@@ -64,46 +64,11 @@ multiple grids during an update. And finally, This
 [Sequence Diagram](assets/USS5.png) shows different examples of protection with
 concurrent updates.
 
-## Files of interest in this package
+## Directories of Interest:
 
-*   src/storage_interface.py - Zookeeper Wrapper library in python. It contains
-    one class of interest: USSMetadataManager with get/set/delete operations and
-    an initialization with a Zookeeper connection string.
-
-*   src/storage_api.py - Web Service API for the Zookeeper library. It will
-    start a web service and serve GET/PUT/DELETE on
-    /GridCellMetaData/<z>/<x>/<y>, which wraps directly to the
-    USSMetadataManager.
-
-*   src/storage_api_test.bash - bash system test script, also shows how to start
-    the server in bash.
-
-*   src/storage_api_test.py - Python unit test for the Web Service API, also
-    shows how to use the API to get, set, and delete metadata.
-
-*   src/storage_interface_test.py - Python unit test for the Zookeeper Wrapper
-    library, also shows how to use the library to get, set, and delete metadata.
-
-*   coverage-html/index.html - interactive unit test coverage.
-
-## Installation
-
-*   mkdir USS2USS
-*   cd USS2USS
-*   (upload USS2USS-x.y.z.tar.gz)
-*   tar -zxvf USS2USS-x.y.z.tar.gz
-*   sudo apt install python-virtualenv python-pip
-*   cd ..
-*   virtualenv USSenv
-*   cd USSenv
-*   . bin/activate
-*   pip install kazoo flask pytest python-dateutil
-*   pip install requests pyjwt cryptography djangorestframework
-*   ln -sf ../USS2USS/src ./src
-*   export INTERUSS_PUBLIC_KEY=(The public KEY for decoding JWTs)
-*   python src/storage_api.py --help
-    *   For example: python src/storage_api.py -z
-        "10.1.0.2:2181,10.1.0.3:2181,10.1.0.4:2181" -s 0.0.0.0 -p 8121 -v
+*   datanode/docker: instructions to download and start your own datanode image
+    as well as the source to create your own docker image to test
+*   datanode/src: all of the source code for running the API and Interface layer
 
 ## Contribution
 
