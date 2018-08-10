@@ -32,8 +32,10 @@ https://app.swaggerhub.com/apis/InterUSS_Platform/data_node_api.
 
 ## Sequence for USS information exchange
 
-![Simple Sequence](assets/USS0.png) When a USS wants to plan a flight, the
-“planning USS” performs the following steps:
+![Simple Sequence](assets/USS0.png)
+
+When a USS wants to plan a flight, the “planning USS” performs the following
+steps:
 
 1.  Discover - Communicates with the InterUSS platform to discover what other
     USSs have an active operation in the specific area of flight and how to
