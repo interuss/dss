@@ -1,0 +1,17 @@
+Title: Example InterUSS Platform initial session[fillcolor="black", fontcolor="white"]                                                                                           
+
+participant Data Node API as L [fillcolor="orange", fontcolor="black"]                                                                                                                                        
+participant USS A as A [fillcolor="yellow", fontcolor="black"]
+participant USS B as B [fillcolor="blue", fontcolor="white"]
+participant USS C as C [fillcolor="darkgreen", fontcolor="white"]
+
+Note over A: USS A Receives request\nto reserve airspace\nwithin cell 1z/1x/1y[fillcolor="yellow", fontcolor="black"]
+
+A->L: GET GridCellMetadata(1z/1x/1y)                                                                                                                              
+L-->A: Empty Metadata and synctoken_v0
+
+
+A->L: PUT GridCellMetadata(1z/1x/1y, synctoken_v0, {uss_id}, \n{operation_endpoint},...)                                                                                                                     
+Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]                                                                                                                                      
+L-->A: 200 Response and synctoken_v1
+Note over A: Once 200 is received, \ncommit in USS A local DB \nfor serving other USSs[fillcolor="yellow", fontcolor="black"]

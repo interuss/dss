@@ -1,0 +1,22 @@
+Title: Example InterUSS Platform multi-grid initial session[fillcolor="black", fontcolor="white"]                                                                                           
+
+participant Data Node API as L [fillcolor="orange", fontcolor="black"]                                                                                                                                        
+participant USS A as A [fillcolor="yellow", fontcolor="black"]
+participant USS B as B [fillcolor="blue", fontcolor="white"]
+
+Note over A: USS A Receives request to reserve airspace\nwithin cells 1z/1x/1y & 1z/2x/1y[fillcolor="yellow", fontcolor="black"]
+
+A->L: GET GridCellMetadata(1z/1x/1y)                                                                                                                              
+L-->A: Empty Metadata and synctoken_v0(1.1.1)
+A->L: GET GridCellMetadata(1z/2x/1y)                                                                                                                              
+L-->A: Empty Metadata and synctoken_v0(1.2.1)
+
+
+Note over A: These two PUTs can be performed in parallel, \nbut parallel is not required[fillcolor="yellow", fontcolor="black"]
+A->L: PUT GridCellMetadata(1z/1x/1y, synctoken_v0(1.1.1), {uss_id}, \n{operation_endpoint},...)                                                                                                                     
+Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]                                                                                                                                      
+L-->A: 200 Response and synctoken_v1(1.1.1)
+A->L: PUT GridCellMetadata(1z/2x/1y, synctoken_v0(1.2.1), {uss_id}, \n{operation_endpoint},...)                                                                                                                     
+Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]                                                                                                                                      
+L-->A: 200 Response and synctoken_v1(1.2.1)
+Note over A: Once all 200s are received, commit in USS A\nlocal DB for serving other USSs[fillcolor="yellow", fontcolor="black"]

@@ -1,0 +1,114 @@
+# Copyright 2018 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Definition for Docker image that runs a complete data node containing both an InterUSS Platform
+# storage API server and an associated Zookeeper instance.
+
+# To build an image from this Dockerfile:
+# docker image build -f Dockerfile_datanode_pybase -t interussplatform/data_node .
+
+# To run this image:
+# docker run -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" -p 8121:8121 \
+#   -d interussplatform/data_node
+
+# Required environment variables:
+#   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.
+
+# Optional environment variables:
+#   ZOO_MY_ID: Integer index for this data node among the data node network.
+#   ZOO_SERVERS: List data node servers on the network.  The address of this node's server should be
+#     set to 0.0.0.0.
+#     Ex: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
+#   INTERUSS_API_PORT: Port on which the InterUSS API will be served (default 8121)
+#   INTERUSS_API_SERVER: IP address that will respond to InterUSS API requests (default 0.0.0.0)
+#   INTERUSS_VERBOSE: True for more log messages from the InterUSS API (default true)
+#   STORAGE_API_ARGS: Any arguments to pass to the storage API, like "-t test" (default blank)
+
+FROM interussplatform/storage_api
+
+# =======
+# Install OpenJDK 8
+# =======
+RUN set -ex;\
+    apt-get update; \
+    apt-get install -y software-properties-common; \
+    add-apt-repository ppa:openjdk-r/ppa; \
+    apt-get update; \
+    apt-get install -y openjdk-8-jdk
+
+# =======
+# Install Zookeeper
+# Adapted from Alpine: https://github.com/31z4/zookeeper-docker/blob/master/3.4.12/Dockerfile
+# =======
+
+ENV ZOO_USER=zookeeper \
+    ZOO_CONF_DIR=/zoo_conf \
+    ZOO_DATA_DIR=/zoo_data \
+    ZOO_DATA_LOG_DIR=/zoo_datalog \
+    ZOO_PORT=2181 \
+    ZOO_TICK_TIME=2000 \
+    ZOO_INIT_LIMIT=5 \
+    ZOO_SYNC_LIMIT=2 \
+    ZOO_MAX_CLIENT_CNXNS=60
+
+# Add a user and make dirs
+WORKDIR /
+RUN set -ex; \
+    useradd --create-home --shell /bin/bash "$ZOO_USER"; \
+    passwd --delete "$ZOO_USER"; \
+    mkdir -p "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR"; \
+    chown "$ZOO_USER:$ZOO_USER" "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR"
+
+ARG ZOO_DISTRO_NAME=zookeeper-3.4.12
+
+RUN set -ex; \
+    wget -q "https://www.apache.org/dist/zookeeper/$ZOO_DISTRO_NAME/$ZOO_DISTRO_NAME.tar.gz"; \
+    wget -q "https://www.apache.org/dist/zookeeper/$ZOO_DISTRO_NAME/$ZOO_DISTRO_NAME.tar.gz.asc"; \
+    tar -xzf "$ZOO_DISTRO_NAME.tar.gz"; \
+    mv "$ZOO_DISTRO_NAME/conf/"* "$ZOO_CONF_DIR"; \
+    rm -rf "$GNUPGHOME" "$ZOO_DISTRO_NAME.tar.gz" "$ZOO_DISTRO_NAME.tar.gz.asc"
+
+# =======
+# Install supervisord
+# =======
+
+RUN apt-get install -y supervisor
+
+# =======
+# Setup Zookeeper
+# =======
+
+EXPOSE 2888 3888
+
+ENV PATH=$PATH:/$ZOO_DISTRO_NAME/bin \
+    ZOOCFGDIR=$ZOO_CONF_DIR
+
+COPY datanode_entrypoint.sh /
+ENTRYPOINT ["/datanode_entrypoint.sh"]
+
+ENV INTERUSS_CONNECTIONSTRING="localhost:2181"
+ENV ZOO_MY_ID=1
+ENV ZOO_SERVERS=localhost:2888:3888
+
+# =======
+# Setup supervisord
+# =======
+
+RUN mkdir -p /var/log/supervisor
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Set STORAGE_API_ARGS to a blank string if not specified
+ENV STORAGE_API_ARGS=${STORAGE_API_ARGS:-}
+
+CMD ["/usr/bin/supervisord", "--configuration", "/etc/supervisor/conf.d/supervisord.conf"]
