@@ -1,0 +1,54 @@
+# Copyright 2018 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Definition for Docker image that runs a complete data node containing both an InterUSS Platform
+# storage API server and an associated Zookeeper instance.
+
+# THIS IMPLEMENTATION IS CURRENTLY INCOMPLETE.
+
+# Required environment variables:
+#   ZOO_MY_ID: Integer index for this data node among the data node network.
+#   ZOO_SERVERS: List data node servers on the network.  The address of this node's server should be
+#     set to 0.0.0.0.
+#     Ex: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
+#   INTERUSS_API_PORT: Port number on which to provide the InterUSS Platform data node API.
+#   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.
+
+# To build an image from this Dockerfile:
+# 1) docker image build -f Dockerfile_datanode -t uss_datanode
+# 2) docker run -it --privileged uss_datanode sh
+# 2a) nohup dockerd & docker pull interussplatform/storage_api && docker pull zookeeper && \
+#         killall dockerd && rm nohup.out
+# 2b) exit
+# 3) docker container ls -n 1
+# 4) docker commit <container name> uss_datanode
+
+FROM docker:stable-dind
+
+RUN apk --no-cache add curl
+
+# Install Docker Compose (https://docs.docker.com/compose/install/#install-compose)
+RUN curl -L\
+  https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m)\
+  -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
+
+WORKDIR /usr/src/app
+COPY docker-compose.yaml ./
+
+ENV ZOO_MY_ID ${ZOO_MY_ID}
+ENV ZOO_SERVERS ${ZOO_SERVERS}
+ENV INTERUSS_API_PORT ${INTERUSS_API_PORT}
+ENV INTERUSS_PUBLIC_KEY ${INTERUSS_PUBLIC_KEY}
+
+CMD ["docker-compose" "-p" "datanode" "up"]
