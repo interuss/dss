@@ -16,17 +16,17 @@ branch or a fork from a publicly-available repo of the InterUSS Platform.
 *   GridCellMetaData endpoint is called GridCellOperator.
 *   PUT GridCellOperator now uses a json body of the entire request, rather than form fields
 *   New and different data elements within a Grid Cell Operator:
-**Removed scope, operation_endpoint, operation_format
-**Added uss_baseurl (the location for the required TCL4 USS endpoints),
-**Added announcement_level (an already operating USS can request for other USSs to contact
-them when they update this cell),
-**Added an array of operations (a list of operations including the gufi, start and end times,
-and the operation signature)
+    * Removed scope, operation_endpoint, operation_format
+    * Added uss_baseurl (the location for the required TCL4 USS endpoints),
+    * Added announcement_level (an already operating USS can request for other USSs to contact
+      them when they update this cell),
+    * Added an array of operations (a list of operations including the gufi, start and end times,
+      and the operation signature)
 *   Added a new endpoint (GridCellOperation) for adding/updating/removing a single operation
-**USSs must PUT a GridCellOperator at least once, and then can use GridCellOperation for single
-updates. Useful for cells with lots of flights.
-**USSs can also choose to use GridCellOperator and update the entire list of operations
-every time.
+    * USSs must PUT a GridCellOperator at least once, and then can use GridCellOperation for single
+      updates. Useful for cells with lots of flights.
+    * USSs can also choose to use GridCellOperator and update the entire list of operations
+      every time.
 
 
 ### Main Features
