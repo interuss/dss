@@ -55,18 +55,10 @@ These instructions describe the installation and usage of an InterUSS Platform d
    ```pip install --no-cache-dir python-dateutil kazoo flask PyJWT djangorestframework cryptography```
 
 1. Copy InterUSS Platform files
-    1. Retrieve source files
 
-       ```yum install git```  
-       ```git clone https://github.com/wing-aviation/InterUSS-Platform```  
-       ```cd InterUSS-Platform/datanode/src```  
-       ```cp storage_api.py storage_interface.py ../../..```  
-
-    1. Retrieve install files
-
-       ```cd ../centos```  
-    	 ```cp *.sh ../../..```  
-       ```cd ../../..```
+   ```yum install git```  
+   ```git clone https://github.com/wing-aviation/InterUSS-Platform```  
+   ```cp InterUSS-Platform/datanode/centos/* .```
 
 1. Install Zookeeper:
 
