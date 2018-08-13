@@ -8,8 +8,9 @@ operator and consumer privacy. The system is focused on facilitating
 communication amongst actively operating USSs with no details about UAS
 operations stored or processed on the InterUSS Platform.
 
-## NOTE: This is a NASA UTM Project delta on the original. In the future, this can be a
-branch or a fork from a publicly-available repo of the InterUSS Platform.
+## NOTE: This is a NASA UTM Project branch specifically for TCL4
+**In the future, this can be a branch or a fork from a publicly-available repo
+of the InterUSS Platform.**
 
 ### Main Differences from the master branch of the InterUSS Platform:
 
