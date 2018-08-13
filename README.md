@@ -1,6 +1,6 @@
 # USS to USS Communication and Synchronization Wrapper
 
-This repository contains a simple, open, and API used for separate UAS Service
+This repository contains a simple and open API used for separate UAS Service
 Suppliers (USS) to communicate during UAS operations, known as the InterUSS
 Platform™. This flexible and distributed system is used to connect multiple USSs
 operating in the same general area to share safety information while protecting
