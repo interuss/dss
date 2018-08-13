@@ -8,10 +8,25 @@ operator and consumer privacy. The system is focused on facilitating
 communication amongst actively operating USSs with no details about UAS
 operations stored or processed on the InterUSS Platform.
 
-## NOTE: This is a NASA UTM Project delta on the original.
+## NOTE: This is a NASA UTM Project delta on the original. In the future, this can be a
+branch or a fork from a publicly-available repo of the InterUSS Platform.
 
-In the future, this can be a branch or a fork from a publicly-available repo
-of the InterUSS Platform.
+### Main Differences from the master branch of the InterUSS Platform:
+
+*   GridCellMetaData endpoint is called GridCellOperator.
+*   PUT GridCellOperator now uses a json body of the entire request, rather than form fields
+*   New and different data elements within a Grid Cell Operator:
+**  Removed scope, operation_endpoint, operation_format
+**  Added uss_baseurl (the location for the required TCL4 USS endpoints),
+**  Added announcement_level (an already operating USS can request for other USSs to contact
+    them when they update this cell),
+**  Added an array of operations (a list of operations including the gufi, start and end times,
+    and the operation signature)
+*   Added a new endpoint (GridCellOperation) for adding/updating/removing a single operation
+**  USSs must PUT a GridCellOperator at least once, and then can use GridCellOperation for single
+    updates. Useful for cells with lots of flights.
+**  USSs can also choose to use GridCellOperator and update the entire list of operations
+    every time.
 
 
 ### Main Features
@@ -34,12 +49,13 @@ of the InterUSS Platform.
     volume.
 
 For the API specification and online test area, see
-https://app.swaggerhub.com/apis/InterUSS_Platform/data_node_api.
+https://app.swaggerhub.com/apis/InterUSS_Platform/data_node_api/tcl4.0.0
 
 ## Sequence for USS information exchange
 
-![Simple Sequence](assets/USS0.png) When a USS wants to plan a flight, the
-“planning USS” performs the following steps:
+![Simple Sequence](assets/USS0.png)
+
+When a USS wants to plan a flight, the “planning USS” performs the following steps:
 
 1.  Discover - Communicates with the InterUSS platform to discover what other
     USSs have an active operation in the specific area of flight and how to
