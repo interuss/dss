@@ -1,12 +1,18 @@
-# USS to USS Communication and Synchronization Wrapper
+# TCL4 USS to USS Communication and Synchronization Wrapper
 
 This repository contains a simple, open, and API used for separate UAS Service
-Suppliers (USS) to communicate during UAS operations, known as the InterUSS
+Suppliers (USS) to communicate during TCL4 UAS operations, known as the InterUSS
 Platform™. This flexible and distributed system is used to connect multiple USSs
 operating in the same general area to share safety information while protecting
 operator and consumer privacy. The system is focused on facilitating
 communication amongst actively operating USSs with no details about UAS
 operations stored or processed on the InterUSS Platform.
+
+## NOTE: This is a NASA UTM Project delta on the original.
+
+In the future, this can be a branch or a fork from a publicly-available repo
+of the InterUSS Platform.
+
 
 ### Main Features
 

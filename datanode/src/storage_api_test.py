@@ -15,9 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import json
-import os
 import unittest
-import requests
 
 import storage_api
 ZK_TEST_CONNECTION_STRING = '35.224.64.48:2181,35.188.14.39:2181,35.224.180.72:2181'
@@ -39,38 +37,6 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     result = self.app.get('/status')
     assert result.status_code == 200
     assert b'OK' in result.data
-
-  def testIntrospectWithBadTokens(self):
-    result = self.app.get('/introspect')
-    assert result.status_code == 403
-    result = self.app.get('/introspect?token=NOTVALID')
-    assert result.status_code == 403
-    result = self.app.get('/introspect?access_token=NOTVALID')
-    assert result.status_code == 403
-    result = self.app.get('/introspect', headers={'access_token': 'NOTVALID'})
-    assert result.status_code == 400
-
-  def testIntrospectWithExpiredToken(self):
-    assert os.environ.get('FIMS_AUTH')
-    result = self.app.get(
-        '/introspect',
-        headers={
-            'access_token':
-            '1/fFAGRNJru1FTz70BzhT3Zg'
-        })
-    assert result.status_code == 400
-
-  def testIntrospectWithValidToken(self):
-    # pylint: disable=line-too-long
-    assert os.environ.get('FIMS_AUTH')
-    assert os.getenv('INTERUSS_PUBLIC_KEY')
-    endpoint = 'https://utmbeta.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials'
-    headers = {'Authorization': 'Basic ' + os.environ.get('FIMS_AUTH', '')}
-    r = requests.post(endpoint, headers=headers)
-    assert r.status_code == 200
-    token = r.json()['access_token']
-    result = self.app.get('/introspect', headers={'access_token': token})
-    assert result.status_code == 200
 
   def testSlippyConversionWithInvalidData(self):
     result = self.app.get('/slippy')

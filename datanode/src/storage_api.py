@@ -64,7 +64,8 @@ import storage_interface
 # VERSION = '0.3.0'  # Changed to locally verifying JWT, removing NASA FIMS link
 # VERSION = '0.3.1'  # Added token validation option in test mode
 # VERSION = '0.4.0'  # Changed data structure to match v1 of InterUSS Platform
-VERSION = '1.0.0'  # Initial, approved release deployed on GitHub
+# VERSION = '1.0.0'  # Initial, approved release deployed on GitHub
+VERSION = 'TCL4.0.0'  # Specific branch for TCL4 only
 
 TESTID = None
 
@@ -82,20 +83,6 @@ def Status():
   # just a quick status checker, not really a health check
   log.debug('Status handler instantiated...')
   return _FormatResult({'status': 'success', 'message': 'OK'})
-
-
-@webapp.route('/introspect', methods=['GET'])
-def Introspect():
-  #  status checker of FIMS authorization token (access_token)
-  log.debug('Status handler instantiated...')
-  uss_id = _ValidateAccessToken()
-  return _FormatResult({
-      'status': 'success',
-      'message': 'ACCESS TOKEN VALID',
-      'data': {
-          'uss_id': uss_id
-      }
-  })
 
 
 @webapp.route('/slippy/<zoom>', methods=['GET'])
@@ -208,6 +195,7 @@ def _ValidateAccessToken():
   if secret and token:
     try:
       r = jwt.decode(token, secret, algorithms='RS256')
+      return r['client_id']
     except jwt.ExpiredSignatureError:
       log.error('Access token has expired.')
       abort(status.HTTP_401_UNAUTHORIZED,
@@ -216,7 +204,6 @@ def _ValidateAccessToken():
       log.error('Access token is invalid and cannot be decoded.')
       abort(status.HTTP_400_BAD_REQUEST,
             'OAuth access_token is invalid: token cannot be decoded.')
-    return r['client_id']
   else:
     log.error('Attempt to access resource without access_token in header.')
     abort(status.HTTP_403_FORBIDDEN,
