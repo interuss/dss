@@ -105,16 +105,15 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     assert g['data']['version'] == 0
     assert not g['data']['operators']
     # simple set with basic values
-    s = self.mm.set(2, 1, 1, g['sync_token'], 'uss', 'uss-scope', 'GUTMA',
-                    'https://g.co/flight', '2018-01-01T00:00:00+00:00',
-                    '2018-01-01T01:00:00+00:00')
+    s = self.mm.set(2, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
+                    '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
     assert s['status'] == 'success'
     assert s['data']['version'] == 1
     assert len(s['data']['operators']) == 1
     o = s['data']['operators'][0]
     assert o['uss'] == 'uss'
-    assert o['operation_endpoint'] == 'https://g.co/flight'
-    assert o['operation_format'] == 'GUTMA'
+    assert o['uss_baseurl'] == 'uss.com/base'
+    assert o['announcement_level'] == False
     assert o['version'] == 1
     assert o['minimum_operation_timestamp'] == '2018-01-01T00:00:00+00:00'
     assert o['maximum_operation_timestamp'] == '2018-01-01T01:00:00+00:00'
@@ -140,16 +139,14 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     assert g['data']['version'] == 0
     assert not g['data']['operators']
     # simple set with basic values
-    s = self.mm.set(3, 1, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
-                    'https://g.co/flight', '2018-01-01T00:00:00+00:00',
-                    '2018-01-01T01:00:00+00:00')
+    s = self.mm.set(3, 1, 1, g['sync_token'], 'uss1', 'uss1.com/base', True,
+                    '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
     assert s['status'] == 'success'
     assert s['data']['version'] == 1
     assert len(s['data']['operators']) == 1
     # now try to do a set with the original sync token
-    s = self.mm.set(3, 1, 1, g['sync_token'], 'uss2', 'uss2-scope', 'GUTMA',
-                    'https://h.com/f/3/1/1', '2018-01-01T11:00:00+00:00',
-                    '2018-01-01T12:00:00+00:00')
+    s = self.mm.set(3, 1, 1, g['sync_token'], 'uss2', 'uss2.com/base', True,
+                    '2018-01-01T11:00:00+00:00', '2018-01-01T12:00:00+00:00')
     assert s['status'] == 'fail'
     # confirm version is still the first write
     g = self.mm.get(3, 1, 1)
@@ -176,7 +173,8 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
           ))
       threads.append(t)
       t.start()
-    t.join()
+    for t in threads:
+      t.join()
     # confirm there is only one update
     g = self.mm.get(4, 1, 1)
     assert g['status'] == 'success'
@@ -186,9 +184,8 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.mm.delete_testdata()
 
   def SetCellWorker(self, num, sync_token):
-    self.mm.set(4, 1, 1, sync_token, 'uss' + str(num), 'uss-scope' + str(num),
-                'GUTMA', 'https://' + str(num) + '.io/flight',
-                '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
+    self.mm.set(4, 1, 1, sync_token, 'uss' + str(num), 'uss-base' + str(num),
+                True, '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
     return
 
   def testSetCellsWithInvalidTimestamps(self):
@@ -201,8 +198,8 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                 ('2018-01-01H00:00:00+00:00', '2019-01-01!00:00:00'),
                 ('2018-01-01T00:00:00+00:00', '215664892128621657566')]
     for test in testsets:
-      s = self.mm.set(5, 1, 1, token, 'uss', 'uss-scope', 'GUTMA',
-                      'https://g.co/flight', test[0], test[1])
+      s = self.mm.set(5, 1, 1, token, 'uss', 'uss.com/base', True,
+                      test[0], test[1])
       assert s['status'] == 'fail'
     # Make sure everything is clean
     self.mm.delete_testdata()
@@ -220,8 +217,8 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                 ('2018-01-01T00:00:00', '2019-01-01')
                ]
     for test in testsets:
-      s = self.mm.set(5, 1, 1, token, 'uss', 'uss-scope', 'GUTMA',
-                      'https://g.co/flight', test[0], test[1])
+      s = self.mm.set(5, 1, 1, token, 'uss', 'uss.com/base', True,
+                      test[0], test[1])
       token = s['sync_token']
       assert s['status'] == 'success'
       o = s['data']['operators'][0]

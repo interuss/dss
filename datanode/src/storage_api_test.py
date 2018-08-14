@@ -326,7 +326,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
   def testVerbose(self):
     storage_api.InitializeConnection([
-        '-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCase',
+        '-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCaseTCL4',
         '-v'
     ])
 

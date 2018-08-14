@@ -161,6 +161,7 @@ class USSMetadataManager(object):
     #                   convert them to http error codes. For now, this is
     #                   at least in a standard JSend format.
     status = 500
+    result = None
     if self._validate_slippy(z, x, y):
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
@@ -182,8 +183,8 @@ class USSMetadataManager(object):
       result = self._format_status_code_to_jsend(status)
     return result
 
-  def set(self, z, x, y, sync_token, uss_id, ws_scope, operation_format,
-          operation_ws, earliest_operation, latest_operation):
+  def set(self, z, x, y, sync_token, uss_id, baseurl, announce,
+          earliest_operation, latest_operation):
     """Sets the metadata for a GridCell.
 
     Writes data, using the snapshot token for confirming data
@@ -195,10 +196,13 @@ class USSMetadataManager(object):
       y: y tile number in slippy tile format
       sync_token: token retrieved in the original GET GridCellMetadata,
       uss_id: plain text identifier for the USS,
-      ws_scope: scope to use to obtain OAuth token,
-      operation_format: output format for operation ws (i.e. NASA, GUTMA),
-      operation_ws: submitting USS endpoint where all flights in
-        this cell can be retrieved from,
+      baseurl: Base URL for the USSs web service endpoints hosting the
+        required NASA API (https://app.swaggerhub.com/apis/utm/uss/).
+      announce: The level of announcements the USS would like to receive related
+        to operations in this grid cell. Current just a binary, but expect this
+        enumeration to grow as use cases are developed. For example, USSs may
+        want just security related announcements, or would only like
+        announcements that involve changed geographies.
       earliest_operation: lower bound of active or planned flight timestamp,
         used for quick filtering conflicts.
       latest_operation: upper bound of active or planned flight timestamp,
@@ -218,9 +222,8 @@ class USSMetadataManager(object):
           try:
             m = USSMetadata(content)
             log.debug('Setting metadata for %s...', uss_id)
-            if not m.upsert_operator(uss_id, ws_scope, operation_format,
-                                     operation_ws, earliest_operation,
-                                     latest_operation):
+            if not m.upsert_operator(uss_id, baseurl, announce,
+                                     earliest_operation, latest_operation):
               log.error('Failed setting operator for %s with token %s...',
                         uss_id, str(sync_token))
               raise ValueError
@@ -252,6 +255,7 @@ class USSMetadataManager(object):
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
     status = 500
+    m = None
     if self._validate_slippy(z, x, y):
       # first we have to get the cell
       (content, metadata) = self._get_raw(z, x, y)
@@ -430,10 +434,9 @@ class USSMetadata(object):
   """Data structure for the metadata stored for USS entries in a GridCell.
 
   Format: {version: <version>, timestamp: <last_updated>, operators:
-    [{uss: <ussid>, scope: <used_for_obtaining_oauth_tokens>,
+    [{uss: <ussid>, baseurl: <base_url_for_NASA_API>,
     version: <last_version_for_this_uss>, timestamp: <last_updated>,
-    operation_endpoint: <endpoint_to_retrieve_operations_in_this_grid>,
-    operation_format: <output_format_of_uas_operations>,
+    announce: <flag_for_requesting_announcements_from _other_uss>,
     minimum_operation_timestamp: <lowest_start_time_of_operations_in_this_cell>,
     maximum_operation_timestamp: <highest_end_time_of_operations_in_this_cell>
     },
@@ -464,16 +467,19 @@ class USSMetadata(object):
         'operators': self.operators
     }
 
-  def upsert_operator(self, uss_id, ws_scope, operation_format, operation_ws,
+  def upsert_operator(self, uss_id, baseurl, announce,
                       earliest_operation, latest_operation):
     """Inserts or updates an operation, with uss_id as the key.
 
     Args:
       uss_id: plain text identifier for the USS,
-      ws_scope: scope to use to obtain OAuth token,
-      operation_format: output format for operation ws (i.e. NASA, GUTMA),
-      operation_ws: submitting USS endpoint where all flights in
-        this cell can be retrieved from,
+      baseurl: Base URL for the USSs web service endpoints hosting the
+        required NASA API (https://app.swaggerhub.com/apis/utm/uss/).
+      announce: The level of announcements the USS would like to receive related
+        to operations in this grid cell. Current just a binary, but expect this
+        enumeration to grow as use cases are developed. For example, USSs may
+        want just security related announcements, or would only like
+        announcements that involve changed geographies.
       earliest_operation: lower bound of active or planned flight timestamp,
         used for quick filtering conflicts.
       latest_operation: upper bound of active or planned flight timestamp,
@@ -497,13 +503,12 @@ class USSMetadata(object):
     # Now add the new record
     operator = {
         'uss': uss_id,
-        'scope': ws_scope,
+        'uss_baseurl': baseurl,
         'version': self.version,
         'timestamp': datetime.datetime.now().isoformat(),
-        'operation_endpoint': operation_ws,
-        'operation_format': operation_format,
         'minimum_operation_timestamp': earliest_operation.isoformat(),
-        'maximum_operation_timestamp': latest_operation.isoformat()
+        'maximum_operation_timestamp': latest_operation.isoformat(),
+        'announcement_level': announce
     }
     self.operators.append(operator)
     self.timestamp = datetime.datetime.now().isoformat()
