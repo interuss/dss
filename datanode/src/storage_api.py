@@ -134,9 +134,9 @@ def ConvertCoordinatesToSlippy(zoom):
 
 
 @webapp.route(
-    '/GridCellMetaData/<zoom>/<x>/<y>',
+    '/GridCellOperator/<zoom>/<x>/<y>',
     methods=['GET', 'PUT', 'POST', 'DELETE'])
-def GridCellMetaDataHandler(zoom, x, y):
+def GridCellOperatorHandler(zoom, x, y):
   """Handles the web service request and routes to the proper function.
 
   Args:
@@ -166,11 +166,11 @@ def GridCellMetaDataHandler(zoom, x, y):
     InitializeConnection(None)
   # Check the request method
   if request.method == 'GET':
-    result = _GetGridCellMetaData(zoom, x, y)
+    result = _GetGridCellOperator(zoom, x, y)
   elif request.method in ('PUT', 'POST'):
-    result = _PutGridCellMetaData(zoom, x, y, uss_id)
+    result = _PutGridCellOperator(zoom, x, y, uss_id)
   elif request.method == 'DELETE':
-    result = _DeleteGridCellMetaData(zoom, x, y, uss_id)
+    result = _DeleteGridCellOperator(zoom, x, y, uss_id)
   else:
     abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
   return _FormatResult(result)
@@ -210,10 +210,10 @@ def _ValidateAccessToken():
           'Valid OAuth access_token must be provided in header.')
 
 
-def _GetGridCellMetaData(zoom, x, y):
-  """Provides an instantaneous snapshot of the metadata for a specific GridCell.
+def _GetGridCellOperator(zoom, x, y):
+  """Provides an instantaneous snapshot of operators for a specific GridCell.
 
-  GridCellMetaData provides an instantaneous snapshot of the metadata stored
+  GridCellOperator provides an instantaneous snapshot of the operators stored
   in a specific GridCell, along with a token to be used when updating. For
   TCL3, this will support a single cell.
 
@@ -225,26 +225,26 @@ def _GetGridCellMetaData(zoom, x, y):
     200 with token and JSON metadata,
     or the nominal 4xx error codes as necessary.
   """
-  log.info('Grid cell metadata request instantiated for %sz, %s,%s...', zoom, x,
+  log.info('Grid cell operators request instantiated for %sz, %s,%s...', zoom, x,
            y)
   result = wrapper.get(zoom, x, y)
   return result
 
 
-def _PutGridCellMetaData(zoom, x, y, uss_id):
-  """Updates the metadata stored in a specific slippy GridCell.
+def _PutGridCellOperator(zoom, x, y, uss_id):
+  """Updates the operator info stored in a specific slippy GridCell.
 
     Updates the metadata stored in a specific GridCell using optimistic locking
     behavior, which acquires and releases the lock for the specific GridCell.
     Operation fails if unable to acquire the locks or if the lock has been
-    updated since GET GridCellMetadata was originally called (based on token).
+    updated since GET GridCellOperator was originally called (based on token).
   Args:
     zoom: zoom level in slippy tile format
     x: x tile number in slippy tile format
     y: y tile number in slippy tile format
     uss_id: the plain text identifier for the USS from OAuth
   Plus posted webargs:
-    sync_token: the token retrieved in the original GET GridCellMetadata,
+    sync_token: the token retrieved in the original GET GridCellOperator,
     scope: The submitting USS scope for the web service endpoint (used for OAuth
       access),
     operation_endpoint: the submitting USS endpoint where all flights in this
@@ -261,7 +261,7 @@ def _PutGridCellMetaData(zoom, x, y, uss_id):
     409 if there is a locking conflict that could not be resolved, or
     the other nominal 4xx error codes as necessary.
   """
-  log.info('Grid cell metadata submit instantiated for %sz, %s,%s...', zoom, x,
+  log.info('Grid cell operator submit instantiated for %sz, %s,%s...', zoom, x,
            y)
   sync_token = _GetRequestParameter('sync_token', None)
   scope = _GetRequestParameter('scope', None)
@@ -305,7 +305,7 @@ def _PutGridCellMetaData(zoom, x, y, uss_id):
   return result
 
 
-def _DeleteGridCellMetaData(zoom, x, y, uss_id):
+def _DeleteGridCellOperator(zoom, x, y, uss_id):
   """Removes the USS entry in the metadata stored in a specific GridCell.
 
   Removes the USS entry in the metadata using optimistic locking behavior, which
@@ -322,7 +322,7 @@ def _DeleteGridCellMetaData(zoom, x, y, uss_id):
     409 if there is a locking conflict that could not be resolved, or
     the other nominal 4xx error codes as necessary.
   """
-  log.info('Grid cell metadata delete instantiated for %sz, %s,%s...', zoom, x,
+  log.info('Grid cell operator delete instantiated for %sz, %s,%s...', zoom, x,
            y)
   if uss_id:
     result = wrapper.delete(zoom, x, y, uss_id)

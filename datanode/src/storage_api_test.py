@@ -94,36 +94,36 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     assert len(j['data']['links']) == 2
 
   def testMultipleSuccessfulEmptyRandomGets(self):
-    assert self.CheckEmptyGridCell(self.app.get('/GridCellMetaData/1/1/1'))
-    assert self.CheckEmptyGridCell(self.app.get('/GridCellMetaData/19/1/1'))
-    assert self.CheckEmptyGridCell(self.app.get('/GridCellMetaData/10/100/100'))
-    assert self.CheckEmptyGridCell(self.app.get('/GridCellMetaData/15/1/1'))
+    assert self.CheckEmptyGridCell(self.app.get('/GridCellOperator/1/1/1'))
+    assert self.CheckEmptyGridCell(self.app.get('/GridCellOperator/19/1/1'))
+    assert self.CheckEmptyGridCell(self.app.get('/GridCellOperator/10/100/100'))
+    assert self.CheckEmptyGridCell(self.app.get('/GridCellOperator/15/1/1'))
     assert self.CheckEmptyGridCell(
-        self.app.get('/GridCellMetaData/15/9132/1425'))
+        self.app.get('/GridCellOperator/15/9132/1425'))
 
   def testIncorrectGetsOnGridCells(self):
-    assert self.app.get('/GridCellMetaDatas/1/1/1').status_code == 404
-    assert self.app.get('/GridCellMetaData').status_code == 404
-    assert self.app.get('/GridCellMetaData/admin').status_code == 404
-    assert self.app.get('/GridCellMetaData/1/1/1/admin').status_code == 404
-    assert self.app.get('/GridCellMetaData/1a/1/1').status_code == 400
-    assert self.app.get('/GridCellMetaData/99/1/1').status_code == 400
-    assert self.app.get('/GridCellMetaData/1/99/1').status_code == 400
-    assert self.app.get('/GridCellMetaData/1/1/99').status_code == 400
+    assert self.app.get('/GridCellOperators/1/1/1').status_code == 404
+    assert self.app.get('/GridCellOperator').status_code == 404
+    assert self.app.get('/GridCellOperator/admin').status_code == 404
+    assert self.app.get('/GridCellOperator/1/1/1/admin').status_code == 404
+    assert self.app.get('/GridCellOperator/1a/1/1').status_code == 400
+    assert self.app.get('/GridCellOperator/99/1/1').status_code == 400
+    assert self.app.get('/GridCellOperator/1/99/1').status_code == 400
+    assert self.app.get('/GridCellOperator/1/1/99').status_code == 400
 
   def testIncorrectPutsOnGridCells(self):
-    result = self.app.get('/GridCellMetaData/1/1/1')
+    result = self.app.get('/GridCellOperator/1/1/1')
     assert result.status_code == 200
     j = json.loads(result.data)
     s = j['sync_token']
     assert self.app.put(
-        '/GridCellMetaDatas/1/1/1',
+        '/GridCellOperators/1/1/1',
         query_string=dict(
             sync_token=s,
             flight_endpoint='https://g.co/f1',
             priority_flight_callback='https://g.co/r')).status_code == 404
     assert self.app.put(
-        '/GridCellMetaData',
+        '/GridCellOperator',
         query_string=dict(
             ssync_token=s,
             scope='https://g.co/r',
@@ -132,7 +132,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code == 404
     assert self.app.put(
-        '/GridCellMetaData/1a/1/1',
+        '/GridCellOperator/1a/1/1',
         query_string=dict(
             sync_token=s,
             scope='https://g.co/r',
@@ -141,7 +141,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code == 400
     assert self.app.put(
-        '/GridCellMetaData/1/99/1',
+        '/GridCellOperator/1/99/1',
         query_string=dict(
             sync_token=s,
             scope='https://g.co/r',
@@ -150,7 +150,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code == 400
     assert self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             # sync_token=s,
             scope='https://g.co/r',
@@ -159,7 +159,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code == 400
     assert self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
             # scope='https://g.co/r',
@@ -168,7 +168,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code == 400
     assert self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
             scope='https://g.co/r',
@@ -177,7 +177,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code == 400
     assert self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
             scope='https://g.co/r',
@@ -186,7 +186,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code == 400
     assert self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
             scope='https://g.co/r',
@@ -195,7 +195,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             # minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code == 400
     assert self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
             scope='https://g.co/r',
@@ -204,20 +204,20 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             # maximum_operation_timestamp='2018-01-02'
             minimum_operation_timestamp='2018-01-01')).status_code == 400
     assert self.app.put(
-        '/GridCellMetaData/1/1/1', data={
+        '/GridCellOperator/1/1/1', data={
             'sync_token': 'NOT_VALID'
         }).status_code == 400
-    assert self.app.put('/GridCellMetaData/1/1/1').status_code == 400
+    assert self.app.put('/GridCellOperator/1/1/1').status_code == 400
 
   def testIncorrectDeletesOnGridCells(self):
-    assert self.app.delete('/GridCellMetaDatas/1/1/1').status_code == 404
-    assert self.app.delete('/GridCellMetaData').status_code == 404
-    assert self.app.delete('/GridCellMetaData/admin').status_code == 404
-    assert self.app.delete('/GridCellMetaData/1/1/1/admin').status_code == 404
-    assert self.app.delete('/GridCellMetaData/1a/1/1').status_code == 400
-    assert self.app.delete('/GridCellMetaData/99/1/1').status_code == 400
-    assert self.app.delete('/GridCellMetaData/1/99/1').status_code == 400
-    assert self.app.delete('/GridCellMetaData/1/1/99').status_code == 400
+    assert self.app.delete('/GridCellOperators/1/1/1').status_code == 404
+    assert self.app.delete('/GridCellOperator').status_code == 404
+    assert self.app.delete('/GridCellOperator/admin').status_code == 404
+    assert self.app.delete('/GridCellOperator/1/1/1/admin').status_code == 404
+    assert self.app.delete('/GridCellOperator/1a/1/1').status_code == 400
+    assert self.app.delete('/GridCellOperator/99/1/1').status_code == 400
+    assert self.app.delete('/GridCellOperator/1/99/1').status_code == 400
+    assert self.app.delete('/GridCellOperator/1/1/99').status_code == 400
 
   def CheckEmptyGridCell(self, result):
     assert result.status_code == 200
@@ -229,14 +229,14 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
   def testFullValidSequenceOfGetPutDelete(self):
     # Make sure it is empty
-    result = self.app.get('/GridCellMetaData/1/1/1')
+    result = self.app.get('/GridCellOperator/1/1/1')
     assert result.status_code == 200
     j = json.loads(result.data)
     s = j['sync_token']
     assert not j['data']['operators']
     # Put a record in there
     result = self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
             scope='https://g.co/r',
@@ -248,26 +248,26 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     j = json.loads(result.data)
     s = j['sync_token']
     # Delete the record
-    result = self.app.delete('/GridCellMetaData/1/1/1')
+    result = self.app.delete('/GridCellOperator/1/1/1')
     assert result.status_code == 200
     j = json.loads(result.data)
     s = j['sync_token']
     # Make sure it is gone
-    result = self.app.get('/GridCellMetaData/1/1/1')
+    result = self.app.get('/GridCellOperator/1/1/1')
     assert result.status_code == 200
     j = json.loads(result.data)
     assert not j['data']['operators']
 
   def testMultipleUpdates(self):
     # Make sure it is empty
-    result = self.app.get('/GridCellMetaData/1/1/1')
+    result = self.app.get('/GridCellOperator/1/1/1')
     assert result.status_code == 200
     j = json.loads(result.data)
     s = j['sync_token']
     assert not j['data']['operators']
     # Put a record in there with the wrong sequence token
     result = self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token='arbitrary_and_NOT_VALID',
             scope='https://g.co/r',
@@ -278,7 +278,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     assert result.status_code == 409
     # Put a record in there with the right sequence token
     result = self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
             scope='https://g.co/r',
@@ -289,7 +289,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     assert result.status_code == 200
     # Try to put a record in there again with the old sequence token
     result = self.app.put(
-        '/GridCellMetaData/1/1/1',
+        '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
             scope='https://g.co/r',
