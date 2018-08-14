@@ -264,6 +264,8 @@ def _PutGridCellOperator(zoom, x, y, uss_id):
   log.info('Grid cell operator submit instantiated for %sz, %s,%s...', zoom, x,
            y)
   sync_token = _GetRequestParameter('sync_token', None)
+  if not sync_token and 'sync_token' in request.headers:
+    sync_token = request.headers['sync_token']
   scope = _GetRequestParameter('scope', None)
   operation_endpoint = _GetRequestParameter('operation_endpoint', None)
   operation_format = _GetRequestParameter('operation_format', None)

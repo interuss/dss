@@ -209,6 +209,31 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         }).status_code == 400
     assert self.app.put('/GridCellOperator/1/1/1').status_code == 400
 
+  def testSyncTokenInHeader(self):
+    result = self.app.get('/GridCellOperator/1/1/1')
+    assert result.status_code == 200
+    j = json.loads(result.data)
+    s = j['sync_token']
+    # Put a record in there with an invalid token
+    qs = dict(
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        query_string=qs,
+        headers={'sync_token': 'arbitrary_and_NOT_VALID'})
+    assert result.status_code == 409
+    # Put a record in there with an invalid token
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        query_string=qs,
+        headers={'sync_token': s})
+    assert result.status_code == 200
+
+
   def testIncorrectDeletesOnGridCells(self):
     assert self.app.delete('/GridCellOperators/1/1/1').status_code == 404
     assert self.app.delete('/GridCellOperator').status_code == 404
