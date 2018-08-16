@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="34486fa4-1e5f-4998-982e-85eca5fa2e1a" name="Default" comment="Merged to master">
+    <list default="true" id="34486fa4-1e5f-4998-982e-85eca5fa2e1a" name="Default" comment="Added delete operation">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/datanode/src/storage_interface.py" beforeDir="false" afterPath="$PROJECT_DIR$/datanode/src/storage_interface.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/datanode/src/storage_interface_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/datanode/src/storage_interface_test.py" afterDir="false" />
     </list>
@@ -14,13 +15,13 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.47811607">
+    <splitter split-orientation="horizontal" split-proportion="0.5">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
           <file leaf-file-name="storage_api.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/datanode/src/storage_api.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="3975">
+                <state relative-caret-position="3735">
                   <caret line="265" column="5" selection-start-line="265" selection-start-column="5" selection-end-line="265" selection-end-column="5" />
                   <folding>
                     <element signature="e#1572#1586#0" expanded="true" />
@@ -32,8 +33,8 @@
           <file leaf-file-name="storage_interface.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-30">
-                  <caret line="527" lean-forward="true" selection-start-line="527" selection-end-line="527" />
+                <state relative-caret-position="626">
+                  <caret line="548" selection-start-line="548" selection-end-line="548" />
                 </state>
               </provider>
             </entry>
@@ -45,7 +46,7 @@
           <file leaf-file-name="storage_api_test.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/datanode/src/storage_api_test.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="4920">
+                <state relative-caret-position="4875">
                   <caret line="328" column="78" selection-start-line="328" selection-start-column="78" selection-end-line="328" selection-end-column="78" />
                   <folding>
                     <element signature="e#620#631#0" expanded="true" />
@@ -57,8 +58,17 @@
           <file leaf-file-name="storage_interface_test.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface_test.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="738">
-                  <caret line="257" lean-forward="true" selection-start-line="257" selection-end-line="257" />
+                <state relative-caret-position="577">
+                  <caret line="278" column="68" selection-start-line="278" selection-start-column="68" selection-end-line="278" selection-end-column="68" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/README.md">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="150">
+                  <caret line="10" column="2" selection-start-line="10" selection-start-column="2" selection-end-line="10" selection-end-column="2" />
                 </state>
               </provider>
             </entry>
@@ -73,6 +83,7 @@
       <find>scope</find>
       <find>operation_</find>
       <find>upser</find>
+      <find>operations</find>
     </findStrings>
     <replaceStrings>
       <replace>operators</replace>
@@ -95,8 +106,8 @@
         <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/datanode/src/storage_api.py" />
         <option value="$PROJECT_DIR$/datanode/src/storage_api_test.py" />
-        <option value="$PROJECT_DIR$/datanode/src/storage_interface.py" />
         <option value="$PROJECT_DIR$/datanode/src/storage_interface_test.py" />
+        <option value="$PROJECT_DIR$/datanode/src/storage_interface.py" />
       </list>
     </option>
   </component>
@@ -106,11 +117,14 @@
     <option name="width" value="1400" />
     <option name="height" value="1000" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="PackagesPane" />
+      <pane id="Scope" />
       <pane id="AndroidView" />
       <pane id="ProjectPane">
         <subPane>
@@ -128,14 +142,18 @@
               <item name="InterUSS-Platform" type="b2602c69:ProjectViewProjectNode" />
               <item name="InterUSS-Platform" type="462c0819:PsiDirectoryNode" />
               <item name="datanode" type="462c0819:PsiDirectoryNode" />
+              <item name="docker" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="InterUSS-Platform" type="b2602c69:ProjectViewProjectNode" />
+              <item name="InterUSS-Platform" type="462c0819:PsiDirectoryNode" />
+              <item name="datanode" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -223,7 +241,7 @@
       <option name="_new_target" value="&quot;datanode/src/storage_interface_test.py&quot;" />
       <option name="_new_targetType" value="&quot;PATH&quot;" />
     </configuration>
-    <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testNegativeDeleteCycle" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="InterUSS-Platform" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -233,10 +251,10 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle&quot;" />
+      <option name="_new_target" value="&quot;storage_interface_test.InterUSSStorageInterfaceTestCase.testNegativeDeleteCycle&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
     </configuration>
-    <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="InterUSS-Platform" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -246,7 +264,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token&quot;" />
+      <option name="_new_target" value="&quot;storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
     </configuration>
     <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithInvalidTimestamps" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
@@ -291,17 +309,17 @@
     <list>
       <item itemvalue="Python tests.Storage Interface Test" />
       <item itemvalue="Python tests.Storage API Test" />
-      <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle" />
-      <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" />
       <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithInvalidTimestamps" />
       <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithValidTimestamps" />
       <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" />
+      <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation" />
+      <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testNegativeDeleteCycle" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" />
-        <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle" />
-        <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" />
+        <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation" />
+        <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testNegativeDeleteCycle" />
         <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithValidTimestamps" />
         <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithInvalidTimestamps" />
       </list>
@@ -371,38 +389,52 @@
       <option name="project" value="LOCAL" />
       <updated>1534272202827</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Added operations within operators">
+      <created>1534451970278</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1534451970278</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Added operations to operators">
+      <created>1534452117262</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1534452117262</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithInvalidTimestamps - 2018.08.14 at 11h 37m 06s.xml">
-      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithInvalidTimestamps" configurationId="tests" />
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testRemoveAnOperation - 2018.08.16 at 16h 08m 57s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithValidTimestamps - 2018.08.14 at 11h 37m 28s.xml">
-      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithValidTimestamps" configurationId="tests" />
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testRemoveAnOperation - 2018.08.16 at 16h 10m 00s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsInParallelWithSamesync_token - 2018.08.14 at 11h 42m 00s.xml">
-      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" configurationId="tests" />
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testRemoveAnOperation - 2018.08.16 at 16h 10m 20s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsInParallelWithSamesync_token - 2018.08.15 at 12h 19m 24s.xml">
-      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Storage_Interface_Test - 2018.08.15 at 12h 20m 24s.xml">
+    <history-entry file="Storage_Interface_Test - 2018.08.16 at 16h 11m 24s.xml">
       <configuration name="Storage Interface Test" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testPositiveGetSetDeleteCycle - 2018.08.15 at 12h 21m 33s.xml">
-      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle" configurationId="tests" />
+    <history-entry file="Storage_Interface_Test - 2018.08.16 at 16h 15m 22s.xml">
+      <configuration name="Storage Interface Test" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.15 at 12h 33m 22s.xml">
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testRemoveAnOperation - 2018.08.16 at 16h 17m 44s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testRemoveAnOperation - 2018.08.16 at 16h 18m 01s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testRemoveAnOperation - 2018.08.16 at 16h 20m 10s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testRemoveAnOperation" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.16 at 16h 21m 26s.xml">
       <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.15 at 12h 33m 51s.xml">
-      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.15 at 12h 36m 34s.xml">
-      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.15 at 12h 36m 47s.xml">
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.16 at 16h 21m 50s.xml">
       <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" configurationId="tests" />
     </history-entry>
   </component>
@@ -420,29 +452,29 @@
     <editor active="true" />
     <layout>
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3298272" />
-      <window_info anchor="bottom" id="Messages" weight="0.3298272" />
-      <window_info anchor="right" id="Palette&#9;" />
-      <window_info id="Image Layers" />
-      <window_info anchor="right" id="Capture Analysis" />
-      <window_info anchor="bottom" id="Event Log" side_tool="true" />
-      <window_info anchor="right" id="Maven Projects" />
-      <window_info anchor="bottom" id="Version Control" weight="0.3298272" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3298272" />
-      <window_info anchor="bottom" id="Terminal" />
-      <window_info id="Capture Tool" />
-      <window_info id="Designer" />
+      <window_info active="true" anchor="bottom" id="Messages" order="7" visible="true" weight="0.3298272" />
+      <window_info anchor="right" id="Palette&#9;" order="3" />
+      <window_info id="Image Layers" order="2" />
+      <window_info anchor="right" id="Capture Analysis" order="3" />
+      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
+      <window_info anchor="right" id="Maven Projects" order="3" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.3298272" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.3298272" />
+      <window_info anchor="bottom" id="Terminal" order="7" />
+      <window_info id="Capture Tool" order="2" />
+      <window_info id="Designer" order="2" />
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17890625" />
-      <window_info anchor="bottom" id="Find" order="1" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="right" id="Theme Preview" />
-      <window_info id="Favorites" side_tool="true" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.19083396" />
-      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="right" id="Theme Preview" order="3" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.47933885" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Find" order="1" />
     </layout>
   </component>
   <component name="UnknownFeatures">
@@ -457,14 +489,92 @@
     <MESSAGE value="Changed GridCellMetaData to GridCellOperator" />
     <MESSAGE value="Add support for sync_token in the header" />
     <MESSAGE value="Changed operators structure to match TCL4 spec, minus operations" />
-    <option name="LAST_COMMIT_MESSAGE" value="Changed operators structure to match TCL4 spec, minus operations" />
+    <MESSAGE value="Added operations within operators" />
+    <MESSAGE value="Added operations to operators" />
+    <MESSAGE value="Added delete operation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added delete operation" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="1" />
+      <option name="time" value="4" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_api.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3735">
+          <caret line="265" column="5" selection-start-line="265" selection-start-column="5" selection-end-line="265" selection-end-column="5" />
+          <folding>
+            <element signature="e#1572#1586#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7545">
+          <caret line="512" column="21" selection-start-line="512" selection-start-column="21" selection-end-line="512" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_api_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4875">
+          <caret line="328" column="78" selection-start-line="328" selection-start-column="78" selection-end-line="328" selection-end-column="78" />
+          <folding>
+            <element signature="e#620#631#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" column="2" selection-start-line="10" selection-start-column="2" selection-end-line="10" selection-end-column="2" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3540">
+          <caret line="241" column="18" lean-forward="true" selection-start-line="241" selection-start-column="18" selection-end-line="241" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_api.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3735">
+          <caret line="265" column="5" selection-start-line="265" selection-start-column="5" selection-end-line="265" selection-end-column="5" />
+          <folding>
+            <element signature="e#1572#1586#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7710">
+          <caret line="523" lean-forward="true" selection-start-line="523" selection-end-line="523" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_api_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4875">
+          <caret line="328" column="78" selection-start-line="328" selection-start-column="78" selection-end-line="328" selection-end-column="78" />
+          <folding>
+            <element signature="e#620#631#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3450">
+          <caret line="235" lean-forward="true" selection-start-line="235" selection-end-line="235" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/datanode/src/README.md">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
@@ -472,9 +582,14 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/docker/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-45" />
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/datanode/src/storage_api.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3975">
+        <state relative-caret-position="3735">
           <caret line="265" column="5" selection-start-line="265" selection-start-column="5" selection-end-line="265" selection-end-column="5" />
           <folding>
             <element signature="e#1572#1586#0" expanded="true" />
@@ -484,7 +599,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/datanode/src/storage_api_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4920">
+        <state relative-caret-position="4875">
           <caret line="328" column="78" selection-start-line="328" selection-start-column="78" selection-end-line="328" selection-end-column="78" />
           <folding>
             <element signature="e#620#631#0" expanded="true" />
@@ -492,29 +607,38 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/datanode/docker/README.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-45" />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
+        <state relative-caret-position="150">
           <caret line="10" column="2" selection-start-line="10" selection-start-column="2" selection-end-line="10" selection-end-column="2" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface.py">
+    <entry file="file://$PROJECT_DIR$/../../../../../../lib/python2.7/unittest/case.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-30">
-          <caret line="527" lean-forward="true" selection-start-line="527" selection-end-line="527" />
+        <state relative-caret-position="297">
+          <caret line="333" selection-start-line="333" selection-end-line="333" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.IdeaIC2018.1/system/python_stubs/-1329024251/__builtin__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="288">
+          <caret line="779" column="8" selection-start-line="779" selection-start-column="8" selection-end-line="779" selection-end-column="8" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="738">
-          <caret line="257" lean-forward="true" selection-start-line="257" selection-end-line="257" />
+        <state relative-caret-position="577">
+          <caret line="278" column="68" selection-start-line="278" selection-start-column="68" selection-end-line="278" selection-end-column="68" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="626">
+          <caret line="548" selection-start-line="548" selection-end-line="548" />
         </state>
       </provider>
     </entry>

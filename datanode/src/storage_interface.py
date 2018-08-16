@@ -184,7 +184,7 @@ class USSMetadataManager(object):
     return result
 
   def set(self, z, x, y, sync_token, uss_id, baseurl, announce,
-          earliest_operation, latest_operation, operations=[]):
+          earliest_operation, latest_operation, operations=None):
     """Sets the metadata for a GridCell.
 
     Writes data, using the snapshot token for confirming data
@@ -211,6 +211,8 @@ class USSMetadataManager(object):
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
     status = 500
+    if operations is None:
+      operations = []
     if self._validate_slippy(z, x, y):
       # first we have to get the cell
       status = 0
@@ -263,10 +265,12 @@ class USSMetadataManager(object):
       if metadata:
         try:
           m = USSMetadata(content)
-          m.remove_operator(uss_id)
-          # TODO(pelletierb): Automatically retry on delete
-          status = self._set_raw(z, x, y, m, uss_id,
-                                 metadata.last_modified_transaction_id)
+          if m.remove_operator(uss_id):
+            # TODO(pelletierb): Automatically retry on delete
+            status = self._set_raw(z, x, y, m, uss_id,
+                                   metadata.last_modified_transaction_id)
+          else:
+            status = 404
         except ValueError:
           status = 424
       else:
@@ -280,6 +284,50 @@ class USSMetadataManager(object):
           'status': 'success',
           'sync_token': metadata.last_modified_transaction_id,
           'data': m.to_json()
+      }
+    else:
+      result = self._format_status_code_to_jsend(status)
+    return result
+
+  def delete_operation(self, z, x, y, uss_id, gufi):
+    """Removes an operation from an operator.
+
+    Args:
+      z: zoom level in slippy tile format
+      x: x tile number in slippy tile format
+      y: y tile number in slippy tile format
+      uss_id: is the plain text identifier for the USS
+      gufi: Unique flight identifier per NASA formatting standards
+    Returns:
+      JSend formatted response (https://labs.omniti.com/labs/jsend)
+    """
+    status = 500
+    m = None
+    if self._validate_slippy(z, x, y):
+      # first we have to get the cell
+      (content, metadata) = self._get_raw(z, x, y)
+      if metadata:
+        try:
+          m = USSMetadata(content)
+          if m.remove_operation(uss_id, gufi):
+            # TODO(pelletierb): Automatically retry on delete
+            status = self._set_raw(z, x, y, m, uss_id,
+                                   metadata.last_modified_transaction_id)
+          else:
+            status = 404
+        except ValueError:
+          status = 424
+      else:
+        status = 404
+    else:
+      status = 400
+    if status == 200:
+      # Success, now get the metadata back to send back
+      (content, metadata) = self._get_raw(z, x, y)
+      result = {
+        'status': 'success',
+        'sync_token': metadata.last_modified_transaction_id,
+        'data': m.to_json()
       }
     else:
       result = self._format_status_code_to_jsend(status)
@@ -475,7 +523,7 @@ class USSMetadata(object):
     }
 
   def upsert_operator(self, uss_id, baseurl, announce,
-                      earliest_operation, latest_operation, operations=[]):
+                      earliest_operation, latest_operation, operations=None):
     """Inserts or updates an operator, with uss_id as the key.
 
     Args:
@@ -496,6 +544,8 @@ class USSMetadata(object):
     Returns:
       true if valid, false if not
     """
+    if operations is None:
+      operations = []
     # Remove the existing operator, if any
     self.remove_operator(uss_id)
     try:
@@ -527,12 +577,14 @@ class USSMetadata(object):
     return True
 
   def remove_operator(self, uss_id):
+    num_operators = len(self.operators)
     self.version += 1
     # Remove the existing operator, if any
     self.operators[:] = [
         d for d in self.operators if d.get('uss').upper() != uss_id.upper()
     ]
     self.timestamp = datetime.datetime.now().isoformat()
+    return len(self.operators) == num_operators - 1
 
   def upsert_operation(self, uss_id, gufi, signature, begin, end):
     """Inserts or updates an operation, with gufi as the key.
@@ -544,12 +596,11 @@ class USSMetadata(object):
       begin: start time of the operation.
       end: end time of the operation.
     Returns:
-      true if valid, false if not
+      true if valid, false if it cannot find the USS
     """
-    # Remove the existing operation, if any
-    self.remove_operation(uss_id, gufi)
     # clean up the datetimestamps, setting to nothing if invalid rather
     #   than failing, as they are optional
+    found = False
     try:
       effective_time_begin = parser.parse(begin)
       effective_time_end = parser.parse(end)
@@ -571,20 +622,26 @@ class USSMetadata(object):
     # find the operator entry and add the operation
     for oper in self.operators:
       if oper.get('uss').upper() == uss_id.upper():
-        if oper.operations is None:
-          oper.operations = []
+        found = True
+        # Remove the existing operation, if any
+        self.remove_operation(uss_id, gufi)
         oper.operations.append(operation)
         break
-    self.timestamp = datetime.datetime.now().isoformat()
-    return True
+      self.timestamp = datetime.datetime.now().isoformat()
+    return found
+
 
   def remove_operation(self, uss_id, gufi):
+    found = False
     self.version += 1
     # find the operator entry
     for oper in self.operators:
       if oper.get('uss').upper() == uss_id.upper():
         # Remove the existing operation, if any
-        oper.operations[:] = [
-          d for d in oper.operations if d.get('gufi').upper() != gufi.upper()
+        num_operations = len(oper['operations'])
+        oper['operations'][:] = [
+          d for d in oper['operations'] if d.get('gufi').upper() != gufi.upper()
         ]
-        oper.timestamp = datetime.datetime.now().isoformat()
+        found = (len(oper['operations']) == num_operations - 1)
+        oper['timestamp'] = datetime.datetime.now().isoformat()
+    return found

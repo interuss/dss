@@ -130,6 +130,38 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # Make sure everything is clean
     self.mm.delete_testdata()
 
+  def testNegativeDeleteCycle(self):
+    # Make sure everything is clean
+    self.mm.delete_testdata()
+    # 2,1,1 get empty
+    g = self.mm.get(2, 2, 1)
+    assert g['status'] == 'success'
+    assert g['data']['version'] == 0
+    assert not g['data']['operators']
+    # simple set with basic values
+    s = self.mm.set(2, 2, 1, g['sync_token'], 'uss', 'uss.com/base', False,
+                    '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
+    assert s['status'] == 'success'
+    assert s['data']['version'] == 1
+    assert len(s['data']['operators']) == 1
+    o = s['data']['operators'][0]
+    assert o['uss'] == 'uss'
+    assert o['uss_baseurl'] == 'uss.com/base'
+    assert o['announcement_level'] == False
+    assert o['version'] == 1
+    assert o['minimum_operation_timestamp'] == '2018-01-01T00:00:00+00:00'
+    assert o['maximum_operation_timestamp'] == '2018-01-01T01:00:00+00:00'
+    # delete the wrong USS
+    d = self.mm.delete(2, 2, 1, 'NOT_THE_RIGHT_USS')
+    assert d['status'] == 'fail'
+    # simple confirm get is still the same
+    g = self.mm.get(2, 2, 1)
+    assert g['status'] == 'success'
+    assert s['data']['version'] == 1
+    assert len(s['data']['operators']) == 1
+    # Make sure everything is clean
+    self.mm.delete_testdata()
+
   def testSetCellWithOutdatedSync_token(self):
     # Make sure everything is clean
     self.mm.delete_testdata()
@@ -237,21 +269,51 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     g = self.mm.get(6, 1, 1)
     # simple set with basic values
     s = self.mm.set(6, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
-                    '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00',
+                    '2018-02-28T23:59:59-07:00', '2018-03-02T23:59:59+08:00',
                     [{'gufi': 'G00F1', 'operation_signature': 'signed4',
                       'effective_time_begin': '2018-02-28T23:59:59-07:00',
                       'effective_time_end': '2018-03-02T23:59:59+08:00'}])
-    assert s['status'] == 'success'
-    assert s['data']['version'] == 1
-    assert len(s['data']['operators']) == 1
-    assert len(s['data']['operators'][0]['operations']) == 1
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 1)
+    self.assertEqual(len(s['data']['operators']), 1)
+    self.assertEqual(len(s['data']['operators'][0]['operations']), 1)
     s = self.mm.set(6, 1, 1, s['sync_token'], 'uss', 'uss.com/base', True,
                     '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
-    assert s['status'] == 'success'
-    assert s['data']['version'] == 2
-    assert len(s['data']['operators']) == 1
-    assert len(s['data']['operators'][0]['operations']) == 0
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 2)
+    self.assertEqual(len(s['data']['operators']), 1)
+    self.assertEqual(len(s['data']['operators'][0]['operations']), 0)
 
+  def testRemoveAnOperation(self):
+    # Make sure everything is clean
+    self.mm.delete_testdata()
+    # 6,1,1 get empty
+    g = self.mm.get(7, 1, 1)
+    # simple set with basic values
+    s = self.mm.set(7, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
+                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00',
+                    [{'gufi': 'G00F1', 'operation_signature': 'signed4',
+                      'effective_time_begin': '2018-02-28T23:59:59-07:00',
+                      'effective_time_end': '2018-03-02T23:59:59+08:00'},
+                     {'gufi': 'G00F2', 'operation_signature': 'signed4.1',
+                      'effective_time_begin': '2018-02-21T00:00:00-07:00',
+                      'effective_time_end': '2018-02-22T00:00:00-07:00'}])
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 1)
+    self.assertEqual(len(s['data']['operators']), 1)
+    self.assertEqual(len(s['data']['operators'][0]['operations']), 2)
+    s = self.mm.delete_operation(7, 1, 1, 'uss', 'INVALID_GUFI')
+    self.assertEqual(s['status'], 'fail')
+    s = self.mm.delete_operation(7, 1, 1, 'uss', 'G00F2')
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 2)
+    self.assertEqual(len(s['data']['operators']), 1)
+    self.assertEqual(len(s['data']['operators'][0]['operations']), 1)
+    s = self.mm.delete_operation(7, 1, 1, 'uss', 'G00F1')
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 3)
+    self.assertEqual(len(s['data']['operators']), 1)
+    self.assertEqual(len(s['data']['operators'][0]['operations']), 0)
 
 if __name__ == '__main__':
   unittest.main()
