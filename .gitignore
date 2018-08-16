@@ -98,7 +98,8 @@ venv.bak/
 .ropeproject
 
 # IntelliJ project settings
-.idea
+.idea/
+*.iml
 
 # mkdocs documentation
 /site
