@@ -130,7 +130,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # Make sure everything is clean
     self.mm.delete_testdata()
 
-  def testSetCellWithOutdatedsync_token(self):
+  def testSetCellWithOutdatedSync_token(self):
     # Make sure everything is clean
     self.mm.delete_testdata()
     # 3,1,1 get empty
@@ -229,6 +229,28 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # Make sure everything is clean
     self.mm.delete_testdata()
     return
+
+  def testSetCellsWithOperations(self):
+    # Make sure everything is clean
+    self.mm.delete_testdata()
+    # 6,1,1 get empty
+    g = self.mm.get(6, 1, 1)
+    # simple set with basic values
+    s = self.mm.set(6, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
+                    '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00',
+                    [{'gufi': 'G00F1', 'operation_signature': 'signed4',
+                      'effective_time_begin': '2018-02-28T23:59:59-07:00',
+                      'effective_time_end': '2018-03-02T23:59:59+08:00'}])
+    assert s['status'] == 'success'
+    assert s['data']['version'] == 1
+    assert len(s['data']['operators']) == 1
+    assert len(s['data']['operators'][0]['operations']) == 1
+    s = self.mm.set(6, 1, 1, s['sync_token'], 'uss', 'uss.com/base', True,
+                    '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
+    assert s['status'] == 'success'
+    assert s['data']['version'] == 2
+    assert len(s['data']['operators']) == 1
+    assert len(s['data']['operators'][0]['operations']) == 0
 
 
 if __name__ == '__main__':
