@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="34486fa4-1e5f-4998-982e-85eca5fa2e1a" name="Default" comment="Merged to master">
+      <change beforePath="$PROJECT_DIR$/datanode/src/storage_interface.py" beforeDir="false" afterPath="$PROJECT_DIR$/datanode/src/storage_interface.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/datanode/src/storage_interface_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/datanode/src/storage_interface_test.py" afterDir="false" />
+    </list>
+    <ignored path="$PROJECT_DIR$/out/" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <splitter split-orientation="horizontal" split-proportion="0.47811607">
+      <split-first>
+        <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+          <file leaf-file-name="storage_api.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/datanode/src/storage_api.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="3975">
+                  <caret line="265" column="5" selection-start-line="265" selection-start-column="5" selection-end-line="265" selection-end-column="5" />
+                  <folding>
+                    <element signature="e#1572#1586#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="storage_interface.py" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="-30">
+                  <caret line="527" lean-forward="true" selection-start-line="527" selection-end-line="527" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-first>
+      <split-second>
+        <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+          <file leaf-file-name="storage_api_test.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/datanode/src/storage_api_test.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="4920">
+                  <caret line="328" column="78" selection-start-line="328" selection-start-column="78" selection-end-line="328" selection-end-column="78" />
+                  <folding>
+                    <element signature="e#620#631#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="storage_interface_test.py" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface_test.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="738">
+                  <caret line="257" lean-forward="true" selection-start-line="257" selection-end-line="257" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-second>
+    </splitter>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>MetaData</find>
+      <find>scope</find>
+      <find>operation_</find>
+      <find>upser</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>operators</replace>
+      <replace>operator info</replace>
+      <replace>operator</replace>
+      <replace>Operator</replace>
+    </replaceStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="bugfixes" />
+      </map>
+    </option>
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/datanode/src/storage_api.py" />
+        <option value="$PROJECT_DIR$/datanode/src/storage_api_test.py" />
+        <option value="$PROJECT_DIR$/datanode/src/storage_interface.py" />
+        <option value="$PROJECT_DIR$/datanode/src/storage_interface_test.py" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="668" />
+    <option name="y" value="824" />
+    <option name="width" value="1400" />
+    <option name="height" value="1000" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="AndroidView" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="InterUSS-Platform" type="b2602c69:ProjectViewProjectNode" />
+              <item name="InterUSS-Platform" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="InterUSS-Platform" type="b2602c69:ProjectViewProjectNode" />
+              <item name="InterUSS-Platform" type="462c0819:PsiDirectoryNode" />
+              <item name="datanode" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="InterUSS-Platform" type="b2602c69:ProjectViewProjectNode" />
+              <item name="InterUSS-Platform" type="462c0819:PsiDirectoryNode" />
+              <item name="datanode" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="PackagesPane" />
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations">
+    <configuration default="true" type="Application" factoryName="Application">
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    </configuration>
+    <configuration default="true" type="JUnit" factoryName="JUnit">
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="PACKAGE_NAME" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="METHOD_NAME" />
+      <option name="TEST_OBJECT" value="class" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="singleModule" />
+      </option>
+      <patterns />
+    </configuration>
+    <configuration default="true" type="TestNG" factoryName="TestNG">
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="SUITE_NAME" />
+      <option name="PACKAGE_NAME" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="METHOD_NAME" />
+      <option name="GROUP_NAME" />
+      <option name="TEST_OBJECT" value="CLASS" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
+      <option name="OUTPUT_DIRECTORY" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="singleModule" />
+      </option>
+      <option name="USE_DEFAULT_REPORTERS" value="false" />
+      <option name="PROPERTIES_FILE" />
+      <properties />
+      <listeners />
+    </configuration>
+    <configuration name="Storage API Test" type="tests" factoryName="py.test">
+      <module name="InterUSS-Platform" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="$USER_HOME$/venv/bin/python" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;datanode/src/storage_api_test.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+    </configuration>
+    <configuration name="Storage Interface Test" type="tests" factoryName="py.test">
+      <module name="InterUSS-Platform" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="$USER_HOME$/venv/bin/python" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;datanode/src/storage_interface_test.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+    </configuration>
+    <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="InterUSS-Platform" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/datanode/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+    </configuration>
+    <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="InterUSS-Platform" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/datanode/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+    </configuration>
+    <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithInvalidTimestamps" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="InterUSS-Platform" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/datanode/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithInvalidTimestamps&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+    </configuration>
+    <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="InterUSS-Platform" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/datanode/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+    </configuration>
+    <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithValidTimestamps" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="InterUSS-Platform" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/datanode/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithValidTimestamps&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+    </configuration>
+    <list>
+      <item itemvalue="Python tests.Storage Interface Test" />
+      <item itemvalue="Python tests.Storage API Test" />
+      <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle" />
+      <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" />
+      <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithInvalidTimestamps" />
+      <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithValidTimestamps" />
+      <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" />
+        <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle" />
+        <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" />
+        <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithValidTimestamps" />
+        <item itemvalue="Python tests.Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithInvalidTimestamps" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="34486fa4-1e5f-4998-982e-85eca5fa2e1a" name="Default" comment="" />
+      <created>1534194579996</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1534194579996</updated>
+    </task>
+    <task id="LOCAL-00001" summary="Removed introspect, updated readme to reflect TCL4 only">
+      <created>1534203100317</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1534203100318</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Updated readme to reflect TCL4 changes">
+      <created>1534204233838</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1534204233838</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Updated readme to reflect TCL4 changes">
+      <created>1534204314590</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1534204314590</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Updated readme to reflect TCL4 changes">
+      <created>1534204487180</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1534204487180</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Updated readme to reflect TCL4 changes">
+      <created>1534204570861</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1534204570861</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Changed GridCellMetaData to GridCellOperator">
+      <created>1534265322198</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1534265322198</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Add support for sync_token in the header">
+      <created>1534265957272</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1534265957272</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Changed operators structure to match TCL4 spec, minus operations">
+      <created>1534272202827</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1534272202827</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
+    <servers />
+  </component>
+  <component name="TestHistory">
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithInvalidTimestamps - 2018.08.14 at 11h 37m 06s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithInvalidTimestamps" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithValidTimestamps - 2018.08.14 at 11h 37m 28s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithValidTimestamps" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsInParallelWithSamesync_token - 2018.08.14 at 11h 42m 00s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsInParallelWithSamesync_token - 2018.08.15 at 12h 19m 24s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsInParallelWithSamesync_token" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Storage_Interface_Test - 2018.08.15 at 12h 20m 24s.xml">
+      <configuration name="Storage Interface Test" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testPositiveGetSetDeleteCycle - 2018.08.15 at 12h 21m 33s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testPositiveGetSetDeleteCycle" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.15 at 12h 33m 22s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.15 at 12h 33m 51s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.15 at 12h 36m 34s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testSetCellsWithOperations - 2018.08.15 at 12h 36m 47s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testSetCellsWithOperations" configurationId="tests" />
+    </history-entry>
+  </component>
+  <component name="TodoView">
+    <todo-panel id="selected-file">
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+    <todo-panel id="all">
+      <are-packages-shown value="true" />
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-1" y="594" width="2562" height="1441" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.3298272" />
+      <window_info anchor="bottom" id="Messages" weight="0.3298272" />
+      <window_info anchor="right" id="Palette&#9;" />
+      <window_info id="Image Layers" />
+      <window_info anchor="right" id="Capture Analysis" />
+      <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info anchor="right" id="Maven Projects" />
+      <window_info anchor="bottom" id="Version Control" weight="0.3298272" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3298272" />
+      <window_info anchor="bottom" id="Terminal" />
+      <window_info id="Capture Tool" />
+      <window_info id="Designer" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17890625" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" id="Theme Preview" />
+      <window_info id="Favorites" side_tool="true" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.19083396" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Message" order="0" />
+    </layout>
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.md" />
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Removed introspect, updated readme to reflect TCL4 only" />
+    <MESSAGE value="Updated readme to reflect TCL4 changes" />
+    <MESSAGE value="Changed GridCellMetaData to GridCellOperator" />
+    <MESSAGE value="Add support for sync_token in the header" />
+    <MESSAGE value="Changed operators structure to match TCL4 spec, minus operations" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changed operators structure to match TCL4 spec, minus operations" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <option name="time" value="1" />
+    </breakpoint-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/datanode/src/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="17" column="61" selection-start-line="17" selection-start-column="61" selection-end-line="17" selection-end-column="61" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_api.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3975">
+          <caret line="265" column="5" selection-start-line="265" selection-start-column="5" selection-end-line="265" selection-end-column="5" />
+          <folding>
+            <element signature="e#1572#1586#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_api_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4920">
+          <caret line="328" column="78" selection-start-line="328" selection-start-column="78" selection-end-line="328" selection-end-column="78" />
+          <folding>
+            <element signature="e#620#631#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/docker/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-45" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="10" column="2" selection-start-line="10" selection-start-column="2" selection-end-line="10" selection-end-column="2" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-30">
+          <caret line="527" lean-forward="true" selection-start-line="527" selection-end-line="527" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="738">
+          <caret line="257" lean-forward="true" selection-start-line="257" selection-end-line="257" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>
