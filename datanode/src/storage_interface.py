@@ -509,8 +509,8 @@ class USSMetadata(object):
       return False
     # validate the operations (if any)
     for oper in operations:
-      oper.timestamp = datetime.datetime.now().isoformat()
-      oper.version = self.version
+      oper['timestamp'] = datetime.datetime.now().isoformat()
+      oper['version'] = self.version
     # Now add the new record
     operator = {
         'uss': uss_id,
