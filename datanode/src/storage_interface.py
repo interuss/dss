@@ -247,6 +247,58 @@ class USSMetadataManager(object):
       result = self._format_status_code_to_jsend(status)
     return result
 
+  def set_operation(self, z, x, y, sync_token, uss_id, gufi,
+      signature, begin, end):
+    """Sets the metadata for a GridCell.
+
+    Writes data, using the snapshot token for confirming data
+    has not been updated since it was last read.
+
+    Args:
+      z: zoom level in slippy tile format
+      x: x tile number in slippy tile format
+      y: y tile number in slippy tile format
+      sync_token: token retrieved in the original GET GridCellMetadata,
+      uss_id: plain text identifier for the USS,
+      gufi: Unique flight identifier per NASA formatting standards
+      signature: The JWS signature of the Operation,
+      begin: start time of the operation.
+      end: end time of the operation.
+    Returns:
+      JSend formatted response (https://labs.omniti.com/labs/jsend)
+    """
+    status = 500
+    if self._validate_slippy(z, x, y):
+      # first we have to get the cell
+      status = 0
+      (content, metadata) = self._get_raw(z, x, y)
+      if metadata:
+        # Quick check of the token, another is done on the actual set to be sure
+        #    but this check fails early and fast
+        if str(metadata.last_modified_transaction_id) == str(sync_token):
+          try:
+            m = uss_metadata.USSMetadata(content)
+            log.debug('Setting metadata for %s - %s...', uss_id, gufi)
+            if not m.upsert_operation(uss_id, gufi, signature, begin, end):
+              log.error('Failed setting operation for %s with token %s...',
+                        gufi, str(sync_token))
+              raise ValueError
+            status = self._set_raw(z, x, y, m, uss_id, sync_token)
+          except ValueError:
+            status = 424
+        else:
+          status = 409
+      else:
+        status = 404
+    else:
+      status = 400
+    if status == 200:
+      # Success, now get the metadata back to send back
+      result = self.get(z, x, y)
+    else:
+      result = self._format_status_code_to_jsend(status)
+    return result
+
   def delete(self, z, x, y, uss_id):
     """Sets the metadata for a GridCell by removing the entry for the USS.
 

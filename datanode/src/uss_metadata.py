@@ -85,7 +85,7 @@ class USSMetadata(object):
     }
 
   def upsert_operator(self, uss_id, baseurl, announce,
-      earliest_operation, latest_operation, operations=None):
+      earliest, latest, operations=None):
     """Inserts or updates an operator, with uss_id as the key.
 
     Args:
@@ -97,9 +97,9 @@ class USSMetadata(object):
         enumeration to grow as use cases are developed. For example, USSs may
         want just security related announcements, or would only like
         announcements that involve changed geographies.
-      earliest_operation: lower bound of active or planned flight timestamp,
+      earliest: lower bound of active or planned flight timestamp,
         used for quick filtering conflicts.
-      latest_operation: upper bound of active or planned flight timestamp,
+      latest: upper bound of active or planned flight timestamp,
       operations: complete list of operations for this operator
 
         used for quick filtering conflicts.
@@ -111,13 +111,13 @@ class USSMetadata(object):
     # Remove the existing operator, if any
     self.remove_operator(uss_id)
     try:
-      earliest_operation = parser.parse(earliest_operation)
-      latest_operation = parser.parse(latest_operation)
+      earliest_operation = parser.parse(earliest)
+      latest_operation = parser.parse(latest)
       if earliest_operation >= latest_operation:
         raise ValueError
     except (TypeError, ValueError, OverflowError):
       log.error('Invalid date format/values for operators %s, %s',
-                earliest_operation, latest_operation)
+                earliest, latest)
       return False
     # validate the operations (if any)
     for oper in operations:
@@ -177,8 +177,8 @@ class USSMetadata(object):
       'version': self.version,
       'gufi': gufi,
       'operation_signature': signature,
-      'effective_time_begin': begin.isoformat(),
-      'effective_time_end': end.isoformat(),
+      'effective_time_begin': effective_time_begin.isoformat(),
+      'effective_time_end': effective_time_end.isoformat(),
       'timestamp': datetime.datetime.now().isoformat()
     }
     # find the operator entry and add the operation
@@ -187,7 +187,7 @@ class USSMetadata(object):
         found = True
         # Remove the existing operation, if any
         self.remove_operation(uss_id, gufi)
-        oper.operations.append(operation)
+        oper['operations'].append(operation)
         break
       self.timestamp = datetime.datetime.now().isoformat()
     return found

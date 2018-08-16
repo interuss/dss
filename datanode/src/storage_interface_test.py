@@ -315,5 +315,41 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(len(s['data']['operators']), 1)
     self.assertEqual(len(s['data']['operators'][0]['operations']), 0)
 
+  def testAddAndUpdateAnOperation(self):
+    # Make sure everything is clean
+    self.mm.delete_testdata()
+    # 6,1,1 get empty
+    g = self.mm.get(8, 1, 1)
+    # simple set with basic values
+    s = self.mm.set(8, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
+                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00',
+                    [{'gufi': 'G00F1', 'operation_signature': 'signed4',
+                      'effective_time_begin': '2018-02-28T23:59:59-07:00',
+                      'effective_time_end': '2018-03-02T23:59:59+08:00'}])
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 1)
+    self.assertEqual(len(s['data']['operators']), 1)
+    self.assertEqual(len(s['data']['operators'][0]['operations']), 1)
+    s = self.mm.set_operation(8, 1, 1, s['sync_token'], 'uss', 'G00F2',
+                              'signed4.1', '2018-02-21T00:00:00-07:00',
+                              '2018-02-22T00:00:00-07:00')
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 2)
+    self.assertEqual(len(s['data']['operators']), 1)
+    os = s['data']['operators'][0]['operations']
+    self.assertEqual(len(os), 2)
+    self.assertEqual(os[0]['operation_signature'], 'signed4')
+    self.assertEqual(os[1]['operation_signature'], 'signed4.1')
+    s = self.mm.set_operation(8, 1, 1, s['sync_token'], 'uss', 'G00F2',
+                              'signed4.2', '2018-02-22T00:00:00-07:00',
+                              '2018-02-22T10:00:00-07:00')
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 3)
+    self.assertEqual(len(s['data']['operators']), 1)
+    os = s['data']['operators'][0]['operations']
+    self.assertEqual(len(os), 2)
+    self.assertEqual(os[0]['operation_signature'], 'signed4')
+    self.assertEqual(os[1]['operation_signature'], 'signed4.2')
+
 if __name__ == '__main__':
   unittest.main()
