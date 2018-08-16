@@ -31,16 +31,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import datetime
 import json
 import logging
-from dateutil import parser
 
 # Kazoo is the zookeeper wrapper for python
 from kazoo.client import KazooClient
 from kazoo.exceptions import LockTimeout
 from kazoo.handlers.threading import KazooTimeoutError
 from kazoo.protocol.states import KazooState
+
+# Our main class for metadata structure
+import uss_metadata
 
 # logging is our log infrastructure used for this application
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -166,7 +167,7 @@ class USSMetadataManager(object):
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
         try:
-          m = USSMetadata(content)
+          m = uss_metadata.USSMetadata(content)
           status = 200
           result = {
               'status': 'success',
@@ -222,7 +223,7 @@ class USSMetadataManager(object):
         #    but this check fails early and fast
         if str(metadata.last_modified_transaction_id) == str(sync_token):
           try:
-            m = USSMetadata(content)
+            m = uss_metadata.USSMetadata(content)
             log.debug('Setting metadata for %s...', uss_id)
             if not m.upsert_operator(uss_id, baseurl, announce,
                                      earliest_operation, latest_operation,
@@ -264,7 +265,7 @@ class USSMetadataManager(object):
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
         try:
-          m = USSMetadata(content)
+          m = uss_metadata.USSMetadata(content)
           if m.remove_operator(uss_id):
             # TODO(pelletierb): Automatically retry on delete
             status = self._set_raw(z, x, y, m, uss_id,
@@ -308,7 +309,7 @@ class USSMetadataManager(object):
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
         try:
-          m = USSMetadata(content)
+          m = uss_metadata.USSMetadata(content)
           if m.remove_operation(uss_id, gufi):
             # TODO(pelletierb): Automatically retry on delete
             status = self._set_raw(z, x, y, m, uss_id,
@@ -477,171 +478,3 @@ class USSMetadataManager(object):
     except (ValueError, TypeError):
       log.error('Invalid slippy format for tiles %sz, %s,%s!', z, x, y)
       return False
-
-
-class USSMetadata(object):
-  """Data structure for the metadata stored for USS entries in a GridCell.
-
-  Format: {version: <version>, timestamp: <last_updated>, operators:
-    [{uss: <ussid>, baseurl: <base_url_for_NASA_API>,
-    version: <last_version_for_this_uss>, timestamp: <last_updated>,
-    announce: <flag_for_requesting_announcements_from _other_uss>,
-    minimum_operation_timestamp: <lowest_start_time_of_operations_in_this_cell>,
-    maximum_operation_timestamp: <highest_end_time_of_operations_in_this_cell>,
-    operations: [{version: <version>, gufi: <unique_identifier>,
-      operation_signature: <jws_signature_for_operation>,
-      effective_time_begin: <operation_start_time>,
-      effective_time_end: <operation_end_time>,
-      timestamp: <last_updated> }
-      ...other operations as appropriate... ]
-    },
-    ...other USSs as appropriate... ]
-  }
-
-  """
-
-  def __init__(self, content=None):
-    # Parse the metadata or create a new one if none
-    if content:
-      m = json.loads(content)
-      self.version = m['version']
-      self.timestamp = m['timestamp']
-      self.operators = m['operators']
-    else:
-      self.version = 0
-      self.timestamp = datetime.datetime.now().isoformat()
-      self.operators = []
-
-  def __str__(self):
-    return str(self.to_json())
-
-  def to_json(self):
-    return {
-        'version': self.version,
-        'timestamp': self.timestamp,
-        'operators': self.operators
-    }
-
-  def upsert_operator(self, uss_id, baseurl, announce,
-                      earliest_operation, latest_operation, operations=None):
-    """Inserts or updates an operator, with uss_id as the key.
-
-    Args:
-      uss_id: plain text identifier for the USS,
-      baseurl: Base URL for the USSs web service endpoints hosting the
-        required NASA API (https://app.swaggerhub.com/apis/utm/uss/).
-      announce: The level of announcements the USS would like to receive related
-        to operations in this grid cell. Current just a binary, but expect this
-        enumeration to grow as use cases are developed. For example, USSs may
-        want just security related announcements, or would only like
-        announcements that involve changed geographies.
-      earliest_operation: lower bound of active or planned flight timestamp,
-        used for quick filtering conflicts.
-      latest_operation: upper bound of active or planned flight timestamp,
-      operations: complete list of operations for this operator
-
-        used for quick filtering conflicts.
-    Returns:
-      true if valid, false if not
-    """
-    if operations is None:
-      operations = []
-    # Remove the existing operator, if any
-    self.remove_operator(uss_id)
-    try:
-      earliest_operation = parser.parse(earliest_operation)
-      latest_operation = parser.parse(latest_operation)
-      if earliest_operation >= latest_operation:
-        raise ValueError
-    except (TypeError, ValueError, OverflowError):
-      log.error('Invalid date format/values for operators %s, %s',
-                earliest_operation, latest_operation)
-      return False
-    # validate the operations (if any)
-    for oper in operations:
-      oper['timestamp'] = datetime.datetime.now().isoformat()
-      oper['version'] = self.version
-    # Now add the new record
-    operator = {
-        'uss': uss_id,
-        'uss_baseurl': baseurl,
-        'version': self.version,
-        'timestamp': datetime.datetime.now().isoformat(),
-        'minimum_operation_timestamp': earliest_operation.isoformat(),
-        'maximum_operation_timestamp': latest_operation.isoformat(),
-        'announcement_level': announce,
-        'operations': operations
-    }
-    self.operators.append(operator)
-    self.timestamp = datetime.datetime.now().isoformat()
-    return True
-
-  def remove_operator(self, uss_id):
-    num_operators = len(self.operators)
-    self.version += 1
-    # Remove the existing operator, if any
-    self.operators[:] = [
-        d for d in self.operators if d.get('uss').upper() != uss_id.upper()
-    ]
-    self.timestamp = datetime.datetime.now().isoformat()
-    return len(self.operators) == num_operators - 1
-
-  def upsert_operation(self, uss_id, gufi, signature, begin, end):
-    """Inserts or updates an operation, with gufi as the key.
-
-    Args:
-      uss_id: plain text identifier for the USS,
-      gufi: Unique flight identifier per NASA formatting standards
-      signature: The JWS signature of the Operation,
-      begin: start time of the operation.
-      end: end time of the operation.
-    Returns:
-      true if valid, false if it cannot find the USS
-    """
-    # clean up the datetimestamps, setting to nothing if invalid rather
-    #   than failing, as they are optional
-    found = False
-    try:
-      effective_time_begin = parser.parse(begin)
-      effective_time_end = parser.parse(end)
-      if effective_time_begin >= effective_time_end:
-        raise ValueError
-    except (TypeError, ValueError, OverflowError):
-      log.error('Invalid date format/values for operators %s, %s',
-                begin, end)
-      return False
-    # Now add the new record
-    operation = {
-      'version': self.version,
-      'gufi': gufi,
-      'operation_signature': signature,
-      'effective_time_begin': begin.isoformat(),
-      'effective_time_end': end.isoformat(),
-      'timestamp': datetime.datetime.now().isoformat()
-    }
-    # find the operator entry and add the operation
-    for oper in self.operators:
-      if oper.get('uss').upper() == uss_id.upper():
-        found = True
-        # Remove the existing operation, if any
-        self.remove_operation(uss_id, gufi)
-        oper.operations.append(operation)
-        break
-      self.timestamp = datetime.datetime.now().isoformat()
-    return found
-
-
-  def remove_operation(self, uss_id, gufi):
-    found = False
-    self.version += 1
-    # find the operator entry
-    for oper in self.operators:
-      if oper.get('uss').upper() == uss_id.upper():
-        # Remove the existing operation, if any
-        num_operations = len(oper['operations'])
-        oper['operations'][:] = [
-          d for d in oper['operations'] if d.get('gufi').upper() != gufi.upper()
-        ]
-        found = (len(oper['operations']) == num_operations - 1)
-        oper['timestamp'] = datetime.datetime.now().isoformat()
-    return found
