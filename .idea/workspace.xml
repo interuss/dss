@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="34486fa4-1e5f-4998-982e-85eca5fa2e1a" name="Default" comment="Removed intellij config files">
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/datanode/src/storage_interface.py" beforeDir="false" afterPath="$PROJECT_DIR$/datanode/src/storage_interface.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/datanode/src/storage_interface_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/datanode/src/storage_interface_test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/datanode/src/uss_metadata.py" beforeDir="false" afterPath="$PROJECT_DIR$/datanode/src/uss_metadata.py" afterDir="false" />
+    <list default="true" id="34486fa4-1e5f-4998-982e-85eca5fa2e1a" name="Default" comment="Added upsert operations">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -38,8 +32,8 @@
           <file leaf-file-name="storage_interface.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="469">
-                  <caret line="175" column="11" lean-forward="true" selection-start-line="175" selection-start-column="11" selection-end-line="175" selection-end-column="11" />
+                <state relative-caret-position="214">
+                  <caret line="260" column="71" lean-forward="true" selection-start-line="260" selection-start-column="71" selection-end-line="260" selection-end-column="71" />
                   <folding>
                     <element signature="e#1515#1526#0" expanded="true" />
                   </folding>
@@ -63,10 +57,10 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="storage_interface_test.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="storage_interface_test.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface_test.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="573">
+                <state relative-caret-position="528">
                   <caret line="340" selection-start-line="340" selection-end-line="340" />
                 </state>
               </provider>
@@ -75,8 +69,17 @@
           <file leaf-file-name="uss_metadata.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/datanode/src/uss_metadata.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="468">
-                  <caret line="189" column="26" selection-start-line="189" selection-start-column="26" selection-end-line="189" selection-end-column="26" />
+                <state relative-caret-position="506">
+                  <caret line="119" column="32" selection-start-line="119" selection-start-column="32" selection-end-line="119" selection-end-column="32" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name=".gitignore" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/.gitignore">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="685">
+                  <caret line="101" column="2" selection-start-line="101" selection-start-column="2" selection-end-line="101" selection-end-column="2" />
                 </state>
               </provider>
             </entry>
@@ -125,8 +128,9 @@
         <option value="$PROJECT_DIR$/datanode/src/storage_api.py" />
         <option value="$PROJECT_DIR$/datanode/src/storage_api_test.py" />
         <option value="$PROJECT_DIR$/datanode/src/storage_interface.py" />
-        <option value="$PROJECT_DIR$/datanode/src/uss_metadata.py" />
         <option value="$PROJECT_DIR$/datanode/src/storage_interface_test.py" />
+        <option value="$PROJECT_DIR$/datanode/src/uss_metadata.py" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -436,13 +440,24 @@
       <option name="project" value="LOCAL" />
       <updated>1534462548873</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Added upsert operations">
+      <created>1534463717874</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1534463717874</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Added intellij ignores">
+      <created>1534463806368</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1534463806368</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Storage_Interface_Test - 2018.08.16 at 16h 35m 19s.xml">
-      <configuration name="Storage Interface Test" configurationId="tests" />
-    </history-entry>
     <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testAddAndUpdateAnOperation - 2018.08.16 at 16h 46m 41s.xml">
       <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testAddAndUpdateAnOperation" configurationId="tests" />
     </history-entry>
@@ -470,6 +485,9 @@
     <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testAddAndUpdateAnOperation - 2018.08.16 at 16h 51m 57s.xml">
       <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testAddAndUpdateAnOperation" configurationId="tests" />
     </history-entry>
+    <history-entry file="Unittests_for_storage_interface_test_InterUSSStorageInterfaceTestCase_testAddAndUpdateAnOperation - 2018.08.16 at 16h 52m 24s.xml">
+      <configuration name="Unittests for storage_interface_test.InterUSSStorageInterfaceTestCase.testAddAndUpdateAnOperation" configurationId="tests" />
+    </history-entry>
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -485,17 +503,18 @@
     <editor active="true" />
     <layout>
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3298272" />
+      <window_info anchor="bottom" id="Messages" order="7" visible="true" weight="0.3298272" />
       <window_info anchor="right" id="Palette&#9;" order="3" />
       <window_info id="Image Layers" order="2" />
       <window_info anchor="right" id="Capture Analysis" order="3" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="right" id="Maven Projects" order="3" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.3298272" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3298272" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.3298272" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info id="Capture Tool" order="2" />
       <window_info id="Designer" order="2" />
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17890625" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.17890625" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -507,7 +526,6 @@
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.3298272" />
     </layout>
   </component>
   <component name="UnknownFeatures">
@@ -527,7 +545,9 @@
     <MESSAGE value="Added delete operation" />
     <MESSAGE value="Removed intellij config files" />
     <MESSAGE value="Split uss_metadata into its own file, as the file was getting too big" />
-    <option name="LAST_COMMIT_MESSAGE" value="Split uss_metadata into its own file, as the file was getting too big" />
+    <MESSAGE value="Added upsert operations" />
+    <MESSAGE value="Added intellij ignores" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added intellij ignores" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -680,11 +700,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-830" />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/datanode/src/storage_api.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="630">
@@ -714,25 +729,32 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="469">
-          <caret line="175" column="11" lean-forward="true" selection-start-line="175" selection-start-column="11" selection-end-line="175" selection-end-column="11" />
+        <state relative-caret-position="214">
+          <caret line="260" column="71" lean-forward="true" selection-start-line="260" selection-start-column="71" selection-end-line="260" selection-end-column="71" />
           <folding>
             <element signature="e#1515#1526#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/datanode/src/uss_metadata.py">
+    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="468">
-          <caret line="189" column="26" selection-start-line="189" selection-start-column="26" selection-end-line="189" selection-end-column="26" />
+        <state relative-caret-position="528">
+          <caret line="340" selection-start-line="340" selection-end-line="340" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/datanode/src/storage_interface_test.py">
+    <entry file="file://$PROJECT_DIR$/datanode/src/uss_metadata.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="573">
-          <caret line="340" selection-start-line="340" selection-end-line="340" />
+        <state relative-caret-position="506">
+          <caret line="119" column="32" selection-start-line="119" selection-start-column="32" selection-end-line="119" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="685">
+          <caret line="101" column="2" selection-start-line="101" selection-start-column="2" selection-end-line="101" selection-end-column="2" />
         </state>
       </provider>
     </entry>
