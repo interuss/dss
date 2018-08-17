@@ -149,8 +149,10 @@ def GridCellOperatorHandler(zoom, x, y):
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
   """
-  if TESTID and ('access_token' not in request.headers or
-                 request.headers['access_token'] == TESTID):
+  if ('access_token' in request.headers and
+      TESTID in request.headers['access_token']):
+    uss_id = request.headers['access_token']
+  elif TESTID and 'access_token' not in request.headers:
     uss_id = TESTID
   else:
     uss_id = _ValidateAccessToken()
@@ -175,6 +177,49 @@ def GridCellOperatorHandler(zoom, x, y):
     abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
   return _FormatResult(result)
 
+
+@webapp.route(
+    '/GridCellOperation/<zoom>/<x>/<y>/<gufi>',
+    methods=['PUT', 'POST', 'DELETE'])
+def GridCellOperationHandler(zoom, x, y, gufi):
+  """Handles the web service request and routes to the proper function.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    x: x tile number in slippy tile format
+    y: y tile number in slippy tile format
+    gufi: flight identifier to remove
+    OAuth access_token as part of the header
+    Plus posted webargs as needed for PUT/POST and DELETE methods (see below)
+  Returns:
+    200 with token and metadata in JSON format,
+    or the nominal 4xx error codes as necessary.
+  """
+  if ('access_token' in request.headers and
+      TESTID in request.headers['access_token']):
+    uss_id = request.headers['access_token']
+  elif TESTID and 'access_token' not in request.headers:
+    uss_id = TESTID
+  else:
+    uss_id = _ValidateAccessToken()
+  result = {}
+  try:
+    zoom = int(zoom)
+    x = int(x)
+    y = int(y)
+  except ValueError:
+    abort(status.HTTP_400_BAD_REQUEST,
+          'Invalid parameters for slippy tile coordinates, must be integers.')
+  if not wrapper:
+    InitializeConnection(None)
+  # Check the request method
+  if request.method in ('PUT', 'POST'):
+    result = _PutGridCellOperation(zoom, x, y, uss_id, gufi)
+  elif request.method == 'DELETE':
+    result = _DeleteGridCellOperation(zoom, x, y, uss_id, gufi)
+  else:
+    abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
+  return _FormatResult(result)
 
 ######################################################################
 ################       INTERNAL FUNCTIONS    #########################
@@ -334,6 +379,60 @@ def _DeleteGridCellOperator(zoom, x, y, uss_id):
         'message':
             """uss_id must be provided in the request to
               delete a USS from a GridCell."""
+    }
+  return result
+
+def _PutGridCellOperation(zoom, x, y, uss_id, gufi):
+  """Puts a single operation in the metadata stored in a specific GridCell.
+
+  Upserts the operation entry in the metadata using optimistic locking behavior,
+  which acquires and releases the lock for the specific GridCell. Operation
+  fails if unable to acquire the locks.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    x: x tile number in slippy tile format
+    y: y tile number in slippy tile format
+    uss_id: the plain text identifier for the USS from OAuth
+    gufi: flight identifier to remove
+  Returns:
+    200 and a new sync_token if updated successfully,
+    409 if there is a locking conflict that could not be resolved, or
+    the other nominal 4xx error codes as necessary.
+  """
+  return False
+
+def _DeleteGridCellOperation(zoom, x, y, uss_id, gufi):
+  """Removes a single operation in the metadata stored in a specific GridCell.
+
+  Removes the operation entry in the metadata using optimistic locking behavior,
+  which acquires and releases the lock for the specific GridCell. Operation
+  fails if unable to acquire the locks.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    x: x tile number in slippy tile format
+    y: y tile number in slippy tile format
+    uss_id: the plain text identifier for the USS from OAuth
+    gufi: flight identifier to remove
+  Returns:
+    200 and a new sync_token if updated successfully,
+    409 if there is a locking conflict that could not be resolved, or
+    the other nominal 4xx error codes as necessary.
+  """
+  log.info('Grid cell operation delete instantiated for %sz, %s,%s...',
+           zoom, x, y)
+  if uss_id:
+    result = wrapper.delete_operation(zoom, x, y, uss_id, gufi)
+  else:
+    result = {
+      'status':
+        'fail',
+      'code':
+        status.HTTP_400_BAD_REQUEST,
+      'message':
+        """uss_id must be provided in the request to
+          delete a USS from a GridCell."""
     }
   return result
 

@@ -281,6 +281,247 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     j = json.loads(result.data)
     self.assertEqual(len(j['data']['operators']), 0)
 
+  def testPutWithJSONFormattedBody(self):
+    # Make sure it is empty
+    result = self.app.get('/GridCellOperator/1/1/1')
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(len(j['data']['operators']), 0)
+    # Put a record in there with the bare minimum fields
+    joper = {
+      "uss_baseurl": "https://g.co/r",
+      "minimum_operation_timestamp": "2018-01-01",
+      "maximum_operation_timestamp": "2018-01-02",
+      "announcement_level": "NONE"
+    }
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        json=joper,
+        headers={'sync_token': s})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(j['status'], 'success')
+    self.assertEqual(j['data']['version'], 1)
+    self.assertEqual(len(j['data']['operators']), 1)
+    o = j['data']['operators'][0]
+    self.assertEqual(o['uss_baseurl'], 'https://g.co/r')
+    self.assertEqual(o['announcement_level'], 'NONE')
+    self.assertEqual(len(o['operations']), 0)
+    # Put a record in there with lots of data
+    joper = {
+      "uss_baseurl": "https://g.co/r",
+      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
+      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
+      "announcement_level": True,
+      "operations": [
+        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+          'effective_time_begin': '2018-01-01T01:00:00-05:00',
+          'effective_time_end': '2018-01-01T02:00:00-05:00'},
+        {'gufi': 'G00F2', 'operation_signature': 'signed4.2',
+         'effective_time_begin': '2018-01-01T02:00:00-05:00',
+         'effective_time_end': '2018-01-01T03:00:00-05:00'},
+        {'gufi': 'G00F3', 'operation_signature': 'signed4.3',
+         'effective_time_begin': '2018-01-01T03:00:00-05:00',
+         'effective_time_end': '2018-01-01T04:00:00-05:00'}
+      ]
+    }
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        json=joper,
+        headers={'sync_token': s})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(j['status'], 'success')
+    self.assertEqual(j['data']['version'], 2)
+    self.assertEqual(len(j['data']['operators']), 1)
+    o = j['data']['operators'][0]
+    self.assertEqual(o['uss_baseurl'], 'https://g.co/r')
+    self.assertEqual(o['announcement_level'], True)
+    self.assertEqual(len(o['operations']), 3)
+    # Put a record in there with too much data
+    joper = {
+      "version": 99,
+      "timestamp": "2018-01-01T01:00:00-05:00",
+      "some_unknown_field": True,
+      "uss_baseurl": "https://g.co/r",
+      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
+      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
+      "announcement_level": True,
+      "operations": [
+        {"version": 99, "timestamp": "2018-01-01T01:00:00-05:00",
+         "some_unknown_field": True,
+         'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+         'effective_time_begin': '2018-01-01T01:00:00-05:00',
+         'effective_time_end': '2018-01-01T02:00:00-05:00'},
+        {'gufi': 'G00F2', 'operation_signature': 'signed4.2',
+         'effective_time_begin': '2018-01-01T02:00:00-05:00',
+         'effective_time_end': '2018-01-01T03:00:00-05:00'},
+        {'gufi': 'G00F3', 'operation_signature': 'signed4.3',
+         'effective_time_begin': '2018-01-01T03:00:00-05:00',
+         'effective_time_end': '2018-01-01T04:00:00-05:00'}
+      ]
+    }
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        json=joper,
+        headers={'sync_token': s})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    self.assertEqual(j['status'], 'success')
+    self.assertEqual(j['data']['version'], 3)
+    self.assertEqual(len(j['data']['operators']), 1)
+    self.assertNotEqual(j['data']['timestamp'], '2018-01-01T01:00:00-05:00')
+    o = j['data']['operators'][0]
+    self.assertEqual(len(o['operations']), 3)
+    self.assertEqual(o['operations'][0]['version'], 3)
+    self.assertNotEqual(o['operations'][0]['timestamp'],
+                        '2018-01-01T01:00:00-05:00')
+
+
+  def testValidDeleteOperations(self):
+    # Make sure it is empty
+    result = self.app.get('/GridCellOperator/1/1/1')
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(len(j['data']['operators']), 0)
+    # Put a record in there with operations
+    joper = {
+      "uss_baseurl": "https://g.co/r",
+      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
+      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
+      "announcement_level": True,
+      "operations": [
+        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+         'effective_time_begin': '2018-01-01T01:00:00-05:00',
+         'effective_time_end': '2018-01-01T02:00:00-05:00'},
+        {'gufi': 'G00F2', 'operation_signature': 'signed4.2',
+         'effective_time_begin': '2018-01-01T02:00:00-05:00',
+         'effective_time_end': '2018-01-01T03:00:00-05:00'},
+        {'gufi': 'G00F3', 'operation_signature': 'signed4.3',
+         'effective_time_begin': '2018-01-01T03:00:00-05:00',
+         'effective_time_end': '2018-01-01T04:00:00-05:00'}
+      ]
+    }
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        json=joper,
+        headers={'sync_token': s})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    self.assertEqual(len(j['data']['operators']), 1)
+    o = j['data']['operators'][0]
+    self.assertEqual(len(o['operations']), 3)
+    # Delete an operation
+    result = self.app.delete('/GridCellOperation/1/1/1/G00F1')
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    self.assertEqual(len(j['data']['operators']), 1)
+    o = j['data']['operators'][0]
+    self.assertEqual(len(o['operations']), 2)
+    # Make sure it is gone
+    result = self.app.get('/GridCellOperator/1/1/1')
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    self.assertEqual(len(j['data']['operators']), 1)
+    o = j['data']['operators'][0]
+    self.assertEqual(len(o['operations']), 2)
+
+  def testInvalidDeleteOperations(self):
+    # Make sure it is empty
+    result = self.app.get('/GridCellOperator/1/1/1')
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(len(j['data']['operators']), 0)
+    # Put a record in there with operations
+    joper = {
+      "uss_baseurl": "https://g.co/r",
+      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
+      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
+      "announcement_level": True,
+      "operations": [
+        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+         'effective_time_begin': '2018-01-01T01:00:00-05:00',
+         'effective_time_end': '2018-01-01T02:00:00-05:00'},
+        {'gufi': 'G00F2', 'operation_signature': 'signed4.2',
+         'effective_time_begin': '2018-01-01T02:00:00-05:00',
+         'effective_time_end': '2018-01-01T03:00:00-05:00'},
+        {'gufi': 'G00F3', 'operation_signature': 'signed4.3',
+         'effective_time_begin': '2018-01-01T03:00:00-05:00',
+         'effective_time_end': '2018-01-01T04:00:00-05:00'}
+      ]
+    }
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        json=joper,
+        headers={'sync_token': s})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    self.assertEqual(len(j['data']['operators']), 1)
+    o = j['data']['operators'][0]
+    self.assertEqual(len(o['operations']), 3)
+    # Delete the wrong operation
+    result = self.app.delete('/GridCellOperation/1/1/1/G00FAA')
+    self.assertEqual(result.status_code, 404)
+    result = self.app.delete('/GridCellOperation/1/1/1')
+    self.assertEqual(result.status_code, 404)
+
+  def testMultipleOperators(self):
+    result = self.app.get('/GridCellOperator/1/1/1')
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(len(j['data']['operators']), 0)
+    # Put a record in there with operations
+    joper = {
+      "uss_baseurl": "https://g.co/r",
+      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
+      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
+      "announcement_level": True,
+      "operations": [
+        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+         'effective_time_begin': '2018-01-01T01:00:00-05:00',
+         'effective_time_end': '2018-01-01T02:00:00-05:00'},
+        {'gufi': 'G00F2', 'operation_signature': 'signed4.2',
+         'effective_time_begin': '2018-01-01T02:00:00-05:00',
+         'effective_time_end': '2018-01-01T03:00:00-05:00'},
+        {'gufi': 'G00F3', 'operation_signature': 'signed4.3',
+         'effective_time_begin': '2018-01-01T03:00:00-05:00',
+         'effective_time_end': '2018-01-01T04:00:00-05:00'}
+      ]
+    }
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        json=joper,
+        headers={'sync_token': s,
+                 'access_token': 'InterUSSStorageAPITestCase-1'})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(len(j['data']['operators']), 1)
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        json=joper,
+        headers={'sync_token': s,
+                 'access_token': 'InterUSSStorageAPITestCase-2'})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(len(j['data']['operators']), 2)
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        json=joper,
+        headers={'sync_token': s,
+                 'access_token': 'InterUSSStorageAPITestCase-3'})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(len(j['data']['operators']), 3)
+
   def testMultipleUpdates(self):
     # Make sure it is empty
     result = self.app.get('/GridCellOperator/1/1/1')
