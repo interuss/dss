@@ -16,7 +16,6 @@ limitations under the License.
 """
 import json
 import unittest
-
 import storage_api
 ZK_TEST_CONNECTION_STRING = '35.224.64.48:2181,35.188.14.39:2181,35.224.180.72:2181'
 
@@ -35,179 +34,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
   def testStatus(self):
     result = self.app.get('/status')
-    assert result.status_code == 200
-    assert b'OK' in result.data
-
-  def testSlippyConversionWithInvalidData(self):
-    result = self.app.get('/slippy')
-    assert result.status_code == 404
-    result = self.app.get('/slippy/11')
-    assert result.status_code == 400
-    result = self.app.get('/slippy/11a')
-    assert result.status_code == 400
-    result = self.app.get('/slippy/11?coords=1')
-    assert result.status_code == 400
-    result = self.app.get('/slippy/11?coords=1a,1')
-    assert result.status_code == 400
-    result = self.app.get('/slippy/11?coords=1,1a')
-    assert result.status_code == 400
-    result = self.app.get('/slippy/11?coords=181,1')
-    assert result.status_code == 400
-    result = self.app.get('/slippy/11?coords=1,91')
-    assert result.status_code == 400
-    result = self.app.get('/slippy/21?coords=1,1')
-    assert result.status_code == 400
-    result = self.app.get('/slippy/11?coords=1,1,2')
-    assert result.status_code == 400
-
-  def testSlippyConversionWithValidData(self):
-    # pylint: disable=line-too-long
-    r = self.app.get('/slippy/11?coords=1,1')
-    assert r.status_code == 200
-    j = json.loads(r.data)
-    assert j['data']['tiles'][0] == [11, 1029, 1018]
-    assert j['data']['links'][0] == 'http://tile.openstreetmap.org/11/1029/1018.png'
-    r = self.app.get('/slippy/10?coords=37.203335,-80.599481')
-    r = self.app.get('/slippy/10?coords=37.203335,-80.599481')
-    assert r.status_code == 200
-    j = json.loads(r.data)
-    assert j['data']['tiles'][0] == [10, 617, 919]
-    assert j['data']['links'][0] == 'http://tile.openstreetmap.org/10/617/919.png'
-    r = self.app.get('/slippy/11?coords=37.203335,-80.599481')
-    assert json.loads(r.data)['data']['tiles'][0] == [11, 1235, 1838]
-    r = self.app.get('/slippy/12?coords=37.203335,-80.599481')
-    assert json.loads(r.data)['data']['tiles'][0] == [12, 2471, 3676]
-    r = self.app.get('/slippy/13?coords=37.203335,-80.599481')
-    assert json.loads(r.data)['data']['tiles'][0] == [13, 4942, 7353]
-    r = self.app.get('/slippy/14?coords=37.203335,-80.599481')
-    assert json.loads(r.data)['data']['tiles'][0] == [14, 9885, 14706]
-    r = self.app.get('/slippy/15?coords=37.203335,-80.599481')
-    assert json.loads(r.data)['data']['tiles'][0] == [15, 19770, 29413]
-    r = self.app.get('/slippy/16?coords=37.203335,-80.599481')
-    assert json.loads(r.data)['data']['tiles'][0] == [16, 39540, 58826]
-    r = self.app.get('/slippy/17?coords=37.203335,-80.599481')
-    assert json.loads(r.data)['data']['tiles'][0] == [17, 79081, 117653]
-    r = self.app.get('/slippy/11?coords=0,0,1,1')
-    assert r.status_code == 200
-    j = json.loads(r.data)
-    assert len(j['data']['tiles']) == 2
-    assert len(j['data']['links']) == 2
-
-  def testMultipleSuccessfulEmptyRandomGets(self):
-    assert self.CheckEmptyGridCell(self.app.get('/GridCellOperator/1/1/1'))
-    assert self.CheckEmptyGridCell(self.app.get('/GridCellOperator/19/1/1'))
-    assert self.CheckEmptyGridCell(self.app.get('/GridCellOperator/10/100/100'))
-    assert self.CheckEmptyGridCell(self.app.get('/GridCellOperator/15/1/1'))
-    assert self.CheckEmptyGridCell(
-        self.app.get('/GridCellOperator/15/9132/1425'))
-
-  def testIncorrectGetsOnGridCells(self):
-    assert self.app.get('/GridCellOperators/1/1/1').status_code == 404
-    assert self.app.get('/GridCellOperator').status_code == 404
-    assert self.app.get('/GridCellOperator/admin').status_code == 404
-    assert self.app.get('/GridCellOperator/1/1/1/admin').status_code == 404
-    assert self.app.get('/GridCellOperator/1a/1/1').status_code == 400
-    assert self.app.get('/GridCellOperator/99/1/1').status_code == 400
-    assert self.app.get('/GridCellOperator/1/99/1').status_code == 400
-    assert self.app.get('/GridCellOperator/1/1/99').status_code == 400
-
-  def testIncorrectPutsOnGridCells(self):
-    result = self.app.get('/GridCellOperator/1/1/1')
-    assert result.status_code == 200
-    j = json.loads(result.data)
-    s = j['sync_token']
-    assert self.app.put(
-        '/GridCellOperators/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            flight_endpoint='https://g.co/f1',
-            priority_flight_callback='https://g.co/r')).status_code == 404
-    assert self.app.put(
-        '/GridCellOperator',
-        query_string=dict(
-            ssync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code == 404
-    assert self.app.put(
-        '/GridCellOperator/1a/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code == 400
-    assert self.app.put(
-        '/GridCellOperator/1/99/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code == 400
-    assert self.app.put(
-        '/GridCellOperator/1/1/1',
-        query_string=dict(
-            # sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code == 400
-    assert self.app.put(
-        '/GridCellOperator/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            # scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code == 400
-    assert self.app.put(
-        '/GridCellOperator/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            # operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code == 400
-    assert self.app.put(
-        '/GridCellOperator/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            # operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code == 400
-    assert self.app.put(
-        '/GridCellOperator/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            # minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code == 400
-    assert self.app.put(
-        '/GridCellOperator/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            # maximum_operation_timestamp='2018-01-02'
-            minimum_operation_timestamp='2018-01-01')).status_code == 400
-    assert self.app.put(
-        '/GridCellOperator/1/1/1', data={
-            'sync_token': 'NOT_VALID'
-        }).status_code == 400
-    assert self.app.put('/GridCellOperator/1/1/1').status_code == 400
+    self.assertEqual(result.status_code, 200)
+    self.assertIn(b'OK', result.data)
 
   def testSyncTokenInHeader(self):
     result = self.app.get('/GridCellOperator/1/1/1')
@@ -233,32 +61,210 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         headers={'sync_token': s})
     assert result.status_code == 200
 
+  def testSlippyConversionWithInvalidData(self):
+    result = self.app.get('/slippy')
+    self.assertEqual(result.status_code, 404)
+    result = self.app.get('/slippy/11')
+    self.assertEqual(result.status_code, 400)
+    result = self.app.get('/slippy/11a')
+    self.assertEqual(result.status_code, 400)
+    result = self.app.get('/slippy/11?coords=1')
+    self.assertEqual(result.status_code, 400)
+    result = self.app.get('/slippy/11?coords=1a,1')
+    self.assertEqual(result.status_code, 400)
+    result = self.app.get('/slippy/11?coords=1,1a')
+    self.assertEqual(result.status_code, 400)
+    result = self.app.get('/slippy/11?coords=181,1')
+    self.assertEqual(result.status_code, 400)
+    result = self.app.get('/slippy/11?coords=1,91')
+    self.assertEqual(result.status_code, 400)
+    result = self.app.get('/slippy/21?coords=1,1')
+    self.assertEqual(result.status_code, 400)
+    result = self.app.get('/slippy/11?coords=1,1,2')
+    self.assertEqual(result.status_code, 400)
+
+  def testSlippyConversionWithValidData(self):
+    r = self.app.get('/slippy/11?coords=1,1')
+    self.assertEqual(r.status_code, 200)
+    j = json.loads(r.data)
+    self.assertEqual(j['data']['tiles'][0], [11, 1029, 1018])
+    self.assertEqual(j['data']['links'][0],
+                     'http://tile.openstreetmap.org/11/1029/1018.png')
+    r = self.app.get('/slippy/10?coords=37.203335,-80.599481')
+    r = self.app.get('/slippy/10?coords=37.203335,-80.599481')
+    self.assertEqual(r.status_code, 200)
+    j = json.loads(r.data)
+    self.assertEqual(j['data']['tiles'][0], [10, 617, 919])
+    self.assertEqual(j['data']['links'][0],
+                     'http://tile.openstreetmap.org/10/617/919.png')
+    r = self.app.get('/slippy/11?coords=37.203335,-80.599481')
+    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [11, 1235, 1838])
+    r = self.app.get('/slippy/12?coords=37.203335,-80.599481')
+    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [12, 2471, 3676])
+    r = self.app.get('/slippy/13?coords=37.203335,-80.599481')
+    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [13, 4942, 7353])
+    r = self.app.get('/slippy/14?coords=37.203335,-80.599481')
+    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [14, 9885, 14706])
+    r = self.app.get('/slippy/15?coords=37.203335,-80.599481')
+    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [15, 19770, 29413])
+    r = self.app.get('/slippy/16?coords=37.203335,-80.599481')
+    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [16, 39540, 58826])
+    r = self.app.get('/slippy/17?coords=37.203335,-80.599481')
+    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [17, 79081, 117653])
+    r = self.app.get('/slippy/11?coords=0,0,1,1')
+    self.assertEqual(r.status_code, 200)
+    j = json.loads(r.data)
+    self.assertEqual(len(j['data']['tiles']), 2)
+    self.assertEqual(len(j['data']['links']), 2)
+
+  def testMultipleSuccessfulEmptyRandomGets(self):
+    self.CheckEmptyGridCell(self.app.get('/GridCellOperator/1/1/1'))
+    self.CheckEmptyGridCell(self.app.get('/GridCellOperator/19/1/1'))
+    self.CheckEmptyGridCell(self.app.get('/GridCellOperator/10/100/100'))
+    self.CheckEmptyGridCell(self.app.get('/GridCellOperator/15/1/1'))
+    self.CheckEmptyGridCell(self.app.get('/GridCellOperator/15/9132/1425'))
+
+  def testIncorrectGetsOnGridCells(self):
+    self.assertEqual(self.app.get('/GridCellOperators/1/1/1').status_code, 404)
+    self.assertEqual(self.app.get('/GridCellOperator').status_code, 404)
+    self.assertEqual(self.app.get('/GridCellOperator/admin').status_code, 404)
+    self.assertEqual(self.app.get('/GridCellOperator/1/1/1/admin').status_code,
+                     404)
+    self.assertEqual(self.app.get('/GridCellOperator/1a/1/1').status_code, 400)
+    self.assertEqual(self.app.get('/GridCellOperator/99/1/1').status_code, 400)
+    self.assertEqual(self.app.get('/GridCellOperator/1/99/1').status_code, 400)
+    self.assertEqual(self.app.get('/GridCellOperator/1/1/99').status_code, 400)
+
+  def testIncorrectPutsOnGridCells(self):
+    result = self.app.get('/GridCellOperator/1/1/1')
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(self.app.put(
+        '/GridCellOperators/1/1/1',
+        query_string=dict(
+            sync_token=s,
+            flight_endpoint='https://g.co/f1',
+            priority_flight_callback='https://g.co/r')).status_code, 404)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator',
+        query_string=dict(
+            ssync_token=s,
+            scope='https://g.co/r',
+            operation_endpoint='https://g.co/f',
+            operation_format='NASA',
+            minimum_operation_timestamp='2018-01-01',
+            maximum_operation_timestamp='2018-01-02')).status_code, 404)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator/1a/1/1',
+        query_string=dict(
+            sync_token=s,
+            scope='https://g.co/r',
+            operation_endpoint='https://g.co/f',
+            operation_format='NASA',
+            minimum_operation_timestamp='2018-01-01',
+            maximum_operation_timestamp='2018-01-02')).status_code, 400)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator/1/99/1',
+        query_string=dict(
+            sync_token=s,
+            scope='https://g.co/r',
+            operation_endpoint='https://g.co/f',
+            operation_format='NASA',
+            minimum_operation_timestamp='2018-01-01',
+            maximum_operation_timestamp='2018-01-02')).status_code, 400)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator/1/1/1',
+        query_string=dict(
+            # sync_token=s,
+            scope='https://g.co/r',
+            operation_endpoint='https://g.co/f',
+            operation_format='NASA',
+            minimum_operation_timestamp='2018-01-01',
+            maximum_operation_timestamp='2018-01-02')).status_code, 400)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator/1/1/1',
+        query_string=dict(
+            sync_token=s,
+            # scope='https://g.co/r',
+            operation_endpoint='https://g.co/f',
+            operation_format='NASA',
+            minimum_operation_timestamp='2018-01-01',
+            maximum_operation_timestamp='2018-01-02')).status_code, 400)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator/1/1/1',
+        query_string=dict(
+            sync_token=s,
+            scope='https://g.co/r',
+            # operation_endpoint='https://g.co/f',
+            operation_format='NASA',
+            minimum_operation_timestamp='2018-01-01',
+            maximum_operation_timestamp='2018-01-02')).status_code, 400)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator/1/1/1',
+        query_string=dict(
+            sync_token=s,
+            scope='https://g.co/r',
+            operation_endpoint='https://g.co/f',
+            # operation_format='NASA',
+            minimum_operation_timestamp='2018-01-01',
+            maximum_operation_timestamp='2018-01-02')).status_code, 400)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator/1/1/1',
+        query_string=dict(
+            sync_token=s,
+            scope='https://g.co/r',
+            operation_endpoint='https://g.co/f',
+            operation_format='NASA',
+            # minimum_operation_timestamp='2018-01-01',
+            maximum_operation_timestamp='2018-01-02')).status_code, 400)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator/1/1/1',
+        query_string=dict(
+            sync_token=s,
+            scope='https://g.co/r',
+            operation_endpoint='https://g.co/f',
+            operation_format='NASA',
+            # maximum_operation_timestamp='2018-01-02'
+            minimum_operation_timestamp='2018-01-01')).status_code, 400)
+    self.assertEqual(self.app.put(
+        '/GridCellOperator/1/1/1', data={
+          'sync_token': 'NOT_VALID'
+        }).status_code, 400)
+    self.assertEqual(self.app.put('/GridCellOperator/1/1/1').status_code, 400)
 
   def testIncorrectDeletesOnGridCells(self):
-    assert self.app.delete('/GridCellOperators/1/1/1').status_code == 404
-    assert self.app.delete('/GridCellOperator').status_code == 404
-    assert self.app.delete('/GridCellOperator/admin').status_code == 404
-    assert self.app.delete('/GridCellOperator/1/1/1/admin').status_code == 404
-    assert self.app.delete('/GridCellOperator/1a/1/1').status_code == 400
-    assert self.app.delete('/GridCellOperator/99/1/1').status_code == 400
-    assert self.app.delete('/GridCellOperator/1/99/1').status_code == 400
-    assert self.app.delete('/GridCellOperator/1/1/99').status_code == 400
+    self.assertEqual(
+        self.app.delete('/GridCellOperators/1/1/1').status_code, 404)
+    self.assertEqual(self.app.delete('/GridCellOperator').status_code, 404)
+    self.assertEqual(
+        self.app.delete('/GridCellOperator/admin').status_code, 404)
+    self.assertEqual(self.app.delete(
+        '/GridCellOperator/1/1/1/admin').status_code, 404)
+    self.assertEqual(
+        self.app.delete('/GridCellOperator/1a/1/1').status_code, 400)
+    self.assertEqual(
+        self.app.delete('/GridCellOperator/99/1/1').status_code, 400)
+    self.assertEqual(
+        self.app.delete('/GridCellOperator/1/99/1').status_code, 400)
+    self.assertEqual(
+        self.app.delete('/GridCellOperator/1/1/99').status_code, 400)
 
   def CheckEmptyGridCell(self, result):
-    assert result.status_code == 200
+    self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
-    assert j['status'] == 'success'
-    assert j['data']['version'] == 0
-    assert not j['data']['operators']
+    self.assertEqual(j['status'], 'success')
+    self.assertEqual(j['data']['version'], 0)
+    self.assertEqual(len(j['data']['operators']), 0)
     return True
 
   def testFullValidSequenceOfGetPutDelete(self):
     # Make sure it is empty
     result = self.app.get('/GridCellOperator/1/1/1')
-    assert result.status_code == 200
+    self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
     s = j['sync_token']
-    assert not j['data']['operators']
+    self.assertEqual(len(j['data']['operators']), 0)
     # Put a record in there
     result = self.app.put(
         '/GridCellOperator/1/1/1',
@@ -269,27 +275,27 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
-    assert result.status_code == 200
+    self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
     s = j['sync_token']
     # Delete the record
     result = self.app.delete('/GridCellOperator/1/1/1')
-    assert result.status_code == 200
+    self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
     s = j['sync_token']
     # Make sure it is gone
     result = self.app.get('/GridCellOperator/1/1/1')
-    assert result.status_code == 200
+    self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
-    assert not j['data']['operators']
+    self.assertEqual(len(j['data']['operators']), 0)
 
   def testMultipleUpdates(self):
     # Make sure it is empty
     result = self.app.get('/GridCellOperator/1/1/1')
-    assert result.status_code == 200
+    self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
     s = j['sync_token']
-    assert not j['data']['operators']
+    self.assertEqual(len(j['data']['operators']), 0)
     # Put a record in there with the wrong sequence token
     result = self.app.put(
         '/GridCellOperator/1/1/1',
@@ -300,7 +306,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
-    assert result.status_code == 409
+    self.assertEqual(result.status_code, 409)
     # Put a record in there with the right sequence token
     result = self.app.put(
         '/GridCellOperator/1/1/1',
@@ -311,7 +317,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
-    assert result.status_code == 200
+    self.assertEqual(result.status_code, 200)
     # Try to put a record in there again with the old sequence token
     result = self.app.put(
         '/GridCellOperator/1/1/1',
@@ -322,12 +328,12 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
-    assert result.status_code == 409
+    self.assertEqual(result.status_code, 409)
 
   def testVerbose(self):
     storage_api.InitializeConnection([
-        '-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCaseTCL4',
-        '-v'
+      '-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCase',
+      '-v'
     ])
 
 

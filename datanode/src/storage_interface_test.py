@@ -57,42 +57,42 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
           testgroupid='InterUSSStorageInterfaceTest')
 
   def testGetCellNegativeCases(self):
-    assert self.mm.get(2, 1, 2**2)['status'] == 'fail'
+    self.assertEqual(self.mm.get(2, 1, 2**2)['status'], 'fail')
     # x, y, z are ints
-    assert self.mm.get(1, '1a', 1)['status'] == 'fail'
-    assert self.mm.get(1, 1, 'aa')['status'] == 'fail'
-    assert self.mm.get(None, 1, 1)['status'] == 'fail'
+    self.assertEqual(self.mm.get(1, '1a', 1)['status'], 'fail')
+    self.assertEqual(self.mm.get(1, 1, 'aa')['status'], 'fail')
+    self.assertEqual(self.mm.get(None, 1, 1)['status'], 'fail')
     # x and y tiles max are 2^zoom - 1
-    assert self.mm.get(1, 2, 1)['status'] == 'fail'
-    assert self.mm.get(2, 5478118, 1)['status'] == 'fail'
-    assert self.mm.get(2, 2**2, 1)['status'] == 'fail'
-    assert self.mm.get(12, 2**12, 1)['status'] == 'fail'
-    assert self.mm.get(1, 17, 1)['status'] == 'fail'
-    assert self.mm.get(1, 1, 11)['status'] == 'fail'
-    assert self.mm.get(9, 2**8, 2**11)['status'] == 'fail'
+    self.assertEqual(self.mm.get(1, 2, 1)['status'], 'fail')
+    self.assertEqual(self.mm.get(2, 5478118, 1)['status'], 'fail')
+    self.assertEqual(self.mm.get(2, 2**2, 1)['status'], 'fail')
+    self.assertEqual(self.mm.get(12, 2**12, 1)['status'], 'fail')
+    self.assertEqual(self.mm.get(1, 17, 1)['status'], 'fail')
+    self.assertEqual(self.mm.get(1, 1, 11)['status'], 'fail')
+    self.assertEqual(self.mm.get(9, 2**8, 2**11)['status'], 'fail')
 
   def testGetCellPositiveEmptyCases(self):
     # Make sure everything is clean
     self.mm.delete_testdata()
     # simple 1,1,1
     r = self.mm.get(1, 1, 1)
-    assert r['status'] == 'success'
-    assert r['data']['version'] == 0
+    self.assertEqual(r['status'], 'success')
+    self.assertEqual(r['data']['version'], 0)
     # zero case
     r = self.mm.get(0, 0, 0)
-    assert r['status'] == 'success'
-    assert r['data']['version'] == 0
+    self.assertEqual(r['status'], 'success')
+    self.assertEqual(r['data']['version'], 0)
     r = self.mm.get(11, 0, 5)
-    assert r['status'] == 'success'
-    assert r['data']['version'] == 0
+    self.assertEqual(r['status'], 'success')
+    self.assertEqual(r['data']['version'], 0)
     # limit in the y direction
     r = self.mm.get(10, 1, 2**10 - 1)
-    assert r['status'] == 'success'
-    assert r['data']['version'] == 0
+    self.assertEqual(r['status'], 'success')
+    self.assertEqual(r['data']['version'], 0)
     # limit in the x direction
     r = self.mm.get(18, 2**18 - 1, 2**10 - 1)
-    assert r['status'] == 'success'
-    assert r['data']['version'] == 0
+    self.assertEqual(r['status'], 'success')
+    self.assertEqual(r['data']['version'], 0)
     # Make sure everything is clean
     self.mm.delete_testdata()
 
@@ -101,32 +101,34 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.mm.delete_testdata()
     # 2,1,1 get empty
     g = self.mm.get(2, 1, 1)
-    assert g['status'] == 'success'
-    assert g['data']['version'] == 0
-    assert not g['data']['operators']
+    self.assertEqual(g['status'], 'success')
+    self.assertEqual(g['data']['version'], 0)
+    self.assertEqual(len(g['data']['operators']), 0)
     # simple set with basic values
     s = self.mm.set(2, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
                     '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
-    assert s['status'] == 'success'
-    assert s['data']['version'] == 1
-    assert len(s['data']['operators']) == 1
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 1)
+    self.assertEqual(len(s['data']['operators']), 1)
     o = s['data']['operators'][0]
-    assert o['uss'] == 'uss'
-    assert o['uss_baseurl'] == 'uss.com/base'
-    assert o['announcement_level'] == False
-    assert o['version'] == 1
-    assert o['minimum_operation_timestamp'] == '2018-01-01T00:00:00+00:00'
-    assert o['maximum_operation_timestamp'] == '2018-01-01T01:00:00+00:00'
+    self.assertEqual(o['uss'], 'uss')
+    self.assertEqual(o['uss_baseurl'], 'uss.com/base')
+    self.assertEqual(o['announcement_level'], False)
+    self.assertEqual(o['version'], 1)
+    self.assertEqual(o['minimum_operation_timestamp'],
+                     '2018-01-01T00:00:00+00:00')
+    self.assertEqual(o['maximum_operation_timestamp'],
+                     '2018-01-01T01:00:00+00:00')
     # simple delete
     d = self.mm.delete(2, 1, 1, 'uss')
-    assert d['status'] == 'success'
-    assert d['data']['version'] == 2
-    assert not d['data']['operators']
+    self.assertEqual(d['status'], 'success')
+    self.assertEqual(d['data']['version'], 2)
+    self.assertEqual(len(d['data']['operators']), 0)
     # simple confirm get is empty
     g = self.mm.get(2, 1, 1)
-    assert g['status'] == 'success'
-    assert g['data']['version'] == 2
-    assert not g['data']['operators']
+    self.assertEqual(g['status'], 'success')
+    self.assertEqual(g['data']['version'], 2)
+    self.assertEqual(len(g['data']['operators']), 0)
     # Make sure everything is clean
     self.mm.delete_testdata()
 
@@ -135,30 +137,20 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.mm.delete_testdata()
     # 2,1,1 get empty
     g = self.mm.get(2, 2, 1)
-    assert g['status'] == 'success'
-    assert g['data']['version'] == 0
-    assert not g['data']['operators']
+    self.assertEqual(g['status'], 'success')
     # simple set with basic values
     s = self.mm.set(2, 2, 1, g['sync_token'], 'uss', 'uss.com/base', False,
                     '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
-    assert s['status'] == 'success'
-    assert s['data']['version'] == 1
-    assert len(s['data']['operators']) == 1
+    self.assertEqual(s['status'], 'success')
     o = s['data']['operators'][0]
-    assert o['uss'] == 'uss'
-    assert o['uss_baseurl'] == 'uss.com/base'
-    assert o['announcement_level'] == False
-    assert o['version'] == 1
-    assert o['minimum_operation_timestamp'] == '2018-01-01T00:00:00+00:00'
-    assert o['maximum_operation_timestamp'] == '2018-01-01T01:00:00+00:00'
     # delete the wrong USS
     d = self.mm.delete(2, 2, 1, 'NOT_THE_RIGHT_USS')
-    assert d['status'] == 'fail'
+    self.assertEqual(d['status'], 'fail')
     # simple confirm get is still the same
     g = self.mm.get(2, 2, 1)
-    assert g['status'] == 'success'
-    assert s['data']['version'] == 1
-    assert len(s['data']['operators']) == 1
+    self.assertEqual(g['status'], 'success')
+    self.assertEqual(g['data']['version'], 1)
+    self.assertEqual(len(g['data']['operators']), 1)
     # Make sure everything is clean
     self.mm.delete_testdata()
 
@@ -167,24 +159,24 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.mm.delete_testdata()
     # 3,1,1 get empty
     g = self.mm.get(3, 1, 1)
-    assert g['status'] == 'success'
-    assert g['data']['version'] == 0
-    assert not g['data']['operators']
+    self.assertEqual(g['status'], 'success')
+    self.assertEqual(g['data']['version'], 0)
+    self.assertEqual(len(g['data']['operators']), 0)
     # simple set with basic values
     s = self.mm.set(3, 1, 1, g['sync_token'], 'uss1', 'uss1.com/base', True,
                     '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
-    assert s['status'] == 'success'
-    assert s['data']['version'] == 1
-    assert len(s['data']['operators']) == 1
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 1)
+    self.assertEqual(len(s['data']['operators']), 1)
     # now try to do a set with the original sync token
     s = self.mm.set(3, 1, 1, g['sync_token'], 'uss2', 'uss2.com/base', True,
                     '2018-01-01T11:00:00+00:00', '2018-01-01T12:00:00+00:00')
-    assert s['status'] == 'fail'
+    self.assertEqual(s['status'], 'fail')
     # confirm version is still the first write
     g = self.mm.get(3, 1, 1)
-    assert g['status'] == 'success'
-    assert g['data']['version'] == 1
-    assert len(g['data']['operators']) == 1
+    self.assertEqual(g['status'], 'success')
+    self.assertEqual(g['data']['version'], 1)
+    self.assertEqual(len(g['data']['operators']), 1)
     # Make sure everything is clean
     self.mm.delete_testdata()
 
@@ -193,15 +185,15 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.mm.delete_testdata()
     # 4,1,1 get empty
     g = self.mm.get(4, 1, 1)
-    assert g['status'] == 'success'
-    assert g['data']['version'] == 0
-    assert not g['data']['operators']
+    self.assertEqual(g['status'], 'success')
+    self.assertEqual(g['data']['version'], 0)
+    self.assertEqual(len(g['data']['operators']), 0)
     threads = []
     for i in range(PARALLEL_WORKERS):
       t = threading.Thread(
           target=self.SetCellWorker, args=(
-              i,
-              g['sync_token'],
+            i,
+            g['sync_token'],
           ))
       threads.append(t)
       t.start()
@@ -209,9 +201,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       t.join()
     # confirm there is only one update
     g = self.mm.get(4, 1, 1)
-    assert g['status'] == 'success'
-    assert g['data']['version'] == 1
-    assert len(g['data']['operators']) == 1
+    self.assertEqual(g['status'], 'success')
+    self.assertEqual(g['data']['version'], 1)
+    self.assertEqual(len(g['data']['operators']), 1)
     # Make sure everything is clean
     self.mm.delete_testdata()
 
@@ -232,7 +224,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     for test in testsets:
       s = self.mm.set(5, 1, 1, token, 'uss', 'uss.com/base', True,
                       test[0], test[1])
-      assert s['status'] == 'fail'
+      self.assertEqual(s['status'], 'fail')
     # Make sure everything is clean
     self.mm.delete_testdata()
     return
@@ -252,12 +244,12 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       s = self.mm.set(5, 1, 1, token, 'uss', 'uss.com/base', True,
                       test[0], test[1])
       token = s['sync_token']
-      assert s['status'] == 'success'
+      self.assertEqual(s['status'], 'success')
       o = s['data']['operators'][0]
-      assert parser.parse(test[0]) == parser.parse(
-          o['minimum_operation_timestamp'])
-      assert parser.parse(test[1]) == parser.parse(
-          o['maximum_operation_timestamp'])
+      self.assertEqual(parser.parse(test[0]),
+                       parser.parse(o['minimum_operation_timestamp']))
+      self.assertEqual(parser.parse(test[1]),
+                       parser.parse(o['maximum_operation_timestamp']))
     # Make sure everything is clean
     self.mm.delete_testdata()
     return
