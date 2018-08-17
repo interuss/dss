@@ -31,6 +31,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import json
 # logging is our log infrastructure used for this application
 import logging
 import math
@@ -488,6 +489,9 @@ def _GetRequestParameter(name, default):
     r = request.args.get(name, default)
   elif request.form:
     r = default if name not in request.form else request.form[name]
+  elif request.data:
+    rjson = json.loads(request.data)
+    r = default if name not in rjson else rjson[name]
   else:
     log.error('Request is in an unknown format: %s', str(request))
     r = default

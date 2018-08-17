@@ -1,19 +1,19 @@
-"""Test of the InterUSS Platform Data Node storage API server.
+'''Test of the InterUSS Platform Data Node storage API server.
 
 Copyright 2018 Google LLC
 
-Licensed under the Apache License, Version 2.0 (the "License");
+Licensed under the Apache License, Version 2.0 (the 'License');
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
+distributed under the License is distributed on an 'AS IS' BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-"""
+'''
 import json
 import unittest
 import storage_api
@@ -290,10 +290,10 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(len(j['data']['operators']), 0)
     # Put a record in there with the bare minimum fields
     joper = {
-      "uss_baseurl": "https://g.co/r",
-      "minimum_operation_timestamp": "2018-01-01",
-      "maximum_operation_timestamp": "2018-01-02",
-      "announcement_level": "NONE"
+      'uss_baseurl': 'https://g.co/r',
+      'minimum_operation_timestamp': '2018-01-01',
+      'maximum_operation_timestamp': '2018-01-02',
+      'announcement_level': 'NONE'
     }
     result = self.app.put(
         '/GridCellOperator/1/1/1',
@@ -311,11 +311,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(len(o['operations']), 0)
     # Put a record in there with lots of data
     joper = {
-      "uss_baseurl": "https://g.co/r",
-      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
-      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
-      "announcement_level": "YES",
-      "operations": [
+      'uss_baseurl': 'https://g.co/r',
+      'minimum_operation_timestamp': '2018-01-01T01:00:00-05:00',
+      'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
+      'announcement_level': 'YES',
+      'operations': [
         {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
           'effective_time_begin': '2018-01-01T01:00:00-05:00',
           'effective_time_end': '2018-01-01T02:00:00-05:00'},
@@ -343,16 +343,16 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(len(o['operations']), 3)
     # Put a record in there with too much data
     joper = {
-      "version": 99,
-      "timestamp": "2018-01-01T01:00:00-05:00",
-      "some_unknown_field": True,
-      "uss_baseurl": "https://g.co/r",
-      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
-      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
-      "announcement_level": True,
-      "operations": [
-        {"version": 99, "timestamp": "2018-01-01T01:00:00-05:00",
-         "some_unknown_field": True,
+      'version': 99,
+      'timestamp': '2018-01-01T01:00:00-05:00',
+      'some_unknown_field': True,
+      'uss_baseurl': 'https://g.co/r',
+      'minimum_operation_timestamp': '2018-01-01T01:00:00-05:00',
+      'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
+      'announcement_level': True,
+      'operations': [
+        {'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
+         'some_unknown_field': 'True',
          'gufi': 'G00F1', 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'},
@@ -366,7 +366,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     }
     result = self.app.put(
         '/GridCellOperator/1/1/1',
-        json=joper,
+        data=json.dumps(joper),
         headers={'sync_token': s})
     self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
@@ -390,11 +390,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(len(j['data']['operators']), 0)
     # Put a record in there with operations
     joper = {
-      "uss_baseurl": "https://g.co/r",
-      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
-      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
-      "announcement_level": True,
-      "operations": [
+      'uss_baseurl': 'https://g.co/r',
+      'minimum_operation_timestamp': '2018-01-01T01:00:00-05:00',
+      'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
+      'announcement_level': True,
+      'operations': [
         {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'},
@@ -439,11 +439,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(len(j['data']['operators']), 0)
     # Put a record in there with operations
     joper = {
-      "uss_baseurl": "https://g.co/r",
-      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
-      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
-      "announcement_level": True,
-      "operations": [
+      'uss_baseurl': 'https://g.co/r',
+      'minimum_operation_timestamp': '2018-01-01T01:00:00-05:00',
+      'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
+      'announcement_level': True,
+      'operations': [
         {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'},
@@ -478,11 +478,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(len(j['data']['operators']), 0)
     # Put a record in there with operations
     joper = {
-      "uss_baseurl": "https://g.co/r",
-      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
-      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
-      "announcement_level": True,
-      "operations": [
+      'uss_baseurl': 'https://g.co/r',
+      'minimum_operation_timestamp': '2018-01-01T01:00:00-05:00',
+      'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
+      'announcement_level': True,
+      'operations': [
         {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'},
@@ -569,11 +569,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(len(j['data']['operators']), 0)
     # Put a record in there with operations
     joper = {
-      "uss_baseurl": "https://g.co/r",
-      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
-      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
-      "announcement_level": True,
-      "operations": [
+      'uss_baseurl': 'https://g.co/r',
+      'minimum_operation_timestamp': '2018-01-01T01:00:00-05:00',
+      'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
+      'announcement_level': True,
+      'operations': [
         {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'}
