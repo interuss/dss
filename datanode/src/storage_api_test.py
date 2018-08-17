@@ -39,27 +39,26 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
   def testSyncTokenInHeader(self):
     result = self.app.get('/GridCellOperator/1/1/1')
-    assert result.status_code == 200
+    self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
     s = j['sync_token']
     # Put a record in there with an invalid token
     qs = dict(
-        scope='https://g.co/r',
-        operation_endpoint='https://g.co/f',
-        operation_format='NASA',
+        uss_baseurl='https://g.co/f',
+        announcement_level=False,
         minimum_operation_timestamp='2018-01-01',
         maximum_operation_timestamp='2018-01-02')
     result = self.app.put(
         '/GridCellOperator/1/1/1',
         query_string=qs,
         headers={'sync_token': 'arbitrary_and_NOT_VALID'})
-    assert result.status_code == 409
+    self.assertEqual(result.status_code, 409)
     # Put a record in there with an invalid token
     result = self.app.put(
         '/GridCellOperator/1/1/1',
         query_string=qs,
         headers={'sync_token': s})
-    assert result.status_code == 200
+    self.assertEqual(result.status_code, 200)
 
   def testSlippyConversionWithInvalidData(self):
     result = self.app.get('/slippy')
@@ -144,26 +143,20 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperators/1/1/1',
         query_string=dict(
             sync_token=s,
-            flight_endpoint='https://g.co/f1',
-            priority_flight_callback='https://g.co/r')).status_code, 404)
+            baseurl='https://g.co/f',
+            announce=False)).status_code, 404)
     self.assertEqual(self.app.put(
         '/GridCellOperator',
         query_string=dict(
-            ssync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 404)
+            sync_token=s,
+            baseurl='https://g.co/f',
+            announce=False)).status_code, 404)
     self.assertEqual(self.app.put(
         '/GridCellOperator/1a/1/1',
         query_string=dict(
             sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 400)
+            baseurl='https://g.co/f',
+            announce=False)).status_code, 400)
     self.assertEqual(self.app.put(
         '/GridCellOperator/1/99/1',
         query_string=dict(
@@ -270,9 +263,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
+            uss_baseurl='https://g.co/r',
+            announcement_level=False,
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
     self.assertEqual(result.status_code, 200)
@@ -301,9 +293,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token='arbitrary_and_NOT_VALID',
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
+            uss_baseurl='https://g.co/r',
+            announcement_level=False,
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
     self.assertEqual(result.status_code, 409)
@@ -312,9 +303,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
+            uss_baseurl='https://g.co/r',
+            announcement_level=False,
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
     self.assertEqual(result.status_code, 200)
@@ -323,9 +313,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
+            uss_baseurl='https://g.co/r',
+            announcement_level=False,
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
     self.assertEqual(result.status_code, 409)

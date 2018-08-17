@@ -266,9 +266,9 @@ def _PutGridCellOperator(zoom, x, y, uss_id):
   sync_token = _GetRequestParameter('sync_token', None)
   if not sync_token and 'sync_token' in request.headers:
     sync_token = request.headers['sync_token']
-  scope = _GetRequestParameter('scope', None)
-  operation_endpoint = _GetRequestParameter('operation_endpoint', None)
-  operation_format = _GetRequestParameter('operation_format', None)
+  baseurl = _GetRequestParameter('uss_baseurl', None)
+  announce = _GetRequestParameter('announcement_level', None)
+  operations = _GetRequestParameter('operations', None)
   minimum_operation_timestamp = _GetRequestParameter(
       'minimum_operation_timestamp', None)
   maximum_operation_timestamp = _GetRequestParameter(
@@ -279,12 +279,10 @@ def _PutGridCellOperator(zoom, x, y, uss_id):
   elif not uss_id:
     errorfield = 'uss_id'
     errormsg = 'USS identifier not received from OAuth token check.'
-  elif not scope:
-    errorfield = 'scope'
-  elif not operation_endpoint:
-    errorfield = 'operation_endpoint'
-  elif not operation_format:
-    errorfield = 'operation_format'
+  elif not baseurl:
+    errorfield = 'uss_baseurl'
+  elif not announce:
+    errorfield = 'announcement_level'
   elif not minimum_operation_timestamp:
     errorfield = 'minimum_operation_timestamp'
   elif not maximum_operation_timestamp:
@@ -300,10 +298,9 @@ def _PutGridCellOperator(zoom, x, y, uss_id):
         'message': errormsg
     }
   else:
-    result = wrapper.set(zoom, x, y, sync_token, uss_id, scope,
-                         operation_format, operation_endpoint,
-                         minimum_operation_timestamp,
-                         maximum_operation_timestamp)
+    result = wrapper.set(zoom, x, y, sync_token, uss_id, baseurl,
+                         announce, minimum_operation_timestamp,
+                         maximum_operation_timestamp, operations)
   return result
 
 

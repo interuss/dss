@@ -45,9 +45,9 @@ class USSMetadata(object):
   """Data structure for the metadata stored for USS entries in a GridCell.
 
   Format: {version: <version>, timestamp: <last_updated>, operators:
-    [{uss: <ussid>, baseurl: <base_url_for_NASA_API>,
+    [{uss: <ussid>, uss_baseurl: <base_url_for_NASA_API>,
     version: <last_version_for_this_uss>, timestamp: <last_updated>,
-    announce: <flag_for_requesting_announcements_from _other_uss>,
+    announcement_level: <flag_for_requesting_announcements_from _other_uss>,
     minimum_operation_timestamp: <lowest_start_time_of_operations_in_this_cell>,
     maximum_operation_timestamp: <highest_end_time_of_operations_in_this_cell>,
     operations: [{version: <version>, gufi: <unique_identifier>,
