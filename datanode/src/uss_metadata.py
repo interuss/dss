@@ -71,7 +71,7 @@ class USSMetadata(object):
       self.operators = m['operators']
     else:
       self.version = 0
-      self.timestamp = datetime.datetime.now().isoformat()
+      self.timestamp = datetime.datetime.utcnow().isoformat() + 'Z'
       self.operators = []
 
   def __str__(self):
@@ -121,21 +121,21 @@ class USSMetadata(object):
       return False
     # validate the operations (if any)
     for oper in operations:
-      oper['timestamp'] = datetime.datetime.now().isoformat()
+      oper['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
       oper['version'] = self.version
     # Now add the new record
     operator = {
       'uss': uss_id,
       'uss_baseurl': baseurl,
       'version': self.version,
-      'timestamp': datetime.datetime.now().isoformat(),
+      'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
       'minimum_operation_timestamp': earliest_operation.isoformat(),
       'maximum_operation_timestamp': latest_operation.isoformat(),
-      'announcement_level': announce,
+      'announcement_level': str(announce),
       'operations': operations
     }
     self.operators.append(operator)
-    self.timestamp = datetime.datetime.now().isoformat()
+    self.timestamp = datetime.datetime.utcnow().isoformat() + 'Z'
     return True
 
   def remove_operator(self, uss_id):
@@ -145,7 +145,7 @@ class USSMetadata(object):
     self.operators[:] = [
       d for d in self.operators if d.get('uss').upper() != uss_id.upper()
     ]
-    self.timestamp = datetime.datetime.now().isoformat()
+    self.timestamp = datetime.datetime.utcnow().isoformat() + 'Z'
     return len(self.operators) == num_operators - 1
 
   def upsert_operation(self, uss_id, gufi, signature, begin, end):
@@ -163,6 +163,8 @@ class USSMetadata(object):
     # clean up the datetimestamps, setting to nothing if invalid rather
     #   than failing, as they are optional
     found = False
+    # Remove the existing operation, if any
+    self.remove_operation(uss_id, gufi)
     try:
       effective_time_begin = parser.parse(begin)
       effective_time_end = parser.parse(end)
@@ -179,17 +181,17 @@ class USSMetadata(object):
       'operation_signature': signature,
       'effective_time_begin': effective_time_begin.isoformat(),
       'effective_time_end': effective_time_end.isoformat(),
-      'timestamp': datetime.datetime.now().isoformat()
+      'timestamp': datetime.datetime.utcnow().isoformat() + 'Z'
     }
     # find the operator entry and add the operation
     for oper in self.operators:
       if oper.get('uss').upper() == uss_id.upper():
         found = True
-        # Remove the existing operation, if any
-        self.remove_operation(uss_id, gufi)
+        oper['version'] = self.version
+        oper['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
         oper['operations'].append(operation)
         break
-      self.timestamp = datetime.datetime.now().isoformat()
+      self.timestamp = datetime.datetime.utcnow().isoformat() + 'Z'
     return found
 
 
@@ -205,5 +207,5 @@ class USSMetadata(object):
           d for d in oper['operations'] if d.get('gufi').upper() != gufi.upper()
         ]
         found = (len(oper['operations']) == num_operations - 1)
-        oper['timestamp'] = datetime.datetime.now().isoformat()
+        oper['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
     return found

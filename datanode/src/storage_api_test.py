@@ -314,7 +314,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       "uss_baseurl": "https://g.co/r",
       "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
       "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
-      "announcement_level": True,
+      "announcement_level": "YES",
       "operations": [
         {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
           'effective_time_begin': '2018-01-01T01:00:00-05:00',
@@ -339,7 +339,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(len(j['data']['operators']), 1)
     o = j['data']['operators'][0]
     self.assertEqual(o['uss_baseurl'], 'https://g.co/r')
-    self.assertEqual(o['announcement_level'], True)
+    self.assertEqual(o['announcement_level'], 'YES')
     self.assertEqual(len(o['operations']), 3)
     # Put a record in there with too much data
     joper = {
@@ -559,6 +559,67 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
     self.assertEqual(result.status_code, 409)
+
+  def testValidUpsertOperations(self):
+    # Make sure it is empty
+    result = self.app.get('/GridCellOperator/1/1/1')
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(len(j['data']['operators']), 0)
+    # Put a record in there with operations
+    joper = {
+      "uss_baseurl": "https://g.co/r",
+      "minimum_operation_timestamp": "2018-01-01T01:00:00-05:00",
+      "maximum_operation_timestamp": "2018-01-01T04:00:00-05:00",
+      "announcement_level": True,
+      "operations": [
+        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+         'effective_time_begin': '2018-01-01T01:00:00-05:00',
+         'effective_time_end': '2018-01-01T02:00:00-05:00'}
+      ]
+    }
+    result = self.app.put(
+        '/GridCellOperator/1/1/1',
+        json=joper,
+        headers={'sync_token': s})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    self.assertEqual(len(j['data']['operators']), 1)
+    s = j['sync_token']
+    o = j['data']['operators'][0]
+    self.assertEqual(len(o['operations']), 1)
+    # Add a new operation
+    joper = {'gufi': 'G00F2', 'operation_signature': 'signed4.2',
+             'effective_time_begin': '2018-01-01T02:00:00-05:00',
+             'effective_time_end': '2018-01-01T03:00:00-05:00'}
+    result = self.app.put('/GridCellOperation/1/1/1/G00F2',
+                          json=joper, headers={'sync_token': s})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    self.assertEqual(len(j['data']['operators']), 1)
+    s = j['sync_token']
+    o = j['data']['operators'][0]
+    self.assertEqual(len(o['operations']), 2)
+    self.assertIn('G00F1', [d['gufi'] for d in o['operations']])
+    self.assertIn('G00F2', [d['gufi'] for d in o['operations']])
+    # Update the old operation
+    joper = {'gufi': 'G00F2', 'operation_signature': 'UNSIGNED',
+             'effective_time_begin': '2018-01-01T02:00:00-05:00',
+             'effective_time_end': '2018-01-01T03:00:00-05:00'}
+    result = self.app.put('/GridCellOperation/1/1/1/G00F2',
+                          json=joper, headers={'sync_token': s})
+    self.assertEqual(result.status_code, 200)
+    j = json.loads(result.data)
+    self.assertEqual(len(j['data']['operators']), 1)
+    s = j['sync_token']
+    o = j['data']['operators'][0]
+    self.assertEqual(len(o['operations']), 2)
+    self.assertIn('UNSIGNED',
+                  [d['operation_signature'] for d in o['operations']])
+    self.assertIn(1, [d['version'] for d in o['operations']])
+    self.assertIn(3, [d['version'] for d in o['operations']])
+    print(j)
 
   def testVerbose(self):
     storage_api.InitializeConnection([

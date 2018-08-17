@@ -113,7 +113,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     o = s['data']['operators'][0]
     self.assertEqual(o['uss'], 'uss')
     self.assertEqual(o['uss_baseurl'], 'uss.com/base')
-    self.assertEqual(o['announcement_level'], False)
+    self.assertEqual(o['announcement_level'], 'False')
     self.assertEqual(o['version'], 1)
     self.assertEqual(o['minimum_operation_timestamp'],
                      '2018-01-01T00:00:00+00:00')

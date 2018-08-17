@@ -306,8 +306,8 @@ def _PutGridCellOperator(zoom, x, y, uss_id):
     409 if there is a locking conflict that could not be resolved, or
     the other nominal 4xx error codes as necessary.
   """
-  log.info('Grid cell operator submit instantiated for %sz, %s,%s...', zoom, x,
-           y)
+  log.info('Grid cell operator submit instantiated for %sz, %s, %s...',
+           zoom, x, y)
   sync_token = _GetRequestParameter('sync_token', None)
   if not sync_token and 'sync_token' in request.headers:
     sync_token = request.headers['sync_token']
@@ -366,8 +366,8 @@ def _DeleteGridCellOperator(zoom, x, y, uss_id):
     409 if there is a locking conflict that could not be resolved, or
     the other nominal 4xx error codes as necessary.
   """
-  log.info('Grid cell operator delete instantiated for %sz, %s,%s...', zoom, x,
-           y)
+  log.info('Grid cell operator delete instantiated for %sz, %s, %s...',
+           zoom, x, y)
   if uss_id:
     result = wrapper.delete(zoom, x, y, uss_id)
   else:
@@ -394,13 +394,49 @@ def _PutGridCellOperation(zoom, x, y, uss_id, gufi):
     x: x tile number in slippy tile format
     y: y tile number in slippy tile format
     uss_id: the plain text identifier for the USS from OAuth
-    gufi: flight identifier to remove
+    gufi: flight identifier to add/update
   Returns:
     200 and a new sync_token if updated successfully,
     409 if there is a locking conflict that could not be resolved, or
     the other nominal 4xx error codes as necessary.
   """
-  return False
+  log.info('Grid cell operation upsert instantiated for %sz, %s, %s, %s...',
+           zoom, x, y, gufi)
+  sync_token = _GetRequestParameter('sync_token', None)
+  if not sync_token and 'sync_token' in request.headers:
+    sync_token = request.headers['sync_token']
+  gufi = _GetRequestParameter('gufi', None)
+  signature = _GetRequestParameter('operation_signature', None)
+  begin = _GetRequestParameter('effective_time_begin', None)
+  end = _GetRequestParameter('effective_time_end', None)
+  errorfield = errormsg = None
+  if not sync_token:
+    errorfield = 'sync_token'
+  elif not uss_id:
+    errorfield = 'uss_id'
+    errormsg = 'USS identifier not received from OAuth token check.'
+  elif not gufi:
+    errorfield = 'gufi'
+  elif not signature:
+    errorfield = 'operation_signature'
+  elif not begin:
+    errorfield = 'effective_time_begin'
+  elif not end:
+    errorfield = 'effective_time_end'
+  if errorfield:
+    if not errormsg:
+      errormsg = errorfield + (
+        ' must be provided in the form data request to add to a '
+        'GridCell.')
+    result = {
+      'status': 'error',
+      'code': status.HTTP_400_BAD_REQUEST,
+      'message': errormsg
+    }
+  else:
+    result = wrapper.set_operation(zoom, x, y, sync_token, uss_id, gufi,
+                                   signature, begin, end)
+  return result
 
 def _DeleteGridCellOperation(zoom, x, y, uss_id, gufi):
   """Removes a single operation in the metadata stored in a specific GridCell.
@@ -420,8 +456,8 @@ def _DeleteGridCellOperation(zoom, x, y, uss_id, gufi):
     409 if there is a locking conflict that could not be resolved, or
     the other nominal 4xx error codes as necessary.
   """
-  log.info('Grid cell operation delete instantiated for %sz, %s,%s...',
-           zoom, x, y)
+  log.info('Grid cell operation delete instantiated for %sz, %s, %s, %s...',
+           zoom, x, y, gufi)
   if uss_id:
     result = wrapper.delete_operation(zoom, x, y, uss_id, gufi)
   else:
