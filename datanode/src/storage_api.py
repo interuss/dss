@@ -162,8 +162,10 @@ def GridCellMetaDataHandler(zoom, x, y):
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
   """
-  if TESTID and ('access_token' not in request.headers or
-                 request.headers['access_token'] == TESTID):
+  if ('access_token' in request.headers and
+    TESTID in request.headers['access_token']):
+    uss_id = request.headers['access_token']
+  elif TESTID and 'access_token' not in request.headers:
     uss_id = TESTID
   else:
     uss_id = _ValidateAccessToken()
