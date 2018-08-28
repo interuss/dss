@@ -77,20 +77,24 @@ When a USS wants to plan a flight, the “planning USS” performs the following
     of the world, industry provided OAuth solutions decided by the InterUSS
     Technical Steering Committee.
 
+A simple sequence diagram of USS A adding its record to the specific grid its operation is impacting. There are no other operations, so no need to contact other USSs (yet, more complicated sequences forthcoming). 
 ![Simple Sequence](assets/USS1.png)
 
-For an additional examples, this [Sequence Diagram](assets/USS2.png) shows a
-more complex operation with three USSs, two trying to plan at the same time.
-This [Sequence Diagram](assets/USS3.png) shows a USS affecting multiple grids.
+In this sequence, USS A is already operating (and marked itself as wanting updates [announcement_level=True]. USS B and USS C are planning two different operations concurrently.
+![Conflicting Sequence](assets/USS2.png)
+
+For an additional examples, this [Sequence Diagram](assets/USS3.png) shows a USS affecting multiple grids.
 This [Sequence Diagram](assets/USS4.png) shows another USS updating one of
 multiple grids during an update. And finally, This
 [Sequence Diagram](assets/USS5.png) shows different examples of protection with
-concurrent updates.
+concurrent updates. (NOTE: These use the baseline InterUSS Platform naming conventions)
 
 ## Directories of Interest:
 
 *   datanode/docker: instructions to download and start your own datanode image
     as well as the source to create your own docker image to test
+*   datanode/centos: instructions to download and start your own datanode image
+    on CentOS
 *   datanode/src: all of the source code for running the API and Interface layer
 
 ## Contribution
