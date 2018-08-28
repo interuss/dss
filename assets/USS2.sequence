@@ -1,12 +1,12 @@
-Title: Example InterUSS Platform conflicting session [fillcolor="black", fontcolor="white"]                                                                                           
+Title: Example TCL4 InterUSS Platform conflicting session [fillcolor="black", fontcolor="white"]                                                                                           
 
 participant Data Node API as L [fillcolor="darkorange", fontcolor="black"]                                                                                                                                        
 participant USS B as B [fillcolor="blue", fontcolor="white"]
 participant USS C as C [fillcolor="darkgreen", fontcolor="white"]
 participant USS A as A [fillcolor="yellow", fontcolor="black"]
-
+Note over A: USS A has marked itself as True \nfor announcement_level in this cell[fillcolor="yellow", fontcolor="black"]
 Note over B: USS B Receives request\nto reserve airspace\nwithin cell 1z/1x/1y [fillcolor="blue", fontcolor="white"]                                                                                           
-B->L: GET GridCellMetadata(1z/1x/1y)                                                                                                                              
+B->L: GET GridCellOperator(1z/1x/1y)                                                                                                                              
 L-->B: Metadata and synctoken_v1
 
 B->A: Fetch FlightVolumes for cell 1z/1x/1y                                                                                                                          
@@ -14,7 +14,7 @@ A-->B: FlightVolumes
 Note over B: Deconflict new reservation with ALL\nknown flight volumes within cell. [fillcolor="blue", fontcolor="white"]                                                                                       
 
 Note over C: USS C Receives request\nto reserve airspace\nwithin cell 1z/1x/1y [fillcolor="darkgreen", fontcolor="white"]                                                                                           
-C->L: GET GridCellMetadata(1z/1x/1y)                                                                                                                              
+C->L: GET GridCellOperator(1z/1x/1y)                                                                                                                              
 L-->C: Metadata and synctoken_v1
 
 Note over C: Check local cache for\n"USS A cell v1"...Not found\nMust fetch from origin\nhttps://USSA/{z}/{x}/{y}/flights.   [fillcolor="darkgreen", fontcolor="white"]                                                            
@@ -24,17 +24,18 @@ Note over C: Store "USS A cell 1z/1x/1y v1" in local cache. [fillcolor="darkgree
 Note over C: Deconflict new reservation with ALL\nknown flight volumes within cell. [fillcolor="darkgreen", fontcolor="white"]                                                                                       
 
 Note over B: Deconfliction process complete. [fillcolor="blue", fontcolor="white"]                                                                                       
-B->L: PUT GridCellMetadata(1z/1x/1y, synctoken_v1, \n{uss_id}, {flight_endpoint}, ...)                                                                                                                     
+B->L: PUT GridCellOperator(1z/1x/1y, synctoken_v1, \n{uss_id}, {flight_endpoint}, ...)                                                                                                                     
 Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]                                                                                                                                      
 L-->B: 200 Response and synctoken_v2
 Note over B: Once 200 is received, commit in USS B\nlocal DB for serving other USSs[fillcolor="blue", fontcolor="white"]
+B->A: Send FlightVolumes for cell 1z/1x/1y\n(since USS A has True for announcement_level)                                                                                                                          
 
 Note over C: Deconfliction process complete. [fillcolor="blue", fontcolor="white"]
-C->L: PUT GridCellMetadata(1z/1x/1y, synctoken_v1, \n{uss_id}, {flight_endpoint}, ...)                                                                                                                     
+C->L: PUT GridCellOperator(1z/1x/1y, synctoken_v1, \n{uss_id}, {flight_endpoint}, ...)                                                                                                                     
 L-->C: 409 Response (due to invalid token) 
 Note over C: C must start over,\nsince the metadata was updated. [fillcolor="darkgreen", fontcolor="white"]                                                                                                                  
 Note over C: It has not commited the operation locally\nand would not serve it if asked at 1z/1x/1y[fillcolor="darkgreen", fontcolor="white"]
-C->L: GET GridCellMetadata(1z/1x/1y)                                                                                                                              
+C->L: GET GridCellOperator(1z/1x/1y)                                                                                                                              
 L-->C: Metadata and synctoken_v2
 
 Note over C: Check local cache for\n"USS A cell v1"...Found\nNo need to fetch from USS A again. [fillcolor="darkgreen", fontcolor="white"]                                                            
@@ -43,7 +44,8 @@ C->B: Fetch FlightVolumes for cell 1z/1x/1y
 B-->C: FlightVolumes                                                                                                                           
 
 Note over C: Deconflict new reservation with ALL\nknown flight volumes within cell. [fillcolor="darkgreen", fontcolor="white"]                                                                                       
-C->L: PUT GridCellMetadata(1z/1x/1y, synctoken_v2, \n{uss_id}, {flight_endpoint}, ...)                                                                                                                     
+C->L: PUT GridCellOperator(1z/1x/1y, synctoken_v2, \n{uss_id}, {flight_endpoint}, ...)                                                                                                                     
 Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]                                                                                                                                      
 L-->C: 200 Response and synctoken_v3
 Note over C: Once 200 is received, commit in USS B\nlocal DB for serving other USSs[fillcolor="darkgreen", fontcolor="white"]
+C->A: Send FlightVolumes for cell 1z/1x/1y\n(since USS A has True for announcement_level)                                                                                                                          
