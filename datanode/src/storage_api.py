@@ -77,6 +77,8 @@ webapp = Flask(__name__)  # Global object serving the API
 ######################################################################
 ################    WEB SERVICE ENDPOINTS    #########################
 ######################################################################
+
+@webapp.route('/', methods=['GET'])
 @webapp.route('/status', methods=['GET'])
 def Status():
   # just a quick status checker, not really a health check
