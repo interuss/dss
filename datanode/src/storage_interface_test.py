@@ -116,9 +116,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(o['announcement_level'], 'False')
     self.assertEqual(o['version'], 1)
     self.assertEqual(o['minimum_operation_timestamp'],
-                     '2018-01-01T00:00:00+00:00')
+                     '2018-01-01T00:00:00.000Z')
     self.assertEqual(o['maximum_operation_timestamp'],
-                     '2018-01-01T01:00:00+00:00')
+                     '2018-01-01T01:00:00.000Z')
     # simple delete
     d = self.mm.delete(2, 1, 1, 'uss')
     self.assertEqual(d['status'], 'success')
@@ -236,9 +236,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     s = self.mm.get(5, 1, 1)
     token = s['sync_token']
     testsets = [('2018-01-01T00:00+00', '2019-01-01T01:02:03.12345+00:00'),
-                ('2018-01-01T00:00:00', '2019-01-01T01:02:03.12345'),
+                ('2018-01-01T00:00:00', '2019-01-01T01:02:03.123'),
                 ('2018-02-28T23:59:59-07:00', '2018-03-02T23:59:59+08:00'),
-                ('2018-01-01T00:00:00', '2019-01-01')
+                ('2018-01-01T00:00:00.12345', '2019-01-01')
                ]
     for test in testsets:
       s = self.mm.set(5, 1, 1, token, 'uss', 'uss.com/base', True,
@@ -246,10 +246,17 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       token = s['sync_token']
       self.assertEqual(s['status'], 'success')
       o = s['data']['operators'][0]
-      self.assertEqual(parser.parse(test[0]),
-                       parser.parse(o['minimum_operation_timestamp']))
-      self.assertEqual(parser.parse(test[1]),
-                       parser.parse(o['maximum_operation_timestamp']))
+      # Fix up the test cases to compare, this isn't what is sent to the api
+      mintest = test[0]
+      maxtest = test[1]
+      if len(maxtest) <= 10:
+        maxtest = maxtest + 'T00:00:00Z'
+      if not ('+' in mintest[-6:] or '-' in mintest[-6:] or 'Z' in mintest[-6:]):
+        mintest += 'Z'
+      if not ('+' in maxtest[-6:] or '-' in maxtest[-6:] or 'Z' in maxtest[-6:]):
+        maxtest += 'Z'
+      self.assertAlmostEqual(0, (parser.parse(mintest) - parser.parse(o['minimum_operation_timestamp'])).total_seconds(), 0)
+      self.assertAlmostEqual(0, (parser.parse(maxtest) - parser.parse(o['maximum_operation_timestamp'])).total_seconds(), 0)
     # Make sure everything is clean
     self.mm.delete_testdata()
     return

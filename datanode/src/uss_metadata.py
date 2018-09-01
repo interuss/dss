@@ -34,6 +34,7 @@ limitations under the License.
 import datetime
 import json
 import logging
+import pytz
 from dateutil import parser
 
 # logging is our log infrastructure used for this application
@@ -71,7 +72,7 @@ class USSMetadata(object):
       self.operators = m['operators']
     else:
       self.version = 0
-      self.timestamp = datetime.datetime.utcnow().isoformat() + 'Z'
+      self.timestamp = self.format_ts()
       self.operators = []
 
   def __str__(self):
@@ -112,7 +113,11 @@ class USSMetadata(object):
     self.remove_operator(uss_id)
     try:
       earliest_operation = parser.parse(earliest)
+      if earliest_operation.tzinfo is None:
+        earliest_operation = earliest_operation.replace(tzinfo=pytz.utc)
       latest_operation = parser.parse(latest)
+      if latest_operation.tzinfo is None:
+        latest_operation = latest_operation.replace(tzinfo=pytz.utc)
       if earliest_operation >= latest_operation:
         raise ValueError
     except (TypeError, ValueError, OverflowError):
@@ -121,21 +126,21 @@ class USSMetadata(object):
       return False
     # validate the operations (if any)
     for oper in operations:
-      oper['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
+      oper['timestamp'] = self.format_ts()
       oper['version'] = self.version
     # Now add the new record
     operator = {
       'uss': uss_id,
       'uss_baseurl': baseurl,
       'version': self.version,
-      'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
-      'minimum_operation_timestamp': earliest_operation.isoformat(),
-      'maximum_operation_timestamp': latest_operation.isoformat(),
+      'timestamp': self.format_ts(),
+      'minimum_operation_timestamp': self.format_ts(earliest_operation),
+      'maximum_operation_timestamp': self.format_ts(latest_operation),
       'announcement_level': str(announce),
       'operations': operations
     }
     self.operators.append(operator)
-    self.timestamp = datetime.datetime.utcnow().isoformat() + 'Z'
+    self.timestamp = self.format_ts()
     return True
 
   def remove_operator(self, uss_id):
@@ -145,7 +150,7 @@ class USSMetadata(object):
     self.operators[:] = [
       d for d in self.operators if d.get('uss').upper() != uss_id.upper()
     ]
-    self.timestamp = datetime.datetime.utcnow().isoformat() + 'Z'
+    self.timestamp = self.format_ts()
     return len(self.operators) == num_operators - 1
 
   def upsert_operation(self, uss_id, gufi, signature, begin, end):
@@ -179,19 +184,19 @@ class USSMetadata(object):
       'version': self.version,
       'gufi': gufi,
       'operation_signature': signature,
-      'effective_time_begin': effective_time_begin.isoformat(),
-      'effective_time_end': effective_time_end.isoformat(),
-      'timestamp': datetime.datetime.utcnow().isoformat() + 'Z'
+      'effective_time_begin': self.format_ts(effective_time_begin),
+      'effective_time_end': self.format_ts(effective_time_end),
+      'timestamp': self.format_ts()
     }
     # find the operator entry and add the operation
     for oper in self.operators:
       if oper.get('uss').upper() == uss_id.upper():
         found = True
         oper['version'] = self.version
-        oper['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
+        oper['timestamp'] = self.format_ts()
         oper['operations'].append(operation)
         break
-      self.timestamp = datetime.datetime.utcnow().isoformat() + 'Z'
+      self.timestamp = self.format_ts()
     return found
 
 
@@ -207,5 +212,10 @@ class USSMetadata(object):
           d for d in oper['operations'] if d.get('gufi').upper() != gufi.upper()
         ]
         found = (len(oper['operations']) == num_operations - 1)
-        oper['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
+        oper['timestamp'] = self.format_ts()
     return found
+
+  def format_ts(self, timestamp=None):
+    r = datetime.datetime.now(pytz.utc) if timestamp is None else timestamp
+    r = r.astimezone(pytz.utc)
+    return '{0}Z'.format(r.strftime('%Y-%m-%dT%H:%M:%S.%f')[:23])
