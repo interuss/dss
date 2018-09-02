@@ -16,11 +16,11 @@
 # storage API server and an associated Zookeeper instance.
 
 # To build an image from this Dockerfile:
-# docker image build -f Dockerfile_datanode_pybase -t interussplatform/data_node .
+# docker image build -f Dockerfile_datanode_pybase -t interussplatform/data_node:tcl4 .
 
 # To run this image:
 # docker run -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" -p 8121:8121 \
-#   -d interussplatform/data_node
+#   -d interussplatform/data_node:tcl4
 
 # Required environment variables:
 #   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.

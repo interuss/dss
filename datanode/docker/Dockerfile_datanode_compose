@@ -26,13 +26,13 @@
 #   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.
 
 # To build an image from this Dockerfile:
-# 1) docker image build -f Dockerfile_datanode -t uss_datanode
-# 2) docker run -it --privileged uss_datanode sh
-# 2a) nohup dockerd & docker pull interussplatform/storage_api && docker pull zookeeper && \
+# 1) docker image build -f Dockerfile_datanode -t uss_datanode:tcl4
+# 2) docker run -it --privileged uss_datanode:tcl4 sh
+# 2a) nohup dockerd & docker pull interussplatform/storage_api:tcl4 && docker pull zookeeper && \
 #         killall dockerd && rm nohup.out
 # 2b) exit
 # 3) docker container ls -n 1
-# 4) docker commit <container name> uss_datanode
+# 4) docker commit <container name> uss_datanode:tcl4
 
 FROM docker:stable-dind
 

@@ -36,6 +36,9 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     result = self.app.get('/status')
     self.assertEqual(result.status_code, 200)
     self.assertIn(b'OK', result.data)
+    result = self.app.get('/')
+    self.assertEqual(result.status_code, 200)
+    self.assertIn(b'OK', result.data)
 
   def testSyncTokenInHeader(self):
     result = self.app.get('/GridCellOperator/1/1/1')

@@ -45,7 +45,7 @@ with any other data nodes:
 docker run -e INTERUSS_PUBLIC_KEY=Unused \
   -e STORAGE_API_ARGS="-t test" \
   -p 8121:8121 \
-  -d interussplatform/data_node
+  -d interussplatform/data_node:tcl4
 ```
 
 To verify operation, first make sure the container is running: `docker container
@@ -54,7 +54,7 @@ ls`
 Then, navigate a browser to http://localhost:8121/status
 
 To make sure you have the latest version, first run: `docker pull
-interussplatform/data_node`
+interussplatform/data_node:tcl4`
 
 ### Synchronized node
 
@@ -69,5 +69,12 @@ docker run -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" \
   -e ZOO_MY_ID="${ZOO_MY_ID}" \
   -e ZOO_SERVERS="${ZOO_SERVERS}" \
   -p 8121:8121 \
-  -d interussplatform/data_node
+  -d interussplatform/data_node:tcl4
 ```
+
+## SSL
+
+To use TLS encryption for all endpoints, add `--ssladhoc` to STORAGE_API_ARGS.  So, for the
+stand-alone test node example above, set `-e STORAGE_API_ARGS="-t test --ssladhoc"`.  This will
+enable TLS encryption using ad hoc certificates.  As such, clients will not be assured of the
+identity of the server, but traffic will be protected in transit.

@@ -66,7 +66,8 @@ import storage_interface
 # VERSION = '0.3.1'  # Added token validation option in test mode
 # VERSION = '0.4.0'  # Changed data structure to match v1 of InterUSS Platform
 # VERSION = '1.0.0'  # Initial, approved release deployed on GitHub
-VERSION = 'TCL4.0.0'  # Specific branch for TCL4 only
+# VERSION = 'TCL4.0.0'  # Specific branch for TCL4 only
+VERSION = 'TCL4.0.1'  # Updated slippy format, added SSL
 
 TESTID = None
 
@@ -79,11 +80,15 @@ webapp = Flask(__name__)  # Global object serving the API
 ######################################################################
 ################    WEB SERVICE ENDPOINTS    #########################
 ######################################################################
+
+@webapp.route('/', methods=['GET'])
 @webapp.route('/status', methods=['GET'])
 def Status():
   # just a quick status checker, not really a health check
   log.debug('Status handler instantiated...')
-  return _FormatResult({'status': 'success', 'message': 'OK'})
+  return _FormatResult({'status': 'success',
+                        'message': 'OK',
+                        'version': VERSION})
 
 
 @webapp.route('/slippy/<zoom>', methods=['GET'])
@@ -601,6 +606,13 @@ def InitializeConnection(argv):
       help='Force testing mode with test data located in specific test id  '
       '[or env variable INTERUSS_TESTID]',
       metavar='TESTID')
+  parser.add_option(
+      '-a',
+      '--ssladhoc',
+      action='store_true',
+      dest='ssladhoc',
+      default=False,
+      help='Enable ad-hoc TLS encryption')
   (options, args) = parser.parse_args(argv)
   del args
   if options.verbose or os.environ.get('INTERUSS_VERBOSE'):
@@ -614,7 +626,7 @@ def InitializeConnection(argv):
     TESTID = os.getenv('INTERUSS_TESTID', options.testid)
     wrapper.set_testmode(TESTID)
     wrapper.delete_testdata(TESTID)
-  return options.server, options.port
+  return options.server, options.port, options.ssladhoc
 
 
 def TerminateConnection():
@@ -630,9 +642,10 @@ def main(argv):
     log.debug(
         """Instantiated application, parsing commandline
       %s and initializing connection...""", str(argv))
-    host, port = InitializeConnection(argv)
+    host, port, ssl_adhoc = InitializeConnection(argv)
     log.info('Starting webserver...')
-    webapp.run(host=host, port=int(port))
+    webapp.run(host=host, port=int(port),
+               ssl_context='adhoc' if ssl_adhoc else None)
 
 
 # this is what starts everything

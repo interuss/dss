@@ -57,7 +57,7 @@ services:
       - ZOO_SERVERS=server.1=localzoo:2888:3888 server.2=zoo2:2888:3888 server.3=0.0.0.0:2888:3888
 
   storage_api:
-    image: storage_api
+    image: interussplatform/storage_api:tcl4
     ports:
       - ${INTERUSS_API_PORT}:${INTERUSS_API_PORT}
     environment:

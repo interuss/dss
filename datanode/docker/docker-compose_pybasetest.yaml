@@ -25,7 +25,7 @@ version: '3.6'
 services:
 
   datanode:
-    image: data_node
+    image: interussplatform/data_node:tcl4
     ports:
       - 8121:8121
     expose:
