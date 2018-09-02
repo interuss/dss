@@ -1,0 +1,606 @@
+swagger: '2.0'
+info:
+  description: |
+
+    This repository contains a simple, open, and API used for separate UAS Service Suppliers (USS) to communicate during UAS operations, known as the InterUSS Platform™. This flexible and distributed system is used to connect multiple USSs operating in the same general area to share safety information while protecting operator and consumer privacy. The system is focused on facilitating communication amongst actively operating USSs with no details about UAS operations stored or processed on the InterUSS Platform.
+
+    ### Main Features
+
+    * Simple, open, flexible, and scalable information interface and Optimistic Concurrency Control to simplify USS to USS communication and control race conditions.
+    * Effective information sharing to enable effective, deterministic conflict detection for flight planning across multiple overlapping 4D volumes from multiple USSs.
+    * Effective reconstitution of flight volumes when restarting a USS or adding a USS to an existing environment.
+
+    ### Main Assumptions
+
+    * Trust each USS to deconflict with known flight data.
+    * Auditing is available, as all USSs can verify the authorship and addition of erroneous conflictions.
+    * Deconfliction is simply defined as no overlapping flights in time and volume.
+
+    For more information, see the InterUSS Platform technical document located here: https://github.com/wing-aviation/InterUSS-Platform/raw/master/assets/InterUSS%20Platform%20Open%20Source%20Project-v1%20DRAFT.pdf or the executive summary located here:
+    https://github.com/wing-aviation/InterUSS-Platform/blob/master/assets/InterUSS%20Platform%20Executive%20Summary-v1%20DRAFT.pdf
+
+    ### NOTE
+
+    This is a NASA UTM Project delta on the original.  In the future, this can be a branch or a fork from a publicly-available repo of InterUSS.
+
+    # Try it out
+
+    The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with an access_token, use a NASA FIMS valid OAuth token or use 'tcl4box' (which works only in the sandbox environment). You can also use additional info at the end of the token to simulate multiple USSs (i.e. 'tcl4box-uss1').
+
+  version: "tcl4.0.1"
+  title: InterUSS Platform - Data Node Stateless API
+  contact:
+    email: hikevin+interuss@google.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+paths:
+  /status:
+    get:
+      summary: Just a quick status checker on the API layer
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Success, JSend version of OK
+          schema:
+            $ref: '#/definitions/JSendStatusResponse'
+  /slippy/{zoom}:
+    get:
+      summary: Figures out which slippy tiles are impacted by a CSV list of latitudes and longitudes
+      produces:
+      - application/json
+      parameters:
+      - name: zoom
+        in: path
+        description: Zoom level to use for tiles
+        required: true
+        type: integer
+      - name: coords
+        in: query
+        description: CSV list of latitude,longitude,latitude,longitude...
+        required: true
+        type: string
+      responses:
+        200:
+          description: Success, JSend version of tiles and links to tiles
+          schema:
+            $ref: '#/definitions/JSendSlippyResponse'
+        400:
+          description: Invalid zoom or csv
+
+  /GridCellOperator/{zoom}/{x}/{y}:
+    get:
+      summary: Provides an instantaneous snapshot of the operators and their operations for a specific GridCell
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token
+        type: string
+        default: tcl4box-uss1
+        required: true
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: x
+        in: path
+        description: x tile number in slippy tile format
+        required: true
+        type: integer
+      - name: y
+        in: path
+        description: y tile number in slippy tile format
+        required: true
+        type: integer
+      responses:
+        200:
+          description: JSend version of grid operator data, including the sync_token used for updating grids
+          schema:
+            $ref: '#/definitions/JSendGridCellOperatorResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided
+    put:
+      summary: Updates the operator and operation data stored in a specific GridCell
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token
+        required: true
+        default: tcl4box-uss1
+        type: string
+      - name: sync_token
+        in: header
+        description: The synchronization token retrieved in the original GET GridCellOperator, which is a long (64-bit) integer
+        required: true
+        type: string
+      - in: body
+        name: gridcell_operator
+        description: The GridCellOperator information being submitted
+        required: true
+        schema:
+          $ref: '#/definitions/GridCellOperatorRequest'
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: x
+        in: path
+        description: x tile number in slippy tile format
+        required: true
+        type: integer
+      - name: y
+        in: path
+        description: y tile number in slippy tile format
+        required: true
+        type: integer
+      responses:
+        200:
+          description: JSend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellOperatorResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Valid OAuth access token
+        408:
+          description: Unable to lock GridCell
+        409:
+          description: Sync token does not match (GridCell updated since GET)
+        424:
+          description: JSON is not in the correct format
+    delete:
+      summary: Removes the USS entry stored in a specific GridCell
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token
+        required: true
+        default: tcl4box-uss1
+        type: string
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: x
+        in: path
+        description: x tile number in slippy tile format
+        required: true
+        type: integer
+      - name: y
+        in: path
+        description: y tile number in slippy tile format
+        required: true
+        type: integer
+      responses:
+        200:
+          description: Success, Jend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellOperatorResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided
+        408:
+          description: Unable to lock GridCell
+
+  /GridCellOperation/{zoom}/{x}/{y}/{gufi}:
+    put:
+      summary: Creates or Updates an operation stored in a specific GridCell
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token
+        required: true
+        default: tcl4box-uss1
+        type: string
+      - name: sync_token
+        in: header
+        description: The synchronization token retrieved in the original GET GridCellOperator, which is a long (64-bit) integer
+
+        required: true
+        type: string
+      - in: body
+        name: gridcell_operation
+        description: The operation information for the specific GridCell being submitted, useful for creating/updating/deleting a single operation when many operations exist in this GridCell. A USS must have an entry as the operator (/GridCellOperator) in this GridCell already to use this endpoint. 
+        required: true
+        schema:
+          $ref: '#/definitions/GridCellOperationRequest'
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: x
+        in: path
+        description: x tile number in slippy tile format
+        required: true
+        type: integer
+      - name: y
+        in: path
+        description: y tile number in slippy tile format
+        required: true
+        type: integer
+      - name: gufi
+        in: path
+        description: GUFI for the Operation to create/modify
+        required: true
+        type: string
+      responses:
+        200:
+          description: JSend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellOperatorResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Valid OAuth access token
+        408:
+          description: Unable to lock GridCell
+        409:
+          description: Sync token does not match (GridCell updated since GET)
+        424:
+          description: JSON is not in the correct format
+    delete:
+      summary: Removes an operation stored in a specific GridCell
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token
+        required: true
+        default: tcl4box-uss1
+        type: string
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: x
+        in: path
+        description: x tile number in slippy tile format
+        required: true
+        type: integer
+      - name: y
+        in: path
+        description: y tile number in slippy tile format
+        required: true
+        type: integer
+      - name: gufi
+        in: path
+        description: GUFI for the Operation to remove
+        required: true
+        type: string
+      responses:
+        200:
+          description: Success, Jend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellOperatorResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided
+        408:
+          description: Unable to lock GridCell
+definitions:
+  JSendStatusResponse:
+    type: object
+    properties:
+      status:
+        type: string
+      message:
+        type: string
+      version:
+        type: string
+        format: json
+
+  JSendSlippyResponse:
+    type: object
+    properties:
+      status:
+        type: string
+      message:
+        type: string
+      data:
+        type: object
+        format: json
+        properties:
+          zoom:
+            type: integer
+          grid_cells:
+            type: array
+            items:
+              type: object
+              properties:
+                link:
+                  type: string
+                zoom:
+                  type: integer
+                x:
+                  type: integer
+                y:
+                  type: integer
+
+  GridCellOperatorResponse:
+    type: object
+    format: json
+    required:
+      - uss
+      - uss_baseurl
+      - version
+      - timestamp
+      - minimum_operation_timestamp
+      - maximum_operation_timestamp
+      - announcement_level
+      - operations
+    properties:
+      uss:
+        type: string
+        description: >-
+          USS ID as pulled from the access token provided by OAuth.
+        minLength: 4
+        maxLength: 250
+      uss_baseurl:
+        type: string
+        description: >-
+          Base URL for the USS's web service endpoints hosting the required
+          NASA API (https://app.swaggerhub.com/apis/utm/uss/).
+        minLength: 1
+        maxLength: 200
+      version:
+        type: integer
+        description: >-
+          Automatically managed version number of this USSs last update.
+        minimum: 0
+        maximum: 99999
+      timestamp:
+        type: string
+        format: datetime
+        description: >-
+          Forcing ms resolution and UTC only.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T10:43:18.937Z'
+      minimum_operation_timestamp:
+        type: string
+        format: datetime
+        description: >-
+          Earliest operation start time in this grid cell.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T14:11:00.000Z'
+      maximum_operation_timestamp:
+        type: string
+        format: datetime
+        description: >-
+          Latest operation end time in this grid cell.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T15:00:00.000Z'
+      announcement_level:
+        type: string
+        description: >-
+          The level of announcements the USS would like to recieve related to operations
+          in this grid cell.  Current just a binary, but expect this enumeration to grow
+          as use cases are developed.  For example, USSs may want just security related
+          announcements, or would only like announcements that involve changed geographies.
+        enum:
+          - NONE
+          - ALL
+      operations:
+        type: array
+        items:
+          $ref: '#/definitions/GridCellOperationResponse'
+
+  GridCellOperatorRequest:
+    type: object
+    format: json
+    required:
+      - uss_baseurl
+      - minimum_operation_timestamp
+      - maximum_operation_timestamp
+      - operations
+    properties:
+      uss_baseurl:
+        type: string
+        description: >-
+          Base URL for the USS's web service endpoints hosting the required
+          NASA API (https://app.swaggerhub.com/apis/utm/uss/).
+        minLength: 1
+        maxLength: 200
+      minimum_operation_timestamp:
+        type: string
+        format: datetime
+        description: >-
+          Earliest operation start time in this grid cell.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T14:11:00.000Z'
+      maximum_operation_timestamp:
+        type: string
+        format: datetime
+        description: >-
+          Latest operation end time in this grid cell.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T15:00:00.000Z'
+      announcement_level:
+        type: string
+        description: >-
+          The level of announcements the USS would like to recieve related to operations
+          in this grid cell.  Current just a binary, but expect this enumeration to grow
+          as use cases are developed.  For example, USSs may want just security related
+          announcements, or would only like announcements that involve changed geographies.
+        enum:
+          - NONE
+          - ALL
+      operations:
+        type: array
+        minItems: 0
+        maxItems: 1000
+        items:
+          $ref: '#/definitions/GridCellOperationRequest'
+
+  GridCellOperationResponse:
+    type: object
+    format: json
+    required:
+      - version
+      - gufi
+      - operation_signature
+      - effective_time_begin
+      - effective_time_end
+      - timestamp
+    properties:
+      version:
+        type: integer
+        minimum: 0
+        maximum: 99999
+      gufi:
+        type: string
+        format: uuid
+        description: >-
+          GUFI for the Operation described this GridCellOperation.
+        maxLength: 36
+        minLength: 36
+      operation_signature:
+        type: string
+        format: base64url
+        description: >-
+          The JWS signature of the Operation described by this GridCellOperation. The JWS signature
+          is base64 URL encoded per specification.  The unencoded length of a SHA-256 signature is
+          32 bytes and the unencoded length of other potential hash functions can be much longer.
+          The min and max should take into consideration all potential base64url encoding of the
+          JWS algorithms listed in the RFC https://tools.ietf.org/html/rfc7518#section-3
+          Currently, these values do not take this into consideration.
+        minLength: 32
+        maxLength: 200
+      effective_time_begin:
+        type: string
+        format: datetime
+        description: >-
+          Start time of operation.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T14:11:00.000Z'
+      effective_time_end:
+        type: string
+        format: datetime
+        description: >-
+          End time of operation.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T15:00:00.000Z'
+      timestamp:
+        type: string
+        format: datetime
+        description: >-
+          Forcing ms resolution and UTC only.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T10:43:18.937Z'
+
+  GridCellOperationRequest:
+    type: object
+    format: json
+    required:
+      - gufi
+      - operation_signature
+      - effective_time_begin
+      - effective_time_end
+    properties:
+      gufi:
+        type: string
+        format: uuid
+        description: >-
+          GUFI for the Operation described this GridCellOperation.
+        maxLength: 36
+        minLength: 36
+      operation_signature:
+        type: string
+        format: base64url
+        description: >-
+          The JWS signature of the Operation described by this GridCellOperation. The JWS signature
+          is base64 URL encoded per specification.  The unencoded length of a SHA-256 signature is
+          32 bytes and the unencoded length of other potential hash functions can be much longer.
+
+          The min and max should take into consideration all potential base64url encoding of the
+          JWS algorithms listed in the RFC: https://tools.ietf.org/html/rfc7518#section-3
+
+          Currently, these values do not take this into consideration.
+        minLength: 32
+        maxLength: 200
+      effective_time_begin:
+        type: string
+        format: datetime
+        description: >-
+          Start time of operation.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T14:11:00.000Z'
+      effective_time_end:
+        type: string
+        format: datetime
+        description: >-
+          End time of operation.
+        minLength: 25
+        maxLength: 25
+        example: '2015-08-20T15:00:00.000Z'
+
+
+  JSendGridCellOperatorResponse:
+    type: object
+    properties:
+      status:
+        type: string
+        minLength: 1
+        maxLength: 100
+      sync_token:
+        type: integer
+        minimum: 0
+        description: The zxid, which is a long (64-bit) integer
+      data:
+        type: object
+        format: json
+        properties:
+          version:
+            type: integer
+          timestamp:
+            type: string
+            format: datetime
+            description: >-
+              Forcing ms resolution and UTC only.
+            minLength: 25
+            maxLength: 25
+            example: '2015-08-20T03:14:32.819Z'
+          operators:
+            type: array
+            minItems: 0
+            maxItems: 1000
+            items:
+              $ref: '#/definitions/GridCellOperatorResponse'
+
+# Added by API Auto Mocking Plugin
+host: 35.193.160.127:8121
+basePath: /
+schemes:
+ - http
