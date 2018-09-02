@@ -99,7 +99,6 @@ def ConvertCoordinatesToSlippy(zoom):
   """
   log.info('Convert coordinates to slippy instantiated for %sz...', zoom)
   tiles = []
-  links = []
   coords = _GetRequestParameter('coords', '')
   log.debug('Retrieved coords from web params and split to %s...', coords)
   coordinates = _ValidateCoordinates(coords)
@@ -112,24 +111,20 @@ def ConvertCoordinatesToSlippy(zoom):
     abort(status.HTTP_400_BAD_REQUEST,
           'Invalid parameters for zoom, must be integer 0-20.')
   if not coordinates:
-    log.error('Invalid coords %s, must be a CSV of lon,lat...', zoom)
+    log.error('Invalid coords %s, must be a CSV of lat,lon...', zoom)
     abort(status.HTTP_400_BAD_REQUEST,
-          'Invalid coords, must be a CSV of lon,lat,lon,lat...')
+          'Invalid coords, must be a CSV of lat,lon,lat,lon...')
   for c in coordinates:
-    x, y = _ConvertPointToTile(zoom, c[0], c[1])
-    tile = (zoom, x, y)
+    x, y = _ConvertPointToTile(zoom, c[1], c[0])
+    link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
+    tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
     if tile not in tiles:
       tiles.append(tile)
-    link = 'http://tile.openstreetmap.org/' + str(zoom) + '/' + str(
-        x) + '/' + str(y) + '.png'
-    if link not in links:
-      links.append(link)
   return jsonify({
       'status': 'success',
       'data': {
           'zoom': zoom,
-          'tiles': tiles,
-          'links': links
+          'grid_cells': tiles,
       }
   })
 
