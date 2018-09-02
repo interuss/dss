@@ -35,7 +35,7 @@
 #   INTERUSS_VERBOSE: True for more log messages from the InterUSS API (default true)
 #   STORAGE_API_ARGS: Any arguments to pass to the storage API, like "-t test" (default blank)
 
-FROM interussplatform/storage_api
+FROM interussplatform/storage_api:tcl4
 
 # =======
 # Install OpenJDK 8

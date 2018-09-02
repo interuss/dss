@@ -15,13 +15,13 @@
 # Definition for Docker image that runs the InterUSS Platform storage API server.
 
 # To build an image from this Dockerfile:
-# docker image build -f Dockerfile_storageapi -t interussplatform/storage_api ../src
+# docker image build -f Dockerfile_storageapi -t interussplatform/storage_api:tcl4 ../src
 
 # To run this image:
 # docker run \
 #     -e INTERUSS_CONNECTIONSTRING="zookeeper_ip:2181" \
 #     -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" \
-#     -p 8121:8121 -d interussplatform/storage_api
+#     -p 8121:8121 -d interussplatform/storage_api:tcl4
 
 # Required environment variables:
 #   INTERUSS_CONNECTIONSTRING: Set of Zookeeper servers to which the storage API should connect.
