@@ -150,7 +150,7 @@ def GridCellOperatorHandler(zoom, x, y):
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
   """
-  if ('access_token' in request.headers and
+  if ('access_token' in request.headers and TESTID and
       TESTID in request.headers['access_token']):
     uss_id = request.headers['access_token']
   elif TESTID and 'access_token' not in request.headers:
@@ -196,7 +196,7 @@ def GridCellOperationHandler(zoom, x, y, gufi):
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
   """
-  if ('access_token' in request.headers and
+  if ('access_token' in request.headers and TESTID and
       TESTID in request.headers['access_token']):
     uss_id = request.headers['access_token']
   elif TESTID and 'access_token' not in request.headers:
