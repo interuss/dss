@@ -37,7 +37,7 @@ FROM python:2
 
 WORKDIR /usr/src/app
 
-RUN pip install --no-cache-dir python-dateutil kazoo flask PyJWT djangorestframework cryptography pyopenssl
+RUN pip install --no-cache-dir python-dateutil kazoo flask PyJWT djangorestframework cryptography pyopenssl pytz
 
 COPY . .
 
