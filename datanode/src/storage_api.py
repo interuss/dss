@@ -70,6 +70,7 @@ import storage_interface
 VERSION = 'TCL4.0.1'  # Updated slippy format, added SSL
 
 TESTID = None
+SCOPE = 'utm.nasa.gov_write.conflictmanagement'
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('InterUSS_DataNode_StorageAPI')
@@ -246,7 +247,13 @@ def _ValidateAccessToken():
   if secret and token:
     try:
       r = jwt.decode(token, secret, algorithms='RS256')
-      return r['client_id']
+      if SCOPE in r['scope']:
+        return r['sub']
+      else:
+        log.error('%s not in scope %s', SCOPE, r['scope'])
+        abort(status.HTTP_401_UNAUTHORIZED,
+              'OAuth access_token is invalid: '
+              'scope not valid for conflict management.')
     except jwt.ExpiredSignatureError:
       log.error('Access token has expired.')
       abort(status.HTTP_401_UNAUTHORIZED,
