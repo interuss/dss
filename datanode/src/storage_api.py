@@ -67,7 +67,8 @@ import storage_interface
 # VERSION = '0.4.0'  # Changed data structure to match v1 of InterUSS Platform
 # VERSION = '1.0.0'  # Initial, approved release deployed on GitHub
 # VERSION = 'TCL4.0.0'  # Specific branch for TCL4 only
-VERSION = 'TCL4.0.1'  # Updated slippy format, added SSL
+# VERSION = 'TCL4.0.1'  # Updated slippy format, added SSL
+VERSION = 'TCL4.0.1.001'  # Updated public key format for env variables
 
 TESTID = None
 SCOPE = 'utm.nasa.gov_write.conflictmanagement'
