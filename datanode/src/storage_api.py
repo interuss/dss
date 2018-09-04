@@ -238,6 +238,11 @@ def _ValidateAccessToken():
   token = None
   if 'access_token' in request.headers:
     token = request.headers['access_token']
+    # ENV variables sometimes don't pass newlines, spec says white space
+    # doesn't matter, but pyjwt cares about it, so fix it
+    token = token.replace(' PUBLIC ', '_PLACEHOLDER_')
+    token = token.replace(' ', '\n')
+    token = token.replace('_PLACEHOLDER_', ' PUBLIC ')
   if secret and token:
     try:
       r = jwt.decode(token, secret, algorithms='RS256')
