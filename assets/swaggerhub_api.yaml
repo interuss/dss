@@ -101,7 +101,7 @@ paths:
         200:
           description: JSend version of grid operator data, including the sync_token used for updating grids
           schema:
-            $ref: '#/definitions/JSendGridCellOperatorResponse'
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
         400:
           description: Invalid request
         403:
@@ -149,7 +149,7 @@ paths:
         200:
           description: JSend version of updated grid operator data
           schema:
-            $ref: '#/definitions/JSendGridCellOperatorResponse'
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
         400:
           description: Invalid request
         403:
@@ -190,7 +190,7 @@ paths:
         200:
           description: Success, Jend version of updated grid operator data
           schema:
-            $ref: '#/definitions/JSendGridCellOperatorResponse'
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
         400:
           description: Invalid request
         403:
@@ -248,7 +248,7 @@ paths:
         200:
           description: JSend version of updated grid operator data
           schema:
-            $ref: '#/definitions/JSendGridCellOperatorResponse'
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
         400:
           description: Invalid request
         403:
@@ -294,7 +294,7 @@ paths:
         200:
           description: Success, Jend version of updated grid operator data
           schema:
-            $ref: '#/definitions/JSendGridCellOperatorResponse'
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
         400:
           description: Invalid request
         403:
@@ -340,6 +340,41 @@ definitions:
                 y:
                   type: integer
 
+  JSendGridCellMetadataResponse:
+    type: object
+    properties:
+      status:
+        type: string
+        minLength: 1
+        maxLength: 100
+      sync_token:
+        type: integer
+        minimum: 0
+        description: The zxid, which is a long (64-bit) integer
+      data:
+        $ref: '#/definitions/GridCellMetadataResponse'
+
+  GridCellMetadataResponse:
+        type: object
+        format: json
+        properties:
+          version:
+            type: integer
+          timestamp:
+            type: string
+            format: datetime
+            description: >-
+              Forcing ms resolution and UTC only.
+            minLength: 24
+            maxLength: 24
+            example: '2015-08-20T03:14:32.819Z'
+          operators:
+            type: array
+            minItems: 0
+            maxItems: 1000
+            items:
+              $ref: '#/definitions/GridCellOperatorResponse'
+
   GridCellOperatorResponse:
     type: object
     format: json
@@ -377,24 +412,24 @@ definitions:
         format: datetime
         description: >-
           Forcing ms resolution and UTC only.
-        minLength: 25
-        maxLength: 25
+        minLength: 24
+        maxLength: 24
         example: '2015-08-20T10:43:18.937Z'
       minimum_operation_timestamp:
         type: string
         format: datetime
         description: >-
           Earliest operation start time in this grid cell.
-        minLength: 25
-        maxLength: 25
+        minLength: 24
+        maxLength: 24
         example: '2015-08-20T14:11:00.000Z'
       maximum_operation_timestamp:
         type: string
         format: datetime
         description: >-
           Latest operation end time in this grid cell.
-        minLength: 25
-        maxLength: 25
+        minLength: 24
+        maxLength: 24
         example: '2015-08-20T15:00:00.000Z'
       announcement_level:
         type: string
@@ -410,55 +445,6 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/GridCellOperationResponse'
-
-  GridCellOperatorRequest:
-    type: object
-    format: json
-    required:
-      - uss_baseurl
-      - minimum_operation_timestamp
-      - maximum_operation_timestamp
-      - operations
-    properties:
-      uss_baseurl:
-        type: string
-        description: >-
-          Base URL for the USS's web service endpoints hosting the required
-          NASA API (https://app.swaggerhub.com/apis/utm/uss/).
-        minLength: 1
-        maxLength: 200
-      minimum_operation_timestamp:
-        type: string
-        format: datetime
-        description: >-
-          Earliest operation start time in this grid cell.
-        minLength: 25
-        maxLength: 25
-        example: '2015-08-20T14:11:00.000Z'
-      maximum_operation_timestamp:
-        type: string
-        format: datetime
-        description: >-
-          Latest operation end time in this grid cell.
-        minLength: 25
-        maxLength: 25
-        example: '2015-08-20T15:00:00.000Z'
-      announcement_level:
-        type: string
-        description: >-
-          The level of announcements the USS would like to recieve related to operations
-          in this grid cell.  Current just a binary, but expect this enumeration to grow
-          as use cases are developed.  For example, USSs may want just security related
-          announcements, or would only like announcements that involve changed geographies.
-        enum:
-          - NONE
-          - ALL
-      operations:
-        type: array
-        minItems: 0
-        maxItems: 1000
-        items:
-          $ref: '#/definitions/GridCellOperationRequest'
 
   GridCellOperationResponse:
     type: object
@@ -499,25 +485,74 @@ definitions:
         format: datetime
         description: >-
           Start time of operation.
-        minLength: 25
-        maxLength: 25
+        minLength: 24
+        maxLength: 24
         example: '2015-08-20T14:11:00.000Z'
       effective_time_end:
         type: string
         format: datetime
         description: >-
           End time of operation.
-        minLength: 25
-        maxLength: 25
+        minLength: 24
+        maxLength: 24
         example: '2015-08-20T15:00:00.000Z'
       timestamp:
         type: string
         format: datetime
         description: >-
           Forcing ms resolution and UTC only.
-        minLength: 25
-        maxLength: 25
+        minLength: 24
+        maxLength: 24
         example: '2015-08-20T10:43:18.937Z'
+        
+  GridCellOperatorRequest:
+    type: object
+    format: json
+    required:
+      - uss_baseurl
+      - minimum_operation_timestamp
+      - maximum_operation_timestamp
+      - operations
+    properties:
+      uss_baseurl:
+        type: string
+        description: >-
+          Base URL for the USS's web service endpoints hosting the required
+          NASA API (https://app.swaggerhub.com/apis/utm/uss/).
+        minLength: 1
+        maxLength: 200
+      minimum_operation_timestamp:
+        type: string
+        format: datetime
+        description: >-
+          Earliest operation start time in this grid cell.
+        minLength: 24
+        maxLength: 24
+        example: '2015-08-20T14:11:00.000Z'
+      maximum_operation_timestamp:
+        type: string
+        format: datetime
+        description: >-
+          Latest operation end time in this grid cell.
+        minLength: 24
+        maxLength: 24
+        example: '2015-08-20T15:00:00.000Z'
+      announcement_level:
+        type: string
+        description: >-
+          The level of announcements the USS would like to recieve related to operations
+          in this grid cell.  Current just a binary, but expect this enumeration to grow
+          as use cases are developed.  For example, USSs may want just security related
+          announcements, or would only like announcements that involve changed geographies.
+        enum:
+          - NONE
+          - ALL
+      operations:
+        type: array
+        minItems: 0
+        maxItems: 1000
+        items:
+          $ref: '#/definitions/GridCellOperationRequest'
 
   GridCellOperationRequest:
     type: object
@@ -554,50 +589,19 @@ definitions:
         format: datetime
         description: >-
           Start time of operation.
-        minLength: 25
-        maxLength: 25
+        minLength: 24
+        maxLength: 24
         example: '2015-08-20T14:11:00.000Z'
       effective_time_end:
         type: string
         format: datetime
         description: >-
           End time of operation.
-        minLength: 25
-        maxLength: 25
+        minLength: 24
+        maxLength: 24
         example: '2015-08-20T15:00:00.000Z'
 
 
-  JSendGridCellOperatorResponse:
-    type: object
-    properties:
-      status:
-        type: string
-        minLength: 1
-        maxLength: 100
-      sync_token:
-        type: integer
-        minimum: 0
-        description: The zxid, which is a long (64-bit) integer
-      data:
-        type: object
-        format: json
-        properties:
-          version:
-            type: integer
-          timestamp:
-            type: string
-            format: datetime
-            description: >-
-              Forcing ms resolution and UTC only.
-            minLength: 25
-            maxLength: 25
-            example: '2015-08-20T03:14:32.819Z'
-          operators:
-            type: array
-            minItems: 0
-            maxItems: 1000
-            items:
-              $ref: '#/definitions/GridCellOperatorResponse'
 
 # Added by API Auto Mocking Plugin
 host: 35.193.160.127:8121
