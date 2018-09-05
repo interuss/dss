@@ -34,7 +34,11 @@ echo "syncLimit=$ZOO_SYNC_LIMIT" >> "$ZOO_CONFIG"
 echo "maxClientCnxns=$ZOO_MAX_CLIENT_CNXNS" >> "$ZOO_CONFIG"
 
 for server in $ZOO_SERVERS; do
-    echo "$server" >> "$ZOO_CONFIG"
+    if [[ $server = "server.${ZOO_MY_ID}"* ]]; then
+        echo "$server" | sed 's/=[0-9.]*:/=0.0.0.0:/' >> "$ZOO_CONFIG"
+    else
+        echo "$server" >> "$ZOO_CONFIG"
+    fi
 done
 
 # Write myid
