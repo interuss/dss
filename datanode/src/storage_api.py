@@ -524,8 +524,8 @@ def _ValidateCoordinates(csv):
   log.debug('Split coordinates to %s and passed early validation...', coords)
   for a, b in _Pairwise(coords):
     try:
-      lon = float(a)
-      lat = float(b)
+      lat = float(a)
+      lon = float(b)
       if lat >= 90 or lat <= -90 or lon >= 180 or lon <= -180:
         raise ValueError
     except ValueError:
