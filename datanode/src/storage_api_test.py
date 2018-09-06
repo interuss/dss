@@ -1,4 +1,4 @@
-'''Test of the InterUSS Platform Data Node storage API server.
+"""Test of the InterUSS Platform Data Node storage API server.
 
 Copyright 2018 Google LLC
 
@@ -13,7 +13,7 @@ distributed under the License is distributed on an 'AS IS' BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-'''
+"""
 import json
 import unittest
 import storage_api

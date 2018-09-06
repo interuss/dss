@@ -69,7 +69,9 @@ import storage_interface
 # VERSION = 'TCL4.0.0'  # Specific branch for TCL4 only
 # VERSION = 'TCL4.0.1'  # Updated slippy format, added SSL
 # VERSION = 'TCL4.0.1.002'  # Updated public key format for env variables
-VERSION = 'TCL4.0.1.004'  # Updated docker startup script
+# VERSION = 'TCL4.0.1.003'  # Updated docker startup script
+VERSION = 'TCL4.0.1.004'  # Fixed slippy validation error
+
 
 TESTID = None
 SCOPE = 'utm.nasa.gov_write.conflictmanagement'
