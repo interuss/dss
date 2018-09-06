@@ -94,13 +94,13 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(1018, j['data']['grid_cells'][0]['y'], 1018)
     self.assertEqual('http://tile.openstreetmap.org/11/1029/1018.png',
                      j['data']['grid_cells'][0]['link'])
-    r = self.app.get('/slippy/10?coords=37.203335,-80.599481')
+    r = self.app.get('/slippy/10?coords=37.408959,-122.053834')
     self.assertEqual(r.status_code, 200)
     j = json.loads(r.data)
     self.assertEqual(10, j['data']['grid_cells'][0]['zoom'])
-    self.assertEqual(282, j['data']['grid_cells'][0]['x'])
+    self.assertEqual(164, j['data']['grid_cells'][0]['x'])
     self.assertEqual(397, j['data']['grid_cells'][0]['y'])
-    self.assertEqual('http://tile.openstreetmap.org/10/282/397.png',
+    self.assertEqual('http://tile.openstreetmap.org/10/164/397.png',
                      j['data']['grid_cells'][0]['link'])
     r = self.app.get('/slippy/11?coords=37.203335,-80.599481')
     self.assertEqual('http://tile.openstreetmap.org/11/565/795.png',

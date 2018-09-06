@@ -78,6 +78,7 @@ SCOPE = 'utm.nasa.gov_write.conflictmanagement'
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('InterUSS_DataNode_StorageAPI')
+log.setLevel(logging.DEBUG)
 wrapper = None  # Global object API uses for access
 webapp = Flask(__name__)  # Global object serving the API
 
@@ -108,10 +109,6 @@ def ConvertCoordinatesToSlippy(zoom):
     or the nominal 4xx error codes as necessary.
   """
   log.info('Convert coordinates to slippy instantiated for %sz...', zoom)
-  tiles = []
-  coords = _GetRequestParameter('coords', '')
-  log.debug('Retrieved coords from web params and split to %s...', coords)
-  coordinates = _ValidateCoordinates(coords)
   try:
     zoom = int(zoom)
     if zoom < 0 or zoom > 20:
@@ -120,12 +117,16 @@ def ConvertCoordinatesToSlippy(zoom):
     log.error('Invalid parameters for zoom %s, must be integer 0-20...', zoom)
     abort(status.HTTP_400_BAD_REQUEST,
           'Invalid parameters for zoom, must be integer 0-20.')
+  tiles = []
+  coords = _GetRequestParameter('coords', '')
+  log.debug('Retrieved coords from web params and split to %s...', coords)
+  coordinates = _ValidateCoordinates(coords)
   if not coordinates:
-    log.error('Invalid coords %s, must be a CSV of lat,lon...', zoom)
+    log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
     abort(status.HTTP_400_BAD_REQUEST,
           'Invalid coords, must be a CSV of lat,lon,lat,lon...')
   for c in coordinates:
-    x, y = _ConvertPointToTile(zoom, c[1], c[0])
+    x, y = _ConvertPointToTile(zoom, c[0], c[1])
     link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
     tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
     if tile not in tiles:
@@ -532,7 +533,7 @@ def _ValidateCoordinates(csv):
         raise ValueError
     except ValueError:
       return None
-    result.append((lon, lat))
+    result.append((lat, lon))
   return result
 
 
@@ -543,8 +544,9 @@ def _Pairwise(it):
     yield next(it), next(it)
 
 
-def _ConvertPointToTile(zoom, longitude, latitude):
+def _ConvertPointToTile(zoom, latitude, longitude):
   """Actual calculation from lat/lon to tile at specific zoom."""
+  log.debug('_ConvertPointToTile for %.3f, %.3f...', latitude, longitude)
   latitude_rad = math.radians(latitude)
   n = 2.0**zoom
   xtile = int((longitude + 180.0) / 360.0 * n)
