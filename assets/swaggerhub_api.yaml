@@ -362,7 +362,7 @@ definitions:
             type: integer
           timestamp:
             type: string
-            format: datetime
+            format: date-time
             description: >-
               Forcing ms resolution and UTC only.
             minLength: 24
@@ -409,7 +409,7 @@ definitions:
         maximum: 99999
       timestamp:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           Forcing ms resolution and UTC only.
         minLength: 24
@@ -417,7 +417,7 @@ definitions:
         example: '2015-08-20T10:43:18.937Z'
       minimum_operation_timestamp:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           Earliest operation start time in this grid cell.
         minLength: 24
@@ -425,7 +425,7 @@ definitions:
         example: '2015-08-20T14:11:00.000Z'
       maximum_operation_timestamp:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           Latest operation end time in this grid cell.
         minLength: 24
@@ -482,7 +482,7 @@ definitions:
         maxLength: 200
       effective_time_begin:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           Start time of operation.
         minLength: 24
@@ -490,7 +490,7 @@ definitions:
         example: '2015-08-20T14:11:00.000Z'
       effective_time_end:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           End time of operation.
         minLength: 24
@@ -498,7 +498,7 @@ definitions:
         example: '2015-08-20T15:00:00.000Z'
       timestamp:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           Forcing ms resolution and UTC only.
         minLength: 24
@@ -523,7 +523,7 @@ definitions:
         maxLength: 200
       minimum_operation_timestamp:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           Earliest operation start time in this grid cell.
         minLength: 24
@@ -531,7 +531,7 @@ definitions:
         example: '2015-08-20T14:11:00.000Z'
       maximum_operation_timestamp:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           Latest operation end time in this grid cell.
         minLength: 24
@@ -586,7 +586,7 @@ definitions:
         maxLength: 200
       effective_time_begin:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           Start time of operation.
         minLength: 24
@@ -594,7 +594,7 @@ definitions:
         example: '2015-08-20T14:11:00.000Z'
       effective_time_end:
         type: string
-        format: datetime
+        format: date-time
         description: >-
           End time of operation.
         minLength: 24
