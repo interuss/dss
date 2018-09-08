@@ -1,19 +1,18 @@
 # TCL4 USS to USS Communication and Synchronization Wrapper
 
 This repository contains a simple, open, and API used for separate UAS Service
-Suppliers (USS) to communicate during TCL4 UAS operations, known as the InterUSS
-Platform™. This flexible and distributed system is used to connect multiple USSs
-operating in the same general area to share safety information while protecting
-operator and consumer privacy. The system is focused on facilitating
-communication amongst actively operating USSs with no details about UAS
-operations stored or processed on the InterUSS Platform.
+Suppliers (USS) to communicate during TCL4 UAS operations. This flexible and 
+distributed system is used to connect multiple USSs operating in the same general 
+area to share safety information while protecting operator and consumer privacy. 
+The system is focused on facilitating communication amongst actively operating USSs 
+with no details about UAS operations stored or processed on the InterUSS Platform.
 
 ## NOTE: This is a NASA UTM Project branch specifically for TCL4
-**In the future, this can be a branch or a fork from a publicly-available repo
-of the InterUSS Platform.**
+**In the future, features in this branch could be pulled back into the InterUSS Platform.**
 
 ### Main Differences from the master branch of the InterUSS Platform:
 
+*   This is not the trademarked and baselined version of the InterUSS Platform. It should be used for NASA TCL4 activities only.
 *   GridCellMetaData endpoint is called GridCellOperator.
 *   PUT GridCellOperator now uses a json body of the entire request, rather than form fields
 *   New and different data elements within a Grid Cell Operator:
@@ -47,10 +46,10 @@ of the InterUSS Platform.**
 *   Auditing is available, as all USSs can verify the authorship and addition of
     erroneous conflictions.
 *   Deconfliction is simply defined as no overlapping flights in time and
-    volume.
+    volume. Negotiation is handled via NASA UTM protocols.
 
 For the API specification and online test area, see
-https://app.swaggerhub.com/apis/InterUSS_Platform/data_node_api/tcl4.0.0
+https://app.swaggerhub.com/apis/InterUSS_Platform/data_node_api/tcl4.0.1
 
 ## Sequence for USS information exchange
 
