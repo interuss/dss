@@ -123,7 +123,8 @@ paths:
         in: header
         description: The synchronization token retrieved in the original GET GridCellOperator, which is a long (64-bit) integer
         required: true
-        type: string
+        type: integer
+        format: int64
       - in: body
         name: gridcell_operator
         description: The GridCellOperator information being submitted
@@ -217,7 +218,8 @@ paths:
         description: The synchronization token retrieved in the original GET GridCellOperator, which is a long (64-bit) integer
 
         required: true
-        type: string
+        type: integer
+        format: int64
       - in: body
         name: gridcell_operation
         description: The operation information for the specific GridCell being submitted, useful for creating/updating/deleting a single operation when many operations exist in this GridCell. A USS must have an entry as the operator (/GridCellOperator) in this GridCell already to use this endpoint. 
@@ -349,6 +351,7 @@ definitions:
         maxLength: 100
       sync_token:
         type: integer
+        format: int64
         minimum: 0
         description: The zxid, which is a long (64-bit) integer
       data:
