@@ -31,10 +31,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import datetime
 import json
 import logging
-from dateutil import parser
+
+# Our data structure for the actual metadata stored
+import uss_metadata
 
 # Kazoo is the zookeeper wrapper for python
 from kazoo.client import KazooClient
@@ -52,8 +53,8 @@ USS_BASE_PREFIX = '/uss/gridcells/'
 TEST_BASE_PREFIX = '/test/'
 USS_METADATA_FILE = '/manifest'
 BAD_CHARACTER_CHECK = '\';(){}[]!@#$%^&*|"<>'
-CONNECTION_TIMEOUT = 5.0  # seconds
-LOCK_TIMEOUT = 5.0  # seconds
+CONNECTION_TIMEOUT = 2.5  # seconds
+LOCK_TIMEOUT = 2.5  # seconds
 DEFAULT_CONNECTION = 'localhost:2181'
 GRID_PATH = USS_BASE_PREFIX
 
@@ -165,7 +166,7 @@ class USSMetadataManager(object):
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
         try:
-          m = USSMetadata(content)
+          m = uss_metadata.USSMetadata(content)
           status = 200
           result = {
               'status': 'success',
@@ -216,7 +217,7 @@ class USSMetadataManager(object):
         #    but this check fails early and fast
         if str(metadata.last_modified_transaction_id) == str(sync_token):
           try:
-            m = USSMetadata(content)
+            m = uss_metadata.USSMetadata(content)
             log.debug('Setting metadata for %s...', uss_id)
             if not m.upsert_operator(uss_id, ws_scope, operation_format,
                                      operation_ws, earliest_operation,
@@ -257,7 +258,7 @@ class USSMetadataManager(object):
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
         try:
-          m = USSMetadata(content)
+          m = uss_metadata.USSMetadata(content)
           m.remove_operator(uss_id)
           # TODO(pelletierb): Automatically retry on delete
           status = self._set_raw(z, x, y, m, uss_id,
@@ -426,93 +427,3 @@ class USSMetadataManager(object):
       return False
 
 
-class USSMetadata(object):
-  """Data structure for the metadata stored for USS entries in a GridCell.
-
-  Format: {version: <version>, timestamp: <last_updated>, operators:
-    [{uss: <ussid>, scope: <used_for_obtaining_oauth_tokens>,
-    version: <last_version_for_this_uss>, timestamp: <last_updated>,
-    operation_endpoint: <endpoint_to_retrieve_operations_in_this_grid>,
-    operation_format: <output_format_of_uas_operations>,
-    minimum_operation_timestamp: <lowest_start_time_of_operations_in_this_cell>,
-    maximum_operation_timestamp: <highest_end_time_of_operations_in_this_cell>
-    },
-      ...other USSs as appropriate... ]
-  }
-
-  """
-
-  def __init__(self, content=None):
-    # Parse the metadata or create a new one if none
-    if content:
-      m = json.loads(content)
-      self.version = m['version']
-      self.timestamp = m['timestamp']
-      self.operators = m['operators']
-    else:
-      self.version = 0
-      self.timestamp = datetime.datetime.now().isoformat()
-      self.operators = []
-
-  def __str__(self):
-    return str(self.to_json())
-
-  def to_json(self):
-    return {
-        'version': self.version,
-        'timestamp': self.timestamp,
-        'operators': self.operators
-    }
-
-  def upsert_operator(self, uss_id, ws_scope, operation_format, operation_ws,
-                      earliest_operation, latest_operation):
-    """Inserts or updates an operation, with uss_id as the key.
-
-    Args:
-      uss_id: plain text identifier for the USS,
-      ws_scope: scope to use to obtain OAuth token,
-      operation_format: output format for operation ws (i.e. NASA, GUTMA),
-      operation_ws: submitting USS endpoint where all flights in
-        this cell can be retrieved from,
-      earliest_operation: lower bound of active or planned flight timestamp,
-        used for quick filtering conflicts.
-      latest_operation: upper bound of active or planned flight timestamp,
-        used for quick filtering conflicts.
-    Returns:
-      true if valid, false if not
-    """
-    # Remove the existing operator, if any
-    self.remove_operator(uss_id)
-    # clean up the datetimestamps, setting to nothing if invalid rather
-    #   than failing, as they are optional
-    try:
-      earliest_operation = parser.parse(earliest_operation)
-      latest_operation = parser.parse(latest_operation)
-      if earliest_operation >= latest_operation:
-        raise ValueError
-    except (TypeError, ValueError, OverflowError):
-      log.error('Invalid date format/values for operators %s, %s',
-                earliest_operation, latest_operation)
-      return False
-    # Now add the new record
-    operator = {
-        'uss': uss_id,
-        'scope': ws_scope,
-        'version': self.version,
-        'timestamp': datetime.datetime.now().isoformat(),
-        'operation_endpoint': operation_ws,
-        'operation_format': operation_format,
-        'minimum_operation_timestamp': earliest_operation.isoformat(),
-        'maximum_operation_timestamp': latest_operation.isoformat()
-    }
-    self.operators.append(operator)
-    self.timestamp = datetime.datetime.now().isoformat()
-    return True
-
-  def remove_operator(self, uss_id):
-    self.version += 1
-    # Remove the existing operator, if any
-    self.operators[:] = [
-        d for d in self.operators if d.get('uss').upper() != uss_id.upper()
-    ]
-    self.timestamp = datetime.datetime.now().isoformat()

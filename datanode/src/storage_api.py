@@ -64,7 +64,8 @@ import storage_interface
 # VERSION = '0.3.0'  # Changed to locally verifying JWT, removing NASA FIMS link
 # VERSION = '0.3.1'  # Added token validation option in test mode
 # VERSION = '0.4.0'  # Changed data structure to match v1 of InterUSS Platform
-VERSION = '1.0.0'  # Initial, approved release deployed on GitHub
+# VERSION = '1.0.0'  # Initial, approved release deployed on GitHub
+VERSION = '1.0.1.001'  # Bug fixes for slippy, dates, and OAuth key
 
 TESTID = None
 
@@ -103,7 +104,6 @@ def Introspect():
 @webapp.route('/slippy/<zoom>', methods=['GET'])
 def ConvertCoordinatesToSlippy(zoom):
   """Converts an CSV of coords to slippy tile format at the specified zoom.
-
   Args:
     zoom: zoom level to use for encapsulating the tiles
     Plus posted webarg coords: csv of lon,lat,long,lat,etc.
@@ -112,11 +112,6 @@ def ConvertCoordinatesToSlippy(zoom):
     or the nominal 4xx error codes as necessary.
   """
   log.info('Convert coordinates to slippy instantiated for %sz...', zoom)
-  tiles = []
-  links = []
-  coords = _GetRequestParameter('coords', '')
-  log.debug('Retrieved coords from web params and split to %s...', coords)
-  coordinates = _ValidateCoordinates(coords)
   try:
     zoom = int(zoom)
     if zoom < 0 or zoom > 20:
@@ -125,26 +120,26 @@ def ConvertCoordinatesToSlippy(zoom):
     log.error('Invalid parameters for zoom %s, must be integer 0-20...', zoom)
     abort(status.HTTP_400_BAD_REQUEST,
           'Invalid parameters for zoom, must be integer 0-20.')
+  tiles = []
+  coords = _GetRequestParameter('coords', '')
+  log.debug('Retrieved coords from web params and split to %s...', coords)
+  coordinates = _ValidateCoordinates(coords)
   if not coordinates:
-    log.error('Invalid coords %s, must be a CSV of lon,lat...', zoom)
+    log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
     abort(status.HTTP_400_BAD_REQUEST,
-          'Invalid coords, must be a CSV of lon,lat,lon,lat...')
+          'Invalid coords, must be a CSV of lat,lon,lat,lon...')
   for c in coordinates:
     x, y = _ConvertPointToTile(zoom, c[0], c[1])
-    tile = (zoom, x, y)
+    link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
+    tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
     if tile not in tiles:
       tiles.append(tile)
-    link = 'http://tile.openstreetmap.org/' + str(zoom) + '/' + str(
-        x) + '/' + str(y) + '.png'
-    if link not in links:
-      links.append(link)
   return jsonify({
-      'status': 'success',
-      'data': {
-          'zoom': zoom,
-          'tiles': tiles,
-          'links': links
-      }
+    'status': 'success',
+    'data': {
+      'zoom': zoom,
+      'grid_cells': tiles,
+    }
   })
 
 
@@ -164,7 +159,7 @@ def GridCellMetaDataHandler(zoom, x, y):
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
   """
-  if ('access_token' in request.headers and
+  if ('access_token' in request.headers and TESTID and
     TESTID in request.headers['access_token']):
     uss_id = request.headers['access_token']
   elif TESTID and 'access_token' not in request.headers:
@@ -210,6 +205,11 @@ def _ValidateAccessToken():
   if 'access_token' in request.headers:
     token = request.headers['access_token']
   if secret and token:
+    # ENV variables sometimes don't pass newlines, spec says white space
+    # doesn't matter, but pyjwt cares about it, so fix it
+    secret = secret.replace(' PUBLIC ', '_PLACEHOLDER_')
+    secret = secret.replace(' ', '\n')
+    secret = secret.replace('_PLACEHOLDER_', ' PUBLIC ')
     try:
       r = jwt.decode(token, secret, algorithms='RS256')
     except jwt.ExpiredSignatureError:
@@ -389,13 +389,13 @@ def _ValidateCoordinates(csv):
   log.debug('Split coordinates to %s and passed early validation...', coords)
   for a, b in _Pairwise(coords):
     try:
-      lon = float(a)
-      lat = float(b)
+      lat = float(a)
+      lon = float(b)
       if lat >= 90 or lat <= -90 or lon >= 180 or lon <= -180:
         raise ValueError
     except ValueError:
       return None
-    result.append((lon, lat))
+    result.append((lat, lon))
   return result
 
 
@@ -406,14 +406,15 @@ def _Pairwise(it):
     yield next(it), next(it)
 
 
-def _ConvertPointToTile(zoom, longitude, latitude):
+def _ConvertPointToTile(zoom, latitude, longitude):
   """Actual calculation from lat/lon to tile at specific zoom."""
+  log.debug('_ConvertPointToTile for %.3f, %.3f...', latitude, longitude)
   latitude_rad = math.radians(latitude)
   n = 2.0**zoom
   xtile = int((longitude + 180.0) / 360.0 * n)
   ytile = int(
-      (1.0 - math.log(math.tan(latitude_rad) +
-                      (1 / math.cos(latitude_rad))) / math.pi) / 2.0 * n)
+    (1.0 - math.log(math.tan(latitude_rad) +
+                    (1 / math.cos(latitude_rad))) / math.pi) / 2.0 * n)
   return xtile, ytile
 
 
