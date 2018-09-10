@@ -35,7 +35,7 @@ echo "maxClientCnxns=$ZOO_MAX_CLIENT_CNXNS" >> "$ZOO_CONFIG"
 
 for server in $ZOO_SERVERS; do
     if [[ $server = "server.${ZOO_MY_ID}"* ]]; then
-        echo "$server" | sed 's/=[0-9.]*:/=0.0.0.0:/' >> "$ZOO_CONFIG"
+      echo "$server" | sed 's/server\.\([0-9]\+\)=[^:]*:/server.\1=0.0.0.0:/'
     else
         echo "$server" >> "$ZOO_CONFIG"
     fi
