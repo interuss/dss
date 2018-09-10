@@ -84,7 +84,9 @@ webapp = Flask(__name__)  # Global object serving the API
 def Status():
   # just a quick status checker, not really a health check
   log.debug('Status handler instantiated...')
-  return _FormatResult({'status': 'success', 'message': 'OK'})
+  return _FormatResult({'status': 'success',
+                        'message': 'OK',
+                        'version': VERSION})
 
 
 @webapp.route('/introspect', methods=['GET'])
