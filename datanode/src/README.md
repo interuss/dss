@@ -4,6 +4,8 @@
     one class of interest: USSMetadataManager with get/set/delete operations and
     an initialization with a Zookeeper connection string.
 
+*   uss_metadata.py - information wrapper for the actual JSON data structure.
+
 *   storage_api.py - Web Service API for the Zookeeper library. It will
     start a web service and serve GET/PUT/DELETE on
     /GridCellMetaData/<z>/<x>/<y>, which wraps directly to the

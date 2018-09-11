@@ -227,10 +227,17 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       token = s['sync_token']
       self.assertEqual(s['status'], 'success')
       o = s['data']['operators'][0]
-      self.assertEqual(parser.parse(test[0]),
-                       parser.parse(o['minimum_operation_timestamp']))
-      self.assertEqual(parser.parse(test[1]),
-                       parser.parse(o['maximum_operation_timestamp']))
+      # Fix up the test cases to compare, this isn't what is sent to the api
+      mintest = test[0]
+      maxtest = test[1]
+      if len(maxtest) <= 10:
+        maxtest = maxtest + 'T00:00:00Z'
+      if not ('+' in mintest[-6:] or '-' in mintest[-6:] or 'Z' in mintest[-6:]):
+        mintest += 'Z'
+      if not ('+' in maxtest[-6:] or '-' in maxtest[-6:] or 'Z' in maxtest[-6:]):
+        maxtest += 'Z'
+      self.assertAlmostEqual(0, (parser.parse(mintest) - parser.parse(o['minimum_operation_timestamp'])).total_seconds(), 0)
+      self.assertAlmostEqual(0, (parser.parse(maxtest) - parser.parse(o['maximum_operation_timestamp'])).total_seconds(), 0)
     # Make sure everything is clean
     self.mm.delete_testdata()
     return

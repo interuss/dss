@@ -51,7 +51,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     result = self.app.get('/introspect?access_token=NOTVALID')
     self.assertEqual(result.status_code, 403)
     result = self.app.get('/introspect', headers={'access_token': 'NOTVALID'})
-    self.assertEqual(result.status_code, 403)
+    self.assertEqual(result.status_code, 400)
 
   def testIntrospectWithExpiredToken(self):
     self.assertIsNotNone(os.environ.get('FIMS_AUTH'))
@@ -67,7 +67,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     # pylint: disable=line-too-long
     self.assertIsNotNone(os.environ.get('FIMS_AUTH'))
     self.assertIsNotNone(os.environ.get('INTERUSS_PUBLIC_KEY'))
-    endpoint = 'https://utmbeta.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials'
+    endpoint = 'https://utmalpha.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials'
     headers = {'Authorization': 'Basic ' + os.environ.get('FIMS_AUTH', '')}
     r = requests.post(endpoint, headers=headers)
     self.assertEqual(r.status_code, 200)
@@ -88,9 +88,9 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(result.status_code, 400)
     result = self.app.get('/slippy/11?coords=1,1a')
     self.assertEqual(result.status_code, 400)
-    result = self.app.get('/slippy/11?coords=181,1')
+    result = self.app.get('/slippy/11?coords=91,1')
     self.assertEqual(result.status_code, 400)
-    result = self.app.get('/slippy/11?coords=1,91')
+    result = self.app.get('/slippy/11?coords=1,181')
     self.assertEqual(result.status_code, 400)
     result = self.app.get('/slippy/21?coords=1,1')
     self.assertEqual(result.status_code, 400)
@@ -101,35 +101,35 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     r = self.app.get('/slippy/11?coords=1,1')
     self.assertEqual(r.status_code, 200)
     j = json.loads(r.data)
-    self.assertEqual(j['data']['tiles'][0], [11, 1029, 1018])
-    self.assertEqual(j['data']['links'][0],
-                    'http://tile.openstreetmap.org/11/1029/1018.png')
-    r = self.app.get('/slippy/10?coords=37.203335,-80.599481')
-    r = self.app.get('/slippy/10?coords=37.203335,-80.599481')
+    self.assertEqual(11, j['data']['grid_cells'][0]['zoom'])
+    self.assertEqual(1029, j['data']['grid_cells'][0]['x'])
+    self.assertEqual(1018, j['data']['grid_cells'][0]['y'])
+    self.assertEqual('http://tile.openstreetmap.org/11/1029/1018.png',
+                     j['data']['grid_cells'][0]['link'])
+    r = self.app.get('/slippy/10?coords=37.408959,-122.053834')
     self.assertEqual(r.status_code, 200)
     j = json.loads(r.data)
-    self.assertEqual(j['data']['tiles'][0], [10, 617, 919])
-    self.assertEqual(j['data']['links'][0],
-                    'http://tile.openstreetmap.org/10/617/919.png')
+    self.assertEqual(10, j['data']['grid_cells'][0]['zoom'])
+    self.assertEqual(164, j['data']['grid_cells'][0]['x'])
+    self.assertEqual(397, j['data']['grid_cells'][0]['y'])
+    self.assertEqual('http://tile.openstreetmap.org/10/164/397.png',
+                     j['data']['grid_cells'][0]['link'])
     r = self.app.get('/slippy/11?coords=37.203335,-80.599481')
-    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [11, 1235, 1838])
+    self.assertEqual('http://tile.openstreetmap.org/11/565/795.png',
+                     json.loads(r.data)['data']['grid_cells'][0]['link'])
     r = self.app.get('/slippy/12?coords=37.203335,-80.599481')
-    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [12, 2471, 3676])
+    self.assertEqual('http://tile.openstreetmap.org/12/1130/1591.png',
+                     json.loads(r.data)['data']['grid_cells'][0]['link'])
     r = self.app.get('/slippy/13?coords=37.203335,-80.599481')
-    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [13, 4942, 7353])
-    r = self.app.get('/slippy/14?coords=37.203335,-80.599481')
-    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [14, 9885, 14706])
-    r = self.app.get('/slippy/15?coords=37.203335,-80.599481')
-    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [15, 19770, 29413])
-    r = self.app.get('/slippy/16?coords=37.203335,-80.599481')
-    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [16, 39540, 58826])
-    r = self.app.get('/slippy/17?coords=37.203335,-80.599481')
-    self.assertEqual(json.loads(r.data)['data']['tiles'][0], [17, 79081, 117653])
-    r = self.app.get('/slippy/11?coords=0,0,1,1')
-    self.assertEqual(r.status_code, 200)
+    self.assertEqual('http://tile.openstreetmap.org/13/2261/3182.png',
+                     json.loads(r.data)['data']['grid_cells'][0]['link'])
     j = json.loads(r.data)
-    self.assertEqual(len(j['data']['tiles']), 2)
-    self.assertEqual(len(j['data']['links']), 2)
+    self.assertEqual(
+      j, json.loads(self.app.get(
+        '/slippy/13?coords=37.203335,-80.599481,37.20334,-80.59948').data))
+    r = self.app.get('/slippy/11?coords=0,0,1,1,2,2,3,3')
+    self.assertEqual(r.status_code, 200)
+    self.assertEqual(len(json.loads(r.data)['data']['grid_cells']), 4)
 
   def testMultipleSuccessfulEmptyRandomGets(self):
     self.CheckEmptyGridCell(self.app.get('/GridCellMetaData/1/1/1'))
