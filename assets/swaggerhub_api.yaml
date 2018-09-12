@@ -25,7 +25,7 @@ info:
 
     # Try it out
 
-    The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with an access_token, use a NASA FIMS valid OAuth token or use 'tcl4box' (which works only in the sandbox environment). You can also use additional info at the end of the token to simulate multiple USSs (i.e. 'tcl4box-uss1').
+    The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with Authorization, use a NASA FIMS valid OAuth token or use 'tcl4box' (which works only in the sandbox environment). You can also use additional info at the end of the token to simulate multiple USSs (i.e. 'tcl4box-uss1').
 
   version: "tcl4.0.1"
   title: InterUSS Platform - Data Node Stateless API
@@ -76,11 +76,11 @@ paths:
       produces:
       - application/json
       parameters:
-      - name: access_token
+      - name: Authorization
         in: header
         description: Valid OAuth access token
         type: string
-        default: tcl4box-uss1
+        default: Bearer tcl4box-uss1
         required: true
       - name: zoom
         in: path
@@ -113,12 +113,12 @@ paths:
       produces:
       - application/json
       parameters:
-      - name: access_token
+      - name: Authorization
         in: header
         description: Valid OAuth access token
-        required: true
-        default: tcl4box-uss1
         type: string
+        default: Bearer tcl4box-uss1
+        required: true
       - name: sync_token
         in: header
         description: The synchronization token retrieved in the original GET GridCellOperator, which is a long (64-bit) integer
@@ -166,12 +166,12 @@ paths:
       produces:
       - application/json
       parameters:
-      - name: access_token
+      - name: Authorization
         in: header
         description: Valid OAuth access token
-        required: true
-        default: tcl4box-uss1
         type: string
+        default: Bearer tcl4box-uss1
+        required: true
       - name: zoom
         in: path
         description: Zoom level in slippy tile format
@@ -207,12 +207,12 @@ paths:
       produces:
       - application/json
       parameters:
-      - name: access_token
+      - name: Authorization
         in: header
         description: Valid OAuth access token
-        required: true
-        default: tcl4box-uss1
         type: string
+        default: Bearer tcl4box-uss1
+        required: true
       - name: sync_token
         in: header
         description: The synchronization token retrieved in the original GET GridCellOperator, which is a long (64-bit) integer
@@ -266,12 +266,12 @@ paths:
       produces:
       - application/json
       parameters:
-      - name: access_token
+      - name: Authorization
         in: header
         description: Valid OAuth access token
-        required: true
-        default: tcl4box-uss1
         type: string
+        default: Bearer tcl4box-uss1
+        required: true
       - name: zoom
         in: path
         description: Zoom level in slippy tile format
