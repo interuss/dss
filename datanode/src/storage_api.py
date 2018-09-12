@@ -65,7 +65,8 @@ import storage_interface
 # VERSION = '0.3.1'  # Added token validation option in test mode
 # VERSION = '0.4.0'  # Changed data structure to match v1 of InterUSS Platform
 # VERSION = '1.0.0'  # Initial, approved release deployed on GitHub
-VERSION = '1.0.1.001'  # Bug fixes for slippy, dates, and OAuth key
+# VERSION = '1.0.1.001'  # Bug fixes for slippy, dates, and OAuth key
+VERSION = '1.0.1.002'  # Standardize OAuth Authorization header, docker fix
 
 TESTID = None
 
@@ -161,13 +162,7 @@ def GridCellMetaDataHandler(zoom, x, y):
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
   """
-  if ('access_token' in request.headers and TESTID and
-    TESTID in request.headers['access_token']):
-    uss_id = request.headers['access_token']
-  elif TESTID and 'access_token' not in request.headers:
-    uss_id = TESTID
-  else:
-    uss_id = _ValidateAccessToken()
+  uss_id = _ValidateAccessToken()
   result = {}
   try:
     zoom = int(zoom)
@@ -201,32 +196,47 @@ def _ValidateAccessToken():
   Returns:
     USS identification from OAuth client_id field
   """
-  # TODO(hikevin): Replace with OAuth Discovery and JKWS
-  secret = os.getenv('INTERUSS_PUBLIC_KEY')
-  token = None
-  if 'access_token' in request.headers:
-    token = request.headers['access_token']
-  if secret and token:
-    # ENV variables sometimes don't pass newlines, spec says white space
-    # doesn't matter, but pyjwt cares about it, so fix it
-    secret = secret.replace(' PUBLIC ', '_PLACEHOLDER_')
-    secret = secret.replace(' ', '\n')
-    secret = secret.replace('_PLACEHOLDER_', ' PUBLIC ')
-    try:
-      r = jwt.decode(token, secret, algorithms='RS256')
-    except jwt.ExpiredSignatureError:
-      log.error('Access token has expired.')
-      abort(status.HTTP_401_UNAUTHORIZED,
-            'OAuth access_token is invalid: token has expired.')
-    except jwt.DecodeError:
-      log.error('Access token is invalid and cannot be decoded.')
-      abort(status.HTTP_400_BAD_REQUEST,
-            'OAuth access_token is invalid: token cannot be decoded.')
-    return r['client_id']
+  uss_id = None
+  if ('access_token' in request.headers and TESTID and
+    TESTID in request.headers['access_token']) :
+    uss_id = request.headers['access_token']
+  elif ('Authorization' in request.headers and TESTID and
+        TESTID in request.headers['Authorization']):
+    uss_id = request.headers['Authorization']
+  elif (TESTID and 'access_token' not in request.headers and
+        'Authorization' not in request.headers):
+    uss_id = TESTID
   else:
-    log.error('Attempt to access resource without access_token in header.')
-    abort(status.HTTP_403_FORBIDDEN,
-          'Valid OAuth access_token must be provided in header.')
+    # TODO(hikevin): Replace with OAuth Discovery and JKWS
+    secret = os.getenv('INTERUSS_PUBLIC_KEY')
+    token = None
+    if 'Authorization' in request.headers:
+      token = request.headers['Authorization'].replace('Bearer ', '')
+    elif 'access_token' in request.headers:
+      token = request.headers['access_token']
+    if secret and token:
+      # ENV variables sometimes don't pass newlines, spec says white space
+      # doesn't matter, but pyjwt cares about it, so fix it
+      secret = secret.replace(' PUBLIC ', '_PLACEHOLDER_')
+      secret = secret.replace(' ', '\n')
+      secret = secret.replace('_PLACEHOLDER_', ' PUBLIC ')
+      try:
+        r = jwt.decode(token, secret, algorithms='RS256')
+        #TODO(hikevin): Check scope is valid for InterUSS Platform
+        uss_id = r['client_id'] if 'client_id' in r else r['sub']
+      except jwt.ExpiredSignatureError:
+        log.error('Access token has expired.')
+        abort(status.HTTP_401_UNAUTHORIZED,
+              'OAuth access_token is invalid: token has expired.')
+      except jwt.DecodeError:
+        log.error('Access token is invalid and cannot be decoded.')
+        abort(status.HTTP_400_BAD_REQUEST,
+              'OAuth access_token is invalid: token cannot be decoded.')
+    else:
+      log.error('Attempt to access resource without access_token in header.')
+      abort(status.HTTP_403_FORBIDDEN,
+            'Valid OAuth access_token must be provided in header.')
+  return uss_id
 
 
 def _GetGridCellMetaData(zoom, x, y):
