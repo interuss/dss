@@ -23,6 +23,8 @@ fi
 # Generate Zookeeper config
 ZOO_CONFIG="$ZOO_CONF_DIR/zoo.cfg"
 
+echo "quorumListenOnAllIPs=TRUE" >> "$ZOO_CONFIG"
+
 echo "clientPort=$ZOO_PORT" >> "$ZOO_CONFIG"
 echo "dataDir=$ZOO_DATA_DIR" >> "$ZOO_CONFIG"
 echo "dataLogDir=$ZOO_DATA_LOG_DIR" >> "$ZOO_CONFIG"
