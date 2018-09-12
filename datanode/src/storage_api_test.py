@@ -18,7 +18,7 @@ import json
 import unittest
 import storage_api
 ZK_TEST_CONNECTION_STRING = '35.224.64.48:2181,35.188.14.39:2181,35.224.180.72:2181'
-
+TESTID = 'storage-api-test'
 
 class InterUSSStorageAPITestCase(unittest.TestCase):
 
@@ -26,7 +26,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     storage_api.webapp.testing = True
     self.app = storage_api.webapp.test_client()
     storage_api.InitializeConnection(
-        ['-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCase'])
+        ['-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID])
 
   def tearDown(self):
     storage_api.TerminateConnection()
@@ -63,6 +63,20 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         headers={'sync_token': s})
     self.assertEqual(result.status_code, 200)
 
+  def testValidAuthorizationTokensInTest(self):
+    for field in ('access_token', 'Authorization'):
+      for token in (TESTID, TESTID + 'a', '123' + TESTID):
+        result = self.app.get('/GridCellOperator/1/1/1',
+                              headers={field: token})
+        self.assertEqual(200, result.status_code)
+
+  def testInvalidAuthorizationTokensInTest(self):
+    for field in ('Authorization', 'access_token'):
+      for token in ('not_valid', '', None):
+        result = self.app.get('/GridCellOperator/1/1/1',
+                              headers={field: token})
+        self.assertAlmostEqual(400, result.status_code, delta=3)
+
   def testSlippyConversionWithInvalidData(self):
     result = self.app.get('/slippy')
     self.assertEqual(result.status_code, 404)
@@ -76,9 +90,9 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(result.status_code, 400)
     result = self.app.get('/slippy/11?coords=1,1a')
     self.assertEqual(result.status_code, 400)
-    result = self.app.get('/slippy/11?coords=181,1')
+    result = self.app.get('/slippy/11?coords=1,181')
     self.assertEqual(result.status_code, 400)
-    result = self.app.get('/slippy/11?coords=1,91')
+    result = self.app.get('/slippy/11?coords=91,1')
     self.assertEqual(result.status_code, 400)
     result = self.app.get('/slippy/21?coords=1,1')
     self.assertEqual(result.status_code, 400)
@@ -501,7 +515,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperator/1/1/1',
         json=joper,
         headers={'sync_token': s,
-                 'access_token': 'InterUSSStorageAPITestCase-1'})
+                 'access_token': TESTID + '-1'})
     self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
     s = j['sync_token']
@@ -510,7 +524,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperator/1/1/1',
         json=joper,
         headers={'sync_token': s,
-                 'access_token': 'InterUSSStorageAPITestCase-2'})
+                 'access_token': TESTID + '-2'})
     self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
     s = j['sync_token']
@@ -519,7 +533,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperator/1/1/1',
         json=joper,
         headers={'sync_token': s,
-                 'access_token': 'InterUSSStorageAPITestCase-3'})
+                 'access_token': TESTID + '-3'})
     self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
     s = j['sync_token']
@@ -626,7 +640,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
   def testVerbose(self):
     storage_api.InitializeConnection([
-      '-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCase',
+      '-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID,
       '-v'
     ])
 

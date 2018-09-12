@@ -70,7 +70,8 @@ import storage_interface
 # VERSION = 'TCL4.0.1'  # Updated slippy format, added SSL
 # VERSION = 'TCL4.0.1.002'  # Updated public key format for env variables
 # VERSION = 'TCL4.0.1.003'  # Updated docker startup script
-VERSION = 'TCL4.0.1.004'  # Fixed slippy validation error
+# VERSION = 'TCL4.0.1.004'  # Fixed slippy validation error
+VERSION = 'TCL4.0.1.005'  # Added Authorization as a valid JWT field
 
 
 TESTID = None
@@ -156,13 +157,7 @@ def GridCellOperatorHandler(zoom, x, y):
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
   """
-  if ('access_token' in request.headers and TESTID and
-      TESTID in request.headers['access_token']):
-    uss_id = request.headers['access_token']
-  elif TESTID and 'access_token' not in request.headers:
-    uss_id = TESTID
-  else:
-    uss_id = _ValidateAccessToken()
+  uss_id = _ValidateAccessToken()
   result = {}
   try:
     zoom = int(zoom)
@@ -202,13 +197,7 @@ def GridCellOperationHandler(zoom, x, y, gufi):
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
   """
-  if ('access_token' in request.headers and TESTID and
-      TESTID in request.headers['access_token']):
-    uss_id = request.headers['access_token']
-  elif TESTID and 'access_token' not in request.headers:
-    uss_id = TESTID
-  else:
-    uss_id = _ValidateAccessToken()
+  uss_id = _ValidateAccessToken()
   result = {}
   try:
     zoom = int(zoom)
@@ -239,39 +228,52 @@ def _ValidateAccessToken():
   Returns:
     USS identification from OAuth client_id field
   """
-  # TODO(hikevin): Replace with OAuth Discovery and JKWS
-  secret = os.getenv('INTERUSS_PUBLIC_KEY')
-  token = None
-  if 'access_token' in request.headers:
-    token = request.headers['access_token']
-  if secret and token:
-    # ENV variables sometimes don't pass newlines, spec says white space
-    # doesn't matter, but pyjwt cares about it, so fix it
-    secret = secret.replace(' PUBLIC ', '_PLACEHOLDER_')
-    secret = secret.replace(' ', '\n')
-    secret = secret.replace('_PLACEHOLDER_', ' PUBLIC ')
-    try:
-      r = jwt.decode(token, secret, algorithms='RS256')
-      if SCOPE in r['scope']:
-        return r['sub']
-      else:
-        log.error('%s not in scope %s', SCOPE, r['scope'])
-        abort(status.HTTP_401_UNAUTHORIZED,
-              'OAuth access_token is invalid: '
-              'scope not valid for conflict management.')
-    except jwt.ExpiredSignatureError:
-      log.error('Access token has expired.')
-      abort(status.HTTP_401_UNAUTHORIZED,
-            'OAuth access_token is invalid: token has expired.')
-    except jwt.DecodeError:
-      log.error('Access token is invalid and cannot be decoded.')
-      abort(status.HTTP_400_BAD_REQUEST,
-            'OAuth access_token is invalid: token cannot be decoded.')
+  uss_id = None
+  if ('access_token' in request.headers and TESTID and
+      TESTID in request.headers['access_token']) :
+    uss_id = request.headers['access_token']
+  elif ('Authorization' in request.headers and TESTID and
+      TESTID in request.headers['Authorization']):
+    uss_id = request.headers['Authorization']
+  elif (TESTID and 'access_token' not in request.headers and
+        'Authorization' not in request.headers):
+    uss_id = TESTID
   else:
-    log.error('Attempt to access resource without access_token in header.')
-    abort(status.HTTP_403_FORBIDDEN,
-          'Valid OAuth access_token must be provided in header.')
-
+    # TODO(hikevin): Replace with OAuth Discovery and JKWS
+    secret = os.getenv('INTERUSS_PUBLIC_KEY')
+    token = None
+    if 'Authorization' in request.headers:
+      token = request.headers['Authorization'].replace('Bearer ', '')
+    elif 'access_token' in request.headers:
+      token = request.headers['access_token']
+    if secret and token:
+      # ENV variables sometimes don't pass newlines, spec says white space
+      # doesn't matter, but pyjwt cares about it, so fix it
+      secret = secret.replace(' PUBLIC ', '_PLACEHOLDER_')
+      secret = secret.replace(' ', '\n')
+      secret = secret.replace('_PLACEHOLDER_', ' PUBLIC ')
+      try:
+        r = jwt.decode(token, secret, algorithms='RS256')
+        if SCOPE in r['scope']:
+          uss_id = r['sub']
+        else:
+          log.error('%s not in scope %s', SCOPE, r['scope'])
+          abort(status.HTTP_401_UNAUTHORIZED,
+                'OAuth access_token is invalid: '
+                'scope not valid for conflict management.')
+      except jwt.ExpiredSignatureError:
+        log.error('Access token has expired.')
+        abort(status.HTTP_401_UNAUTHORIZED,
+              'OAuth access_token is invalid: token has expired.')
+      except jwt.DecodeError:
+        log.error('Access token is invalid and cannot be decoded.')
+        abort(status.HTTP_400_BAD_REQUEST,
+              'OAuth access_token is invalid: token cannot be decoded.')
+    else:
+      log.error('Attempt to access resource without access_token in header.')
+      abort(status.HTTP_403_FORBIDDEN,
+            'Valid OAuth access_token must be provided in header.')
+  return uss_id
 
 def _GetGridCellOperator(zoom, x, y):
   """Provides an instantaneous snapshot of operators for a specific GridCell.
