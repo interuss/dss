@@ -269,6 +269,14 @@ def _ValidateAccessToken():
         log.error('Access token is invalid and cannot be decoded.')
         abort(status.HTTP_400_BAD_REQUEST,
               'OAuth access_token is invalid: token cannot be decoded.')
+      except jwt.ImmatureSignatureError:
+        log.error('Access token nbf claim represents a time in the future.')
+        abort(status.HTTP_400_BAD_REQUEST,
+              'OAuth access_token is invalid: nbf claim represents a time in the future.')
+      except:
+        log.error('Unknown error processing JWT.')
+        abort(status.HTTP_400_BAD_REQUEST,
+              'OAuth access_token is invalid: unknown error.')        
     else:
       log.error('Attempt to access resource without access_token in header.')
       abort(status.HTTP_403_FORBIDDEN,
