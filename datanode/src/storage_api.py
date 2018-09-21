@@ -71,7 +71,8 @@ import storage_interface
 # VERSION = 'TCL4.0.1.002'  # Updated public key format for env variables
 # VERSION = 'TCL4.0.1.003'  # Updated docker startup script
 # VERSION = 'TCL4.0.1.004'  # Fixed slippy validation error
-VERSION = 'TCL4.0.1.005'  # Added Authorization as a valid JWT field
+# VERSION = 'TCL4.0.1.005'  # Added Authorization as a valid JWT field
+VERSION = 'TCL4.0.1.006'  # Corrected 404 error code text
 
 
 TESTID = None
