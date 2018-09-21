@@ -175,7 +175,7 @@ class USSMetadataManager(object):
               'data': m.to_json()
           }
         except ValueError:
-          status = 424
+          status = 412
       else:
         status = 404
     else:
@@ -233,7 +233,7 @@ class USSMetadataManager(object):
               raise ValueError
             status = self._set_raw(z, x, y, m, uss_id, sync_token)
           except ValueError:
-            status = 424
+            status = 412
         else:
           status = 409
       else:
@@ -285,7 +285,7 @@ class USSMetadataManager(object):
               raise ValueError
             status = self._set_raw(z, x, y, m, uss_id, sync_token)
           except ValueError:
-            status = 424
+            status = 412
         else:
           status = 409
       else:
@@ -325,7 +325,7 @@ class USSMetadataManager(object):
           else:
             status = 404
         except ValueError:
-          status = 424
+          status = 412
       else:
         status = 404
     else:
@@ -369,7 +369,7 @@ class USSMetadataManager(object):
           else:
             status = 404
         except ValueError:
-          status = 424
+          status = 412
       else:
         status = 404
     else:
@@ -486,7 +486,7 @@ class USSMetadataManager(object):
           'message':
               'Content in metadata has been updated since provided sync token.'
       }
-    elif status == 424:
+    elif status == 412:
       result = {
           'status':
               'fail',
