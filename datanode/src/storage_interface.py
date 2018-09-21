@@ -469,13 +469,13 @@ class USSMetadataManager(object):
       result = {
           'status': 'fail',
           'code': status,
-          'message': 'Unable to pull metadata from lock system.'
+          'message': 'Unable to find metadata in uss discovery platform.'
       }
     elif status == 408:
       result = {
           'status': 'fail',
           'code': status,
-          'message': 'Timeout trying to get lock.'
+          'message': 'Timeout trying to update metadata information.'
       }
     elif status == 409:
       result = {
