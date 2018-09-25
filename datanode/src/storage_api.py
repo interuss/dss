@@ -72,7 +72,8 @@ import storage_interface
 # VERSION = 'TCL4.0.1.003'  # Updated docker startup script
 # VERSION = 'TCL4.0.1.004'  # Fixed slippy validation error
 # VERSION = 'TCL4.0.1.005'  # Added Authorization as a valid JWT field
-VERSION = 'TCL4.0.1.006'  # Corrected error codes and text
+#VERSION = 'TCL4.0.1.006'  # Corrected error codes and text
+VERSION = 'TCL4.0.1.007'  # Fixed non-tz aware dates and version in operations
 
 
 TESTID = None

@@ -17,7 +17,7 @@ limitations under the License.
 import json
 import unittest
 import storage_api
-ZK_TEST_CONNECTION_STRING = '35.224.64.48:2181,35.188.14.39:2181,35.224.180.72:2181'
+ZK_TEST_CONNECTION_STRING = '35.225.221.52:2181,35.188.14.39:2181,35.224.180.72:2181'
 TESTID = 'storage-api-test'
 
 class InterUSSStorageAPITestCase(unittest.TestCase):
@@ -636,7 +636,6 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
                   [d['operation_signature'] for d in o['operations']])
     self.assertIn(1, [d['version'] for d in o['operations']])
     self.assertIn(3, [d['version'] for d in o['operations']])
-    print(j)
 
   def testVerbose(self):
     storage_api.InitializeConnection([

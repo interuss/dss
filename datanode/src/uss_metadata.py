@@ -172,7 +172,11 @@ class USSMetadata(object):
     self.remove_operation(uss_id, gufi)
     try:
       effective_time_begin = parser.parse(begin)
+      if effective_time_begin.tzinfo is None:
+        effective_time_begin = effective_time_begin.replace(tzinfo=pytz.utc)
       effective_time_end = parser.parse(end)
+      if effective_time_end.tzinfo is None:
+        effective_time_end = effective_time_end.replace(tzinfo=pytz.utc)
       if effective_time_begin >= effective_time_end:
         raise ValueError
     except (TypeError, ValueError, OverflowError):
@@ -212,6 +216,7 @@ class USSMetadata(object):
           d for d in oper['operations'] if d.get('gufi').upper() != gufi.upper()
         ]
         found = (len(oper['operations']) == num_operations - 1)
+        oper['version'] = self.version
         oper['timestamp'] = self.format_ts()
     return found
 

@@ -21,7 +21,7 @@ from dateutil import parser
 from kazoo.handlers.threading import KazooTimeoutError
 
 import storage_interface
-ZK_TEST_CONNECTION_STRING = '35.224.64.48:2181,35.188.14.39:2181,35.224.180.72:2181'
+ZK_TEST_CONNECTION_STRING = '35.225.221.52:2181,35.188.14.39:2181,35.224.180.72:2181'
 PARALLEL_WORKERS = 10
 
 
@@ -93,8 +93,6 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     r = self.mm.get(18, 2**18 - 1, 2**10 - 1)
     self.assertEqual(r['status'], 'success')
     self.assertEqual(r['data']['version'], 0)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
 
   def testPositiveGetSetDeleteCycle(self):
     # Make sure everything is clean
@@ -129,8 +127,6 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(g['status'], 'success')
     self.assertEqual(g['data']['version'], 2)
     self.assertEqual(len(g['data']['operators']), 0)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
 
   def testNegativeDeleteCycle(self):
     # Make sure everything is clean
@@ -151,8 +147,6 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(g['status'], 'success')
     self.assertEqual(g['data']['version'], 1)
     self.assertEqual(len(g['data']['operators']), 1)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
 
   def testSetCellWithOutdatedSync_token(self):
     # Make sure everything is clean
@@ -177,8 +171,6 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(g['status'], 'success')
     self.assertEqual(g['data']['version'], 1)
     self.assertEqual(len(g['data']['operators']), 1)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
 
   def testSetCellsInParallelWithSamesync_token(self):
     # Make sure everything is clean
@@ -204,8 +196,6 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(g['status'], 'success')
     self.assertEqual(g['data']['version'], 1)
     self.assertEqual(len(g['data']['operators']), 1)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
 
   def SetCellWorker(self, num, sync_token):
     self.mm.set(4, 1, 1, sync_token, 'uss' + str(num), 'uss-base' + str(num),
@@ -225,9 +215,6 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       s = self.mm.set(5, 1, 1, token, 'uss', 'uss.com/base', True,
                       test[0], test[1])
       self.assertEqual(s['status'], 'fail')
-    # Make sure everything is clean
-    self.mm.delete_testdata()
-    return
 
   def testSetCellsWithValidTimestamps(self):
     # Make sure everything is clean
@@ -238,7 +225,8 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     testsets = [('2018-01-01T00:00+00', '2019-01-01T01:02:03.12345+00:00'),
                 ('2018-01-01T00:00:00', '2019-01-01T01:02:03.123'),
                 ('2018-02-28T23:59:59-07:00', '2018-03-02T23:59:59+08:00'),
-                ('2018-01-01T00:00:00.12345', '2019-01-01')
+                ('2018-01-01T00:00:00.12345', '2019-01-01'),
+                ('9/25/2018 7:02:00 PM', '9/25/2018 7:10:00 PM')
                ]
     for test in testsets:
       s = self.mm.set(5, 1, 1, token, 'uss', 'uss.com/base', True,
@@ -252,14 +240,11 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       if len(maxtest) <= 10:
         maxtest = maxtest + 'T00:00:00Z'
       if not ('+' in mintest[-6:] or '-' in mintest[-6:] or 'Z' in mintest[-6:]):
-        mintest += 'Z'
+        mintest += ' Z'
       if not ('+' in maxtest[-6:] or '-' in maxtest[-6:] or 'Z' in maxtest[-6:]):
-        maxtest += 'Z'
+        maxtest += ' Z'
       self.assertAlmostEqual(0, (parser.parse(mintest) - parser.parse(o['minimum_operation_timestamp'])).total_seconds(), 0)
       self.assertAlmostEqual(0, (parser.parse(maxtest) - parser.parse(o['maximum_operation_timestamp'])).total_seconds(), 0)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
-    return
 
   def testSetCellsWithOperations(self):
     # Make sure everything is clean
@@ -349,6 +334,27 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(len(os), 2)
     self.assertEqual(os[0]['operation_signature'], 'signed4')
     self.assertEqual(os[1]['operation_signature'], 'signed4.2')
+
+  def testOperatorAndThenOperation(self):
+    # Make sure everything is clean
+    self.mm.delete_testdata()
+    # 6,1,1 get empty
+    g = self.mm.get(9, 1, 1)
+    # simple set with basic values
+    s = self.mm.set(9, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
+                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 1)
+    self.assertEqual(len(s['data']['operators']), 1)
+    s = self.mm.set_operation(9, 1, 1, s['sync_token'], 'uss',
+                              'bc7b212b-1499-486e-a6ff-4a9a6eb76728',
+                              'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpPU0UiLCJraWQiOiJiVnAyNDd2ckRzRzM0MEdhOW14YjFIeFR3MDZJOWhhRmlsT3BIeDhQY3IwIiwieDV1IjoiaHR0cDovL2xvY2FsaG9zdDo1MDAxLy53ZWxsLWtub3duL3Vhcy10cmFmZmljLW1hbmFnZW1lbnQvdXRtLmp3a3MiLCJ4NXQjUzI1NiI6IlRPTy80UjlXT3paeWtnZVQrRUhpK2NwRGxKbGtLSlpCRVBLMDc0SHFjL0E9IiwiY3JpdCI6W119.IiI.JshB25qLWyBt90SVrDXI-jG7dLWCgerGxV58FmFKZrxVBjX904gK7bAjc5eXkRGoJ8Q9QyXN8gkxMERk35iQl9rAnt2ZvVPy5KyAtTX4uPLDPcYfyT9sej8at3dvObwXWoINRU8u9sipi-qxn1RXfbRWozyAxEe1iSR7ZCK3B5VPC3u8OApMCHVXRPn4IX1gzXf99JVQLxtqvls-VyS8nJD1T4TmwScW1uhU2I5rorxHZXP2YJ7uexakq_cgXOHmRJv8ufKUb3QExuVvYOv-SEl4GPLGDvgI-FJuxUtADsxQPXxFoXEx2zJhIQ29uuo_G2_1-ST_A3DSjxX_bY2gsg',
+                              '9/25/2018 7:02:00 PM',
+                              '9/25/2018 7:18:00 PM')
+    self.assertEqual(s['status'], 'success')
+    self.assertEqual(s['data']['version'], 2)
+    self.assertEqual(len(s['data']['operators']), 1)
+    self.assertEqual(len(s['data']['operators'][0]['operations']), 1)
 
 if __name__ == '__main__':
   unittest.main()
