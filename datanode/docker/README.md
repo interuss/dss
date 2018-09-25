@@ -68,7 +68,7 @@ export INTERUSS_PUBLIC_KEY=[paste public key here]
 docker run -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" \
   -e ZOO_MY_ID="${ZOO_MY_ID}" \
   -e ZOO_SERVERS="${ZOO_SERVERS}" \
-  -p 8121:8121 \
+  -p 8121:8121 -p 2888:2888 -p 3888:3888 \
   -d interussplatform/data_node
 ```
 
