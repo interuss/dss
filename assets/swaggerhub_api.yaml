@@ -306,6 +306,10 @@ paths:
 definitions:
   JSendStatusResponse:
     type: object
+    required:
+      - status
+      - message
+      - version
     properties:
       status:
         type: string
@@ -317,6 +321,9 @@ definitions:
 
   JSendSlippyResponse:
     type: object
+    required:
+      - status
+      - data
     properties:
       status:
         type: string
@@ -325,6 +332,9 @@ definitions:
       data:
         type: object
         format: json
+        required:
+          - zoom
+          - grid_cells
         properties:
           zoom:
             type: integer
@@ -332,6 +342,11 @@ definitions:
             type: array
             items:
               type: object
+              required:
+                - link
+                - zoom
+                - x
+                - y
               properties:
                 link:
                   type: string
@@ -344,6 +359,10 @@ definitions:
 
   JSendGridCellMetadataResponse:
     type: object
+    required:
+      - status
+      - sync_token
+      - data
     properties:
       status:
         type: string
@@ -360,6 +379,9 @@ definitions:
   GridCellMetadataResponse:
         type: object
         format: json
+        required:
+          - version
+          - timestamp
         properties:
           version:
             type: integer
@@ -389,7 +411,6 @@ definitions:
       - minimum_operation_timestamp
       - maximum_operation_timestamp
       - announcement_level
-      - operations
     properties:
       uss:
         type: string
@@ -515,7 +536,6 @@ definitions:
       - uss_baseurl
       - minimum_operation_timestamp
       - maximum_operation_timestamp
-      - operations
     properties:
       uss_baseurl:
         type: string
