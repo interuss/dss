@@ -391,7 +391,7 @@ def _ValidateCoordinates(csv):
     try:
       lon = float(a)
       lat = float(b)
-      if lat >= 90 or lat <= -90 or lon >= 180 or lon <= -180:
+      if lat >= 85 or lat <= -85 or lon >= 180 or lon <= -180:
         raise ValueError
     except ValueError:
       return None

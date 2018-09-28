@@ -96,7 +96,12 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(result.status_code, 400)
     result = self.app.get('/slippy/11?coords=1,1,2')
     self.assertEqual(result.status_code, 400)
-
+    result = self.app.get('/slippy/10?coords=-86,0')
+    self.assertEqual(result.status_code, 400)    
+    result = self.app.get('/slippy/10?coords=89,0')
+    self.assertEqual(result.status_code, 400)    
+    
+    
   def testSlippyConversionWithValidData(self):
     r = self.app.get('/slippy/11?coords=1,1')
     self.assertEqual(r.status_code, 200)
