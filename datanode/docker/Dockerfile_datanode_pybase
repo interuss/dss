@@ -18,9 +18,11 @@
 # To build an image from this Dockerfile:
 # docker image build -f Dockerfile_datanode_pybase -t interussplatform/data_node .
 
-# To run this image:
+# To run this image as a standalone node:
 # docker run -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" -p 8121:8121 \
 #   -d interussplatform/data_node
+
+# To run this image as an interconnected node, see README.md
 
 # Required environment variables:
 #   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.
