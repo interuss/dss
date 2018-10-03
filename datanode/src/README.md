@@ -28,8 +28,8 @@
 *   virtualenv USSenv
 *   cd USSenv
 *   . bin/activate
-*   pip install kazoo flask pytest python-dateutil
-*   pip install requests pyjwt cryptography djangorestframework
+*   pip install kazoo flask pytest python-dateutil pyopenssl
+*   pip install requests pyjwt cryptography djangorestframework pytz
 *   ln -sf ../InterUSS-Platform/datanode/src ./src
 *   export INTERUSS_PUBLIC_KEY=(The public KEY for decoding JWTs)
 *   python src/storage_api.py --help
@@ -37,3 +37,4 @@
         "10.1.0.2:2181,10.1.0.3:2181,10.1.0.4:2181" -s 0.0.0.0 -p 8121 -t
         test-instance  -v
 
+See also the configurations described in ../docker.

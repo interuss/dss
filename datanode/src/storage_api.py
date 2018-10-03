@@ -65,7 +65,8 @@ import storage_interface
 # VERSION = '0.3.1'  # Added token validation option in test mode
 # VERSION = '0.4.0'  # Changed data structure to match v1 of InterUSS Platform
 # VERSION = '1.0.0'  # Initial, approved release deployed on GitHub
-VERSION = '1.0.1.001'  # Bug fixes for slippy, dates, and OAuth key
+# VERSION = '1.0.1.001'  # Bug fixes for slippy, dates, and OAuth key
+VERSION = '1.0.2'  # Refactored to run with gunicorn
 
 TESTID = None
 
@@ -176,8 +177,6 @@ def GridCellMetaDataHandler(zoom, x, y):
   except ValueError:
     abort(status.HTTP_400_BAD_REQUEST,
           'Invalid parameters for slippy tile coordinates, must be integers.')
-  if not wrapper:
-    InitializeConnection(None)
   # Check the request method
   if request.method == 'GET':
     result = _GetGridCellMetaData(zoom, x, y)
@@ -283,6 +282,8 @@ def _PutGridCellMetaData(zoom, x, y, uss_id):
   log.info('Grid cell metadata submit instantiated for %sz, %s,%s...', zoom, x,
            y)
   sync_token = _GetRequestParameter('sync_token', None)
+  if not sync_token and 'sync_token' in request.headers:
+    sync_token = request.headers['sync_token']
   scope = _GetRequestParameter('scope', None)
   operation_endpoint = _GetRequestParameter('operation_endpoint', None)
   operation_format = _GetRequestParameter('operation_format', None)
@@ -434,8 +435,14 @@ def _FormatResult(result):
     return jsonify(result)
 
 
-def InitializeConnection(argv):
-  """Initializes the wrapper and the connection to the zookeeper servers.
+def _VerifyPublicKey():
+  if not os.environ.get('INTERUSS_PUBLIC_KEY'):
+    log.error('INTERUSS_PUBLIC_KEY environment variable must be set.')
+    sys.exit(-1)
+
+
+def ParseOptions(argv):
+  """Parses desired options from the command line.
 
   Uses the command line parameters as argv, which can be altered as needed for
   testing.
@@ -443,10 +450,9 @@ def InitializeConnection(argv):
   Args:
     argv: Command line parameters
   Returns:
-    Host and port to use for the server
+    Options structure
   """
-  global wrapper, TESTID
-  log.debug('Parsing command line arguments...')
+  global TESTID
   parser = OptionParser(
       usage='usage: %prog [options]', version='%prog ' + VERSION)
   parser.add_option(
@@ -488,27 +494,34 @@ def InitializeConnection(argv):
       help='Force testing mode with test data located in specific test id  '
       '[or env variable INTERUSS_TESTID]',
       metavar='TESTID')
-  parser.add_option(
-      '-a',
-      '--ssladhoc',
-      action='store_true',
-      dest='ssladhoc',
-      default=False,
-      help='Enable ad-hoc TLS encryption')
   (options, args) = parser.parse_args(argv)
   del args
-  if options.verbose or os.environ.get('INTERUSS_VERBOSE'):
+  return options
+
+
+def InitializeConnection(options=None):
+  """Initializes the wrapper and the connection to the zookeeper servers.
+
+  The side effects of this method are to set the global variables 'wrapper' and
+  'TESTID'.
+
+  Args:
+    options: Options structure with a field per option.
+  """
+  global wrapper, TESTID
+  if (options and options.verbose) or os.environ.get('INTERUSS_VERBOSE'):
     log.setLevel(logging.DEBUG)
   log.debug('Initializing USS metadata manager...')
   wrapper = storage_interface.USSMetadataManager(
-      os.getenv('INTERUSS_CONNECTIONSTRING', options.connectionstring))
-  if options.verbose or os.environ.get('INTERUSS_VERBOSE'):
+      os.getenv('INTERUSS_CONNECTIONSTRING',
+                options.connectionstring if options else None))
+  if (options and options.verbose) or os.environ.get('INTERUSS_VERBOSE'):
     wrapper.set_verbose()
-  if options.testid or os.environ.get('INTERUSS_TESTID'):
-    TESTID = os.getenv('INTERUSS_TESTID', options.testid)
+  if (options and options.testid) or os.environ.get('INTERUSS_TESTID'):
+    TESTID = os.getenv('INTERUSS_TESTID', options.testid if options else None)
+    log.info('Authorization set to test mode with TESTID=%s' % TESTID)
     wrapper.set_testmode(TESTID)
     wrapper.delete_testdata(TESTID)
-  return options.server, options.port, options.ssladhoc
 
 
 def TerminateConnection():
@@ -516,20 +529,24 @@ def TerminateConnection():
   wrapper = None
 
 
+@webapp.before_first_request
+def BeforeFirstRequest():
+  if wrapper is None:
+    _VerifyPublicKey()
+    InitializeConnection()
+
+
 def main(argv):
-  if not os.environ.get('INTERUSS_PUBLIC_KEY'):
-    log.error('INTERUSS_PUBLIC_KEY environment variable must be set.')
-    sys.exit(-1)
-  else:
-    log.debug(
-        """Instantiated application, parsing commandline
-      %s and initializing connection...""", str(argv))
-    host, port, ssl_adhoc = InitializeConnection(argv)
-    log.info('Starting webserver...')
-    webapp.run(host=host, port=int(port),
-               ssl_context='adhoc' if ssl_adhoc else None)
+  _VerifyPublicKey()
+  log.debug(
+      """Instantiated application, parsing commandline
+    %s and initializing connection...""", str(argv))
+  options = ParseOptions(argv)
+  InitializeConnection(options)
+  log.info('Starting webserver...')
+  webapp.run(host=options.server, port=int(options.port))
 
 
-# this is what starts everything
+# this is what starts everything when run directly as an executable
 if __name__ == '__main__':
   main(sys.argv)

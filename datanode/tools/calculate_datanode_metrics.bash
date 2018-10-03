@@ -1,7 +1,7 @@
 #/bin/bash
 # Calculates metrics for the datanode  based on the logs
 #   from the storage api server.
-#   Usage: calculate_intrauss_metrics.bash <filename of log file from server>
+#   Usage: calculate_datanode_metrics.bash <filename of log file from server>
 ##################################################
 errorhandler () {
     errcode=$? # save the exit code as the first thing done in the trap function

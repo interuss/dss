@@ -28,8 +28,9 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
   def setUp(self):
     storage_api.webapp.testing = True
     self.app = storage_api.webapp.test_client()
-    storage_api.InitializeConnection(
+    options = storage_api.ParseOptions(
         ['-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCase'])
+    storage_api.InitializeConnection(options)
 
   def tearDown(self):
     storage_api.TerminateConnection()
@@ -54,7 +55,6 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(result.status_code, 400)
 
   def testIntrospectWithExpiredToken(self):
-    self.assertIsNotNone(os.environ.get('FIMS_AUTH'))
     result = self.app.get(
         '/introspect',
         headers={
@@ -97,11 +97,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     result = self.app.get('/slippy/11?coords=1,1,2')
     self.assertEqual(result.status_code, 400)
     result = self.app.get('/slippy/10?coords=-86,0')
-    self.assertEqual(result.status_code, 400)    
+    self.assertEqual(result.status_code, 400)
     result = self.app.get('/slippy/10?coords=89,0')
-    self.assertEqual(result.status_code, 400)    
-    
-    
+    self.assertEqual(result.status_code, 400)
+
+
   def testSlippyConversionWithValidData(self):
     r = self.app.get('/slippy/11?coords=1,1')
     self.assertEqual(r.status_code, 200)
@@ -350,10 +350,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(result.status_code, 409)
 
   def testVerbose(self):
-    storage_api.InitializeConnection([
+    options = storage_api.ParseOptions([
         '-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCase',
         '-v'
     ])
+    storage_api.InitializeConnection(options)
 
 
 if __name__ == '__main__':
