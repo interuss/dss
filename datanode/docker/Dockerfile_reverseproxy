@@ -19,7 +19,7 @@
 
 # To run this image:
 # docker run \
-#     -e STORAGE_API_SERVER="storage_api_ip" -e STORAGE_API_PORT="8121" \
+#     -e STORAGE_API_SERVER="storage_api_ip" -e STORAGE_API_PORT="5000" \
 #     -p 8121:8121 -p 8120:8120 -d interussplatform/reverse_proxy
 
 # Required environment variables:
@@ -27,8 +27,8 @@
 #   STORAGE_API_PORT: Port on which the storage API service is listening.
 
 # Optional environment variables:
-#   INTERUSS_API_PORT_HTTP: Port on which the InterUSS API will be served via HTTP (default 8121).
-#   INTERUSS_API_PORT_HTTPS: Port on which the InterUSS API will be served via HTTPS (default 8120).
+#   INTERUSS_API_PORT_HTTP: Port on which the InterUSS API will be served via HTTP (default 8120).
+#   INTERUSS_API_PORT_HTTPS: Port on which the InterUSS API will be served via HTTPS (default 8121).
 
 FROM nginx
 
@@ -37,8 +37,8 @@ COPY test_cert.pem /etc/ssl/certs/cert.pem
 COPY test_key.pem /etc/ssl/private/key.pem
 COPY test_signatures .
 
-ENV INTERUSS_API_PORT_HTTP 8121
-ENV INTERUSS_API_PORT_HTTPS 8120
+ENV INTERUSS_API_PORT_HTTP 8120
+ENV INTERUSS_API_PORT_HTTPS 8121
 
 CMD ./nginx_entrypoint.sh
 

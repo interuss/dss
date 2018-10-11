@@ -28,7 +28,7 @@ gate requests to the storage API and provide HTTPS access to the API.
 
 This docker-compose configuration brings up an entire InterUSS Platform data
 node in a single command.  By default, HTTP access to the API is available on
-port 8121 and HTTPS on 8120.
+port 8120 and HTTPS on 8121.
 
 ### docker-compose_localssl.yaml
 
@@ -44,10 +44,11 @@ To run a stand-alone test InterUSS Platform data node that does not synchronize
 with any other data nodes:
 
 ```shell
+export INTERUSS_PUBLIC_KEY=test
 docker-compose -p datanode up
 ```
 
-To verify operation, navigate a browser to http://localhost:8121/status
+To verify operation, navigate a browser to http://localhost:8120/status
 
 To make sure you have the latest versions, first run:
 
@@ -72,7 +73,7 @@ docker-compose -p datanode up
 ## SSL
 
 By default, the data node docker-compose configuration will serve HTTPS
-requests on port 8120 using a test self-signed certificate included in this
+requests on port 8121 using a test self-signed certificate included in this
 repository. This is insecure, and a warning will be displayed in the nginx
 container. To provide a secure HTTPS connection, a different certificate must
 be provided.

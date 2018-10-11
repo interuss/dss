@@ -19,9 +19,9 @@
 
 # Optional environment variables:
 #   INTERUSS_API_PORT_HTTP: Port on which to provide the InterUSS Platform data node API via HTTP
-#     (default 8121).
-#   INTERUSS_API_PORT_HTTPS: Port on which to provide the InterUSS Platform data node API via HTTPS
 #     (default 8120).
+#   INTERUSS_API_PORT_HTTPS: Port on which to provide the InterUSS Platform data node API via HTTPS
+#     (default 8121).
 #   ZOO_MY_ID: Zookeeper ID of this node (default 1).
 #   ZOO_SERVERS: List of Zookeeper servers.
 #     Example: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
@@ -66,11 +66,11 @@ services:
   reverse_proxy:
     image: interussplatform/reverse_proxy
     ports:
-      - "${INTERUSS_API_PORT_HTTP:-8121}:${INTERUSS_API_PORT_HTTP:-8121}"
-      - "${INTERUSS_API_PORT_HTTPS:-8120}:${INTERUSS_API_PORT_HTTPS:-8120}"
+      - "${INTERUSS_API_PORT_HTTP:-8120}:${INTERUSS_API_PORT_HTTP:-8120}"
+      - "${INTERUSS_API_PORT_HTTPS:-8121}:${INTERUSS_API_PORT_HTTPS:-8121}"
     environment:
-      - INTERUSS_API_PORT_HTTP=${INTERUSS_API_PORT_HTTP:-8121}
-      - INTERUSS_API_PORT_HTTPS=${INTERUSS_API_PORT_HTTPS:-8120}
+      - INTERUSS_API_PORT_HTTP=${INTERUSS_API_PORT_HTTP:-8120}
+      - INTERUSS_API_PORT_HTTPS=${INTERUSS_API_PORT_HTTPS:-8121}
       - STORAGE_API_SERVER=storage_api
       - STORAGE_API_PORT=5000
     depends_on:

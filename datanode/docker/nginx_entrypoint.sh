@@ -30,9 +30,9 @@ echo "
     underscores_in_headers on;
 
     server {
-      listen ${INTERUSS_API_PORT_HTTP:-8121};
+      listen ${INTERUSS_API_PORT_HTTP:-8120};
 
-      listen ${INTERUSS_API_PORT_HTTPS:-8120} ssl;
+      listen ${INTERUSS_API_PORT_HTTPS:-8121} ssl;
       # server_name         www.example.com;
       ssl_certificate     /etc/ssl/certs/cert.pem;
       ssl_certificate_key /etc/ssl/private/key.pem;
