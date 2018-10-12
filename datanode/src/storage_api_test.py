@@ -29,8 +29,9 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
   def setUp(self):
     storage_api.webapp.testing = True
     self.app = storage_api.webapp.test_client()
-    storage_api.InitializeConnection(
+    options = storage_api.ParseOptions(
         ['-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID])
+    storage_api.InitializeConnection(options)
 
   def tearDown(self):
     storage_api.TerminateConnection()
@@ -57,7 +58,6 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(400, result.status_code)
 
   def testIntrospectWithExpiredToken(self):
-    self.assertIsNotNone(os.environ.get('FIMS_AUTH'))
     result = self.app.get(
         '/introspect',
         headers={
@@ -83,7 +83,6 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
   def testIntrospectWithValidToken(self):
     self.assertIsNotNone(os.environ.get('FIMS_AUTH'))
     self.assertIsNotNone(os.environ.get('INTERUSS_PUBLIC_KEY'))
-    # pylint: disable=line-too-long
     endpoint = 'https://utmalpha.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials'
     headers = {'Authorization': 'Basic ' + os.environ.get('FIMS_AUTH', '')}
     r = requests.post(endpoint, headers=headers)
@@ -362,10 +361,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(result.status_code, 409)
 
   def testVerbose(self):
-    storage_api.InitializeConnection([
+    options = storage_api.ParseOptions([
         '-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID,
         '-v'
     ])
+    storage_api.InitializeConnection(options)
 
 
 if __name__ == '__main__':
