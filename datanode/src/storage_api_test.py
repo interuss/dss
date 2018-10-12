@@ -20,7 +20,7 @@ import unittest
 import requests
 
 import storage_api
-ZK_TEST_CONNECTION_STRING = '35.224.64.48:2181,35.188.14.39:2181,35.224.180.72:2181'
+ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-api-test'
 
 

@@ -33,7 +33,6 @@ limitations under the License.
 """
 # logging is our log infrastructure used for this application
 import logging
-import math
 # OptionParser is our command line parser interface
 from optparse import OptionParser
 import os
@@ -47,8 +46,11 @@ from flask import request
 import jwt
 # rest_framework is for HTTP status codes
 from rest_framework import status
+
 # Our main class for accessing metadata from the locking system
 import storage_interface
+# Tools for slippy conversion
+import slippy_util
 
 # Initialize everything we need
 # VERSION = '0.1.0'  # Initial TCL3 release
@@ -126,13 +128,13 @@ def ConvertCoordinatesToSlippy(zoom):
   tiles = []
   coords = _GetRequestParameter('coords', '')
   log.debug('Retrieved coords from web params and split to %s...', coords)
-  coordinates = _ValidateCoordinates(coords)
+  coordinates = slippy_util.ConverCSVtoCoordinates(coords)
   if not coordinates:
     log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
     abort(status.HTTP_400_BAD_REQUEST,
           'Invalid coords, must be a CSV of lat,lon,lat,lon...')
   for c in coordinates:
-    x, y = _ConvertPointToTile(zoom, c[0], c[1])
+    x, y = slippy_util.ConvertPointToTile(zoom, c[0], c[1])
     link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
     tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
     if tile not in tiles:
@@ -387,47 +389,6 @@ def _GetRequestParameter(name, default):
     log.error('Request is in an unknown format: %s', str(request))
     r = default
   return r
-
-
-def _ValidateCoordinates(csv):
-  """Converts and validates string of CSV coords into array of coords."""
-  result = []
-  try:
-    coords = csv.split(',')
-    if len(coords) % 2 != 0:
-      raise ValueError
-  except ValueError:
-    return None
-  log.debug('Split coordinates to %s and passed early validation...', coords)
-  for a, b in _Pairwise(coords):
-    try:
-      lat = float(a)
-      lon = float(b)
-      if lat >= 90 or lat <= -90 or lon >= 180 or lon <= -180:
-        raise ValueError
-    except ValueError:
-      return None
-    result.append((lat, lon))
-  return result
-
-
-def _Pairwise(it):
-  """Iterator for sets of lon,lat in an array."""
-  it = iter(it)
-  while True:
-    yield next(it), next(it)
-
-
-def _ConvertPointToTile(zoom, latitude, longitude):
-  """Actual calculation from lat/lon to tile at specific zoom."""
-  log.debug('_ConvertPointToTile for %.3f, %.3f...', latitude, longitude)
-  latitude_rad = math.radians(latitude)
-  n = 2.0**zoom
-  xtile = int((longitude + 180.0) / 360.0 * n)
-  ytile = int(
-    (1.0 - math.log(math.tan(latitude_rad) +
-                    (1 / math.cos(latitude_rad))) / math.pi) / 2.0 * n)
-  return xtile, ytile
 
 
 def _FormatResult(result):
