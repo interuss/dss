@@ -23,9 +23,12 @@ class InterUSSSlippyUtilitiesTestCase(unittest.TestCase):
   def testValidCSVConversions(self):
     self.assertEqual([(0.0, 0.0)], slippy_util.ConverCSVtoCoordinates('0,0'))
     self.assertEqual([(40.0, 0.0)], slippy_util.ConverCSVtoCoordinates('40,0'))
-    self.assertEqual([(40.4, 0.0)], slippy_util.ConverCSVtoCoordinates('40.4,0'))
-    self.assertEqual([(40.4, 110.0)], slippy_util.ConverCSVtoCoordinates('40.4,110'))
-    self.assertEqual([(40.4, 110.1)], slippy_util.ConverCSVtoCoordinates('40.4,110.1'))
+    self.assertEqual([(40.4, 0.0)],
+                     slippy_util.ConverCSVtoCoordinates('40.4,0'))
+    self.assertEqual([(40.4, 110.0)],
+                     slippy_util.ConverCSVtoCoordinates('40.4,110'))
+    self.assertEqual([(40.4, 110.1)],
+                     slippy_util.ConverCSVtoCoordinates('40.4,110.1'))
 
   def testInvalidCSVConversions(self):
     with self.assertRaises(TypeError):
@@ -70,37 +73,68 @@ class InterUSSSlippyUtilitiesTestCase(unittest.TestCase):
       self.assertIsNone(slippy_util.ConvertPointToTile(1, 10, 191))
     with self.assertRaises(ValueError):
       self.assertIsNone(slippy_util.ConvertPointToTile(1, 10, None))
+    with self.assertRaises(ValueError):
+      self.assertEqual(1, len(slippy_util.ConvertPathToTile(0, [(0, 0)])))
 
   def testValidPathConversions(self):
-    self.assertEqual(1, len(slippy_util.ConvertPathToTile(0, [(0, 0)])))
-    self.assertEqual(1, len(slippy_util.ConvertPathToTile(0, [(0, 0), (1, 1.5)])))
-    self.assertEqual(2, len(slippy_util.ConvertPathToTile(5, [(0, 0), (1, 1.5)])))
-    self.assertEqual(184, len(slippy_util.ConvertPathToTile(15, [(0, 0), (1, 1.5)])))
+    self.assertEqual(1,
+                     len(slippy_util.ConvertPathToTile(0, [(0, 0), (1, 1.5)])))
+    self.assertEqual(2,
+                     len(slippy_util.ConvertPathToTile(5, [(0, 0), (1, 1.5)])))
+    self.assertEqual(184,
+                     len(slippy_util.ConvertPathToTile(15, [(0, 0), (1, 1.5)])))
     # One segment should be the same as two segments that overlapp
     self.assertEqual(len(slippy_util.ConvertPathToTile(10, [(0, 0), (1, 1.5)])),
-                     len(slippy_util.ConvertPathToTile(10, [(0, 0), (1, 1.5), (0, 0)])))
-    # 4 points are in 4 separate grids, and there are 2 grids underlapping the path
-    self.assertEqual(6, len(slippy_util.ConvertPathToTile(9, [(47.5, -103), (47.5, -102.5),
-                                                                 (48, -102.5), (48, -103), (47.5, -103)])))
+                     len(slippy_util.ConvertPathToTile(10, [(0, 0), (1, 1.5),
+                                                            (0, 0)])))
+    # 4 points are in 4 separate grids,
+    # and there are 2 grids underlapping the path
+    self.assertEqual(6, len(
+      slippy_util.ConvertPathToTile(9, [(47.5, -103), (47.5, -102.5),
+                                        (48, -102.5), (48, -103),
+                                        (47.5, -103)])))
 
   def testInvalidPathConversions(self):
     with self.assertRaises(TypeError):
       slippy_util.ConvertPathToTile(0, None)
     with self.assertRaises(TypeError):
       slippy_util.ConvertPathToTile(0, 0)
-    with self.assertRaises(ValueError):
+    with self.assertRaises(TypeError):
       slippy_util.ConvertPathToTile(0, '0,0,1,1.5')
     with self.assertRaises(ValueError):
       slippy_util.ConvertPathToTile(0, [])
     with self.assertRaises(TypeError):
-      slippy_util.ConvertPathToTile(0, [(0),(1)])
+      slippy_util.ConvertPathToTile(0, [(0), (1)])
 
   def testValidPolygonConversions(self):
-    self.assertEqual(1, len(slippy_util.ConvertPolygonToTile(0, [(0, 0), (1, 1.5), (2, 0), (0, 0)])))
-    self.assertEqual(2, len(slippy_util.ConvertPolygonToTile(5, [(0, 0), (1, 1.5), (2, 0), (0, 0)])))
-    # 4 points are in 4 separate grids, and there are 4 grids underlapping the path, and 1 grid surrounded
-    self.assertEqual(9, len(slippy_util.ConvertPolygonToTile(9, [(47.5, -103), (47.5, -101.8),
-                                                              (48, -101.8), (48, -103), (47.5, -103)])))
+    self.assertEqual(1, len(
+      slippy_util.ConvertPolygonToTile(0, [(0, 0), (1, 1.5), (2, 0), (0, 0)])))
+    self.assertEqual(2, len(
+      slippy_util.ConvertPolygonToTile(5, [(0, 0), (1, 1.5), (2, 0), (0, 0)])))
+    # check auto closing
+    self.assertEqual(
+      slippy_util.ConvertPolygonToTile(9, [(0, 0), (1, 1.5), (2, 0)]),
+      slippy_util.ConvertPolygonToTile(9, [(0, 0), (1, 1.5), (2, 0), (0, 0)]))
+    # 4 points are in 4 separate grids,
+    # and there are 4 grids underlapping the path, and 1 grid surrounded
+    self.assertEqual(9, len(
+      slippy_util.ConvertPolygonToTile(9, [(47.5, -103), (47.5, -101.8),
+                                           (48, -101.8), (48, -103),
+                                           (47.5, -103)])))
     # test the duration of a lot of tiles calculation
-    self.assertEqual(7590, len(slippy_util.ConvertPolygonToTile(15, [(47.5, -103), (47.5, -101.8),
-                                                                 (48, -101.8), (48, -103), (47.5, -103)])))
+    self.assertEqual(7590, len(
+      slippy_util.ConvertPolygonToTile(15, [(47.5, -103), (47.5, -101.8),
+                                            (48, -101.8), (48, -103),
+                                            (47.5, -103)])))
+
+  def testInvalidPolygonConversions(self):
+    with self.assertRaises(TypeError):
+      slippy_util.ConvertPolygonToTile(0, None)
+    with self.assertRaises(TypeError):
+      slippy_util.ConvertPolygonToTile(0, 0)
+    with self.assertRaises(TypeError):
+      slippy_util.ConvertPolygonToTile(0, '0,0,1,1.5')
+    with self.assertRaises(ValueError):
+      slippy_util.ConvertPolygonToTile(0, [])
+    with self.assertRaises(ValueError):
+      slippy_util.ConvertPolygonToTile(0, [(0), (1)])

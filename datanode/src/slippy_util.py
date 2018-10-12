@@ -90,6 +90,14 @@ def ConvertPathToTile(zoom, points):
       ValueError if no tiles can be found from the points
   """
   log.debug('ConvertPathToTile for %dz and points %s...', zoom, str(points))
+  if not isinstance(points, list):
+    raise TypeError('Points must be a list of (lat,lon)')
+  if len(points) < 2:
+    raise ValueError('Points must be a list of (lat,lon)')
+  if not isinstance(points[0], (tuple,list)):
+    raise TypeError('Points must be a list of (lat,lon)')
+  if len(points[0]) != 2:
+    raise ValueError('Points must be a list of at least two (lat,lon)')
   last = None
   result = []
   for lat, lon in points:
@@ -110,7 +118,7 @@ def ConvertPathToTile(zoom, points):
     last = (lat, lon)
   if not result:
     raise ValueError('No tiles found for path coordinates')
-  return sorted(result, key=lambda tup: tup[0])
+  return result
 
 
 def ConvertPolygonToTile(zoom, points):
@@ -130,16 +138,25 @@ def ConvertPolygonToTile(zoom, points):
       ValueError if no tiles can be found from the points
   """
   log.debug('ConvertPolygonToTile for %dz and points %s...', zoom, str(points))
+  if not isinstance(points, list):
+    raise TypeError('Points must be a list of (lat,lon)')
+  if len(points) < 3:
+    raise ValueError('Must have at least 3 points to make a polygon')
+  if points[0] != points[len(points) - 1]:
+    log.debug('Polygon did not close, assuming close to first point...')
+    points.append(points[0])
+  # get the path first
   pathtiles = ConvertPathToTile(zoom, points)
   result = []
   lastx = -1
-  for tile in pathtiles:
+  # ensure they are sorted by the X tile and fill in the empty Y's
+  for tile in sorted(pathtiles, key=lambda tup: tup[0]):
     if lastx == -1:
       # first time through
       result.append(tile)
       miny = maxy = tile[1]
     elif lastx == tile[0]:
-      # continuation of the same set of tiles
+      # continuation of the same set of x tiles
       result.append(tile)
       if tile[1] < miny:
         miny = tile[1]
@@ -155,7 +172,7 @@ def ConvertPolygonToTile(zoom, points):
       miny = maxy = tile[1]
     lastx = tile[0]
   if lastx != -1:
-    # take care of the straggler
+    # take care of the straggler X
     for y in range(miny, maxy):
       if (lastx, y) not in result:
         result.append((lastx, y))
@@ -163,7 +180,12 @@ def ConvertPolygonToTile(zoom, points):
 
 
 def DegreesPerTile(zoom):
-  """Calculates the number of degress stored in each tile"""
+  """Calculates the number of degress stored in each tile
+
+  This could be even more optimized, since longitude is 360 degrees and
+  latitude is 180 degrees. However, we just use 180 as it is over
+  protective and does not result in a performance impact.
+  """
   return 180 / float(2 ** zoom)
 
 
