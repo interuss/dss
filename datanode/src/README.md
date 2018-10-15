@@ -28,7 +28,7 @@
 *   virtualenv USSenv
 *   cd USSenv
 *   . bin/activate
-*   pip install kazoo flask pytest python-dateutil pyopenssl
+*   pip install kazoo flask pytest python-dateutil pyopenssl shapely
 *   pip install requests pyjwt cryptography djangorestframework pytz
 *   ln -sf ../InterUSS-Platform/datanode/src ./src
 *   export INTERUSS_PUBLIC_KEY=(The public KEY for decoding JWTs)

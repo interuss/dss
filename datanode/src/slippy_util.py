@@ -34,13 +34,49 @@ limitations under the License.
 # logging is our log infrastructure used for this application
 import logging
 import math
+from shapely.geometry import LineString
+from shapely.geometry import Polygon
 
 # Configure the logger
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('InterUSS_DataNode_SlippyUtil')
 
 
-def ConverCSVtoCoordinates(csv):
+def validate_slippy(z, x, y, raise_error=False):
+  """Validates slippy tile ranges.
+
+  https://en.wikipedia.org/wiki/Tiled_web_map
+  https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+
+  Args:
+    z: zoom level in slippy tile format
+    x: x tile number in slippy tile format
+    y: y tile number in slippy tile format
+  Returns:
+    true if valid, false if not
+  """
+  try:
+    z = int(z)
+    x = int(x)
+    y = int(y)
+    if not 0 <= z <= 20:
+      raise ValueError('Zoom must be an integer from 0-20')
+    if not 0 <= x < 2**z:
+      raise ValueError('x must be an integer from 0-%d' % (2**z - 1))
+    if not 0 <= y < 2**z:
+      raise ValueError('y must be an integer from 0-%d' % (2**z - 1))
+    return True
+  except (ValueError, TypeError) as e:
+    log.error('Invalid slippy format for tiles %sz, %s, %s!',
+              str(z), str(x), str(y))
+    log.error('Invalid slippy format error: %s', e)
+    if raise_error:
+      raise e
+    else:
+      return False
+
+
+def convert_csv_to_coordinates(csv):
   """Converts and validates string of CSV coords into array of lat/lon coords."""
   if not csv:
     raise TypeError('CSV of coordinates must be a string in lat,lon[,lat,lon]...format')
@@ -49,7 +85,7 @@ def ConverCSVtoCoordinates(csv):
   if len(coords) % 2 != 0:
     raise ValueError('CSV of coordinates must in lat,lon pairs')
   log.debug('Split coordinates to %s and passed early validation...', coords)
-  for a, b in _Pairwise(coords):
+  for a, b in _pairwise(coords):
     lat = float(a)
     lon = float(b)
     if lat >= 90 or lat <= -90 or lon >= 180 or lon <= -180:
@@ -58,15 +94,48 @@ def ConverCSVtoCoordinates(csv):
   return result
 
 
-def ConvertPointToTile(zoom, latitude, longitude):
-  """Calculation from lat/lon to tile at specific zoom."""
+def convert_tile_to_polygon(zoom, xtile, ytile):
+  """Conversion from lat/lon to tile at specific zoom.
+
+  Args:
+      zoom: level of zoom in slippy terms (0-20)
+      xtile: x tile in slippy terms
+      ytile: y tile in slippy terms
+  Raises:
+      TypeError if parameters are not ints
+      ValueError if parameters are not in respective bounds
+  Returns:
+      list of points that make up the tile
+  """
+  validate_slippy(zoom, xtile, ytile, True)
+  n = 2.0 ** zoom
+  wlon = xtile / n * 360.0 - 180.0
+  nlat = math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * ytile / n))))
+  elon = (xtile + 1) / n * 360.0 - 180.0
+  slat = math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * (ytile + 1) / n))))
+  return [(nlat, wlon), (nlat, elon), (slat, elon), (slat, wlon), (nlat, wlon)]
+
+
+def convert_point_to_tile(zoom, latitude, longitude):
+  """Conversion from lat/lon to tile at specific zoom.
+
+  Args:
+      zoom: level of zoom in slippy terms (0-20)
+      latitude: decimal degrees latitude for the tile
+      longitude: decimal degrees latitude for the tile
+  Raises:
+      TypeError if zoom is not integer or lat/on is not floats
+      ValueError if parameters are not in respective bounds
+  """
+  zoom = int(zoom)
+  latitude = float(latitude)
+  longitude = float(longitude)
   if latitude >= 90 or latitude <= -90:
     raise ValueError('latitude must be within range -90 to 90')
   if longitude >= 180 or longitude <= -180:
     raise ValueError('longitude must be within range -180 to 180')
   if zoom < 0 or zoom > 20:
     raise ValueError('zoom level must be within range 0 to 20')
-
   log.debug('ConvertPointToTile for %.3f, %.3f...', latitude, longitude)
   latitude_rad = math.radians(latitude)
   n = 2.0 ** zoom
@@ -77,80 +146,127 @@ def ConvertPointToTile(zoom, latitude, longitude):
   return xtile, ytile
 
 
-def ConvertPathToTile(zoom, points):
+def convert_path_to_tiles(zoom, points):
   """Conversion from a series of lat/lon to tile(s) at the specific zoom.
 
-  This is a bit difficult, since you have to make sure there are enough points
-  in the path to ensure each point touches a tile.
+  This makes sure to get tiles the path may cross without a point.
 
   Args:
       zoom: level of zoom in slippy terms (0-20)
-      points: array of (lat,lon) that make the path
+      points: list of (lat,lon) that make the path
   Raises:
-      ValueError if no tiles can be found from the points
+      ValueError if no tiles can be found from the points, or if the
+      points are not in the format of an list of (lat, lon)
+      TypeError if the type of zoom or points is not correct
   """
-  log.debug('ConvertPathToTile for %dz and points %s...', zoom, str(points))
+  log.debug('ConvertPathToTiles for %dz and points %s...', zoom, str(points))
+  return _convert_shape_to_tiles(zoom, points, is_poly=False)
+
+
+
+def convert_polygon_to_tiles(zoom, points):
+  """Conversion from a polygon to tile(s) at the specific zoom.
+
+  This makes sure to get tiles the polygon encloses, but the boundary
+  does not touch.
+
+  Args:
+      zoom: level of zoom in slippy terms (0-20)
+      points: list of (lat,lon) that make the polygon.
+  Raises:
+      ValueError if no tiles can be found from the points, or if the
+      points are not in the format of an list of (lat, lon)
+      TypeError if the type of zoom or points is not correct
+  """
+  log.debug('ConvertPolygonToTiles for %dz and points %s...', zoom, str(points))
+  return _convert_shape_to_tiles(zoom, points, is_poly=True)
+
+
+def convert_points_to_geojson(points, headers=True, name='slippy-out'):
+  """ Converts a set of lat/lon points into a path in geojson format."""
+  result = ''
+  if headers:
+    result += """{
+      "type": "FeatureCollection",
+      "features": ["""
+  result += """{
+      "type": "Feature",
+      "properties": {"name" : "%s" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [ [ """ % name
+  for lat, lon in points:
+    result += "[ %.5f, %.5f ]," % (lon, lat)
+  result = result[:-1] + """] ]
+        }
+      }"""
+  if headers:
+    result +=' ] }'
+  return result
+
+
+######################################################################
+################       INTERNAL FUNCTIONS    #########################
+######################################################################
+def _convert_shape_to_tiles(zoom, points, is_poly=False):
+  """Validates, creates the shape, and finds tiles """
+  log.debug('_ConvertShapeToTiles for %dz and points %s for %s poly...',
+            zoom, str(points), str(is_poly))
   if not isinstance(points, list):
     raise TypeError('Points must be a list of (lat,lon)')
-  if len(points) < 2:
-    raise ValueError('Points must be a list of (lat,lon)')
+  if is_poly and len(points) < 3:
+    raise ValueError('Must have at least 3 points to make a polygon')
+  if not is_poly and len(points) < 2:
+    raise ValueError('Must have at least 2 points to make a path')
   if not isinstance(points[0], (tuple,list)):
     raise TypeError('Points must be a list of (lat,lon)')
   if len(points[0]) != 2:
-    raise ValueError('Points must be a list of at least two (lat,lon)')
+    raise ValueError('Points must be a list of (lat,lon)')
+  if is_poly and points[0] != points[len(points) - 1]:
+    log.debug('Polygon did not close, assuming close to first point...')
+    points.append(points[0])
+  shape = Polygon(points) if is_poly else LineString(points)
+  result = _calculate_tiles_from_bounding_box(zoom, shape.bounds)
+  return _trim_unused_tiles(zoom, result, shape)
+
+
+def _calculate_tiles_from_bounding_box(zoom, bbox):
+  """Calculates tiles from the polygon representing a bounding box."""
   last = None
   result = []
+  nlat = bbox[0]
+  wlon = bbox[1]
+  slat = bbox[2]
+  elon = bbox[3]
+  points = [(nlat, wlon), (nlat, elon),
+            (slat, elon), (slat, wlon), (nlat, wlon)]
   for lat, lon in points:
     if last:
       latdiff = math.fabs(last[0] - lat)
       londiff = math.fabs(last[1] - lon)
       maxdiff = latdiff if latdiff > londiff else londiff
-      splits = int(math.fabs(maxdiff) / DegreesPerTile(zoom)) + 1
+      splits = int(math.fabs(maxdiff) / _degrees_per_tile(zoom)) + 1
       dlat = (lat - last[0]) / float(splits)
       dlon = (lon - last[1]) / float(splits)
       for i in range(1, splits):
-        x, y = ConvertPointToTile(zoom, last[0] + i * dlat, last[1] + i * dlon)
+        x, y = convert_point_to_tile(zoom, last[0] + i * dlat, last[1] + i * dlon)
         if x is not None and (x, y) not in result:
           result.append((x, y))
-    x, y = ConvertPointToTile(zoom, lat, lon)
+    x, y = convert_point_to_tile(zoom, lat, lon)
     if (x, y) not in result:
       result.append((x, y))
     last = (lat, lon)
   if not result:
     raise ValueError('No tiles found for path coordinates')
-  return result
+  return _add_covering_tiles(result)
 
 
-def ConvertPolygonToTile(zoom, points):
-  """Conversion from a series of lat/lon defining a polygon to tile(s) at the specific zoom.
-
-  This is a bit difficult, since you have to make sure there are enough points
-  in the polygon to ensure each point touches a tile, and you have to make sure
-  the volume within touches all the tiles. Quick way is to make a bounding box for the
-  polygon. Expensive way (but minimizes tiles) is to get the tiles for the path and
-  fill in the blanks.
-
-  Args:
-      zoom: level of zoom in slippy terms (0-20)
-      points: array of (lat,lon) that make the polygon. No validity checking is done on
-      the polygon for closure or crossing.
-  Raises:
-      ValueError if no tiles can be found from the points
-  """
-  log.debug('ConvertPolygonToTile for %dz and points %s...', zoom, str(points))
-  if not isinstance(points, list):
-    raise TypeError('Points must be a list of (lat,lon)')
-  if len(points) < 3:
-    raise ValueError('Must have at least 3 points to make a polygon')
-  if points[0] != points[len(points) - 1]:
-    log.debug('Polygon did not close, assuming close to first point...')
-    points.append(points[0])
-  # get the path first
-  pathtiles = ConvertPathToTile(zoom, points)
+def _add_covering_tiles(tiles):
+  """Fills in tiles enclosed by the tile list provided"""
   result = []
   lastx = -1
   # ensure they are sorted by the X tile and fill in the empty Y's
-  for tile in sorted(pathtiles, key=lambda tup: tup[0]):
+  for tile in sorted(tiles, key=lambda tup: tup[0]):
     if lastx == -1:
       # first time through
       result.append(tile)
@@ -179,7 +295,17 @@ def ConvertPolygonToTile(zoom, points):
   return result
 
 
-def DegreesPerTile(zoom):
+def _trim_unused_tiles(zoom, tiles, shape):
+  """Removes tiles the shape does not touch"""
+  result = []
+  for tile in tiles:
+    poly = Polygon(convert_tile_to_polygon(zoom, tile[0], tile[1]))
+    if poly.intersects(shape) or poly.touches(shape):
+      result.append(tile)
+  return result
+
+
+def _degrees_per_tile(zoom):
   """Calculates the number of degress stored in each tile
 
   This could be even more optimized, since longitude is 360 degrees and
@@ -189,7 +315,7 @@ def DegreesPerTile(zoom):
   return 180 / float(2 ** zoom)
 
 
-def _Pairwise(it):
+def _pairwise(it):
   """Iterator for sets of lon,lat in an array."""
   it = iter(it)
   while True:

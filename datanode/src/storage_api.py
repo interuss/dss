@@ -127,13 +127,13 @@ def ConvertCoordinatesToSlippy(zoom):
     tiles = []
     coords = _GetRequestParameter('coords', '')
     log.debug('Retrieved coords from web params and split to %s...', coords)
-    coordinates = slippy_util.ConverCSVtoCoordinates(coords)
+    coordinates = slippy_util.convert_csv_to_coordinates(coords)
     if not coordinates:
       log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
       abort(status.HTTP_400_BAD_REQUEST,
             'Invalid coords, must be a CSV of lat,lon,lat,lon...')
     for c in coordinates:
-      x, y = slippy_util.ConvertPointToTile(zoom, c[0], c[1])
+      x, y = slippy_util.convert_point_to_tile(zoom, c[0], c[1])
       link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
       tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
       if tile not in tiles:
