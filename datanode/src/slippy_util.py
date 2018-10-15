@@ -105,7 +105,7 @@ def convert_tile_to_polygon(zoom, xtile, ytile):
       TypeError if parameters are not ints
       ValueError if parameters are not in respective bounds
   Returns:
-      list of points that make up the tile
+      list of (lat,lon) points that make up the tile
   """
   validate_slippy(zoom, xtile, ytile, True)
   n = 2.0 ** zoom
@@ -126,6 +126,9 @@ def convert_point_to_tile(zoom, latitude, longitude):
   Raises:
       TypeError if zoom is not integer or lat/on is not floats
       ValueError if parameters are not in respective bounds
+  Returns:
+      tuple representing the integer x-tile, y-tile for the
+      specified zoom/lat/lon
   """
   zoom = int(zoom)
   latitude = float(latitude)
