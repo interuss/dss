@@ -70,7 +70,8 @@ import slippy_util
 # VERSION = '1.0.1.001'  # Bug fixes for slippy, dates, and OAuth key
 # VERSION = '1.0.2.001'  # Refactored to run with gunicorn
 # VERSION = '1.0.2.002'  # Standardize OAuth Authorization header, docker fix
-VERSION = '1.0.2.003'  # slippy utility updates to support point/path/polygon
+# VERSION = '1.0.2.003'  # slippy utility updates to support point/path/polygon
+VERSION = '1.0.2.004'  # slippy non-breaking api changes to support path/polygon
 
 TESTID = None
 
@@ -121,24 +122,30 @@ def ConvertCoordinatesToSlippy(zoom):
   log.info('Convert coordinates to slippy instantiated for %sz...', zoom)
   try:
     zoom = int(zoom)
-    if zoom < 0 or zoom > 20:
-      raise ValueError('Invalid parameters for zoom %s, must be integer 0-20.',
-                       zoom)
     tiles = []
     coords = _GetRequestParameter('coords', '')
+    coord_type = _GetRequestParameter('coord_type', 'point')
     log.debug('Retrieved coords from web params and split to %s...', coords)
     coordinates = slippy_util.convert_csv_to_coordinates(coords)
     if not coordinates:
       log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
-      abort(status.HTTP_400_BAD_REQUEST,
-            'Invalid coords, must be a CSV of lat,lon,lat,lon...')
-    for c in coordinates:
-      x, y = slippy_util.convert_point_to_tile(zoom, c[0], c[1])
+      raise ValueError('Invalid coords, must be a CSV of lat,lon,lat,lon...')
+    if coord_type == 'point':
+      for c in coordinates:
+        tiles.append((slippy_util.convert_point_to_tile(zoom, c[0], c[1])))
+    elif coord_type == 'path':
+      tiles = slippy_util.convert_path_to_tiles(zoom, coordinates)
+    elif coord_type == 'polygon':
+      tiles = slippy_util.convert_polygon_to_tiles(zoom, coordinates)
+    else:
+      raise ValueError('Invalid coord_type, must be point/path/polygon')
+    result = []
+    for x, y in tiles:
       link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
       tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
-      if tile not in tiles:
-        tiles.append(tile)
-  except (ValueError, TypeError), e:
+      if tile not in result:
+        result.append(tile)
+  except (ValueError, TypeError) as e:
     log.error('/slippy error: %s...', e.message)
     abort(status.HTTP_400_BAD_REQUEST, e.message)
 
@@ -146,7 +153,7 @@ def ConvertCoordinatesToSlippy(zoom):
     'status': 'success',
     'data': {
       'zoom': zoom,
-      'grid_cells': tiles,
+      'grid_cells': result,
     }
   })
 
