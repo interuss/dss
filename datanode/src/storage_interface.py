@@ -36,6 +36,8 @@ import logging
 
 # Our data structure for the actual metadata stored
 import uss_metadata
+# Utilties for validating slippy
+import slippy_util
 
 # Kazoo is the zookeeper wrapper for python
 from kazoo.client import KazooClient
@@ -162,7 +164,7 @@ class USSMetadataManager(object):
     #                   convert them to http error codes. For now, this is
     #                   at least in a standard JSend format.
     status = 500
-    if self._validate_slippy(z, x, y):
+    if slippy_util.validate_slippy(z, x, y):
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
         try:
@@ -208,7 +210,7 @@ class USSMetadataManager(object):
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
     status = 500
-    if self._validate_slippy(z, x, y):
+    if slippy_util.validate_slippy(z, x, y):
       # first we have to get the cell
       status = 0
       (content, metadata) = self._get_raw(z, x, y)
@@ -253,7 +255,7 @@ class USSMetadataManager(object):
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
     status = 500
-    if self._validate_slippy(z, x, y):
+    if slippy_util.validate_slippy(z, x, y):
       # first we have to get the cell
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
@@ -398,32 +400,6 @@ class USSMetadataManager(object):
       }
     return result
 
-  def _validate_slippy(self, z, x, y):
-    """Validates slippy tile ranges.
 
-    https://en.wikipedia.org/wiki/Tiled_web_map
-    https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
-
-    Args:
-      z: zoom level in slippy tile format
-      x: x tile number in slippy tile format
-      y: y tile number in slippy tile format
-    Returns:
-      true if valid, false if not
-    """
-    try:
-      z = int(z)
-      x = int(x)
-      y = int(y)
-      if not 0 <= z <= 20:
-        raise ValueError
-      if not 0 <= x < 2**z:
-        raise ValueError
-      if not 0 <= y < 2**z:
-        raise ValueError
-      return True
-    except (ValueError, TypeError):
-      log.error('Invalid slippy format for tiles %sz, %s,%s!', z, x, y)
-      return False
 
 

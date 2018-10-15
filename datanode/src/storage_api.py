@@ -33,7 +33,6 @@ limitations under the License.
 """
 # logging is our log infrastructure used for this application
 import logging
-import math
 # OptionParser is our command line parser interface
 from optparse import OptionParser
 import os
@@ -47,8 +46,11 @@ from flask import request
 import jwt
 # rest_framework is for HTTP status codes
 from rest_framework import status
+
 # Our main class for accessing metadata from the locking system
 import storage_interface
+# Tools for slippy conversion
+import slippy_util
 
 # Initialize everything we need
 # VERSION = '0.1.0'  # Initial TCL3 release
@@ -66,7 +68,9 @@ import storage_interface
 # VERSION = '0.4.0'  # Changed data structure to match v1 of InterUSS Platform
 # VERSION = '1.0.0'  # Initial, approved release deployed on GitHub
 # VERSION = '1.0.1.001'  # Bug fixes for slippy, dates, and OAuth key
-VERSION = '1.0.2'  # Refactored to run with gunicorn
+# VERSION = '1.0.2.001'  # Refactored to run with gunicorn
+# VERSION = '1.0.2.002'  # Standardize OAuth Authorization header, docker fix
+VERSION = '1.0.2.003'  # slippy utility updates to support point/path/polygon
 
 TESTID = None
 
@@ -118,25 +122,26 @@ def ConvertCoordinatesToSlippy(zoom):
   try:
     zoom = int(zoom)
     if zoom < 0 or zoom > 20:
-      raise ValueError
-  except ValueError:
-    log.error('Invalid parameters for zoom %s, must be integer 0-20...', zoom)
-    abort(status.HTTP_400_BAD_REQUEST,
-          'Invalid parameters for zoom, must be integer 0-20.')
-  tiles = []
-  coords = _GetRequestParameter('coords', '')
-  log.debug('Retrieved coords from web params and split to %s...', coords)
-  coordinates = _ValidateCoordinates(coords)
-  if not coordinates:
-    log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
-    abort(status.HTTP_400_BAD_REQUEST,
-          'Invalid coords, must be a CSV of lat,lon,lat,lon...')
-  for c in coordinates:
-    x, y = _ConvertPointToTile(zoom, c[0], c[1])
-    link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
-    tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
-    if tile not in tiles:
-      tiles.append(tile)
+      raise ValueError('Invalid parameters for zoom %s, must be integer 0-20.',
+                       zoom)
+    tiles = []
+    coords = _GetRequestParameter('coords', '')
+    log.debug('Retrieved coords from web params and split to %s...', coords)
+    coordinates = slippy_util.convert_csv_to_coordinates(coords)
+    if not coordinates:
+      log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
+      abort(status.HTTP_400_BAD_REQUEST,
+            'Invalid coords, must be a CSV of lat,lon,lat,lon...')
+    for c in coordinates:
+      x, y = slippy_util.convert_point_to_tile(zoom, c[0], c[1])
+      link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
+      tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
+      if tile not in tiles:
+        tiles.append(tile)
+  except (ValueError, TypeError), e:
+    log.error('/slippy error: %s...', e.message)
+    abort(status.HTTP_400_BAD_REQUEST, e.message)
+
   return jsonify({
     'status': 'success',
     'data': {
@@ -162,13 +167,7 @@ def GridCellMetaDataHandler(zoom, x, y):
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
   """
-  if ('access_token' in request.headers and TESTID and
-    TESTID in request.headers['access_token']):
-    uss_id = request.headers['access_token']
-  elif TESTID and 'access_token' not in request.headers:
-    uss_id = TESTID
-  else:
-    uss_id = _ValidateAccessToken()
+  uss_id = _ValidateAccessToken()
   result = {}
   try:
     zoom = int(zoom)
@@ -200,32 +199,47 @@ def _ValidateAccessToken():
   Returns:
     USS identification from OAuth client_id field
   """
-  # TODO(hikevin): Replace with OAuth Discovery and JKWS
-  secret = os.getenv('INTERUSS_PUBLIC_KEY')
-  token = None
-  if 'access_token' in request.headers:
-    token = request.headers['access_token']
-  if secret and token:
-    # ENV variables sometimes don't pass newlines, spec says white space
-    # doesn't matter, but pyjwt cares about it, so fix it
-    secret = secret.replace(' PUBLIC ', '_PLACEHOLDER_')
-    secret = secret.replace(' ', '\n')
-    secret = secret.replace('_PLACEHOLDER_', ' PUBLIC ')
-    try:
-      r = jwt.decode(token, secret, algorithms='RS256')
-    except jwt.ExpiredSignatureError:
-      log.error('Access token has expired.')
-      abort(status.HTTP_401_UNAUTHORIZED,
-            'OAuth access_token is invalid: token has expired.')
-    except jwt.DecodeError:
-      log.error('Access token is invalid and cannot be decoded.')
-      abort(status.HTTP_400_BAD_REQUEST,
-            'OAuth access_token is invalid: token cannot be decoded.')
-    return r['client_id']
+  uss_id = None
+  if ('access_token' in request.headers and TESTID and
+    TESTID in request.headers['access_token']) :
+    uss_id = request.headers['access_token']
+  elif ('Authorization' in request.headers and TESTID and
+        TESTID in request.headers['Authorization']):
+    uss_id = request.headers['Authorization']
+  elif (TESTID and 'access_token' not in request.headers and
+        'Authorization' not in request.headers):
+    uss_id = TESTID
   else:
-    log.error('Attempt to access resource without access_token in header.')
-    abort(status.HTTP_403_FORBIDDEN,
-          'Valid OAuth access_token must be provided in header.')
+    # TODO(hikevin): Replace with OAuth Discovery and JKWS
+    secret = os.getenv('INTERUSS_PUBLIC_KEY')
+    token = None
+    if 'Authorization' in request.headers:
+      token = request.headers['Authorization'].replace('Bearer ', '')
+    elif 'access_token' in request.headers:
+      token = request.headers['access_token']
+    if secret and token:
+      # ENV variables sometimes don't pass newlines, spec says white space
+      # doesn't matter, but pyjwt cares about it, so fix it
+      secret = secret.replace(' PUBLIC ', '_PLACEHOLDER_')
+      secret = secret.replace(' ', '\n')
+      secret = secret.replace('_PLACEHOLDER_', ' PUBLIC ')
+      try:
+        r = jwt.decode(token, secret, algorithms='RS256')
+        #TODO(hikevin): Check scope is valid for InterUSS Platform
+        uss_id = r['client_id'] if 'client_id' in r else r['sub']
+      except jwt.ExpiredSignatureError:
+        log.error('Access token has expired.')
+        abort(status.HTTP_401_UNAUTHORIZED,
+              'OAuth access_token is invalid: token has expired.')
+      except jwt.DecodeError:
+        log.error('Access token is invalid and cannot be decoded.')
+        abort(status.HTTP_400_BAD_REQUEST,
+              'OAuth access_token is invalid: token cannot be decoded.')
+    else:
+      log.error('Attempt to access resource without access_token in header.')
+      abort(status.HTTP_403_FORBIDDEN,
+            'Valid OAuth access_token must be provided in header.')
+  return uss_id
 
 
 def _GetGridCellMetaData(zoom, x, y):
@@ -378,47 +392,6 @@ def _GetRequestParameter(name, default):
     log.error('Request is in an unknown format: %s', str(request))
     r = default
   return r
-
-
-def _ValidateCoordinates(csv):
-  """Converts and validates string of CSV coords into array of coords."""
-  result = []
-  try:
-    coords = csv.split(',')
-    if len(coords) % 2 != 0:
-      raise ValueError
-  except ValueError:
-    return None
-  log.debug('Split coordinates to %s and passed early validation...', coords)
-  for a, b in _Pairwise(coords):
-    try:
-      lat = float(a)
-      lon = float(b)
-      if lat >= 85 or lat <= -85 or lon >= 180 or lon <= -180:
-        raise ValueError
-    except ValueError:
-      return None
-    result.append((lat, lon))
-  return result
-
-
-def _Pairwise(it):
-  """Iterator for sets of lon,lat in an array."""
-  it = iter(it)
-  while True:
-    yield next(it), next(it)
-
-
-def _ConvertPointToTile(zoom, latitude, longitude):
-  """Actual calculation from lat/lon to tile at specific zoom."""
-  log.debug('_ConvertPointToTile for %.3f, %.3f...', latitude, longitude)
-  latitude_rad = math.radians(latitude)
-  n = 2.0**zoom
-  xtile = int((longitude + 180.0) / 360.0 * n)
-  ytile = int(
-    (1.0 - math.log(math.tan(latitude_rad) +
-                    (1 / math.cos(latitude_rad))) / math.pi) / 2.0 * n)
-  return xtile, ytile
 
 
 def _FormatResult(result):

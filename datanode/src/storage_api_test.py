@@ -20,7 +20,8 @@ import unittest
 import requests
 
 import storage_api
-ZK_TEST_CONNECTION_STRING = '35.224.64.48:2181,35.188.14.39:2181,35.224.180.72:2181'
+ZK_TEST_CONNECTION_STRING = 'localhost:2181'
+TESTID = 'storage-api-test'
 
 
 class InterUSSStorageAPITestCase(unittest.TestCase):
@@ -29,7 +30,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     storage_api.webapp.testing = True
     self.app = storage_api.webapp.test_client()
     options = storage_api.ParseOptions(
-        ['-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCase'])
+        ['-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID])
     storage_api.InitializeConnection(options)
 
   def tearDown(self):
@@ -38,21 +39,23 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
   def testStatus(self):
     result = self.app.get('/status')
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     self.assertIn(b'OK', result.data)
     result = self.app.get('/')
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     self.assertIn(b'OK', result.data)
 
   def testIntrospectWithBadTokens(self):
-    result = self.app.get('/introspect')
-    self.assertEqual(result.status_code, 403)
-    result = self.app.get('/introspect?token=NOTVALID')
-    self.assertEqual(result.status_code, 403)
-    result = self.app.get('/introspect?access_token=NOTVALID')
-    self.assertEqual(result.status_code, 403)
+    result = self.app.get('/introspect', headers={'Authorization': None})
+    self.assertEqual(400, result.status_code)
+    result = self.app.get('/introspect?token=NOTVALID',
+                          headers={'Authorization': None})
+    self.assertEqual(400, result.status_code)
+    result = self.app.get('/introspect?access_token=NOTVALID',
+                          headers={'Authorization': None})
+    self.assertEqual(400, result.status_code)
     result = self.app.get('/introspect', headers={'access_token': 'NOTVALID'})
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
 
   def testIntrospectWithExpiredToken(self):
     result = self.app.get(
@@ -61,10 +64,23 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             'access_token':
             '1/fFAGRNJru1FTz70BzhT3Zg'
         })
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
+
+  def testValidAuthorizationTokensInTest(self):
+    for field in ('access_token', 'Authorization'):
+      for token in (TESTID, TESTID + 'a', '123' + TESTID):
+        result = self.app.get('/GridCellMetaData/1/1/1',
+                              headers={field: token})
+        self.assertEqual(200, result.status_code)
+
+  def testInvalidAuthorizationTokensInTest(self):
+    for field in ('Authorization', 'access_token'):
+      for token in ('not_valid', '', None):
+        result = self.app.get('/GridCellMetaData/1/1/1',
+                              headers={field: token})
+        self.assertAlmostEqual(400, result.status_code, delta=3)
 
   def testIntrospectWithValidToken(self):
-    # pylint: disable=line-too-long
     self.assertIsNotNone(os.environ.get('FIMS_AUTH'))
     self.assertIsNotNone(os.environ.get('INTERUSS_PUBLIC_KEY'))
     endpoint = 'https://utmalpha.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials'
@@ -73,34 +89,29 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(r.status_code, 200)
     token = r.json()['access_token']
     result = self.app.get('/introspect', headers={'access_token': token})
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
 
   def testSlippyConversionWithInvalidData(self):
     result = self.app.get('/slippy')
     self.assertEqual(result.status_code, 404)
     result = self.app.get('/slippy/11')
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
     result = self.app.get('/slippy/11a')
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
     result = self.app.get('/slippy/11?coords=1')
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
     result = self.app.get('/slippy/11?coords=1a,1')
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
     result = self.app.get('/slippy/11?coords=1,1a')
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
     result = self.app.get('/slippy/11?coords=91,1')
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
     result = self.app.get('/slippy/11?coords=1,181')
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
     result = self.app.get('/slippy/21?coords=1,1')
-    self.assertEqual(result.status_code, 400)
+    self.assertEqual(400, result.status_code)
     result = self.app.get('/slippy/11?coords=1,1,2')
-    self.assertEqual(result.status_code, 400)
-    result = self.app.get('/slippy/10?coords=-86,0')
-    self.assertEqual(result.status_code, 400)
-    result = self.app.get('/slippy/10?coords=89,0')
-    self.assertEqual(result.status_code, 400)
-
+    self.assertEqual(400, result.status_code)
 
   def testSlippyConversionWithValidData(self):
     r = self.app.get('/slippy/11?coords=1,1')
@@ -144,28 +155,28 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.CheckEmptyGridCell(self.app.get('/GridCellMetaData/15/9132/1425'))
 
   def testIncorrectGetsOnGridCells(self):
-    self.assertEqual(self.app.get('/GridCellMetaDatas/1/1/1').status_code, 404)
-    self.assertEqual(self.app.get('/GridCellMetaData').status_code, 404)
-    self.assertEqual(self.app.get('/GridCellMetaData/admin').status_code, 404)
-    self.assertEqual(self.app.get('/GridCellMetaData/1/1/1/admin').status_code,
-                    404)
-    self.assertEqual(self.app.get('/GridCellMetaData/1a/1/1').status_code, 400)
-    self.assertEqual(self.app.get('/GridCellMetaData/99/1/1').status_code, 400)
-    self.assertEqual(self.app.get('/GridCellMetaData/1/99/1').status_code, 400)
-    self.assertEqual(self.app.get('/GridCellMetaData/1/1/99').status_code, 400)
+    self.assertEqual(404, self.app.get('/GridCellMetaDatas/1/1/1').status_code)
+    self.assertEqual(404, self.app.get('/GridCellMetaData').status_code)
+    self.assertEqual(404, self.app.get('/GridCellMetaData/admin').status_code)
+    self.assertEqual(404,
+                     self.app.get('/GridCellMetaData/1/1/1/admin').status_code)
+    self.assertEqual(400, self.app.get('/GridCellMetaData/1a/1/1').status_code)
+    self.assertEqual(400, self.app.get('/GridCellMetaData/99/1/1').status_code)
+    self.assertEqual(400, self.app.get('/GridCellMetaData/1/99/1').status_code)
+    self.assertEqual(400, self.app.get('/GridCellMetaData/1/1/99').status_code)
 
   def testIncorrectPutsOnGridCells(self):
     result = self.app.get('/GridCellMetaData/1/1/1')
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     s = j['sync_token']
-    self.assertEqual(self.app.put(
+    self.assertEqual(404, self.app.put(
         '/GridCellMetaDatas/1/1/1',
         query_string=dict(
             sync_token=s,
             flight_endpoint='https://g.co/f1',
-            priority_flight_callback='https://g.co/r')).status_code, 404)
-    self.assertEqual(self.app.put(
+            priority_flight_callback='https://g.co/r')).status_code)
+    self.assertEqual(404, self.app.put(
         '/GridCellMetaData',
         query_string=dict(
             ssync_token=s,
@@ -173,8 +184,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_endpoint='https://g.co/f',
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 404)
-    self.assertEqual(self.app.put(
+            maximum_operation_timestamp='2018-01-02')).status_code)
+    self.assertEqual(400, self.app.put(
         '/GridCellMetaData/1a/1/1',
         query_string=dict(
             sync_token=s,
@@ -182,8 +193,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_endpoint='https://g.co/f',
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 400)
-    self.assertEqual(self.app.put(
+            maximum_operation_timestamp='2018-01-02')).status_code)
+    self.assertEqual(400, self.app.put(
         '/GridCellMetaData/1/99/1',
         query_string=dict(
             sync_token=s,
@@ -191,8 +202,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_endpoint='https://g.co/f',
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 400)
-    self.assertEqual(self.app.put(
+            maximum_operation_timestamp='2018-01-02')).status_code)
+    self.assertEqual(400, self.app.put(
         '/GridCellMetaData/1/1/1',
         query_string=dict(
             # sync_token=s,
@@ -200,8 +211,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_endpoint='https://g.co/f',
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 400)
-    self.assertEqual(self.app.put(
+            maximum_operation_timestamp='2018-01-02')).status_code)
+    self.assertEqual(400, self.app.put(
         '/GridCellMetaData/1/1/1',
         query_string=dict(
             sync_token=s,
@@ -209,8 +220,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_endpoint='https://g.co/f',
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 400)
-    self.assertEqual(self.app.put(
+            maximum_operation_timestamp='2018-01-02')).status_code)
+    self.assertEqual(400, self.app.put(
         '/GridCellMetaData/1/1/1',
         query_string=dict(
             sync_token=s,
@@ -218,8 +229,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             # operation_endpoint='https://g.co/f',
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 400)
-    self.assertEqual(self.app.put(
+            maximum_operation_timestamp='2018-01-02')).status_code)
+    self.assertEqual(400, self.app.put(
         '/GridCellMetaData/1/1/1',
         query_string=dict(
             sync_token=s,
@@ -227,8 +238,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_endpoint='https://g.co/f',
             # operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 400)
-    self.assertEqual(self.app.put(
+            maximum_operation_timestamp='2018-01-02')).status_code)
+    self.assertEqual(400, self.app.put(
         '/GridCellMetaData/1/1/1',
         query_string=dict(
             sync_token=s,
@@ -236,8 +247,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_endpoint='https://g.co/f',
             operation_format='NASA',
             # minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code, 400)
-    self.assertEqual(self.app.put(
+            maximum_operation_timestamp='2018-01-02')).status_code)
+    self.assertEqual(400, self.app.put(
         '/GridCellMetaData/1/1/1',
         query_string=dict(
             sync_token=s,
@@ -245,45 +256,45 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_endpoint='https://g.co/f',
             operation_format='NASA',
             # maximum_operation_timestamp='2018-01-02'
-            minimum_operation_timestamp='2018-01-01')).status_code, 400)
-    self.assertEqual(self.app.put(
+            minimum_operation_timestamp='2018-01-01')).status_code)
+    self.assertEqual(400, self.app.put(
         '/GridCellMetaData/1/1/1', data={
             'sync_token': 'NOT_VALID'
-        }).status_code, 400)
-    self.assertEqual(self.app.put('/GridCellMetaData/1/1/1').status_code, 400)
+        }).status_code)
+    self.assertEqual(400, self.app.put('/GridCellMetaData/1/1/1').status_code)
 
   def testIncorrectDeletesOnGridCells(self):
-    self.assertEqual(
-        self.app.delete('/GridCellMetaDatas/1/1/1').status_code, 404)
-    self.assertEqual(self.app.delete('/GridCellMetaData').status_code, 404)
-    self.assertEqual(
-        self.app.delete('/GridCellMetaData/admin').status_code, 404)
-    self.assertEqual(self.app.delete(
-        '/GridCellMetaData/1/1/1/admin').status_code, 404)
-    self.assertEqual(
-        self.app.delete('/GridCellMetaData/1a/1/1').status_code, 400)
-    self.assertEqual(
-        self.app.delete('/GridCellMetaData/99/1/1').status_code, 400)
-    self.assertEqual(
-        self.app.delete('/GridCellMetaData/1/99/1').status_code, 400)
-    self.assertEqual(
-        self.app.delete('/GridCellMetaData/1/1/99').status_code, 400)
+    self.assertEqual(404,
+                     self.app.delete('/GridCellMetaDatas/1/1/1').status_code)
+    self.assertEqual(404, self.app.delete('/GridCellMetaData').status_code)
+    self.assertEqual(404,
+                     self.app.delete('/GridCellMetaData/admin').status_code)
+    self.assertEqual(404, self.app.delete(
+        '/GridCellMetaData/1/1/1/admin').status_code)
+    self.assertEqual(400,
+                     self.app.delete('/GridCellMetaData/1a/1/1').status_code)
+    self.assertEqual(400,
+                     self.app.delete('/GridCellMetaData/99/1/1').status_code)
+    self.assertEqual(400,
+                     self.app.delete('/GridCellMetaData/1/99/1').status_code)
+    self.assertEqual(400,
+                     self.app.delete('/GridCellMetaData/1/1/99').status_code)
 
   def CheckEmptyGridCell(self, result):
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
-    self.assertEqual(j['status'], 'success')
-    self.assertEqual(j['data']['version'], 0)
-    self.assertEqual(len(j['data']['operators']), 0)
+    self.assertEqual('success', j['status'])
+    self.assertEqual(0, j['data']['version'])
+    self.assertEqual(0, len(j['data']['operators']))
     return True
 
   def testFullValidSequenceOfGetPutDelete(self):
     # Make sure it is empty
     result = self.app.get('/GridCellMetaData/1/1/1')
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     s = j['sync_token']
-    self.assertEqual(len(j['data']['operators']), 0)
+    self.assertEqual(0, len(j['data']['operators']))
     # Put a record in there
     result = self.app.put(
         '/GridCellMetaData/1/1/1',
@@ -294,24 +305,24 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     s = j['sync_token']
     # Delete the record
     result = self.app.delete('/GridCellMetaData/1/1/1')
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     s = j['sync_token']
     # Make sure it is gone
     result = self.app.get('/GridCellMetaData/1/1/1')
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     self.assertEqual(len(j['data']['operators']), 0)
 
   def testMultipleUpdates(self):
     # Make sure it is empty
     result = self.app.get('/GridCellMetaData/1/1/1')
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     s = j['sync_token']
     self.assertEqual(len(j['data']['operators']), 0)
@@ -336,7 +347,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
-    self.assertEqual(result.status_code, 200)
+    self.assertEqual(200, result.status_code)
     # Try to put a record in there again with the old sequence token
     result = self.app.put(
         '/GridCellMetaData/1/1/1',
@@ -351,7 +362,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
   def testVerbose(self):
     options = storage_api.ParseOptions([
-        '-z', ZK_TEST_CONNECTION_STRING, '-t', 'InterUSSStorageAPITestCase',
+        '-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID,
         '-v'
     ])
     storage_api.InitializeConnection(options)

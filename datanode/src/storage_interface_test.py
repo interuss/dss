@@ -21,7 +21,8 @@ from dateutil import parser
 from kazoo.handlers.threading import KazooTimeoutError
 
 import storage_interface
-ZK_TEST_CONNECTION_STRING = '35.224.64.48:2181,35.188.14.39:2181,35.224.180.72:2181'
+ZK_TEST_CONNECTION_STRING = 'localhost:2181'
+TESTID = 'storage-interface-test'
 PARALLEL_WORKERS = 10
 
 
@@ -30,7 +31,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
   def setUp(self):
     # IMPORTANT: Puts us in a test data location
     self.mm = storage_interface.USSMetadataManager(
-        ZK_TEST_CONNECTION_STRING, testgroupid='InterUSSStorageInterfaceTest')
+        ZK_TEST_CONNECTION_STRING, testgroupid=TESTID)
 
   def tearDown(self):
     # IMPORTANT: Clean out your test data when you are done
@@ -41,20 +42,20 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     with self.assertRaises(ValueError):
       storage_interface.USSMetadataManager(
           'terrible:connection:1459231232133_string-#$%@',
-          testgroupid='InterUSSStorageInterfaceTest')
+          testgroupid=TESTID)
     with self.assertRaises(ValueError):
       storage_interface.USSMetadataManager(
-          '__init__%password%', testgroupid='InterUSSStorageInterfaceTest')
+          '__init__%password%', testgroupid=TESTID)
     with self.assertRaises(ValueError):
       storage_interface.USSMetadataManager(
-          '\'printf();\'', testgroupid='InterUSSStorageInterfaceTest')
+          '\'printf();\'', testgroupid=TESTID)
     with self.assertRaises(KazooTimeoutError):
       storage_interface.USSMetadataManager(
-          '123456789101112', testgroupid='InterUSSStorageInterfaceTest')
+          '123456789101112', testgroupid=TESTID)
     with self.assertRaises(KazooTimeoutError):
       storage_interface.USSMetadataManager(
           'google.com:2424,gmail.com:14566',
-          testgroupid='InterUSSStorageInterfaceTest')
+          testgroupid=TESTID)
 
   def testGetCellNegativeCases(self):
     self.assertEqual(self.mm.get(2, 1, 2**2)['status'], 'fail')
@@ -236,8 +237,12 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
         mintest += 'Z'
       if not ('+' in maxtest[-6:] or '-' in maxtest[-6:] or 'Z' in maxtest[-6:]):
         maxtest += 'Z'
-      self.assertAlmostEqual(0, (parser.parse(mintest) - parser.parse(o['minimum_operation_timestamp'])).total_seconds(), 0)
-      self.assertAlmostEqual(0, (parser.parse(maxtest) - parser.parse(o['maximum_operation_timestamp'])).total_seconds(), 0)
+      self.assertAlmostEqual(
+        0, (parser.parse(mintest) -
+            parser.parse(o['minimum_operation_timestamp'])).total_seconds(), 0)
+      self.assertAlmostEqual(
+        0, (parser.parse(maxtest) -
+            parser.parse(o['maximum_operation_timestamp'])).total_seconds(), 0)
     # Make sure everything is clean
     self.mm.delete_testdata()
     return
