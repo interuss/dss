@@ -86,14 +86,14 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     endpoint = 'https://utmalpha.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials'
     headers = {'Authorization': 'Basic ' + os.environ.get('FIMS_AUTH', '')}
     r = requests.post(endpoint, headers=headers)
-    self.assertEqual(r.status_code, 200)
+    self.assertEqual(200, r.status_code)
     token = r.json()['access_token']
     result = self.app.get('/introspect', headers={'access_token': token})
     self.assertEqual(200, result.status_code)
 
   def testSlippyConversionWithInvalidData(self):
     result = self.app.get('/slippy')
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(404, result.status_code)
     result = self.app.get('/slippy/11')
     self.assertEqual(400, result.status_code)
     result = self.app.get('/slippy/11a')
@@ -113,17 +113,17 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     result = self.app.get('/slippy/11?coords=1,1,2')
     self.assertEqual(400, result.status_code)
 
-  def testSlippyConversionWithValidData(self):
+  def testSlippyConversionWithValidPoints(self):
     r = self.app.get('/slippy/11?coords=1,1')
-    self.assertEqual(r.status_code, 200)
+    self.assertEqual(200, r.status_code)
     j = json.loads(r.data)
     self.assertEqual(11, j['data']['grid_cells'][0]['zoom'])
     self.assertEqual(1029, j['data']['grid_cells'][0]['x'])
     self.assertEqual(1018, j['data']['grid_cells'][0]['y'])
     self.assertEqual('http://tile.openstreetmap.org/11/1029/1018.png',
                      j['data']['grid_cells'][0]['link'])
-    r = self.app.get('/slippy/10?coords=37.408959,-122.053834')
-    self.assertEqual(r.status_code, 200)
+    r = self.app.get('/slippy/10?coord_type=point&coords=37.408959,-122.053834')
+    self.assertEqual(200, r.status_code)
     j = json.loads(r.data)
     self.assertEqual(10, j['data']['grid_cells'][0]['zoom'])
     self.assertEqual(164, j['data']['grid_cells'][0]['x'])
@@ -146,6 +146,58 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     r = self.app.get('/slippy/11?coords=0,0,1,1,2,2,3,3')
     self.assertEqual(r.status_code, 200)
     self.assertEqual(len(json.loads(r.data)['data']['grid_cells']), 4)
+
+  def testSlippyConversionWithValidPaths(self):
+    r = self.app.get('/slippy/0?coord_type=path&coords=0,0,1,1.5')
+    self.assertEqual(r.status_code, 200)
+    j = json.loads(r.data)
+    self.assertEqual(0, j['data']['grid_cells'][0]['zoom'])
+    self.assertEqual(0, j['data']['grid_cells'][0]['x'])
+    self.assertEqual(0, j['data']['grid_cells'][0]['y'])
+    self.assertEqual('http://tile.openstreetmap.org/0/0/0.png',
+                     j['data']['grid_cells'][0]['link'])
+    self.assertEqual(
+      self.app.get('/slippy/5?coord_type=path&coords=0,0,1,1.5').data,
+      self.app.get('/slippy/5?coord_type=path&coords=0,0,1,1.5,0,0').data)
+    r = self.app.get('/slippy/15?coord_type=path&coords=0,0,1,1.5')
+    self.assertEqual(r.status_code, 200)
+    j = json.loads(r.data)
+    self.assertEqual(15, j['data']['grid_cells'][0]['zoom'])
+    self.assertEqual(229, len(j['data']['grid_cells']))
+
+  def testSlippyConversionWithInvalidPaths(self):
+    r = self.app.get('/slippy/0?coord_type=path&coords=0')
+    self.assertEqual(400, r.status_code)
+    r = self.app.get('/slippy/0?coord_type=path&coords=0,1,2')
+    self.assertEqual(400, r.status_code)
+
+  def testSlippyConversionWithValidPolygons(self):
+    r = self.app.get('/slippy/0?coord_type=polygon&coords=0,0,1,1.5,0,1.5')
+    self.assertEqual(r.status_code, 200)
+    j = json.loads(r.data)
+    self.assertEqual(0, j['data']['grid_cells'][0]['zoom'])
+    self.assertEqual(0, j['data']['grid_cells'][0]['x'])
+    self.assertEqual(0, j['data']['grid_cells'][0]['y'])
+    self.assertEqual('http://tile.openstreetmap.org/0/0/0.png',
+                     j['data']['grid_cells'][0]['link'])
+    self.assertEqual(
+      self.app.get('/slippy/5?coord_type=polygon&coords=0,0,1,1.5,0,1.5').data,
+      self.app.get(
+        '/slippy/5?coord_type=polygon&coords=0,0,1,1.5,0,0,0,1.5,0,0').data)
+    s = '47.5,-103,47.5,-101.8,48,-101.8,48,-103,47.5,-103'
+    r = self.app.get('/slippy/9?coord_type=polygon&coords=' + s)
+    self.assertEqual(r.status_code, 200)
+    j = json.loads(r.data)
+    self.assertEqual(9, j['data']['grid_cells'][0]['zoom'])
+    self.assertEqual(9, len(j['data']['grid_cells']))
+
+  def testSlippyConversionWithInvalidPolygons(self):
+    r = self.app.get('/slippy/0?coord_type=polygon&coords=0')
+    self.assertEqual(400, r.status_code)
+    r = self.app.get('/slippy/0?coord_type=polygon&coords=0,1,2')
+    self.assertEqual(400, r.status_code)
+    r = self.app.get('/slippy/0?coord_type=polygon&coords=0,0,1,1.5')
+    self.assertEqual(400, r.status_code)
 
   def testMultipleSuccessfulEmptyRandomGets(self):
     self.CheckEmptyGridCell(self.app.get('/GridCellMetaData/1/1/1'))
