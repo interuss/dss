@@ -95,7 +95,7 @@ def convert_csv_to_coordinates(csv):
 
 
 def convert_tile_to_polygon(zoom, xtile, ytile):
-  """Conversion from lat/lon to tile at specific zoom.
+  """Conversion from tile to lat,lon polygon at specific zoom.
 
   Args:
       zoom: level of zoom in slippy terms (0-20)

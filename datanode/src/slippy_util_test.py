@@ -182,9 +182,7 @@ class InterUSSSlippyUtilitiesTestCase(unittest.TestCase):
       slippy_util.convert_path_to_tiles(
         4, [point_8x11, point_11x8])))
 
-    # triangle to the bottom is 10
-    print(slippy_util.convert_polygon_to_tiles(
-      4, [point_11x8, point_8x11, point_11x11, point_11x8]))
-    self.assertEqual(10, len(
+    # triangle to the bottom is 11
+    self.assertEqual(11, len(
       slippy_util.convert_polygon_to_tiles(
         4, [point_11x8, point_8x11, point_11x11, point_11x8])))
