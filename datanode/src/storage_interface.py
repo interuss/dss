@@ -42,6 +42,7 @@ import slippy_util
 # Kazoo is the zookeeper wrapper for python
 from kazoo.client import KazooClient
 from kazoo.exceptions import BadVersionError
+from kazoo.exceptions import NoNodeError
 from kazoo.exceptions import RolledBackError
 from kazoo.handlers.threading import KazooTimeoutError
 from kazoo.protocol.states import KazooState
@@ -411,8 +412,11 @@ class USSMetadataManager(object):
     path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
                                USS_METADATA_FILE)
     log.debug('Getting metadata from zookeeper@%s...', path)
-    self.zk.ensure_path(path)
-    c, m = self.zk.get(path)
+    try:
+      c, m = self.zk.get(path)
+    except NoNodeError:
+      self.zk.ensure_path(path)
+      c, m = self.zk.get(path)
     if c:
       log.debug('Received raw content and metadata from zookeeper: %s', c)
     if m:

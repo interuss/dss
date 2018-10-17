@@ -21,7 +21,6 @@ from dateutil import parser
 from kazoo.handlers.threading import KazooTimeoutError
 
 import storage_interface
-#ZK_TEST_CONNECTION_STRING = '35.188.14.39:2181,35.224.180.72:2181'
 ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-interface-test'
 PARALLEL_WORKERS = 10
@@ -293,7 +292,10 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual('fail', r['status'])
 
   def testSetMultipleCellCases(self):
-    grids = [(0, 0), (0, 1), (1, 1)]
+    grids = [(0, 0), (0, 1), (0, 2),
+             (1, 0), (1, 1), (1, 2),
+             (2, 0), (2, 1), (2, 2),
+             (3, 0), (3, 1), (3, 2)]
     g = self.mm.get_multi(8, grids)
     self.assertEqual('success', g['status'])
     self.assertEqual(0, g['data']['version'])
@@ -304,6 +306,11 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                           '2018-01-01T01:00:00+00:00')
     self.assertEqual('success', s['status'])
     self.assertEqual(1, s['data']['version'])
+    self.assertEqual(len(grids), len(s['data']['operators']))
+    g = self.mm.get_multi(8, grids)
+    self.assertEqual('success', s['status'])
+    self.assertEqual(1, s['data']['version'])
+    self.assertEqual(len(grids), len(s['data']['operators']))
 
   def testFullCycleMultipleCellCases(self):
     grids = [(0, 0), (0, 1), (1, 1)]
@@ -318,7 +325,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual('success', s['status'])
     self.assertNotEqual(g['sync_token'], s['sync_token'])
     self.assertEqual(1, s['data']['version'])
-    self.assertEqual(3, len(s['data']['operators']))
+    self.assertEqual(len(grids), len(s['data']['operators']))
     # Do a write to two other cells
     grids = [(0, 0), (1, 1)]
     g = self.mm.get_multi(9, grids)
