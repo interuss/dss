@@ -29,6 +29,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import copy
 import datetime
 import json
 import logging
@@ -71,6 +72,24 @@ class USSMetadata(object):
   def __str__(self):
     return str(self.to_json())
 
+  def __add__(self, other):
+    """Adds two metadata objects together"""
+    combined = copy.deepcopy(self)
+    if other is not None:
+      if (parser.parse(other.timestamp) > parser.parse(combined.timestamp) or
+        combined.version == 0):
+        combined.version = other.version
+        combined.timestamp = other.timestamp
+      for operator in other.operators:
+        combined.operators.append(operator)
+    return combined
+
+  def __radd__(self, other):
+    if other == 0:
+      return self
+    else:
+      return self.__add__(other)
+
   def to_json(self):
     return {
       'version': self.version,
@@ -79,7 +98,7 @@ class USSMetadata(object):
     }
 
   def upsert_operator(self, uss_id, ws_scope, operation_format, operation_ws,
-    earliest, latest):
+    earliest, latest, zoom=None, x=None, y=None):
     """Inserts or updates an operation, with uss_id as the key.
 
     Args:
@@ -92,6 +111,7 @@ class USSMetadata(object):
         used for quick filtering conflicts.
       latest: upper bound of active or planned flight timestamp,
         used for quick filtering conflicts.
+      zoom, x, y: grid reference for this cell
     Returns:
       true if valid, false if not
     """
@@ -122,8 +142,22 @@ class USSMetadata(object):
       'maximum_operation_timestamp': self.format_ts(latest_operation)
     }
     self.operators.append(operator)
+    self.update_grid_location(zoom, x, y)
     self.timestamp = self.format_ts()
     return True
+
+  def update_grid_location(self, z, x, y):
+    """Updates the z, x, y fields and any variables in the endpoints"""
+    if not (z is None or x is None or y is None):
+      for operator in self.operators:
+        operator['zoom'] = z
+        operator['x'] = x
+        operator['y'] = y
+        e = operator['operation_endpoint']
+        e = e.replace('{zoom}', str(z)).replace('{z}', str(z))
+        e = e.replace('{x}', str(x))
+        e = e.replace('{y}', str(y))
+        operator['operation_endpoint'] = e
 
   def remove_operator(self, uss_id):
     self.version += 1

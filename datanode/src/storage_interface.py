@@ -41,7 +41,8 @@ import slippy_util
 
 # Kazoo is the zookeeper wrapper for python
 from kazoo.client import KazooClient
-from kazoo.exceptions import LockTimeout
+from kazoo.exceptions import BadVersionError
+from kazoo.exceptions import RolledBackError
 from kazoo.handlers.threading import KazooTimeoutError
 from kazoo.protocol.states import KazooState
 
@@ -56,7 +57,6 @@ TEST_BASE_PREFIX = '/test/'
 USS_METADATA_FILE = '/manifest'
 BAD_CHARACTER_CHECK = '\';(){}[]!@#$%^&*|"<>'
 CONNECTION_TIMEOUT = 2.5  # seconds
-LOCK_TIMEOUT = 2.5  # seconds
 DEFAULT_CONNECTION = 'localhost:2181'
 GRID_PATH = USS_BASE_PREFIX
 
@@ -171,9 +171,9 @@ class USSMetadataManager(object):
           m = uss_metadata.USSMetadata(content)
           status = 200
           result = {
-              'status': 'success',
-              'sync_token': metadata.last_modified_transaction_id,
-              'data': m.to_json()
+            'status': 'success',
+            'sync_token': metadata.last_modified_transaction_id,
+            'data': m.to_json()
           }
         except ValueError:
           status = 424
@@ -186,7 +186,7 @@ class USSMetadataManager(object):
     return result
 
   def set(self, z, x, y, sync_token, uss_id, ws_scope, operation_format,
-          operation_ws, earliest_operation, latest_operation):
+    operation_ws, earliest_operation, latest_operation):
     """Sets the metadata for a GridCell.
 
     Writes data, using the snapshot token for confirming data
@@ -212,7 +212,6 @@ class USSMetadataManager(object):
     status = 500
     if slippy_util.validate_slippy(z, x, y):
       # first we have to get the cell
-      status = 0
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
         # Quick check of the token, another is done on the actual set to be sure
@@ -223,11 +222,11 @@ class USSMetadataManager(object):
             log.debug('Setting metadata for %s...', uss_id)
             if not m.upsert_operator(uss_id, ws_scope, operation_format,
                                      operation_ws, earliest_operation,
-                                     latest_operation):
+                                     latest_operation, z, x, y):
               log.error('Failed setting operator for %s with token %s...',
                         uss_id, str(sync_token))
               raise ValueError
-            status = self._set_raw(z, x, y, m, uss_id, sync_token)
+            status = self._set_raw(z, x, y, m, metadata.version)
           except ValueError:
             status = 424
         else:
@@ -263,8 +262,7 @@ class USSMetadataManager(object):
           m = uss_metadata.USSMetadata(content)
           m.remove_operator(uss_id)
           # TODO(pelletierb): Automatically retry on delete
-          status = self._set_raw(z, x, y, m, uss_id,
-                                 metadata.last_modified_transaction_id)
+          status = self._set_raw(z, x, y, m, metadata.version)
         except ValueError:
           status = 424
       else:
@@ -275,12 +273,125 @@ class USSMetadataManager(object):
       # Success, now get the metadata back to send back
       (content, metadata) = self._get_raw(z, x, y)
       result = {
-          'status': 'success',
-          'sync_token': metadata.last_modified_transaction_id,
-          'data': m.to_json()
+        'status': 'success',
+        'sync_token': metadata.last_modified_transaction_id,
+        'data': m.to_json()
       }
     else:
       result = self._format_status_code_to_jsend(status)
+    return result
+
+  def get_multi(self, z, grids):
+    """Gets the metadata and snapshot token for a GridCell.
+
+    Reads data from zookeeper, including a snapshot token. The
+    snapshot token is used as a reference when writing to ensure
+    the data has not been updated between read and write.
+
+    Args:
+      z: zoom level in slippy tile format
+      grids: list of (x,y) tiles to retrieve
+    Returns:
+      JSend formatted response (https://labs.omniti.com/labs/jsend)
+    """
+    try:
+      metas, syncs = self._get_multi_raw(z, grids)
+      log.debug('Found sync token %s for %d grids...',
+                self._hash_sync_tokens(syncs), len(syncs))
+      result = {
+        'status': 'success',
+        'sync_token': self._hash_sync_tokens(syncs),
+        'data': metas.to_json()
+      }
+    except ValueError as e:
+      result = self._format_status_code_to_jsend(400, e.message)
+    except IndexError as e:
+      result = self._format_status_code_to_jsend(404, e.message)
+    return result
+
+  def set_multi(self, z, grids, sync_token, uss_id, ws_scope, operation_format,
+    operation_ws, earliest_operation, latest_operation):
+    """Sets multiple GridCells metadata at once.
+
+    Writes data, using the hashed snapshot token for confirming data
+    has not been updated since it was last read.
+
+    Args:
+      z: zoom level in slippy tile format
+      grids: list of (x,y) tiles to update
+      sync_token: token retrieved in the original get_multi,
+      uss_id: plain text identifier for the USS,
+      ws_scope: scope to use to obtain OAuth token,
+      operation_format: output format for operation ws (i.e. NASA, GUTMA),
+      operation_ws: submitting USS endpoint where all flights in
+        this cell can be retrieved from,
+      earliest_operation: lower bound of active or planned flight timestamp,
+        used for quick filtering conflicts.
+      latest_operation: upper bound of active or planned flight timestamp,
+        used for quick filtering conflicts.
+    Returns:
+      JSend formatted response (https://labs.omniti.com/labs/jsend)
+    """
+    log.debug('Setting multiple grid metadata for %s...', uss_id)
+    try:
+      # first, get the grids affected
+      metas, syncs = self._get_multi_raw(z, grids)
+      # Quick check of the token, another is done on the actual set to be sure
+      #    but this check fails early and fast
+      log.debug('Found sync token %d for %d grids...',
+                self._hash_sync_tokens(syncs), len(syncs))
+      if str(self._hash_sync_tokens(syncs)) == str(sync_token):
+        log.debug('Composite sync_token matches, continuing...')
+        self._set_multi_raw(z, grids, syncs, uss_id, ws_scope, operation_format,
+                            operation_ws, earliest_operation, latest_operation)
+        log.debug('Completed updating multiple grids...')
+      else:
+        raise KeyError('Composite sync_token has changed')
+      new_metas, new_syncs = self._get_multi_raw(z, grids)
+      result = {
+        'status': 'success',
+        'sync_token': self._hash_sync_tokens(new_syncs),
+        'data': new_metas.to_json()
+      }
+    except (KeyError, RolledBackError) as e:
+      result = self._format_status_code_to_jsend(409, e.message)
+    except ValueError as e:
+      result = self._format_status_code_to_jsend(400, e.message)
+    except IndexError as e:
+      result = self._format_status_code_to_jsend(404, e.message)
+    return result
+
+  def delete_multi(self, uss_id, z, grids):
+    """Sets multiple GridCells metadata by removing the entry for the USS.
+
+    Reads data from zookeeper, including a snapshot token. The
+    snapshot token is used as a reference when writing to ensure
+    the data has not been updated between read and write.
+
+    Args:
+      uss_id: is the plain text identifier for the USS
+      z: zoom level in slippy tile format
+      grids: list of (x,y) tiles to delete
+    Returns:
+      JSend formatted response (https://labs.omniti.com/labs/jsend)
+    """
+    log.debug('Deleting multiple grid metadata for %s...', uss_id)
+    try:
+      if not uss_id:
+        raise ValueError('Invalid uss_id for deleting multi')
+      for x, y in grids:
+        if slippy_util.validate_slippy(z, x, y):
+          (content, metadata) = self._get_raw(z, x, y)
+          if metadata:
+            m = uss_metadata.USSMetadata(content)
+            m.remove_operator(uss_id)
+            # TODO(pelletierb): Automatically retry on delete
+            status = self._set_raw(z, x, y, m, metadata.version)
+        else:
+          raise ValueError('Invalid slippy grids for lookup')
+      result = self.get_multi(z, grids)
+    except ValueError as e:
+      result = self._format_status_code_to_jsend(400, e.message)
     return result
 
   ######################################################################
@@ -297,7 +408,8 @@ class USSMetadataManager(object):
       content: USS metadata
       metadata: straight from zookeeper
     """
-    path = GRID_PATH + '/'.join((str(z), str(x), str(y))) + USS_METADATA_FILE
+    path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
+                               USS_METADATA_FILE)
     log.debug('Getting metadata from zookeeper@%s...', path)
     self.zk.ensure_path(path)
     c, m = self.zk.get(path)
@@ -307,7 +419,7 @@ class USSMetadataManager(object):
       log.debug('Received raw metadata from zookeeper: %s', m)
     return c, m
 
-  def _set_raw(self, z, x, y, m, uss_id, sync_token):
+  def _set_raw(self, z, x, y, m, version):
     """Grabs the lock and updates the raw content for a GridCell in zookeeper.
 
     Args:
@@ -315,41 +427,118 @@ class USSMetadataManager(object):
       x: x tile number in slippy tile format
       y: y tile number in slippy tile format
       m: metadata object to write
-      uss_id: the plain text identifier for the USS
-      sync_token: the sync token received during get operation
+      version: the metadata version verified from the sync_token match
     Returns:
       200 for success, 409 for conflict, 408 for unable to get the lock
     """
-    status = 500
-    path = GRID_PATH + '/'.join((str(z), str(x), str(y))) + USS_METADATA_FILE
-    # TODO(hikevin): Remove Lock and use built in set with version
-    lock = self.zk.WriteLock(path, uss_id)
+    path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
+                               USS_METADATA_FILE)
     try:
-      log.debug('Getting metadata lock from zookeeper@%s...', path)
-      lock.acquire(timeout=LOCK_TIMEOUT)
-      (content, metadata) = self._get_raw(z, x, y)
-      del content
-      if str(metadata.last_modified_transaction_id) == str(sync_token):
-        log.debug('Setting metadata to %s...', str(m))
-        self.zk.set(path, json.dumps(m.to_json()))
-        status = 200
-      else:
-        log.error(
-            'Sync token from USS (%s) does not match token from zk (%s)...',
-            str(sync_token), str(metadata.last_modified_transaction_id))
-        status = 409
-      log.debug('Releasing the lock...')
-      lock.release()
-    except LockTimeout:
-      log.error('Unable to acquire the lock for %s...', path)
-      status = 408
+      log.debug('Setting metadata to %s...', str(m))
+      self.zk.set(path, json.dumps(m.to_json()), version)
+      status = 200
+    except BadVersionError:
+      log.error('Sync token updated before write for %s...', path)
+      status = 409
     return status
 
-  def _format_status_code_to_jsend(self, status):
+  def _get_multi_raw(self, z, grids):
+    """Gets the raw content and metadata for multiple GridCells from zookeeper.
+
+    Args:
+      z: zoom level in slippy tile format
+      grids: list of (x,y) tiles to retrieve
+    Returns:
+      content: Combined USS metadata
+      syncs: list of sync tokens in the same order as the grids
+    Raises:
+      IndexError: if it cannot find anything in zookeeper
+      ValueError: if the grid data is not in the right format
+    """
+    log.debug('Getting multiple grid metadata for %s...', str(grids))
+    metas = None
+    syncs = []
+    for x, y in grids:
+      if slippy_util.validate_slippy(z, x, y):
+        (content, metadata) = self._get_raw(z, x, y)
+        if metadata:
+          metas += uss_metadata.USSMetadata(content)
+          syncs.append(metadata.last_modified_transaction_id)
+        else:
+          raise IndexError('Unable to find metadata in platform')
+      else:
+        raise ValueError('Invalid slippy grids for lookup')
+    if len(syncs) == 0:
+      raise IndexError('Unable to find metadata in platform')
+    return metas, syncs
+
+  def _set_multi_raw(self, z, grids, sync_tokens, uss_id, ws_scope,
+    operation_format, operation_ws, earliest_operation, latest_operation):
+    """Grabs the lock and updates the raw content for multiple GridCells
+
+    Args:
+      z: zoom level in slippy tile format
+      grids: list of (x,y) tiles to retrieve
+      sync_tokens: list of the sync tokens received during get operation
+      uss_id: plain text identifier for the USS,
+      ws_scope: scope to use to obtain OAuth token,
+      operation_format: output format for operation ws (i.e. NASA, GUTMA),
+      operation_ws: submitting USS endpoint where all flights in
+        this cell can be retrieved from,
+      earliest_operation: lower bound of active or planned flight timestamp,
+        used for quick filtering conflicts.
+      latest_operation: upper bound of active or planned flight timestamp,
+        used for quick filtering conflicts.
+    Raises:
+      IndexError: if it cannot find anything in zookeeper
+      ValueError: if the grid data is not in the right format
+    """
+    log.debug('Setting multiple grid metadata for %s...', str(grids))
+    try:
+      contents = []
+      for i in range(len(grids)):
+        # First, get and update them all in memory, validate the sync_token
+        x = grids[i][0]
+        y = grids[i][1]
+        sync_token = sync_tokens[i]
+        path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
+                                   USS_METADATA_FILE)
+        (content, metadata) = self._get_raw(z, x, y)
+        if str(metadata.last_modified_transaction_id) == str(sync_token):
+          log.debug('Sync_token matches for %d, %d...', x, y)
+          m = uss_metadata.USSMetadata(content)
+          if not m.upsert_operator(uss_id, ws_scope, operation_format,
+                                   operation_ws, earliest_operation,
+                                   latest_operation, z, x, y):
+            raise ValueError('Failed to set operator content')
+          contents.append((path, m, metadata.version))
+        else:
+          log.error(
+            'Sync token from USS (%s) does not match token from zk (%s)...',
+            str(sync_token), str(metadata.last_modified_transaction_id))
+          raise KeyError('Composite sync_token has changed')
+      # Now, start a transaction to update them all
+      #  the version will catch any changes and roll back any attempted
+      #  updates to the grids
+      log.debug('Starting transaction to write all grids at once...')
+      t = self.zk.transaction()
+      for path, m, version in contents:
+        t.set_data(path, json.dumps(m.to_json()), version)
+      log.debug('Committing transaction...')
+      results = t.commit()
+      if isinstance(results[0], RolledBackError):
+        raise KeyError('Rolled back multi-grid transaction due to grid change')
+      log.debug('Committed transaction successfully.')
+    except (KeyError, ValueError, IndexError) as e:
+      log.error('Error caught in set_multi_raw %s.', e.message)
+      raise e
+
+  def _format_status_code_to_jsend(self, status, message=None):
     """Formats a response based on HTTP status code.
 
     Args:
       status: HTTP status code
+      message: optional message to override preset message for codes
     Returns:
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
@@ -358,48 +547,52 @@ class USSMetadataManager(object):
       result = {'status': 'success', 'code': 204, 'message': 'Empty data set.'}
     elif status == 400:
       result = {
-          'status': 'fail',
-          'code': status,
-          'message': 'Parameters are not following the correct format.'
+        'status': 'fail',
+        'code': status,
+        'message': 'Parameters are not following the correct format.'
       }
     elif status == 404:
       result = {
-          'status': 'fail',
-          'code': status,
-          'message': 'Unable to pull metadata from lock system.'
+        'status': 'fail',
+        'code': status,
+        'message': 'Unable to pull metadata from lock system.'
       }
     elif status == 408:
       result = {
-          'status': 'fail',
-          'code': status,
-          'message': 'Timeout trying to get lock.'
+        'status': 'fail',
+        'code': status,
+        'message': 'Timeout trying to get lock.'
       }
     elif status == 409:
       result = {
-          'status':
-              'fail',
-          'code':
-              status,
-          'message':
-              'Content in metadata has been updated since provided sync token.'
+        'status':
+          'fail',
+        'code':
+          status,
+        'message':
+          'Content in metadata has been updated since provided sync token.'
       }
     elif status == 424:
       result = {
-          'status':
-              'fail',
-          'code':
-              status,
-          'message':
-              'Content in metadata is not following JSON format guidelines.'
+        'status':
+          'fail',
+        'code':
+          status,
+        'message':
+          'Content in metadata is not following JSON format guidelines.'
       }
     else:
       result = {
-          'status': 'fail',
-          'code': status,
-          'message': 'Unknown error code occurred.'
+        'status': 'fail',
+        'code': status,
+        'message': 'Unknown error code occurred.'
       }
+    if message:
+      result['message'] = message
     return result
 
-
-
-
+  @staticmethod
+  def _hash_sync_tokens(syncs):
+    """Hashes a list of sync tokens into a single, positive 64-bit int"""
+    log.debug('Hashing syncs: %s', str(sorted(syncs)))
+    return abs(hash(str(sorted(syncs))))
