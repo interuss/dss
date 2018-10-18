@@ -21,6 +21,8 @@ from dateutil import parser
 from kazoo.handlers.threading import KazooTimeoutError
 
 import storage_interface
+import uss_metadata
+
 ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-interface-test'
 PARALLEL_WORKERS = 10
@@ -365,6 +367,26 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                           'GUTMA', 'https://g4.co/flight/{z}/{x}/{y}',
                           '2018-01-01T00:00:00+00:00',
                           '2018-01-01T01:00:00+00:00')
+
+  def testUSSmetadatAddition(self):
+    a = uss_metadata.USSMetadata()
+    a.upsert_operator('uss-a', 'scope-a', 'NASA', 'http://a.com/uss',
+                      '2018-01-01', '2018-01-02', 10, 1, 1)
+    b1 = uss_metadata.USSMetadata()
+    b1.upsert_operator('uss-b', 'scope-b', 'NASA', 'http://b.com/uss',
+                      '2018-01-01', '2018-01-02', 10, 1, 1)
+    b2 = uss_metadata.USSMetadata()
+    b2.upsert_operator('uss-b', 'scope-b', 'NASA', 'http://b.com/uss',
+                       '2018-01-01', '2018-01-02', 10, 1, 2)
+    usss = a + b1 + b2
+    self.assertEqual(3, len(usss.operators))
+    with self.assertRaises(ValueError):
+      usss = a + a
+    ax = uss_metadata.USSMetadata()
+    ax.upsert_operator('uss-a', 'scope-ax', 'NASA', 'http://ax.com/uss',
+                      '2018-01-03', '2018-01-04', 10, 1, 1)
+    with self.assertRaises(ValueError):
+      usss = a + ax
 
 
 if __name__ == '__main__':

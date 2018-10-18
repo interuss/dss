@@ -210,7 +210,6 @@ class USSMetadataManager(object):
     Returns:
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
-    status = 500
     if slippy_util.validate_slippy(z, x, y):
       # first we have to get the cell
       (content, metadata) = self._get_raw(z, x, y)
@@ -283,9 +282,9 @@ class USSMetadataManager(object):
     return result
 
   def get_multi(self, z, grids):
-    """Gets the metadata and snapshot token for a GridCell.
+    """Gets the metadata and snapshot token for multiple GridCells.
 
-    Reads data from zookeeper, including a snapshot token. The
+    Reads data from zookeeper, including a composite snapshot token. The
     snapshot token is used as a reference when writing to ensure
     the data has not been updated between read and write.
 
@@ -296,13 +295,13 @@ class USSMetadataManager(object):
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
     try:
-      metas, syncs = self._get_multi_raw(z, grids)
+      combined_meta, syncs = self._get_multi_raw(z, grids)
       log.debug('Found sync token %s for %d grids...',
                 self._hash_sync_tokens(syncs), len(syncs))
       result = {
         'status': 'success',
         'sync_token': self._hash_sync_tokens(syncs),
-        'data': metas.to_json()
+        'data': combined_meta.to_json()
       }
     except ValueError as e:
       result = self._format_status_code_to_jsend(400, e.message)
@@ -335,8 +334,9 @@ class USSMetadataManager(object):
     """
     log.debug('Setting multiple grid metadata for %s...', uss_id)
     try:
-      # first, get the grids affected
-      metas, syncs = self._get_multi_raw(z, grids)
+      # first, get the affected grid's sync tokens
+      m, syncs = self._get_multi_raw(z, grids)
+      del m
       # Quick check of the token, another is done on the actual set to be sure
       #    but this check fails early and fast
       log.debug('Found sync token %d for %d grids...',
@@ -348,11 +348,11 @@ class USSMetadataManager(object):
         log.debug('Completed updating multiple grids...')
       else:
         raise KeyError('Composite sync_token has changed')
-      new_metas, new_syncs = self._get_multi_raw(z, grids)
+      combined_meta, new_syncs = self._get_multi_raw(z, grids)
       result = {
         'status': 'success',
         'sync_token': self._hash_sync_tokens(new_syncs),
-        'data': new_metas.to_json()
+        'data': combined_meta.to_json()
       }
     except (KeyError, RolledBackError) as e:
       result = self._format_status_code_to_jsend(409, e.message)
@@ -460,13 +460,13 @@ class USSMetadataManager(object):
       ValueError: if the grid data is not in the right format
     """
     log.debug('Getting multiple grid metadata for %s...', str(grids))
-    metas = None
+    combined_meta = None
     syncs = []
     for x, y in grids:
       if slippy_util.validate_slippy(z, x, y):
         (content, metadata) = self._get_raw(z, x, y)
         if metadata:
-          metas += uss_metadata.USSMetadata(content)
+          combined_meta += uss_metadata.USSMetadata(content)
           syncs.append(metadata.last_modified_transaction_id)
         else:
           raise IndexError('Unable to find metadata in platform')
@@ -474,7 +474,7 @@ class USSMetadataManager(object):
         raise ValueError('Invalid slippy grids for lookup')
     if len(syncs) == 0:
       raise IndexError('Unable to find metadata in platform')
-    return metas, syncs
+    return combined_meta, syncs
 
   def _set_multi_raw(self, z, grids, sync_tokens, uss_id, ws_scope,
     operation_format, operation_ws, earliest_operation, latest_operation):
@@ -598,5 +598,5 @@ class USSMetadataManager(object):
   @staticmethod
   def _hash_sync_tokens(syncs):
     """Hashes a list of sync tokens into a single, positive 64-bit int"""
-    log.debug('Hashing syncs: %s', str(sorted(syncs)))
-    return abs(hash(str(sorted(syncs))))
+    log.debug('Hashing syncs: %s', tuple(sorted(syncs)))
+    return abs(hash(tuple(sorted(syncs))))
