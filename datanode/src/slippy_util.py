@@ -187,29 +187,6 @@ def convert_polygon_to_tiles(zoom, points):
   return _convert_shape_to_tiles(zoom, points, is_poly=True)
 
 
-def convert_points_to_geojson(points, headers=True, name='slippy-out'):
-  """ Converts a set of lat/lon points into a path in geojson format."""
-  result = ''
-  if headers:
-    result += """{
-      "type": "FeatureCollection",
-      "features": ["""
-  result += """{
-      "type": "Feature",
-      "properties": {"name" : "%s" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [ [ """ % name
-  for lat, lon in points:
-    result += "[ %.5f, %.5f ]," % (lon, lat)
-  result = result[:-1] + """] ]
-        }
-      }"""
-  if headers:
-    result +=' ] }'
-  return result
-
-
 ######################################################################
 ################       INTERNAL FUNCTIONS    #########################
 ######################################################################
