@@ -160,16 +160,13 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(
       self.app.get('/slippy/5?coord_type=path&coords=0,0,1,1.5').data,
       self.app.get('/slippy/5?coord_type=path&coords=0,0,1,1.5,0,0').data)
-    r = self.app.get('/slippy/15?coord_type=path&coords=0,0,1,1.5')
-    self.assertEqual(200, r.status_code)
-    j = json.loads(r.data)
-    self.assertEqual(15, j['data']['grid_cells'][0]['zoom'])
-    self.assertEqual(229, len(j['data']['grid_cells']))
 
   def testSlippyConversionWithInvalidPaths(self):
     r = self.app.get('/slippy/0?coord_type=path&coords=0')
     self.assertEqual(400, r.status_code)
     r = self.app.get('/slippy/0?coord_type=path&coords=0,1,2')
+    self.assertEqual(400, r.status_code)
+    r = self.app.get('/slippy/15?coord_type=path&coords=0,0,1,1.5')
     self.assertEqual(400, r.status_code)
 
   def testSlippyConversionWithValidPolygons(self):
@@ -666,6 +663,10 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
                                        query_string=dict(
                                          coords='0,0,1,0,1,1,0,1',
                                          coord_type='rainbows')).status_code)
+    self.assertEqual(413, self.app.get('/GridCellsMetaData/18',
+                                       query_string=dict(
+                                         coords='0,0,1,0,1,1,0,1',
+                                         coord_type='polygon')).status_code)
     result = self.app.get('/GridCellsMetaData/10',
                           query_string=dict(coords='0,0,1,0,1,1,0,1'))
     self.assertEqual(200, result.status_code)

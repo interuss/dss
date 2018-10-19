@@ -75,7 +75,6 @@ import slippy_util
 VERSION = '1.1.0.005'  # api changes to support multi-grid GET/PUT/DEL
 
 TESTID = None
-TILE_LIMIT = 25  # Number of tiles to allow for multi get/put/del
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('InterUSS_DataNode_StorageAPI')
@@ -133,7 +132,7 @@ def ConvertCoordinatesToSlippy(zoom):
       tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
       if tile not in result:
         result.append(tile)
-  except (ValueError, TypeError) as e:
+  except (ValueError, TypeError, OverflowError) as e:
     log.error('/slippy error: %s...', e.message)
     abort(status.HTTP_400_BAD_REQUEST, e.message)
 
@@ -206,9 +205,9 @@ def GridCellsMetaDataHandler(zoom):
   try:
     zoom = int(zoom)
     tiles = _ConvertCSVtoTiles(zoom)
-    if len(tiles) > TILE_LIMIT:
+    if len(tiles) > slippy_util.TILE_LIMIT:
       raise OverflowError('Limit of %d tiles impacted exceeded (%d)'
-                          % (TILE_LIMIT, len(tiles)))
+                          % (slippy_util.TILE_LIMIT, len(tiles)))
   except (ValueError, TypeError) as e:
     abort(status.HTTP_400_BAD_REQUEST, e.message)
   except OverflowError as e:
@@ -531,7 +530,7 @@ def _ConvertCSVtoTiles(zoom):
       and the specified coordinate type (path, polygon, point) """
   tiles = []
   coords = _GetRequestParameter('coords', '')
-  coord_type = _GetRequestParameter('coord_type', 'point')
+  coord_type = _GetRequestParameter('coord_type', 'point').lower()
   log.debug('Retrieved coords from web params and split to %s...', coords)
   coordinates = slippy_util.convert_csv_to_coordinates(coords)
   if not coordinates:

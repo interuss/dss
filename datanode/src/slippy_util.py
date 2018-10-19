@@ -41,6 +41,8 @@ from shapely.geometry import Polygon
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('InterUSS_DataNode_SlippyUtil')
 
+TILE_LIMIT = 50  # Number of tiles to allow for multi get/put/del
+
 
 def validate_slippy(z, x, y, raise_error=False):
   """Validates slippy tile ranges.
@@ -258,6 +260,9 @@ def _calculate_tiles_from_bounding_box(zoom, bbox):
     x, y = convert_point_to_tile(zoom, lat, lon)
     if (x, y) not in result:
       result.append((x, y))
+      if len(result) > TILE_LIMIT:
+        raise OverflowError('Limit of %d tiles impacted exceeded'
+                            % (TILE_LIMIT))
     last = (lat, lon)
   if not result:
     raise ValueError('No tiles found for path coordinates')
