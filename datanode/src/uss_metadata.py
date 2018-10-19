@@ -29,6 +29,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import copy
 import datetime
 import json
 import logging
@@ -41,7 +42,7 @@ log = logging.getLogger('InterUSS_DataNode_InformationInterface')
 
 
 class USSMetadata(object):
-  """Data structure for the metadata stored for USS entries in a GridCell.
+  """Data structure for the USS metadata stored for one or more GridCells.
 
   Format: {version: <version>, timestamp: <last_updated>, operators:
     [{uss: <ussid>, scope: <used_for_obtaining_oauth_tokens>,
@@ -49,7 +50,10 @@ class USSMetadata(object):
     operation_endpoint: <endpoint_to_retrieve_operations_in_this_grid>,
     operation_format: <output_format_of_uas_operations>,
     minimum_operation_timestamp: <lowest_start_time_of_operations_in_this_cell>,
-    maximum_operation_timestamp: <highest_end_time_of_operations_in_this_cell>
+    maximum_operation_timestamp: <highest_end_time_of_operations_in_this_cell>,
+    zoom: <slippy_zoom_level_for_the_gridcell>,
+    x: <slippy_x_level_for_the_gridcell>,
+    y: <slippy_y_level_for_the_gridcell>,
     },
       ...other USSs as appropriate... ]
   }
@@ -71,6 +75,31 @@ class USSMetadata(object):
   def __str__(self):
     return str(self.to_json())
 
+  def __add__(self, other):
+    """Adds two metadata objects together"""
+    combined = copy.deepcopy(self)
+    if other is not None:
+      if (parser.parse(other.timestamp) > parser.parse(combined.timestamp) or
+        combined.version == 0):
+        combined.version = other.version
+        combined.timestamp = other.timestamp
+      for operator in other.operators:
+        combined.operators.append(operator)
+    keys = []
+    for o in combined.operators:
+      key = (o['uss'], o['zoom'], o['x'], o['y'])
+      if key in keys:
+        raise ValueError('Duplicate USS ID, zoom, x, y found during add')
+      else:
+        keys.append(key)
+    return combined
+
+  def __radd__(self, other):
+    if other == 0:
+      return self
+    else:
+      return self.__add__(other)
+
   def to_json(self):
     return {
       'version': self.version,
@@ -79,7 +108,7 @@ class USSMetadata(object):
     }
 
   def upsert_operator(self, uss_id, ws_scope, operation_format, operation_ws,
-    earliest, latest):
+    earliest, latest, zoom, x, y):
     """Inserts or updates an operation, with uss_id as the key.
 
     Args:
@@ -92,6 +121,7 @@ class USSMetadata(object):
         used for quick filtering conflicts.
       latest: upper bound of active or planned flight timestamp,
         used for quick filtering conflicts.
+      zoom, x, y: grid reference for this cell
     Returns:
       true if valid, false if not
     """
@@ -122,6 +152,7 @@ class USSMetadata(object):
       'maximum_operation_timestamp': self.format_ts(latest_operation)
     }
     self.operators.append(operator)
+    self._update_grid_location(zoom, x, y)
     self.timestamp = self.format_ts()
     return True
 
@@ -137,3 +168,18 @@ class USSMetadata(object):
     r = datetime.datetime.now(pytz.utc) if timestamp is None else timestamp
     r = r.astimezone(pytz.utc)
     return r.isoformat()
+
+  def _update_grid_location(self, z, x, y):
+    """Updates the z, x, y fields and any variables in the endpoints"""
+    if z is None or x is None or y is None:
+      raise ValueError('Slippy values not set for grid location')
+    else:
+      for operator in self.operators:
+        operator['zoom'] = z
+        operator['x'] = x
+        operator['y'] = y
+        e = operator['operation_endpoint']
+        e = e.replace('{zoom}', str(z)).replace('{z}', str(z))
+        e = e.replace('{x}', str(x))
+        e = e.replace('{y}', str(y))
+        operator['operation_endpoint'] = e

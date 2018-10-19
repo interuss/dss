@@ -21,6 +21,8 @@ from dateutil import parser
 from kazoo.handlers.threading import KazooTimeoutError
 
 import storage_interface
+import uss_metadata
+
 ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-interface-test'
 PARALLEL_WORKERS = 10
@@ -32,6 +34,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # IMPORTANT: Puts us in a test data location
     self.mm = storage_interface.USSMetadataManager(
         ZK_TEST_CONNECTION_STRING, testgroupid=TESTID)
+    self.mm.set_verbose()
 
   def tearDown(self):
     # IMPORTANT: Clean out your test data when you are done
@@ -58,58 +61,52 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
           testgroupid=TESTID)
 
   def testGetCellNegativeCases(self):
-    self.assertEqual(self.mm.get(2, 1, 2**2)['status'], 'fail')
+    self.assertEqual('fail', self.mm.get(2, 1, 2**2)['status'])
     # x, y, z are ints
-    self.assertEqual(self.mm.get(1, '1a', 1)['status'], 'fail')
-    self.assertEqual(self.mm.get(1, 1, 'aa')['status'], 'fail')
-    self.assertEqual(self.mm.get(None, 1, 1)['status'], 'fail')
+    self.assertEqual('fail', self.mm.get(1, '1a', 1)['status'])
+    self.assertEqual('fail', self.mm.get(1, 1, 'aa')['status'])
+    self.assertEqual('fail', self.mm.get(None, 1, 1)['status'])
     # x and y tiles max are 2^zoom - 1
-    self.assertEqual(self.mm.get(1, 2, 1)['status'], 'fail')
-    self.assertEqual(self.mm.get(2, 5478118, 1)['status'], 'fail')
-    self.assertEqual(self.mm.get(2, 2**2, 1)['status'], 'fail')
-    self.assertEqual(self.mm.get(12, 2**12, 1)['status'], 'fail')
-    self.assertEqual(self.mm.get(1, 17, 1)['status'], 'fail')
-    self.assertEqual(self.mm.get(1, 1, 11)['status'], 'fail')
-    self.assertEqual(self.mm.get(9, 2**8, 2**11)['status'], 'fail')
+    self.assertEqual('fail', self.mm.get(1, 2, 1)['status'])
+    self.assertEqual('fail', self.mm.get(2, 5478118, 1)['status'])
+    self.assertEqual('fail', self.mm.get(2, 2**2, 1)['status'])
+    self.assertEqual('fail', self.mm.get(12, 2**12, 1)['status'])
+    self.assertEqual('fail', self.mm.get(1, 17, 1)['status'])
+    self.assertEqual('fail', self.mm.get(1, 1, 11)['status'])
+    self.assertEqual('fail', self.mm.get(9, 2**8, 2**11)['status'])
 
   def testGetCellPositiveEmptyCases(self):
-    # Make sure everything is clean
-    self.mm.delete_testdata()
     # simple 1,1,1
     r = self.mm.get(1, 1, 1)
-    self.assertEqual(r['status'], 'success')
+    self.assertEqual('success', r['status'])
     self.assertEqual(r['data']['version'], 0)
     # zero case
     r = self.mm.get(0, 0, 0)
-    self.assertEqual(r['status'], 'success')
+    self.assertEqual('success', r['status'])
     self.assertEqual(r['data']['version'], 0)
     r = self.mm.get(11, 0, 5)
-    self.assertEqual(r['status'], 'success')
+    self.assertEqual('success', r['status'])
     self.assertEqual(r['data']['version'], 0)
     # limit in the y direction
     r = self.mm.get(10, 1, 2**10 - 1)
-    self.assertEqual(r['status'], 'success')
+    self.assertEqual('success', r['status'])
     self.assertEqual(r['data']['version'], 0)
     # limit in the x direction
     r = self.mm.get(18, 2**18 - 1, 2**10 - 1)
-    self.assertEqual(r['status'], 'success')
+    self.assertEqual('success', r['status'])
     self.assertEqual(r['data']['version'], 0)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
 
   def testPositiveGetSetDeleteCycle(self):
-    # Make sure everything is clean
-    self.mm.delete_testdata()
     # 2,1,1 get empty
     g = self.mm.get(2, 1, 1)
-    self.assertEqual(g['status'], 'success')
+    self.assertEqual('success', g['status'])
     self.assertEqual(g['data']['version'], 0)
     self.assertEqual(len(g['data']['operators']), 0)
     # simple set with basic values
     s = self.mm.set(2, 1, 1, g['sync_token'], 'uss', 'uss-scope', 'GUTMA',
                     'https://g.co/flight', '2018-01-01T00:00:00+00:00',
                     '2018-01-01T01:00:00+00:00')
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 1)
     self.assertEqual(len(s['data']['operators']), 1)
     o = s['data']['operators'][0]
@@ -123,30 +120,26 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                      '2018-01-01T01:00:00+00:00')
     # simple delete
     d = self.mm.delete(2, 1, 1, 'uss')
-    self.assertEqual(d['status'], 'success')
+    self.assertEqual('success', d['status'])
     self.assertEqual(d['data']['version'], 2)
     self.assertEqual(len(d['data']['operators']), 0)
     # simple confirm get is empty
     g = self.mm.get(2, 1, 1)
-    self.assertEqual(g['status'], 'success')
+    self.assertEqual('success', g['status'])
     self.assertEqual(g['data']['version'], 2)
     self.assertEqual(len(g['data']['operators']), 0)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
 
   def testSetCellWithOutdatedsync_token(self):
-    # Make sure everything is clean
-    self.mm.delete_testdata()
     # 3,1,1 get empty
     g = self.mm.get(3, 1, 1)
-    self.assertEqual(g['status'], 'success')
+    self.assertEqual('success', g['status'])
     self.assertEqual(g['data']['version'], 0)
     self.assertEqual(len(g['data']['operators']), 0)
     # simple set with basic values
     s = self.mm.set(3, 1, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
                     'https://g.co/flight', '2018-01-01T00:00:00+00:00',
                     '2018-01-01T01:00:00+00:00')
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 1)
     self.assertEqual(len(s['data']['operators']), 1)
     # now try to do a set with the original sync token
@@ -156,18 +149,14 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(s['status'], 'fail')
     # confirm version is still the first write
     g = self.mm.get(3, 1, 1)
-    self.assertEqual(g['status'], 'success')
+    self.assertEqual('success', g['status'])
     self.assertEqual(g['data']['version'], 1)
     self.assertEqual(len(g['data']['operators']), 1)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
 
   def testSetCellsInParallelWithSamesync_token(self):
-    # Make sure everything is clean
-    self.mm.delete_testdata()
     # 4,1,1 get empty
     g = self.mm.get(4, 1, 1)
-    self.assertEqual(g['status'], 'success')
+    self.assertEqual('success', g['status'])
     self.assertEqual(g['data']['version'], 0)
     self.assertEqual(len(g['data']['operators']), 0)
     threads = []
@@ -182,11 +171,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     t.join()
     # confirm there is only one update
     g = self.mm.get(4, 1, 1)
-    self.assertEqual(g['status'], 'success')
+    self.assertEqual('success', g['status'])
     self.assertEqual(g['data']['version'], 1)
     self.assertEqual(len(g['data']['operators']), 1)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
 
   def SetCellWorker(self, num, sync_token):
     self.mm.set(4, 1, 1, sync_token, 'uss' + str(num), 'uss-scope' + str(num),
@@ -195,8 +182,6 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     return
 
   def testSetCellsWithInvalidTimestamps(self):
-    # Make sure everything is clean
-    self.mm.delete_testdata()
     # 5,1,1 get empty
     s = self.mm.get(5, 1, 1)
     token = s['sync_token']
@@ -207,13 +192,8 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       s = self.mm.set(5, 1, 1, token, 'uss', 'uss-scope', 'GUTMA',
                       'https://g.co/flight', test[0], test[1])
       self.assertEqual(s['status'], 'fail')
-    # Make sure everything is clean
-    self.mm.delete_testdata()
-    return
 
   def testSetCellsWithValidTimestamps(self):
-    # Make sure everything is clean
-    self.mm.delete_testdata()
     # 5,1,1 get empty
     s = self.mm.get(5, 1, 1)
     token = s['sync_token']
@@ -226,7 +206,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       s = self.mm.set(5, 1, 1, token, 'uss', 'uss-scope', 'GUTMA',
                       'https://g.co/flight', test[0], test[1])
       token = s['sync_token']
-      self.assertEqual(s['status'], 'success')
+      self.assertEqual('success', s['status'])
       o = s['data']['operators'][0]
       # Fix up the test cases to compare, this isn't what is sent to the api
       mintest = test[0]
@@ -243,9 +223,170 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       self.assertAlmostEqual(
         0, (parser.parse(maxtest) -
             parser.parse(o['maximum_operation_timestamp'])).total_seconds(), 0)
-    # Make sure everything is clean
-    self.mm.delete_testdata()
-    return
+
+  def testGetCellMultipleCellCases(self):
+    r1 = self.mm.get_multi(6, [(0, 0), (0, 1), (1, 1)])
+    self.assertEqual('success', r1['status'])
+    self.assertEqual(0, r1['data']['version'])
+    # now do a write to a single cell
+    g = self.mm.get(6, 0, 1)
+    s = self.mm.set(6, 0, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
+                    'https://g.co/flight/0/1', '2018-01-01T00:00:00+00:00',
+                    '2018-01-01T01:00:00+00:00')
+    self.assertEqual('success', s['status'])
+    # confirm the sync_token has changed on multi
+    r2 = self.mm.get_multi(6, [(0, 0), (0, 1), (1, 1)])
+    self.assertNotEqual(r1['sync_token'], r2['sync_token'])
+    # add a few more writes
+    g = self.mm.get(6, 1, 1)
+    s = self.mm.set(6, 1, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
+                    'https://g.co/flight/1/1', '2018-01-01T00:00:00+00:00',
+                    '2018-01-01T01:00:00+00:00')
+    g = self.mm.get(6, 1, 1)
+    s = self.mm.set(6, 1, 1, g['sync_token'], 'uss2', 'uss2-scope', 'GUTMA',
+                    'https://g2.co/uss2/1/1', '2018-01-01T00:00:00+00:00',
+                    '2018-01-01T01:00:00+00:00')
+    self.assertEqual('success', s['status'])
+    # Now get them all and confirm you have the right amount
+    r3 = self.mm.get_multi(6, [(0, 0), (0, 1), (1, 1)])
+    self.assertEqual('success', r3['status'])
+    self.assertNotEqual(r1['sync_token'], r3['sync_token'])
+    self.assertNotEqual(r2['sync_token'], r3['sync_token'])
+    self.assertEqual(2, r3['data']['version'])
+    self.assertEqual(3, len(r3['data']['operators']))
+
+  def testDeleteCellMultipleCellCases(self):
+    grids = [(0, 0), (0, 1), (1, 1)]
+    r1 = self.mm.get_multi(7, grids)
+    self.assertEqual('success', r1['status'])
+    self.assertEqual(0, r1['data']['version'])
+    g = self.mm.get(7, 0, 1)
+    s = self.mm.set(7, 0, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
+                    'https://g.co/flight/0/1', '2018-01-01T00:00:00+00:00',
+                    '2018-01-01T01:00:00+00:00')
+    self.assertEqual('success', s['status'])
+    # add a few more writes
+    g = self.mm.get(7, 1, 1)
+    s = self.mm.set(7, 1, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
+                    'https://g.co/flight/1/1', '2018-01-01T00:00:00+00:00',
+                    '2018-01-01T01:00:00+00:00')
+    self.assertEqual('success', s['status'])
+    g = self.mm.get(7, 1, 1)
+    s = self.mm.set(7, 1, 1, g['sync_token'], 'uss2', 'uss2-scope', 'GUTMA',
+                    'https://g2.co/uss2/1/1', '2018-01-01T00:00:00+00:00',
+                    '2018-01-01T01:00:00+00:00')
+    self.assertEqual('success', s['status'])
+    # Now try deleting uss1, which would delete from two different cells
+    r2 = self.mm.delete_multi('uss1', 7, grids)
+    self.assertEqual('success', r2['status'])
+    self.assertNotEqual(r1['sync_token'], r2['sync_token'])
+    self.assertEqual(3, r2['data']['version'])
+    self.assertEqual(1, len(r2['data']['operators']))
+
+  def testInvalidMultipleCellCases(self):
+    r = self.mm.get_multi(6, [])
+    self.assertEqual('fail', r['status'])
+    r = self.mm.get_multi(6, '0,0,1,1,0,1')
+    self.assertEqual('fail', r['status'])
+    r = self.mm.delete_multi(None, 6, [(0, 0), (0, 1), (1, 1)])
+    self.assertEqual('fail', r['status'])
+    r = self.mm.delete_multi('uss', 21, [(0, 0), (0, 1), (1, 1)])
+    self.assertEqual('fail', r['status'])
+
+  def testSetMultipleCellCases(self):
+    grids = [(0, 0), (0, 1), (0, 2),
+             (1, 0), (1, 1), (1, 2),
+             (2, 0), (2, 1), (2, 2),
+             (3, 0), (3, 1), (3, 2)]
+    g = self.mm.get_multi(8, grids)
+    self.assertEqual('success', g['status'])
+    self.assertEqual(0, g['data']['version'])
+    # now do a write to multiple cells
+    s = self.mm.set_multi(8, grids, g['sync_token'], 'uss1', 'uss1-scope',
+                          'GUTMA', 'https://g.co/flight/{z}/{x}/{y}',
+                          '2018-01-01T00:00:00+00:00',
+                          '2018-01-01T01:00:00+00:00')
+    self.assertEqual('success', s['status'])
+    self.assertEqual(1, s['data']['version'])
+    self.assertEqual(len(grids), len(s['data']['operators']))
+    g = self.mm.get_multi(8, grids)
+    self.assertEqual('success', s['status'])
+    self.assertEqual(1, s['data']['version'])
+    self.assertEqual(len(grids), len(s['data']['operators']))
+
+  def testFullCycleMultipleCellCases(self):
+    grids = [(0, 0), (0, 1), (1, 1)]
+    g = self.mm.get_multi(9, grids)
+    self.assertEqual('success', g['status'])
+    self.assertEqual(0, g['data']['version'])
+    # now do a write to multiple cells
+    s = self.mm.set_multi(9, grids, g['sync_token'], 'uss1', 'uss1-scope',
+                          'GUTMA', 'https://g1.co/flight/{z}/{x}/{y}',
+                          '2018-01-01T00:00:00+00:00',
+                          '2018-01-01T01:00:00+00:00')
+    self.assertEqual('success', s['status'])
+    self.assertNotEqual(g['sync_token'], s['sync_token'])
+    self.assertEqual(1, s['data']['version'])
+    self.assertEqual(len(grids), len(s['data']['operators']))
+    # Do a write to two other cells
+    grids = [(0, 0), (1, 1)]
+    g = self.mm.get_multi(9, grids)
+    self.assertEqual('success', g['status'])
+    self.assertEqual(1, g['data']['version'])
+    s = self.mm.set_multi(9, grids, g['sync_token'], 'uss2', 'uss2-scope',
+                          'GUTMA', 'https://g2.co/flight/{z}/{x}/{y}',
+                          '2018-01-01T00:00:00+00:00',
+                          '2018-01-01T01:00:00+00:00')
+    self.assertEqual('success', s['status'])
+    self.assertNotEqual(g['sync_token'], s['sync_token'])
+    self.assertEqual(2, s['data']['version'])
+    self.assertEqual(4, len(s['data']['operators']))
+    grids = [(0, 0), (0, 1), (1, 1)]
+    s = self.mm.get_multi(9, grids)
+    self.assertEqual('success', s['status'])
+    self.assertEqual(2, s['data']['version'])
+    self.assertEqual(5, len(s['data']['operators']))
+    multi_token = s['sync_token']
+    # Now write to another cell singly and then update using old token
+    g = self.mm.get(9, 0, 1)
+    s = self.mm.set(9, 0, 1, g['sync_token'], 'uss3', 'uss3-scope', 'GUTMA',
+                    'https://g3.co/f/{z}/{x}/{y}', '2018-01-01T00:00:00+00:00',
+                    '2018-01-01T01:00:00+00:00')
+    self.assertEqual('success', s['status'])
+    s = self.mm.set_multi(9, grids, multi_token, 'ussXX', 'ussXX-scope',
+                          'GUTMA', 'https://gXX.co/flight/{z}/{x}/{y}',
+                          '2018-01-01T00:00:00+00:00',
+                          '2018-01-01T01:00:00+00:00')
+    self.assertEqual('fail', s['status'])
+    grids = [(0, 0), (0, 1), (0, 2),
+             (1, 0), (1, 1), (1, 2),
+             (2, 0), (2, 1), (2, 2),
+             (3, 0), (3, 1), (3, 2)]
+    g = self.mm.get_multi(9, grids)
+    s = self.mm.set_multi(9, grids, g['sync_token'], 'uss4', 'uss4-scope',
+                          'GUTMA', 'https://g4.co/flight/{z}/{x}/{y}',
+                          '2018-01-01T00:00:00+00:00',
+                          '2018-01-01T01:00:00+00:00')
+
+  def testUSSmetadatAddition(self):
+    a = uss_metadata.USSMetadata()
+    a.upsert_operator('uss-a', 'scope-a', 'NASA', 'http://a.com/uss',
+                      '2018-01-01', '2018-01-02', 10, 1, 1)
+    b1 = uss_metadata.USSMetadata()
+    b1.upsert_operator('uss-b', 'scope-b', 'NASA', 'http://b.com/uss',
+                      '2018-01-01', '2018-01-02', 10, 1, 1)
+    b2 = uss_metadata.USSMetadata()
+    b2.upsert_operator('uss-b', 'scope-b', 'NASA', 'http://b.com/uss',
+                       '2018-01-01', '2018-01-02', 10, 1, 2)
+    usss = a + b1 + b2
+    self.assertEqual(3, len(usss.operators))
+    with self.assertRaises(ValueError):
+      usss = a + a
+    ax = uss_metadata.USSMetadata()
+    ax.upsert_operator('uss-a', 'scope-ax', 'NASA', 'http://ax.com/uss',
+                      '2018-01-03', '2018-01-04', 10, 1, 1)
+    with self.assertRaises(ValueError):
+      usss = a + ax
 
 
 if __name__ == '__main__':
