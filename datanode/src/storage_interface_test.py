@@ -168,7 +168,8 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
           ))
       threads.append(t)
       t.start()
-    t.join()
+    for t in threads:
+      t.join()
     # confirm there is only one update
     g = self.mm.get(4, 1, 1)
     self.assertEqual('success', g['status'])
