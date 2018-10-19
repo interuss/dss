@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Tests the storage_api image by supplying the required Zookeeper nodes.
+# Tests the storage_api image by supplying the required Zookeeper node.
 
 # Required environment variables:
-#   INTERUSS_API_PORT: Port number on which to provide the InterUSS Platform data node API.
 #   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.
+
+# Optional environment variables:
+#   INTERUSS_API_PORT: Port on which to provide the InterUSS Platform data node API (default 8121).
 
 # To bring up this system:
 # docker-compose -f docker-compose_storageapitest.yaml -p datanode up
@@ -25,7 +27,7 @@ version: '3.6'
 
 services:
 
-  localzoo:
+  zoo:
     image: zookeeper
     ports:
       - 2888:2888
@@ -34,35 +36,15 @@ services:
       - 2181
     environment:
       - ZOO_MY_ID=1
-      - ZOO_SERVERS=server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
-
-  zoo2:
-    image: zookeeper
-    expose:
-      - 2888
-      - 3888
-      - 2181
-    environment:
-      - ZOO_MY_ID=2
-      - ZOO_SERVERS=server.1=localzoo:2888:3888 server.2=0.0.0.0:2888:3888 server.3=zoo3:2888:3888
-
-  zoo3:
-    image: zookeeper
-    expose:
-      - 2888
-      - 3888
-      - 2181
-    environment:
-      - ZOO_MY_ID=3
-      - ZOO_SERVERS=server.1=localzoo:2888:3888 server.2=zoo2:2888:3888 server.3=0.0.0.0:2888:3888
+      - ZOO_SERVERS=server.1=0.0.0.0:2888:3888
 
   storage_api:
     image: interussplatform/storage_api:tcl4
     ports:
-      - ${INTERUSS_API_PORT}:${INTERUSS_API_PORT}
+      - "${INTERUSS_API_PORT:-8121}:${INTERUSS_API_PORT:-8121}"
     environment:
-      - INTERUSS_API_PORT
+      - "${INTERUSS_API_PORT:-8121}"
       - INTERUSS_PUBLIC_KEY
-      - INTERUSS_CONNECTIONSTRING=localzoo:2181
+      - INTERUSS_CONNECTIONSTRING=zoo:2181
     depends_on:
-      - localzoo
+      - zoo

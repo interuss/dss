@@ -31,10 +31,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import json
 # logging is our log infrastructure used for this application
 import logging
-import math
 # OptionParser is our command line parser interface
 from optparse import OptionParser
 import os
@@ -48,8 +46,11 @@ from flask import request
 import jwt
 # rest_framework is for HTTP status codes
 from rest_framework import status
+
 # Our main class for accessing metadata from the locking system
 import storage_interface
+# Tools for slippy conversion
+import slippy_util
 
 # Initialize everything we need
 # VERSION = '0.1.0'  # Initial TCL3 release
@@ -72,8 +73,9 @@ import storage_interface
 # VERSION = 'TCL4.0.1.003'  # Updated docker startup script
 # VERSION = 'TCL4.0.1.004'  # Fixed slippy validation error
 # VERSION = 'TCL4.0.1.005'  # Added Authorization as a valid JWT field
-#VERSION = 'TCL4.0.1.006'  # Corrected error codes and text
-VERSION = 'TCL4.0.1.007'  # Fixed non-tz aware dates and version in operations
+# VERSION = 'TCL4.0.1.006'  # Corrected error codes and text
+# VERSION = 'TCL4.0.1.007'  # Fixed non-tz aware dates and version in operations
+VERSION = 'TCL4.0.2.008'  # sync with master branch for multi-grid and docker updates
 
 
 TESTID = None
@@ -103,10 +105,11 @@ def Status():
 @webapp.route('/slippy/<zoom>', methods=['GET'])
 def ConvertCoordinatesToSlippy(zoom):
   """Converts an CSV of coords to slippy tile format at the specified zoom.
-
   Args:
     zoom: zoom level to use for encapsulating the tiles
-    Plus posted webarg coords: csv of lon,lat,long,lat,etc.
+    Plus posted webargs
+     coords: csv of lon,lat,long,lat,etc.
+     coord_type: (optional) type of coords - point (default), path, polygon
   Returns:
     200 with tiles array in JSON format,
     or the nominal 4xx error codes as necessary.
@@ -114,32 +117,23 @@ def ConvertCoordinatesToSlippy(zoom):
   log.info('Convert coordinates to slippy instantiated for %sz...', zoom)
   try:
     zoom = int(zoom)
-    if zoom < 0 or zoom > 20:
-      raise ValueError
-  except ValueError:
-    log.error('Invalid parameters for zoom %s, must be integer 0-20...', zoom)
-    abort(status.HTTP_400_BAD_REQUEST,
-          'Invalid parameters for zoom, must be integer 0-20.')
-  tiles = []
-  coords = _GetRequestParameter('coords', '')
-  log.debug('Retrieved coords from web params and split to %s...', coords)
-  coordinates = _ValidateCoordinates(coords)
-  if not coordinates:
-    log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
-    abort(status.HTTP_400_BAD_REQUEST,
-          'Invalid coords, must be a CSV of lat,lon,lat,lon...')
-  for c in coordinates:
-    x, y = _ConvertPointToTile(zoom, c[0], c[1])
-    link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
-    tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
-    if tile not in tiles:
-      tiles.append(tile)
+    tiles = _ConvertCSVtoTiles(zoom)
+    result = []
+    for x, y in tiles:
+      link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
+      tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
+      if tile not in result:
+        result.append(tile)
+  except (ValueError, TypeError, OverflowError) as e:
+    log.error('/slippy error: %s...', e.message)
+    abort(status.HTTP_400_BAD_REQUEST, e.message)
+
   return jsonify({
-      'status': 'success',
-      'data': {
-          'zoom': zoom,
-          'grid_cells': tiles,
-      }
+    'status': 'success',
+    'data': {
+      'zoom': zoom,
+      'grid_cells': result,
+    }
   })
 
 
@@ -168,9 +162,6 @@ def GridCellOperatorHandler(zoom, x, y):
   except ValueError:
     abort(status.HTTP_400_BAD_REQUEST,
           'Invalid parameters for slippy tile coordinates, must be integers.')
-  if not wrapper:
-    InitializeConnection(None)
-  # Check the request method
   if request.method == 'GET':
     result = _GetGridCellOperator(zoom, x, y)
   elif request.method in ('PUT', 'POST'):
@@ -219,6 +210,49 @@ def GridCellOperationHandler(zoom, x, y, gufi):
     abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
   return _FormatResult(result)
 
+
+@webapp.route(
+  '/GridCellsMetaData/<zoom>',
+  methods=['GET', 'PUT', 'POST', 'DELETE'])
+def GridCellsMetaDataHandler(zoom):
+  """Handles the web service request for multi-grid operations.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    x: x tile number in slippy tile format
+    y: y tile number in slippy tile format
+    OAuth access_token as part of the header
+    Plus posted webargs:
+      coords: csv of lon,lat,long,lat,etc.
+      coord_type: (optional) type of coords - point (default), path, polygon
+      and additional as needed for PUT/POST and DELETE methods (see below)
+  Returns:
+    200 with token and metadata in JSON format,
+    or the nominal 4xx error codes as necessary.
+  """
+  uss_id = _ValidateAccessToken()
+  result = {}
+  try:
+    zoom = int(zoom)
+    tiles = _ConvertCSVtoTiles(zoom)
+    if len(tiles) > slippy_util.TILE_LIMIT:
+      raise OverflowError('Limit of %d tiles impacted exceeded (%d)'
+                          % (slippy_util.TILE_LIMIT, len(tiles)))
+  except (ValueError, TypeError) as e:
+    abort(status.HTTP_400_BAD_REQUEST, e.message)
+  except OverflowError as e:
+    abort(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, e.message)
+  if request.method == 'GET':
+    result = _GetGridCellsMetaData(zoom, tiles)
+  elif request.method in ('PUT', 'POST'):
+    result = _PutGridCellsMetaData(zoom, tiles, uss_id)
+  elif request.method == 'DELETE':
+    result = _DeleteGridCellsMetaData(zoom, tiles, uss_id)
+  else:
+    abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
+  return _FormatResult(result)
+
+
 ######################################################################
 ################       INTERNAL FUNCTIONS    #########################
 ######################################################################
@@ -232,10 +266,10 @@ def _ValidateAccessToken():
   """
   uss_id = None
   if ('access_token' in request.headers and TESTID and
-      TESTID in request.headers['access_token']) :
+    TESTID in request.headers['access_token']) :
     uss_id = request.headers['access_token']
   elif ('Authorization' in request.headers and TESTID and
-      TESTID in request.headers['Authorization']):
+        TESTID in request.headers['Authorization']):
     uss_id = request.headers['Authorization']
   elif (TESTID and 'access_token' not in request.headers and
         'Authorization' not in request.headers):
@@ -310,9 +344,9 @@ def _PutGridCellOperator(zoom, x, y, uss_id):
   """Updates the operator info stored in a specific slippy GridCell.
 
     Updates the metadata stored in a specific GridCell using optimistic locking
-    behavior, which acquires and releases the lock for the specific GridCell.
-    Operation fails if unable to acquire the locks or if the lock has been
-    updated since GET GridCellOperator was originally called (based on token).
+    behavior. Operation fails if the metadata has been updated since
+    GET GridCellOperator was originally called (based on token).
+
   Args:
     zoom: zoom level in slippy tile format
     x: x tile number in slippy tile format
@@ -382,9 +416,7 @@ def _PutGridCellOperator(zoom, x, y, uss_id):
 def _DeleteGridCellOperator(zoom, x, y, uss_id):
   """Removes the USS entry in the metadata stored in a specific GridCell.
 
-  Removes the USS entry in the metadata using optimistic locking behavior, which
-  acquires and releases the lock for the specific GridCell. Operation fails if
-  unable to acquire the locks.
+  Removes the USS entry in the metadata using optimistic locking behavior.
 
   Args:
     zoom: zoom level in slippy tile format
@@ -503,6 +535,126 @@ def _DeleteGridCellOperation(zoom, x, y, uss_id, gufi):
   return result
 
 
+def _GetGridCellsMetaData(zoom, tiles):
+  """Provides an instantaneous snapshot of the metadata for a multiple GridCells
+
+  Args:
+    zoom: zoom level in slippy tile format
+    tiles: array of x,y tiles to retrieve
+  Returns:
+    200 with token and JSON metadata,
+    or the nominal 4xx error codes as necessary.
+  """
+  log.info('Grid cells metadata request instantiated for %sz, %s...',
+           zoom, str(tiles))
+  result = wrapper.get_multi(zoom, tiles)
+  return result
+
+def _PutGridCellsMetaData(zoom, tiles, uss_id):
+  """Updates the metadata stored in multiple GridCells.
+
+    Updates the metadata stored in a multiple GridCell using optimistic locking
+    behavior. Operation fails if the metadata has been updated since
+    GET GridCellsMetadata was originally called (based on sync_token).
+
+  Args:
+    zoom: zoom level in slippy tile format
+    tiles: array of x,y tiles to retrieve
+    uss_id: the plain text identifier for the USS from OAuth
+  Plus posted webargs:
+    sync_token: the composite sync_token retrieved in the
+      original GET GridCellsMetadata,
+    scope: The submitting USS scope for the web service endpoint (used for OAuth
+      access),
+    operation_endpoint: the submitting USS endpoint where all flights in these
+      cells can be retrieved from (variables {zoom}, {x}, and {y} can be used in
+      the endpoint, and will be replaced with the actual grid values),
+    operation_format: The output format for the USS web service endpoint (i.e.
+      NASA, GUTMA),
+    minimum_operation_timestamp: the lower time bound of all of the USSs flights
+      in these grid cells.
+    maximum_operation_timestamp: the upper time bound of all of the USSs flights
+      in these grid cells.
+
+  Returns:
+    200 and a new composite token if updated successfully,
+    409 if there is a locking conflict that could not be resolved, or
+    the other nominal 4xx error codes as necessary.
+  """
+  log.info('Grid cells metadata submit instantiated for %s at %sz, %s...',
+           uss_id, zoom, str(tiles))
+  sync_token = _GetRequestParameter('sync_token', None)
+  if not sync_token and 'sync_token' in request.headers:
+    sync_token = request.headers['sync_token']
+  scope = _GetRequestParameter('scope', None)
+  operation_endpoint = _GetRequestParameter('operation_endpoint', None)
+  operation_format = _GetRequestParameter('operation_format', None)
+  minimum_operation_timestamp = _GetRequestParameter(
+    'minimum_operation_timestamp', None)
+  maximum_operation_timestamp = _GetRequestParameter(
+    'maximum_operation_timestamp', None)
+  errorfield = errormsg = None
+  if not sync_token:
+    errorfield = 'sync_token'
+  elif not uss_id:
+    errorfield = 'uss_id'
+    errormsg = 'USS identifier not received from OAuth token check.'
+  elif not scope:
+    errorfield = 'scope'
+  elif not operation_endpoint:
+    errorfield = 'operation_endpoint'
+  elif not operation_format:
+    errorfield = 'operation_format'
+  elif not minimum_operation_timestamp:
+    errorfield = 'minimum_operation_timestamp'
+  elif not maximum_operation_timestamp:
+    errorfield = 'maximum_operation_timestamp'
+  if errorfield:
+    if not errormsg:
+      errormsg = errorfield + (
+        ' must be provided in the form data request to add to a '
+        'GridCell.')
+    result = {
+      'status': 'error',
+      'code': status.HTTP_400_BAD_REQUEST,
+      'message': errormsg
+    }
+  else:
+    result = wrapper.set_multi(zoom, tiles, sync_token, uss_id, scope,
+                         operation_format, operation_endpoint,
+                         minimum_operation_timestamp,
+                         maximum_operation_timestamp)
+  return result
+
+def _DeleteGridCellsMetaData(zoom, tiles, uss_id):
+  """Removes the USS entry in multiple GridCells.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    tiles: array of x,y tiles to delete the uss from
+    uss_id: the plain text identifier for the USS from OAuth
+  Returns:
+    200 and a new sync_token if updated successfully,
+    409 if there is a locking conflict that could not be resolved, or
+    the other nominal 4xx error codes as necessary.
+  """
+  log.info('Grid cells metadata delete instantiated for %s, %sz, %s...',
+           uss_id, zoom, str(tiles))
+  if uss_id:
+    result = wrapper.delete_multi(uss_id, zoom, tiles)
+  else:
+    result = {
+      'status':
+        'fail',
+      'code':
+        status.HTTP_400_BAD_REQUEST,
+      'message':
+        """uss_id must be provided in the request to
+          delete a USS from a GridCell."""
+    }
+  return result
+
+
 def _GetRequestParameter(name, default):
   """Parses a web request parameter, regardless of how it was passed in.
 
@@ -527,47 +679,6 @@ def _GetRequestParameter(name, default):
   return r
 
 
-def _ValidateCoordinates(csv):
-  """Converts and validates string of CSV coords into array of coords."""
-  result = []
-  try:
-    coords = csv.split(',')
-    if len(coords) % 2 != 0:
-      raise ValueError
-  except ValueError:
-    return None
-  log.debug('Split coordinates to %s and passed early validation...', coords)
-  for a, b in _Pairwise(coords):
-    try:
-      lat = float(a)
-      lon = float(b)
-      if lat >= 90 or lat <= -90 or lon >= 180 or lon <= -180:
-        raise ValueError
-    except ValueError:
-      return None
-    result.append((lat, lon))
-  return result
-
-
-def _Pairwise(it):
-  """Iterator for sets of lon,lat in an array."""
-  it = iter(it)
-  while True:
-    yield next(it), next(it)
-
-
-def _ConvertPointToTile(zoom, latitude, longitude):
-  """Actual calculation from lat/lon to tile at specific zoom."""
-  log.debug('_ConvertPointToTile for %.3f, %.3f...', latitude, longitude)
-  latitude_rad = math.radians(latitude)
-  n = 2.0**zoom
-  xtile = int((longitude + 180.0) / 360.0 * n)
-  ytile = int(
-      (1.0 - math.log(math.tan(latitude_rad) +
-                      (1 / math.cos(latitude_rad))) / math.pi) / 2.0 * n)
-  return xtile, ytile
-
-
 def _FormatResult(result):
   """Formats the result for returning via the web service.
 
@@ -582,8 +693,14 @@ def _FormatResult(result):
     return jsonify(result)
 
 
-def InitializeConnection(argv):
-  """Initializes the wrapper and the connection to the zookeeper servers.
+def _VerifyPublicKey():
+  if not os.environ.get('INTERUSS_PUBLIC_KEY'):
+    log.error('INTERUSS_PUBLIC_KEY environment variable must be set.')
+    sys.exit(-1)
+
+
+def ParseOptions(argv):
+  """Parses desired options from the command line.
 
   Uses the command line parameters as argv, which can be altered as needed for
   testing.
@@ -591,10 +708,9 @@ def InitializeConnection(argv):
   Args:
     argv: Command line parameters
   Returns:
-    Host and port to use for the server
+    Options structure
   """
-  global wrapper, TESTID
-  log.debug('Parsing command line arguments...')
+  global TESTID
   parser = OptionParser(
       usage='usage: %prog [options]', version='%prog ' + VERSION)
   parser.add_option(
@@ -636,27 +752,34 @@ def InitializeConnection(argv):
       help='Force testing mode with test data located in specific test id  '
       '[or env variable INTERUSS_TESTID]',
       metavar='TESTID')
-  parser.add_option(
-      '-a',
-      '--ssladhoc',
-      action='store_true',
-      dest='ssladhoc',
-      default=False,
-      help='Enable ad-hoc TLS encryption')
   (options, args) = parser.parse_args(argv)
   del args
-  if options.verbose or os.environ.get('INTERUSS_VERBOSE'):
+  return options
+
+
+def InitializeConnection(options=None):
+  """Initializes the wrapper and the connection to the zookeeper servers.
+
+  The side effects of this method are to set the global variables 'wrapper' and
+  'TESTID'.
+
+  Args:
+    options: Options structure with a field per option.
+  """
+  global wrapper, TESTID
+  if (options and options.verbose) or os.environ.get('INTERUSS_VERBOSE'):
     log.setLevel(logging.DEBUG)
   log.debug('Initializing USS metadata manager...')
   wrapper = storage_interface.USSMetadataManager(
-      os.getenv('INTERUSS_CONNECTIONSTRING', options.connectionstring))
-  if options.verbose or os.environ.get('INTERUSS_VERBOSE'):
+      os.getenv('INTERUSS_CONNECTIONSTRING',
+                options.connectionstring if options else None))
+  if (options and options.verbose) or os.environ.get('INTERUSS_VERBOSE'):
     wrapper.set_verbose()
-  if options.testid or os.environ.get('INTERUSS_TESTID'):
-    TESTID = os.getenv('INTERUSS_TESTID', options.testid)
+  if (options and options.testid) or os.environ.get('INTERUSS_TESTID'):
+    TESTID = os.getenv('INTERUSS_TESTID', options.testid if options else None)
+    log.info('Authorization set to test mode with TESTID=%s' % TESTID)
     wrapper.set_testmode(TESTID)
     wrapper.delete_testdata(TESTID)
-  return options.server, options.port, options.ssladhoc
 
 
 def TerminateConnection():
@@ -664,20 +787,24 @@ def TerminateConnection():
   wrapper = None
 
 
+@webapp.before_first_request
+def BeforeFirstRequest():
+  if wrapper is None:
+    _VerifyPublicKey()
+    InitializeConnection()
+
+
 def main(argv):
-  if not os.environ.get('INTERUSS_PUBLIC_KEY'):
-    log.error('INTERUSS_PUBLIC_KEY environment variable must be set.')
-    sys.exit(-1)
-  else:
-    log.debug(
-        """Instantiated application, parsing commandline
-      %s and initializing connection...""", str(argv))
-    host, port, ssl_adhoc = InitializeConnection(argv)
-    log.info('Starting webserver...')
-    webapp.run(host=host, port=int(port),
-               ssl_context='adhoc' if ssl_adhoc else None)
+  _VerifyPublicKey()
+  log.debug(
+      """Instantiated application, parsing commandline
+    %s and initializing connection...""", str(argv))
+  options = ParseOptions(argv)
+  InitializeConnection(options)
+  log.info('Starting webserver...')
+  webapp.run(host=options.server, port=int(options.port))
 
 
-# this is what starts everything
+# this is what starts everything when run directly as an executable
 if __name__ == '__main__':
   main(sys.argv)
