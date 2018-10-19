@@ -189,8 +189,6 @@ def GridCellsMetaDataHandler(zoom):
 
   Args:
     zoom: zoom level in slippy tile format
-    x: x tile number in slippy tile format
-    y: y tile number in slippy tile format
     OAuth access_token as part of the header
     Plus posted webargs:
       coords: csv of lon,lat,long,lat,etc.
