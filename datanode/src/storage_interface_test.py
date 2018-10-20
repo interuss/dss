@@ -41,7 +41,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.mm.delete_testdata()
     self.mm = None
 
-  def testBadConnectionStrings(self):
+  """def testBadConnectionStrings(self):
     with self.assertRaises(ValueError):
       storage_interface.USSMetadataManager(
           'terrible:connection:1459231232133_string-#$%@',
@@ -59,7 +59,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       storage_interface.USSMetadataManager(
           'google.com:2424,gmail.com:14566',
           testgroupid=TESTID)
-
+  """
   def testGetCellNegativeCases(self):
     self.assertEqual('fail', self.mm.get(2, 1, 2**2)['status'])
     # x, y, z are ints
@@ -131,20 +131,20 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
   def testNegativeDeleteCycle(self):
     # 2,1,1 get empty
     g = self.mm.get(2, 2, 1)
-    self.assertEqual(g['status'], 'success')
+    self.assertEqual('success', g['status'])
     # simple set with basic values
     s = self.mm.set(2, 2, 1, g['sync_token'], 'uss', 'uss.com/base', False,
                     '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     o = s['data']['operators'][0]
     # delete the wrong USS
     d = self.mm.delete(2, 2, 1, 'NOT_THE_RIGHT_USS')
-    self.assertEqual(d['status'], 'fail')
+    self.assertEqual('fail', d['status'])
     # simple confirm get is still the same
     g = self.mm.get(2, 2, 1)
-    self.assertEqual(g['status'], 'success')
-    self.assertEqual(g['data']['version'], 1)
-    self.assertEqual(len(g['data']['operators']), 1)
+    self.assertEqual('success' ,g['status'])
+    self.assertEqual(1, g['data']['version'])
+    self.assertEqual(1, len(g['data']['operators']))
 
   def testSetCellWithOutdatedSync_token(self):
     # 3,1,1 get empty
@@ -155,7 +155,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # simple set with basic values
     s = self.mm.set(3, 1, 1, g['sync_token'], 'uss1', 'uss1.com/base', True,
                     '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 1)
     self.assertEqual(len(s['data']['operators']), 1)
     # now try to do a set with the original sync token
@@ -230,9 +230,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       if len(maxtest) <= 10:
         maxtest = maxtest + 'T00:00:00Z'
       if not ('+' in mintest[-6:] or '-' in mintest[-6:] or 'Z' in mintest[-6:]):
-        mintest += 'Z'
+        mintest += '+00:00'
       if not ('+' in maxtest[-6:] or '-' in maxtest[-6:] or 'Z' in maxtest[-6:]):
-        maxtest += 'Z'
+        maxtest += '+00:00'
       self.assertAlmostEqual(
         0, (parser.parse(mintest) -
             parser.parse(o['minimum_operation_timestamp'])).total_seconds(), 0)
@@ -251,13 +251,13 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                     [{'gufi': 'G00F1', 'operation_signature': 'signed4',
                       'effective_time_begin': '2018-02-28T23:59:59-07:00',
                       'effective_time_end': '2018-03-02T23:59:59+08:00'}])
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 1)
     self.assertEqual(len(s['data']['operators']), 1)
     self.assertEqual(len(s['data']['operators'][0]['operations']), 1)
     s = self.mm.set(6, 1, 1, s['sync_token'], 'uss', 'uss.com/base', True,
                     '2018-01-01T00:00:00+00:00', '2018-01-01T01:00:00+00:00')
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 2)
     self.assertEqual(len(s['data']['operators']), 1)
     self.assertEqual(len(s['data']['operators'][0]['operations']), 0)
@@ -276,19 +276,19 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                      {'gufi': 'G00F2', 'operation_signature': 'signed4.1',
                       'effective_time_begin': '2018-02-21T00:00:00-07:00',
                       'effective_time_end': '2018-02-22T00:00:00-07:00'}])
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 1)
     self.assertEqual(len(s['data']['operators']), 1)
     self.assertEqual(len(s['data']['operators'][0]['operations']), 2)
     s = self.mm.delete_operation(7, 1, 1, 'uss', 'INVALID_GUFI')
     self.assertEqual(s['status'], 'fail')
     s = self.mm.delete_operation(7, 1, 1, 'uss', 'G00F2')
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 2)
     self.assertEqual(len(s['data']['operators']), 1)
     self.assertEqual(len(s['data']['operators'][0]['operations']), 1)
     s = self.mm.delete_operation(7, 1, 1, 'uss', 'G00F1')
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 3)
     self.assertEqual(len(s['data']['operators']), 1)
     self.assertEqual(len(s['data']['operators'][0]['operations']), 0)
@@ -304,30 +304,30 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                     [{'gufi': 'G00F1', 'operation_signature': 'signed4',
                       'effective_time_begin': '2018-02-28T23:59:59-07:00',
                       'effective_time_end': '2018-03-02T23:59:59+08:00'}])
-    self.assertEqual(s['status'], 'success')
-    self.assertEqual(s['data']['version'], 1)
-    self.assertEqual(len(s['data']['operators']), 1)
-    self.assertEqual(len(s['data']['operators'][0]['operations']), 1)
+    self.assertEqual('success', s['status'])
+    self.assertEqual(1, s['data']['version'])
+    self.assertEqual(1, len(s['data']['operators']))
+    self.assertEqual(1, len(s['data']['operators'][0]['operations']))
     s = self.mm.set_operation(8, 1, 1, s['sync_token'], 'uss', 'G00F2',
                               'signed4.1', '2018-02-21T00:00:00-07:00',
                               '2018-02-22T00:00:00-07:00')
-    self.assertEqual(s['status'], 'success')
-    self.assertEqual(s['data']['version'], 2)
-    self.assertEqual(len(s['data']['operators']), 1)
+    self.assertEqual('success', s['status'])
+    self.assertEqual(2, s['data']['version'])
+    self.assertEqual(1, len(s['data']['operators']))
     os = s['data']['operators'][0]['operations']
-    self.assertEqual(len(os), 2)
-    self.assertEqual(os[0]['operation_signature'], 'signed4')
-    self.assertEqual(os[1]['operation_signature'], 'signed4.1')
+    self.assertEqual(2, len(os), 2)
+    self.assertEqual('signed4', os[0]['operation_signature'])
+    self.assertEqual('signed4.1', os[1]['operation_signature'])
     s = self.mm.set_operation(8, 1, 1, s['sync_token'], 'uss', 'G00F2',
                               'signed4.2', '2018-02-22T00:00:00-07:00',
                               '2018-02-22T10:00:00-07:00')
-    self.assertEqual(s['status'], 'success')
-    self.assertEqual(s['data']['version'], 3)
-    self.assertEqual(len(s['data']['operators']), 1)
+    self.assertEqual('success', s['status'])
+    self.assertEqual(3, s['data']['version'])
+    self.assertEqual(1, len(s['data']['operators']))
     os = s['data']['operators'][0]['operations']
-    self.assertEqual(len(os), 2)
-    self.assertEqual(os[0]['operation_signature'], 'signed4')
-    self.assertEqual(os[1]['operation_signature'], 'signed4.2')
+    self.assertEqual(2, len(os))
+    self.assertEqual('signed4', os[0]['operation_signature'])
+    self.assertEqual('signed4.2', os[1]['operation_signature'])
 
   def testOperatorAndThenOperation(self):
     # Make sure everything is clean
@@ -337,7 +337,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # simple set with basic values
     s = self.mm.set(9, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
                     '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 1)
     self.assertEqual(len(s['data']['operators']), 1)
     s = self.mm.set_operation(9, 1, 1, s['sync_token'], 'uss',
@@ -345,7 +345,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                               'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpPU0UiLCJraWQiOiJiVnAyNDd2ckRzRzM0MEdhOW14YjFIeFR3MDZJOWhhRmlsT3BIeDhQY3IwIiwieDV1IjoiaHR0cDovL2xvY2FsaG9zdDo1MDAxLy53ZWxsLWtub3duL3Vhcy10cmFmZmljLW1hbmFnZW1lbnQvdXRtLmp3a3MiLCJ4NXQjUzI1NiI6IlRPTy80UjlXT3paeWtnZVQrRUhpK2NwRGxKbGtLSlpCRVBLMDc0SHFjL0E9IiwiY3JpdCI6W119.IiI.JshB25qLWyBt90SVrDXI-jG7dLWCgerGxV58FmFKZrxVBjX904gK7bAjc5eXkRGoJ8Q9QyXN8gkxMERk35iQl9rAnt2ZvVPy5KyAtTX4uPLDPcYfyT9sej8at3dvObwXWoINRU8u9sipi-qxn1RXfbRWozyAxEe1iSR7ZCK3B5VPC3u8OApMCHVXRPn4IX1gzXf99JVQLxtqvls-VyS8nJD1T4TmwScW1uhU2I5rorxHZXP2YJ7uexakq_cgXOHmRJv8ufKUb3QExuVvYOv-SEl4GPLGDvgI-FJuxUtADsxQPXxFoXEx2zJhIQ29uuo_G2_1-ST_A3DSjxX_bY2gsg',
                               '9/25/2018 7:02:00 PM',
                               '9/25/2018 7:18:00 PM')
-    self.assertEqual(s['status'], 'success')
+    self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 2)
     self.assertEqual(len(s['data']['operators']), 1)
     self.assertEqual(len(s['data']['operators'][0]['operations']), 1)
@@ -356,22 +356,19 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(0, r1['data']['version'])
     # now do a write to a single cell
     g = self.mm.get(6, 0, 1)
-    s = self.mm.set(6, 0, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
-                    'https://g.co/flight/0/1', '2018-01-01T00:00:00+00:00',
-                    '2018-01-01T01:00:00+00:00')
+    s = self.mm.set(6, 0, 1, g['sync_token'], 'uss1', 'uss1.com/base', False,
+                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     # confirm the sync_token has changed on multi
     r2 = self.mm.get_multi(6, [(0, 0), (0, 1), (1, 1)])
     self.assertNotEqual(r1['sync_token'], r2['sync_token'])
     # add a few more writes
     g = self.mm.get(6, 1, 1)
-    s = self.mm.set(6, 1, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
-                    'https://g.co/flight/1/1', '2018-01-01T00:00:00+00:00',
-                    '2018-01-01T01:00:00+00:00')
+    s = self.mm.set(6, 1, 1, g['sync_token'], 'uss1', 'uss1.com/base', False,
+                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
     g = self.mm.get(6, 1, 1)
-    s = self.mm.set(6, 1, 1, g['sync_token'], 'uss2', 'uss2-scope', 'GUTMA',
-                    'https://g2.co/uss2/1/1', '2018-01-01T00:00:00+00:00',
-                    '2018-01-01T01:00:00+00:00')
+    s = self.mm.set(6, 1, 1, g['sync_token'], 'uss2', 'uss2.com/base', False,
+                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     # Now get them all and confirm you have the right amount
     r3 = self.mm.get_multi(6, [(0, 0), (0, 1), (1, 1)])
@@ -387,20 +384,17 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual('success', r1['status'])
     self.assertEqual(0, r1['data']['version'])
     g = self.mm.get(7, 0, 1)
-    s = self.mm.set(7, 0, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
-                    'https://g.co/flight/0/1', '2018-01-01T00:00:00+00:00',
-                    '2018-01-01T01:00:00+00:00')
+    s = self.mm.set(7, 0, 1, g['sync_token'], 'uss1', 'uss1.com/base', False,
+                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     # add a few more writes
     g = self.mm.get(7, 1, 1)
-    s = self.mm.set(7, 1, 1, g['sync_token'], 'uss1', 'uss1-scope', 'GUTMA',
-                    'https://g.co/flight/1/1', '2018-01-01T00:00:00+00:00',
-                    '2018-01-01T01:00:00+00:00')
+    s = self.mm.set(7, 1, 1, g['sync_token'], 'uss1', 'uss1.com/base', False,
+                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     g = self.mm.get(7, 1, 1)
-    s = self.mm.set(7, 1, 1, g['sync_token'], 'uss2', 'uss2-scope', 'GUTMA',
-                    'https://g2.co/uss2/1/1', '2018-01-01T00:00:00+00:00',
-                    '2018-01-01T01:00:00+00:00')
+    s = self.mm.set(7, 1, 1, g['sync_token'], 'uss2', 'uss2.com/base', False,
+                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     # Now try deleting uss1, which would delete from two different cells
     r2 = self.mm.delete_multi('uss1', 7, grids)
@@ -429,10 +423,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(0, g['data']['version'])
 
     # now do a write to multiple cells
-    s = self.mm.set_multi(8, grids, g['sync_token'], 'uss1', 'uss1-scope',
-                          'GUTMA', 'https://g.co/flight/{z}/{x}/{y}',
-                          '2018-01-01T00:00:00+00:00',
-                          '2018-01-01T01:00:00+00:00')
+    s = self.mm.set_multi(8, grids, g['sync_token'], 'uss1', 'uss1.com/base',
+                          False, '2018-02-21T00:00:00-07:00',
+                          '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     self.assertEqual(1, s['data']['version'])
     self.assertEqual(len(grids), len(s['data']['operators']))
@@ -447,10 +440,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual('success', g['status'])
     self.assertEqual(0, g['data']['version'])
     # now do a write to multiple cells
-    s = self.mm.set_multi(9, grids, g['sync_token'], 'uss1', 'uss1-scope',
-                          'GUTMA', 'https://g1.co/flight/{z}/{x}/{y}',
-                          '2018-01-01T00:00:00+00:00',
-                          '2018-01-01T01:00:00+00:00')
+    s = self.mm.set_multi(9, grids, g['sync_token'], 'uss1', 'uss1.com/base',
+                          False, '2018-02-21T00:00:00-07:00',
+                          '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     self.assertNotEqual(g['sync_token'], s['sync_token'])
     self.assertEqual(1, s['data']['version'])
@@ -460,10 +452,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     g = self.mm.get_multi(9, grids)
     self.assertEqual('success', g['status'])
     self.assertEqual(1, g['data']['version'])
-    s = self.mm.set_multi(9, grids, g['sync_token'], 'uss2', 'uss2-scope',
-                          'GUTMA', 'https://g2.co/flight/{z}/{x}/{y}',
-                          '2018-01-01T00:00:00+00:00',
-                          '2018-01-01T01:00:00+00:00')
+    s = self.mm.set_multi(9, grids, g['sync_token'], 'uss2', 'uss2.com/base',
+                          False, '2018-02-21T00:00:00-07:00',
+                          '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     self.assertNotEqual(g['sync_token'], s['sync_token'])
     self.assertEqual(2, s['data']['version'])
@@ -476,41 +467,39 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     multi_token = s['sync_token']
     # Now write to another cell singly and then update using old token
     g = self.mm.get(9, 0, 1)
-    s = self.mm.set(9, 0, 1, g['sync_token'], 'uss3', 'uss3-scope', 'GUTMA',
-                    'https://g3.co/f/{z}/{x}/{y}', '2018-01-01T00:00:00+00:00',
-                    '2018-01-01T01:00:00+00:00')
+    s = self.mm.set(9, 0, 1, g['sync_token'], 'uss3', 'uss3.com/base',
+                    False, '2018-02-21T00:00:00-07:00',
+                    '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
-    s = self.mm.set_multi(9, grids, multi_token, 'ussXX', 'ussXX-scope',
-                          'GUTMA', 'https://gXX.co/flight/{z}/{x}/{y}',
-                          '2018-01-01T00:00:00+00:00',
-                          '2018-01-01T01:00:00+00:00')
+    s = self.mm.set_multi(9, grids, multi_token, 'ussXX', 'ussXX.com/base',
+                          False, '2018-02-21T00:00:00-07:00',
+                          '2018-03-02T23:59:59+08:00')
     self.assertEqual('fail', s['status'])
     grids = [(0, 0), (0, 1), (0, 2),
              (1, 0), (1, 1), (1, 2),
              (2, 0), (2, 1), (2, 2),
              (3, 0), (3, 1), (3, 2)]
     g = self.mm.get_multi(9, grids)
-    s = self.mm.set_multi(9, grids, g['sync_token'], 'uss4', 'uss4-scope',
-                          'GUTMA', 'https://g4.co/flight/{z}/{x}/{y}',
-                          '2018-01-01T00:00:00+00:00',
-                          '2018-01-01T01:00:00+00:00')
+    s = self.mm.set_multi(9, grids, g['sync_token'], 'uss4', 'uss4.com/base',
+                          False, '2018-02-21T00:00:00-07:00',
+                          '2018-03-02T23:59:59+08:00')
 
-  def testUSSmetadatAddition(self):
+  def testUSSMetadataAddition(self):
     a = uss_metadata.USSMetadata()
-    a.upsert_operator('uss-a', 'scope-a', 'NASA', 'http://a.com/uss',
+    a.upsert_operator('uss-a', 'http://a.com/uss', True,
                       '2018-01-01', '2018-01-02', 10, 1, 1)
     b1 = uss_metadata.USSMetadata()
-    b1.upsert_operator('uss-b', 'scope-b', 'NASA', 'http://b.com/uss',
+    b1.upsert_operator('uss-b', 'http://b.com/uss', True,
                       '2018-01-01', '2018-01-02', 10, 1, 1)
     b2 = uss_metadata.USSMetadata()
-    b2.upsert_operator('uss-b', 'scope-b', 'NASA', 'http://b.com/uss',
+    b2.upsert_operator('uss-b', 'http://b.com/uss', True,
                        '2018-01-01', '2018-01-02', 10, 1, 2)
     usss = a + b1 + b2
     self.assertEqual(3, len(usss.operators))
     with self.assertRaises(ValueError):
       usss = a + a
     ax = uss_metadata.USSMetadata()
-    ax.upsert_operator('uss-a', 'scope-ax', 'NASA', 'http://ax.com/uss',
+    ax.upsert_operator('uss-a', 'http://ax.com/uss', True,
                       '2018-01-03', '2018-01-04', 10, 1, 1)
     with self.assertRaises(ValueError):
       usss = a + ax

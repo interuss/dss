@@ -31,6 +31,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import copy
 import datetime
 import json
 import logging
@@ -264,8 +265,8 @@ class USSMetadata(object):
         operator['zoom'] = z
         operator['x'] = x
         operator['y'] = y
-        e = operator['operation_endpoint']
+        e = operator['uss_baseurl']
         e = e.replace('{zoom}', str(z)).replace('{z}', str(z))
         e = e.replace('{x}', str(x))
         e = e.replace('{y}', str(y))
-        operator['operation_endpoint'] = e
+        operator['uss_baseurl'] = e

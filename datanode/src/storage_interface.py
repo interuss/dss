@@ -225,9 +225,9 @@ class USSMetadataManager(object):
           try:
             m = uss_metadata.USSMetadata(content)
             log.debug('Setting metadata for %s...', uss_id)
-            if not m.upsert_operator(uss_id, ws_scope, operation_format,
-                                     operation_ws, earliest_operation,
-                                     latest_operation, z, x, y):
+            if not m.upsert_operator(uss_id, baseurl, announce,
+                                     earliest_operation, latest_operation,
+                                     z, x, y, operations):
               log.error('Failed setting operator for %s with token %s...',
                         uss_id, str(sync_token))
               raise ValueError
@@ -268,7 +268,7 @@ class USSMetadataManager(object):
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
     status = 500
-    if self._validate_slippy(z, x, y):
+    if slippy_util.validate_slippy(z, x, y):
       # first we have to get the cell
       status = 0
       (content, metadata) = self._get_raw(z, x, y)
@@ -283,7 +283,7 @@ class USSMetadataManager(object):
               log.error('Failed setting operation for %s with token %s...',
                         gufi, str(sync_token))
               raise ValueError
-            status = self._set_raw(z, x, y, m, uss_id, sync_token)
+            status = self._set_raw(z, x, y, m, metadata.version)
           except ValueError:
             status = 412
         else:
@@ -317,9 +317,11 @@ class USSMetadataManager(object):
       if metadata:
         try:
           m = uss_metadata.USSMetadata(content)
-          m.remove_operator(uss_id)
-          # TODO(pelletierb): Automatically retry on delete
-          status = self._set_raw(z, x, y, m, metadata.version)
+          if m.remove_operator(uss_id):
+            # TODO(pelletierb): Automatically retry on delete
+            status = self._set_raw(z, x, y, m, metadata.version)
+          else:
+            status = 404
         except ValueError:
           status = 412
       else:
@@ -352,7 +354,7 @@ class USSMetadataManager(object):
     """
     status = 500
     m = None
-    if self._validate_slippy(z, x, y):
+    if slippy_util.validate_slippy(z, x, y):
       # first we have to get the cell
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
@@ -360,8 +362,8 @@ class USSMetadataManager(object):
           m = uss_metadata.USSMetadata(content)
           if m.remove_operation(uss_id, gufi):
             # TODO(pelletierb): Automatically retry on delete
-            status = self._set_raw(z, x, y, m, uss_id,
-                                   metadata.last_modified_transaction_id)
+            status = self._set_raw(z, x, y, m,
+                                   metadata.version)
           else:
             status = 404
         except ValueError:
@@ -410,8 +412,8 @@ class USSMetadataManager(object):
       result = self._format_status_code_to_jsend(404, e.message)
     return result
 
-  def set_multi(self, z, grids, sync_token, uss_id, ws_scope, operation_format,
-    operation_ws, earliest_operation, latest_operation):
+  def set_multi(self, z, grids, sync_token, uss_id, baseurl, announce,
+    earliest_operation, latest_operation, operations=None):
     """Sets multiple GridCells metadata at once.
 
     Writes data, using the hashed snapshot token for confirming data
@@ -422,14 +424,17 @@ class USSMetadataManager(object):
       grids: list of (x,y) tiles to update
       sync_token: token retrieved in the original get_multi,
       uss_id: plain text identifier for the USS,
-      ws_scope: scope to use to obtain OAuth token,
-      operation_format: output format for operation ws (i.e. NASA, GUTMA),
-      operation_ws: submitting USS endpoint where all flights in
-        this cell can be retrieved from,
+      baseurl: Base URL for the USSs web service endpoints hosting the
+        required NASA API (https://app.swaggerhub.com/apis/utm/uss/).
+      announce: The level of announcements the USS would like to receive related
+        to operations in this grid cell. Current just a binary, but expect this
+        enumeration to grow as use cases are developed. For example, USSs may
+        want just security related announcements, or would only like
+        announcements that involve changed geographies.
       earliest_operation: lower bound of active or planned flight timestamp,
-        used for quick filtering conflicts.
       latest_operation: upper bound of active or planned flight timestamp,
-        used for quick filtering conflicts.
+        dates are used for quick filtering conflicts.
+      operations: complete list of operations for this operator
     Returns:
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
@@ -444,8 +449,8 @@ class USSMetadataManager(object):
                 self._hash_sync_tokens(syncs), len(syncs))
       if str(self._hash_sync_tokens(syncs)) == str(sync_token):
         log.debug('Composite sync_token matches, continuing...')
-        self._set_multi_raw(z, grids, syncs, uss_id, ws_scope, operation_format,
-                            operation_ws, earliest_operation, latest_operation)
+        self._set_multi_raw(z, grids, syncs, uss_id, baseurl, announce,
+                            earliest_operation, latest_operation, operations)
         log.debug('Completed updating multiple grids...')
       else:
         raise KeyError('Composite sync_token has changed')
@@ -577,8 +582,8 @@ class USSMetadataManager(object):
       raise IndexError('Unable to find metadata in platform')
     return combined_meta, syncs
 
-  def _set_multi_raw(self, z, grids, sync_tokens, uss_id, ws_scope,
-    operation_format, operation_ws, earliest_operation, latest_operation):
+  def _set_multi_raw(self, z, grids, sync_tokens, uss_id, baseurl, announce,
+    earliest_operation, latest_operation, operations=None):
     """Grabs the lock and updates the raw content for multiple GridCells
 
     Args:
@@ -612,9 +617,9 @@ class USSMetadataManager(object):
         if str(metadata.last_modified_transaction_id) == str(sync_token):
           log.debug('Sync_token matches for %d, %d...', x, y)
           m = uss_metadata.USSMetadata(content)
-          if not m.upsert_operator(uss_id, ws_scope, operation_format,
-                                   operation_ws, earliest_operation,
-                                   latest_operation, z, x, y):
+          if not m.upsert_operator(uss_id, baseurl, announce,
+                                   earliest_operation, latest_operation,
+                                   z, x, y, operations):
             raise ValueError('Failed to set operator content')
           contents.append((path, m, metadata.version))
         else:
