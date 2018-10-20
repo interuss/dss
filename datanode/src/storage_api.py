@@ -125,7 +125,7 @@ def ConvertCoordinatesToSlippy(zoom):
   log.info('Convert coordinates to slippy instantiated for %sz...', zoom)
   try:
     zoom = int(zoom)
-    tiles = _ConvertCSVtoTiles(zoom)
+    tiles = _ConvertRequestToTiles(zoom)
     result = []
     for x, y in tiles:
       link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
@@ -156,7 +156,8 @@ def GridCellMetaDataHandler(zoom, x, y):
     x: x tile number in slippy tile format
     y: y tile number in slippy tile format
     OAuth access_token as part of the header
-    Plus posted webargs as needed for PUT/POST and DELETE methods (see below)
+    Plus posted webargs as needed for PUT/POST and DELETE methods
+      (see internal functions Get/Put/Delete metadata below)
   Returns:
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
@@ -193,7 +194,9 @@ def GridCellsMetaDataHandler(zoom):
     Plus posted webargs:
       coords: csv of lon,lat,long,lat,etc.
       coord_type: (optional) type of coords - point (default), path, polygon
-      and additional as needed for PUT/POST and DELETE methods (see below)
+       and additional as needed for PUT/POST and DELETE methods
+       (see internal functions Get/Put/Delete metadata below)
+
   Returns:
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
@@ -202,7 +205,7 @@ def GridCellsMetaDataHandler(zoom):
   result = {}
   try:
     zoom = int(zoom)
-    tiles = _ConvertCSVtoTiles(zoom)
+    tiles = _ConvertRequestToTiles(zoom)
     if len(tiles) > slippy_util.TILE_LIMIT:
       raise OverflowError('Limit of %d tiles impacted exceeded (%d)'
                           % (slippy_util.TILE_LIMIT, len(tiles)))
@@ -523,7 +526,7 @@ def _DeleteGridCellsMetaData(zoom, tiles, uss_id):
   return result
 
 
-def _ConvertCSVtoTiles(zoom):
+def _ConvertRequestToTiles(zoom):
   """Converts an CSV of coords into slippy tile format at the specified zoom
       and the specified coordinate type (path, polygon, point) """
   tiles = []
