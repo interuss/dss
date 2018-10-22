@@ -367,7 +367,7 @@ class USSMetadataManager(object):
 
     Removes the operator from multiple cells. Does not return 404 on
     not finding the USS in a cell, since this should be a remove all
-    type function, ad some cells might have the ussid and some might not.
+    type function, as some cells might have the ussid and some might not.
     
     Args:
       uss_id: is the plain text identifier for the USS
