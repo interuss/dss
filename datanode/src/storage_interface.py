@@ -365,10 +365,10 @@ class USSMetadataManager(object):
   def delete_multi(self, uss_id, z, grids):
     """Sets multiple GridCells metadata by removing the entry for the USS.
 
-    Reads data from zookeeper, including a snapshot token. The
-    snapshot token is used as a reference when writing to ensure
-    the data has not been updated between read and write.
-
+    Removes the operator from multiple cells. Does not return 404 on
+    not finding the USS in a cell, since this should be a remove all
+    type function, ad some cells might have the ussid and some might not.
+    
     Args:
       uss_id: is the plain text identifier for the USS
       z: zoom level in slippy tile format
