@@ -249,10 +249,11 @@ class USSMetadataManager(object):
 
   def set_operation(self, z, x, y, sync_token, uss_id, gufi,
       signature, begin, end):
-    """Sets the metadata for a GridCell.
+    """Sets the operation metadata for a GridCell.
 
     Writes data, using the snapshot token for confirming data
-    has not been updated since it was last read.
+    has not been updated since it was last read. Operator must be in
+    grid cell before using this method.
 
     Args:
       z: zoom level in slippy tile format
@@ -422,7 +423,7 @@ class USSMetadataManager(object):
     Args:
       z: zoom level in slippy tile format
       grids: list of (x,y) tiles to update
-      sync_token: token retrieved in the original get_multi,
+      sync_token: composite token retrieved in the original get_multi,
       uss_id: plain text identifier for the USS,
       baseurl: Base URL for the USSs web service endpoints hosting the
         required NASA API (https://app.swaggerhub.com/apis/utm/uss/).
@@ -451,6 +452,56 @@ class USSMetadataManager(object):
         log.debug('Composite sync_token matches, continuing...')
         self._set_multi_raw(z, grids, syncs, uss_id, baseurl, announce,
                             earliest_operation, latest_operation, operations)
+        log.debug('Completed updating multiple grids...')
+      else:
+        raise KeyError('Composite sync_token has changed')
+      combined_meta, new_syncs = self._get_multi_raw(z, grids)
+      result = {
+        'status': 'success',
+        'sync_token': self._hash_sync_tokens(new_syncs),
+        'data': combined_meta.to_json()
+      }
+    except (KeyError, RolledBackError) as e:
+      result = self._format_status_code_to_jsend(409, e.message)
+    except ValueError as e:
+      result = self._format_status_code_to_jsend(400, e.message)
+    except IndexError as e:
+      result = self._format_status_code_to_jsend(404, e.message)
+    return result
+
+  def set_multi_operation(self, z, grids, sync_token, uss_id, gufi,
+    signature, begin, end):
+    """Sets the metadata for an operation for multiple GridCells.
+
+    Writes data, using the snapshot token for confirming data
+    has not been updated since it was last read. Operator must be in
+    the grid cells before using this method.
+
+    Args:
+      z: zoom level in slippy tile format
+      grids: list of (x,y) tiles to update
+      sync_token: composite token retrieved in the original get_multi,
+      uss_id: plain text identifier for the USS,
+      gufi: Unique flight identifier per NASA formatting standards
+      signature: The JWS signature of the Operation,
+      begin: start time of the operation.
+      end: end time of the operation.
+    Returns:
+      JSend formatted response (https://labs.omniti.com/labs/jsend)
+    """
+    log.debug('Setting multiple grid operation data for %s...', uss_id)
+    try:
+      # first, get the affected grid's sync tokens
+      m, syncs = self._get_multi_raw(z, grids)
+      del m
+      # Quick check of the token, another is done on the actual set to be sure
+      #    but this check fails early and fast
+      log.debug('Found composite sync token %d for %d grids...',
+                self._hash_sync_tokens(syncs), len(syncs))
+      if str(self._hash_sync_tokens(syncs)) == str(sync_token):
+        log.debug('Composite sync_token matches, continuing...')
+        self._set_multi_operation_raw(z, grids, syncs, uss_id, gufi,
+                                      signature, begin, end)
         log.debug('Completed updating multiple grids...')
       else:
         raise KeyError('Composite sync_token has changed')
@@ -599,6 +650,7 @@ class USSMetadataManager(object):
         used for quick filtering conflicts.
       latest_operation: upper bound of active or planned flight timestamp,
         used for quick filtering conflicts.
+      operations: array of individual operations for this uss in these cells
     Raises:
       IndexError: if it cannot find anything in zookeeper
       ValueError: if the grid data is not in the right format
@@ -621,6 +673,65 @@ class USSMetadataManager(object):
                                    earliest_operation, latest_operation,
                                    z, x, y, operations):
             raise ValueError('Failed to set operator content')
+          contents.append((path, m, metadata.version))
+        else:
+          log.error(
+            'Sync token from USS (%s) does not match token from zk (%s)...',
+            str(sync_token), str(metadata.last_modified_transaction_id))
+          raise KeyError('Composite sync_token has changed')
+      # Now, start a transaction to update them all
+      #  the version will catch any changes and roll back any attempted
+      #  updates to the grids
+      log.debug('Starting transaction to write all grids at once...')
+      t = self.zk.transaction()
+      for path, m, version in contents:
+        t.set_data(path, json.dumps(m.to_json()), version)
+      log.debug('Committing transaction...')
+      results = t.commit()
+      if isinstance(results[0], RolledBackError):
+        raise KeyError('Rolled back multi-grid transaction due to grid change')
+      log.debug('Committed transaction successfully.')
+    except (KeyError, ValueError, IndexError) as e:
+      log.error('Error caught in set_multi_raw %s.', e.message)
+      raise e
+
+  def _set_multi_operation_raw(self, z, grids, sync_tokens, uss_id, gufi,
+    signature, begin, end):
+    """Grabs the lock and updates the raw content for multiple GridCells
+
+    Args:
+      z: zoom level in slippy tile format
+      grids: list of (x,y) tiles to retrieve
+      sync_tokens: list of the sync tokens received during get operation
+      uss_id: plain text identifier for the USS,
+      gufi: Unique flight identifier per NASA formatting standards
+      signature: The JWS signature of the Operation,
+      begin: start time of the operation.
+      end: end time of the operation.
+    Raises:
+      IndexError: if it cannot find anything in zookeeper
+      ValueError: if the grid data is not in the right format
+    """
+    log.debug('Setting multiple grid operation metadata for %s...', str(grids))
+    try:
+      contents = []
+      for i in range(len(grids)):
+        # First, get and update them all in memory, validate the sync_token
+        x = grids[i][0]
+        y = grids[i][1]
+        sync_token = sync_tokens[i]
+        path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
+                                   USS_METADATA_FILE)
+        (content, metadata) = self._get_raw(z, x, y)
+        if str(metadata.last_modified_transaction_id) == str(sync_token):
+          log.debug('Sync_token matches for %d, %d...', x, y)
+          m = uss_metadata.USSMetadata(content)
+          # TODO(hikevin): refactor with multi_operator, as only one line diffs
+          if not m.upsert_operation(uss_id, gufi, signature, begin, end):
+            log.error('Failed setting operation for %s with token %s...',
+                      gufi, str(sync_token))
+            raise ValueError('Failed setting operation in grid %d/%d/%d' %
+                             (z, x, y))
           contents.append((path, m, metadata.version))
         else:
           log.error(

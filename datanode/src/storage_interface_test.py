@@ -421,7 +421,6 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     g = self.mm.get_multi(8, grids)
     self.assertEqual('success', g['status'])
     self.assertEqual(0, g['data']['version'])
-
     # now do a write to multiple cells
     s = self.mm.set_multi(8, grids, g['sync_token'], 'uss1', 'uss1.com/base',
                           False, '2018-02-21T00:00:00-07:00',
@@ -504,6 +503,39 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     with self.assertRaises(ValueError):
       usss = a + ax
 
+  def testOperationWithMultipleCellCases(self):
+    grids = [(0, 0), (0, 1), (1, 1)]
+    g = self.mm.get_multi(11, grids)
+    self.assertEqual('success', g['status'])
+    self.assertEqual(0, g['data']['version'])
+    # now do a write to multiple cells
+    s = self.mm.set_multi(11, grids, g['sync_token'], 'uss1', 'uss1.com/base',
+                          False, '2018-02-21T00:00:00-07:00',
+                          '2018-03-02T23:59:59+08:00')
+    self.assertEqual('success', s['status'])
+    # Do a write for just an operation to two of the cells
+    grids = [(0, 0), (1, 1)]
+    g = self.mm.get_multi(11, grids)
+    self.assertEqual('success', g['status'])
+    s = self.mm.set_multi_operation(11, grids, g['sync_token'], 'uss1', 'goo1',
+                                    'sig1', '2018-02-21T00:00:00-07:00',
+                                    '2018-03-02T23:59:59+08:00')
+    self.assertEqual('success', s['status'])
+    self.assertNotEqual(g['sync_token'], s['sync_token'])
+    self.assertEqual(2, s['data']['version'])
+    self.assertEqual(2, len(s['data']['operators']))
+    grids = [(0, 0), (0, 1), (1, 1)]
+    g = self.mm.get_multi(11, grids)
+    self.assertEqual('success', g['status'])
+    self.assertEqual(2, g['data']['version'])
+    self.assertEqual(3, len(g['data']['operators']))
+    # make sure it fails if we are not in on of the grids
+    grids = [(0, 0), (2, 1), (1, 1)]
+    g = self.mm.get_multi(11, grids)
+    s = self.mm.set_multi_operation(11, grids, g['sync_token'], 'uss1', 'goo1',
+                                    'sig1', '2018-02-21T00:00:00-07:00',
+                                    '2018-03-02T23:59:59+08:00')
+    self.assertEqual('fail', s['status'])
 
 if __name__ == '__main__':
   unittest.main()
