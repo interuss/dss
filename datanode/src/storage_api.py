@@ -512,7 +512,7 @@ def _DeleteGridCellsMetaData(zoom, tiles, uss_id):
   log.info('Grid cells metadata delete instantiated for %s, %sz, %s...',
            uss_id, zoom, str(tiles))
   if uss_id:
-    result = wrapper.delete_multi(uss_id, zoom, tiles)
+    result = wrapper.delete_multi(zoom, tiles, uss_id)
   else:
     result = {
       'status':
