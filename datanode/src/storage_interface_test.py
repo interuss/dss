@@ -278,7 +278,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                     '2018-01-01T01:00:00+00:00')
     self.assertEqual('success', s['status'])
     # Now try deleting uss1, which would delete from two different cells
-    r2 = self.mm.delete_multi('uss1', 7, grids)
+    r2 = self.mm.delete_multi(7, grids, 'uss1')
     self.assertEqual('success', r2['status'])
     self.assertNotEqual(r1['sync_token'], r2['sync_token'])
     self.assertEqual(3, r2['data']['version'])
@@ -289,9 +289,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual('fail', r['status'])
     r = self.mm.get_multi(6, '0,0,1,1,0,1')
     self.assertEqual('fail', r['status'])
-    r = self.mm.delete_multi(None, 6, [(0, 0), (0, 1), (1, 1)])
+    r = self.mm.delete_multi(6, [(0, 0), (0, 1), (1, 1)], None)
     self.assertEqual('fail', r['status'])
-    r = self.mm.delete_multi('uss', 21, [(0, 0), (0, 1), (1, 1)])
+    r = self.mm.delete_multi(21, [(0, 0), (0, 1), (1, 1)], 'uss')
     self.assertEqual('fail', r['status'])
 
   def testSetMultipleCellCases(self):
