@@ -362,7 +362,7 @@ class USSMetadataManager(object):
       result = self._format_status_code_to_jsend(404, e.message)
     return result
 
-  def delete_multi(self, uss_id, z, grids):
+  def delete_multi(self, z, grids, uss_id):
     """Sets multiple GridCells metadata by removing the entry for the USS.
 
     Removes the operator from multiple cells. Does not return 404 on
@@ -370,9 +370,9 @@ class USSMetadataManager(object):
     type function, as some cells might have the ussid and some might not.
     
     Args:
-      uss_id: is the plain text identifier for the USS
       z: zoom level in slippy tile format
       grids: list of (x,y) tiles to delete
+      uss_id: is the plain text identifier for the USS
     Returns:
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
