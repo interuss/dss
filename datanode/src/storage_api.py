@@ -31,6 +31,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import json
+
 # logging is our log infrastructure used for this application
 import logging
 # OptionParser is our command line parser interface
@@ -117,7 +119,7 @@ def ConvertCoordinatesToSlippy(zoom):
   log.info('Convert coordinates to slippy instantiated for %sz...', zoom)
   try:
     zoom = int(zoom)
-    tiles = _ConvertCSVtoTiles(zoom)
+    tiles = _ConvertRequestToTiles(zoom)
     result = []
     for x, y in tiles:
       link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
@@ -212,15 +214,13 @@ def GridCellOperationHandler(zoom, x, y, gufi):
 
 
 @webapp.route(
-  '/GridCellsMetaData/<zoom>',
+  '/GridCellsOperator/<zoom>',
   methods=['GET', 'PUT', 'POST', 'DELETE'])
-def GridCellsMetaDataHandler(zoom):
+def GridCellsOperatorDataHandler(zoom):
   """Handles the web service request for multi-grid operations.
 
   Args:
     zoom: zoom level in slippy tile format
-    x: x tile number in slippy tile format
-    y: y tile number in slippy tile format
     OAuth access_token as part of the header
     Plus posted webargs:
       coords: csv of lon,lat,long,lat,etc.
@@ -234,7 +234,7 @@ def GridCellsMetaDataHandler(zoom):
   result = {}
   try:
     zoom = int(zoom)
-    tiles = _ConvertCSVtoTiles(zoom)
+    tiles = _ConvertRequestToTiles(zoom)
     if len(tiles) > slippy_util.TILE_LIMIT:
       raise OverflowError('Limit of %d tiles impacted exceeded (%d)'
                           % (slippy_util.TILE_LIMIT, len(tiles)))
@@ -243,11 +243,50 @@ def GridCellsMetaDataHandler(zoom):
   except OverflowError as e:
     abort(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, e.message)
   if request.method == 'GET':
-    result = _GetGridCellsMetaData(zoom, tiles)
+    result = _GetGridCellsOperator(zoom, tiles)
   elif request.method in ('PUT', 'POST'):
-    result = _PutGridCellsMetaData(zoom, tiles, uss_id)
+    result = _PutGridCellsOperator(zoom, tiles, uss_id)
   elif request.method == 'DELETE':
-    result = _DeleteGridCellsMetaData(zoom, tiles, uss_id)
+    result = _DeleteGridCellsOperator(zoom, tiles, uss_id)
+  else:
+    abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
+  return _FormatResult(result)
+
+
+@webapp.route(
+  '/GridCellsOperation/<zoom>/<gufi>',
+  methods=['PUT', 'POST', 'DELETE'])
+def GridCellsOperationDataHandler(zoom, gufi):
+  """Handles the web service request for multi-grid operations.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    gufi: flight identifier to remove
+    OAuth access_token as part of the header
+    Plus posted webargs:
+      coords: csv of lon,lat,long,lat,etc.
+      coord_type: (optional) type of coords - point (default), path, polygon
+      and additional as needed for PUT/POST and DELETE methods (see below)
+  Returns:
+    200 with token and metadata in JSON format,
+    or the nominal 4xx error codes as necessary.
+  """
+  uss_id = _ValidateAccessToken()
+  result = {}
+  try:
+    zoom = int(zoom)
+    tiles = _ConvertRequestToTiles(zoom)
+    if len(tiles) > slippy_util.TILE_LIMIT:
+      raise OverflowError('Limit of %d tiles impacted exceeded (%d)'
+                          % (slippy_util.TILE_LIMIT, len(tiles)))
+  except (ValueError, TypeError) as e:
+    abort(status.HTTP_400_BAD_REQUEST, e.message)
+  except OverflowError as e:
+    abort(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, e.message)
+  if request.method in ('PUT', 'POST'):
+    result = _PutGridCellsOperation(zoom, tiles, uss_id, gufi)
+  elif request.method == 'DELETE':
+    result = _DeleteGridCellsOperation(zoom, tiles, uss_id, gufi)
   else:
     abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
   return _FormatResult(result)
@@ -312,12 +351,13 @@ def _ValidateAccessToken():
       except:
         log.error('Unknown error processing JWT.')
         abort(status.HTTP_400_BAD_REQUEST,
-              'OAuth access_token is invalid: unknown error.')        
+              'OAuth access_token is invalid: unknown error.')
     else:
       log.error('Attempt to access resource without access_token in header.')
       abort(status.HTTP_403_FORBIDDEN,
             'Valid OAuth access_token must be provided in header.')
   return uss_id
+
 
 def _GetGridCellOperator(zoom, x, y):
   """Provides an instantaneous snapshot of operators for a specific GridCell.
@@ -354,16 +394,12 @@ def _PutGridCellOperator(zoom, x, y, uss_id):
     uss_id: the plain text identifier for the USS from OAuth
   Plus posted webargs:
     sync_token: the token retrieved in the original GET GridCellOperator,
-    scope: The submitting USS scope for the web service endpoint (used for OAuth
-      access),
-    operation_endpoint: the submitting USS endpoint where all flights in this
-      cell can be retrieved from,
-    operation_format: The output format for the USS web service endpoint (i.e.
-      NASA, GUTMA),
+    announce: Boolean announcement request from other USSs,
     minimum_operation_timestamp: the lower time bound of all of the USSs flights
       in this grid cell.
     maximum_operation_timestamp: the upper time bound of all of the USSs flights
       in this grid cell.
+    operations: a list of operations in this cell,
 
   Returns:
     200 and a new token if updated successfully,
@@ -444,6 +480,7 @@ def _DeleteGridCellOperator(zoom, x, y, uss_id):
     }
   return result
 
+
 def _PutGridCellOperation(zoom, x, y, uss_id, gufi):
   """Puts a single operation in the metadata stored in a specific GridCell.
 
@@ -457,6 +494,10 @@ def _PutGridCellOperation(zoom, x, y, uss_id, gufi):
     y: y tile number in slippy tile format
     uss_id: the plain text identifier for the USS from OAuth
     gufi: flight identifier to add/update
+  Plus posted webargs:
+    operation_signature: encoded signatrue for this version of the operation
+    effective_time_begin: tile the operation begins
+    effective_time_end: time the operation ends
   Returns:
     200 and a new sync_token if updated successfully,
     409 if there is a locking conflict that could not be resolved, or
@@ -467,7 +508,7 @@ def _PutGridCellOperation(zoom, x, y, uss_id, gufi):
   sync_token = _GetRequestParameter('sync_token', None)
   if not sync_token and 'sync_token' in request.headers:
     sync_token = request.headers['sync_token']
-  gufi = _GetRequestParameter('gufi', None)
+  gufi = _GetRequestParameter('gufi', gufi)
   signature = _GetRequestParameter('operation_signature', None)
   begin = _GetRequestParameter('effective_time_begin', None)
   end = _GetRequestParameter('effective_time_end', None)
@@ -499,6 +540,7 @@ def _PutGridCellOperation(zoom, x, y, uss_id, gufi):
     result = wrapper.set_operation(zoom, x, y, sync_token, uss_id, gufi,
                                    signature, begin, end)
   return result
+
 
 def _DeleteGridCellOperation(zoom, x, y, uss_id, gufi):
   """Removes a single operation in the metadata stored in a specific GridCell.
@@ -535,7 +577,7 @@ def _DeleteGridCellOperation(zoom, x, y, uss_id, gufi):
   return result
 
 
-def _GetGridCellsMetaData(zoom, tiles):
+def _GetGridCellsOperator(zoom, tiles):
   """Provides an instantaneous snapshot of the metadata for a multiple GridCells
 
   Args:
@@ -550,7 +592,8 @@ def _GetGridCellsMetaData(zoom, tiles):
   result = wrapper.get_multi(zoom, tiles)
   return result
 
-def _PutGridCellsMetaData(zoom, tiles, uss_id):
+
+def _PutGridCellsOperator(zoom, tiles, uss_id):
   """Updates the metadata stored in multiple GridCells.
 
     Updates the metadata stored in a multiple GridCell using optimistic locking
@@ -562,19 +605,13 @@ def _PutGridCellsMetaData(zoom, tiles, uss_id):
     tiles: array of x,y tiles to retrieve
     uss_id: the plain text identifier for the USS from OAuth
   Plus posted webargs:
-    sync_token: the composite sync_token retrieved in the
-      original GET GridCellsMetadata,
-    scope: The submitting USS scope for the web service endpoint (used for OAuth
-      access),
-    operation_endpoint: the submitting USS endpoint where all flights in these
-      cells can be retrieved from (variables {zoom}, {x}, and {y} can be used in
-      the endpoint, and will be replaced with the actual grid values),
-    operation_format: The output format for the USS web service endpoint (i.e.
-      NASA, GUTMA),
+    sync_token: the token retrieved in the original GET GridCellOperator,
+    announce: Boolean announcement request from other USSs,
     minimum_operation_timestamp: the lower time bound of all of the USSs flights
-      in these grid cells.
+      in this grid cell.
     maximum_operation_timestamp: the upper time bound of all of the USSs flights
-      in these grid cells.
+      in this grid cell.
+    operations: a list of operations in this cell,
 
   Returns:
     200 and a new composite token if updated successfully,
@@ -586,9 +623,9 @@ def _PutGridCellsMetaData(zoom, tiles, uss_id):
   sync_token = _GetRequestParameter('sync_token', None)
   if not sync_token and 'sync_token' in request.headers:
     sync_token = request.headers['sync_token']
-  scope = _GetRequestParameter('scope', None)
-  operation_endpoint = _GetRequestParameter('operation_endpoint', None)
-  operation_format = _GetRequestParameter('operation_format', None)
+  baseurl = _GetRequestParameter('uss_baseurl', None)
+  announce = _GetRequestParameter('announcement_level', None)
+  operations = _GetRequestParameter('operations', None)
   minimum_operation_timestamp = _GetRequestParameter(
     'minimum_operation_timestamp', None)
   maximum_operation_timestamp = _GetRequestParameter(
@@ -599,12 +636,10 @@ def _PutGridCellsMetaData(zoom, tiles, uss_id):
   elif not uss_id:
     errorfield = 'uss_id'
     errormsg = 'USS identifier not received from OAuth token check.'
-  elif not scope:
-    errorfield = 'scope'
-  elif not operation_endpoint:
-    errorfield = 'operation_endpoint'
-  elif not operation_format:
-    errorfield = 'operation_format'
+  elif not baseurl:
+    errorfield = 'uss_baseurl'
+  elif not announce:
+    errorfield = 'announcement_level'
   elif not minimum_operation_timestamp:
     errorfield = 'minimum_operation_timestamp'
   elif not maximum_operation_timestamp:
@@ -620,13 +655,13 @@ def _PutGridCellsMetaData(zoom, tiles, uss_id):
       'message': errormsg
     }
   else:
-    result = wrapper.set_multi(zoom, tiles, sync_token, uss_id, scope,
-                         operation_format, operation_endpoint,
-                         minimum_operation_timestamp,
-                         maximum_operation_timestamp)
+    result = wrapper.set_multi(zoom, tiles, sync_token, uss_id, baseurl,
+                               announce, minimum_operation_timestamp,
+                               maximum_operation_timestamp, operations)
   return result
 
-def _DeleteGridCellsMetaData(zoom, tiles, uss_id):
+
+def _DeleteGridCellsOperator(zoom, tiles, uss_id):
   """Removes the USS entry in multiple GridCells.
 
   Args:
@@ -641,7 +676,7 @@ def _DeleteGridCellsMetaData(zoom, tiles, uss_id):
   log.info('Grid cells metadata delete instantiated for %s, %sz, %s...',
            uss_id, zoom, str(tiles))
   if uss_id:
-    result = wrapper.delete_multi(uss_id, zoom, tiles)
+    result = wrapper.delete_multi(zoom, tiles, uss_id)
   else:
     result = {
       'status':
@@ -653,6 +688,120 @@ def _DeleteGridCellsMetaData(zoom, tiles, uss_id):
           delete a USS from a GridCell."""
     }
   return result
+
+
+def _PutGridCellsOperation(zoom, tiles, uss_id, gufi):
+  """Updates the metadata for an operation stored in multiple GridCells.
+
+    Updates the metadata stored in a multiple GridCell using optimistic locking
+    behavior. Operation fails if the metadata has been updated since
+    GET GridCellsMetadata was originally called (based on sync_token).
+
+  Args:
+    zoom: zoom level in slippy tile format
+    tiles: array of x,y tiles to retrieve
+    uss_id: the plain text identifier for the USS from OAuth
+    gufi: flight identifier to write
+  Plus posted webargs:
+    operation_signature: encoded signatrue for this version of the operation
+    effective_time_begin: tile the operation begins
+    effective_time_end: time the operation ends
+
+  Returns:
+    200 and a new composite token if updated successfully,
+    409 if there is a locking conflict that could not be resolved, or
+    the other nominal 4xx error codes as necessary.
+  """
+  log.info('Grid cells metadata submit instantiated for %s at %sz, %s...',
+           uss_id, zoom, str(tiles))
+  sync_token = _GetRequestParameter('sync_token', None)
+  if not sync_token and 'sync_token' in request.headers:
+    sync_token = request.headers['sync_token']
+  gufi = _GetRequestParameter('gufi', gufi)
+  signature = _GetRequestParameter('operation_signature', None)
+  begin = _GetRequestParameter('effective_time_begin', None)
+  end = _GetRequestParameter('effective_time_end', None)
+  errorfield = errormsg = None
+  if not sync_token:
+    errorfield = 'sync_token'
+  elif not uss_id:
+    errorfield = 'uss_id'
+    errormsg = 'USS identifier not received from OAuth token check.'
+  elif not gufi:
+    errorfield = 'gufi'
+  elif not signature:
+    errorfield = 'operation_signature'
+  elif not begin:
+    errorfield = 'effective_time_begin'
+  elif not end:
+    errorfield = 'effective_time_end'
+  if errorfield:
+    if not errormsg:
+      errormsg = errorfield + (
+        ' must be provided in the form data request to add to a '
+        'GridCell.')
+    result = {
+      'status': 'error',
+      'code': status.HTTP_400_BAD_REQUEST,
+      'message': errormsg
+    }
+  else:
+    result = wrapper.set_multi_operation(zoom, tiles, sync_token, uss_id, gufi,
+                                         signature, begin, end)
+  return result
+
+
+def _DeleteGridCellsOperation(zoom, tiles, uss_id, gufi):
+  """Removes the USS entry in multiple GridCells.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    tiles: array of x,y tiles to delete the uss from
+    uss_id: the plain text identifier for the USS from OAuth
+    gufi: flight identifier to remove
+  Returns:
+    200 and a new sync_token if updated successfully,
+    409 if there is a locking conflict that could not be resolved, or
+    the other nominal 4xx error codes as necessary.
+  """
+  log.info('Grid cells delete operation instantiated for %s, %sz, %s...',
+           uss_id, zoom, str(tiles))
+  if uss_id:
+    result = wrapper.delete_multi_operation(zoom, tiles, uss_id, gufi)
+  else:
+    result = {
+      'status':
+        'fail',
+      'code':
+        status.HTTP_400_BAD_REQUEST,
+      'message':
+        """uss_id must be provided in the request to
+          delete a USS from a GridCell."""
+    }
+  return result
+
+
+def _ConvertRequestToTiles(zoom):
+  """Converts an CSV of coords into slippy tile format at the specified zoom
+      and the specified coordinate type (path, polygon, point) """
+  tiles = []
+  coords = _GetRequestParameter('coords', '')
+  coord_type = _GetRequestParameter('coord_type', 'point').lower()
+  log.debug('Retrieved coords from web params and split to %s...', coords)
+  coordinates = slippy_util.convert_csv_to_coordinates(coords)
+  if not coordinates:
+    log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
+    raise ValueError('Invalid coords, must be a CSV of lat,lon,lat,lon...')
+  if coord_type == 'point':
+    for c in coordinates:
+      tiles.append((slippy_util.convert_point_to_tile(zoom, c[0], c[1])))
+  elif coord_type == 'path':
+    tiles = slippy_util.convert_path_to_tiles(zoom, coordinates)
+  elif coord_type == 'polygon':
+    tiles = slippy_util.convert_polygon_to_tiles(zoom, coordinates)
+  else:
+    raise ValueError('Invalid coord_type, must be point/path/polygon')
+  return tiles
 
 
 def _GetRequestParameter(name, default):

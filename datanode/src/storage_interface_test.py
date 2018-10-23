@@ -397,7 +397,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                     '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     # Now try deleting uss1, which would delete from two different cells
-    r2 = self.mm.delete_multi('uss1', 7, grids)
+    r2 = self.mm.delete_multi(7, grids, 'uss1')
     self.assertEqual('success', r2['status'])
     self.assertNotEqual(r1['sync_token'], r2['sync_token'])
     self.assertEqual(3, r2['data']['version'])
@@ -408,9 +408,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual('fail', r['status'])
     r = self.mm.get_multi(6, '0,0,1,1,0,1')
     self.assertEqual('fail', r['status'])
-    r = self.mm.delete_multi(None, 6, [(0, 0), (0, 1), (1, 1)])
+    r = self.mm.delete_multi(6, [(0, 0), (0, 1), (1, 1)], None)
     self.assertEqual('fail', r['status'])
-    r = self.mm.delete_multi('uss', 21, [(0, 0), (0, 1), (1, 1)])
+    r = self.mm.delete_multi(21, [(0, 0), (0, 1), (1, 1)], 'uss')
     self.assertEqual('fail', r['status'])
 
   def testSetMultipleCellCases(self):
@@ -536,6 +536,23 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                                     'sig1', '2018-02-21T00:00:00-07:00',
                                     '2018-03-02T23:59:59+08:00')
     self.assertEqual('fail', s['status'])
+    # set another uss and then clear out the original
+    s = self.mm.set_multi(11, grids, g['sync_token'], 'uss2', 'uss2.com/base',
+                          False, '2018-02-21T00:00:00-07:00',
+                          '2018-03-02T23:59:59+08:00')
+    self.assertEqual('success', s['status'])
+    s = self.mm.set_multi_operation(11, grids, s['sync_token'], 'uss2', 'goo2',
+                                    'sig2', '2018-02-21T00:00:00-07:00',
+                                    '2018-03-02T23:59:59+08:00')
+    self.assertEqual('success', s['status'])
+    grids = [(0, 0), (0,1), (2, 1), (1, 1)]
+    s = self.mm.delete_multi_operation(11, grids, 'uss1', 'goo1')
+    print(str(s).replace("u'", "'"))
+    operations = 0
+    for o in s['data']['operators']:
+      if 'operations' in o:
+        operations += len(o['operations'])
+    self.assertEqual(3, operations)
 
 if __name__ == '__main__':
   unittest.main()
