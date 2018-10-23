@@ -27,7 +27,7 @@ info:
 
     The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with Authorization, use a NASA FIMS valid OAuth token or use 'tcl4box' (which works only in the sandbox environment). You can also use additional info at the end of the token to simulate multiple USSs (i.e. 'tcl4box-uss1').
 
-  version: "tcl4.0.1"
+  version: "tcl4.0.2"
   title: InterUSS Platform - Data Node Stateless API
   contact:
     email: hikevin+interuss@google.com
@@ -62,6 +62,15 @@ paths:
         description: CSV list of latitude,longitude,latitude,longitude...
         required: true
         type: string
+      - name: coord_type
+        in: query
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
       responses:
         200:
           description: Success, JSend version of tiles and links to tiles
@@ -196,6 +205,8 @@ paths:
           description: Invalid request
         403:
           description: Access token not provided
+        404:
+          description: USS not found in the GridCell
         408:
           description: Unable to lock GridCell
 
@@ -301,8 +312,238 @@ paths:
           description: Invalid request
         403:
           description: Access token not provided
+        404:
+          description: GUFI or USS not found in the GridCell
         408:
           description: Unable to lock GridCell
+
+  /GridCellsOperator/{zoom}:
+    get:
+      summary: Provides an instantaneous snapshot of the operators and their operations for multiple GridCells based on a series of coordinates (representing a set of points, a path, or a polygon)
+      produces:
+      - application/json
+      parameters:
+      - name: Authorization
+        in: header
+        description: Valid OAuth access token
+        type: string
+        default: Bearer tcl4box-uss1
+        required: true
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: coords
+        in: query
+        description: CSV list of latitude,longitude,latitude,longitude...
+        required: true
+        type: string
+      - name: coord_type
+        in: query
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
+      responses:
+        200:
+          description: JSend version of grid operator data, including the sync_token used for updating grids
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided
+    put:
+      summary: Updates the operator and operation data stored multiple GridCells based on a series of coordinates (representing a set of points, a path, or a polygon)
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: Authorization
+        in: header
+        description: Valid OAuth access token
+        type: string
+        default: Bearer tcl4box-uss1
+        required: true
+      - name: sync_token
+        in: header
+        description: The synchronization token retrieved in the original GET GridsCellOperator, which is a long (64-bit) integer
+        required: true
+        type: integer
+        format: int64
+      - in: body
+        name: gridcell_operator
+        description: The GridCellOperator information being submitted
+        required: true
+        schema:
+          $ref: '#/definitions/GridCellsOperatorRequest'
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      responses:
+        200:
+          description: JSend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Valid OAuth access token
+        408:
+          description: Unable to lock GridCell
+        409:
+          description: Sync token does not match (GridCell updated since GET)
+        424:
+          description: JSON is not in the correct format
+    delete:
+      summary: Removes the USS entry stored in multiple GridCells based on a series of coordinates (representing a set of points, a path, or a polygon)
+      produces:
+      - application/json
+      parameters:
+      - name: Authorization
+        in: header
+        description: Valid OAuth access token
+        type: string
+        default: Bearer tcl4box-uss1
+        required: true
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: coords
+        in: query
+        description: CSV list of latitude,longitude,latitude,longitude...
+        required: true
+        type: string
+      - name: coord_type
+        in: query
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
+      responses:
+        200:
+          description: Success, Jend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided
+        408:
+          description: Unable to lock GridCell
+
+  /GridCellsOperation/{zoom}/{gufi}:
+    put:
+      summary: Creates or Updates an operation stored in multiple GridCells based on a series of coordinates (representing a set of points, a path, or a polygon)
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: Authorization
+        in: header
+        description: Valid OAuth access token
+        type: string
+        default: Bearer tcl4box-uss1
+        required: true
+      - name: sync_token
+        in: header
+        description: The synchronization token retrieved in the original GET GridCellOperator, which is a long (64-bit) integer
+
+        required: true
+        type: integer
+        format: int64
+      - in: body
+        name: gridcell_operation
+        description: The operation information for the specific GridCell being submitted, useful for creating/updating/deleting a single operation when many operations exist in this GridCell. A USS must have an entry as the operator (/GridCellOperator) in this GridCell already to use this endpoint. 
+        required: true
+        schema:
+          $ref: '#/definitions/GridCellsOperationRequest'
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: gufi
+        in: path
+        description: GUFI for the Operation to create/modify
+        required: true
+        type: string
+      responses:
+        200:
+          description: JSend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Valid OAuth access token
+        408:
+          description: Unable to lock GridCell
+        409:
+          description: Sync token does not match (GridCell updated since GET)
+        424:
+          description: JSON is not in the correct format
+    delete:
+      summary: Removes an operation stored in multiple GridCells based on a series of coordinates (representing a set of points, a path, or a polygon)
+      produces:
+      - application/json
+      parameters:
+      - name: Authorization
+        in: header
+        description: Valid OAuth access token
+        type: string
+        default: Bearer tcl4box-uss1
+        required: true
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: coords
+        in: query
+        description: CSV list of latitude,longitude,latitude,longitude...
+        required: true
+        type: string
+      - name: coord_type
+        in: query
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
+      - name: gufi
+        in: path
+        description: GUFI for the Operation to remove
+        required: true
+        type: string
+      responses:
+        200:
+          description: Success, Jend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided
+        408:
+          description: Unable to lock GridCell
+
+          
 definitions:
   JSendStatusResponse:
     type: object
@@ -411,6 +652,9 @@ definitions:
       - minimum_operation_timestamp
       - maximum_operation_timestamp
       - announcement_level
+      - zoom
+      - x
+      - y
     properties:
       uss:
         type: string
@@ -465,6 +709,12 @@ definitions:
         enum:
           - NONE
           - ALL
+      zoom:
+        type: integer
+      x:
+        type: integer
+      y:
+        type: integer
       operations:
         type: array
         items:
@@ -624,7 +874,124 @@ definitions:
         maxLength: 24
         example: '2015-08-20T15:00:00.000Z'
 
+  GridCellsOperatorRequest:
+    type: object
+    format: json
+    required:
+      - coords
+      - uss_baseurl
+      - minimum_operation_timestamp
+      - maximum_operation_timestamp
+    properties:
+      coords:
+        description: CSV list of latitude,longitude,latitude,longitude...
+        type: string
+      coord_type:
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
+      uss_baseurl:
+        type: string
+        description: >-
+          Base URL for the USS's web service endpoints hosting the required
+          NASA API (https://app.swaggerhub.com/apis/utm/uss/).
+        minLength: 1
+        maxLength: 200
+      minimum_operation_timestamp:
+        type: string
+        format: date-time
+        description: >-
+          Earliest operation start time in this grid cell.
+        minLength: 24
+        maxLength: 24
+        example: '2015-08-20T14:11:00.000Z'
+      maximum_operation_timestamp:
+        type: string
+        format: date-time
+        description: >-
+          Latest operation end time in this grid cell.
+        minLength: 24
+        maxLength: 24
+        example: '2015-08-20T15:00:00.000Z'
+      announcement_level:
+        type: string
+        description: >-
+          The level of announcements the USS would like to recieve related to operations
+          in this grid cell.  Current just a binary, but expect this enumeration to grow
+          as use cases are developed.  For example, USSs may want just security related
+          announcements, or would only like announcements that involve changed geographies.
+        enum:
+          - NONE
+          - ALL
+      operations:
+        type: array
+        minItems: 0
+        maxItems: 1000
+        items:
+          $ref: '#/definitions/GridCellOperationRequest'
 
+  GridCellsOperationRequest:
+    type: object
+    format: json
+    required:
+      - coords
+      - gufi
+      - operation_signature
+      - effective_time_begin
+      - effective_time_end
+    properties:
+      coords:
+        description: CSV list of latitude,longitude,latitude,longitude...
+        type: string
+      coord_type:
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
+      gufi:
+        type: string
+        format: uuid
+        description: >-
+          GUFI for the Operation described this GridCellOperation.
+        maxLength: 36
+        minLength: 36
+      operation_signature:
+        type: string
+        format: base64url
+        description: >-
+          The JWS signature of the Operation described by this GridCellOperation. The JWS signature
+          is base64 URL encoded per specification.  The unencoded length of a SHA-256 signature is
+          32 bytes and the unencoded length of other potential hash functions can be much longer.
+
+          The min and max should take into consideration all potential base64url encoding of the
+          JWS algorithms listed in the RFC: https://tools.ietf.org/html/rfc7518#section-3
+
+          Currently, these values do not take this into consideration.
+        minLength: 32
+        maxLength: 200
+      effective_time_begin:
+        type: string
+        format: date-time
+        description: >-
+          Start time of operation.
+        minLength: 24
+        maxLength: 24
+        example: '2015-08-20T14:11:00.000Z'
+      effective_time_end:
+        type: string
+        format: date-time
+        description: >-
+          End time of operation.
+        minLength: 24
+        maxLength: 24
+        example: '2015-08-20T15:00:00.000Z'
 
 # Added by API Auto Mocking Plugin
 host: 35.193.160.127:8121
