@@ -51,7 +51,7 @@ services:
       - ZOO_SERVERS=${ZOO_SERVERS:-server.1=0.0.0.0:2888:3888}
 
   storage_api:
-    image: interussplatform/storage_api
+    image: interussplatform/storage_api:tcl4
     expose:
       - 5000
     environment:

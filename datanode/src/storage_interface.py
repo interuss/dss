@@ -60,7 +60,7 @@ BAD_CHARACTER_CHECK = '\';(){}[]!@#$%^&*|"<>'
 CONNECTION_TIMEOUT = 2.5  # seconds
 DEFAULT_CONNECTION = 'localhost:2181'
 GRID_PATH = USS_BASE_PREFIX
-
+MAX_SAFE_INTEGER = 9007199254740991
 
 class USSMetadataManager(object):
   """Interfaces with the locking system to get, put, and delete USS metadata.
@@ -848,6 +848,9 @@ class USSMetadataManager(object):
 
   @staticmethod
   def _hash_sync_tokens(syncs):
-    """Hashes a list of sync tokens into a single, positive 64-bit int"""
-    log.debug('Hashing syncs: %s', tuple(sorted(syncs)))
-    return abs(hash(tuple(sorted(syncs))))
+    """Hashes a list of sync tokens into a single, positive 64-bit int.
+
+    For various languages, the limit to integers may be different, therefore
+    we truncate to ensure the hash is the same on all implementations.
+    """
+    return abs(hash(tuple(sorted(syncs)))) % MAX_SAFE_INTEGER
