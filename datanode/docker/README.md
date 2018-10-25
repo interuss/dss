@@ -89,14 +89,19 @@ host. To be fully secure, the certificate must be signed by a trusted
 certificate authority, and that certificate will only be valid on the host for
 which it was signed.
 
+## Deployment
+
 To run a fully-functional production InterUSS Platform data node that
 synchronizes with a network of other InterUSS Platform data nodes:
 
 ```shell
 export ZOO_MY_ID=[your InterUSS Platform network Zookeeper ID]
-export ZOO_SERVERS=[InterUSS Platform server network; ex: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888]
+export ZOO_SERVERS=[InterUSS Platform server network; ex: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888, make sure your server is 0.0.0.0]
 export INTERUSS_PUBLIC_KEY=[paste public key here]
-export SSL_CERT_PATH=[/path/containing/cert.pem/in/it]
-export SSL_KEY_PATH=[/path/containing/key.pem/in/it]
-docker docker-compose -f docker-compose.yaml -f docker-compose_localssl.yaml -p datanode up
+
+docker run --name="tcl4-zookeeper" --restart always -p 2888:2888 -p 3888:3888 --expose 2181 -e ZOO_MY_ID="${ZOO_MY_ID}" -e ZOO_SERVERS="${ZOO_SERVERS}" -d zookeeper
+
+docker run --name="tcl4-storage_api" --link="tcl4-zookeeper" --restart always --expose 5000 -e INTERUSS_API_PORT=5000 -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" -e INTERUSS_CONNECTIONSTRING="tcl4-zookeeper:2181" -e INTERUSS_VERBOSE=true -d interussplatform/storage_api:tcl4
+
+docker run --name="tcl4-reverse_proxy" --link="tcl4-storage_api" --restart always -p 8120:8120 -p 8121:8121 -e INTERUSS_API_PORT_HTTP=${INTERUSS_API_PORT_HTTP:-8120} -e INTERUSS_API_PORT_HTTPS=${INTERUSS_API_PORT_HTTPS:-8121} -e STORAGE_API_SERVER="tcl4-storage_api" -e STORAGE_API_PORT=5000 -d interussplatform/reverse_proxy
 ```
