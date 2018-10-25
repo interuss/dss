@@ -36,7 +36,7 @@ By layering this docker-compose configuration on top of docker-compose.yaml,
 users may provide their own SSL certificates. This is the intended usage in
 production.
 
-## Usage
+## Test Usage
 
 ### Stand-alone test node
 
@@ -70,7 +70,7 @@ export INTERUSS_PUBLIC_KEY=[paste public key here]
 docker-compose -p datanode up
 ```
 
-## SSL
+### SSL
 
 By default, the data node docker-compose configuration will serve HTTPS
 requests on port 8121 using a test self-signed certificate included in this
@@ -99,9 +99,9 @@ export ZOO_MY_ID=[your InterUSS Platform network Zookeeper ID]
 export ZOO_SERVERS=[InterUSS Platform server network; ex: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888, make sure your server is 0.0.0.0]
 export INTERUSS_PUBLIC_KEY=[paste public key here]
 
-docker run --name="tcl4-zookeeper" --restart always -p 2888:2888 -p 3888:3888 --expose 2181 -e ZOO_MY_ID="${ZOO_MY_ID}" -e ZOO_SERVERS="${ZOO_SERVERS}" -d zookeeper
+docker run --name="datanode-zookeeper" --restart always -p 2888:2888 -p 3888:3888 --expose 2181 -e ZOO_MY_ID="${ZOO_MY_ID}" -e ZOO_SERVERS="${ZOO_SERVERS}" -d zookeeper
 
-docker run --name="tcl4-storage_api" --link="tcl4-zookeeper" --restart always --expose 5000 -e INTERUSS_API_PORT=5000 -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" -e INTERUSS_CONNECTIONSTRING="tcl4-zookeeper:2181" -e INTERUSS_VERBOSE=true -d interussplatform/storage_api:tcl4
+docker run --name="datanode-storage_api" --link="tcl4-zookeeper" --restart always --expose 5000 -e INTERUSS_API_PORT=5000 -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" -e INTERUSS_CONNECTIONSTRING="datanode-zookeeper:2181" -e INTERUSS_VERBOSE=true -d interussplatform/storage_api:tcl4
 
-docker run --name="tcl4-reverse_proxy" --link="tcl4-storage_api" --restart always -p 8120:8120 -p 8121:8121 -e INTERUSS_API_PORT_HTTP=${INTERUSS_API_PORT_HTTP:-8120} -e INTERUSS_API_PORT_HTTPS=${INTERUSS_API_PORT_HTTPS:-8121} -e STORAGE_API_SERVER="tcl4-storage_api" -e STORAGE_API_PORT=5000 -d interussplatform/reverse_proxy
+docker run --name="datanode-reverse_proxy" --link="tcl4-storage_api" --restart always -p 8120:8120 -p 8121:8121 -e INTERUSS_API_PORT_HTTP=${INTERUSS_API_PORT_HTTP:-8120} -e INTERUSS_API_PORT_HTTPS=${INTERUSS_API_PORT_HTTPS:-8121} -e STORAGE_API_SERVER="datanode-storage_api" -e STORAGE_API_PORT=5000 -d interussplatform/reverse_proxy
 ```
