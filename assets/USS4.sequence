@@ -1,4 +1,4 @@
-Title: Example InterUSS Platform multi-grid with conflict[fillcolor="black", fontcolor="white"]                                                                                           
+Title: Example InterUSS GUD multi-grid with conflict[fillcolor="black", fontcolor="white"]                                                                                           
 
 participant Data Node API as L [fillcolor="orange", fontcolor="black"]                                                                                                                                        
 participant USS A as A [fillcolor="yellow", fontcolor="black"]
