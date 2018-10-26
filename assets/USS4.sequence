@@ -1,43 +1,39 @@
-Title: Example InterUSS GUD multi-grid with conflict[fillcolor="black", fontcolor="white"]                                                                                           
+Title: Example GUD Platform multi-grid with conflict[fillcolor="black", fontcolor="white"]                                                                                           
 
 participant Data Node API as L [fillcolor="orange", fontcolor="black"]                                                                                                                                        
 participant USS A as A [fillcolor="yellow", fontcolor="black"]
 participant USS B as B [fillcolor="blue", fontcolor="white"]
 
-Note over A: USS A Receives request to reserve airspace\nwithin cells 1z/1x/1y & 1z/2x/1y[fillcolor="yellow", fontcolor="black"]
+Note over A: USS A Receives request to reserve\nairspace within a polygon\nthat overlaps cells 1z/1x/1y & 1z/2x/1y[fillcolor="yellow", fontcolor="black"]
 
-A->L: GET GridCellMetadata(1z/1x/1y)                                                                                                                              
-L-->A: Empty Metadata and synctoken_v0(1.1.1)
-A->L: GET GridCellMetadata(1z/2x/1y)                                                                                                                              
-L-->A: Empty Metadata and synctoken_v0(1.2.1)
+A->L: GET GridCellsMetadata(1z + polygon)                                                                                                                              
+L-->A: Empty Metadata and composite synctoken_v24392
 
+Note over A: The PUT takes wildcards for {zoom}, {x}, and {y}\nto support obsfucation by the USS[fillcolor="yellow", fontcolor="black"]
+A->L: PUT GridCellsMetadata(1z + polygon, synctoken_v24392, {uss_id}, \n{operation_endpoint},...)                                                                                                                     
 
-A->L: PUT GridCellMetadata(1z/1x/1y, synctoken_v0(1.1.1), {uss_id}, \n{operation_endpoint},...)                                                                                                                     
-Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]                                                                                                                                      
-L-->A: 200 Response and synctoken_v1(1.1.1)
+Note right of L: USS A Metadata Update\nIn Progress[fillcolor="orange", fontcolor="black"]                                                                                                                                      
+
 Note over B: B has been working on a plan\nand updates cell 1z/2x/1y[fillcolor="blue", fontcolor="white"]                                                                                                                                      
-B->L: PUT GridCellMetadata(1z/2x/1y, synctoken_v0(1.2.1), {uss_id}, \n{operation_endpoint},...)                                                                                                                     
+B->L: PUT GridCellMetadata(1z/2x/1y, synctoken_v0, {uss_id}, \n{operation_endpoint},...)                                                                                                                     
 Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]                                                                                                                                      
-L-->B: 200 Response and synctoken_v1(1.2.1)
+L-->B: 200 Response and synctoken_v1
 Note over B: Once all 200s are received, commit in USS B\nlocal DB for serving other USSs[fillcolor="blue", fontcolor="white"]
 
-Note over A: A still tries to write to\n1z/2x/1y with v0 synctoken[fillcolor="yellow", fontcolor="black"]
-A->L: PUT GridCellMetadata(1z/2x/1y, synctoken_v0(1.2.1), {uss_id}, \n{operation_endpoint},...)                                                                                                                     
-L-->A: 409 Response (due to invalid token) 
+Note right of L: Metadata transaction\nrolled back[fillcolor="orange", fontcolor="black"]                                                                                                                                      
+L-->A: 409 Response (sync_token changed)
 
-Note over A: USS A needs to start over (completely)\nIt has not commited the operation locally\nand would not serve it if asked at 1z/1x/1y[fillcolor="yellow", fontcolor="black"]
-A->L: GET GridCellMetadata(1z/1x/1y)                                                                                                                              
-L-->A: Empty Metadata and synctoken_v0(1.1.1)
-A->L: GET GridCellMetadata(1z/2x/1y)                                                                                                                              
-L-->A: Metadata and synctoken_v1(1.2.1)
-A->B: Fetch FlightVolumes for cell 1x/2x/1y                                                                                                                           
-B-->A: FlightVolumes                                                                                                                           
+Note over A: USS A needs to start over (completely).\nIt has not commited the operation locally\nand would not serve it if asked at 1z/1x/1y[fillcolor="yellow", fontcolor="black"]
 
+A->L: GET GridCellsMetadata(1z + polygon)                                                                                                                              
+L-->A: Response and composite synctoken_v92484
+
+A->B: GET Operations(1z/2x/1y)
+B-->A: Operation flight volumes
 Note over A: Deconflict new reservation with ALL\nknown flight volumes within cell. [fillcolor="yellow", fontcolor="black"]                                                                                       
-A->L: PUT GridCellMetadata(1z/1x/1y, synctoken_v0(1.1.1), {uss_id}, \n{operation_endpoint},...)                                                                                                                     
+
+A->L: PUT GridCellsMetadata(1z + polygon, synctoken_v92484, {uss_id}, \n{operation_endpoint},...)                                                                                                                     
+
 Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]                                                                                                                                      
-L-->A: 200 Response and synctoken_v2(1.1.1)
-A->L: PUT GridCellMetadata(1z/2x/1y, synctoken_v1(1.2.1), {uss_id}, \n{operation_endpoint},...)                                                                                                                     
-Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]                                                                                                                                      
-L-->A: 200 Response and synctoken_v2(1.2.1)
+L-->A: 200 Response and composite synctoken_v89122
 Note over A: Once all 200s are received, commit in USS A\nlocal DB for serving other USSs[fillcolor="yellow", fontcolor="black"]
