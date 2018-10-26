@@ -1,4 +1,4 @@
-Title: Example TCL4 InterUSS Platform conflicting session [fillcolor="black", fontcolor="white"]                                                                                           
+Title: Example TCL4 GUD Platform conflicting session [fillcolor="black", fontcolor="white"]                                                                                           
 
 participant Data Node API as L [fillcolor="darkorange", fontcolor="black"]                                                                                                                                        
 participant USS B as B [fillcolor="blue", fontcolor="white"]
