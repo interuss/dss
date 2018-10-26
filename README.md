@@ -84,9 +84,7 @@ In this sequence, USS A is already operating (and marked itself as wanting updat
 
 For an additional examples, this [Sequence Diagram](assets/USS3.png) shows a USS affecting multiple grids.
 This [Sequence Diagram](assets/USS4.png) shows another USS updating one of
-multiple grids during an update. And finally, This
-[Sequence Diagram](assets/USS5.png) shows different examples of protection with
-concurrent updates. (NOTE: These use the baseline InterUSS Platform naming conventions)
+multiple grids during an update. 
 
 ## Directories of Interest:
 
