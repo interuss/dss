@@ -1,4 +1,4 @@
-Title: Example TCL4 InterUSS Platform initial session[fillcolor="black", fontcolor="white"]                                                                                           
+Title: Example TCL4 GUD Platform initial session[fillcolor="black", fontcolor="white"]                                                                                           
 
 participant Data Node API as L [fillcolor="orange", fontcolor="black"]                                                                                                                                        
 participant USS A as A [fillcolor="yellow", fontcolor="black"]
