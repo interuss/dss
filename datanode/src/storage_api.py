@@ -71,7 +71,8 @@ import slippy_util
 # VERSION = '1.0.2.001'  # Refactored to run with gunicorn
 # VERSION = '1.0.2.002'  # Standardize OAuth Authorization header, docker fix
 # VERSION = '1.0.2.003'  # slippy utility updates to support point/path/polygon
-VERSION = '1.0.2.004'  # slippy non-breaking api changes to support path/polygon
+# VERSION = '1.0.2.004'  # slippy non-breaking api changes to support path/polygon
+VERSION = '1.1.0.005'  # api changes to support multi-grid GET/PUT/DEL
 
 TESTID = None
 
@@ -114,7 +115,9 @@ def ConvertCoordinatesToSlippy(zoom):
   """Converts an CSV of coords to slippy tile format at the specified zoom.
   Args:
     zoom: zoom level to use for encapsulating the tiles
-    Plus posted webarg coords: csv of lon,lat,long,lat,etc.
+    Plus posted webargs
+     coords: csv of lon,lat,long,lat,etc.
+     coord_type: (optional) type of coords - point (default), path, polygon
   Returns:
     200 with tiles array in JSON format,
     or the nominal 4xx error codes as necessary.
@@ -122,30 +125,14 @@ def ConvertCoordinatesToSlippy(zoom):
   log.info('Convert coordinates to slippy instantiated for %sz...', zoom)
   try:
     zoom = int(zoom)
-    tiles = []
-    coords = _GetRequestParameter('coords', '')
-    coord_type = _GetRequestParameter('coord_type', 'point')
-    log.debug('Retrieved coords from web params and split to %s...', coords)
-    coordinates = slippy_util.convert_csv_to_coordinates(coords)
-    if not coordinates:
-      log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
-      raise ValueError('Invalid coords, must be a CSV of lat,lon,lat,lon...')
-    if coord_type == 'point':
-      for c in coordinates:
-        tiles.append((slippy_util.convert_point_to_tile(zoom, c[0], c[1])))
-    elif coord_type == 'path':
-      tiles = slippy_util.convert_path_to_tiles(zoom, coordinates)
-    elif coord_type == 'polygon':
-      tiles = slippy_util.convert_polygon_to_tiles(zoom, coordinates)
-    else:
-      raise ValueError('Invalid coord_type, must be point/path/polygon')
+    tiles = _ConvertRequestToTiles(zoom)
     result = []
     for x, y in tiles:
       link = 'http://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, x, y)
       tile = {'link': link, 'zoom': zoom, 'x': x, 'y': y}
       if tile not in result:
         result.append(tile)
-  except (ValueError, TypeError) as e:
+  except (ValueError, TypeError, OverflowError) as e:
     log.error('/slippy error: %s...', e.message)
     abort(status.HTTP_400_BAD_REQUEST, e.message)
 
@@ -169,7 +156,8 @@ def GridCellMetaDataHandler(zoom, x, y):
     x: x tile number in slippy tile format
     y: y tile number in slippy tile format
     OAuth access_token as part of the header
-    Plus posted webargs as needed for PUT/POST and DELETE methods (see below)
+    Plus posted webargs as needed for PUT/POST and DELETE methods
+      (see internal functions Get/Put/Delete metadata below)
   Returns:
     200 with token and metadata in JSON format,
     or the nominal 4xx error codes as necessary.
@@ -183,13 +171,54 @@ def GridCellMetaDataHandler(zoom, x, y):
   except ValueError:
     abort(status.HTTP_400_BAD_REQUEST,
           'Invalid parameters for slippy tile coordinates, must be integers.')
-  # Check the request method
   if request.method == 'GET':
     result = _GetGridCellMetaData(zoom, x, y)
   elif request.method in ('PUT', 'POST'):
     result = _PutGridCellMetaData(zoom, x, y, uss_id)
   elif request.method == 'DELETE':
     result = _DeleteGridCellMetaData(zoom, x, y, uss_id)
+  else:
+    abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
+  return _FormatResult(result)
+
+
+@webapp.route(
+  '/GridCellsMetaData/<zoom>',
+  methods=['GET', 'PUT', 'POST', 'DELETE'])
+def GridCellsMetaDataHandler(zoom):
+  """Handles the web service request for multi-grid operations.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    OAuth access_token as part of the header
+    Plus posted webargs:
+      coords: csv of lon,lat,long,lat,etc.
+      coord_type: (optional) type of coords - point (default), path, polygon
+       and additional as needed for PUT/POST and DELETE methods
+       (see internal functions Get/Put/Delete metadata below)
+
+  Returns:
+    200 with token and metadata in JSON format,
+    or the nominal 4xx error codes as necessary.
+  """
+  uss_id = _ValidateAccessToken()
+  result = {}
+  try:
+    zoom = int(zoom)
+    tiles = _ConvertRequestToTiles(zoom)
+    if len(tiles) > slippy_util.TILE_LIMIT:
+      raise OverflowError('Limit of %d tiles impacted exceeded (%d)'
+                          % (slippy_util.TILE_LIMIT, len(tiles)))
+  except (ValueError, TypeError) as e:
+    abort(status.HTTP_400_BAD_REQUEST, e.message)
+  except OverflowError as e:
+    abort(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, e.message)
+  if request.method == 'GET':
+    result = _GetGridCellsMetaData(zoom, tiles)
+  elif request.method in ('PUT', 'POST'):
+    result = _PutGridCellsMetaData(zoom, tiles, uss_id)
+  elif request.method == 'DELETE':
+    result = _DeleteGridCellsMetaData(zoom, tiles, uss_id)
   else:
     abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
   return _FormatResult(result)
@@ -253,8 +282,7 @@ def _GetGridCellMetaData(zoom, x, y):
   """Provides an instantaneous snapshot of the metadata for a specific GridCell.
 
   GridCellMetaData provides an instantaneous snapshot of the metadata stored
-  in a specific GridCell, along with a token to be used when updating. For
-  TCL3, this will support a single cell.
+  in a specific GridCell, along with a token to be used when updating.
 
   Args:
     zoom: zoom level in slippy tile format
@@ -274,9 +302,9 @@ def _PutGridCellMetaData(zoom, x, y, uss_id):
   """Updates the metadata stored in a specific slippy GridCell.
 
     Updates the metadata stored in a specific GridCell using optimistic locking
-    behavior, which acquires and releases the lock for the specific GridCell.
-    Operation fails if unable to acquire the locks or if the lock has been
-    updated since GET GridCellMetadata was originally called (based on token).
+    behavior. Operation fails if the metadata has been updated since
+    GET GridCellMetadata was originally called (based on token).
+
   Args:
     zoom: zoom level in slippy tile format
     x: x tile number in slippy tile format
@@ -349,9 +377,7 @@ def _PutGridCellMetaData(zoom, x, y, uss_id):
 def _DeleteGridCellMetaData(zoom, x, y, uss_id):
   """Removes the USS entry in the metadata stored in a specific GridCell.
 
-  Removes the USS entry in the metadata using optimistic locking behavior, which
-  acquires and releases the lock for the specific GridCell. Operation fails if
-  unable to acquire the locks.
+  Removes the USS entry in the metadata using optimistic locking behavior.
 
   Args:
     zoom: zoom level in slippy tile format
@@ -378,6 +404,149 @@ def _DeleteGridCellMetaData(zoom, x, y, uss_id):
               delete a USS from a GridCell."""
     }
   return result
+
+
+def _GetGridCellsMetaData(zoom, tiles):
+  """Provides an instantaneous snapshot of the metadata for a multiple GridCells
+
+  Args:
+    zoom: zoom level in slippy tile format
+    tiles: array of x,y tiles to retrieve
+  Returns:
+    200 with token and JSON metadata,
+    or the nominal 4xx error codes as necessary.
+  """
+  log.info('Grid cells metadata request instantiated for %sz, %s...',
+           zoom, str(tiles))
+  result = wrapper.get_multi(zoom, tiles)
+  return result
+
+def _PutGridCellsMetaData(zoom, tiles, uss_id):
+  """Updates the metadata stored in multiple GridCells.
+
+    Updates the metadata stored in a multiple GridCell using optimistic locking
+    behavior. Operation fails if the metadata has been updated since
+    GET GridCellsMetadata was originally called (based on sync_token).
+
+  Args:
+    zoom: zoom level in slippy tile format
+    tiles: array of x,y tiles to retrieve
+    uss_id: the plain text identifier for the USS from OAuth
+  Plus posted webargs:
+    sync_token: the composite sync_token retrieved in the
+      original GET GridCellsMetadata,
+    scope: The submitting USS scope for the web service endpoint (used for OAuth
+      access),
+    operation_endpoint: the submitting USS endpoint where all flights in these
+      cells can be retrieved from (variables {zoom}, {x}, and {y} can be used in
+      the endpoint, and will be replaced with the actual grid values),
+    operation_format: The output format for the USS web service endpoint (i.e.
+      NASA, GUTMA),
+    minimum_operation_timestamp: the lower time bound of all of the USSs flights
+      in these grid cells.
+    maximum_operation_timestamp: the upper time bound of all of the USSs flights
+      in these grid cells.
+
+  Returns:
+    200 and a new composite token if updated successfully,
+    409 if there is a locking conflict that could not be resolved, or
+    the other nominal 4xx error codes as necessary.
+  """
+  log.info('Grid cells metadata submit instantiated for %s at %sz, %s...',
+           uss_id, zoom, str(tiles))
+  sync_token = _GetRequestParameter('sync_token', None)
+  if not sync_token and 'sync_token' in request.headers:
+    sync_token = request.headers['sync_token']
+  scope = _GetRequestParameter('scope', None)
+  operation_endpoint = _GetRequestParameter('operation_endpoint', None)
+  operation_format = _GetRequestParameter('operation_format', None)
+  minimum_operation_timestamp = _GetRequestParameter(
+    'minimum_operation_timestamp', None)
+  maximum_operation_timestamp = _GetRequestParameter(
+    'maximum_operation_timestamp', None)
+  errorfield = errormsg = None
+  if not sync_token:
+    errorfield = 'sync_token'
+  elif not uss_id:
+    errorfield = 'uss_id'
+    errormsg = 'USS identifier not received from OAuth token check.'
+  elif not scope:
+    errorfield = 'scope'
+  elif not operation_endpoint:
+    errorfield = 'operation_endpoint'
+  elif not operation_format:
+    errorfield = 'operation_format'
+  elif not minimum_operation_timestamp:
+    errorfield = 'minimum_operation_timestamp'
+  elif not maximum_operation_timestamp:
+    errorfield = 'maximum_operation_timestamp'
+  if errorfield:
+    if not errormsg:
+      errormsg = errorfield + (
+        ' must be provided in the form data request to add to a '
+        'GridCell.')
+    result = {
+      'status': 'error',
+      'code': status.HTTP_400_BAD_REQUEST,
+      'message': errormsg
+    }
+  else:
+    result = wrapper.set_multi(zoom, tiles, sync_token, uss_id, scope,
+                         operation_format, operation_endpoint,
+                         minimum_operation_timestamp,
+                         maximum_operation_timestamp)
+  return result
+
+def _DeleteGridCellsMetaData(zoom, tiles, uss_id):
+  """Removes the USS entry in multiple GridCells.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    tiles: array of x,y tiles to delete the uss from
+    uss_id: the plain text identifier for the USS from OAuth
+  Returns:
+    200 and a new sync_token if updated successfully,
+    409 if there is a locking conflict that could not be resolved, or
+    the other nominal 4xx error codes as necessary.
+  """
+  log.info('Grid cells metadata delete instantiated for %s, %sz, %s...',
+           uss_id, zoom, str(tiles))
+  if uss_id:
+    result = wrapper.delete_multi(zoom, tiles, uss_id)
+  else:
+    result = {
+      'status':
+        'fail',
+      'code':
+        status.HTTP_400_BAD_REQUEST,
+      'message':
+        """uss_id must be provided in the request to
+          delete a USS from a GridCell."""
+    }
+  return result
+
+
+def _ConvertRequestToTiles(zoom):
+  """Converts an CSV of coords into slippy tile format at the specified zoom
+      and the specified coordinate type (path, polygon, point) """
+  tiles = []
+  coords = _GetRequestParameter('coords', '')
+  coord_type = _GetRequestParameter('coord_type', 'point').lower()
+  log.debug('Retrieved coords from web params and split to %s...', coords)
+  coordinates = slippy_util.convert_csv_to_coordinates(coords)
+  if not coordinates:
+    log.error('Invalid coords %s, must be a CSV of lat,lon...', coords)
+    raise ValueError('Invalid coords, must be a CSV of lat,lon,lat,lon...')
+  if coord_type == 'point':
+    for c in coordinates:
+      tiles.append((slippy_util.convert_point_to_tile(zoom, c[0], c[1])))
+  elif coord_type == 'path':
+    tiles = slippy_util.convert_path_to_tiles(zoom, coordinates)
+  elif coord_type == 'polygon':
+    tiles = slippy_util.convert_polygon_to_tiles(zoom, coordinates)
+  else:
+    raise ValueError('Invalid coord_type, must be point/path/polygon')
+  return tiles
 
 
 def _GetRequestParameter(name, default):

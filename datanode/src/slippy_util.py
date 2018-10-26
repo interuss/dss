@@ -41,6 +41,8 @@ from shapely.geometry import Polygon
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('InterUSS_DataNode_SlippyUtil')
 
+TILE_LIMIT = 50  # Number of tiles to allow for multi get/put/del
+
 
 def validate_slippy(z, x, y, raise_error=False):
   """Validates slippy tile ranges.
@@ -185,29 +187,6 @@ def convert_polygon_to_tiles(zoom, points):
   return _convert_shape_to_tiles(zoom, points, is_poly=True)
 
 
-def convert_points_to_geojson(points, headers=True, name='slippy-out'):
-  """ Converts a set of lat/lon points into a path in geojson format."""
-  result = ''
-  if headers:
-    result += """{
-      "type": "FeatureCollection",
-      "features": ["""
-  result += """{
-      "type": "Feature",
-      "properties": {"name" : "%s" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [ [ """ % name
-  for lat, lon in points:
-    result += "[ %.5f, %.5f ]," % (lon, lat)
-  result = result[:-1] + """] ]
-        }
-      }"""
-  if headers:
-    result +=' ] }'
-  return result
-
-
 ######################################################################
 ################       INTERNAL FUNCTIONS    #########################
 ######################################################################
@@ -258,6 +237,9 @@ def _calculate_tiles_from_bounding_box(zoom, bbox):
     x, y = convert_point_to_tile(zoom, lat, lon)
     if (x, y) not in result:
       result.append((x, y))
+      if len(result) > TILE_LIMIT:
+        raise OverflowError('Limit of %d tiles impacted exceeded'
+                            % (TILE_LIMIT))
     last = (lat, lon)
   if not result:
     raise ValueError('No tiles found for path coordinates')

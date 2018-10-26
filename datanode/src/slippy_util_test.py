@@ -74,25 +74,25 @@ class InterUSSSlippyUtilitiesTestCase(unittest.TestCase):
 
   def testInvalidPointConversions(self):
     with self.assertRaises(ValueError):
-      self.assertIsNone(slippy_util.convert_point_to_tile(-1, 0, 0))
+      slippy_util.convert_point_to_tile(-1, 0, 0)
     with self.assertRaises(ValueError):
-      self.assertIsNone(slippy_util.convert_point_to_tile(21, 0, 0))
+      slippy_util.convert_point_to_tile(21, 0, 0)
     with self.assertRaises(ValueError):
-      self.assertIsNone(slippy_util.convert_point_to_tile(1, 91, 10))
+      slippy_util.convert_point_to_tile(1, 91, 10)
     with self.assertRaises(ValueError):
-      self.assertIsNone(slippy_util.convert_point_to_tile(1, 10, 191))
+      slippy_util.convert_point_to_tile(1, 10, 191)
     with self.assertRaises(TypeError):
-      self.assertIsNone(slippy_util.convert_point_to_tile(1, 10, None))
+      slippy_util.convert_point_to_tile(1, 10, None)
     with self.assertRaises(ValueError):
-      self.assertEqual(1, len(slippy_util.convert_path_to_tiles(0, [(0, 0)])))
+      slippy_util.convert_path_to_tiles(0, [(0, 0)])
+    with self.assertRaises(OverflowError):
+      slippy_util.convert_path_to_tiles(15, [(0, 0), (1, 1.5)])
 
   def testValidPathConversions(self):
     self.assertEqual(1,
                      len(slippy_util.convert_path_to_tiles(0, [(0, 0), (1, 1.5)])))
     self.assertEqual(2,
                      len(slippy_util.convert_path_to_tiles(5, [(0, 0), (1, 1.5)])))
-    self.assertEqual(229,
-                     len(slippy_util.convert_path_to_tiles(15, [(0, 0), (1, 1.5)])))
     # One segment should be the same as two segments that overlapp
     self.assertEqual(len(slippy_util.convert_path_to_tiles(10, [(0, 0), (1, 1.5)])),
                      len(slippy_util.convert_path_to_tiles(10, [(0, 0), (1, 1.5),
@@ -121,6 +121,11 @@ class InterUSSSlippyUtilitiesTestCase(unittest.TestCase):
       slippy_util.convert_path_to_tiles(0, [])
     with self.assertRaises(TypeError):
       slippy_util.convert_path_to_tiles(0, [(0), (1)])
+    # test a lot of tiles calculation
+    with self.assertRaises(OverflowError):
+      slippy_util.convert_polygon_to_tiles(15, [(47.5, -103), (47.5, -101.8),
+                                                (48, -101.8), (48, -103),
+                                                (47.5, -103)])
 
   def testValidPolygonConversions(self):
     self.assertEqual(1, len(
@@ -137,11 +142,6 @@ class InterUSSSlippyUtilitiesTestCase(unittest.TestCase):
       slippy_util.convert_polygon_to_tiles(9, [(47.5, -103), (47.5, -101.8),
                                                (48, -101.8), (48, -103),
                                                (47.5, -103)])))
-    # test the duration of a lot of tiles calculation
-    self.assertEqual(7590, len(
-      slippy_util.convert_polygon_to_tiles(15, [(47.5, -103), (47.5, -101.8),
-                                                (48, -101.8), (48, -103),
-                                                (47.5, -103)])))
 
   def testInvalidPolygonConversions(self):
     with self.assertRaises(TypeError):

@@ -60,7 +60,7 @@ BAD_CHARACTER_CHECK = '\';(){}[]!@#$%^&*|"<>'
 CONNECTION_TIMEOUT = 2.5  # seconds
 DEFAULT_CONNECTION = 'localhost:2181'
 GRID_PATH = USS_BASE_PREFIX
-
+MAX_SAFE_INTEGER = 9007199254740991
 
 class USSMetadataManager(object):
   """Interfaces with the locking system to get, put, and delete USS metadata.
@@ -362,17 +362,17 @@ class USSMetadataManager(object):
       result = self._format_status_code_to_jsend(404, e.message)
     return result
 
-  def delete_multi(self, uss_id, z, grids):
+  def delete_multi(self, z, grids, uss_id):
     """Sets multiple GridCells metadata by removing the entry for the USS.
 
-    Reads data from zookeeper, including a snapshot token. The
-    snapshot token is used as a reference when writing to ensure
-    the data has not been updated between read and write.
-
+    Removes the operator from multiple cells. Does not return 404 on
+    not finding the USS in a cell, since this should be a remove all
+    type function, as some cells might have the ussid and some might not.
+    
     Args:
-      uss_id: is the plain text identifier for the USS
       z: zoom level in slippy tile format
       grids: list of (x,y) tiles to delete
+      uss_id: is the plain text identifier for the USS
     Returns:
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
@@ -597,6 +597,9 @@ class USSMetadataManager(object):
 
   @staticmethod
   def _hash_sync_tokens(syncs):
-    """Hashes a list of sync tokens into a single, positive 64-bit int"""
-    log.debug('Hashing syncs: %s', tuple(sorted(syncs)))
-    return abs(hash(tuple(sorted(syncs))))
+    """Hashes a list of sync tokens into a single, positive 64-bit int.
+
+    For various languages, the limit to integers may be different, therefore
+    we truncate to ensure the hash is the same on all implementations.
+    """
+    return abs(hash(tuple(sorted(syncs)))) % MAX_SAFE_INTEGER

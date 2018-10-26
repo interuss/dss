@@ -20,6 +20,7 @@ import unittest
 import requests
 
 import storage_api
+
 ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-api-test'
 
@@ -30,7 +31,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     storage_api.webapp.testing = True
     self.app = storage_api.webapp.test_client()
     options = storage_api.ParseOptions(
-        ['-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID])
+      ['-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID])
     storage_api.InitializeConnection(options)
 
   def tearDown(self):
@@ -59,11 +60,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
   def testIntrospectWithExpiredToken(self):
     result = self.app.get(
-        '/introspect',
-        headers={
-            'access_token':
-            '1/fFAGRNJru1FTz70BzhT3Zg'
-        })
+      '/introspect',
+      headers={
+        'access_token':
+          '1/fFAGRNJru1FTz70BzhT3Zg'
+      })
     self.assertEqual(400, result.status_code)
 
   def testValidAuthorizationTokensInTest(self):
@@ -144,12 +145,12 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       j, json.loads(self.app.get(
         '/slippy/13?coords=37.203335,-80.599481,37.20334,-80.59948').data))
     r = self.app.get('/slippy/11?coords=0,0,1,1,2,2,3,3')
-    self.assertEqual(r.status_code, 200)
-    self.assertEqual(len(json.loads(r.data)['data']['grid_cells']), 4)
+    self.assertEqual(200, r.status_code)
+    self.assertEqual(4, len(json.loads(r.data)['data']['grid_cells']))
 
   def testSlippyConversionWithValidPaths(self):
     r = self.app.get('/slippy/0?coord_type=path&coords=0,0,1,1.5')
-    self.assertEqual(r.status_code, 200)
+    self.assertEqual(200, r.status_code)
     j = json.loads(r.data)
     self.assertEqual(0, j['data']['grid_cells'][0]['zoom'])
     self.assertEqual(0, j['data']['grid_cells'][0]['x'])
@@ -159,21 +160,18 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(
       self.app.get('/slippy/5?coord_type=path&coords=0,0,1,1.5').data,
       self.app.get('/slippy/5?coord_type=path&coords=0,0,1,1.5,0,0').data)
-    r = self.app.get('/slippy/15?coord_type=path&coords=0,0,1,1.5')
-    self.assertEqual(r.status_code, 200)
-    j = json.loads(r.data)
-    self.assertEqual(15, j['data']['grid_cells'][0]['zoom'])
-    self.assertEqual(229, len(j['data']['grid_cells']))
 
   def testSlippyConversionWithInvalidPaths(self):
     r = self.app.get('/slippy/0?coord_type=path&coords=0')
     self.assertEqual(400, r.status_code)
     r = self.app.get('/slippy/0?coord_type=path&coords=0,1,2')
     self.assertEqual(400, r.status_code)
+    r = self.app.get('/slippy/15?coord_type=path&coords=0,0,1,1.5')
+    self.assertEqual(400, r.status_code)
 
   def testSlippyConversionWithValidPolygons(self):
     r = self.app.get('/slippy/0?coord_type=polygon&coords=0,0,1,1.5,0,1.5')
-    self.assertEqual(r.status_code, 200)
+    self.assertEqual(200, r.status_code)
     j = json.loads(r.data)
     self.assertEqual(0, j['data']['grid_cells'][0]['zoom'])
     self.assertEqual(0, j['data']['grid_cells'][0]['x'])
@@ -186,7 +184,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/slippy/5?coord_type=polygon&coords=0,0,1,1.5,0,0,0,1.5,0,0').data)
     s = '47.5,-103,47.5,-101.8,48,-101.8,48,-103,47.5,-103'
     r = self.app.get('/slippy/9?coord_type=polygon&coords=' + s)
-    self.assertEqual(r.status_code, 200)
+    self.assertEqual(200, r.status_code)
     j = json.loads(r.data)
     self.assertEqual(9, j['data']['grid_cells'][0]['zoom'])
     self.assertEqual(9, len(j['data']['grid_cells']))
@@ -223,96 +221,96 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     j = json.loads(result.data)
     s = j['sync_token']
     self.assertEqual(404, self.app.put(
-        '/GridCellMetaDatas/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            flight_endpoint='https://g.co/f1',
-            priority_flight_callback='https://g.co/r')).status_code)
+      '/GridCellMetaDatas/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        flight_endpoint='https://g.co/f1',
+        priority_flight_callback='https://g.co/r')).status_code)
     self.assertEqual(404, self.app.put(
-        '/GridCellMetaData',
-        query_string=dict(
-            ssync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
+      '/GridCellMetaData',
+      query_string=dict(
+        ssync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
-        '/GridCellMetaData/1a/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
+      '/GridCellMetaData/1a/1/1',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
-        '/GridCellMetaData/1/99/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
+      '/GridCellMetaData/1/99/1',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            # sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        # sync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            # scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        # scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            # operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g.co/r',
+        # operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            # operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        # operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            # minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        # minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            # maximum_operation_timestamp='2018-01-02'
-            minimum_operation_timestamp='2018-01-01')).status_code)
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        # maximum_operation_timestamp='2018-01-02'
+        minimum_operation_timestamp='2018-01-01')).status_code)
     self.assertEqual(400, self.app.put(
-        '/GridCellMetaData/1/1/1', data={
-            'sync_token': 'NOT_VALID'
-        }).status_code)
+      '/GridCellMetaData/1/1/1', data={
+        'sync_token': 'NOT_VALID'
+      }).status_code)
     self.assertEqual(400, self.app.put('/GridCellMetaData/1/1/1').status_code)
 
   def testIncorrectDeletesOnGridCells(self):
@@ -322,7 +320,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(404,
                      self.app.delete('/GridCellMetaData/admin').status_code)
     self.assertEqual(404, self.app.delete(
-        '/GridCellMetaData/1/1/1/admin').status_code)
+      '/GridCellMetaData/1/1/1/admin').status_code)
     self.assertEqual(400,
                      self.app.delete('/GridCellMetaData/1a/1/1').status_code)
     self.assertEqual(400,
@@ -349,14 +347,14 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(0, len(j['data']['operators']))
     # Put a record in there
     result = self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02'))
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
     self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     s = j['sync_token']
@@ -369,7 +367,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     result = self.app.get('/GridCellMetaData/1/1/1')
     self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
-    self.assertEqual(len(j['data']['operators']), 0)
+    self.assertEqual(0, len(j['data']['operators']))
 
   def testMultipleUpdates(self):
     # Make sure it is empty
@@ -377,45 +375,318 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     s = j['sync_token']
-    self.assertEqual(len(j['data']['operators']), 0)
+    self.assertEqual(0, len(j['data']['operators']))
     # Put a record in there with the wrong sequence token
     result = self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            sync_token='arbitrary_and_NOT_VALID',
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02'))
-    self.assertEqual(result.status_code, 409)
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token='arbitrary_and_NOT_VALID',
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    self.assertEqual(409, result.status_code)
     # Put a record in there with the right sequence token
     result = self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02'))
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
     self.assertEqual(200, result.status_code)
     # Try to put a record in there again with the old sequence token
     result = self.app.put(
-        '/GridCellMetaData/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02'))
-    self.assertEqual(result.status_code, 409)
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g.co/r',
+        operation_endpoint='https://g.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    self.assertEqual(409, result.status_code)
+
+  def testMultipleGridCellGets(self):
+    # for this zoom level (10), the points refer to the following tiles:
+    # (512, 512), (512, 509), (514, 509), (514, 512)
+    # Path includes the following (in addition to points):
+    # (512, 510), (512, 511), (513, 509), (514, 511), (514, 510)
+    # Polygon includes the following (in addition to path):
+    # (513, 512), (513, 510),(513, 511)
+    # Make sure it is empty, try points first
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    multisync = j['sync_token']
+    self.assertEqual(0, len(j['data']['operators']))
+    # Now write to one and make sure the sync token changes
+    result = self.app.get('/GridCellMetaData/10/512/512')
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(0, len(j['data']['operators']))
+    # Put a record in one of the cells
+    self.app.put(
+      '/GridCellMetaData/10/512/512',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g1.co/r',
+        operation_endpoint='https://g1.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertNotEqual(multisync, j['sync_token'])
+    self.assertEqual(1, len(j['data']['operators']))
+    # Now do it with a path
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(
+                            coords='0,0,1,0,1,1,0,1',
+                            coord_type='path'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(1, len(j['data']['operators']))
+    # Put a record in one of the cells that only applies to the path
+    result = self.app.get('/GridCellMetaData/10/512/510')
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(0, len(j['data']['operators']))
+    self.app.put(
+      '/GridCellMetaData/10/512/510',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g2.co/r',
+        operation_endpoint='https://g2.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1',
+                                            coord_type='path'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(2, len(j['data']['operators']))
+    # and make sure only one still in the point method
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(1, len(j['data']['operators']))
+    # and a polygon, add a record only applies to the polygon grid
+    result = self.app.get('/GridCellMetaData/10/513/511')
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(0, len(j['data']['operators']))
+    self.app.put(
+      '/GridCellMetaData/10/513/511',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g3.co/r',
+        operation_endpoint='https://g3.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1',
+                                            coord_type='polygon'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(3, len(j['data']['operators']))
+    # and make sure only one still in the point method
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(1, len(j['data']['operators']))
+
+  def testMultipleGridCellDeletes(self):
+    # Put a record in two of the cells
+    result = self.app.get('/GridCellMetaData/10/512/512')
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(0, len(j['data']['operators']))
+    self.app.put(
+      '/GridCellMetaData/10/512/512',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g1.co/r',
+        operation_endpoint='https://g1.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    result = self.app.get('/GridCellMetaData/10/512/510')
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(0, len(j['data']['operators']))
+    result = self.app.put(
+      '/GridCellMetaData/10/512/510',
+      query_string=dict(
+        sync_token=s,
+        scope='https://g2.co/r',
+        operation_endpoint='https://g2.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    # Put a record for a different USS in one of the cells
+    self.assertEqual(1, len(j['data']['operators']))
+    result = self.app.put(
+      '/GridCellMetaData/10/512/510',
+      headers={'access_token': TESTID + '3'},
+      query_string=dict(
+        sync_token=s,
+        scope='https://g3.co/r',
+        operation_endpoint='https://g3.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    # Now delete the first USS from all cells, leaving just the uss#3
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1',
+                                            coord_type='polygon'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(3, len(j['data']['operators']))
+    result = self.app.delete('/GridCellsMetaData/10',
+                             query_string=dict(coords='0,0,1,0,1,1,0,1',
+                                               coord_type='polygon'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(1, len(j['data']['operators']))
+
+  def testMultipleGridCellPut(self):
+    # for this zoom level (10), the points refer to the following tiles:
+    # (512, 512), (512, 509), (514, 509), (514, 512)
+    # Path includes the following (in addition to points):
+    # (512, 510), (512, 511), (513, 509), (514, 511), (514, 510)
+    # Polygon includes the following (in addition to path):
+    # (513, 512), (513, 510),(513, 511)
+    # Make sure it is empty, try points first
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(0, len(j['data']['operators']))
+    # Put a record in all of the point cells
+    result = self.app.put(
+      '/GridCellsMetaData/10',
+      headers={'access_token': TESTID + '1'},
+      query_string=dict(
+        coords='0,0,1,0,1,1,0,1',
+        sync_token=s,
+        scope='https://g1.co/r',
+        operation_endpoint='https://g1.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertNotEqual(s, j['sync_token'])
+    s = j['sync_token']
+    self.assertEqual(4, len(j['data']['operators']))
+    # Now do it with a path
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(
+                            coords='0,0,1,0,1,1,0,1',
+                            coord_type='path'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(4, len(j['data']['operators']))
+    # Put a record in all of the path cells
+    result = self.app.put(
+      '/GridCellsMetaData/10',
+      headers={'access_token': TESTID + '2'},
+      query_string=dict(
+        coords='0,0,1,0,1,1,0,1',
+        coord_type='path',
+        sync_token=s,
+        scope='https://g2.co/r',
+        operation_endpoint='https://g2.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(4 + 9, len(j['data']['operators']))
+    # and make sure eight in the point method
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(4 + 4, len(j['data']['operators']))
+    # and a polygon, add records that applies to the polygon grid
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(
+                            coords='0,0,1,0,1,1,0,1',
+                            coord_type='polygon'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(4 + 9, len(j['data']['operators']))
+    result = self.app.put(
+      '/GridCellsMetaData/10',
+      headers={'access_token': TESTID + '3'},
+      query_string=dict(
+        coords='0,0,1,0,1,1,0,1',
+        coord_type='polygon',
+        sync_token=s,
+        scope='https://g3.co/r',
+        operation_endpoint='https://g3.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(4 + 9 + 12, len(j['data']['operators']))
+
+  def testMultipleGridCellFailures(self):
+    self.assertEqual(400, self.app.get('/GridCellsMetaData/10',
+                                       query_string=dict(
+                                         coords='0,0,1')).status_code)
+    self.assertEqual(400, self.app.get('/GridCellsMetaData/10',
+                                       query_string=dict(
+                                         coords='0,0,1,0,1,1,0,1',
+                                         coord_type='rainbows')).status_code)
+    self.assertEqual(413, self.app.get('/GridCellsMetaData/18',
+                                       query_string=dict(
+                                         coords='0,0,1,0,1,1,0,1',
+                                         coord_type='polygon')).status_code)
+    result = self.app.get('/GridCellsMetaData/10',
+                          query_string=dict(coords='0,0,1,0,1,1,0,1'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(400, self.app.put(
+      '/GridCellsMetaData/10',
+      query_string=dict(
+        coords='0,0,1',
+        sync_token=s,
+        scope='https://g1.co/r',
+        operation_endpoint='https://g1.co/f',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
 
   def testVerbose(self):
     options = storage_api.ParseOptions([
-        '-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID,
-        '-v'
+      '-z', ZK_TEST_CONNECTION_STRING, '-t', TESTID,
+      '-v'
     ])
     storage_api.InitializeConnection(options)
 
