@@ -4,6 +4,7 @@ participant Data Node API as L [fillcolor="orange", fontcolor="black"]
 participant USS A as A [fillcolor="yellow", fontcolor="black"]
 participant USS B as B [fillcolor="blue", fontcolor="white"]
 
+
 Note over A: USS A Receives request to reserve airspace\nwithin cells 1z/1x/1y[fillcolor="yellow", fontcolor="black"]
 
 A->L: GET GridCellMetadata(1z/1x/1y) 
@@ -20,6 +21,7 @@ Note over B: Data is consistent,\nMetatdata not yet updated[fillcolor="green", f
 Note over L: Metadata Updated[fillcolor="orange", fontcolor="black"]
 B-->>L: GET GridCellMetadata(1z/1x/1y)[color="green", fontcolor="green"]                                                                                                                              
 Note over B: Metatdata is now updated with USS A info.\nTo cause an inconsistency,\nUSS B has to process the response, AND\ncontact USS A before the 200 is processed by USS A.[fillcolor="green", fontcolor="white"]
+Note over A: To prevent the inconsistency,\n if there is a request for 1z/1x/1y \nafter PUT but before USS A commits, \nUSS A should respond 423 (Locked) \nand the requesting USS should retry[fillcolor="yellow", fontcolor="black"]
 L-->B: Metadata and synctoken_v1 [color="green", fontcolor="green"]
 B->A: Fetch FlightVolumes for cell 1z/1x/1y [color="green", fontcolor="green"]                                                                                                                           
 A-->B: FlightVolumes [color="green", fontcolor="green"]                                                                                                                           
@@ -30,3 +32,5 @@ L-->A: 200 Response and synctoken_v1(1.1.1)
 Note right of A: However, if USS A takes a long time\nto write to its own db, the risk increases.[fillcolor="green", fontcolor="white"]
 
 Note over A: Once all 200s are received, commit in USS A\nlocal DB for serving other USSs[fillcolor="yellow", fontcolor="black"]
+
+Note right of L: GridCellsMetadata processes multiple cells\nas a single transaction, and maintains data consistency\nby rolling back if a sync_token changes in any of the cells.\nTherefore, the protections are identical to the above\nin a multiple-cell update.[fillcolor="black", fontcolor="white"]
