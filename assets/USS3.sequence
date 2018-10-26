@@ -1,4 +1,4 @@
-Title: Example InterUSS Platform multi-grid initial session[fillcolor="black", fontcolor="white"]                                                                                           
+Title: Example GUD Platform multi-grid initial session[fillcolor="black", fontcolor="white"]                                                                                           
 
 participant Data Node API as L [fillcolor="orange", fontcolor="black"]                                                                                                                                        
 participant USS A as A [fillcolor="yellow", fontcolor="black"]
