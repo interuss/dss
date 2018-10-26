@@ -1,4 +1,4 @@
-Title: InterUSS Platform operation request concurrency protection[fillcolor="black", fontcolor="white"]                                                                                           
+Title: GUD Platform operation request concurrency protection[fillcolor="black", fontcolor="white"]                                                                                           
 
 participant Data Node API as L [fillcolor="orange", fontcolor="black"]                                                                                                                                        
 participant USS A as A [fillcolor="yellow", fontcolor="black"]
