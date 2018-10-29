@@ -14,7 +14,7 @@ These instructions describe the installation and usage of an InterUSS Platform d
 
        ```yum -y update```  
        ```yum groupinstall -y 'development tools'```  
-       ```yum install -y zlib-dev openssl-devel sqlite-devel bzip2-devel wget```  
+       ```yum install -y zlib-devel openssl-devel sqlite-devel bzip2-devel wget```  
        ```wget http://www.python.org/ftp/python/2.7.15/Python-2.7.15.tar.xz```  
        ```xz -d Python-2.7.15.tar.xz```  
        ```tar -xvf Python-2.7.15.tar```  
