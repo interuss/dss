@@ -39,6 +39,8 @@ import uss_metadata
 # Utilties for validating slippy
 import slippy_util
 
+import uvrs
+
 # Kazoo is the zookeeper wrapper for python
 from kazoo.client import KazooClient
 from kazoo.exceptions import BadVersionError
@@ -61,6 +63,8 @@ CONNECTION_TIMEOUT = 2.5  # seconds
 DEFAULT_CONNECTION = 'localhost:2181'
 GRID_PATH = USS_BASE_PREFIX
 MAX_SAFE_INTEGER = 9007199254740991
+DELETE_ATTEMPTS = 3
+OK_STATUS = {200, 204}
 
 class USSMetadataManager(object):
   """Interfaces with the locking system to get, put, and delete USS metadata.
@@ -519,6 +523,45 @@ class USSMetadataManager(object):
       result = self._format_status_code_to_jsend(404, e.message)
     return result
 
+  def insert_uvr(self, z, grids, uvr):
+    """Emplaces a UVR in multiple GridCells' metadata at once.
+
+    Args:
+      z: zoom level in slippy tile format
+      grids: list of (x,y) tiles to update
+      uvr: validated UVR data structure, as defined in USSMetadata
+
+    Returns:
+      JSend formatted response (https://labs.omniti.com/labs/jsend)
+    """
+    log.debug('Setting UVR %s in %d grid cells for %s...',
+              uvr['message_id'], len(grids), uvr['originator_id'])
+    try:
+      # Get and update USSMetadata for all affected cells in memory
+      contents = []
+      for i in range(len(grids)):
+        x = grids[i][0]
+        y = grids[i][1]
+        path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
+                                   USS_METADATA_FILE)
+        (content, metadata) = self._get_raw(z, x, y)
+        m = uss_metadata.USSMetadata(content)
+        m.insert_uvr(uvr)
+        contents.append((path, m, metadata.version))
+
+      # Commit changes to Zookeeper
+      self._execute_transaction(contents)
+      log.debug('Completed updating multiple grids with UVR...')
+
+      return self.get_multi(z, grids)
+    except RolledBackError as e:
+      result = self._format_status_code_to_jsend(409, e.message)
+    except (KeyError, ValueError) as e:
+      result = self._format_status_code_to_jsend(400, e.message)
+    except IndexError as e:
+      result = self._format_status_code_to_jsend(404, e.message)
+    return result
+
   def delete_multi(self, z, grids, uss_id):
     """Sets multiple GridCells metadata by removing the entry for the USS.
 
@@ -585,6 +628,58 @@ class USSMetadataManager(object):
     except ValueError as e:
       result = self._format_status_code_to_jsend(400, e.message)
     return result
+
+  def delete_uvr(self, z, grids, uvr):
+    """Updates multiple GridCells' metadata by removing the entry for the UVR.
+
+    Args:
+      z: zoom level in slippy tile format
+      grids: list of (x,y) tiles to delete
+      uvr: validated nested-dict UVR data structure
+    Returns:
+      JSend formatted response (https://labs.omniti.com/labs/jsend)
+    """
+    log.debug('Deleting UVR %s in %d grid cells for %s...',
+              uvr['message_id'], len(grids), uvr['originator_id'])
+    try:
+      status = 200
+      for _ in range(DELETE_ATTEMPTS):
+        # First, plan all deletions without modifying anything
+        deletions = []
+        for x, y in grids:
+          if not slippy_util.validate_slippy(z, x, y):
+            raise ValueError('Invalid slippy grids for lookup')
+          (content, metadata) = self._get_raw(z, x, y)
+          if metadata:
+            m = uss_metadata.USSMetadata(content)
+            removed_uvr = m.remove_uvr(uvr['message_id'])
+            if removed_uvr:
+              diff = uvrs.diff(removed_uvr, uvr)
+              if diff:
+                return self._format_status_code_to_jsend(
+                    400, 'When deleting a UVR, the UVR definition must match '
+                    'the existing UVR exactly. Found %s in existing UVR in '
+                    'grid cell (%d, %d) and %s in UVR deletion request' %
+                    (diff[0], x, y, diff[1]))
+              deletions.append((z, x, y, m, metadata.version))
+
+        # Now, attempt all mutations at once
+        status = 200
+        for d in deletions:
+          status = self._set_raw(*d)
+          if status not in OK_STATUS:
+            break
+
+        if status in OK_STATUS:
+          break
+
+      if status in OK_STATUS:
+        return self.get_multi(z, grids)
+      else:
+        return self._format_status_code_to_jsend(
+          status, 'UVR deletion failed for grid (%d, %d)' % (d[1], d[2]))
+    except ValueError as e:
+      return self._format_status_code_to_jsend(400, e.message)
 
   ######################################################################
   ################       INTERNAL FUNCTIONS    #########################
@@ -745,6 +840,7 @@ class USSMetadataManager(object):
     Raises:
       IndexError: if it cannot find anything in zookeeper
       ValueError: if the grid data is not in the right format
+      RolledBackError: if update transaction does not complete
     """
     log.debug('Setting multiple grid operation metadata for %s...', str(grids))
     try:
@@ -772,21 +868,39 @@ class USSMetadataManager(object):
             'Sync token from USS (%s) does not match token from zk (%s)...',
             str(sync_token), str(metadata.last_modified_transaction_id))
           raise KeyError('Composite sync_token has changed')
-      # Now, start a transaction to update them all
-      #  the version will catch any changes and roll back any attempted
-      #  updates to the grids
-      log.debug('Starting transaction to write all grids at once...')
-      t = self.zk.transaction()
-      for path, m, version in contents:
-        t.set_data(path, json.dumps(m.to_json()), version)
-      log.debug('Committing transaction...')
-      results = t.commit()
-      if isinstance(results[0], RolledBackError):
-        raise KeyError('Rolled back multi-grid transaction due to grid change')
-      log.debug('Committed transaction successfully.')
-    except (KeyError, ValueError, IndexError) as e:
+
+      self._execute_transaction(contents)
+    except (KeyError, ValueError, IndexError, RolledBackError) as e:
       log.error('Error caught in set_multi_raw %s.', e.message)
       raise e
+
+  def _execute_transaction(self, contents):
+    """Write to multiple grid cells in a single transaction with auto-rollback.
+
+    The version data will catch any outside changes and roll back any attempted
+    updates to the grids.
+
+    Args:
+      contents: iterable of tuples of (path, USSMetadata, version)
+        path: Zookeeper path of grid cell data
+        USSMetadata: USSMetadata instance containing updated info
+        version: previous version of grid cell data upon which the updated info
+          is based
+
+    Raises:
+      RolledBackError: if transaction could not be completed due to intermediate
+        updates.
+    """
+    log.debug('Starting transaction to write all grids at once...')
+    t = self.zk.transaction()
+    for path, m, version in contents:
+      t.set_data(path, json.dumps(m.to_json()), version)
+    log.debug('Committing transaction...')
+    results = t.commit()
+    if isinstance(results[0], RolledBackError):
+      raise RolledBackError(
+        'Rolled back multi-grid transaction due to grid change')
+    log.debug('Committed transaction successfully.')
 
   def _format_status_code_to_jsend(self, status, message=None):
     """Formats a response based on HTTP status code.
