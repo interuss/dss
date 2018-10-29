@@ -956,6 +956,16 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     ).status_code)
     verify_uvr_count(uvr, 1)
 
+    # Try to delete the UVR as a different USS
+    storage_api.TESTID = 'uss2'
+    self.assertEqual(400, self.app.delete(
+      '/UVR/%d/%s' % (zoom, message_id),
+      data={'uvr': uvr_json},
+      headers={'access_token': 'uss2'}
+    ).status_code)
+    storage_api.TESTID = uss_id
+    verify_uvr_count(uvr, 1)
+
     # Incorrectly delete the UVR and make sure it's still there
     self.assertEqual(400, self.app.delete(
       '/UVR/%d/%s' % (zoom, 'wrong'),

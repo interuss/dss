@@ -79,7 +79,8 @@ import uvrs
 # VERSION = 'TCL4.0.1.005'  # Added Authorization as a valid JWT field
 # VERSION = 'TCL4.0.1.006'  # Corrected error codes and text
 # VERSION = 'TCL4.0.1.007'  # Fixed non-tz aware dates and version in operations
-VERSION = 'TCL4.0.2.008'  # sync with master branch for multi-grid and docker updates
+# VERSION = 'TCL4.0.2.008'  # sync with master branch for multi-grid and docker updates
+VERSION = 'TCL4.0.2.009'  # Added support for UVRs
 
 
 TESTID = None
@@ -322,13 +323,14 @@ def UvrDataHandler(zoom, message_id):
   uvr_json = _GetRequestParameter('uvr', None)
   if not uvr_json:
     return {
-      'status': 'error',
+      'status': 'fail',
       'code': status.HTTP_400_BAD_REQUEST,
       'message': 'uvr field must be provided in the form data request'}
 
   result = {}
   try:
     unvalidated_uvr = json.loads(uvr_json)
+    unvalidated_uvr['originator_id'] = uss_id
   except ValueError as e:
     abort(status.HTTP_400_BAD_REQUEST, 'Error parsing UVR JSON: ' + e.message)
 
@@ -338,10 +340,6 @@ def UvrDataHandler(zoom, message_id):
     if uvr['message_id'] != message_id:
       raise ValueError('message_id "%s" in request does not match message_id '
                        '"%s" in UVR' % (message_id, uvr['message_id']))
-    if uvr['originator_id'] != uss_id:
-      raise ValueError('authenticated client ID "%s" does not match '
-                       'originator_id "%s" in UVR' % (uss_id,
-                                                      uvr['originator_id']))
 
     zoom = int(zoom)
     tiles = uvr.get_tiles(zoom)
