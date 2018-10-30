@@ -307,6 +307,7 @@ class USSMetadata(object):
     # Now add the new record
     uvr['timestamp'] = format_utils.format_ts()
     self.uvrs.append(uvr)
+    self.version += 1
 
   def remove_uvr(self, message_id):
     """Removes a UVR, if it exists.  Increments version regardless.

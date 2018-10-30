@@ -570,6 +570,9 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual('success', s['status'])
     self.assertFalse(s['data']['uvrs'])
 
+    old_sync_token = s['sync_token']
+    old_version = s['data']['version']
+
     # Correctly emplace a UVR and make sure it's there
     s = self.mm.insert_uvr(11, grids, uvr)
     self.assertEqual('success', s['status'])
@@ -577,6 +580,11 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     s = self.mm.get_multi(11, grids)
     self.assertEqual('success', s['status'])
     self.assertEquals(1, len(s['data']['uvrs']))
+    self.assertNotEqual(old_sync_token, s['sync_token'])
+    self.assertNotEqual(old_version, s['data']['version'])
+
+    old_sync_token = s['sync_token']
+    old_version = s['data']['version']
 
     # Correctly remove the UVR and make sure it's gone
     s = self.mm.delete_uvr(11, grids, uvr)
@@ -585,6 +593,8 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     s = self.mm.get_multi(11, grids)
     self.assertEqual('success', s['status'])
     self.assertFalse(s['data']['uvrs'])
+    self.assertNotEqual(old_sync_token, s['sync_token'])
+    self.assertNotEqual(old_version, s['data']['version'])
 
   def testUvrNonInteraction(self):
     grids = [(1, 0), (0, 1), (1, 1)]
