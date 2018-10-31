@@ -24,7 +24,7 @@ info:
 
     The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with an access_token, use 'sandbox' (which works only in the sandbox environment). To test multiple USSs, use 'sandbox1', 'sandbox2', etc.
     
-  version: "1.0.1"
+  version: "1.1.0"
   title: InterUSS Platform - Data Node Stateless API
   contact:
     email: hikevin+interuss@google.com
@@ -60,6 +60,15 @@ paths:
         description: CSV list of latitude,longitude,latitude,longitude...
         required: true
         type: string
+      - name: coord_type
+        in: query
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
       responses:
         200:
           description: Success, JSend version of tiles and links to tiles
@@ -239,6 +248,168 @@ paths:
         408:
           description: Unable to lock GridCell
 
+  /GridCellsMetaData/{zoom}:
+    get:
+      summary: Provides an instantaneous snapshot of the metadata for multiple GridCells based on a set of points, a path, or an enclosed polygon.
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token
+        type: string
+        default: sandbox
+        required: true
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: coords
+        in: query
+        description: CSV list of latitude,longitude,latitude,longitude...
+        required: true
+        type: string
+      - name: coord_type
+        in: query
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
+      responses:
+        200:
+          description: JSend version of grid metadata, including the composite sync_token used for updating multiple grids
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided
+    put:
+      summary: Updates the metadata stored for multiple GridCells based on a set of points, a path, or an enclosed polygon.
+      consumes:
+      - application/x-www-form-urlencoded
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token
+        required: true
+        default: sandbox
+        type: string
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: coords
+        in: formData
+        description: CSV list of latitude,longitude,latitude,longitude...
+        required: true
+        type: string
+      - name: coord_type
+        in: formData
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
+      - name: sync_token
+        in: formData
+        description: The composite synchronization token retrieved in the original GET GridCellsMetadata
+        required: true
+        type: integer
+        format: int64
+      - name: scope
+        in: formData
+        description: The submitting USS scope for the web service endpoint (used for OAuth access)
+        required: true
+        type: string
+      - name: operation_endpoint
+        in: formData
+        description: The submitting USS web service endpoint where all flights in this cell can be retrieved from. Note that the variables {zoom}, {x}, and {y} can be used in the endpoint, and will be replaced with the actual grid values when stored.
+        required: true
+        type: string
+      - name: operation_format
+        in: formData
+        description: The output format for the USS web service endpoint (i.e. NASA, GUTMA)
+        required: true
+        type: string
+      - name: minimum_operation_timestamp
+        in: formData
+        description: the lower time bound of all of the USS's flights in this GridCell
+        required: true
+        type: string
+        format: date-time
+      - name: maximum_operation_timestamp
+        in: formData
+        description: The upper time bound of all of the USS's flights in this GridCell
+        required: true
+        type: string
+        format: date-time
+      responses:
+        200:
+          description: JSend version of updated grid metadata
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Valid OAuth access token
+        408:
+          description: Unable to lock GridCell
+        409:
+          description: Sync token does not match (GridCell updated since GET)
+        424:
+          description: JSON is not in the correct format
+    delete:
+      summary: Removes the USS entry in the metadata stored in multiple GridCells based on a set of points, a path, or an enclosed polygon.
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token
+        required: true
+        default: sandbox
+        type: string
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: coords
+        in: query
+        description: CSV list of latitude,longitude,latitude,longitude...
+        required: true
+        type: string
+      - name: coord_type
+        in: query
+        description: Type of query (point, path, or polygon)
+        default: point
+        type: string
+        enum:
+          - point
+          - path
+          - polygon
+      responses:
+        200:
+          description: Success, Jend version of updated grid metadata
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided
+        408:
+          description: Unable to lock GridCell
+
 definitions:
   JSendStatusResponse:
     type: object
@@ -357,6 +528,12 @@ definitions:
               type: string
               format: date-time
               example: '2015-08-20T03:18:00.011+00:00'
+            zoom:
+              type: integer
+            x:
+              type: integer
+            y:
+              type: integer
 
 # Added by API Auto Mocking Plugin
 host: 35.192.112.1:8121
