@@ -22,9 +22,9 @@ info:
 
     # Try it out
 
-    The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with an access_token, use a NASA FIMS valid OAuth token or use 'sandbox' (which works only in the sandbox environment).
+    The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with an access_token, use 'sandbox' (which works only in the sandbox environment). To test multiple USSs, use 'sandbox1', 'sandbox2', etc.
     
-  version: 1.0.0
+  version: "1.0.1"
   title: InterUSS Platform - Data Node Stateless API
   contact:
     email: hikevin+interuss@google.com
@@ -42,10 +42,11 @@ paths:
         200:
           description: Success, JSend version of OK
           schema:
-            $ref: '#/definitions/JSendResponse'
+            $ref: '#/definitions/JSendStatusResponse'
+
   /slippy/{zoom}:
     get:
-      summary: Figures out which slippy tiles are impacted by a CSV list of longitudes and latitudes
+      summary: Figures out which slippy tiles are impacted by a CSV list of latitudes and longitudes
       produces:
       - application/json
       parameters:
@@ -56,16 +57,17 @@ paths:
         type: integer
       - name: coords
         in: query
-        description: CSV list of longitude,latitude,longitude,latitude...
+        description: CSV list of latitude,longitude,latitude,longitude...
         required: true
         type: string
       responses:
         200:
           description: Success, JSend version of tiles and links to tiles
           schema:
-            $ref: '#/definitions/SlippyResponse'
+            $ref: '#/definitions/JSendSlippyResponse'
         400:
           description: Invalid zoom or csv
+
   /introspect:
     get:
       summary: Status checker of an authorization token
@@ -81,11 +83,12 @@ paths:
         200:
           description: JSend version of validated access token
           schema:
-            $ref: '#/definitions/JSendResponse'
+            $ref: '#/definitions/JSendIntrospectResponse'
         400:
           description: Invalid/expired token or invalid format
         403:
           description: Access token not provided
+
   /GridCellMetaData/{zoom}/{x}/{y}:
     get:
       summary: Provides an instantaneous snapshot of the metadata for a specific GridCell
@@ -117,7 +120,7 @@ paths:
         200:
           description: JSend version of grid metadata, including the sync_token used for updating grids
           schema:
-            $ref: '#/definitions/GridCellMetaDataResponse'
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
         400:
           description: Invalid request
         403:
@@ -154,7 +157,8 @@ paths:
         in: formData
         description: The synchronization token retrieved in the original GET GridCellMetadata
         required: true
-        type: string
+        type: integer
+        format: int64
       - name: scope
         in: formData
         description: The submitting USS scope for the web service endpoint (used for OAuth access)
@@ -175,18 +179,18 @@ paths:
         description: the lower time bound of all of the USS's flights in this GridCell
         required: true
         type: string
-        format: datetime
+        format: date-time
       - name: maximum_operation_timestamp
         in: formData
         description: The upper time bound of all of the USS's flights in this GridCell
         required: true
         type: string
-        format: datetime
+        format: date-time
       responses:
         200:
           description: JSend version of updated grid metadata
           schema:
-            $ref: '#/definitions/GridCellMetaDataResponse'
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
         400:
           description: Invalid request
         403:
@@ -227,7 +231,7 @@ paths:
         200:
           description: Success, Jend version of updated grid metadata
           schema:
-            $ref: '#/definitions/GridCellMetaDataResponse'
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
         400:
           description: Invalid request
         403:
@@ -236,7 +240,18 @@ paths:
           description: Unable to lock GridCell
 
 definitions:
-  JSendResponse:
+  JSendStatusResponse:
+    type: object
+    properties:
+      status:
+        type: string
+      message:
+        type: string
+      version:
+        type: string
+        format: json
+
+  JSendIntrospectResponse:
     type: object
     properties:
       status:
@@ -244,9 +259,12 @@ definitions:
       message:
         type: string
       data:
-        type: string
-        format: json
-  SlippyResponse:
+        type: object
+        properties:
+          uss_id:
+            type: string
+
+  JSendSlippyResponse:
     type: object
     properties:
       status:
@@ -259,58 +277,86 @@ definitions:
         properties:
           zoom:
             type: integer
-          links:
+          grid_cells:
             type: array
             items:
-              type: string
-          tiles:
-            type: array
-            items:
-              type: array
-              items:
-                type: integer
-                enum:
-                  ["zoom, x, y"]
+              type: object
+              properties:
+                link:
+                  type: string
+                zoom:
+                  type: integer
+                x:
+                  type: integer
+                y:
+                  type: integer
 
-  GridCellMetaDataResponse:
+  JSendGridCellMetadataResponse:
     type: object
     properties:
       status:
         type: string
+        minLength: 1
+        maxLength: 100
       sync_token:
         type: integer
+        format: int64
+        minimum: 0
+        description: The zxid, which is a long (64-bit) integer
       data:
-        type: object
-        format: json
-        properties:
-          version:
-            type: integer
-          timestamp:
-            type: string
-            format: datetime
-          operators:
-            type: array
-            items:
-              properties:
-                uss:
-                  type: string
-                scope:
-                  type: string
-                version:
-                  type: integer
-                timestamp:
-                  type: string
-                  format: datetime
-                operation_endpoint:
-                  type: string
-                operation_format:
-                  type: string
-                minimum_operation_timestamp: 
-                  type: string
-                  format: datetime
-                maximum_operation_timestamp: 
-                  type: string
-                  format: datetime
+        $ref: '#/definitions/GridCellMetadataResponse'
+
+  GridCellMetadataResponse:
+    type: object
+    format: json
+    properties:
+      version:
+        type: integer
+      timestamp:
+        type: string
+        format: date-time
+        example: '2015-08-20T03:14:32.819+00:00'
+      operators:
+        type: array
+        items:
+          $ref: '#/definitions/GridCellOperatorResponse'
+              
+  GridCellOperatorResponse:
+    type: object
+    format: json
+    properties:
+      version:
+        type: integer
+      timestamp:
+        type: string
+        format: date-time
+        example: '2015-08-20T03:14:32.819+00:00'
+      operators:
+        type: array
+        items:
+          properties:
+            uss:
+              type: string
+            scope:
+              type: string
+            version:
+              type: integer
+            timestamp:
+              type: string
+              format: date-time
+              example: '2015-08-20T03:14:32.819+00:00'
+            operation_endpoint:
+              type: string
+            operation_format:
+              type: string
+            minimum_operation_timestamp: 
+              type: string
+              format: date-time
+              example: '2015-08-20T03:14:32.819+00:00'
+            maximum_operation_timestamp: 
+              type: string
+              format: date-time
+              example: '2015-08-20T03:18:00.011+00:00'
 
 # Added by API Auto Mocking Plugin
 host: 35.192.112.1:8121
