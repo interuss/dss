@@ -80,7 +80,7 @@ import uvrs
 # VERSION = 'TCL4.0.1.006'  # Corrected error codes and text
 # VERSION = 'TCL4.0.1.007'  # Fixed non-tz aware dates and version in operations
 # VERSION = 'TCL4.0.2.008'  # sync with master branch for multi-grid and docker updates
-VERSION = 'TCL4.0.2.009'  # Added support for UVRs
+VERSION = 'TCL4.0.3'  # Added support for UVRs
 
 
 TESTID = None
