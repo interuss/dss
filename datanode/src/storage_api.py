@@ -56,7 +56,16 @@ import slippy_util
 
 import uvrs
 
-# Initialize everything we need
+# VERSION HISTORY - BRANCH.MAJOR.MINOR.BUILD
+# Where BRANCH is the specific version for this branch, or numeric for the mainline branch,
+#   changing only on new branches or fundamental changes to the mainline branch.
+# and MAJOR changes when there is major funcationality change that either directly
+#   or eventually depracates functionality in previous major versions.
+# and MINOR changes when there is a non-breaking API change (new fields or methods) and
+#   resets to 0 when a MAJOR change takes place.
+# and BUILD continuously increments with every release, regardles of other version 
+#   number changes.
+# 
 # VERSION = '0.1.0'  # Initial TCL3 release
 # VERSION = '0.1.1'  # Pythonized file names and modules
 # VERSION = '0.1.2'  # Added OS Environment Variables in addition to cmd line
@@ -80,9 +89,9 @@ import uvrs
 # VERSION = 'TCL4.0.1.006'  # Corrected error codes and text
 # VERSION = 'TCL4.0.1.007'  # Fixed non-tz aware dates and version in operations
 # VERSION = 'TCL4.0.2.008'  # sync with master branch for multi-grid and docker updates
-VERSION = 'TCL4.0.3'  # Added support for UVRs
+VERSION = 'TCL4.0.3.009'  # Added support for UVRs
 
-
+# Initialize everything we need
 TESTID = None
 DEFAULT_SCOPE = 'utm.nasa.gov_write.conflictmanagement'
 
