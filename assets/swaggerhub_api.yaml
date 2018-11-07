@@ -27,7 +27,7 @@ info:
 
     The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with Authorization, use a NASA FIMS valid OAuth token or use 'tcl4box' (which works only in the sandbox environment). You can also use additional info at the end of the token to simulate multiple USSs (i.e. 'tcl4box-uss1').
 
-  version: "tcl4.0.2"
+  version: "tcl4.0.3"
   title: InterUSS Platform - Data Node Stateless API
   contact:
     email: hikevin+interuss@google.com
@@ -233,7 +233,7 @@ paths:
         format: int64
       - in: body
         name: gridcell_operation
-        description: The operation information for the specific GridCell being submitted, useful for creating/updating/deleting a single operation when many operations exist in this GridCell. A USS must have an entry as the operator (/GridCellOperator) in this GridCell already to use this endpoint. 
+        description: The operation information for the specific GridCell being submitted, useful for creating/updating/deleting a single operation when many operations exist in this GridCell. A USS must have an entry as the operator (/GridCellOperator) in this GridCell already to use this endpoint.
         required: true
         schema:
           $ref: '#/definitions/GridCellOperationRequest'
@@ -467,7 +467,7 @@ paths:
         format: int64
       - in: body
         name: gridcell_operation
-        description: The operation information for the specific GridCell being submitted, useful for creating/updating/deleting a single operation when many operations exist in this GridCell. A USS must have an entry as the operator (/GridCellOperator) in this GridCell already to use this endpoint. 
+        description: The operation information for the specific GridCell being submitted, useful for creating/updating/deleting a single operation when many operations exist in this GridCell. A USS must have an entry as the operator (/GridCellOperator) in this GridCell already to use this endpoint.
         required: true
         schema:
           $ref: '#/definitions/GridCellsOperationRequest'
@@ -543,7 +543,96 @@ paths:
         408:
           description: Unable to lock GridCell
 
-          
+  /UVR/{zoom}/{message_id}:
+    put:
+      summary: Creates a UAS Volume Reservation (UVR) stored in multiple GridCells retrieved with GET GridCellOperators endpoints
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: Authorization
+        in: header
+        description: Valid OAuth access token
+        type: string
+        default: Bearer tcl4box-uss1
+        required: true
+      - in: body
+        name: uvr
+        description: Description of the UVR to be emplaced
+        required: true
+        schema:
+          $ref: '#/definitions/UASVolumeReservation'
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: message_id
+        in: path
+        description: UUID identifying the UVR (must match message_id field of 'uvr')
+        required: true
+        type: string
+      responses:
+        200:
+          description: JSend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        401:
+          description: Not authorized to perform this operation
+        403:
+          description: Invalid OAuth access token
+        409:
+          description: Grid cells change was interrupted
+        413:
+          description: UVR covers too many grid cells
+        424:
+          description: JSON is not in the correct format
+    delete:
+      summary: Removes a UAS Volume Reservation (UVR) stored in multiple GridCells
+      produces:
+      - application/json
+      parameters:
+      - name: Authorization
+        in: header
+        description: Valid OAuth access token
+        type: string
+        default: Bearer tcl4box-uss1
+        required: true
+      - in: body
+        name: uvr
+        description: Description of the UVR to be emplaced
+        required: true
+        schema:
+          $ref: '#/definitions/UASVolumeReservation'
+      - name: zoom
+        in: path
+        description: Zoom level in slippy tile format
+        required: true
+        type: integer
+      - name: message_id
+        in: path
+        description: UUID identifying the UVR (must match message_id field of 'uvr')
+        required: true
+        type: string
+      responses:
+        200:
+          description: Success, Jend version of updated grid operator data
+          schema:
+            $ref: '#/definitions/JSendGridCellMetadataResponse'
+        400:
+          description: Invalid request
+        401:
+          description: Not authorized to perform this operation
+        403:
+          description: Invalid OAuth access token
+        409:
+          description: Grid cells change was interrupted
+        413:
+          description: UVR covers too many grid cells
+
 definitions:
   JSendStatusResponse:
     type: object
@@ -640,6 +729,12 @@ definitions:
             maxItems: 1000
             items:
               $ref: '#/definitions/GridCellOperatorResponse'
+          uvrs:
+            type: array
+            minItems: 0
+            maxItems: 1000
+            items:
+              $ref: '#/definitions/UASVolumeReservation'
 
   GridCellOperatorResponse:
     type: object
@@ -778,7 +873,7 @@ definitions:
         minLength: 24
         maxLength: 24
         example: '2015-08-20T10:43:18.937Z'
-        
+
   GridCellOperatorRequest:
     type: object
     format: json
@@ -992,6 +1087,222 @@ definitions:
         minLength: 24
         maxLength: 24
         example: '2015-08-20T15:00:00.000Z'
+
+  UASVolumeReservation:
+    description: >-
+      An area limiting UAS access
+    required:
+      - message_id
+      - cause
+      - geography
+      - min_altitude
+      - max_altitude
+      - effective_time_begin
+      - effective_time_end
+      - permitted_uas
+      - permitted_gufis
+    properties:
+      message_id:
+        $ref: '#/definitions/uuid'
+      origin:
+        description: The entity that generated this message
+        type: string
+        enum:
+          - FIMS
+          - USS
+      originator_id:
+        description: >-
+          The uss_id of the enacting USS, provided via the access token
+        type: string
+        minLength: 4
+        exclusiveMinimum: false
+        maxLength: 250
+        exclusiveMaximum: false
+      type:
+        description: >-
+          Type of limitation
+        type: string
+        enum:
+          - DYNAMIC_RESTRICTION
+          - STATIC_ADVISORY
+      permitted_uas:
+        description: >-
+          If a UAS flight falls under any of these categories, it is allowed in the UVR
+        type: array
+        items:
+          type: string
+          enum:
+            - NOT_SET
+            - PUBLIC_SAFETY
+            - SECURITY
+            - NEWS_GATHERING
+            - VLOS
+            - PART_107
+            - PART_101E
+            - PART_107X
+            - RADIO_LINE_OF_SIGHT
+        minItems: 1
+      permitted_gufis:
+        description: >-
+          If a flight operation has one of these GUFIs, it is allowed in the UVR
+        type: array
+        items:
+          $ref: '#/definitions/uuid'
+        minItems: 0
+        maxItems: 100
+        example:
+          - '00000000-0000-4444-8888-000000000000'
+      cause:
+        type: string
+        enum:
+          - WEATHER
+          - ATC
+          - SECURITY
+          - SAFETY
+          - MUNICIPALITY
+          - OTHER
+      geography:
+        $ref: '#/definitions/Polygon'
+      effective_time_begin:
+        type: string
+        format: date-time
+        description: >-
+          Time that the UVR begins
+        minLength: 24
+        maxLength: 24
+        example: '2015-08-20T14:11:00.000Z'
+      effective_time_end:
+        type: string
+        format: date-time
+        description: >-
+          Time that the UVR ends
+        minLength: 24
+        maxLength: 24
+        example: '2015-08-20T14:11:00.000Z'
+      min_altitude:
+        description: >-
+          The UVR does not affect flights below this altitude
+        allOf:
+          - $ref: '#/definitions/Altitude'
+        # https://stackoverflow.com/a/41752575
+      max_altitude:
+        description: >-
+          The UVR does not affect flights above this altitude
+        allOf:
+          - $ref: '#/definitions/Altitude'
+        # https://stackoverflow.com/a/41752575
+      reason:
+        description: Human-readable reason for the UVR
+        type: string
+        maxLength: 1000
+    example:
+      message_id: '00000000-0000-4444-8888-000000000000'
+      origin: USS
+      originator_id: 'tcl4box-uss1.com'
+      type: DYNAMIC_RESTRICTION
+      cause: SAFETY
+      geography:
+        type: Polygon
+        coordinates:
+          - - - -122.0647
+              - 37.4090
+            - - -122.0644
+              - 37.4091
+            - - -122.0643
+              - 37.4086
+            - - -122.0647
+              - 37.4090
+      effective_time_begin: '2018-11-07T14:08:51.123Z'
+      effective_time_end: '2018-11-07T14:09:51.123Z'
+      permitted_uas:
+        - NOT_SET
+      permitted_gufis:
+        - '00000000-0000-4444-8888-000000000000'
+      min_altitude:
+        altitude_value: 400
+        vertical_reference: 'W84'
+        units_of_measure: 'FT'
+      max_altitude:
+        altitude_value: 5000
+        vertical_reference: 'W84'
+        units_of_measure: 'FT'
+      reason: 'Test UVR'
+
+  uuid:
+    description: >-
+      UUID version 4
+    type: string
+    format: uuidv4
+    minLength: 36
+    maxLength: 36
+    pattern: '^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$'
+    example: '00000000-0000-4444-8888-000000000000'
+
+  Altitude:
+    type: object
+    required:
+      - altitude_value
+      - vertical_reference
+      - units_of_measure
+    properties:
+      altitude_value:
+        description: >-
+          Number of measure units above the reference datum
+        type: number
+        format: double
+      vertical_reference:
+        description: >-
+          Vertical reference datum (W84 = WGS84)
+        externalDocs:
+          description: See FIXM 4.1.0
+          url: https://www.fixm.aero/releases/FIXM-4.1.0/doc/schema_documentation_core/Measures_xsd.html#VerticalReferenceType
+        type: string
+        enum:
+          - W84
+      units_of_measure:
+        description: >-
+          Vertical distance units
+        externalDocs:
+          description: See FIXM 4.1.0
+          url: https://www.fixm.aero/releases/FIXM-4.1.0/doc/schema_documentation_core/UnitsOfMeasure_xsd.html#UomHeightType
+        type: string
+        enum:
+          - FT
+
+  Polygon:
+    type: object
+    required:
+      - type
+      - coordinates
+    description: Based on 2D GeoJSon Polygon
+    properties:
+      type:
+        description: |
+          Type of geometry; must be Polygon
+        type: string
+        enum:
+        - Polygon
+      coordinates:
+        type: array
+        description: >-
+          Number of polygons; must be 1
+        minItems: 1
+        maxItems: 1
+        items:
+          type: array
+          description: >-
+            Number of vertices in polygon with last vertex matching first vertex
+          minItems: 4
+          maxItems: 1000
+          items:
+            type: array
+            description: >-
+              Coordinates for vertex as (longitude, latitude) degrees
+            maxItems: 2
+            minItems: 2
+            items:
+              type: number
+              format: double
 
 # Added by API Auto Mocking Plugin
 host: 35.193.160.127:8121

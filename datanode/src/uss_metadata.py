@@ -32,11 +32,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import copy
-import datetime
 import json
 import logging
-import pytz
 from dateutil import parser
+
+import format_utils
+import uvrs
 
 # logging is our log infrastructure used for this application
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -46,23 +47,57 @@ log = logging.getLogger('InterUSS_DataNode_InformationInterface')
 class USSMetadata(object):
   """Data structure for the metadata stored for USS entries in a GridCell.
 
-  Format: {version: <version>, timestamp: <last_updated>, operators:
-    [{uss: <ussid>, uss_baseurl: <base_url_for_NASA_API>,
-    version: <last_version_for_this_uss>, timestamp: <last_updated>,
-    announcement_level: <flag_for_requesting_announcements_from _other_uss>,
-    minimum_operation_timestamp: <lowest_start_time_of_operations_in_this_cell>,
-    maximum_operation_timestamp: <highest_end_time_of_operations_in_this_cell>,
-    zoom: <slippy_zoom_level_for_the_gridcell>,
-    x: <slippy_x_level_for_the_gridcell>,
-    y: <slippy_y_level_for_the_gridcell>,
-    operations: [{version: <version>, gufi: <unique_identifier>,
-      operation_signature: <jws_signature_for_operation>,
-      effective_time_begin: <operation_start_time>,
-      effective_time_end: <operation_end_time>,
-      timestamp: <last_updated> }
-      ...other operations as appropriate... ]
-    },
-    ...other USSs as appropriate... ]
+  Format:
+  {
+    version: <version>,
+    timestamp: <last_updated>,
+    operators: [
+      {
+        uss: <ussid>,
+        uss_baseurl: <base_url_for_NASA_API>,
+        version: <last_version_for_this_uss>,
+        timestamp: <last_updated>,
+        announcement_level: <flag_for_requesting_announcements_from _other_uss>,
+        minimum_operation_timestamp: <lowest_start_time_of_operations_in_this_cell>,
+        maximum_operation_timestamp: <highest_end_time_of_operations_in_this_cell>,
+        zoom: <slippy_zoom_level_for_the_gridcell>,
+        x: <slippy_x_level_for_the_gridcell>,
+        y: <slippy_y_level_for_the_gridcell>,
+        operations: [
+          {
+            version: <version>,
+            gufi: <unique_identifier>,
+            operation_signature: <jws_signature_for_operation>,
+            effective_time_begin: <operation_start_time>,
+            effective_time_end: <operation_end_time>,
+            timestamp: <last_updated> }
+          }, ...other operations as appropriate... ]
+      }, ...other operator USSs as appropriate...],
+    uvrs: [
+      {
+        message_id: <uuid>
+        origin: <FIMS|USS>
+        originator_id: <uss_name or originator domain name>
+        type: <DYNAMIC_RESTRICTION|STATIC_ADVISORY>
+        cause: <WEATHER|ATC|SECURITY|SAFETY|MUNICIPALITY>
+        geography:
+          {
+            type: Polygon
+            coordinates: [[[<longitude>, <latitude>],
+              ...other polygon vertices as appropriate ...]]
+          }
+        effective_time_begin: <YYYY-MM-DDTHH:mm:ss.fffZ>
+        effective_time_end: <YYYY-MM-DDTHH:mm:ss.fffZ>
+        permitted_uas: [<NOT_SET|PUBLIC_SAFETY|SECURITY||NEWS_GATHERING|VLOS|
+                         PART_107|PART_101E|PART_107X|RADIO_LINE_OF_SIGHT>, ...],
+        permitted_gufis: [<uuid>, ...]
+        actual_time_end: <YYYY-MM-DDTHH:mm:ss.fffZ>
+        min_altitude: {altitude_value: <altitude>, vertical_reference: "W84",
+                       units_of_measure: "FT"}
+        max_altitude: {altitude_value: <altitude>, vertical_reference: "W84",
+                       units_of_measure: "FT"}
+        reason: <human-readable string>
+      }, ...other UVRs as appropriate... ]
   }
 
   """
@@ -74,10 +109,12 @@ class USSMetadata(object):
       self.version = m['version']
       self.timestamp = m['timestamp']
       self.operators = m['operators']
+      self.uvrs = [uvrs.Uvr(j) for j in m['uvrs']]
     else:
       self.version = 0
-      self.timestamp = self.format_ts()
+      self.timestamp = format_utils.format_ts()
       self.operators = []
+      self.uvrs = []
 
   def __str__(self):
     return str(self.to_json())
@@ -92,6 +129,14 @@ class USSMetadata(object):
         combined.timestamp = other.timestamp
       for operator in other.operators:
         combined.operators.append(operator)
+      my_uvrs = {c['message_id']: c for c in self.uvrs}
+      for uvr in other.uvrs:
+        if uvr['message_id'] in my_uvrs:
+          if uvr != my_uvrs[uvr['message_id']]:
+            raise ValueError(('Conflicting UVRs with message_id %s' %
+                              uvr['message_id']))
+        else:
+          combined.uvrs.append(uvr)
     keys = []
     for o in combined.operators:
       key = (o['uss'], o['zoom'], o['x'], o['y'])
@@ -111,7 +156,8 @@ class USSMetadata(object):
     return {
       'version': self.version,
       'timestamp': self.timestamp,
-      'operators': self.operators
+      'operators': self.operators,
+      'uvrs': [uvr.to_json() for uvr in self.uvrs]
     }
 
   def upsert_operator(self, uss_id, baseurl, announce,
@@ -142,12 +188,8 @@ class USSMetadata(object):
     # Remove the existing operator, if any
     self.remove_operator(uss_id)
     try:
-      earliest_operation = parser.parse(earliest)
-      if earliest_operation.tzinfo is None:
-        earliest_operation = earliest_operation.replace(tzinfo=pytz.utc)
-      latest_operation = parser.parse(latest)
-      if latest_operation.tzinfo is None:
-        latest_operation = latest_operation.replace(tzinfo=pytz.utc)
+      earliest_operation = format_utils.parse_timestamp(earliest)
+      latest_operation = format_utils.parse_timestamp(latest)
       if earliest_operation >= latest_operation:
         raise ValueError
     except (TypeError, ValueError, OverflowError):
@@ -156,22 +198,22 @@ class USSMetadata(object):
       return False
     # validate the operations (if any)
     for oper in operations:
-      oper['timestamp'] = self.format_ts()
+      oper['timestamp'] = format_utils.format_ts()
       oper['version'] = self.version
     # Now add the new record
     operator = {
       'uss': uss_id,
       'uss_baseurl': baseurl,
       'version': self.version,
-      'timestamp': self.format_ts(),
-      'minimum_operation_timestamp': self.format_ts(earliest_operation),
-      'maximum_operation_timestamp': self.format_ts(latest_operation),
+      'timestamp': format_utils.format_ts(),
+      'minimum_operation_timestamp': format_utils.format_ts(earliest_operation),
+      'maximum_operation_timestamp': format_utils.format_ts(latest_operation),
       'announcement_level': str(announce),
       'operations': operations
     }
     self.operators.append(operator)
     self._update_grid_location(zoom, x, y)
-    self.timestamp = self.format_ts()
+    self.timestamp = format_utils.format_ts()
     return True
 
   def remove_operator(self, uss_id):
@@ -181,7 +223,7 @@ class USSMetadata(object):
     self.operators[:] = [
       d for d in self.operators if d.get('uss').upper() != uss_id.upper()
     ]
-    self.timestamp = self.format_ts()
+    self.timestamp = format_utils.format_ts()
     return len(self.operators) == num_operators - 1
 
   def upsert_operation(self, uss_id, gufi, signature, begin, end):
@@ -202,12 +244,8 @@ class USSMetadata(object):
     # Remove the existing operation, if any
     self.remove_operation(uss_id, gufi)
     try:
-      effective_time_begin = parser.parse(begin)
-      if effective_time_begin.tzinfo is None:
-        effective_time_begin = effective_time_begin.replace(tzinfo=pytz.utc)
-      effective_time_end = parser.parse(end)
-      if effective_time_end.tzinfo is None:
-        effective_time_end = effective_time_end.replace(tzinfo=pytz.utc)
+      effective_time_begin = format_utils.parse_timestamp(begin)
+      effective_time_end = format_utils.parse_timestamp(end)
       if effective_time_begin >= effective_time_end:
         raise ValueError
     except (TypeError, ValueError, OverflowError):
@@ -219,19 +257,19 @@ class USSMetadata(object):
       'version': self.version,
       'gufi': gufi,
       'operation_signature': signature,
-      'effective_time_begin': self.format_ts(effective_time_begin),
-      'effective_time_end': self.format_ts(effective_time_end),
-      'timestamp': self.format_ts()
+      'effective_time_begin': format_utils.format_ts(effective_time_begin),
+      'effective_time_end': format_utils.format_ts(effective_time_end),
+      'timestamp': format_utils.format_ts()
     }
     # find the operator entry and add the operation
     for oper in self.operators:
       if oper.get('uss').upper() == uss_id.upper():
         found = True
         oper['version'] = self.version
-        oper['timestamp'] = self.format_ts()
+        oper['timestamp'] = format_utils.format_ts()
         oper['operations'].append(operation)
         break
-      self.timestamp = self.format_ts()
+      self.timestamp = format_utils.format_ts()
     return found
 
 
@@ -248,13 +286,45 @@ class USSMetadata(object):
         ]
         found = (len(oper['operations']) == num_operations - 1)
         oper['version'] = self.version
-        oper['timestamp'] = self.format_ts()
+        oper['timestamp'] = format_utils.format_ts()
     return found
 
-  def format_ts(self, timestamp=None):
-    r = datetime.datetime.now(pytz.utc) if timestamp is None else timestamp
-    r = r.astimezone(pytz.utc)
-    return '{0}Z'.format(r.strftime('%Y-%m-%dT%H:%M:%S.%f')[:23])
+  def insert_uvr(self, uvr):
+    """Inserts a UVR, failing if another UVR with the same ID already exists.
+
+    Args:
+      uvr: UVR instance
+
+    Raises:
+      ValueError: if a UVR already exists with the new UVR's message_id
+    """
+
+    if uvr['message_id'] in [existing['message_id'] for existing in self.uvrs]:
+      raise ValueError('UVR with message_id %s already exists; it must be '
+                       'removed before inserting a new UVR with that ID' %
+                       (uvr['message_id']))
+
+    # Now add the new record
+    uvr['timestamp'] = format_utils.format_ts()
+    self.uvrs.append(uvr)
+    self.version += 1
+
+  def remove_uvr(self, message_id):
+    """Removes a UVR, if it exists.  Increments version regardless.
+
+    Args:
+      message_id: ID of UVR to remove
+
+    Returns:
+      Removed UVR, or None if no matching UVR was found.
+    """
+    self.version += 1
+    # find the UVR entry
+    for existing_uvr in self.uvrs:
+      if existing_uvr['message_id'] == message_id:
+        self.uvrs.remove(existing_uvr)
+        return existing_uvr
+    return None
 
   def _update_grid_location(self, z, x, y):
     """Updates the z, x, y fields and any variables in the endpoints"""

@@ -54,7 +54,18 @@ import storage_interface
 # Tools for slippy conversion
 import slippy_util
 
-# Initialize everything we need
+import uvrs
+
+# VERSION HISTORY - BRANCH.MAJOR.MINOR.BUILD
+# Where BRANCH is the specific version for this branch, or numeric for the mainline branch,
+#   changing only on new branches or fundamental changes to the mainline branch.
+# and MAJOR changes when there is major funcationality change that either directly
+#   or eventually depracates functionality in previous major versions.
+# and MINOR changes when there is a non-breaking API change (new fields or methods) and
+#   resets to 0 when a MAJOR change takes place.
+# and BUILD continuously increments with every release, regardles of other version 
+#   number changes.
+# 
 # VERSION = '0.1.0'  # Initial TCL3 release
 # VERSION = '0.1.1'  # Pythonized file names and modules
 # VERSION = '0.1.2'  # Added OS Environment Variables in addition to cmd line
@@ -77,11 +88,15 @@ import slippy_util
 # VERSION = 'TCL4.0.1.005'  # Added Authorization as a valid JWT field
 # VERSION = 'TCL4.0.1.006'  # Corrected error codes and text
 # VERSION = 'TCL4.0.1.007'  # Fixed non-tz aware dates and version in operations
-VERSION = 'TCL4.0.2.008'  # sync with master branch for multi-grid and docker updates
+# VERSION = 'TCL4.0.2.008'  # sync with master branch for multi-grid and docker updates
+VERSION = 'TCL4.0.3.009'  # Added support for UVRs
 
-
+# Initialize everything we need
 TESTID = None
-SCOPE = 'utm.nasa.gov_write.conflictmanagement'
+DEFAULT_SCOPE = 'utm.nasa.gov_write.conflictmanagement'
+
+UVR_WRITE_SCOPE = 'utm.nasa.gov_write.constraint'
+UVR_TILE_LIMIT = 500  # Number of tiles to allow for multi get/put/del for UVRs
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('InterUSS_DataNode_StorageAPI')
@@ -292,17 +307,83 @@ def GridCellsOperationDataHandler(zoom, gufi):
   return _FormatResult(result)
 
 
+@webapp.route(
+  '/UVR/<zoom>/<message_id>',
+  methods=['PUT', 'POST', 'DELETE'])
+def UvrDataHandler(zoom, message_id):
+  """Handles the web service request for emplacing or removing a UVR.
+
+  Args:
+    zoom: zoom level in slippy tile format
+    message_id: unique message ID of constraint
+    OAuth access_token as part of the header
+  Returns:
+    200 with token and metadata in JSON format,
+    or the nominal 4xx error codes as necessary.
+  """
+  uss_id = _ValidateAccessToken(UVR_WRITE_SCOPE)
+
+  if not uss_id:
+    return {
+      'status': 'fail',
+      'code': status.HTTP_400_BAD_REQUEST,
+      'message': 'uss_id must be provided in the request to modify a UVR.'}
+
+  uvr_json = _GetRequestParameter('uvr', None)
+  if not uvr_json:
+    return {
+      'status': 'fail',
+      'code': status.HTTP_400_BAD_REQUEST,
+      'message': 'uvr field must be provided in the form data request'}
+
+  result = {}
+  try:
+    unvalidated_uvr = json.loads(uvr_json)
+    unvalidated_uvr['originator_id'] = uss_id
+  except ValueError as e:
+    abort(status.HTTP_400_BAD_REQUEST, 'Error parsing UVR JSON: ' + e.message)
+
+  try:
+    uvr = uvrs.Uvr(unvalidated_uvr)
+
+    if uvr['message_id'] != message_id:
+      raise ValueError('message_id "%s" in request does not match message_id '
+                       '"%s" in UVR' % (message_id, uvr['message_id']))
+
+    zoom = int(zoom)
+    tiles = uvr.get_tiles(zoom)
+    if len(tiles) > UVR_TILE_LIMIT:
+      raise OverflowError('Limit of %d tiles impacted exceeded (%d)'
+                          % (UVR_TILE_LIMIT, len(tiles)))
+  except (KeyError, ValueError, TypeError) as e:
+    abort(status.HTTP_400_BAD_REQUEST, e.message)
+  except OverflowError as e:
+    abort(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, e.message)
+  if request.method in ('PUT', 'POST'):
+    result = wrapper.insert_uvr(zoom, tiles, uvr)
+  elif request.method == 'DELETE':
+    result = wrapper.delete_uvr(zoom, tiles, uvr)
+  else:
+    abort(status.HTTP_405_METHOD_NOT_ALLOWED, 'Request method not supported.')
+  return _FormatResult(result)
+
 ######################################################################
 ################       INTERNAL FUNCTIONS    #########################
 ######################################################################
-def _ValidateAccessToken():
+def _ValidateAccessToken(required_scope=None):
   """Checks the access token, aborting if it does not pass.
 
   Uses an Oauth public key to validate an access token.
 
+  Args:
+    required_scope: If specified, an explicit scope that must be in the list of
+      granted scopes for authorization to succeed. Defaults to DEFAULT_SCOPE.
+
   Returns:
     USS identification from OAuth client_id field
   """
+  if not required_scope:
+    required_scope = DEFAULT_SCOPE
   uss_id = None
   if ('access_token' in request.headers and TESTID and
     TESTID in request.headers['access_token']) :
@@ -329,10 +410,10 @@ def _ValidateAccessToken():
       secret = secret.replace('_PLACEHOLDER_', ' PUBLIC ')
       try:
         r = jwt.decode(token, secret, algorithms='RS256')
-        if SCOPE in r['scope']:
+        if required_scope in r['scope']:
           uss_id = r['sub']
         else:
-          log.error('%s not in scope %s', SCOPE, r['scope'])
+          log.error('%s not in scope %s', required_scope, r['scope'])
           abort(status.HTTP_401_UNAUTHORIZED,
                 'OAuth access_token is invalid: '
                 'scope not valid for conflict management.')

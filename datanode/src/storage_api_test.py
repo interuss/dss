@@ -14,13 +14,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import copy
 import json
+import uuid
 
-import os
 import unittest
-import requests
 
 import storage_api
+import test_utils
 
 ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-api-test'
@@ -884,6 +885,180 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     self.assertEqual(1, len(j['data']['operators']))
+
+  def testUvrs(self):
+    uss_id = TESTID
+    message_id = str(uuid.uuid4())
+    zoom = 11
+    uvr = test_utils.make_uvr(uss_id, message_id)
+    uvr_json = json.dumps(uvr.to_json())
+
+    def verify_uvr_count(uvr, n):
+      s = self.app.get(
+          '/GridCellsOperator/%d' % zoom,
+          query_string=dict(coords=test_utils.csv_coords_of_uvr(uvr),
+                            coords_type='polygon'))
+      self.assertEqual(200, s.status_code)
+      j = json.loads(s.data)
+      if n > 0:
+        self.assertEqual(n, len(j['data']['uvrs']))
+      else:
+        self.assertFalse(j['data']['uvrs'])
+
+    # Make sure grid is empty
+    verify_uvr_count(uvr, 0)
+
+    # Make some invalid UVR PUTs and ensure they didn't emplace a UVR
+    self.assertEqual(400, self.app.put(
+      '/UVR/%d/%s' % (zoom, message_id),
+      data={'uvr': 'invalid uvr'},
+      headers={'access_token': uss_id}
+    ).status_code)
+
+    self.assertEqual(400, self.app.put(
+      '/UVR/%d/%s' % (zoom, message_id),
+      data={'uvr': '{}'},
+      headers={'access_token': uss_id}
+    ).status_code)
+
+    self.assertEqual(400, self.app.put(
+      '/UVR/%d/%s' % (zoom, message_id),
+      data={'uvr': uvr_json[0:-1]},
+      headers={'access_token': uss_id}
+    ).status_code)
+
+    self.assertEqual(400, self.app.put(
+      '/UVR/%d/%s' % (zoom, 'wrong'),
+      data={'uvr': uvr_json},
+      headers={'access_token': uss_id}
+    ).status_code)
+
+    self.assertEqual(403, self.app.put(
+      '/UVR/%d/%s' % (zoom, message_id),
+      data={'uvr': uvr_json},
+      headers={'access_token': 'wrong'}
+    ).status_code)
+
+    uvr_too_big = test_utils.make_uvr(uss_id, coords='too_big')
+    self.assertEqual(413, self.app.put(
+      '/UVR/%d/%s' % (zoom, uvr_too_big['message_id']),
+      data={'uvr': json.dumps(uvr_too_big.to_json())},
+      headers={'access_token': uss_id}
+    ).status_code)
+
+    verify_uvr_count(uvr, 0)
+
+    # Correctly emplace a UVR and verify its presence
+    self.assertEqual(200, self.app.put(
+        '/UVR/%d/%s' % (zoom, message_id),
+        data={'uvr': uvr_json},
+        headers={'access_token': uss_id}
+    ).status_code)
+    verify_uvr_count(uvr, 1)
+
+    # Try to delete the UVR as a different USS
+    storage_api.TESTID = 'uss2'
+    self.assertEqual(400, self.app.delete(
+      '/UVR/%d/%s' % (zoom, message_id),
+      data={'uvr': uvr_json},
+      headers={'access_token': 'uss2'}
+    ).status_code)
+    storage_api.TESTID = uss_id
+    verify_uvr_count(uvr, 1)
+
+    # Incorrectly delete the UVR and make sure it's still there
+    self.assertEqual(400, self.app.delete(
+      '/UVR/%d/%s' % (zoom, 'wrong'),
+      data={'uvr': uvr_json},
+      headers={'access_token': uss_id}
+    ).status_code)
+    verify_uvr_count(uvr, 1)
+
+    bad_uvr = copy.deepcopy(uvr)
+    bad_uvr._core['origin'] = 'FIMS'
+    self.assertEqual(400, self.app.delete(
+      '/UVR/%d/%s' % (zoom, message_id),
+      data={'uvr': json.dumps(bad_uvr.to_json())},
+      headers={'access_token': uss_id}
+    ).status_code)
+    verify_uvr_count(uvr, 1)
+
+    bad_uvr = copy.deepcopy(uvr)
+    bad_uvr['geography']['coordinates'][0][1][0] = -122.05187
+    self.assertEqual(400, self.app.delete(
+      '/UVR/%d/%s' % (zoom, message_id),
+      data={'uvr': json.dumps(bad_uvr.to_json())},
+      headers={'access_token': uss_id}
+    ).status_code)
+    verify_uvr_count(uvr, 1)
+
+    # Correctly delete the UVR and verify its absence
+    self.assertEqual(200, self.app.delete(
+        '/UVR/%d/%s' % (zoom, message_id),
+        data={'uvr': uvr_json},
+        headers={'access_token': uss_id}
+    ).status_code)
+    verify_uvr_count(uvr, 0)
+
+    def verify_uvr_cell_count(cell, n):
+      s = self.app.get(
+        '/GridCellOperator/%d/%d/%d' % (zoom, cell[0], cell[1]))
+      self.assertEqual(200, s.status_code)
+      j = json.loads(s.data)
+      if n > 0:
+        self.assertEqual(n, len(j['data']['uvrs']))
+      else:
+        self.assertFalse(j['data']['uvrs'])
+
+    # Emplace overlapping UVRs and check individual cells
+    uvr_west = test_utils.make_uvr(uss_id, coords='corner_triangle')
+    uvr_east = test_utils.make_uvr(uss_id, coords='800box')
+    self.assertEqual(200, self.app.put(
+      '/UVR/%d/%s' % (zoom, uvr_west['message_id']),
+      data={'uvr': json.dumps(uvr_west.to_json())},
+      headers={'access_token': uss_id}
+    ).status_code)
+    self.assertEqual(200, self.app.put(
+      '/UVR/%d/%s' % (zoom, uvr_east['message_id']),
+      data={'uvr': json.dumps(uvr_east.to_json())},
+      headers={'access_token': uss_id}
+    ).status_code)
+
+    verify_uvr_cell_count((500, 800), 2)
+    verify_uvr_cell_count((499, 800), 1)
+    verify_uvr_cell_count((500, 799), 1)
+    verify_uvr_cell_count((499, 799), 1)
+    verify_uvr_cell_count((501, 800), 1)
+
+    # Remove overlapping UVRs
+    self.assertEqual(200, self.app.delete(
+      '/UVR/%d/%s' % (zoom, uvr_west['message_id']),
+      data={'uvr': json.dumps(uvr_west.to_json())},
+      headers={'access_token': uss_id}
+    ).status_code)
+    verify_uvr_cell_count((500, 800), 1)
+    verify_uvr_cell_count((499, 800), 0)
+    verify_uvr_cell_count((500, 799), 0)
+    verify_uvr_cell_count((499, 799), 0)
+    verify_uvr_cell_count((501, 800), 1)
+
+    self.assertEqual(200, self.app.delete(
+      '/UVR/%d/%s' % (zoom, uvr_east['message_id']),
+      data={'uvr': json.dumps(uvr_east.to_json())},
+      headers={'access_token': uss_id}
+    ).status_code)
+    verify_uvr_cell_count((500, 800), 0)
+    verify_uvr_cell_count((499, 800), 0)
+    verify_uvr_cell_count((500, 799), 0)
+    verify_uvr_cell_count((499, 799), 0)
+    verify_uvr_cell_count((501, 800), 0)
+
+    # Make sure repeated deletes don't fail
+    self.assertEqual(200, self.app.delete(
+      '/UVR/%d/%s' % (zoom, uvr_east['message_id']),
+      data={'uvr': json.dumps(uvr_east.to_json())},
+      headers={'access_token': uss_id}
+    ).status_code)
 
   def testVerbose(self):
     options = storage_api.ParseOptions([

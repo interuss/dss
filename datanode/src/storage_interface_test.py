@@ -17,16 +17,21 @@ limitations under the License.
 """
 import threading
 import unittest
+import uuid
 from dateutil import parser
 from kazoo.handlers.threading import KazooTimeoutError
 
 import storage_interface
+import test_utils
 import uss_metadata
+
+# NOTE: A zookeeper instance must be available for these tests to succeed.
+# To host a suitable zookeeper instance on your local machine, run:
+#   docker run --net=host --rm zookeeper
 
 ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-interface-test-tcl4'
 PARALLEL_WORKERS = 10
-
 
 class InterUSSStorageInterfaceTestCase(unittest.TestCase):
 
@@ -553,6 +558,103 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
       if 'operations' in o:
         operations += len(o['operations'])
     self.assertEqual(3, operations)
+
+  def testBasicUvr(self):
+    grids = [(1, 0), (0, 1), (1, 1), (50, 62)]
+    message_id = str(uuid.uuid4())
+    uss_id = 'uss1'
+    uvr = test_utils.make_uvr(uss_id, message_id)
+
+    # Make sure the grid starts empty
+    s = self.mm.get_multi(11, grids)
+    self.assertEqual('success', s['status'])
+    self.assertFalse(s['data']['uvrs'])
+
+    old_sync_token = s['sync_token']
+    old_version = s['data']['version']
+
+    # Correctly emplace a UVR and make sure it's there
+    s = self.mm.insert_uvr(11, grids, uvr)
+    self.assertEqual('success', s['status'])
+
+    s = self.mm.get_multi(11, grids)
+    self.assertEqual('success', s['status'])
+    self.assertEquals(1, len(s['data']['uvrs']))
+    self.assertNotEqual(old_sync_token, s['sync_token'])
+    self.assertNotEqual(old_version, s['data']['version'])
+
+    old_sync_token = s['sync_token']
+    old_version = s['data']['version']
+
+    # Correctly remove the UVR and make sure it's gone
+    s = self.mm.delete_uvr(11, grids, uvr)
+    self.assertEqual('success', s['status'])
+
+    s = self.mm.get_multi(11, grids)
+    self.assertEqual('success', s['status'])
+    self.assertFalse(s['data']['uvrs'])
+    self.assertNotEqual(old_sync_token, s['sync_token'])
+    self.assertNotEqual(old_version, s['data']['version'])
+
+  def testUvrNonInteraction(self):
+    grids = [(1, 0), (0, 1), (1, 1)]
+    message_id = str(uuid.uuid4())
+    uss_id = 'uss1'
+    uvr = test_utils.make_uvr(uss_id, message_id)
+
+    # Correctly emplace a UVR and make sure it's there
+    s = self.mm.insert_uvr(11, grids, uvr)
+    self.assertEqual('success', s['status'])
+
+    s = self.mm.get_multi(11, grids)
+    self.assertEqual('success', s['status'])
+    self.assertEquals(1, len(s['data']['uvrs']))
+
+    # Make sure the UVR isn't other places
+    s = self.mm.get_multi(11, [(0, 0)])
+    self.assertEqual('success', s['status'])
+    self.assertFalse(s['data']['uvrs'])
+
+    # Add a second UVR and make sure it's there
+    message_id2 = str(uuid.uuid4())
+    uvr2 = test_utils.make_uvr(uss_id, message_id2)
+    grids2 = [(1, 0), (0, 1), (2, 2)]
+    s = self.mm.insert_uvr(11, grids2, uvr2)
+    self.assertEqual('success', s['status'])
+
+    s = self.mm.get_multi(11, [(1, 0), (0, 1)])
+    self.assertEqual('success', s['status'])
+    self.assertEquals(2, len(s['data']['uvrs']))
+
+    s = self.mm.get_multi(11, [(2, 2)])
+    self.assertEqual('success', s['status'])
+    self.assertEquals(1, len(s['data']['uvrs']))
+
+    # Correctly remove the first UVR and make sure it's gone
+    s = self.mm.delete_uvr(11, grids, uvr)
+    self.assertEqual('success', s['status'])
+
+    s = self.mm.get_multi(11, [(1, 1)])
+    self.assertEqual('success', s['status'])
+    self.assertFalse(s['data']['uvrs'])
+
+    s = self.mm.get_multi(11, [(1, 0), (0, 1)])
+    self.assertEqual('success', s['status'])
+    self.assertEquals(1, len(s['data']['uvrs']))
+
+    # Make sure the second UVR is still there
+    s = self.mm.get_multi(11, grids2)
+    self.assertEqual('success', s['status'])
+    self.assertEquals(1, len(s['data']['uvrs']))
+
+    # Correctly remove the second UVR and make sure it's gone
+    s = self.mm.delete_uvr(11, grids2, uvr2)
+    self.assertEqual('success', s['status'])
+
+    s = self.mm.get_multi(11, grids2)
+    self.assertEqual('success', s['status'])
+    self.assertFalse(s['data']['uvrs'])
+
 
 if __name__ == '__main__':
   unittest.main()
