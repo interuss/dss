@@ -64,11 +64,11 @@ def make_uvr(uss_id, message_id=None, coords=None):
     'permitted_gufis': ['00000000-0000-4444-8888-FEEDDEADFFFF'],
     'min_altitude': {
       'altitude_value': 2300,
-      'vertical_reference': 'WGS84',
+      'vertical_reference': 'W84',
       'units_of_measure': 'FT'},
     'max_altitude': {
       'altitude_value': 2700,
-      'vertical_reference': 'WGS84',
+      'vertical_reference': 'W84',
       'units_of_measure': 'FT'},
     'reason': 'A UA leaving defined volume'})
 
