@@ -109,7 +109,10 @@ class USSMetadata(object):
       self.version = m['version']
       self.timestamp = m['timestamp']
       self.operators = m['operators']
-      self.uvrs = [uvrs.Uvr(j) for j in m['uvrs']]
+      if 'uvrs' in m:
+        self.uvrs = [uvrs.Uvr(j) for j in m['uvrs']]
+      else:
+        self.uvrs = []
     else:
       self.version = 0
       self.timestamp = format_utils.format_ts()
