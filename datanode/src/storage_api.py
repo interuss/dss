@@ -63,9 +63,9 @@ import uvrs
 #   or eventually depracates functionality in previous major versions.
 # and MINOR changes when there is a non-breaking API change (new fields or methods) and
 #   resets to 0 when a MAJOR change takes place.
-# and BUILD continuously increments with every release, regardles of other version 
+# and BUILD continuously increments with every release, regardles of other version
 #   number changes.
-# 
+#
 # VERSION = '0.1.0'  # Initial TCL3 release
 # VERSION = '0.1.1'  # Pythonized file names and modules
 # VERSION = '0.1.2'  # Added OS Environment Variables in addition to cmd line
@@ -324,25 +324,27 @@ def UvrDataHandler(zoom, message_id):
   uss_id = _ValidateAccessToken(UVR_WRITE_SCOPE)
 
   if not uss_id:
-    return {
+    return _FormatResult({
       'status': 'fail',
       'code': status.HTTP_400_BAD_REQUEST,
-      'message': 'uss_id must be provided in the request to modify a UVR.'}
+      'message': 'uss_id must be provided in the request to modify a UVR.'})
 
-  uvr_json = _GetRequestParameter('uvr', None)
-  if not uvr_json:
-    return {
+  if request.json:
+    unvalidated_uvr = request.json
+  elif request.data:
+    uvr_json = request.data
+    try:
+      unvalidated_uvr = json.loads(uvr_json)
+    except ValueError as e:
+      abort(status.HTTP_400_BAD_REQUEST, 'Error parsing JSON: ' + e.message)
+  else:
+    return _FormatResult({
       'status': 'fail',
       'code': status.HTTP_400_BAD_REQUEST,
-      'message': 'uvr field must be provided in the form data request'}
+      'message': 'uvr data must be provided in the request body'})
 
   result = {}
-  try:
-    unvalidated_uvr = json.loads(uvr_json)
-    unvalidated_uvr['originator_id'] = uss_id
-  except ValueError as e:
-    abort(status.HTTP_400_BAD_REQUEST, 'Error parsing UVR JSON: ' + e.message)
-
+  unvalidated_uvr['originator_id'] = uss_id
   try:
     uvr = uvrs.Uvr(unvalidated_uvr)
 
