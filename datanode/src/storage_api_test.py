@@ -911,38 +911,44 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     # Make some invalid UVR PUTs and ensure they didn't emplace a UVR
     self.assertEqual(400, self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
-      data={'uvr': 'invalid uvr'},
+      data='invalid uvr',
       headers={'access_token': uss_id}
     ).status_code)
 
     self.assertEqual(400, self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
-      data={'uvr': '{}'},
+      json={},
       headers={'access_token': uss_id}
     ).status_code)
 
     self.assertEqual(400, self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
-      data={'uvr': uvr_json[0:-1]},
+      data=uvr_json[0:-1],
       headers={'access_token': uss_id}
     ).status_code)
 
     self.assertEqual(400, self.app.put(
       '/UVR/%d/%s' % (zoom, 'wrong'),
-      data={'uvr': uvr_json},
+      data=uvr_json,
       headers={'access_token': uss_id}
     ).status_code)
 
     self.assertEqual(403, self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
-      data={'uvr': uvr_json},
+      data=uvr_json,
       headers={'access_token': 'wrong'}
+    ).status_code)
+
+    self.assertEqual(400, self.app.put(
+      '/UVR/%d/%s' % (zoom, message_id),
+      json={},
+      headers={'access_token': uss_id}
     ).status_code)
 
     uvr_too_big = test_utils.make_uvr(uss_id, coords='too_big')
     self.assertEqual(413, self.app.put(
       '/UVR/%d/%s' % (zoom, uvr_too_big['message_id']),
-      data={'uvr': json.dumps(uvr_too_big.to_json())},
+      json=uvr_too_big.to_json(),
       headers={'access_token': uss_id}
     ).status_code)
 
@@ -951,7 +957,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     # Correctly emplace a UVR and verify its presence
     self.assertEqual(200, self.app.put(
         '/UVR/%d/%s' % (zoom, message_id),
-        data={'uvr': uvr_json},
+        data=uvr_json,
         headers={'access_token': uss_id}
     ).status_code)
     verify_uvr_count(uvr, 1)
@@ -960,7 +966,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     storage_api.TESTID = 'uss2'
     self.assertEqual(400, self.app.delete(
       '/UVR/%d/%s' % (zoom, message_id),
-      data={'uvr': uvr_json},
+      data=uvr_json,
       headers={'access_token': 'uss2'}
     ).status_code)
     storage_api.TESTID = uss_id
@@ -969,7 +975,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     # Incorrectly delete the UVR and make sure it's still there
     self.assertEqual(400, self.app.delete(
       '/UVR/%d/%s' % (zoom, 'wrong'),
-      data={'uvr': uvr_json},
+      data=uvr_json,
       headers={'access_token': uss_id}
     ).status_code)
     verify_uvr_count(uvr, 1)
@@ -978,7 +984,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     bad_uvr._core['origin'] = 'FIMS'
     self.assertEqual(400, self.app.delete(
       '/UVR/%d/%s' % (zoom, message_id),
-      data={'uvr': json.dumps(bad_uvr.to_json())},
+      json=bad_uvr.to_json(),
       headers={'access_token': uss_id}
     ).status_code)
     verify_uvr_count(uvr, 1)
@@ -987,7 +993,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     bad_uvr['geography']['coordinates'][0][1][0] = -122.05187
     self.assertEqual(400, self.app.delete(
       '/UVR/%d/%s' % (zoom, message_id),
-      data={'uvr': json.dumps(bad_uvr.to_json())},
+      json=bad_uvr.to_json(),
       headers={'access_token': uss_id}
     ).status_code)
     verify_uvr_count(uvr, 1)
@@ -995,7 +1001,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     # Correctly delete the UVR and verify its absence
     self.assertEqual(200, self.app.delete(
         '/UVR/%d/%s' % (zoom, message_id),
-        data={'uvr': uvr_json},
+        data=uvr_json,
         headers={'access_token': uss_id}
     ).status_code)
     verify_uvr_count(uvr, 0)
@@ -1015,12 +1021,12 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     uvr_east = test_utils.make_uvr(uss_id, coords='800box')
     self.assertEqual(200, self.app.put(
       '/UVR/%d/%s' % (zoom, uvr_west['message_id']),
-      data={'uvr': json.dumps(uvr_west.to_json())},
+      json=uvr_west.to_json(),
       headers={'access_token': uss_id}
     ).status_code)
     self.assertEqual(200, self.app.put(
       '/UVR/%d/%s' % (zoom, uvr_east['message_id']),
-      data={'uvr': json.dumps(uvr_east.to_json())},
+      json=uvr_east.to_json(),
       headers={'access_token': uss_id}
     ).status_code)
 
@@ -1033,7 +1039,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     # Remove overlapping UVRs
     self.assertEqual(200, self.app.delete(
       '/UVR/%d/%s' % (zoom, uvr_west['message_id']),
-      data={'uvr': json.dumps(uvr_west.to_json())},
+      json=uvr_west.to_json(),
       headers={'access_token': uss_id}
     ).status_code)
     verify_uvr_cell_count((500, 800), 1)
@@ -1044,7 +1050,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
     self.assertEqual(200, self.app.delete(
       '/UVR/%d/%s' % (zoom, uvr_east['message_id']),
-      data={'uvr': json.dumps(uvr_east.to_json())},
+      json=uvr_east.to_json(),
       headers={'access_token': uss_id}
     ).status_code)
     verify_uvr_cell_count((500, 800), 0)
@@ -1056,7 +1062,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     # Make sure repeated deletes don't fail
     self.assertEqual(200, self.app.delete(
       '/UVR/%d/%s' % (zoom, uvr_east['message_id']),
-      data={'uvr': json.dumps(uvr_east.to_json())},
+      json=uvr_east.to_json(),
       headers={'access_token': uss_id}
     ).status_code)
 
