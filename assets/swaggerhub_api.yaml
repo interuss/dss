@@ -419,6 +419,86 @@ paths:
           description: Access token not provided
         408:
           description: Unable to lock GridCell
+
+
+  /USS_public_portal_endpoint/{latitude}/{longitude}/{range}/{time}:
+    get:
+      summary: Provided by the active USS (not the InterUSS Platform Data node), this endpoint provides telemetry and/or volume details for use by public portals to meet remote ID requirements
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token specifically for this USS
+        type: string
+        default: sandbox
+        required: true
+      - name: latitude
+        in: path
+        required: true
+        minimum: -90
+        maximum: 90
+        type: integer
+      - name: longitude
+        in: path
+        required: true
+        minimum: -180
+        maximum: 180
+        type: integer
+      - name: range
+        in: path
+        required: true
+        description: range of query, in meters (<1500)
+        minimum: 1
+        maximum: 1500
+        default: 1500
+        type: integer
+      - name: time
+        in: path
+        required: true
+        description: range of history request, in seconds (<60)
+        minimum: 1
+        maximum: 60
+        default: 60
+        type: integer
+      responses:
+        200:
+          description: JSend version of the public portal response, providing telemetry and/or volume information around the specified point
+          schema:
+            $ref: '#/definitions/PublicPortalResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided 
+
+  /USS_flight_details_endpoint/{uuid_operation}:
+    get:
+      summary: Provided by the active USS (not the InterUSS Platform Data node), this endpoint provides flight details for a specific uuis
+      produces:
+      - application/json
+      parameters:
+      - name: access_token
+        in: header
+        description: Valid OAuth access token specifically for this USS
+        type: string
+        default: sandbox
+        required: true
+      - name: uuid_operation
+        description: Unique identifier for the flight provided by the UTM system
+        in: path
+        required: true
+        type: string
+      responses:
+        200:
+          description: JSend version of the flight detail response, providing flight details for one specific flight identified by the UUID
+          schema:
+            $ref: '#/definitions/FlightDetailResponse'
+        400:
+          description: Invalid request
+        403:
+          description: Access token not provided 
+
+
 definitions:
   JSendStatusResponse:
     type: object
