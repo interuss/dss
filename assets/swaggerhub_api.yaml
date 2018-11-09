@@ -183,7 +183,7 @@ paths:
         in: formData
         description: The submitting USS web service endpoint where all public flight remote identification telemetry in this cell can be retrieved from for the purposes of displaying to the public or to authorities
         type: string
-      - name: flight_details_endpoint
+      - name: flight_info_endpoint
         in: formData
         description: The submitting USS web service endpoint where a public flight's remote identification details can be retrieved from for the purposes of displaying to the public or to authorities. This requires a unique identifier.
         type: string
@@ -347,7 +347,7 @@ paths:
         in: formData
         description: The submitting USS web service endpoint where all public flight remote identification telemetry in this cell can be retrieved from for the purposes of displaying to the public or to authorities
         type: string
-      - name: flight_details_endpoint
+      - name: flight_info_endpoint
         in: formData
         description: The submitting USS web service endpoint where a public flight's remote identification details can be retrieved from for the purposes of displaying to the public or to authorities. This requires a unique identifier.
         type: string
@@ -471,9 +471,9 @@ paths:
         403:
           description: Access token not provided 
 
-  /USS_flight_details_endpoint/{uuid_operation}:
+  /USS_flight_info_endpoint/{uuid_operation}:
     get:
-      summary: Provided by the active USS (not the InterUSS Platform Data node), this endpoint provides flight details for a specific uuis
+      summary: Provided by the active USS (not the InterUSS Platform Data node), this endpoint provides flight details for a specific uuid
       produces:
       - application/json
       parameters:
@@ -490,9 +490,9 @@ paths:
         type: string
       responses:
         200:
-          description: JSend version of the flight detail response, providing flight details for one specific flight identified by the UUID
+          description: JSend version of the flight information response, providing information for one specific flight identified by the UUID
           schema:
-            $ref: '#/definitions/FlightDetailResponse'
+            $ref: '#/definitions/FlightInformationResponse'
         400:
           description: Invalid request
         403:
@@ -611,7 +611,7 @@ definitions:
               type: string
             public_portal_endpoint:
               type: string
-            flight_details_endpoint:
+            flight_info_endpoint:
               type: string
             minimum_operation_timestamp: 
               type: string
@@ -740,7 +740,7 @@ definitions:
               description: Upper bound height of this volume in WGS84 meters
               type: number
 
-  FlightDetailResponse:
+  FlightInformationResponse:
     type: object
     format: json
     properties:
