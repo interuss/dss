@@ -1,20 +1,19 @@
 swagger: '2.0'
 info:
   description: |
-    This repository contains a simple, open, and API used for separate UAS Service Suppliers (USS) to communicate during UAS operations, known as the InterUSS Platform™. This flexible and distributed system is used to connect multiple USSs operating in the same general area to share safety information while protecting operator and consumer privacy. The system is focused on facilitating communication amongst actively operating USSs with no details about UAS operations stored or processed on the InterUSS Platform.
+    This repository contains a simple, open, and API used for separate UAS Service Suppliers (USS) to communicate during UAS operations, known as the InterUSS Platform™. This flexible and distributed system is used to connect multiple USSs operating in the same general area to share information while protecting operator and consumer privacy. The system is focused on facilitating communication amongst actively operating USSs with no details about UAS operations stored or processed on the InterUSS Platform.
 
     ### Main Features
 
     * Simple, open, flexible, and scalable information interface and Optimistic Concurrency Control to simplify USS to USS communication and control race conditions. 
-    * Effective information sharing to enable effective, deterministic conflict detection for flight planning across multiple overlapping 4D volumes from multiple USSs. 
-    * Effective reconstitution of flight volumes when restarting a USS or adding a USS to an existing environment.
-
+    * Effective information sharing to enable sharing of positions specifically for a public portal user to see all the operations around them, no matter which USS the drone operator is using.
+    * Effective demonstration of a solution to networked identification of drones using a UTM
+    
     ### Main Assumptions
 
-    * Trust each USS to deconflict with known flight data.
-    * Auditing is available, as all USSs can verify the authorship and addition of erroneous conflictions.
-    * Deconfliction is simply defined as no overlapping flights in time and volume.
-    
+    * Trust each USS to send flight data when drone flights are active.
+    * Auditing is available, as all USSs can verify the authorship and addition of erroneous data.
+
     For more information, see the InterUSS Platform technical document located here: https://docs.google.com/document/d/1JtSvSnvskrctbCF8qsU7ZIMTzYegZtGDj4-a8kdC_Cs/
     
     or the GitHub repository located here:
@@ -24,7 +23,7 @@ info:
 
     The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with an access_token, use 'sandbox' (which works only in the sandbox environment). To test multiple USSs, use 'sandbox1', 'sandbox2', etc.
     
-  version: "1.1.0"
+  version: "publicportal1.1.0"
   title: InterUSS Platform - Data Node Stateless API
   contact:
     email: hikevin+interuss@google.com
@@ -162,26 +161,31 @@ paths:
         description: y tile number in slippy tile format
         required: true
         type: integer
-      - name: sync_token
-        in: formData
-        description: The synchronization token retrieved in the original GET GridCellMetadata
-        required: true
-        type: integer
-        format: int64
       - name: scope
         in: formData
         description: The submitting USS scope for the web service endpoint (used for OAuth access)
         required: true
         type: string
+      - name: sync_token
+        in: formData
+        description: The synchronization token retrieved in the original GET GridCellMetadata
+        type: integer
+        format: int64
       - name: operation_endpoint
         in: formData
-        description: The submitting USS web service endpoint where all flights in this cell can be retrieved from
-        required: true
+        description: The submitting USS web service endpoint where all operation data in this cell can be retrieved from for the purposes of strategic deconfliction. A sync_token is required to submit this data, implying the USS has performed all strategic deconfliction steps with the latest flight operation data from all active USSs.
         type: string
       - name: operation_format
         in: formData
         description: The output format for the USS web service endpoint (i.e. NASA, GUTMA)
-        required: true
+        type: string
+      - name: public_portal_endpoint
+        in: formData
+        description: The submitting USS web service endpoint where all public flight remote identification telemetry in this cell can be retrieved from for the purposes of displaying to the public or to authorities
+        type: string
+      - name: flight_details_endpoint
+        in: formData
+        description: The submitting USS web service endpoint where a public flight's remote identification details can be retrieved from for the purposes of displaying to the public or to authorities. This requires a unique identifier.
         type: string
       - name: minimum_operation_timestamp
         in: formData
@@ -210,6 +214,7 @@ paths:
           description: Sync token does not match (GridCell updated since GET)
         424:
           description: JSON is not in the correct format
+
     delete:
       summary: Removes the USS entry in the metadata stored in a specific GridCell
       produces:
@@ -320,26 +325,31 @@ paths:
           - point
           - path
           - polygon
-      - name: sync_token
-        in: formData
-        description: The composite synchronization token retrieved in the original GET GridCellsMetadata
-        required: true
-        type: integer
-        format: int64
       - name: scope
         in: formData
         description: The submitting USS scope for the web service endpoint (used for OAuth access)
         required: true
         type: string
+      - name: sync_token
+        in: formData
+        description: The synchronization token retrieved in the original GET GridCellMetadata
+        type: integer
+        format: int64
       - name: operation_endpoint
         in: formData
-        description: The submitting USS web service endpoint where all flights in this cell can be retrieved from. Note that the variables {zoom}, {x}, and {y} can be used in the endpoint, and will be replaced with the actual grid values when stored.
-        required: true
+        description: The submitting USS web service endpoint where all operation data in this cell can be retrieved from for the purposes of strategic deconfliction. A sync_token is required to submit this data, implying the USS has performed all strategic deconfliction steps with the latest flight operation data from all active USSs.
         type: string
       - name: operation_format
         in: formData
         description: The output format for the USS web service endpoint (i.e. NASA, GUTMA)
-        required: true
+        type: string
+      - name: public_portal_endpoint
+        in: formData
+        description: The submitting USS web service endpoint where all public flight remote identification telemetry in this cell can be retrieved from for the purposes of displaying to the public or to authorities
+        type: string
+      - name: flight_details_endpoint
+        in: formData
+        description: The submitting USS web service endpoint where a public flight's remote identification details can be retrieved from for the purposes of displaying to the public or to authorities. This requires a unique identifier.
         type: string
       - name: minimum_operation_timestamp
         in: formData
@@ -409,7 +419,6 @@ paths:
           description: Access token not provided
         408:
           description: Unable to lock GridCell
-
 definitions:
   JSendStatusResponse:
     type: object
@@ -520,6 +529,10 @@ definitions:
               type: string
             operation_format:
               type: string
+            public_portal_endpoint:
+              type: string
+            flight_details_endpoint:
+              type: string
             minimum_operation_timestamp: 
               type: string
               format: date-time
@@ -534,6 +547,203 @@ definitions:
               type: integer
             y:
               type: integer
+
+  PublicPortalResponse:
+    type: object
+    format: json
+    properties:
+      timestamp:
+        type: string
+        format: date-time
+        example: '2015-08-20T03:14:32.819+00:00'
+      telemetries:
+        type: array
+        items:
+          $ref: '#/definitions/TelemetryResponse'
+      volumes:
+        type: array
+        items:
+          $ref: '#/definitions/VolumeResponse'
+  
+
+  TelemetryResponse:
+    type: object
+    format: json
+    properties:
+      uuid_serial:
+        description: Serial number of the aircraft
+        type: string
+        example: 'INTCJ123-4567-890'
+      uuid_reg:
+        description: Country/State registration number of the aircraft
+        type: string
+        example: 'FA12345897'
+      uuid_operation:
+        description: UTM Flight ID for this flight
+        type: string
+        example: 'a3423b-213401-0023'
+      drone_type:
+        description: Generic type of drone
+        type: string
+        default: unknown
+        enum:
+          - unknown
+          - vtol
+          - fixed_wing
+          - hybrid
+      position_history:
+        type: array
+        items:
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+              example: '2015-08-20T03:14:32.819+00:00'
+            latitude:
+              type: number
+              minimum: -90
+              maximum: 90
+            longitude:
+              type: number
+              minimum: -180
+              maximum: 180
+            height:
+              description: Height in WGS84 meters
+              type: number
+
+  VolumeResponse:
+    type: object
+    format: json
+    properties:
+      uuid_serial:
+        description: Serial number of the aircraft
+        type: string
+        example: 'INTCJ123-4567-890'
+      uuid_reg:
+        description: Country/State registration number of the aircraft
+        type: string
+        example: 'FA12345897'
+      uuid_operation:
+        description: UTM Flight ID for this flight
+        type: string
+        example: 'a3423b-213401-0023'
+      drone_type:
+        description: Generic type of drone
+        type: string
+        default: unknown
+        enum:
+          - unknown
+          - vtol
+          - fixed_wing
+          - hybrid
+      volumes:
+        type: array
+        items:
+          properties:
+            timestamp_start:
+              description: Start time of this volume
+              type: string
+              format: date-time
+              example: '2015-08-20T03:14:32.819+00:00'
+            timestamp_end:
+              description: End time of this volume
+              type: string
+              format: date-time
+              example: '2015-08-20T03:14:33.899+00:00'
+            volume:
+              description: GeoJSON version of the boundary of this volume
+              type: string
+            height_lower:
+              description: Lower bound height of this volume in WGS84 meters
+              type: number
+            height_upper:
+              description: Upper bound height of this volume in WGS84 meters
+              type: number
+
+  FlightDetailResponse:
+    type: object
+    format: json
+    properties:
+      uuid_serial:
+        description: Serial number of the aircraft
+        type: string
+        example: 'INTCJ123-4567-890'
+      uuid_reg:
+        description: Country/State registration number of the aircraft
+        type: string
+        example: 'FA12345897'
+      uuid_operation:
+        description: UTM Flight ID for this flight
+        type: string
+        example: 'a3423b-213401-0023'
+      drone_type:
+        description: Generic type of drone
+        type: string
+        default: unknown
+        enum:
+          - unknown
+          - vtol
+          - fixed_wing
+          - hybrid
+      drone_make:
+        description: Manufacturer of vehicle
+        type: string
+        example: 'DJI'
+      drone_model:
+        description: Model of vehicle
+        type: string
+        example: 'Inspire 2'
+      operation_details:
+        type: string
+        description: Text of Operator and Purpose
+        example: 'SafeFlightDrone company doing survey. See my privacy policy www.sfd.com/privacy.'
+      accuracy_horizontal:
+        description: The horizontal accuracy of the report position, meters
+        type: number
+        minimum: 0
+      accuracy_vertical:
+        description: The vertical accuracy of the reported position, meters
+        type: number
+        minimum: 0
+      speed_ns:
+        description: Speed North/South (NED system implies bearing), m/s
+        type: number
+      speed_ew:
+        description: Speed East/West (NED system implies bearing), m/s
+        type: number
+      speed_ud:
+        description: Speed Up/Down (NED system implies bearing), m/s
+        type: number
+      latitude_operator:
+        description: Latitude of pilot location
+        type: number
+        minimum: -90
+        maximum: 90
+      longitude_operator:
+        description: Longitude of pilot location
+        type: number
+        minimum: -180
+        maximum: 180
+      latitude_takeoff:
+        description: Latitude of takeoff point
+        type: number
+        minimum: -90
+        maximum: 90
+      longitude_takeoff:
+        description: Longitude of takeoff point
+        type: number
+        minimum: -180
+        maximum: 180
+      latitude_destination:
+        description: Latitude of next destination or return to home point
+        type: number
+        minimum: -90
+        maximum: 90
+      longitude_destination:
+        description: Longitude of next destination or return to home point
+        type: number
+        minimum: -180
+        maximum: 180
 
 # Added by API Auto Mocking Plugin
 host: 35.192.112.1:8121
