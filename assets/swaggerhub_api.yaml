@@ -670,7 +670,7 @@ definitions:
           - unknown
           - vtol
           - fixed_wing
-          - hybrid
+          - multirotor
       position_history:
         type: array
         items:
@@ -715,7 +715,7 @@ definitions:
           - unknown
           - vtol
           - fixed_wing
-          - hybrid
+          - multirotor
       volumes:
         type: array
         items:
@@ -764,7 +764,7 @@ definitions:
           - unknown
           - vtol
           - fixed_wing
-          - hybrid
+          - multirotor
       drone_make:
         description: Manufacturer of vehicle
         type: string
