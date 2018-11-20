@@ -41,6 +41,24 @@ logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('InterUSS_DataNode_InformationInterface')
 
 
+def _format_endpoint(e, z, x, y):
+  """Format a raw endpoint by replacing placeholders with real values.
+
+  Args:
+    e: Prototype endpoint to format with real values.
+    z: Value to substitute for {zoom} or {z}.
+    x: Value to substitute for {x}.
+    y: Value to substitute for {y}.
+
+  Returns:
+    Formatted endpoint.
+  """
+  e = e.replace('{zoom}', str(z)).replace('{z}', str(z))
+  e = e.replace('{x}', str(x))
+  e = e.replace('{y}', str(y))
+  return e
+
+
 class USSMetadata(object):
   """Data structure for the USS metadata stored for one or more GridCells.
 
@@ -108,7 +126,7 @@ class USSMetadata(object):
     }
 
   def upsert_operator(self, uss_id, ws_scope, operation_format, operation_ws,
-    earliest, latest, zoom, x, y):
+    earliest, latest, public_portal_endoint, flight_info_endpoint, zoom, x, y):
     """Inserts or updates an operation, with uss_id as the key.
 
     Args:
@@ -121,6 +139,11 @@ class USSMetadata(object):
         used for quick filtering conflicts.
       latest: upper bound of active or planned flight timestamp,
         used for quick filtering conflicts.
+      public_portal_endpoint: Submitting USS web service endpoint where all
+        public flight remote identification telemetry in this cell can be
+        retrieved.
+      flight_info_endpoint: Submitting USS web service endpoint where a public
+        flight's remote identification details can be retrieved.
       zoom, x, y: grid reference for this cell
     Returns:
       true if valid, false if not
@@ -149,7 +172,9 @@ class USSMetadata(object):
       'operation_endpoint': operation_ws,
       'operation_format': operation_format,
       'minimum_operation_timestamp': self.format_ts(earliest_operation),
-      'maximum_operation_timestamp': self.format_ts(latest_operation)
+      'maximum_operation_timestamp': self.format_ts(latest_operation),
+      'public_portal_endpoint': public_portal_endoint,
+      'flight_info_endpoint': flight_info_endpoint,
     }
     self.operators.append(operator)
     self._update_grid_location(zoom, x, y)
@@ -178,8 +203,9 @@ class USSMetadata(object):
         operator['zoom'] = z
         operator['x'] = x
         operator['y'] = y
-        e = operator['operation_endpoint']
-        e = e.replace('{zoom}', str(z)).replace('{z}', str(z))
-        e = e.replace('{x}', str(x))
-        e = e.replace('{y}', str(y))
-        operator['operation_endpoint'] = e
+        operator['operation_endpoint'] = _format_endpoint(
+          operator['operation_endpoint'], z, x, y)
+        operator['public_portal_endpoint'] = _format_endpoint(
+          operator['public_portal_endpoint'], z, x, y)
+        operator['flight_info_endpoint'] = _format_endpoint(
+          operator['flight_info_endpoint'], z, x, y)

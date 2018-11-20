@@ -72,7 +72,8 @@ import slippy_util
 # VERSION = '1.0.2.002'  # Standardize OAuth Authorization header, docker fix
 # VERSION = '1.0.2.003'  # slippy utility updates to support point/path/polygon
 # VERSION = '1.0.2.004'  # slippy non-breaking api changes to support path/polygon
-VERSION = '1.1.0.005'  # api changes to support multi-grid GET/PUT/DEL
+# VERSION = '1.1.0.005'  # api changes to support multi-grid GET/PUT/DEL
+VERSION = '1.1.1.006'  # Added public portal support
 
 TESTID = None
 
@@ -334,28 +335,33 @@ def _PutGridCellMetaData(zoom, x, y, uss_id):
   if not sync_token and 'sync_token' in request.headers:
     sync_token = request.headers['sync_token']
   scope = _GetRequestParameter('scope', None)
-  operation_endpoint = _GetRequestParameter('operation_endpoint', None)
-  operation_format = _GetRequestParameter('operation_format', None)
+  operation_endpoint = _GetRequestParameter('operation_endpoint', '')
+  operation_format = _GetRequestParameter('operation_format', '')
   minimum_operation_timestamp = _GetRequestParameter(
       'minimum_operation_timestamp', None)
   maximum_operation_timestamp = _GetRequestParameter(
       'maximum_operation_timestamp', None)
+  public_portal_endpoint = _GetRequestParameter('public_portal_endpoint', '')
+  flight_info_endpoint = _GetRequestParameter('flight_info_endpoint', '')
   errorfield = errormsg = None
-  if not sync_token:
+  if operation_endpoint and not sync_token:
     errorfield = 'sync_token'
   elif not uss_id:
     errorfield = 'uss_id'
     errormsg = 'USS identifier not received from OAuth token check.'
   elif not scope:
     errorfield = 'scope'
-  elif not operation_endpoint:
-    errorfield = 'operation_endpoint'
-  elif not operation_format:
+  elif operation_endpoint and not operation_format:
     errorfield = 'operation_format'
   elif not minimum_operation_timestamp:
     errorfield = 'minimum_operation_timestamp'
   elif not maximum_operation_timestamp:
     errorfield = 'maximum_operation_timestamp'
+  elif (not operation_endpoint and
+        not public_portal_endpoint and
+        not flight_info_endpoint):
+    errorfield = ('operation_endpoint, public portal_endpoint, or '
+                  'flight_info_endpoint')
   if errorfield:
     if not errormsg:
       errormsg = errorfield + (
@@ -370,7 +376,8 @@ def _PutGridCellMetaData(zoom, x, y, uss_id):
     result = wrapper.set(zoom, x, y, sync_token, uss_id, scope,
                          operation_format, operation_endpoint,
                          minimum_operation_timestamp,
-                         maximum_operation_timestamp)
+                         maximum_operation_timestamp, public_portal_endpoint,
+                         flight_info_endpoint)
   return result
 
 
@@ -458,23 +465,23 @@ def _PutGridCellsMetaData(zoom, tiles, uss_id):
   if not sync_token and 'sync_token' in request.headers:
     sync_token = request.headers['sync_token']
   scope = _GetRequestParameter('scope', None)
-  operation_endpoint = _GetRequestParameter('operation_endpoint', None)
-  operation_format = _GetRequestParameter('operation_format', None)
+  operation_endpoint = _GetRequestParameter('operation_endpoint', '')
+  operation_format = _GetRequestParameter('operation_format', '')
   minimum_operation_timestamp = _GetRequestParameter(
     'minimum_operation_timestamp', None)
   maximum_operation_timestamp = _GetRequestParameter(
     'maximum_operation_timestamp', None)
+  public_portal_endpoint = _GetRequestParameter('public_portal_endpoint', '')
+  flight_info_endpoint = _GetRequestParameter('flight_info_endpoint', '')
   errorfield = errormsg = None
-  if not sync_token:
+  if operation_endpoint and not sync_token:
     errorfield = 'sync_token'
   elif not uss_id:
     errorfield = 'uss_id'
     errormsg = 'USS identifier not received from OAuth token check.'
   elif not scope:
     errorfield = 'scope'
-  elif not operation_endpoint:
-    errorfield = 'operation_endpoint'
-  elif not operation_format:
+  elif operation_endpoint and not operation_format:
     errorfield = 'operation_format'
   elif not minimum_operation_timestamp:
     errorfield = 'minimum_operation_timestamp'
@@ -492,9 +499,11 @@ def _PutGridCellsMetaData(zoom, tiles, uss_id):
     }
   else:
     result = wrapper.set_multi(zoom, tiles, sync_token, uss_id, scope,
-                         operation_format, operation_endpoint,
-                         minimum_operation_timestamp,
-                         maximum_operation_timestamp)
+                               operation_format, operation_endpoint,
+                               minimum_operation_timestamp,
+                               maximum_operation_timestamp,
+                               public_portal_endpoint,
+                               flight_info_endpoint)
   return result
 
 def _DeleteGridCellsMetaData(zoom, tiles, uss_id):

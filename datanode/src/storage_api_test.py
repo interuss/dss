@@ -21,6 +21,10 @@ import requests
 
 import storage_api
 
+# NOTE: A zookeeper instance must be available for these tests to succeed.
+# To host a suitable zookeeper instance on your local machine, run:
+#   docker run --net=host --rm zookeeper
+
 ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-api-test'
 
@@ -48,7 +52,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
   def testIntrospectWithBadTokens(self):
     result = self.app.get('/introspect', headers={'Authorization': None})
+
+    # If you receive a 403 here, check that your FIMS_AUTH and
+    # INTERUSS_PUBLIC_KEY environment variables are set appropriately.
     self.assertEqual(400, result.status_code)
+
     result = self.app.get('/introspect?token=NOTVALID',
                           headers={'Authorization': None})
     self.assertEqual(400, result.status_code)
@@ -65,6 +73,9 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         'access_token':
           '1/fFAGRNJru1FTz70BzhT3Zg'
       })
+
+    # If you receive a 403 here, check that your FIMS_AUTH and
+    # INTERUSS_PUBLIC_KEY environment variables are set appropriately.
     self.assertEqual(400, result.status_code)
 
   def testValidAuthorizationTokensInTest(self):
@@ -307,6 +318,17 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         operation_format='NASA',
         # maximum_operation_timestamp='2018-01-02'
         minimum_operation_timestamp='2018-01-01')).status_code)
+    self.assertEqual(409, self.app.put(
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        sync_token='NOT_VALID',
+        scope='https://g.co/r',
+        # operation_endpoint='https://g.co/f',
+        # operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02',
+        public_portal_endpoint='https://g.co/pp',
+        flight_info_endpoint='https://g.co/fi')).status_code)
     self.assertEqual(400, self.app.put(
       '/GridCellMetaData/1/1/1', data={
         'sync_token': 'NOT_VALID'
@@ -363,6 +385,37 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     s = j['sync_token']
+    # Make sure it is gone
+    result = self.app.get('/GridCellMetaData/1/1/1')
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertEqual(0, len(j['data']['operators']))
+
+  def testValidPublicPortalGetPutDeleteSequence(self):
+    # Make sure it is empty
+    result = self.app.get('/GridCellMetaData/1/1/1')
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    s = j['sync_token']
+    self.assertEqual(0, len(j['data']['operators']))
+    # Put a record in there
+    result = self.app.put(
+      '/GridCellMetaData/1/1/1',
+      query_string=dict(
+        scope='https://g.co/r',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02',
+        public_portal_endpoint='https://g.co/pp',
+        flight_info_endpoint='https://g.co/fi'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertNotEqual(s, j['sync_token'])
+    s = j['sync_token']
+    # Delete the record
+    result = self.app.delete('/GridCellMetaData/1/1/1')
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertNotEqual(s, j['sync_token'])
     # Make sure it is gone
     result = self.app.get('/GridCellMetaData/1/1/1')
     self.assertEqual(200, result.status_code)
@@ -654,6 +707,36 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     self.assertEqual(4 + 9 + 12, len(j['data']['operators']))
+    # Put a public portal record without a sync_token
+    result = self.app.put(
+      '/GridCellsMetaData/10',
+      headers={'access_token': TESTID + '1'},
+      query_string=dict(
+        coords='0,0,1,0,1,1,0,1',
+        scope='https://g1.co/r',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02',
+        public_portal_endpoint='https://g.co/pp',
+        flight_info_endpoint='https://g.co/fi'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertNotEqual(s, j['sync_token'])
+    s = j['sync_token']
+    # Put a public portal record with a sync_token
+    result = self.app.put(
+      '/GridCellsMetaData/10',
+      headers={'access_token': TESTID + '1'},
+      query_string=dict(
+        coords='0,0,1,0,1,1,0,1',
+        sync_token=s,
+        scope='https://g1.co/r',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02',
+        public_portal_endpoint='https://g.co/pp',
+        flight_info_endpoint='https://g.co/fi'))
+    self.assertEqual(200, result.status_code)
+    j = json.loads(result.data)
+    self.assertNotEqual(s, j['sync_token'])
 
   def testMultipleGridCellFailures(self):
     self.assertEqual(400, self.app.get('/GridCellsMetaData/10',

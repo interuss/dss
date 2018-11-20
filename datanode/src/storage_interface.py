@@ -187,7 +187,8 @@ class USSMetadataManager(object):
     return result
 
   def set(self, z, x, y, sync_token, uss_id, ws_scope, operation_format,
-    operation_ws, earliest_operation, latest_operation):
+      operation_ws, earliest_operation, latest_operation,
+      public_portal_endpoint, flight_info_endpoint):
     """Sets the metadata for a GridCell.
 
     Writes data, using the snapshot token for confirming data
@@ -207,6 +208,11 @@ class USSMetadataManager(object):
         used for quick filtering conflicts.
       latest_operation: upper bound of active or planned flight timestamp,
         used for quick filtering conflicts.
+      public_portal_endpoint: Submitting USS web service endpoint where all
+        public flight remote identification telemetry in this cell can be
+        retrieved.
+      flight_info_endpoint: Submitting USS web service endpoint where a public
+        flight's remote identification details can be retrieved.
     Returns:
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
@@ -214,23 +220,23 @@ class USSMetadataManager(object):
       # first we have to get the cell
       (content, metadata) = self._get_raw(z, x, y)
       if metadata:
-        # Quick check of the token, another is done on the actual set to be sure
-        #    but this check fails early and fast
-        if str(metadata.last_modified_transaction_id) == str(sync_token):
+        if ((sync_token or operation_ws) and
+            (str(metadata.last_modified_transaction_id) != str(sync_token))):
+          status = 409
+        else:
           try:
             m = uss_metadata.USSMetadata(content)
             log.debug('Setting metadata for %s...', uss_id)
             if not m.upsert_operator(uss_id, ws_scope, operation_format,
                                      operation_ws, earliest_operation,
-                                     latest_operation, z, x, y):
+                                     latest_operation, public_portal_endpoint,
+                                     flight_info_endpoint, z, x, y):
               log.error('Failed setting operator for %s with token %s...',
                         uss_id, str(sync_token))
               raise ValueError
             status = self._set_raw(z, x, y, m, metadata.version)
           except ValueError:
             status = 424
-        else:
-          status = 409
       else:
         status = 404
     else:
@@ -310,7 +316,8 @@ class USSMetadataManager(object):
     return result
 
   def set_multi(self, z, grids, sync_token, uss_id, ws_scope, operation_format,
-    operation_ws, earliest_operation, latest_operation):
+      operation_ws, earliest_operation, latest_operation,
+      public_portal_endpoint, flight_info_endpoint):
     """Sets multiple GridCells metadata at once.
 
     Writes data, using the hashed snapshot token for confirming data
@@ -329,6 +336,11 @@ class USSMetadataManager(object):
         used for quick filtering conflicts.
       latest_operation: upper bound of active or planned flight timestamp,
         used for quick filtering conflicts.
+      public_portal_endpoint: Submitting USS web service endpoint where all
+        public flight remote identification telemetry in this cell can be
+        retrieved.
+      flight_info_endpoint: Submitting USS web service endpoint where a public
+        flight's remote identification details can be retrieved.
     Returns:
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
@@ -341,13 +353,14 @@ class USSMetadataManager(object):
       #    but this check fails early and fast
       log.debug('Found sync token %d for %d grids...',
                 self._hash_sync_tokens(syncs), len(syncs))
-      if str(self._hash_sync_tokens(syncs)) == str(sync_token):
-        log.debug('Composite sync_token matches, continuing...')
-        self._set_multi_raw(z, grids, syncs, uss_id, ws_scope, operation_format,
-                            operation_ws, earliest_operation, latest_operation)
-        log.debug('Completed updating multiple grids...')
-      else:
-        raise KeyError('Composite sync_token has changed')
+      if ((sync_token or operation_ws) and
+          (str(self._hash_sync_tokens(syncs)) != str(sync_token))):
+          raise KeyError('Composite sync_token has changed')
+      log.debug('Composite sync_token matches, continuing...')
+      self._set_multi_raw(z, grids, syncs, uss_id, ws_scope, operation_format,
+                          operation_ws, earliest_operation, latest_operation,
+                          public_portal_endpoint, flight_info_endpoint)
+      log.debug('Completed updating multiple grids...')
       combined_meta, new_syncs = self._get_multi_raw(z, grids)
       result = {
         'status': 'success',
@@ -368,7 +381,7 @@ class USSMetadataManager(object):
     Removes the operator from multiple cells. Does not return 404 on
     not finding the USS in a cell, since this should be a remove all
     type function, as some cells might have the ussid and some might not.
-    
+
     Args:
       z: zoom level in slippy tile format
       grids: list of (x,y) tiles to delete
@@ -477,7 +490,8 @@ class USSMetadataManager(object):
     return combined_meta, syncs
 
   def _set_multi_raw(self, z, grids, sync_tokens, uss_id, ws_scope,
-    operation_format, operation_ws, earliest_operation, latest_operation):
+      operation_format, operation_ws, earliest_operation, latest_operation,
+      public_portal_endpoint, flight_info_endpoint):
     """Grabs the lock and updates the raw content for multiple GridCells
 
     Args:
@@ -493,6 +507,11 @@ class USSMetadataManager(object):
         used for quick filtering conflicts.
       latest_operation: upper bound of active or planned flight timestamp,
         used for quick filtering conflicts.
+      public_portal_endpoint: Submitting USS web service endpoint where all
+        public flight remote identification telemetry in this cell can be
+        retrieved.
+      flight_info_endpoint: Submitting USS web service endpoint where a public
+        flight's remote identification details can be retrieved.
     Raises:
       IndexError: if it cannot find anything in zookeeper
       ValueError: if the grid data is not in the right format
@@ -508,19 +527,21 @@ class USSMetadataManager(object):
         path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
                                    USS_METADATA_FILE)
         (content, metadata) = self._get_raw(z, x, y)
-        if str(metadata.last_modified_transaction_id) == str(sync_token):
-          log.debug('Sync_token matches for %d, %d...', x, y)
+        if ((sync_token or operation_ws) and
+            (str(metadata.last_modified_transaction_id) != str(sync_token))):
+          log.error(
+              'Sync token from USS (%s) does not match token from zk (%s)...',
+              str(sync_token), str(metadata.last_modified_transaction_id))
+          raise KeyError('Composite sync_token has changed')
+        else:
+          log.debug('Sync_token approved for %d, %d...', x, y)
           m = uss_metadata.USSMetadata(content)
           if not m.upsert_operator(uss_id, ws_scope, operation_format,
                                    operation_ws, earliest_operation,
-                                   latest_operation, z, x, y):
+                                   latest_operation, public_portal_endpoint,
+                                   flight_info_endpoint, z, x, y):
             raise ValueError('Failed to set operator content')
           contents.append((path, m, metadata.version))
-        else:
-          log.error(
-            'Sync token from USS (%s) does not match token from zk (%s)...',
-            str(sync_token), str(metadata.last_modified_transaction_id))
-          raise KeyError('Composite sync_token has changed')
       # Now, start a transaction to update them all
       #  the version will catch any changes and roll back any attempted
       #  updates to the grids
