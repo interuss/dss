@@ -1,0 +1,65 @@
+# Copyright 2018 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Brings up a full auth server instance.
+
+# Required environment variables:
+#   INTERUSS_AUTH_PATH: Path containing public.pem, private.pem, and roster.txt.
+#   SSL_CERT_PATH: Path to SSL certificate named cert.pem.
+#   SSL_KEY_PATH: Path to SSL private key named key.pem.
+
+# Optional environment variables:
+#   INTERUSS_AUTH_ISSUER: Text that will appear in 'iss' field of access_tokens (default
+#     interussplatform.com).
+#   INTERUSS_AUTH_PORT_HTTPS: Port on which to provide the InterUSS Platform auth server via HTTPS
+#     (default 8121).
+#   INTERUSS_AUTH_EXPIRATION: Number of seconds after issuance that access tokens will expire
+#     (default 3600).
+
+# To bring up this system:
+# docker-compose -p datanode up
+
+version: '3.6'
+
+services:
+
+  auth_server:
+    image: interussplatform/auth_server
+    expose:
+      - 5000
+    environment:
+      - INTERUSS_AUTH_SERVER=0.0.0.0
+      - INTERUSS_AUTH_PORT=5000
+      - INTERUSS_AUTH_VERBOSE=true
+      - INTERUSS_AUTH_ISSUER=${INTERUSS_AUTH_ISSUER:-interussplatform.com}
+      - INTERUSS_AUTH_EXPIRATION=${INTERUSS_AUTH_EXPIRATION:-3600}
+      - INTERUSS_AUTH_PUBLIC_KEY /resources/public.pem
+      - INTERUSS_AUTH_PRIVATE_KEY /resources/private.pem
+      - INTERUSS_AUTH_ROSTER /resources/roster.txt
+    volumes:
+      - ${INTERUSS_AUTH_PATH:?Environment variable INTERUSS_AUTH_PATH must be set}:/resources
+
+  reverse_proxy:
+    image: interussplatform/auth_reverse_proxy
+    ports:
+      - "${INTERUSS_AUTH_PORT_HTTPS:-8121}:${INTERUSS_AUTH_PORT_HTTPS:-8121}"
+    environment:
+      - INTERUSS_AUTH_PORT_HTTPS=${INTERUSS_AUTH_PORT_HTTPS:-8121}
+      - INTERUSS_AUTH_SERVER=auth_server
+      - INTERUSS_AUTH_PORT=5000
+    depends_on:
+      - auth_server
+    volumes:
+      - ${SSL_CERT_PATH:?Environment variable SSL_CERT_PATH must be set}:/etc/ssl/certs
+      - ${SSL_KEY_PATH:?Environment variable SSL_KEY_PATH must be set}:/etc/ssl/private

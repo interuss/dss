@@ -195,7 +195,8 @@ def ParseOptions(argv):
     dest='server',
     default=os.getenv(_KEY_SERVER, '127.0.0.1'),
     help='Specific server name to use on this machine for the web services '
-         '[or use env variable %s]' % _KEY_SERVER,
+         '(only applies directly from command line with Flask development '
+         'server) [or use env variable %s]' % _KEY_SERVER,
     metavar='SERVER')
   parser.add_option(
     '-p',
@@ -298,7 +299,7 @@ def _LoadConfiguration(options=None):
     reader = csv.reader(f)
     for line in reader:
       if len(line) == 3:
-        users[line[0]] = User(line[1], line[2])
+        users[line[0]] = User(line[1], line[2].split(' '))
 
   issuer = (options.issuer if options else
             os.environ.get(_KEY_ISSUER, '127.0.0.1'))
