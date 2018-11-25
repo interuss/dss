@@ -62,7 +62,7 @@ For an additional examples, this [Sequence Diagram](assets/USS2.png) shows a
 more complex operation with three USSs, two trying to plan at the same time.
 This [Sequence Diagram](assets/USS3.png) shows a USS affecting multiple grids.
 This [Sequence Diagram](assets/USS4.png) shows another USS updating one of
-multiple grids during an update. And finally, This
+multiple grids during an update. And finally, this
 [Sequence Diagram](assets/USS5.png) shows different examples of protection with
 concurrent updates.
 
