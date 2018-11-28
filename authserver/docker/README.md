@@ -16,12 +16,13 @@ passwords are sent in the clear without an HTTPS wrapper.
 ### Dockerfile_authreverseproxy
 
 This Dockerfile builds an image containing an nginx reverse proxy intended to
-gate requests to the provide HTTPS access to the auth server.
+gate requests and to the provide HTTPS access to the auth server.
 
 ### docker-compose.yaml
 
 This docker-compose configuration brings up an entire InterUSS Platform auth server in a single
-command.  By default, HTTPS access to the server is available on port 8121.
+command (after supplying the required resources).  By default, HTTPS access to the server is
+available on port 8121.
 
 ## Running an auth server
 
@@ -43,13 +44,13 @@ Be careful never to share private.pem.
 
 #### Roster
 
-The core of the auth server is to translate user credentials into access tokens.  A roster defines
+The core of the auth server is translating user credentials into access tokens.  A roster defines
 the set of users, their passwords, and their respective scopes.  Create `roster.txt` in the same
 folder as the key pair above and populate it with one line per user.  Each line should consist of
 the user's username, their hashed password, and the scopes they are to be granted, each of those
 three fields separated by commas (and be careful to eliminate whitespace).  The scopes should be
 separated by spaces.  The hashed password is the SHA256 hash of
-"`InterUSS Platform USERNAME PASSWORD`".  So, if user `wing.com` had password `wing`, their hashed
+`InterUSS Platform USERNAME PASSWORD`.  So, if user `wing.com` had password `wing`, their hashed
 password would be SHA256(InterUSS Platform wing.com wing), which begins b03ed6.  To compute the
 SHA256 hash on a Linux command line:
 
@@ -89,7 +90,8 @@ which it was signed.
 
 ### Running
 
-To run a bare-HTTP InterUSS Platform auth server from the folder containing the resources above:
+To run a fully-functional InterUSS Platform auth server from the folder containing the resources
+above:
 
 ```shell
 export INTERUSS_AUTH_PATH=`pwd`
@@ -107,16 +109,4 @@ To make sure you have the latest versions, first run:
 ```shell
 docker pull interussplatform/auth_server
 docker pull interussplatform/auth_reverse_proxy
-```
-
-### Synchronized node
-
-To run a fully-functional non-production InterUSS Platform data node that
-synchronizes with a network of other InterUSS Platform data nodes:
-
-```shell
-export ZOO_MY_ID=[your InterUSS Platform network Zookeeper ID]
-export ZOO_SERVERS=[InterUSS Platform server network; ex: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888]
-export INTERUSS_PUBLIC_KEY=[paste public key here]
-docker-compose -p datanode up
 ```

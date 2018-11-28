@@ -142,7 +142,7 @@ def TokenHandler():
 
   payload = {
     'sub': auth.username,
-    'nbf': timestamp,
+    'nbf': timestamp - 1,
     'scope': user.scopes,
     'iss': config.issuer,
     'exp': timestamp + config.expiration,

@@ -129,7 +129,7 @@ class InterUSSAuthServerTestCase(unittest.TestCase):
     now_timestamp = int(
       (datetime.utcnow() - datetime.utcfromtimestamp(0)).total_seconds())
     self.assertGreater(r['exp'], now_timestamp)
-    self.assertItemsEqual(r['scope'].split(' '),
+    self.assertItemsEqual(r['scope'],
                           ('interussplatform.com_operators.read',
                            'interussplatform.com_operators.write'))
 
