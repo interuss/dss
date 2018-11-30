@@ -26,13 +26,16 @@ import slippy_util
 
 # UVR validation constants
 UVR_FIELDS = {
-  'message_id', 'origin', 'originator_id', 'type', 'cause', 'geography',
+  'message_id', 'uss_name', 'type', 'cause', 'geography',
   'effective_time_begin', 'effective_time_end', 'permitted_uas',
   'permitted_gufis', 'actual_time_end', 'min_altitude', 'max_altitude',
   'reason', 'timestamp'}
-UVR_ENUMS = {'origin': {'FIMS', 'USS'},
-             'type': {'DYNAMIC_RESTRICTION', 'STATIC_ADVISORY'},
-             'cause': {'WEATHER', 'ATC', 'SECURITY', 'SAFETY', 'MUNICIPALITY'}}
+UVR_REQUIRED_FIELDS = {
+  'uss_name', 'message_id', 'cause', 'geography', 'min_altitude',
+  'max_altitude', 'effective_time_begin', 'effective_time_end', 'permitted_uas'}
+UVR_ENUMS = {'type': {'DYNAMIC_RESTRICTION', 'STATIC_ADVISORY'},
+             'cause': {'WEATHER', 'ATC', 'SECURITY', 'SAFETY', 'MUNICIPALITY',
+                       'OTHER'}}
 UVR_PERMITTED_UAS = {
   'NOT_SET', 'PUBLIC_SAFETY', 'SECURITY', 'NEWS_GATHERING', 'VLOS',
   'PART_107', 'PART_101E', 'PART_107X', 'RADIO_LINE_OF_SIGHT'}
@@ -166,6 +169,10 @@ def _validate_uvr(unvalidated_uvr):
     if key not in UVR_FIELDS:
       raise ValueError('Unsupported field "%s" found in UVR' % key)
 
+  for key in UVR_REQUIRED_FIELDS:
+    if key not in unvalidated_uvr:
+      raise ValueError('Required field "%s" missing from UVR' % key)
+
   uvr = copy.deepcopy(unvalidated_uvr)
   if 'timestamp' in uvr:
     del uvr['timestamp']
@@ -183,6 +190,11 @@ def _validate_uvr(unvalidated_uvr):
       raise ValueError('Unexpected UVR permitted_uas entry "%s"; must be one '
                        'of %s' % (permitted_uas,
                                   '|'.join(UVR_PERMITTED_UAS)))
+  if len(set(uvr['permitted_uas'])) < len(uvr['permitted_uas']):
+    raise ValueError('Duplicate entries are not allowed in permitted_uas')
+  if 'NOT_SET' in uvr['permitted_uas'] and len(uvr['permitted_uas']) > 1:
+    raise ValueError('If NOT_SET is included in permitted_uas, no other values '
+                     'are allowed')
 
   for gufi in uvr['permitted_gufis']:
     if not UUID_MATCHER.match(gufi):

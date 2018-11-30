@@ -345,13 +345,16 @@ def UvrDataHandler(zoom, message_id):
       'message': 'uvr data must be provided in the request body'})
 
   result = {}
-  unvalidated_uvr['originator_id'] = uss_id
   try:
     uvr = uvrs.Uvr(unvalidated_uvr)
 
     if uvr['message_id'] != message_id:
       raise ValueError('message_id "%s" in request does not match message_id '
                        '"%s" in UVR' % (message_id, uvr['message_id']))
+    if uvr['uss_name'] != uss_id:
+      abort(status.HTTP_403_FORBIDDEN,
+            'uss_name "%s" in UVR does not match uss_id "%s" in access token' %
+            (uvr['uss_name'], uss_id))
 
     zoom = int(zoom)
     tiles = uvr.get_tiles(zoom)

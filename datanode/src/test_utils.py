@@ -51,8 +51,7 @@ def make_uvr(uss_id, message_id=None, coords=None):
     coords = [[-92.1, 36.5], [-91.9, 36.5], [-92.1, 36.55], [-92.1, 36.5]]
   return uvrs.Uvr({
     'message_id': message_id,
-    'origin': 'USS',
-    'originator_id': uss_id,
+    'uss_name': uss_id,
     'type': 'DYNAMIC_RESTRICTION',
     'cause': 'SAFETY',
     'geography': {
