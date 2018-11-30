@@ -535,7 +535,7 @@ class USSMetadataManager(object):
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
     log.debug('Setting UVR %s in %d grid cells for %s...',
-              uvr['message_id'], len(grids), uvr['originator_id'])
+              uvr['message_id'], len(grids), uvr['uss_name'])
     try:
       # Get and update USSMetadata for all affected cells in memory
       contents = []
@@ -640,7 +640,7 @@ class USSMetadataManager(object):
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
     log.debug('Deleting UVR %s in %d grid cells for %s...',
-              uvr['message_id'], len(grids), uvr['originator_id'])
+              uvr['message_id'], len(grids), uvr['uss_name'])
     try:
       status = 200
       for _ in range(DELETE_ATTEMPTS):

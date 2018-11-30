@@ -933,7 +933,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       headers={'access_token': uss_id}
     ).status_code)
 
-    self.assertEqual(403, self.app.put(
+    self.assertEqual(400, self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
       data=uvr_json,
       headers={'access_token': 'wrong'}
@@ -952,6 +952,14 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       headers={'access_token': uss_id}
     ).status_code)
 
+    uvr_mismatched_uss = copy.deepcopy(uvr)
+    uvr_mismatched_uss._core['uss_name'] = 'otheruss'
+    self.assertEqual(403, self.app.put(
+      '/UVR/%d/%s' % (zoom, message_id),
+      json=uvr_mismatched_uss.to_json(),
+      headers={'access_token': uss_id}
+    ).status_code)
+
     verify_uvr_count(uvr, 0)
 
     # Correctly emplace a UVR and verify its presence
@@ -964,7 +972,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
     # Try to delete the UVR as a different USS
     storage_api.TESTID = 'uss2'
-    self.assertEqual(400, self.app.delete(
+    self.assertEqual(403, self.app.delete(
       '/UVR/%d/%s' % (zoom, message_id),
       data=uvr_json,
       headers={'access_token': 'uss2'}
@@ -981,7 +989,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     verify_uvr_count(uvr, 1)
 
     bad_uvr = copy.deepcopy(uvr)
-    bad_uvr._core['origin'] = 'FIMS'
+    bad_uvr._core['reason'] = 'different'
     self.assertEqual(400, self.app.delete(
       '/UVR/%d/%s' % (zoom, message_id),
       json=bad_uvr.to_json(),
