@@ -98,7 +98,31 @@ synchronizes with a network of other InterUSS Platform data nodes:
 export ZOO_MY_ID=[your InterUSS Platform network Zookeeper ID]
 export ZOO_SERVERS=[InterUSS Platform server network; ex: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888, make sure your server is 0.0.0.0]
 export INTERUSS_PUBLIC_KEY=[paste public key here]
+export SSL_CERT_PATH=[/path/containing/cert.pem/in/it]
+export SSL_KEY_PATH=[/path/containing/key.pem/in/it]
+docker-compose -f docker-compose.yaml -f docker-compose_localssl.yaml -p datanode up
+```
 
+### Prerequisites
+The above instructions assume that both `docker` and `docker-compose` are present on your system.
+
+#### docker
+To install `docker`, download and run a single script from get.docker.com described
+[here](https://github.com/docker/docker-install#usage), or follow the instructions
+[here](https://docs.docker.com/install/).
+
+#### docker-compose
+To install `docker-compose`, just download and mark
+executable a single file as described
+[here](https://docs.docker.com/compose/install/#install-compose).
+
+### No docker-compose
+If it is absolutely impossible to install docker-compose on your machine, the
+following commands may work to bring up a system (but they may easily be out
+of date; see docker-compose.yaml and docker-compose_localssl.yaml for the most
+up-to-date system configuration information):
+
+```shell
 docker run --name="tcl4-zookeeper" --restart always -p 2888:2888 -p 3888:3888 --expose 2181 -e ZOO_MY_ID="${ZOO_MY_ID}" -e ZOO_SERVERS="${ZOO_SERVERS}" -d zookeeper
 
 docker run --name="tcl4-storage_api" --link="tcl4-zookeeper" --restart always --expose 5000 -e INTERUSS_API_PORT=5000 -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" -e INTERUSS_CONNECTIONSTRING="tcl4-zookeeper:2181" -e INTERUSS_VERBOSE=true -d interussplatform/storage_api:tcl4

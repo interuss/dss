@@ -76,8 +76,7 @@ class USSMetadata(object):
     uvrs: [
       {
         message_id: <uuid>
-        origin: <FIMS|USS>
-        originator_id: <uss_name or originator domain name>
+        uss_name: <USS ID matching access token>
         type: <DYNAMIC_RESTRICTION|STATIC_ADVISORY>
         cause: <WEATHER|ATC|SECURITY|SAFETY|MUNICIPALITY>
         geography:
@@ -103,14 +102,19 @@ class USSMetadata(object):
   """
 
   def __init__(self, content=None):
-    # Parse the metadata or create a new one if none
+    """Parse metadata in storage format or create a new one if no content.
+
+    Args:
+      content: String containing JSON dict with metadata information.
+    """
+    #
     if content:
       m = json.loads(content)
       self.version = m['version']
       self.timestamp = m['timestamp']
       self.operators = m['operators']
       if 'uvrs' in m:
-        self.uvrs = [uvrs.Uvr(j) for j in m['uvrs']]
+        self.uvrs = [uvrs.Uvr(j, True) for j in m['uvrs']]
       else:
         self.uvrs = []
     else:
@@ -155,12 +159,21 @@ class USSMetadata(object):
     else:
       return self.__add__(other)
 
-  def to_json(self):
+  def to_json(self, storage=False):
+    """Convert this USSMetadata object into a plain JSON dict.
+
+    Args:
+      storage: If True, return a JSON dict suitable for internal grid storage.
+        Otherwise, return an API-compatible JSON dict.
+
+    Returns:
+      JSON dict with content from this USSMetadata object.
+    """
     return {
       'version': self.version,
       'timestamp': self.timestamp,
       'operators': self.operators,
-      'uvrs': [uvr.to_json() for uvr in self.uvrs]
+      'uvrs': [uvr.to_json(storage) for uvr in self.uvrs]
     }
 
   def upsert_operator(self, uss_id, baseurl, announce,
