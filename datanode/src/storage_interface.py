@@ -724,8 +724,8 @@ class USSMetadataManager(object):
     path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
                                USS_METADATA_FILE)
     try:
-      log.debug('Setting metadata to %s...', str(m))
-      self.zk.set(path, json.dumps(m.to_json()), version)
+      log.debug('Setting metadata to %s...', str(m.to_json(True)))
+      self.zk.set(path, json.dumps(m.to_json(True)), version)
       status = 200
     except BadVersionError:
       log.error('Sync token updated before write for %s...', path)
@@ -814,7 +814,7 @@ class USSMetadataManager(object):
       log.debug('Starting transaction to write all grids at once...')
       t = self.zk.transaction()
       for path, m, version in contents:
-        t.set_data(path, json.dumps(m.to_json()), version)
+        t.set_data(path, json.dumps(m.to_json(True)), version)
       log.debug('Committing transaction...')
       results = t.commit()
       if isinstance(results[0], RolledBackError):
@@ -894,7 +894,7 @@ class USSMetadataManager(object):
     log.debug('Starting transaction to write all grids at once...')
     t = self.zk.transaction()
     for path, m, version in contents:
-      t.set_data(path, json.dumps(m.to_json()), version)
+      t.set_data(path, json.dumps(m.to_json(True)), version)
     log.debug('Committing transaction...')
     results = t.commit()
     if isinstance(results[0], RolledBackError):

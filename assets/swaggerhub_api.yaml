@@ -1092,6 +1092,7 @@ definitions:
     description: >-
       An area limiting UAS access
     required:
+      - uss_name
       - message_id
       - cause
       - geography
@@ -1100,19 +1101,12 @@ definitions:
       - effective_time_begin
       - effective_time_end
       - permitted_uas
-      - permitted_gufis
     properties:
       message_id:
         $ref: '#/definitions/uuid'
-      origin:
-        description: The entity that generated this message
-        type: string
-        enum:
-          - FIMS
-          - USS
-      originator_id:
+      uss_name:
         description: >-
-          The uss_id of the enacting USS, provided via the access token
+          The uss_id of the enacting USS, must match ID in the access token
         type: string
         minLength: 4
         exclusiveMinimum: false
@@ -1197,8 +1191,7 @@ definitions:
         maxLength: 1000
     example:
       message_id: '00000000-0000-4444-8888-000000000000'
-      origin: USS
-      originator_id: 'tcl4box-uss1.com'
+      uss_name: 'tcl4box-uss1.com'
       type: DYNAMIC_RESTRICTION
       cause: SAFETY
       geography:

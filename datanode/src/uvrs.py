@@ -44,10 +44,33 @@ UVR_UNITS_OF_MEASURE = {'FT'}
 UUID_MATCHER = re.compile('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[8-b][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$')
 UVR_MIN_POLYGON_COORDS = 4
 
+LEGACY_FIELDS = {'origin', 'originator_id', 'compatibility'}
+NEW_FIELDS = {'uss_name'}
+
 
 class Uvr(object):
-  def __init__(self, json_dict):
+  def __init__(self, json_dict, storage=False):
+    """Create a UVR instance from JSON defining each field.
+
+    Args:
+      json_dict: JSON dict containing at least keys for UVR_REQUIRED_FIELDS, and
+        possibly some or all of UVR_FIELDS, as per UVR spec.
+      storage: True to parse JSON dict compatible with TCL4.0.x.x clients'
+        storage format, false to parse as public API format.
+    """
     self._timestamp = json_dict.get('timestamp', None)
+
+    if storage:
+      uvr = copy.deepcopy(json_dict)
+
+      if 'originator_id' in uvr:
+        uvr['uss_name'] = uvr['originator_id']
+      for legacy_field in LEGACY_FIELDS:
+        if legacy_field in uvr:
+          del uvr[legacy_field]
+
+      json_dict = uvr
+
     self._core = _validate_uvr(json_dict)
 
   def __getitem__(self, item):
@@ -74,8 +97,11 @@ class Uvr(object):
   def __ne__(self, other):
     return not self.__eq__(other)
 
-  def to_json(self):
+  def to_json(self, storage=False):
     """Convert to a nested-dict that can be serialized with json.dumps.
+
+    Args:
+      storage: True to produce JSON compatible with TCL4.0.x.x clients' storage.
 
     Returns:
       Nested-dict structure.
@@ -83,6 +109,14 @@ class Uvr(object):
     result = copy.deepcopy(self._core)
     if self._timestamp:
       result['timestamp'] = self._timestamp
+
+    if storage:
+      result['origin'] = 'USS'
+      result['originator_id'] = result['uss_name']
+      for new_key in NEW_FIELDS:
+        if new_key in result:
+          del result[new_key]
+
     return result
 
   def get_tiles(self, zoom):
@@ -155,6 +189,9 @@ def _validate_uvr(unvalidated_uvr):
 
   Args:
     unvalidated_uvr: nested dict containing unvalidated UVR data structure
+    update: When true, attempt to import a TCL4.0.x.x UVR data structure instead
+      of rejecting it because it fails to validate against the API
+      representation of UVRs.
 
   Returns:
     Validated UVR dict data structure.
