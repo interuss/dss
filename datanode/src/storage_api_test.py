@@ -217,34 +217,34 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperators/1/1/1',
         query_string=dict(
             sync_token=s,
-            baseurl='https://g.co/f',
-            announce=False)).status_code)
+            uss_baseurl='https://g.co/f',
+            announcement_level='NONE')).status_code)
     self.assertEqual(404, self.app.put(
         '/GridCellOperator',
         query_string=dict(
             sync_token=s,
-            baseurl='https://g.co/f',
-            announce=False)).status_code)
+            uss_baseurl='https://g.co/f',
+            announcement_level='NONE')).status_code)
     self.assertEqual(400, self.app.put(
         '/GridCellOperator/1a/1/1',
         query_string=dict(
             sync_token=s,
-            baseurl='https://g.co/f',
-            announce=False)).status_code)
+            uss_baseurl='https://g.co/f',
+            announcement_level='NONE')).status_code)
     self.assertEqual(400, self.app.put(
         '/GridCellOperator/1/99/1',
           query_string=dict(
             sync_token=s,
-            baseurl='https://g.co/f',
-            announce=False,
+            uss_baseurl='https://g.co/f',
+            announcement_level='NONE',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
         '/GridCellOperator/1/1/1',
         query_string=dict(
             # sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
+            uss_baseurl='https://g.co/f',
+            announcement_level='NONE',
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code)
@@ -252,47 +252,114 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
-            # scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
+            # uss_baseurl='https://g.co/f',
+            announcement_level='NONE',
             operation_format='NASA',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02')).status_code)
     self.assertEqual(400, self.app.put(
+      '/GridCellOperator/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        uss_baseurl='https://g.co/f',
+        # announcement_level='NONE',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-01',
+        maximum_operation_timestamp='2018-01-02')).status_code)
+
+    # TODO (hikevin): Require operation_format before re-enabling this test.
+    # self.assertEqual(400, self.app.put(
+    #     '/GridCellOperator/1/1/1',
+    #     query_string=dict(
+    #         sync_token=s,
+    #         uss_baseurl='https://g.co/f',
+    #         announcement_level='NONE',
+    #         # operation_format='NASA',
+    #         minimum_operation_timestamp='2018-01-01',
+    #         maximum_operation_timestamp='2018-01-02')).status_code)
+
+    r = self.app.put(
         '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
-            scope='https://g.co/r',
-            # operation_endpoint='https://g.co/f',
-            operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
-    self.assertEqual(400, self.app.put(
-        '/GridCellOperator/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
-            # operation_format='NASA',
-            minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
-    self.assertEqual(400, self.app.put(
-        '/GridCellOperator/1/1/1',
-        query_string=dict(
-            sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
+            uss_baseurl='https://g.co/f',
+            announcement_level='NONE',
             operation_format='NASA',
             # minimum_operation_timestamp='2018-01-01',
-            maximum_operation_timestamp='2018-01-02')).status_code)
-    self.assertEqual(400, self.app.put(
+            maximum_operation_timestamp='2018-01-02'))
+    self.assertEqual(400, r.status_code)
+    self.assertIn('minimum_operation_timestamp must be provided', r.data)
+    r = self.app.put(
         '/GridCellOperator/1/1/1',
         query_string=dict(
             sync_token=s,
-            scope='https://g.co/r',
-            operation_endpoint='https://g.co/f',
+            uss_baseurl='https://g.co/f',
+            announcement_level='NONE',
             operation_format='NASA',
             # maximum_operation_timestamp='2018-01-02'
-            minimum_operation_timestamp='2018-01-01')).status_code)
+            minimum_operation_timestamp='2018-01-01'))
+    self.assertEqual(400, r.status_code)
+    self.assertIn('maximum_operation_timestamp must be provided', r.data)
+    r = self.app.put(
+      '/GridCellOperator/1/1/1',
+      query_string=dict(
+        sync_token=s,
+        uss_baseurl='https://g.co/f',
+        announcement_level='NONE',
+        operation_format='NASA',
+        minimum_operation_timestamp='2018-01-02',
+        maximum_operation_timestamp='2018-01-01'))
+    self.assertEqual(400, r.status_code)
+    self.assertIn('Invalid date format', r.data)
+    r = self.app.put(
+      '/GridCellOperator/1/1/1',
+      json={
+        'sync_token': s,
+        'uss_baseurl': 'https://g.co/f',
+        'announcement_level': 'NONE',
+        'operation_format': 'NASA',
+        'minimum_operation_timestamp': '2018-01-01',
+        'maximum_operation_timestamp': '2018-01-02',
+        'operations': [{
+          'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
+           'effective_time_begin': '2018-01-01T02:00:00-05:00',
+           'effective_time_end': '2018-01-01T01:00:00-05:00'}],
+      })
+    self.assertEqual(400, r.status_code)
+    self.assertIn('Operation ends before', r.data)
+    r = self.app.put(
+      '/GridCellOperator/1/1/1',
+      json={
+        'sync_token': s,
+        'uss_baseurl': 'https://g.co/f',
+        'announcement_level': 'NONE',
+        'operation_format': 'NASA',
+        'minimum_operation_timestamp': '2018-01-01',
+        'maximum_operation_timestamp': '2018-01-02',
+        'operations': [{
+          'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
+          'effective_time_begin': '2018-01-01T01:00:00-05:00',
+          'effective_time_end': '2018-01-02T02:00:00-05:00'}],
+      })
+    self.assertEqual(400, r.status_code)
+    self.assertIn('Operation ends after', r.data)
+    r = self.app.put(
+      '/GridCellOperator/1/1/1',
+      json={
+        'sync_token': s,
+        'uss_baseurl': 'https://g.co/f',
+        'announcement_level': 'NONE',
+        'operation_format': 'NASA',
+        'minimum_operation_timestamp': '2018-01-01',
+        'maximum_operation_timestamp': '2018-01-02',
+        'operations': [{
+          'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
+          'effective_time_begin': '2017-12-31T01:00:00-05:00',
+          'effective_time_end': '2018-01-01T02:00:00-05:00'}],
+      })
+    self.assertEqual(400, r.status_code)
+    self.assertIn('Operation begins before', r.data)
+
     self.assertEqual(400, self.app.put(
         '/GridCellOperator/1/1/1', data={
           'sync_token': 'NOT_VALID'
@@ -337,7 +404,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         query_string=dict(
             sync_token=s,
             uss_baseurl='https://g.co/r',
-            announcement_level=False,
+            announcement_level='NONE',
             minimum_operation_timestamp='2018-01-01',
             maximum_operation_timestamp='2018-01-02'))
     self.assertEqual(200, result.status_code)
@@ -433,7 +500,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       query_string=dict(
         sync_token=s,
         scope='https://g1.co/r',
-        operation_endpoint='https://g1.co/f',
+        uss_baseurl='https://g1.co/f',
         operation_format='NASA',
         minimum_operation_timestamp='2018-01-01',
         maximum_operation_timestamp='2018-01-02'))
@@ -447,7 +514,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       query_string=dict(
         sync_token=s,
         scope='https://g2.co/r',
-        operation_endpoint='https://g2.co/f',
+        uss_baseurl='https://g2.co/f',
         operation_format='NASA',
         minimum_operation_timestamp='2018-01-01',
         maximum_operation_timestamp='2018-01-02'))
@@ -462,7 +529,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       query_string=dict(
         sync_token=s,
         scope='https://g3.co/r',
-        operation_endpoint='https://g3.co/f',
+        uss_baseurl='https://g3.co/f',
         operation_format='NASA',
         minimum_operation_timestamp='2018-01-01',
         maximum_operation_timestamp='2018-01-02'))
@@ -706,13 +773,14 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(4 + 9 + 12, len(j['data']['operators']))
 
   def testMultipleGridCellFailures(self):
-    self.assertEqual(400, self.app.get('/GridCellsOperator/10',
-                                       query_string=dict(
-                                         coords='0,0,1')).status_code)
-    self.assertEqual(400, self.app.get('/GridCellsOperator/10',
-                                       query_string=dict(
-                                         coords='0,0,1,0,1,1,0,1',
-                                         coord_type='rainbows')).status_code)
+    r = self.app.get('/GridCellsOperator/10',
+                     query_string=dict(coords='0,0,1'))
+    self.assertEqual(400, r.status_code)
+    self.assertIn('coordinates', r.data)
+    r = self.app.get('/GridCellsOperator/10', query_string=dict(
+        coords='0,0,1,0,1,1,0,1', coord_type='rainbows'))
+    self.assertEqual(400, r.status_code)
+    self.assertIn('coord_type', r.data)
     self.assertEqual(413, self.app.get('/GridCellsOperator/18',
                                        query_string=dict(
                                          coords='0,0,1,0,1,1,0,1',
@@ -722,16 +790,18 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
     s = j['sync_token']
-    self.assertEqual(400, self.app.put(
-      '/GridCellsOperator/10',
-      query_string=dict(
+    r = self.app.put(
+        '/GridCellsOperator/10',
+        query_string=dict(
         coords='0,0,1',
         sync_token=s,
         scope='https://g1.co/r',
-        operation_endpoint='https://g1.co/f',
+        uss_baseurl='https://g1.co/f',
         operation_format='NASA',
         minimum_operation_timestamp='2018-01-01',
-        maximum_operation_timestamp='2018-01-02')).status_code)
+        maximum_operation_timestamp='2018-01-02'))
+    self.assertEqual(400, r.status_code)
+    self.assertIn('coordinates', r.data)
 
   def testMultipleGridCellGets(self):
     # for this zoom level (10), the points refer to the following tiles:
@@ -909,56 +979,57 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     verify_uvr_count(uvr, 0)
 
     # Make some invalid UVR PUTs and ensure they didn't emplace a UVR
-    self.assertEqual(400, self.app.put(
+    r = self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
       data='invalid uvr',
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': uss_id})
+    self.assertEqual(400, r.status_code)
+    self.assertIn('parsing JSON', r.data)
 
-    self.assertEqual(400, self.app.put(
+    r = self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
       json={},
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': uss_id})
+    self.assertEqual(400, r.status_code)
+    self.assertIn('Required field', r.data)
 
-    self.assertEqual(400, self.app.put(
+    r = self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
       data=uvr_json[0:-1],
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': uss_id})
+    self.assertEqual(400, r.status_code)
+    self.assertIn('parsing JSON', r.data)
 
-    self.assertEqual(400, self.app.put(
+    r = self.app.put(
       '/UVR/%d/%s' % (zoom, 'wrong'),
       data=uvr_json,
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': uss_id})
+    self.assertEqual(400, r.status_code)
+    self.assertIn('does not match message_id', r.data)
 
-    self.assertEqual(400, self.app.put(
+    r = self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
       data=uvr_json,
-      headers={'access_token': 'wrong'}
-    ).status_code)
-
-    self.assertEqual(400, self.app.put(
-      '/UVR/%d/%s' % (zoom, message_id),
-      json={},
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': 'wrong'})
+    self.assertEqual(400, r.status_code)
+    self.assertIn('access_token is invalid', r.data)
 
     uvr_too_big = test_utils.make_uvr(uss_id, coords='too_big')
-    self.assertEqual(413, self.app.put(
+    r = self.app.put(
       '/UVR/%d/%s' % (zoom, uvr_too_big['message_id']),
       json=uvr_too_big.to_json(),
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': uss_id})
+    self.assertEqual(413, r.status_code)
+    self.assertIn('tiles', r.data)
 
     uvr_mismatched_uss = copy.deepcopy(uvr)
     uvr_mismatched_uss._core['uss_name'] = 'otheruss'
-    self.assertEqual(403, self.app.put(
+    r = self.app.put(
       '/UVR/%d/%s' % (zoom, message_id),
       json=uvr_mismatched_uss.to_json(),
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': uss_id})
+    self.assertEqual(403, r.status_code)
+    self.assertIn('match uss_id', r.data)
 
     verify_uvr_count(uvr, 0)
 
@@ -972,38 +1043,42 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
 
     # Try to delete the UVR as a different USS
     storage_api.TESTID = 'uss2'
-    self.assertEqual(403, self.app.delete(
+    r = self.app.delete(
       '/UVR/%d/%s' % (zoom, message_id),
       data=uvr_json,
-      headers={'access_token': 'uss2'}
-    ).status_code)
+      headers={'access_token': 'uss2'})
+    self.assertEqual(403, r.status_code)
+    self.assertIn('match uss_id', r.data)
     storage_api.TESTID = uss_id
     verify_uvr_count(uvr, 1)
 
     # Incorrectly delete the UVR and make sure it's still there
-    self.assertEqual(400, self.app.delete(
+    r = self.app.delete(
       '/UVR/%d/%s' % (zoom, 'wrong'),
       data=uvr_json,
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': uss_id})
+    self.assertEqual(400, r.status_code)
+    self.assertIn('match message_id', r.data)
     verify_uvr_count(uvr, 1)
 
     bad_uvr = copy.deepcopy(uvr)
     bad_uvr._core['reason'] = 'different'
-    self.assertEqual(400, self.app.delete(
+    r = self.app.delete(
       '/UVR/%d/%s' % (zoom, message_id),
       json=bad_uvr.to_json(),
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': uss_id})
+    self.assertEqual(400, r.status_code)
+    self.assertIn('UVR definition must match', r.data)
     verify_uvr_count(uvr, 1)
 
     bad_uvr = copy.deepcopy(uvr)
     bad_uvr['geography']['coordinates'][0][1][0] = -122.05187
-    self.assertEqual(400, self.app.delete(
+    r = self.app.delete(
       '/UVR/%d/%s' % (zoom, message_id),
       json=bad_uvr.to_json(),
-      headers={'access_token': uss_id}
-    ).status_code)
+      headers={'access_token': uss_id})
+    self.assertEqual(400, r.status_code)
+    self.assertIn('UVR definition must match', r.data)
     verify_uvr_count(uvr, 1)
 
     # Correctly delete the UVR and verify its absence
