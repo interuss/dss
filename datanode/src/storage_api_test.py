@@ -587,8 +587,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(1, len(o['operations']))
     # Add a new operation
     joper = {'gufi': GUFI2, 'operation_signature': 'signed4.2',
-             'effective_time_begin': '2018-01-01T02:00:00-05:00',
-             'effective_time_end': '2018-01-01T03:00:00-05:00'}
+             'effective_time_begin': '2018-01-01T03:00:00-05:00',
+             'effective_time_end': '2018-01-01T05:00:00-05:00'}
     result = self.app.put('/GridCellOperation/1/1/1/' + GUFI2,
                           json=joper, headers={'sync_token': s})
     self.assertEqual(result.status_code, 200)
@@ -601,8 +601,8 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertIn(GUFI2, [d['gufi'] for d in o['operations']])
     # Update the old operation
     joper = {'gufi': GUFI2, 'operation_signature': 'UNSIGNED',
-             'effective_time_begin': '2018-01-01T02:00:00-05:00',
-             'effective_time_end': '2018-01-01T03:00:00-05:00'}
+             'effective_time_begin': '2018-01-01T00:00:00-05:00',
+             'effective_time_end': '2018-01-01T00:30:00-05:00'}
     result = self.app.put('/GridCellOperation/1/1/1/' + GUFI2,
                           json=joper, headers={'sync_token': s})
     self.assertEqual(200, result.status_code)

@@ -243,7 +243,7 @@ class USSMetadata(object):
                             operation['operation_signature'],
                             operation['effective_time_begin'],
                             operation['effective_time_end'],
-                            same_version=True)
+                            same_version=True, expand_operator_window=False)
 
     # Check for duplicate GUFIs
     for i in range(len(operations) - 1):
@@ -266,7 +266,7 @@ class USSMetadata(object):
     return len(self.operators) == num_operators - 1
 
   def upsert_operation(self, uss_id, gufi, signature, begin, end,
-                       same_version=False):
+                       same_version=False, expand_operator_window=True):
     """Inserts or updates an operation, with gufi as the key.
 
     Args:
@@ -276,6 +276,9 @@ class USSMetadata(object):
       begin: start time of the operation.
       end: end time of the operation.
       same_version: True to avoid incrementing the metadata version.
+      expand_operator_window: True to expand min and max operation timestamps in
+        operator according to this operation, False to raise an error when
+        operation is outside operator's time window.
     Returns:
       True if successful, False if it cannot find the Operator.
     Raises:
@@ -319,9 +322,19 @@ class USSMetadata(object):
     latest_operation = format_utils.parse_timestamp(
       operator['maximum_operation_timestamp'])
     if effective_time_begin < earliest_operation:
-      raise ValueError('Operation begins before minimum operation timestamp')
+      if expand_operator_window:
+        earliest_operation = effective_time_begin
+        operator['minimum_operation_timestamp'] = format_utils.format_ts(
+          earliest_operation)
+      else:
+        raise ValueError('Operation begins before minimum operation timestamp')
     if effective_time_end > latest_operation:
-      raise ValueError('Operation ends after maximum operation timestamp')
+      if expand_operator_window:
+        latest_operation = effective_time_end
+        operator['maximum_operation_timestamp'] = format_utils.format_ts(
+          latest_operation)
+      else:
+        raise ValueError('Operation ends after maximum operation timestamp')
 
     # Now add the new operation
     operation = {
