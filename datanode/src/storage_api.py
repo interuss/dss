@@ -91,7 +91,8 @@ import uvrs
 # VERSION = 'TCL4.0.2.008'  # sync with master branch for multi-grid and docker updates
 # VERSION = 'TCL4.0.3.009'  # Added support for UVRs
 # VERSION = 'TCL4.0.3.010'  # Fixed backwards compatibility issue
-VERSION = 'TCL4.1.0.011'  # Updated UVR schema (not API-compatible with previous UVR schema)
+# VERSION = 'TCL4.1.0.011'  # Updated UVR schema (not API-compatible with previous UVR schema)
+VERSION = 'TCL4.1.0.012' # Improved error messages
 
 # Initialize everything we need
 TESTID = None
@@ -912,8 +913,11 @@ def _GetRequestParameter(name, default):
     rjson = json.loads(request.data)
     r = default if name not in rjson else rjson[name]
   else:
-    log.error('Request is in an unknown format: %s', str(request))
-    r = default
+    log.error('Request is in an unknown format (no json, args, form, or data)')
+    abort(status.HTTP_400_BAD_REQUEST,
+          'Expected parameters in JSON body, URL arguments, form data, or body '
+          'data, but none of those data sources appear to be present in the '
+          'request')
   return r
 
 
