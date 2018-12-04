@@ -35,6 +35,7 @@ import copy
 import json
 import logging
 from dateutil import parser
+import re
 
 import format_utils
 import uvrs
@@ -42,6 +43,8 @@ import uvrs
 # logging is our log infrastructure used for this application
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('InterUSS_DataNode_InformationInterface')
+
+GUFI_VALIDATOR = re.compile('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[8-b][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$')
 
 
 class USSMetadata(object):
@@ -201,7 +204,8 @@ class USSMetadata(object):
     """
     if operations is None:
       operations = []
-    # Remove the existing operator, if any
+
+    # Remove the existing operator, if any, and increment version
     self.remove_operator(uss_id)
 
     # Validate earliest and latest timestamps
@@ -216,31 +220,7 @@ class USSMetadata(object):
       log.error(msg)
       raise ValueError(msg)
 
-    # validate the operations (if any)
-    for operation in operations:
-      operation['timestamp'] = format_utils.format_ts()
-      operation['version'] = self.version
-
-      if 'effective_time_begin' not in operation:
-        raise ValueError('Operation missing effective_time_begin')
-      if 'effective_time_end' not in operation:
-        raise ValueError('Operation missing effective_time_end')
-      try:
-        time_begin = format_utils.parse_timestamp(
-            operation['effective_time_begin'])
-        time_end = format_utils.parse_timestamp(operation['effective_time_end'])
-      except (TypeError, ValueError, OverflowError):
-        raise ValueError('Invalid date format/values for operation %s, %s' % (
-            operation['effective_time_begin'],
-            operation['effective_time_end']))
-      if time_begin >= time_end:
-        raise ValueError('Operation ends before it starts')
-      if time_begin < earliest_operation:
-        raise ValueError('Operation begins before minimum operation timestamp')
-      if time_end > latest_operation:
-        raise ValueError('Operation ends after maximum operation timestamp')
-
-    # Now add the new record
+    # Add the new record without operations
     operator = {
       'uss': uss_id,
       'uss_baseurl': baseurl,
@@ -249,9 +229,29 @@ class USSMetadata(object):
       'minimum_operation_timestamp': format_utils.format_ts(earliest_operation),
       'maximum_operation_timestamp': format_utils.format_ts(latest_operation),
       'announcement_level': str(announce),
-      'operations': operations
+      'operations': []
     }
     self.operators.append(operator)
+
+    # Insert the operations
+    for operation in operations:
+      for required_field in ('effective_time_begin', 'effective_time_end',
+                             'gufi', 'operation_signature'):
+        if required_field not in operation:
+          raise ValueError('Operation missing ' + required_field)
+      self.upsert_operation(uss_id, operation['gufi'],
+                            operation['operation_signature'],
+                            operation['effective_time_begin'],
+                            operation['effective_time_end'],
+                            same_version=True)
+
+    # Check for duplicate GUFIs
+    for i in range(len(operations) - 1):
+      gufi1 = operations[i]['gufi']
+      for j in range(i + 1, len(operations)):
+        if _gufis_match(gufi1, operations[j]['gufi']):
+          raise ValueError('Duplicate GUFI found: ' + gufi1)
+
     self._update_grid_location(zoom, x, y)
     self.timestamp = format_utils.format_ts()
 
@@ -265,7 +265,8 @@ class USSMetadata(object):
     self.timestamp = format_utils.format_ts()
     return len(self.operators) == num_operators - 1
 
-  def upsert_operation(self, uss_id, gufi, signature, begin, end):
+  def upsert_operation(self, uss_id, gufi, signature, begin, end,
+                       same_version=False):
     """Inserts or updates an operation, with gufi as the key.
 
     Args:
@@ -274,58 +275,80 @@ class USSMetadata(object):
       signature: The JWS signature of the Operation,
       begin: start time of the operation.
       end: end time of the operation.
+      same_version: True to avoid incrementing the metadata version.
     Returns:
-      true if valid, false if it cannot find the USS
+      True if successful, False if it cannot find the Operator.
+    Raises:
+      ValueError: when inputs are invalid.
     """
-    # clean up the datetimestamps, setting to nothing if invalid rather
-    #   than failing, as they are optional
+    if not same_version:
+      self.version += 1
+
+    # Validate GUFI
+    if not GUFI_VALIDATOR.match(gufi):
+      raise ValueError('Invalid GUFI format: ' + gufi)
+
+    # Find the operator entry
     found = False
-    # Remove the existing operation, if any
-    self.remove_operation(uss_id, gufi)
+    for operator in self.operators:
+      if operator.get('uss').upper() == uss_id.upper():
+        found = True
+        break
+      self.timestamp = format_utils.format_ts()
+    if not found:
+      return False
+
+    operator['version'] = self.version
+    operator['timestamp'] = format_utils.format_ts()
+    operator['operations'] = [op for op in operator['operations']
+                              if not _gufis_match(gufi, op['gufi'])]
+
     try:
       effective_time_begin = format_utils.parse_timestamp(begin)
       effective_time_end = format_utils.parse_timestamp(end)
-      if effective_time_begin >= effective_time_end:
-        raise ValueError
     except (TypeError, ValueError, OverflowError):
-      log.error('Invalid date format/values for operators %s, %s',
-                begin, end)
-      return False
-    # Now add the new record
+      msg = 'Invalid date format/values for operators %s, %s' % (begin, end)
+      log.error(msg)
+      raise ValueError(msg)
+
+    if effective_time_begin >= effective_time_end:
+      raise ValueError('Operation ends before it starts')
+
+    earliest_operation = format_utils.parse_timestamp(
+      operator['minimum_operation_timestamp'])
+    latest_operation = format_utils.parse_timestamp(
+      operator['maximum_operation_timestamp'])
+    if effective_time_begin < earliest_operation:
+      raise ValueError('Operation begins before minimum operation timestamp')
+    if effective_time_end > latest_operation:
+      raise ValueError('Operation ends after maximum operation timestamp')
+
+    # Now add the new operation
     operation = {
-      'version': self.version,
-      'gufi': gufi,
-      'operation_signature': signature,
-      'effective_time_begin': format_utils.format_ts(effective_time_begin),
-      'effective_time_end': format_utils.format_ts(effective_time_end),
-      'timestamp': format_utils.format_ts()
+        'version': self.version,
+        'gufi': gufi,
+        'operation_signature': signature,
+        'effective_time_begin': format_utils.format_ts(effective_time_begin),
+        'effective_time_end': format_utils.format_ts(effective_time_end),
+        'timestamp': format_utils.format_ts(),
     }
-    # find the operator entry and add the operation
-    for oper in self.operators:
-      if oper.get('uss').upper() == uss_id.upper():
-        found = True
-        oper['version'] = self.version
-        oper['timestamp'] = format_utils.format_ts()
-        oper['operations'].append(operation)
-        break
-      self.timestamp = format_utils.format_ts()
-    return found
+    operator['operations'].append(operation)
+    return True
 
 
   def remove_operation(self, uss_id, gufi):
     found = False
     self.version += 1
     # find the operator entry
-    for oper in self.operators:
-      if oper.get('uss').upper() == uss_id.upper():
+    for operator in self.operators:
+      if operator.get('uss').upper() == uss_id.upper():
         # Remove the existing operation, if any
-        num_operations = len(oper['operations'])
-        oper['operations'][:] = [
-          d for d in oper['operations'] if d.get('gufi').upper() != gufi.upper()
-        ]
-        found = (len(oper['operations']) == num_operations - 1)
-        oper['version'] = self.version
-        oper['timestamp'] = format_utils.format_ts()
+        num_operations = len(operator['operations'])
+        operator['operations'][:] = [d for d in operator['operations']
+                                     if not _gufis_match(d.get('gufi'), gufi)]
+        found = len(operator['operations']) < num_operations
+        operator['version'] = self.version
+        operator['timestamp'] = format_utils.format_ts()
     return found
 
   def insert_uvr(self, uvr):
@@ -379,3 +402,16 @@ class USSMetadata(object):
         e = e.replace('{x}', str(x))
         e = e.replace('{y}', str(y))
         operator['uss_baseurl'] = e
+
+
+def _gufis_match(gufi1, gufi2):
+  """Indicates whether two GUFIs match.
+
+  Args:
+    gufi1: String containing GUFI.
+    gufi2: String containing GUFI.
+
+  Returns:
+    True if GUFIs match, False otherwise.
+  """
+  return gufi1.upper() == gufi2.upper()
