@@ -310,7 +310,7 @@ class USSMetadata(object):
       effective_time_begin = format_utils.parse_timestamp(begin)
       effective_time_end = format_utils.parse_timestamp(end)
     except (TypeError, ValueError, OverflowError):
-      msg = 'Invalid date format/values for operators %s, %s' % (begin, end)
+      msg = 'Invalid date format/values for operation %s, %s' % (begin, end)
       log.error(msg)
       raise ValueError(msg)
 
@@ -338,12 +338,12 @@ class USSMetadata(object):
 
     # Now add the new operation
     operation = {
-        'version': self.version,
-        'gufi': gufi,
-        'operation_signature': signature,
-        'effective_time_begin': format_utils.format_ts(effective_time_begin),
-        'effective_time_end': format_utils.format_ts(effective_time_end),
-        'timestamp': format_utils.format_ts(),
+      'version': self.version,
+      'gufi': gufi,
+      'operation_signature': signature,
+      'effective_time_begin': format_utils.format_ts(effective_time_begin),
+      'effective_time_end': format_utils.format_ts(effective_time_end),
+      'timestamp': format_utils.format_ts(),
     }
     operator['operations'].append(operation)
     return True

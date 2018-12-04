@@ -223,13 +223,13 @@ class USSMetadataManager(object):
     if not slippy_util.validate_slippy(z, x, y):
       return self._format_status_code_to_jsend(400, 'Slippy validation failed')
 
-    # first we have to get the cell
+    # First we have to get the cell content
     (content, metadata) = self._get_raw(z, x, y)
     if not metadata:
       return self._format_status_code_to_jsend(404, 'Could not get metadata')
 
-    # Quick check of the token, another is done on the actual set to be sure
-    #    but this check fails early and fast
+    # Quick check of the token; another is done on the actual set to be sure but
+    # this check fails early and fast
     if str(metadata.last_modified_transaction_id) != str(sync_token):
       return self._format_status_code_to_jsend(409, 'Sync token does not match')
 
