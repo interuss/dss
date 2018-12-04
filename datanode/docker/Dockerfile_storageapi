@@ -16,7 +16,7 @@
 
 # To build an image from this Dockerfile:
 # docker image build -f Dockerfile_storageapi -t interussplatform/storage_api:tcl4 ../src
-# docker tag interussplatform/storage_api:tcl4 interussplatform/storage_api:tcl4.1.0.011
+# docker tag interussplatform/storage_api:tcl4 interussplatform/storage_api:tcl4.1.1.012
 
 # To run this image:
 # docker run \
