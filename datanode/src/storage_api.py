@@ -92,7 +92,7 @@ import uvrs
 # VERSION = 'TCL4.0.3.009'  # Added support for UVRs
 # VERSION = 'TCL4.0.3.010'  # Fixed backwards compatibility issue
 # VERSION = 'TCL4.1.0.011'  # Updated UVR schema (not API-compatible with previous UVR schema)
-VERSION = 'TCL4.1.0.012' # Improved error messages
+VERSION = 'TCL4.1.1.012' # Improved validation and error messages
 
 # Initialize everything we need
 TESTID = None

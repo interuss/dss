@@ -276,30 +276,37 @@ class USSMetadataManager(object):
       JSend formatted response (https://labs.omniti.com/labs/jsend)
     """
     status = 500
-    if slippy_util.validate_slippy(z, x, y):
-      # first we have to get the cell
-      status = 0
-      (content, metadata) = self._get_raw(z, x, y)
-      if metadata:
-        # Quick check of the token, another is done on the actual set to be sure
-        #    but this check fails early and fast
-        if str(metadata.last_modified_transaction_id) == str(sync_token):
-          try:
-            m = uss_metadata.USSMetadata(content)
-            log.debug('Setting metadata for %s - %s...', uss_id, gufi)
-            if not m.upsert_operation(uss_id, gufi, signature, begin, end):
-              log.error('Failed setting operation for %s with token %s...',
-                        gufi, str(sync_token))
-              raise ValueError
-            status = self._set_raw(z, x, y, m, metadata.version)
-          except ValueError:
-            status = 412
-        else:
-          status = 409
-      else:
-        status = 404
-    else:
-      status = 400
+    if not slippy_util.validate_slippy(z, x, y):
+      return self._format_status_code_to_jsend(400, 'Slippy validation failed')
+
+    # first we have to get the cell
+    (content, metadata) = self._get_raw(z, x, y)
+    if not metadata:
+      return self._format_status_code_to_jsend(404)
+
+    # Quick check of the token, another is done on the actual set to be sure
+    #    but this check fails early and fast
+    if str(metadata.last_modified_transaction_id) != str(sync_token):
+      return self._format_status_code_to_jsend(409)
+
+    try:
+      m = uss_metadata.USSMetadata(content)
+      log.debug('Setting metadata for %s - %s...', uss_id, gufi)
+      found = m.upsert_operation(uss_id, gufi, signature, begin, end)
+    except ValueError as e:
+      return self._format_status_code_to_jsend(400, e.message)
+
+    if not found:
+      return self._format_status_code_to_jsend(
+          404, 'Operator %s not found' % uss_id)
+
+    try:
+      status = self._set_raw(z, x, y, m, metadata.version)
+    except ValueError:
+      log.error('Failed setting operation for %s with token %s...',
+                gufi, str(sync_token))
+      return self._format_status_code_to_jsend(412)
+
     if status == 200:
       # Success, now get the metadata back to send back
       result = self.get(z, x, y)

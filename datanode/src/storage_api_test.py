@@ -26,6 +26,10 @@ import test_utils
 ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-api-test'
 
+GUFI1 = '00000000-0000-4444-8888-FEEDDEADFFF1'
+GUFI2 = '00000000-0000-4444-8888-FEEDDEADFFF2'
+GUFI3 = '00000000-0000-4444-8888-FEEDDEADFFF3'
+
 
 class InterUSSStorageAPITestCase(unittest.TestCase):
 
@@ -321,9 +325,10 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         'minimum_operation_timestamp': '2018-01-01',
         'maximum_operation_timestamp': '2018-01-02',
         'operations': [{
-          'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
-           'effective_time_begin': '2018-01-01T02:00:00-05:00',
-           'effective_time_end': '2018-01-01T01:00:00-05:00'}],
+            'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
+            'gufi': GUFI1, 'operation_signature': 'sig',
+            'effective_time_begin': '2018-01-01T02:00:00-05:00',
+            'effective_time_end': '2018-01-01T01:00:00-05:00'}],
       })
     self.assertEqual(400, r.status_code)
     self.assertIn('Operation ends before', r.data)
@@ -337,9 +342,10 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         'minimum_operation_timestamp': '2018-01-01',
         'maximum_operation_timestamp': '2018-01-02',
         'operations': [{
-          'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
-          'effective_time_begin': '2018-01-01T01:00:00-05:00',
-          'effective_time_end': '2018-01-02T02:00:00-05:00'}],
+            'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
+            'gufi': GUFI1, 'operation_signature': 'sig',
+            'effective_time_begin': '2018-01-01T01:00:00-05:00',
+            'effective_time_end': '2018-01-02T02:00:00-05:00'}],
       })
     self.assertEqual(400, r.status_code)
     self.assertIn('Operation ends after', r.data)
@@ -353,9 +359,10 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         'minimum_operation_timestamp': '2018-01-01',
         'maximum_operation_timestamp': '2018-01-02',
         'operations': [{
-          'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
-          'effective_time_begin': '2017-12-31T01:00:00-05:00',
-          'effective_time_end': '2018-01-01T02:00:00-05:00'}],
+            'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
+            'gufi': GUFI1, 'operation_signature': 'sig',
+            'effective_time_begin': '2017-12-31T01:00:00-05:00',
+            'effective_time_end': '2018-01-01T02:00:00-05:00'}],
       })
     self.assertEqual(400, r.status_code)
     self.assertIn('Operation begins before', r.data)
@@ -460,13 +467,13 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       'operations': [
         {'version': 99, 'timestamp': '2018-01-01T01:00:00-05:00',
          'some_unknown_field': 'True',
-         'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+         'gufi': GUFI1, 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'},
-        {'gufi': 'G00F2', 'operation_signature': 'signed4.2',
+        {'gufi': GUFI2, 'operation_signature': 'signed4.2',
          'effective_time_begin': '2018-01-01T02:00:00-05:00',
          'effective_time_end': '2018-01-01T03:00:00-05:00'},
-        {'gufi': 'G00F3', 'operation_signature': 'signed4.3',
+        {'gufi': GUFI3, 'operation_signature': 'signed4.3',
          'effective_time_begin': '2018-01-01T03:00:00-05:00',
          'effective_time_end': '2018-01-01T04:00:00-05:00'}
       ]
@@ -563,7 +570,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
       'announcement_level': True,
       'operations': [
-        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+        {'gufi': GUFI1, 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'}
       ]
@@ -579,10 +586,10 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     o = j['data']['operators'][0]
     self.assertEqual(1, len(o['operations']))
     # Add a new operation
-    joper = {'gufi': 'G00F2', 'operation_signature': 'signed4.2',
+    joper = {'gufi': GUFI2, 'operation_signature': 'signed4.2',
              'effective_time_begin': '2018-01-01T02:00:00-05:00',
              'effective_time_end': '2018-01-01T03:00:00-05:00'}
-    result = self.app.put('/GridCellOperation/1/1/1/G00F2',
+    result = self.app.put('/GridCellOperation/1/1/1/' + GUFI2,
                           json=joper, headers={'sync_token': s})
     self.assertEqual(result.status_code, 200)
     j = json.loads(result.data)
@@ -590,13 +597,13 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     s = j['sync_token']
     o = j['data']['operators'][0]
     self.assertEqual(2, len(o['operations']))
-    self.assertIn('G00F1', [d['gufi'] for d in o['operations']])
-    self.assertIn('G00F2', [d['gufi'] for d in o['operations']])
+    self.assertIn(GUFI1, [d['gufi'] for d in o['operations']])
+    self.assertIn(GUFI2, [d['gufi'] for d in o['operations']])
     # Update the old operation
-    joper = {'gufi': 'G00F2', 'operation_signature': 'UNSIGNED',
+    joper = {'gufi': GUFI2, 'operation_signature': 'UNSIGNED',
              'effective_time_begin': '2018-01-01T02:00:00-05:00',
              'effective_time_end': '2018-01-01T03:00:00-05:00'}
-    result = self.app.put('/GridCellOperation/1/1/1/G00F2',
+    result = self.app.put('/GridCellOperation/1/1/1/' + GUFI2,
                           json=joper, headers={'sync_token': s})
     self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
@@ -625,7 +632,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
       'announcement_level': True,
       'operations': [
-        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+        {'gufi': GUFI1, 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'}
       ]
@@ -644,11 +651,11 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(1, len(o['operations']))
     # Add a new operation
     joper = {'coords': '0,0,1,0,1,1,0,1', 'coord_type': 'point',
-             'gufi': 'G00F2', 'operation_signature': 'signed4.2',
+             'gufi': GUFI2, 'operation_signature': 'signed4.2',
              'effective_time_begin': '2018-01-01T02:00:00-05:00',
              'effective_time_end': '2018-01-01T03:00:00-05:00'}
     result = self.app.put(
-      '/GridCellsOperation/10/G00F2',
+      '/GridCellsOperation/10/' + GUFI2,
       json=joper,
       headers={'sync_token': s})
     self.assertEqual(result.status_code, 200)
@@ -659,15 +666,15 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(2, len(o['operations']))
     o = j['data']['operators'][1]
     self.assertEqual(2, len(o['operations']))
-    self.assertIn('G00F1', [d['gufi'] for d in o['operations']])
-    self.assertIn('G00F2', [d['gufi'] for d in o['operations']])
+    self.assertIn(GUFI1, [d['gufi'] for d in o['operations']])
+    self.assertIn(GUFI2, [d['gufi'] for d in o['operations']])
     # Update the old operation
     joper = {'coords': '0,0,1,0,1,1,0,1', 'coord_type': 'point',
-             'gufi': 'G00F2', 'operation_signature': 'UNSIGNED',
+             'gufi': GUFI2, 'operation_signature': 'UNSIGNED',
              'effective_time_begin': '2018-01-01T02:00:00-05:00',
              'effective_time_end': '2018-01-01T03:00:00-05:00'}
     result = self.app.put(
-      '/GridCellsOperation/10/G00F2',
+      '/GridCellsOperation/10/' + GUFI2,
       json=joper,
       headers={'sync_token': s})
     self.assertEqual(200, result.status_code)
@@ -681,7 +688,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertIn(3, [d['version'] for d in o['operations']])
     # Now delete one of the operations
     joper = {'coords': '0,0,1,0,1,1,0,1', 'coord_type': 'point'}
-    result = self.app.delete('/GridCellsOperation/10/G00F1',
+    result = self.app.delete('/GridCellsOperation/10/' + GUFI1,
       json=joper)
     self.assertEqual(200, result.status_code)
     j = json.loads(result.data)
@@ -716,7 +723,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
       'announcement_level': True,
       'operations': [
-        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+        {'gufi': GUFI1, 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'}
       ]
@@ -829,7 +836,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
       'announcement_level': True,
       'operations': [
-        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+        {'gufi': GUFI1, 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'}
       ]
@@ -912,7 +919,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
       'maximum_operation_timestamp': '2018-01-01T04:00:00-05:00',
       'announcement_level': True,
       'operations': [
-        {'gufi': 'G00F1', 'operation_signature': 'signed4.1',
+        {'gufi': GUFI1, 'operation_signature': 'signed4.1',
          'effective_time_begin': '2018-01-01T01:00:00-05:00',
          'effective_time_end': '2018-01-01T02:00:00-05:00'}
       ]

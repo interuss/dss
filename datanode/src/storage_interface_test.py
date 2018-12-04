@@ -33,6 +33,10 @@ ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-interface-test-tcl4'
 PARALLEL_WORKERS = 10
 
+GUFI1 = '00000000-0000-4444-8888-FEEDDEADFFF1'
+GUFI2 = '00000000-0000-4444-8888-FEEDDEADFFF2'
+
+
 class InterUSSStorageInterfaceTestCase(unittest.TestCase):
 
   def setUp(self):
@@ -253,7 +257,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # simple set with basic values
     s = self.mm.set(6, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
                     '2018-02-28T23:59:59-07:00', '2018-03-02T23:59:59+08:00',
-                    [{'gufi': 'G00F1', 'operation_signature': 'signed4',
+                    [{'gufi': GUFI1, 'operation_signature': 'signed4',
                       'effective_time_begin': '2018-02-28T23:59:59-07:00',
                       'effective_time_end': '2018-03-02T23:59:59+08:00'}])
     self.assertEqual('success', s['status'])
@@ -275,10 +279,10 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # simple set with basic values
     s = self.mm.set(7, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
                     '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00',
-                    [{'gufi': 'G00F1', 'operation_signature': 'signed4',
+                    [{'gufi': GUFI1, 'operation_signature': 'signed4',
                       'effective_time_begin': '2018-02-28T23:59:59-07:00',
                       'effective_time_end': '2018-03-02T23:59:59+08:00'},
-                     {'gufi': 'G00F2', 'operation_signature': 'signed4.1',
+                     {'gufi': GUFI2, 'operation_signature': 'signed4.1',
                       'effective_time_begin': '2018-02-21T00:00:00-07:00',
                       'effective_time_end': '2018-02-22T00:00:00-07:00'}])
     self.assertEqual('success', s['status'])
@@ -287,12 +291,12 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(len(s['data']['operators'][0]['operations']), 2)
     s = self.mm.delete_operation(7, 1, 1, 'uss', 'INVALID_GUFI')
     self.assertEqual(s['status'], 'fail')
-    s = self.mm.delete_operation(7, 1, 1, 'uss', 'G00F2')
+    s = self.mm.delete_operation(7, 1, 1, 'uss', GUFI2)
     self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 2)
     self.assertEqual(len(s['data']['operators']), 1)
     self.assertEqual(len(s['data']['operators'][0]['operations']), 1)
-    s = self.mm.delete_operation(7, 1, 1, 'uss', 'G00F1')
+    s = self.mm.delete_operation(7, 1, 1, 'uss', GUFI1)
     self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 3)
     self.assertEqual(len(s['data']['operators']), 1)
@@ -306,14 +310,15 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # simple set with basic values
     s = self.mm.set(8, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
                     '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00',
-                    [{'gufi': 'G00F1', 'operation_signature': 'signed4',
+                    [{'gufi': GUFI1, 'operation_signature': 'signed4',
                       'effective_time_begin': '2018-02-28T23:59:59-07:00',
                       'effective_time_end': '2018-03-02T23:59:59+08:00'}])
     self.assertEqual('success', s['status'])
     self.assertEqual(1, s['data']['version'])
     self.assertEqual(1, len(s['data']['operators']))
     self.assertEqual(1, len(s['data']['operators'][0]['operations']))
-    s = self.mm.set_operation(8, 1, 1, s['sync_token'], 'uss', 'G00F2',
+    s = self.mm.set_operation(8, 1, 1, s['sync_token'], 'uss',
+                              '00000000-0000-4444-8888-FEEDDEADFFF2',
                               'signed4.1', '2018-02-21T00:00:00-07:00',
                               '2018-02-22T00:00:00-07:00')
     self.assertEqual('success', s['status'])
@@ -323,7 +328,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     self.assertEqual(2, len(os), 2)
     self.assertEqual('signed4', os[0]['operation_signature'])
     self.assertEqual('signed4.1', os[1]['operation_signature'])
-    s = self.mm.set_operation(8, 1, 1, s['sync_token'], 'uss', 'G00F2',
+    s = self.mm.set_operation(8, 1, 1, s['sync_token'], 'uss', GUFI2,
                               'signed4.2', '2018-02-22T00:00:00-07:00',
                               '2018-02-22T10:00:00-07:00')
     self.assertEqual('success', s['status'])
@@ -341,7 +346,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     g = self.mm.get(9, 1, 1)
     # simple set with basic values
     s = self.mm.set(9, 1, 1, g['sync_token'], 'uss', 'uss.com/base', False,
-                    '2018-02-21T00:00:00-07:00', '2018-03-02T23:59:59+08:00')
+                    '2018-09-21T00:00:00-07:00', '2018-09-26T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     self.assertEqual(s['data']['version'], 1)
     self.assertEqual(len(s['data']['operators']), 1)
@@ -522,7 +527,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     grids = [(0, 0), (1, 1)]
     g = self.mm.get_multi(11, grids)
     self.assertEqual('success', g['status'])
-    s = self.mm.set_multi_operation(11, grids, g['sync_token'], 'uss1', 'goo1',
+    s = self.mm.set_multi_operation(11, grids, g['sync_token'], 'uss1', GUFI1,
                                     'sig1', '2018-02-21T00:00:00-07:00',
                                     '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
@@ -537,7 +542,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
     # make sure it fails if we are not in on of the grids
     grids = [(0, 0), (2, 1), (1, 1)]
     g = self.mm.get_multi(11, grids)
-    s = self.mm.set_multi_operation(11, grids, g['sync_token'], 'uss1', 'goo1',
+    s = self.mm.set_multi_operation(11, grids, g['sync_token'], 'uss1', GUFI1,
                                     'sig1', '2018-02-21T00:00:00-07:00',
                                     '2018-03-02T23:59:59+08:00')
     self.assertEqual('fail', s['status'])
@@ -546,12 +551,12 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
                           False, '2018-02-21T00:00:00-07:00',
                           '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
-    s = self.mm.set_multi_operation(11, grids, s['sync_token'], 'uss2', 'goo2',
+    s = self.mm.set_multi_operation(11, grids, s['sync_token'], 'uss2', GUFI2,
                                     'sig2', '2018-02-21T00:00:00-07:00',
                                     '2018-03-02T23:59:59+08:00')
     self.assertEqual('success', s['status'])
     grids = [(0, 0), (0,1), (2, 1), (1, 1)]
-    s = self.mm.delete_multi_operation(11, grids, 'uss1', 'goo1')
+    s = self.mm.delete_multi_operation(11, grids, 'uss1', GUFI1)
     print(str(s).replace("u'", "'"))
     operations = 0
     for o in s['data']['operators']:
