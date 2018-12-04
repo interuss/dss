@@ -522,21 +522,24 @@ def _PutGridCellOperator(zoom, x, y, uss_id):
     errorfield = 'minimum_operation_timestamp'
   elif not maximum_operation_timestamp:
     errorfield = 'maximum_operation_timestamp'
+
   if errorfield:
     if not errormsg:
       errormsg = errorfield + (
-          ' must be provided in the form data request to add to a '
-          'GridCell.')
-    result = {
+          ' must be provided in the request to add to a GridCell.')
+    return {
         'status': 'error',
         'code': status.HTTP_400_BAD_REQUEST,
         'message': errormsg
     }
-  else:
-    result = wrapper.set(zoom, x, y, sync_token, uss_id, baseurl,
+
+  try:
+    return wrapper.set(zoom, x, y, sync_token, uss_id, baseurl,
                          announce, minimum_operation_timestamp,
                          maximum_operation_timestamp, operations)
-  return result
+  except ValueError as e:
+    return {'status': 'error', 'code': status.HTTP_400_BAD_REQUEST,
+            'message': e.message}
 
 
 def _DeleteGridCellOperator(zoom, x, y, uss_id):

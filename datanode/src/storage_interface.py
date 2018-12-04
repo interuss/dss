@@ -219,37 +219,40 @@ class USSMetadataManager(object):
     """
     if operations is None:
       operations = []
-    if slippy_util.validate_slippy(z, x, y):
-      # first we have to get the cell
-      (content, metadata) = self._get_raw(z, x, y)
-      if metadata:
-        # Quick check of the token, another is done on the actual set to be sure
-        #    but this check fails early and fast
-        if str(metadata.last_modified_transaction_id) == str(sync_token):
-          try:
-            m = uss_metadata.USSMetadata(content)
-            log.debug('Setting metadata for %s...', uss_id)
-            if not m.upsert_operator(uss_id, baseurl, announce,
-                                     earliest_operation, latest_operation,
-                                     z, x, y, operations):
-              log.error('Failed setting operator for %s with token %s...',
-                        uss_id, str(sync_token))
-              raise ValueError
-            status = self._set_raw(z, x, y, m, metadata.version)
-          except ValueError:
-            status = 412
-        else:
-          status = 409
-      else:
-        status = 404
-    else:
-      status = 400
+
+    if not slippy_util.validate_slippy(z, x, y):
+      return self._format_status_code_to_jsend(400, 'Slippy validation failed')
+
+    # first we have to get the cell
+    (content, metadata) = self._get_raw(z, x, y)
+    if not metadata:
+      return self._format_status_code_to_jsend(404, 'Could not get metadata')
+
+    # Quick check of the token, another is done on the actual set to be sure
+    #    but this check fails early and fast
+    if str(metadata.last_modified_transaction_id) != str(sync_token):
+      return self._format_status_code_to_jsend(409, 'Sync token does not match')
+
+    try:
+      m = uss_metadata.USSMetadata(content)
+      log.debug('Setting metadata for %s...', uss_id)
+      m.upsert_operator(uss_id, baseurl, announce,
+                        earliest_operation, latest_operation,
+                        z, x, y, operations)
+    except ValueError as e:
+      return self._format_status_code_to_jsend(400, e.message)
+    try:
+      status = self._set_raw(z, x, y, m, metadata.version)
+    except ValueError as e:
+      log.error('Failed setting operator for %s with token %s because %s',
+                uss_id, str(sync_token), str(e))
+      return self._format_status_code_to_jsend(412)
+
     if status == 200:
       # Success, now get the metadata back to send back
-      result = self.get(z, x, y)
+      return self.get(z, x, y)
     else:
-      result = self._format_status_code_to_jsend(status)
-    return result
+      return self._format_status_code_to_jsend(status)
 
   def set_operation(self, z, x, y, sync_token, uss_id, gufi,
       signature, begin, end):
@@ -798,10 +801,9 @@ class USSMetadataManager(object):
         if str(metadata.last_modified_transaction_id) == str(sync_token):
           log.debug('Sync_token matches for %d, %d...', x, y)
           m = uss_metadata.USSMetadata(content)
-          if not m.upsert_operator(uss_id, baseurl, announce,
-                                   earliest_operation, latest_operation,
-                                   z, x, y, operations):
-            raise ValueError('Failed to set operator content')
+          m.upsert_operator(uss_id, baseurl, announce,
+                            earliest_operation, latest_operation,
+                            z, x, y, operations)
           contents.append((path, m, metadata.version))
         else:
           log.error(
@@ -821,7 +823,7 @@ class USSMetadataManager(object):
         raise KeyError('Rolled back multi-grid transaction due to grid change')
       log.debug('Committed transaction successfully.')
     except (KeyError, ValueError, IndexError) as e:
-      log.error('Error caught in set_multi_raw %s.', e.message)
+      log.error('Error caught in set_multi_raw: %s', str(e))
       raise e
 
   def _set_multi_operation_raw(self, z, grids, sync_tokens, uss_id, gufi,

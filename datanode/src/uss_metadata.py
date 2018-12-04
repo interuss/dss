@@ -196,26 +196,50 @@ class USSMetadata(object):
       operations: complete list of operations for this operator
 
         used for quick filtering conflicts.
-    Returns:
-      true if valid, false if not
+    Raises:
+      ValueError: when input parameters are invalid.
     """
     if operations is None:
       operations = []
     # Remove the existing operator, if any
     self.remove_operator(uss_id)
+
+    # Validate earliest and latest timestamps
     try:
       earliest_operation = format_utils.parse_timestamp(earliest)
       latest_operation = format_utils.parse_timestamp(latest)
       if earliest_operation >= latest_operation:
-        raise ValueError
+        raise ValueError()
     except (TypeError, ValueError, OverflowError):
-      log.error('Invalid date format/values for operators %s, %s',
-                earliest, latest)
-      return False
+      msg = 'Invalid date format/values for operator %s, %s' % (earliest,
+                                                                latest)
+      log.error(msg)
+      raise ValueError(msg)
+
     # validate the operations (if any)
-    for oper in operations:
-      oper['timestamp'] = format_utils.format_ts()
-      oper['version'] = self.version
+    for operation in operations:
+      operation['timestamp'] = format_utils.format_ts()
+      operation['version'] = self.version
+
+      if 'effective_time_begin' not in operation:
+        raise ValueError('Operation missing effective_time_begin')
+      if 'effective_time_end' not in operation:
+        raise ValueError('Operation missing effective_time_end')
+      try:
+        time_begin = format_utils.parse_timestamp(
+            operation['effective_time_begin'])
+        time_end = format_utils.parse_timestamp(operation['effective_time_end'])
+      except (TypeError, ValueError, OverflowError):
+        raise ValueError('Invalid date format/values for operation %s, %s' % (
+            operation['effective_time_begin'],
+            operation['effective_time_end']))
+      if time_begin >= time_end:
+        raise ValueError('Operation ends before it starts')
+      if time_begin < earliest_operation:
+        raise ValueError('Operation begins before minimum operation timestamp')
+      if time_end > latest_operation:
+        raise ValueError('Operation ends after maximum operation timestamp')
+
     # Now add the new record
     operator = {
       'uss': uss_id,
@@ -230,7 +254,6 @@ class USSMetadata(object):
     self.operators.append(operator)
     self._update_grid_location(zoom, x, y)
     self.timestamp = format_utils.format_ts()
-    return True
 
   def remove_operator(self, uss_id):
     num_operators = len(self.operators)
