@@ -417,13 +417,6 @@ def _ValidateAccessToken(required_scope=None):
       secret = secret.replace('_PLACEHOLDER_', ' PUBLIC ')
       try:
         r = jwt.decode(token, secret, algorithms='RS256')
-        if required_scope in r['scope']:
-          uss_id = r['sub']
-        else:
-          log.error('%s not in scope %s', required_scope, r['scope'])
-          abort(status.HTTP_401_UNAUTHORIZED,
-                'OAuth access_token is invalid: '
-                'scope not valid for conflict management.')
       except jwt.ExpiredSignatureError:
         log.error('Access token has expired.')
         abort(status.HTTP_401_UNAUTHORIZED,
@@ -436,10 +429,18 @@ def _ValidateAccessToken(required_scope=None):
         log.error('Access token nbf claim represents a time in the future.')
         abort(status.HTTP_400_BAD_REQUEST,
               'OAuth access_token is invalid: nbf claim represents a time in the future.')
-      except:
-        log.error('Unknown error processing JWT.')
+      except Exception as e:
+        log.error('Uncategorized error processing JWT: ' + str(e))
         abort(status.HTTP_400_BAD_REQUEST,
-              'OAuth access_token is invalid: unknown error.')
+              'OAuth access_token is invalid: uncategorized error.')
+
+      if required_scope in r['scope']:
+        uss_id = r['sub']
+      else:
+        log.error('%s not in scope %s', required_scope, r['scope'])
+        abort(status.HTTP_401_UNAUTHORIZED,
+              'OAuth access_token is invalid: '
+              'scope not valid for requested operation.')
     else:
       log.error('Attempt to access resource without access_token in header.')
       abort(status.HTTP_403_FORBIDDEN,
