@@ -39,7 +39,7 @@ services:
       - ZOO_SERVERS=server.1=0.0.0.0:2888:3888
 
   storage_api:
-    image: interussplatform/storage_api
+    image: interussplatform/storage_api:publicportal
     ports:
       - "${INTERUSS_API_PORT:-8121}:${INTERUSS_API_PORT:-8121}"
     environment:

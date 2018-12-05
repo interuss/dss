@@ -15,7 +15,7 @@
 # Definition for Docker image that runs the InterUSS Platform storage API server.
 
 # To build an image from this Dockerfile:
-# docker image build -f Dockerfile_storageapi -t interussplatform/storage_api ../src
+# docker image build -f Dockerfile_storageapi -t interussplatform/storage_api:publicportal ../src
 
 # To run this image:
 # docker run \

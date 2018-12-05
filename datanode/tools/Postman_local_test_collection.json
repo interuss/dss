@@ -1,13 +1,13 @@
 {
 	"info": {
-		"name": "InterUSS Platform - Local",
-		"_postman_id": "cd7f90d1-5024-4a16-af24-70c6fc5a8e9e",
+		"name": "InterUSS Platform (public portal)",
+		"_postman_id": "c905a656-3af4-4ef7-825a-4810daea89f5",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Select http://localhost:8121, get status",
+			"name": "Select https://localhost:8121",
 			"event": [
 				{
 					"listen": "test",
@@ -26,10 +26,10 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "7f54ece6-2694-4464-8f69-9274c63bfe22",
+						"id": "bd84a09c-6937-455c-9629-0bb837418ae0",
 						"type": "text/javascript",
 						"exec": [
-							"postman.setEnvironmentVariable(\"node\", \"http://localhost:8121\");",
+							"postman.setEnvironmentVariable(\"node\", \"https://localhost:8121\");",
 							""
 						]
 					}
@@ -59,7 +59,7 @@
 			"response": []
 		},
 		{
-			"name": "Select https://localhost:8120, get status",
+			"name": "Select http://localhost:8120",
 			"event": [
 				{
 					"listen": "test",
@@ -78,10 +78,10 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "b6aee480-e3f1-4979-9d08-072f554c6114",
+						"id": "20a47fe0-d64e-4dd1-910f-6ebf7547ea4a",
 						"type": "text/javascript",
 						"exec": [
-							"postman.setEnvironmentVariable(\"node\", \"https://localhost:8120\");"
+							"postman.setEnvironmentVariable(\"node\", \"http://localhost:8120\");"
 						]
 					}
 				}
@@ -110,7 +110,58 @@
 			"response": []
 		},
 		{
-			"name": "Slippy Conversion",
+			"name": "Select https://node1.staging.interussplatform.com:8121",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "0fe3574a-251b-4937-bc55-c4e774bb5fb7",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Message is OK\"] = data.message === \"OK\";",
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "9dfb8d56-e61a-48af-8e91-670b84036f4b",
+						"type": "text/javascript",
+						"exec": [
+							"postman.setEnvironmentVariable(\"node\", \"https://node1.staging.interussplatform.com:8121\");"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/status",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"status"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Slippy Conversion (polygon)",
 			"event": [
 				{
 					"listen": "test",
@@ -142,7 +193,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{node}}/slippy/11?coords=37.193589,-80.590537,37.19,-80.59",
+					"raw": "{{node}}/slippy/11?coords=37.1936,-80.5915,37.1946,-80.5905,37.1936,-80.5925&coord_path=polygon",
 					"host": [
 						"{{node}}"
 					],
@@ -153,7 +204,12 @@
 					"query": [
 						{
 							"key": "coords",
-							"value": "37.193589,-80.590537,37.19,-80.59",
+							"value": "37.1936,-80.5915,37.1946,-80.5905,37.1936,-80.5925",
+							"equals": true
+						},
+						{
+							"key": "coord_path",
+							"value": "polygon",
 							"equals": true
 						}
 					]
@@ -163,7 +219,60 @@
 			"response": []
 		},
 		{
-			"name": "Get Access Token",
+			"name": "Slippy Conversion (point)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5fc7fc71-4112-4288-97ec-dfdfd487e652",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Correct zoom returned\"] = data.data.zoom === 11;",
+							"tests[\"Correct z returned\"] = data.data.grid_cells[0].zoom === 11;",
+							"tests[\"Correct x returned\"] = data.data.grid_cells[0].x === 565;",
+							"tests[\"Correct y returned\"] = data.data.grid_cells[0].y === 795;",
+							"tests[\"Correct link returned\"] = data.data.grid_cells[0].link === \"http://tile.openstreetmap.org/11/565/795.png\";",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/slippy/11?coords=37.1936,-80.5905,37.19,-80.59",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"slippy",
+						"11"
+					],
+					"query": [
+						{
+							"key": "coords",
+							"value": "37.1936,-80.5905,37.19,-80.59",
+							"equals": true
+						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Get Access Token from auth.staging",
 			"event": [
 				{
 					"listen": "test",
@@ -195,12 +304,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "{{oauth_password}}",
+							"value": "test",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "{{oauth_username}}",
+							"value": "participant.test",
 							"type": "string"
 						},
 						{
@@ -217,16 +326,16 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "https://utmalpha.arc.nasa.gov/fimsAuthServer/oauth/token?grant_type=client_credentials",
+					"raw": "https://auth.staging.interussplatform.com:8121/oauth/token?grant_type=client_credentials",
 					"protocol": "https",
 					"host": [
-						"utmalpha",
-						"arc",
-						"nasa",
-						"gov"
+						"auth",
+						"staging",
+						"interussplatform",
+						"com"
 					],
+					"port": "8121",
 					"path": [
-						"fimsAuthServer",
 						"oauth",
 						"token"
 					],
@@ -236,6 +345,100 @@
 							"value": "client_credentials",
 							"equals": true
 						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Use uss1 sandbox access token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8fef0145-85f0-45d6-abed-851a3111dace",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "ce0be1df-88bb-4b61-b7fc-1502c5810dfb",
+						"type": "text/javascript",
+						"exec": [
+							"postman.setEnvironmentVariable(\"production_token\", \"sandbox-uss1\");"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/status",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"status"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Use uss2 sandbox access token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8fef0145-85f0-45d6-abed-851a3111dace",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "36152e15-14d0-4f9b-99fa-98e278bd3613",
+						"type": "text/javascript",
+						"exec": [
+							"postman.setEnvironmentVariable(\"production_token\", \"sandbox-uss2\");"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/status",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"status"
 					]
 				},
 				"description": null
@@ -324,22 +527,13 @@
 						"value": "{{production_token}}"
 					},
 					{
-						"key": "sync_token",
-						"value": "{{sync_token}}"
-					},
-					{
 						"key": "Content-Type",
 						"value": "application/json"
-					},
-					{
-						"key": "scope",
-						"value": "utm.nasa.gov_write.message",
-						"disabled": true
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t  \"scope\": \"utm.nasa.gov_write.message\",\n\t  \"operation_endpoint\": \"http://localhost\",\n\t  \"operation_format\": \"NASA\",\n\t  \"uss_baseurl\": \"test-uss1-base\",\n\t  \"minimum_operation_timestamp\": \"2015-08-20T14:11:00.000Z\",\n\t  \"maximum_operation_timestamp\": \"2015-08-20T15:00:00.000Z\",\n\t  \"announcement_level\": \"NONE\",\n\t  \"operations\": [  ]\n}\n"
+					"raw": "{\n\t  \"scope\": \"interussplatform.com_operators.read\",\n\t  \"public_portal_endpoint\": \"http://localhost/public_portal\",\n\t  \"flight_info_endpoint\": \"http://localhost/flight_info\",\n\t  \"minimum_operation_timestamp\": \"2015-08-20T14:11:00.000Z\",\n\t  \"maximum_operation_timestamp\": \"2015-08-20T15:00:00.000Z\"\n}\n"
 				},
 				"url": {
 					"raw": "{{node}}/GridCellMetaData/11/565/795?",
@@ -409,6 +603,188 @@
 						"11",
 						"565",
 						"795"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Get Grid Cells",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7c2db295-0f7a-4f73-9e5e-958965eb28ec",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Version is set\"] = data.data.version >= 0;",
+							"tests[\"Sync token is returned\"] = data.sync_token > 0;",
+							"postman.setEnvironmentVariable(\"sync_token\", data.sync_token);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "access_token",
+						"value": "{{production_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/GridCellsMetaData/11?coords=37.1936,-80.5915,37.1946,-80.5905,37.1936,-80.5925&coord_type=polygon",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"GridCellsMetaData",
+						"11"
+					],
+					"query": [
+						{
+							"key": "coords",
+							"value": "37.1936,-80.5915,37.1946,-80.5905,37.1936,-80.5925",
+							"equals": true
+						},
+						{
+							"key": "coord_type",
+							"value": "polygon",
+							"equals": true
+						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "PUT Grid Cells",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7c2db295-0f7a-4f73-9e5e-958965eb28ec",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Version is set\"] = data.data.version >= 0;",
+							"tests[\"Sync token is returned\"] = data.sync_token > 0;",
+							"postman.setEnvironmentVariable(\"sync_token\", data.sync_token);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "access_token",
+						"value": "{{production_token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t  \"coords\": \"37.1936,-80.5915,37.1946,-80.5905,37.1936,-80.5925\",\n\t  \"coord_type\": \"polygon\",\n\t  \"scope\": \"interussplatform.com_operators.read\",\n\t  \"public_portal_endpoint\": \"http://localhost/public_portal\",\n\t  \"flight_info_endpoint\": \"http://localhost/flight_info\",\n\t  \"minimum_operation_timestamp\": \"2015-08-20T14:11:00.000Z\",\n\t  \"maximum_operation_timestamp\": \"2015-08-20T15:00:00.000Z\"\n}\n"
+				},
+				"url": {
+					"raw": "{{node}}/GridCellsMetaData/11?",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"GridCellsMetaData",
+						"11"
+					],
+					"query": [
+						{
+							"key": "gridcell_operator",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Grid Cells",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "51cef57b-139a-4403-989b-9714f11cd814",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Version is set\"] = data.data.version >= 0;",
+							"tests[\"Sync token is returned\"] = data.sync_token > 0;",
+							"postman.setEnvironmentVariable(\"sync_token\", data.sync_token);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "access_token",
+						"value": "{{production_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/GridCellsMetaData/11?coords=37.1936,-80.5915,37.1946,-80.5905,37.1936,-80.5925&coord_type=polygon",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"GridCellsMetaData",
+						"11"
+					],
+					"query": [
+						{
+							"key": "coords",
+							"value": "37.1936,-80.5915,37.1946,-80.5905,37.1936,-80.5925",
+							"equals": true
+						},
+						{
+							"key": "coord_type",
+							"value": "polygon",
+							"equals": true
+						}
 					]
 				},
 				"description": null

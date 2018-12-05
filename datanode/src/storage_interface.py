@@ -475,7 +475,7 @@ class USSMetadataManager(object):
     log.debug('Getting multiple grid metadata for %s...', str(grids))
     combined_meta = None
     syncs = []
-    for x, y in grids:
+    for x, y in set(grids):
       if slippy_util.validate_slippy(z, x, y):
         (content, metadata) = self._get_raw(z, x, y)
         if metadata:

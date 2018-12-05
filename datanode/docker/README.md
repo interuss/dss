@@ -38,6 +38,15 @@ production.
 
 ## Test Usage
 
+## Stand-alone sandbox
+To run a stand-alone test InterUSS Platform data node that does not require
+authorization or synchronize with any other data nodes:
+
+```shell
+export INTERUSS_TESTID=sandbox
+docker-compose -p datanode up
+```
+
 ### Stand-alone test node
 
 To run a stand-alone test InterUSS Platform data node that does not synchronize
@@ -53,7 +62,7 @@ To verify operation, navigate a browser to http://localhost:8120/status
 To make sure you have the latest versions, first run:
 
 ```shell
-docker pull interussplatform/storage_api
+docker pull interussplatform/storage_api:publicportal
 docker pull zookeeper
 docker pull interussplatform/reverse_proxy
 ```
