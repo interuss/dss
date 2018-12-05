@@ -15,8 +15,12 @@
 # Modifies base docker-compose data node configuration to use keys present on the host file system.
 
 # Additional required environment variables:
-#   SSL_CERT_PATH: Path to SSL certificate named cert.pem.
-#   SSL_KEY_PATH: Path to SSL private key named key.pem.
+#   SSL_CERT_PATH: Path to SSL certificate named cert.pem, or per SSL_CERT_NAME.
+#   SSL_KEY_PATH: Path to SSL private key named key.pem, or per SSL_KEY_NAME.
+
+# Additional optional environment variables:
+#   SSL_CERT_NAME: File name of SSL certificate (default: cert.pem)
+#   SSL_KEY_NAME: File name of SSL private key (default: key.pem)
 
 # To use this configuration:
 # docker-compose -f docker-compose.yaml -f docker-compose_localssl.yaml -p datanode up
@@ -29,3 +33,6 @@ services:
     volumes:
       - ${SSL_CERT_PATH:?Environment variable SSL_CERT_PATH must be set}:/etc/ssl/certs
       - ${SSL_KEY_PATH:?Environment variable SSL_KEY_PATH must be set}:/etc/ssl/private
+    environment:
+      - SSL_CERT_NAME=${SSL_CERT_NAME:-cert.pem}
+      - SSL_KEY_NAME=${SSL_KEY_NAME:-key.pem}

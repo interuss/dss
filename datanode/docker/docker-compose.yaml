@@ -51,7 +51,7 @@ services:
       - ZOO_SERVERS=${ZOO_SERVERS:-server.1=0.0.0.0:2888:3888}
 
   storage_api:
-    image: interussplatform/storage_api:tcl4
+    image: interussplatform/storage_api:publicportal
     expose:
       - 5000
     environment:
@@ -73,5 +73,7 @@ services:
       - INTERUSS_API_PORT_HTTPS=${INTERUSS_API_PORT_HTTPS:-8121}
       - STORAGE_API_SERVER=storage_api
       - STORAGE_API_PORT=5000
+      - SSL_CERT_NAME
+      - SSL_KEY_NAME
     depends_on:
       - storage_api

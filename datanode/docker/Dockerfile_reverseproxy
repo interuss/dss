@@ -29,6 +29,8 @@
 # Optional environment variables:
 #   INTERUSS_API_PORT_HTTP: Port on which the InterUSS API will be served via HTTP (default 8120).
 #   INTERUSS_API_PORT_HTTPS: Port on which the InterUSS API will be served via HTTPS (default 8121).
+#   SSL_CERT_NAME: File name of SSL certificate (default: cert.pem)
+#   SSL_KEY_NAME: File name of SSL private key (default: key.pem)
 
 FROM nginx
 
