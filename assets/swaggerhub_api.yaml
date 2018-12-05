@@ -5,25 +5,25 @@ info:
 
     ### Main Features
 
-    * Simple, open, flexible, and scalable information interface and Optimistic Concurrency Control to simplify USS to USS communication and control race conditions. 
+    * Simple, open, flexible, and scalable information interface and Optimistic Concurrency Control to simplify USS to USS communication and control race conditions.
     * Effective information sharing to enable sharing of positions specifically for a public portal user to see all the operations around them, no matter which USS the drone operator is using.
     * Effective demonstration of a solution to networked identification of drones using a UTM
-    
+
     ### Main Assumptions
 
     * Trust each USS to send flight data when drone flights are active.
     * Auditing is available, as all USSs can verify the authorship and addition of erroneous data.
 
     For more information, see the InterUSS Platform technical document located here: https://docs.google.com/document/d/1JtSvSnvskrctbCF8qsU7ZIMTzYegZtGDj4-a8kdC_Cs/
-    
+
     or the GitHub repository located here:
     https://github.com/wing-aviation/InterUSS-Platform
 
     # Try it out
 
-    The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with an access_token, use 'sandbox' (which works only in the sandbox environment). To test multiple USSs, use 'sandbox1', 'sandbox2', etc.
-    
-  version: "publicportal1.1.0"
+    The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with an access_token, retrieve an access token from https://auth.staging.interussplatform.com:8121/oauth/token?grant_type=client_credentials using Basic authentication.
+
+  version: "publicportal1.1.1"
   title: InterUSS Platform - Data Node Stateless API
   contact:
     email: hikevin+interuss@google.com
@@ -450,11 +450,11 @@ paths:
         200:
           description: JSend version of the public portal response, providing telemetry and/or volume information around the specified point
           schema:
-            $ref: '#/definitions/PublicPortalResponse'
+            $ref: '#/definitions/JSendPublicPortalResponse'
         400:
           description: Invalid request
         403:
-          description: Access token not provided 
+          description: Access token not provided
 
   /USS_flight_info_endpoint/{uuid_operation}:
     get:
@@ -477,11 +477,11 @@ paths:
         200:
           description: JSend version of the flight information response, providing information for one specific flight identified by the UUID
           schema:
-            $ref: '#/definitions/FlightInformationResponse'
+            $ref: '#/definitions/JSendFlightInformationResponse'
         400:
           description: Invalid request
         403:
-          description: Access token not provided 
+          description: Access token not provided
 
 
 definitions:
@@ -490,11 +490,13 @@ definitions:
     properties:
       status:
         type: string
+        example: 'success'
       message:
         type: string
+        example: 'OK'
       version:
         type: string
-        format: json
+        example: '1.1.1.006'
 
   JSendIntrospectResponse:
     type: object
@@ -543,11 +545,13 @@ definitions:
         type: string
         minLength: 1
         maxLength: 100
+        example: 'success'
       sync_token:
         type: integer
         format: int64
         minimum: 0
         description: The zxid, which is a long (64-bit) integer
+        example: 8
       data:
         $ref: '#/definitions/GridCellMetadataResponse'
 
@@ -557,21 +561,7 @@ definitions:
     properties:
       version:
         type: integer
-      timestamp:
-        type: string
-        format: date-time
-        example: '2015-08-20T03:14:32.819+00:00'
-      operators:
-        type: array
-        items:
-          $ref: '#/definitions/GridCellOperatorResponse'
-              
-  GridCellOperatorResponse:
-    type: object
-    format: json
-    properties:
-      version:
-        type: integer
+        example: 3
       timestamp:
         type: string
         format: date-time
@@ -582,36 +572,56 @@ definitions:
           properties:
             uss:
               type: string
+              example: 'myuss.com'
             scope:
               type: string
             version:
               type: integer
+              example: 3
             timestamp:
               type: string
               format: date-time
               example: '2015-08-20T03:14:32.819+00:00'
             operation_endpoint:
               type: string
+              example: 'https://myuss.com/operations/{z}/{x}/{y}'
             operation_format:
               type: string
+              example: 'NASA'
             public_portal_endpoint:
               type: string
+              example: 'https://myuss.com/publicportal'
             flight_info_endpoint:
               type: string
-            minimum_operation_timestamp: 
+              example: 'https://myuss.com/flightinfo'
+            minimum_operation_timestamp:
               type: string
               format: date-time
               example: '2015-08-20T03:14:32.819+00:00'
-            maximum_operation_timestamp: 
+            maximum_operation_timestamp:
               type: string
               format: date-time
               example: '2015-08-20T03:18:00.011+00:00'
             zoom:
               type: integer
+              example: 11
             x:
               type: integer
+              example: 565
             y:
               type: integer
+              example: 795
+
+  JSendPublicPortalResponse:
+    type: object
+    properties:
+      status:
+        type: string
+        minLength: 1
+        maxLength: 100
+        example: 'success'
+      data:
+        $ref: '#/definitions/PublicPortalResponse'
 
   PublicPortalResponse:
     type: object
@@ -629,7 +639,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/VolumeResponse'
-  
+
 
   TelemetryResponse:
     type: object
@@ -656,6 +666,7 @@ definitions:
           - vtol
           - fixed_wing
           - multirotor
+        example: 'vtol'
       position_history:
         type: array
         items:
@@ -668,13 +679,16 @@ definitions:
               type: number
               minimum: -90
               maximum: 90
+              example: 37.4096
             longitude:
               type: number
               minimum: -180
               maximum: 180
+              example: -122.1062
             height:
               description: Height in WGS84 meters
               type: number
+              example: 50.2
 
   VolumeResponse:
     type: object
@@ -717,13 +731,52 @@ definitions:
               example: '2015-08-20T03:14:33.899+00:00'
             volume:
               description: GeoJSON version of the boundary of this volume
-              type: string
-            height_lower:
-              description: Lower bound height of this volume in WGS84 meters
-              type: number
-            height_upper:
-              description: Upper bound height of this volume in WGS84 meters
-              type: number
+              type: object
+              properties:
+                type:
+                  description: The type of Geometry; must be 'Polygon'.
+                  type: string
+                  enum:
+                  - Polygon
+                  example: 'Polygon'
+                coordinates:
+                  type: array
+                  description: Number of polygons; must be 1.
+                  minItems: 1
+                  maxItems: 1
+                  items:
+                    type: array
+                    description: Vertices defining polygon. First and last vertices must be identical.
+                    minItems: 4
+                    maxItems: 100
+                    items:
+                      type: array
+                      description: Coordinates of vertices as (longitude, latitude).
+                      maxItems: 2
+                      minItems: 2
+                      items:
+                        type: number
+                        format: double
+                    example: [[-122.1067, 37.4096], [-122.1063, 37.4099], [-122.1058, 37.4094], [-122.1067, 37.4096]]
+                height_lower:
+                  description: Lower bound height of this volume in WGS84 meters
+                  type: number
+                  example: 10
+                height_upper:
+                  description: Upper bound height of this volume in WGS84 meters
+                  type: number
+                  example: 110
+
+  JSendFlightInformationResponse:
+    type: object
+    properties:
+      status:
+        type: string
+        minLength: 1
+        maxLength: 100
+        example: 'success'
+      data:
+        $ref: '#/definitions/FlightInformationResponse'
 
   FlightInformationResponse:
     type: object
@@ -750,6 +803,7 @@ definitions:
           - vtol
           - fixed_wing
           - multirotor
+        example: 'vtol'
       drone_make:
         description: Manufacturer of vehicle
         type: string
@@ -773,45 +827,54 @@ definitions:
       speed_ns:
         description: Speed North/South (NED system implies bearing), m/s
         type: number
+        example: 5.2
       speed_ew:
         description: Speed East/West (NED system implies bearing), m/s
         type: number
+        example: 1.9
       speed_ud:
         description: Speed Up/Down (NED system implies bearing), m/s
         type: number
+        example: 0.2
       latitude_operator:
         description: Latitude of pilot location
         type: number
         minimum: -90
         maximum: 90
+        example: 37.4100
       longitude_operator:
         description: Longitude of pilot location
         type: number
         minimum: -180
         maximum: 180
+        example: -122.1056
       latitude_takeoff:
         description: Latitude of takeoff point
         type: number
         minimum: -90
         maximum: 90
+        example: 37.4100
       longitude_takeoff:
         description: Longitude of takeoff point
         type: number
         minimum: -180
         maximum: 180
+        example: -122.1056
       latitude_destination:
         description: Latitude of next destination or return to home point
         type: number
         minimum: -90
         maximum: 90
+        example: 37.4100
       longitude_destination:
         description: Longitude of next destination or return to home point
         type: number
         minimum: -180
         maximum: 180
+        example: -122.1056
 
 # Added by API Auto Mocking Plugin
-host: 35.192.112.1:8121
+host: node1.staging.interussplatform.com:8121
 basePath: /
 schemes:
- - http
+ - https
