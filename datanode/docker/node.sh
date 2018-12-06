@@ -29,7 +29,7 @@ export SSL_KEY_PATH=**FULL LOCAL PATH CONTAINING SSL CERTIFICATE KEY**
 export SSL_CERT_NAME=**NAME OF SSL CERTIFICATE FILE (e.g., cert.crt or cert.chained.pem)**
 export SSL_KEY_NAME=**NAME OF SSL KEY FILE (e.g., private.pem or cert.key)**
 
-echo "SSL cert ${SSL_CERT_PATH}/${SSL_KEY_NAME}"
+echo "SSL cert ${SSL_CERT_PATH}/${SSL_CERT_NAME}"
 echo "SSL key ${SSL_KEY_PATH}/${SSL_KEY_NAME}"
 
 export ZOO_MY_ID=$1

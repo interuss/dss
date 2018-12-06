@@ -27,7 +27,7 @@ info:
 
     The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with Authorization, use a NASA FIMS valid OAuth token or use 'tcl4box' (which works only in the sandbox environment). You can also use additional info at the end of the token to simulate multiple USSs (i.e. 'tcl4box-uss1').
 
-  version: "tcl4.0.3"
+  version: "tcl4.1.1"
   title: InterUSS Platform - Data Node Stateless API
   contact:
     email: hikevin+interuss@google.com
@@ -555,7 +555,7 @@ paths:
         in: header
         description: Valid OAuth access token
         type: string
-        default: Bearer tcl4box-uss1
+        default: tcl4box-uss1
         required: true
       - in: body
         name: uvr
@@ -599,7 +599,7 @@ paths:
         in: header
         description: Valid OAuth access token
         type: string
-        default: Bearer tcl4box-uss1
+        default: tcl4box-uss1
         required: true
       - in: body
         name: uvr
@@ -1106,7 +1106,7 @@ definitions:
         $ref: '#/definitions/uuid'
       uss_name:
         description: >-
-          The uss_id of the enacting USS, must match ID in the access token
+          The uss_id of the enacting USS, matching the access token
         type: string
         minLength: 4
         exclusiveMinimum: false
@@ -1191,7 +1191,7 @@ definitions:
         maxLength: 1000
     example:
       message_id: '00000000-0000-4444-8888-000000000000'
-      uss_name: 'tcl4box-uss1.com'
+      uss_name: 'tcl4box-uss1'
       type: DYNAMIC_RESTRICTION
       cause: SAFETY
       geography:
@@ -1298,7 +1298,7 @@ definitions:
               format: double
 
 # Added by API Auto Mocking Plugin
-host: 35.193.160.127:8121
+host: sandbox.tcl4.interussplatform.com:8121
 basePath: /
 schemes:
- - http
+ - https
