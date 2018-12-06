@@ -49,6 +49,7 @@ services:
     environment:
       - ZOO_MY_ID=${ZOO_MY_ID:-1}
       - ZOO_SERVERS=${ZOO_SERVERS:-server.1=0.0.0.0:2888:3888}
+    restart: always
 
   storage_api:
     image: interussplatform/storage_api:publicportal
@@ -62,6 +63,7 @@ services:
       - INTERUSS_TESTID=${INTERUSS_TESTID:-}
     depends_on:
       - zoo
+    restart: always
 
   reverse_proxy:
     image: interussplatform/reverse_proxy
@@ -77,3 +79,4 @@ services:
       - SSL_KEY_NAME
     depends_on:
       - storage_api
+    restart: always
