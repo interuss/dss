@@ -34,8 +34,8 @@ echo "
 
       listen ${INTERUSS_API_PORT_HTTPS:-8121} ssl;
       # server_name         www.example.com;
-      ssl_certificate     /etc/ssl/certs/cert.pem;
-      ssl_certificate_key /etc/ssl/private/key.pem;
+      ssl_certificate     /etc/ssl/certs/${SSL_CERT_NAME:-cert.pem};
+      ssl_certificate_key /etc/ssl/private/${SSL_KEY_NAME:-key.pem};
       ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
       ssl_ciphers         HIGH:!aNULL:!MD5;
 

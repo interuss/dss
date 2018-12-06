@@ -38,6 +38,10 @@ Change the storage_api image to target the new branch.
 
 Change the storage_api image to target the new branch.
 
+### docker/node.sh
+
+Change the deployment file download locations.
+
 ### docker/Dockerfile_storageapi
 
 Also change the `docker image build` and `docker run` comment lines to target
