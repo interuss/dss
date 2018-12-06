@@ -49,6 +49,7 @@ services:
       - INTERUSS_AUTH_ROSTER /resources/roster.txt
     volumes:
       - ${INTERUSS_AUTH_PATH:?Environment variable INTERUSS_AUTH_PATH must be set}:/resources
+    restart: always
 
   reverse_proxy:
     image: interussplatform/auth_reverse_proxy
@@ -65,3 +66,4 @@ services:
     volumes:
       - ${SSL_CERT_PATH:?Environment variable SSL_CERT_PATH must be set}:/etc/ssl/certs
       - ${SSL_KEY_PATH:?Environment variable SSL_KEY_PATH must be set}:/etc/ssl/private
+    restart: always
