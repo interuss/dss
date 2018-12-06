@@ -1176,15 +1176,17 @@ definitions:
       min_altitude:
         description: >-
           The UVR does not affect flights below this altitude
-        allOf:
-          - $ref: '#/definitions/Altitude'
+        # Note that this description does not render properly.  See the link
+        # below for a solution, but that solution breaks swagger-codegen.
         # https://stackoverflow.com/a/41752575
+        $ref: '#/definitions/Altitude'
       max_altitude:
         description: >-
           The UVR does not affect flights above this altitude
-        allOf:
-          - $ref: '#/definitions/Altitude'
+        # Note that this description does not render properly.  See the link
+        # below for a solution, but that solution breaks swagger-codegen.
         # https://stackoverflow.com/a/41752575
+        $ref: '#/definitions/Altitude'
       reason:
         description: Human-readable reason for the UVR
         type: string
