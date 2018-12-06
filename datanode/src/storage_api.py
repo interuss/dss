@@ -57,14 +57,7 @@ import slippy_util
 import uvrs
 
 # VERSION HISTORY - BRANCH.MAJOR.MINOR.BUILD
-# Where BRANCH is the specific version for this branch, or numeric for the mainline branch,
-#   changing only on new branches or fundamental changes to the mainline branch.
-# and MAJOR changes when there is major funcationality change that either directly
-#   or eventually depracates functionality in previous major versions.
-# and MINOR changes when there is a non-breaking API change (new fields or methods) and
-#   resets to 0 when a MAJOR change takes place.
-# and BUILD continuously increments with every release, regardles of other version
-#   number changes.
+# See updating.md for version labeling details.
 #
 # VERSION = '0.1.0'  # Initial TCL3 release
 # VERSION = '0.1.1'  # Pythonized file names and modules
