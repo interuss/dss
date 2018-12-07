@@ -1,0 +1,26 @@
+[
+  {
+    "public": {"uuid_serial": "DIZZY01", "uuid_reg": "FADIZZY01", "drone_type": "vtol"},
+    "private": {"drone_make": "Wing", "drone_model": "Test"}
+  },
+
+  {
+    "public": {"uuid_serial": "DIZZY02", "uuid_reg": "FADIZZY02", "drone_type": "vtol"},
+    "private": {"drone_make": "Wing", "drone_model": "Test"}
+  },
+
+  {
+    "public": {"uuid_serial": "DZYTEST01", "uuid_reg": "BRD01", "drone_type": "fixed_wing"},
+    "private": {"drone_make": "Parrot", "drone_model": "Disco"}
+  },
+
+  {
+    "public": {"uuid_serial": "DZYH27", "uuid_reg": "FADIZZY03"},
+    "private": {"drone_make": "DJI", "drone_model": "Phantom 3 Professional"}
+  },
+
+  {
+    "public": {"uuid_serial": "DZYH19", "uuid_reg": "BUZZ04", "drone_type": "multirotor"},
+    "private": {"drone_make": "DJI", "drone_model": "Mavic Pro"}
+  }
+]
