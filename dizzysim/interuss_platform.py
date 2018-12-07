@@ -1,10 +1,11 @@
 import datetime
 import logging
+
 import requests
 
-log = logging.getLogger('InterUSSPlatform')
+import formatting
 
-format_time = lambda t: t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:23] + 'Z'
+log = logging.getLogger('InterUSSPlatform')
 
 
 class Client(object):
@@ -47,8 +48,10 @@ class Client(object):
         'scope': 'interussplatform.com_operators.read',
         'public_portal_endpoint': self._public_portal_endpoint,
         'flight_info_endpoint': self._flight_info_endpoint,
-        'minimum_operation_timestamp': format_time(minimum_operation_timestamp),
-        'maximum_operation_timestamp': format_time(maximum_operation_timestamp),
+        'minimum_operation_timestamp': formatting.timestamp(
+          minimum_operation_timestamp),
+        'maximum_operation_timestamp': formatting.timestamp(
+          maximum_operation_timestamp),
       })
     response.raise_for_status()
 
@@ -57,8 +60,8 @@ class Client(object):
     coords = ','.join('%.6f,%.6f' % (p.lat, p.lng) for p in area)
     response = requests.delete(
       url=self._base_url + '/GridCellsMetaData/%d' % self._zoom,
+      headers={'access_token': self._access_token},
       json={
-        'access_token': self._access_token,
         'coords': coords,
         'coord_type': 'polygon'
       })

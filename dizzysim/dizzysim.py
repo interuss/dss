@@ -21,13 +21,16 @@ import jwt
 import logging
 import math
 import sys
+
 from flask import abort
 from flask import Flask
 from flask import jsonify
 from flask import request
 import requests
 from rest_framework import status
+
 import config
+import formatting
 import interuss_platform
 import simulation
 
@@ -37,8 +40,6 @@ MAX_QUERY_DIAGONAL = 3600  # meters
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('DizzySim')
 webapp = Flask(__name__)  # Global object serving the API
-
-format_time = lambda t: t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:23] + 'Z'
 
 
 flightsim = None
@@ -76,6 +77,7 @@ def Land(i):
 
 
 @webapp.route('/public_portal/<coords>', methods=['GET'])
+@webapp.route('/public_portal/USS_public_portal_endpoint/<coords>', methods=['GET'])
 def PublicPortal(coords):
   log.debug('Public portal queried')
 
@@ -114,7 +116,7 @@ def PublicPortal(coords):
     return jsonify({
       'status': 'success',
       'data': {
-        'timestamp': format_time(datetime.datetime.utcnow()),
+        'timestamp': formatting.timestamp(datetime.datetime.utcnow()),
         'telemetries': flightsim.get_telemetries(history),
         'volumes': []}})
   except Exception as e:
@@ -122,6 +124,7 @@ def PublicPortal(coords):
 
 
 @webapp.route('/flight_info/<uuid_operation>', methods=['GET'])
+@webapp.route('/flight_info/USS_flight_info_endpoint/<uuid_operation>', methods=['GET'])
 def FlightInfo(uuid_operation):
   _ValidateAccessToken()
 

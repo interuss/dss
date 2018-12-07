@@ -9,13 +9,13 @@ import threading
 import time
 import uuid
 
+import formatting
+
 EARTH_CIRCUMFERENCE = 40.075e6  # meters
 ACCURACY_VERTICAL = 0.2  # meters
 OPERATION_PADDING = datetime.timedelta(seconds=30)
 
 log = logging.getLogger('Simulation')
-
-format_time = lambda t: t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:23] + 'Z'
 
 Telemetry = collections.namedtuple('Telemetry', 'timestamp data')
 LatLng = collections.namedtuple('LatLng', 'lat lng')
@@ -36,7 +36,7 @@ class Flight(object):
 
   def is_flying(self):
     t = datetime.datetime.utcnow()
-    return t >= self.takeoff and t <= self.landing
+    return self.takeoff <= t <= self.landing
 
   def get_telemetry(self, history):
     t = datetime.datetime.utcnow()
@@ -67,10 +67,10 @@ class Flight(object):
     f = (t - self.takeoff).total_seconds() / self.period_sec
     p = self._location_at_fraction(f)
     self.telemetry.append(Telemetry(timestamp=t, data={
-      'timestamp': format_time(t),
-      'latitude': p.lat,
-      'longitude': p.lng,
-      'height': self.altitude + r.normalvariate(0, ACCURACY_VERTICAL),
+      'timestamp': formatting.timestamp(t),
+      'latitude': round(p.lat, 6),
+      'longitude': round(p.lng, 6),
+      'height': round(self.altitude + r.normalvariate(0, ACCURACY_VERTICAL), 2),
     }))
 
   def _location_at_fraction(self, f):
@@ -91,23 +91,23 @@ class Flight(object):
     info['latitude_operator'] = self.origin[0]
     info['longitude_operator'] = self.origin[1]
     p = self._location_at_fraction(0)
-    info['latitude_takeoff'] = p.lat
-    info['longitude_takeoff'] = p.lng
+    info['latitude_takeoff'] = round(p.lat, 6)
+    info['longitude_takeoff'] = round(p.lng, 6)
     p = self._location_at_fraction(1)
-    info['latitude_destination'] = p.lat
-    info['longitude_destination'] = p.lng
+    info['latitude_destination'] = round(p.lat, 6)
+    info['longitude_destination'] = round(p.lng, 6)
     if len(self.telemetry) >= 2:
       t0 = self.telemetry[-2]
       t1 = self.telemetry[-1]
       dt = (t1.timestamp - t0.timestamp).total_seconds()
-      info['speed_ud'] = (t1.data['height'] - t0.data['height']) / dt
+      info['speed_ud'] = round((t1.data['height'] - t0.data['height']) / dt, 2)
       p0 = LatLng(t0.data['latitude'], t0.data['longitude'])
       p1 = LatLng(t1.data['latitude'], t1.data['longitude'])
       dy = (p1.lat - p0.lat) * EARTH_CIRCUMFERENCE / 360
-      info['speed_ns'] = dy / dt
+      info['speed_ns'] = round(dy / dt, 2)
       dx = ((p1.lng - p0.lng) * EARTH_CIRCUMFERENCE *
             math.cos(math.radians(p0.lat)) / 360)
-      info['speed_ew'] = dx / dt
+      info['speed_ew'] = round(dx / dt, 2)
     return info
 
 
@@ -188,7 +188,7 @@ class FlightSim(object):
       del self._flights[i]
 
       if not self._flights:
-        self.grid_client.remove_operations(self._get_area)
+        self.grid_client.remove_operations(self._get_area())
         self._bounds = (LatLng(90, 180), LatLng(-90, -180))
 
   def get_flights_info(self):
@@ -220,15 +220,3 @@ class FlightSim(object):
     area = (LatLng(ll.lat, ll.lng), LatLng(ll.lat, ur.lng),
             LatLng(ur.lat, ur.lng), LatLng(ur.lat, ll.lng))
     return area
-    # lat_min = 90
-    # lng_min = 180
-    # lat_max = -90
-    # lng_max = -180
-    # for flight in self._flights:
-    #   ll, ur = flight.get_bounds()
-    #   lat_min = min(lat_min, ll.lat)
-    #   lng_min = min(lng_min, ll.lng)
-    #   lat_max = max(lat_max, ll.lat)
-    #   lng_max = max(lng_max, ll.lng)
-    # return ((lat_min, lng_min), (lat_min, lng_max),
-    #         (lat_max, lng_max), (lat_max, lng_min))
