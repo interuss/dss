@@ -59,7 +59,8 @@ def make_uvr(uss_id, message_id=None, coords=None):
       'coordinates': [coords]},
     'effective_time_begin': '2016-11-29T01:16:41.727Z',
     'effective_time_end': '2016-11-30T01:16:41.727Z',
-    'permitted_uas': ['NOT_SET'],
+    'permitted_uas': ['SUPPORT_LEVEL'],
+    'required_support': ['ADSB_OUT', 'CONSPICUITY'],
     'permitted_gufis': ['00000000-0000-4444-8888-FEEDDEADFFFF'],
     'min_altitude': {
       'altitude_value': 2300,

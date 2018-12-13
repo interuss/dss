@@ -27,7 +27,7 @@ info:
 
     The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with Authorization, use a NASA FIMS valid OAuth token or use 'tcl4box' (which works only in the sandbox environment). You can also use additional info at the end of the token to simulate multiple USSs (i.e. 'tcl4box-uss1').
 
-  version: "tcl4.1.1"
+  version: "tcl4.2.0"
   title: InterUSS Platform - Data Node Stateless API
   contact:
     email: hikevin+interuss@google.com
@@ -1132,11 +1132,28 @@ definitions:
             - SECURITY
             - NEWS_GATHERING
             - VLOS
+            - SUPPORT_LEVEL
             - PART_107
             - PART_101E
             - PART_107X
             - RADIO_LINE_OF_SIGHT
         minItems: 1
+      required_support:
+        description: >-
+          If permitted_uas contains "SUPPORT_LEVEL", this field must contain a
+          list of support features, all of which must be used by an operator in
+          the UVR
+        type: array
+        items:
+          type: string
+          enum:
+            - V2V
+            - DAA
+            - ADSB_OUT
+            - ADSB_IN
+            - CONSPICUITY
+            - ENHANCED_NAVIGATION
+            - ENHANCED_SAFE_LANDING
       permitted_gufis:
         description: >-
           If a flight operation has one of these GUFIs, it is allowed in the UVR

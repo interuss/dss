@@ -18,36 +18,40 @@ version number changes.
 
 When making changes, version information needs to be updated in multiple places.
 
-### src/storage_api.py
+### datanode/src/storage_api.py
 
 Comment out the current `VERSION = ` line and add a new line below.
 
-### docker/Dockerfile_storageapi
+### datanode/docker/Dockerfile_storageapi
 
 Change the version in the `docker tag ` comment line to match to the new version.
+
+### assets/swaggerhub_api.yaml
+
+Change the version tag to match the new version.
 
 ## When making a new branch
 
 A new branch requires changes in additional places as well.
 
-### docker/docker-compose.yaml
+### datanode/docker/docker-compose.yaml
 
 Change the storage_api image to target the new branch.
 
-### docker/docker-compose_storageapitest.yaml
+### datanode/docker/docker-compose_storageapitest.yaml
 
 Change the storage_api image to target the new branch.
 
-### docker/node.sh
+### datanode/docker/node.sh
 
 Change the deployment file download locations.
 
-### docker/Dockerfile_storageapi
+### datanode/docker/Dockerfile_storageapi
 
 Also change the `docker image build` and `docker run` comment lines to target
 the new branch.
 
-### docker/README.md
+### datanode/docker/README.md
 
 Change anywhere `interussplatform/storage_api` is referenced to also include the
 branch.

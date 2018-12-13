@@ -29,16 +29,20 @@ UVR_FIELDS = {
   'message_id', 'uss_name', 'type', 'cause', 'geography',
   'effective_time_begin', 'effective_time_end', 'permitted_uas',
   'permitted_gufis', 'actual_time_end', 'min_altitude', 'max_altitude',
-  'reason', 'timestamp'}
+  'reason', 'timestamp', 'required_support'}
 UVR_REQUIRED_FIELDS = {
   'message_id', 'uss_name', 'type', 'cause', 'geography', 'min_altitude',
   'max_altitude', 'effective_time_begin', 'effective_time_end', 'permitted_uas'}
 UVR_ENUMS = {'type': {'DYNAMIC_RESTRICTION', 'STATIC_ADVISORY'},
              'cause': {'WEATHER', 'ATC', 'SECURITY', 'SAFETY', 'MUNICIPALITY',
                        'OTHER'}}
+UVR_REQUIRED_SUPPORT = {
+  'V2V', 'DAA', 'ADSB_OUT', 'ADSB_IN', 'CONSPICUITY', 'ENHANCED_NAVIGATION',
+  'ENHANCED_SAFE_LANDING'}
 UVR_PERMITTED_UAS = {
   'NOT_SET', 'PUBLIC_SAFETY', 'SECURITY', 'NEWS_GATHERING', 'VLOS',
-  'PART_107', 'PART_101E', 'PART_107X', 'RADIO_LINE_OF_SIGHT'}
+  'SUPPORT_LEVEL', 'PART_107', 'PART_101E', 'PART_107X', 'RADIO_LINE_OF_SIGHT'}
+
 UVR_VERTICAL_REFERENCES = {'W84'}
 UVR_UNITS_OF_MEASURE = {'FT'}
 UUID_MATCHER = re.compile('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[8-b][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$')
@@ -232,7 +236,21 @@ def _validate_uvr(unvalidated_uvr):
   if 'NOT_SET' in uvr['permitted_uas'] and len(uvr['permitted_uas']) > 1:
     raise ValueError('If NOT_SET is included in permitted_uas, no other values '
                      'are allowed')
+  if ('REQUIRED_SUPPORT' in uvr['permitted_uas'] and
+      ('required_support' not in uvr or not uvr['required_support'])):
+    raise ValueError('If REQUIRED_SUPPORT is included in permitted_uas, '
+                     '`required_support` field in UVR must contain at least '
+                     'one field')
 
+  if 'required_support' not in uvr:
+    uvr['required_support'] = []
+  for support in uvr['required_support']:
+    if support not in UVR_REQUIRED_SUPPORT:
+      raise ValueError('Unexpected UVR required_support entry "%s"; must be '
+                       'one of %s' % (support, '|'.join(UVR_REQUIRED_SUPPORT)))
+
+  if 'permitted_gufis' not in uvr:
+    uvr['permitted_gufis'] = []
   for gufi in uvr['permitted_gufis']:
     if not UUID_MATCHER.match(gufi):
       raise ValueError('permitted_gufi "%s" is not a valid UUID' % gufi)

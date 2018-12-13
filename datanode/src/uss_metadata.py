@@ -91,8 +91,11 @@ class USSMetadata(object):
         effective_time_begin: <YYYY-MM-DDTHH:mm:ss.fffZ>
         effective_time_end: <YYYY-MM-DDTHH:mm:ss.fffZ>
         permitted_uas: [<NOT_SET|PUBLIC_SAFETY|SECURITY||NEWS_GATHERING|VLOS|
-                         PART_107|PART_101E|PART_107X|RADIO_LINE_OF_SIGHT>, ...],
+                         SUPPORT_LEVEL|PART_107|PART_101E|PART_107X|
+                         RADIO_LINE_OF_SIGHT>, ...],
         permitted_gufis: [<uuid>, ...]
+        required_support: [<V2V|DAA|ADSB_OUT|ADSB_IN|CONSPICUITY|
+                            ENHANCED_NAVIGATION|ENHANCED_SAFE_LANDING>, ...]
         actual_time_end: <YYYY-MM-DDTHH:mm:ss.fffZ>
         min_altitude: {altitude_value: <altitude>, vertical_reference: "W84",
                        units_of_measure: "FT"}
