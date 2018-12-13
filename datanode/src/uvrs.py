@@ -31,7 +31,7 @@ UVR_FIELDS = {
   'permitted_gufis', 'actual_time_end', 'min_altitude', 'max_altitude',
   'reason', 'timestamp'}
 UVR_REQUIRED_FIELDS = {
-  'uss_name', 'message_id', 'cause', 'geography', 'min_altitude',
+  'message_id', 'uss_name', 'type', 'cause', 'geography', 'min_altitude',
   'max_altitude', 'effective_time_begin', 'effective_time_end', 'permitted_uas'}
 UVR_ENUMS = {'type': {'DYNAMIC_RESTRICTION', 'STATIC_ADVISORY'},
              'cause': {'WEATHER', 'ATC', 'SECURITY', 'SAFETY', 'MUNICIPALITY',

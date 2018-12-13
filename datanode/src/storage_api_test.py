@@ -1038,6 +1038,15 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
     self.assertEqual(403, r.status_code)
     self.assertIn('match uss_id', r.data)
 
+    uvr_missing_type = copy.deepcopy(uvr)
+    del uvr_missing_type._core['type']
+    r = self.app.put(
+      '/UVR/%d/%s' % (zoom, message_id),
+      json=uvr_missing_type.to_json(),
+      headers={'access_token': uss_id})
+    self.assertEqual(400, r.status_code)
+    self.assertIn('Required field', r.data)
+
     verify_uvr_count(uvr, 0)
 
     # Correctly emplace a UVR and verify its presence
