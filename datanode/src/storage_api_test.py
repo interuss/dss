@@ -1055,7 +1055,15 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
         data=uvr_json,
         headers={'access_token': uss_id}
     ).status_code)
-    verify_uvr_count(uvr, 1)
+
+    s = self.app.get(
+      '/GridCellsOperator/%d' % zoom,
+      query_string=dict(coords=test_utils.csv_coords_of_uvr(uvr),
+                        coords_type='polygon'))
+    self.assertEqual(200, s.status_code)
+    j = json.loads(s.data)
+    self.assertEqual(1, len(j['data']['uvrs']))
+    self.assertNotIn('timestamp', j['data']['uvrs'][0])
 
     # Try to delete the UVR as a different USS
     storage_api.TESTID = 'uss2'

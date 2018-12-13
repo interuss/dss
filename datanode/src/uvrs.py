@@ -107,10 +107,10 @@ class Uvr(object):
       Nested-dict structure.
     """
     result = copy.deepcopy(self._core)
-    if self._timestamp:
-      result['timestamp'] = self._timestamp
 
     if storage:
+      if self._timestamp:
+        result['timestamp'] = self._timestamp
       result['origin'] = 'USS'
       result['originator_id'] = result['uss_name']
       for new_key in NEW_FIELDS:
