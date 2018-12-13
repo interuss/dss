@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+  <title>InterUSS Platform operators list</title>
+</head>
+<body>
+<div class="section" id="operators">
+  <h2>Operators</h2>
+  {% for op in operators %}
+  <div class="operator">
+    <h3 onclick="toggleVisibility('{{ op.entry_name }}_content', 'none')">
+      {{ op.uss }} [{{ op.x }} {{ op.y }} {{ op.zoom }}]
+    </h3>
+    <div id="{{ op.entry_name }}_content" class="operator_content">
+      {% if 'public_portal_endpoint' in op %}
+      <div>
+        <div class="tooltip">
+          Public portal
+          <span class="tooltiptext">{{ op.public_portal_endpoint }}</span>
+        </div>
+        <div class="public_portal_response">
+          {% if op.public_portal_error %}
+          <div class="error">
+            {{ op.public_portal_error }}
+          </div>
+          {% endif %}
+          {% if 'public_portal_flights' in op and op.public_portal_flights %}
+            {% for flight in op.public_portal_flights %}
+              <div class="flight">
+                <span class="operation_id">{{ flight.op_id }}</span>
+                {{ flight.position }}
+                <a href="#" onclick="toggleVisibility('{{ op.entry_name }}_{{ flight.op_id }}_ppraw', 'block')">
+                  &lt;public portal&gt;
+                </a>
+                <a href="#" onclick="toggleVisibility('{{ op.entry_name }}_{{ flight.op_id }}_firaw', 'block')">
+                  &lt;flight info&gt;
+                </a>
+                {{flight.drone_type }} {{ flight.short_reg }} {{ flight.short_serial }}
+                <div class="raw_flight_entry" id="{{ op.entry_name }}_{{ flight.op_id }}_ppraw">
+                  <pre>{{ flight.raw_entry }}</pre>
+                </div>
+                <div class="raw_info_entry" id="{{ op.entry_name }}_{{ flight.op_id }}_firaw">
+                  {% if 'flight_info_error' in flight %}
+                    <div class="error">{{ flight.flight_info_error }}</div>
+                  {% else %}
+                    <pre>{{ flight.flight_info_raw }}</pre>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+            <a href="#" onclick="toggleVisibility('{{ op.entry_name }}_ppraw', 'block')">
+              Raw public portal flights
+            </a>
+            <div class="raw_public_portal_entry" id="{{ op.entry_name }}_ppraw">
+              <pre>{{ op.public_portal_flights_raw }}</pre>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if op.missing_fields %}
+      <div>
+        <span class="error">Missing fields in grid entry:</span><br>
+        <ul>
+          {% for missing_field in missing_fields %}
+          <li>{{ missing_field }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <a href="#" onclick="toggleVisibility('{{ op.entry_name }}_gridentry', 'block')">
+        Raw grid entry
+      </a><br>
+      <div id="{{ op.entry_name }}_gridentry" class="raw_grid_entry">
+        <pre>{{ op.raw_grid_entry }}</pre>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<script>
+  function toggleVisibility(id, first_change) {
+    element = document.getElementById(id);
+    if (element.style.display == "") {
+      element.style.display = first_change;
+    } else if (element.style.display == "none") {
+      element.style.display = "block";
+    } else {
+      element.style.display = "none";
+    }
+  }
+</script>
+</body>
+</html>

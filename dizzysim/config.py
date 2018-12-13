@@ -87,7 +87,7 @@ def ParseOptions(argv):
     '--baseurl',
     dest='baseurl',
     default=os.getenv('DIZZY_BASEURL', 'https//localhost:5000'),
-    help='URL at which to retrieve access tokens',
+    help='Base URL for public_portal_endpoint and flight_info_endpoint',
     metavar='URL')
   parser.add_option(
     '-k', '--authpublickey',
