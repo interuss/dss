@@ -72,6 +72,10 @@ class Flight(object):
       'longitude': round(p.lng, 6),
       'height': round(self.altitude + r.normalvariate(0, ACCURACY_VERTICAL), 2),
     }))
+    if len(self.telemetry) >= 2:
+      p1 = self.telemetry[-1]
+      (p1.data['speed_ew'], p1.data['speed_ns'],
+       p1.data['speed_ud']) = self._current_speed()
 
   def _location_at_fraction(self, f):
     theta = 2 * math.pi * f + self._theta0
@@ -81,6 +85,23 @@ class Flight(object):
     lng = self.origin[1] + x * 360 / (EARTH_CIRCUMFERENCE *
                                       math.cos(math.radians(lat)))
     return LatLng(lat=lat, lng=lng)
+
+  def _current_speed(self):
+    if len(self.telemetry) >= 2:
+      t0 = self.telemetry[-2]
+      t1 = self.telemetry[-1]
+      dt = (t1.timestamp - t0.timestamp).total_seconds()
+      speed_ud = round((t1.data['height'] - t0.data['height']) / dt, 2)
+      p0 = LatLng(t0.data['latitude'], t0.data['longitude'])
+      p1 = LatLng(t1.data['latitude'], t1.data['longitude'])
+      dy = (p1.lat - p0.lat) * EARTH_CIRCUMFERENCE / 360
+      speed_ns = round(dy / dt, 2)
+      dx = ((p1.lng - p0.lng) * EARTH_CIRCUMFERENCE *
+            math.cos(math.radians(p0.lat)) / 360)
+      speed_ew = round(dx / dt, 2)
+      return speed_ew, speed_ns, speed_ud
+    else:
+      return None, None, None
 
   def get_flight_info(self):
     info = {}
@@ -97,17 +118,9 @@ class Flight(object):
     info['latitude_destination'] = round(p.lat, 6)
     info['longitude_destination'] = round(p.lng, 6)
     if len(self.telemetry) >= 2:
-      t0 = self.telemetry[-2]
-      t1 = self.telemetry[-1]
-      dt = (t1.timestamp - t0.timestamp).total_seconds()
-      info['speed_ud'] = round((t1.data['height'] - t0.data['height']) / dt, 2)
-      p0 = LatLng(t0.data['latitude'], t0.data['longitude'])
-      p1 = LatLng(t1.data['latitude'], t1.data['longitude'])
-      dy = (p1.lat - p0.lat) * EARTH_CIRCUMFERENCE / 360
-      info['speed_ns'] = round(dy / dt, 2)
-      dx = ((p1.lng - p0.lng) * EARTH_CIRCUMFERENCE *
-            math.cos(math.radians(p0.lat)) / 360)
-      info['speed_ew'] = round(dx / dt, 2)
+      t = self.telemetry[-1].data
+      for key in ('speed_ew', 'speed_ns', 'speed_ud'):
+        info[key] = t[key]
     return info
 
 
