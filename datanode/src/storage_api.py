@@ -73,7 +73,8 @@ import slippy_util
 # VERSION = '1.0.2.003'  # slippy utility updates to support point/path/polygon
 # VERSION = '1.0.2.004'  # slippy non-breaking api changes to support path/polygon
 # VERSION = '1.1.0.005'  # api changes to support multi-grid GET/PUT/DEL
-VERSION = 'PublicPortal1.1.1.006'  # Added public portal support
+# VERSION = 'PublicPortal1.1.1.006'  # Added public portal support
+VERSION = 'PublicPortal1.1.1.007'  # Fixed multi-cell bug
 
 TESTID = None
 
