@@ -137,10 +137,12 @@ def ListOperators():
     no_id_index = 1
     if 'public_portal_endpoint' in args:
       try:
-        args['public_portal_flights'] = grid_client.get_flights(
+        public_portal_response = grid_client.get_public_portal(
             args['public_portal_endpoint'], border)
         args['public_portal_flights_raw'] = json.dumps(
-            args['public_portal_flights'], indent=2, sort_keys=True)
+            public_portal_response, indent=2, sort_keys=True)
+        args['public_portal_flights'] = public_portal_response[
+          'data']['telemetries']
 
         for flight in args['public_portal_flights']:
           flight['raw_entry'] = json.dumps(flight, indent=2, sort_keys=True)

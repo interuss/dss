@@ -43,14 +43,14 @@ class Client(object):
     response.raise_for_status()
     return response.json()['data']['operators']
 
-  def get_flights(self, public_portal_endpoint, area):
+  def get_public_portal(self, public_portal_endpoint, area):
     access_token = self.get_access_token()
     coords = ','.join('%.6f,%.6f' % (p.lat, p.lng) for p in area)
     response = requests.get(
       url=os.path.join(public_portal_endpoint, coords),
       headers={'access_token': access_token})
     response.raise_for_status()
-    return response.json()['data']['telemetries']
+    return response.json()
 
   def get_flight_info(self, flight_info_endpoint, uuid):
     access_token = self.get_access_token()

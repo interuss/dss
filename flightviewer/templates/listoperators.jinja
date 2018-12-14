@@ -49,6 +49,8 @@
                 </div>
               </div>
             {% endfor %}
+          {% endif %}
+          {% if 'public_portal_flights_raw' in op %}
             <a href="#" onclick="toggleVisibility('{{ op.entry_name }}_ppraw', 'block')">
               Raw public portal flights
             </a>
