@@ -1104,7 +1104,12 @@ definitions:
       - permitted_uas
     properties:
       message_id:
-        $ref: '#/definitions/uuid'
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+        pattern: '^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$'
+        example: '00000000-0000-4444-8888-000000000000'
       uss_name:
         description: >-
           The uss_id of the enacting USS, matching the access token
@@ -1159,7 +1164,12 @@ definitions:
           If a flight operation has one of these GUFIs, it is allowed in the UVR
         type: array
         items:
-          $ref: '#/definitions/uuid'
+          type: string
+          format: uuid
+          minLength: 36
+          maxLength: 36
+          pattern: '^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$'
+          example: '00000000-0000-4444-8888-000000000000'
         minItems: 0
         maxItems: 100
         example:
@@ -1245,7 +1255,7 @@ definitions:
     description: >-
       UUID version 4
     type: string
-    format: uuidv4
+    format: uuid
     minLength: 36
     maxLength: 36
     pattern: '^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$'
