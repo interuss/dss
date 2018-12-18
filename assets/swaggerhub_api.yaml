@@ -27,7 +27,7 @@ info:
 
     The below API are connected to a sandbox environment to allow you to try the different API. For endpoints with Authorization, use a NASA FIMS valid OAuth token or use 'tcl4box' (which works only in the sandbox environment). You can also use additional info at the end of the token to simulate multiple USSs (i.e. 'tcl4box-uss1').
 
-  version: "tcl4.1.1"
+  version: "tcl4.2.0"
   title: InterUSS Platform - Data Node Stateless API
   contact:
     email: hikevin+interuss@google.com
@@ -1092,8 +1092,9 @@ definitions:
     description: >-
       An area limiting UAS access
     required:
-      - uss_name
       - message_id
+      - uss_name
+      - type
       - cause
       - geography
       - min_altitude
@@ -1103,7 +1104,12 @@ definitions:
       - permitted_uas
     properties:
       message_id:
-        $ref: '#/definitions/uuid'
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+        pattern: '^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$'
+        example: '00000000-0000-4444-8888-000000000000'
       uss_name:
         description: >-
           The uss_id of the enacting USS, matching the access token
@@ -1131,17 +1137,39 @@ definitions:
             - SECURITY
             - NEWS_GATHERING
             - VLOS
+            - SUPPORT_LEVEL
             - PART_107
             - PART_101E
             - PART_107X
             - RADIO_LINE_OF_SIGHT
         minItems: 1
+      required_support:
+        description: >-
+          If permitted_uas contains "SUPPORT_LEVEL", this field must contain a
+          list of support features, all of which must be used by an operator in
+          the UVR
+        type: array
+        items:
+          type: string
+          enum:
+            - V2V
+            - DAA
+            - ADSB_OUT
+            - ADSB_IN
+            - CONSPICUITY
+            - ENHANCED_NAVIGATION
+            - ENHANCED_SAFE_LANDING
       permitted_gufis:
         description: >-
           If a flight operation has one of these GUFIs, it is allowed in the UVR
         type: array
         items:
-          $ref: '#/definitions/uuid'
+          type: string
+          format: uuid
+          minLength: 36
+          maxLength: 36
+          pattern: '^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$'
+          example: '00000000-0000-4444-8888-000000000000'
         minItems: 0
         maxItems: 100
         example:
@@ -1176,15 +1204,17 @@ definitions:
       min_altitude:
         description: >-
           The UVR does not affect flights below this altitude
-        allOf:
-          - $ref: '#/definitions/Altitude'
+        # Note that this description does not render properly.  See the link
+        # below for a solution, but that solution breaks swagger-codegen.
         # https://stackoverflow.com/a/41752575
+        $ref: '#/definitions/Altitude'
       max_altitude:
         description: >-
           The UVR does not affect flights above this altitude
-        allOf:
-          - $ref: '#/definitions/Altitude'
+        # Note that this description does not render properly.  See the link
+        # below for a solution, but that solution breaks swagger-codegen.
         # https://stackoverflow.com/a/41752575
+        $ref: '#/definitions/Altitude'
       reason:
         description: Human-readable reason for the UVR
         type: string
@@ -1225,7 +1255,7 @@ definitions:
     description: >-
       UUID version 4
     type: string
-    format: uuidv4
+    format: uuid
     minLength: 36
     maxLength: 36
     pattern: '^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$'
