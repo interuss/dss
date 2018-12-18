@@ -39,7 +39,7 @@ class Client(object):
     response = requests.get(
       url=self._base_url + '/GridCellsMetaData/%d' % self._zoom,
       headers={'access_token': access_token},
-      params={'coords': coords})
+      params={'coords': coords, 'coord_type': 'polygon'})
     response.raise_for_status()
     return response.json()['data']['operators']
 
