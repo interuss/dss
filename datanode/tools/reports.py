@@ -34,6 +34,7 @@ def parse_timestamp(timestamp):
   return datetime.datetime.strptime(
     timestamp, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=pytz.UTC)
 
+
 def format_timedelta(td):
   """Produce a human-readable string describing a timedelta.
 
@@ -109,6 +110,43 @@ def print_operator_list(operators, now):
         termcolor.colored(operation['gufi'], 'magenta'),
         begin_text, end_text)
 
+
+def print_uvrs(uvrs, now):
+  """Print human-readable summary of UVRs.
+
+  Timestamps are printed as timedeltas relative to the provided now, and are
+  highlighted when there may be a problem (start time too far in the future, end
+  time in the past)
+
+  Args:
+    uvrs: List of TCL4 InterUSS Platform UVR dicts.
+    now: The datetime relative to which timestamps should be displayed.
+  """
+  for uvr in uvrs:
+    time_begin = parse_timestamp(uvr['effective_time_begin'])
+    time_end = parse_timestamp(uvr['effective_time_begin'])
+    td_begin = time_begin - now
+    td_end = time_end - now
+    begin_text = format_timedelta(time_begin - now)
+    end_text = format_timedelta(time_end - now)
+    if td_begin > datetime.timedelta(minutes=5):
+      begin_text = termcolor.colored(begin_text, 'red')
+    elif td_begin.total_seconds() > 0:
+      begin_text = termcolor.colored(begin_text, 'yellow')
+    if td_end.total_seconds() < 0:
+      end_text = termcolor.colored(end_text, 'red')
+    print '++ %s %s %.0f %s %s-%.0f %s %s (%s => %s) %s' % (
+        termcolor.colored('UVR', 'green'),
+        termcolor.colored(uvr['uss_name'], 'blue'),
+        uvr['min_altitude']['altitude_value'],
+        uvr['min_altitude']['units_of_measure'],
+        uvr['min_altitude']['vertical_reference'],
+        uvr['max_altitude']['altitude_value'],
+        uvr['max_altitude']['units_of_measure'],
+        uvr['max_altitude']['vertical_reference'],
+        begin_text, end_text, uvr['message_id'])
+
+
 def print_operators(metadata):
   """Print human-readable summary of all operators in provided metadata.
 
@@ -120,11 +158,13 @@ def print_operators(metadata):
       GridCellOperators endpoint.
   """
   now = pytz.timezone('US/Pacific').localize(datetime.datetime.now())
-  print('sync_token %s @ %s received %s' % (
-    metadata['sync_token'], metadata['data']['timestamp'], str(now)))
+  print('%s @ %s received %s' % (
+    termcolor.colored('sync_token %d' % metadata['sync_token'], 'cyan', attrs=['bold']),
+    metadata['data']['timestamp'], str(now)))
   passive_operators = sorted([o for o in metadata['data']['operators']
                               if not o['operations']], key=lambda o: o['uss'])
   active_operators = sorted([o for o in metadata['data']['operators']
                              if o['operations']], key=lambda o: o['uss'])
   print_operator_list(passive_operators, now)
+  print_uvrs(metadata['data']['uvrs'], now)
   print_operator_list(active_operators, now)

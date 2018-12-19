@@ -26,9 +26,10 @@ try:
 except ImportError:
   from urllib2 import Request, urlopen, HTTPError  # Python 2
 
-DEFAULT_AUTH_URL = 'https://utmalpha.arc.nasa.gov/fimsAuthServer/oauth/token?grant_type=client_credentials'
-DEFAULT_HOST = 'http://18.216.177.215:8120/'
-DEFAULT_REQUEST_PATH = 'GridCellsOperator/10?coords=48.3379,-103.4582,47.6191,-103.1149,47.5672,-102.4530,48.3525,-102.4722,48.3379,-103.4582&coord_type=polygon'
+DEFAULT_AUTH_URL = 'https://utmalpha.arc.nasa.gov/fimsAuthServer/oauth/token?grant_type=client_credentials&scope=utm.nasa.gov_write.conflictmanagement'
+DEFAULT_HOST = 'https://node4.tcl4.interussplatform.com:8121/'
+DEFAULT_REQUEST_PATH = 'GridCellsOperator/10?coords=48.832,-101.832,47.954,-101.832,47.954,-100.501,48.832,-100.501,48.832,-101.832&coord_type=polygon'
+
 
 def get_token(auth_key, auth_url):
   """Call the specified OAuth server to retrieve an access token.
@@ -51,6 +52,7 @@ def get_token(auth_key, auth_url):
   else:
     raise ValueError('Error getting token: ' + r.content)
 
+
 def get_metadata(token, url):
   """Retrieve metadata from TCL4 InterUSS Platform data node.
 
@@ -71,6 +73,7 @@ def get_metadata(token, url):
   except ValueError:
     raise ValueError('Error getting metadata: ' + r.content)
   return r.content
+
 
 def add_auth_arguments(parser):
   """Add arguments relating to OAuth authentication.
@@ -95,6 +98,7 @@ def add_auth_arguments(parser):
     help='URL from which to obtain an access token',
     metavar='URL')
 
+
 def add_node_arguments(parser):
   """Add arguments relating to TCL4 InterUSS Platform data node access.
 
@@ -115,6 +119,7 @@ def add_node_arguments(parser):
     default=DEFAULT_REQUEST_PATH,
     help='Path and query to use on the TCL4 InterUSS Platform node',
     metavar='REQUESTPATH')
+
 
 def make_node_url(options):
   """Combine option values from node arguments into a URL for that node.
