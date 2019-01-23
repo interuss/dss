@@ -25,9 +25,9 @@ In addition to the public_portal and flight_info endpoints necessary to provide 
 The following pip packages must be installed (```pip install <PACKAGE>```):
 
 * ```djangorestframework```
-* ```pyjwt```
 * ```flask```
 * ```gunicorn``` (for stable development web server)
+* ```pyjwt```
 * ```pytz```
 * ```requests```
 

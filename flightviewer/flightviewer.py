@@ -1,4 +1,4 @@
-"""A simulated USS exposing public portal endpoints and flying virtual circles.
+"""A diagnostic tool that displays public portal flight information.
 
 Copyright 2018 Google LLC
 
@@ -19,7 +19,6 @@ import collections
 import copy
 import datetime
 import json
-import jwt
 import logging
 import math
 import sys
@@ -29,11 +28,9 @@ from flask import Flask
 from flask import jsonify
 from flask import render_template
 from flask import request
-from flask import url_for
 import iso8601
 import jinja2
 import pytz
-import requests
 from rest_framework import status
 
 import config
@@ -48,7 +45,7 @@ REQUIRED_GRID_FIELDS = {'x', 'y', 'zoom', 'version', 'uss', 'timestamp',
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 log = logging.getLogger('FlightViewer')
-webapp = Flask(__name__)  # Global object serving the API
+webapp = Flask(__name__)
 
 LatLng = collections.namedtuple('LatLng', 'lat lng')
 
@@ -187,6 +184,14 @@ def ListOperators():
 
 
 def _shorten(identifier):
+  """Shortens an identifier, keeping the first and last 4 characters.
+
+  Args:
+    identifier: Long-form identifier (like a UUID).
+
+  Returns:
+    Either the full identifier if it is short enough, or a shortened form.
+  """
   if len(identifier) > 11:
     return identifier[0:4] + '...' + identifier[-4:]
   else:
@@ -194,6 +199,14 @@ def _shorten(identifier):
 
 
 def _most_recent_position(history):
+  """Retrieve the most recent position given a history list.
+
+  Args:
+    history: List of dict entries each with a 'timestamp' key in ISO8601 format.
+
+  Returns:
+    The dict entry with the most recent 'timestamp' value.
+  """
   recent_time = datetime.datetime.fromtimestamp(0, pytz.utc)
   recent_entry = None
   for entry in history:
