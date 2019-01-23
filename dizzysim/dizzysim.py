@@ -112,6 +112,9 @@ def PublicPortal(coords):
     abort(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
           'Bounding area exceeds maximum for privacy')
 
+  # Note that telemetry for all flights is returned regardless of query window.
+  # In a real implementation, flights returned would be filtered to include only
+  # those with recent history of positions inside the query window.
   try:
     return jsonify({
       'status': 'success',
@@ -145,6 +148,7 @@ def BeforeFirstRequest():
 
 
 def _ValidateAccessToken():
+  """Return an error response if the provided access token is invalid."""
   if 'Authorization' in request.headers:
     token = request.headers['Authorization'].replace('Bearer ', '')
   elif 'access_token' in request.headers:

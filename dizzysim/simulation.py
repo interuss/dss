@@ -1,3 +1,20 @@
+"""Simulates aircraft flight behavior.
+
+Copyright 2018 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import collections
 import copy
 import datetime
@@ -22,7 +39,19 @@ LatLng = collections.namedtuple('LatLng', 'lat lng')
 
 
 class Flight(object):
+  """A single flight/operation of a single aircraft."""
+
   def __init__(self, origin, radius, period, altitude, aircraft_info, theta0):
+    """Create a flight that orbits around a fixed point for exactly one orbit.
+    
+      origin: Geo point of the center of the orbit (.lat and .lng degrees).
+      radius: Orbit radius, meters.
+      period: Orbit period, Python datetime.
+      altitude: Flight altitude, meters above WGS84 sea level datum.
+      aircraft_info: Intrinsic information about simulated aircraft flying; see
+        hanger.json for examples.
+      theta0: Radians north of east where the flight should start in its orbit.
+    """
     self.origin = origin
     self.radius = radius
     self.period_sec = period.total_seconds()
@@ -35,10 +64,21 @@ class Flight(object):
     self.telemetry = []
 
   def is_flying(self):
+    """Indicate whether the aircraft is in the air currently.
+
+    Returns:
+      True iff aircraft is flying.
+    """
     t = datetime.datetime.utcnow()
     return self.takeoff <= t <= self.landing
 
   def get_telemetry(self, history):
+    """Get the public portal telemetry for this flight.
+
+    Returns:
+      Nested dict struct corresponding to a public_portal response telemetry
+      entry in the public portal API spec.
+    """
     t = datetime.datetime.utcnow()
 
     earliest = max(self.takeoff, t - history)
@@ -60,6 +100,11 @@ class Flight(object):
       LatLng(self.origin.lat + dlat, self.origin.lng + dlng))
 
   def log_telemetry(self, r):
+    """Record a telemetry point for the aircraft's current state.
+
+    Args:
+      r: random.Random used to add noise to the altitude measurement.
+    """
     t = datetime.datetime.utcnow()
     if t > self.landing:
       return
@@ -78,6 +123,15 @@ class Flight(object):
        p1.data['speed_ud']) = self._current_speed()
 
   def _location_at_fraction(self, f):
+    """Determine where the aircraft should be at a point during its flight.
+
+    Args:
+      f: Number between 0 and 1 where 0 is the beginning of the flight and 1 is
+        the end of the flight.
+
+    Returns:
+      Geo point of the aircraft at the specified point in its flight.
+    """
     theta = 2 * math.pi * f + self._theta0
     x = self.radius * math.cos(theta)
     y = self.radius * math.sin(theta)
@@ -87,6 +141,13 @@ class Flight(object):
     return LatLng(lat=lat, lng=lng)
 
   def _current_speed(self):
+    """Compute the current speed based on the two most recent positions.
+
+    Returns:
+      speed_ew: Speed in the easterly direction, m/s.
+      speed_ns: Speed in the northerly direction, m/s.
+      speed_ud: Speed in the upward direction, m/s.
+    """
     if len(self.telemetry) >= 2:
       t0 = self.telemetry[-2]
       t1 = self.telemetry[-1]
@@ -104,6 +165,12 @@ class Flight(object):
       return None, None, None
 
   def get_flight_info(self):
+    """Get the public portal flight info for this flight.
+
+    Returns:
+      Nested dict struct corresponding to a flight_info response entry in the
+      public portal API spec.
+    """
     info = {}
     for d in self.aircraft_info.values():
       for k, v in d.items():
@@ -125,8 +192,24 @@ class Flight(object):
 
 
 class FlightSim(object):
+  """Simulator capable of launching and maintaining multiple sim aircraft."""
+
   def __init__(self, origin, radius, period, interval, min_altitude,
                max_altitude, hanger, grid_client):
+    """Create a flight simulator that generates orbiting sim flights.
+
+      origin: Geo point of the center of the orbit (.lat and .lng degrees).
+      radius: Orbit radius, meters.
+      period: Orbit period, Python datetime.
+      interval: Time between when an aircraft lands and the next one is launched
+        automatically, Python timedelta.
+      min_altitude: Minimum flight altitude, meters above WGS84 sea level datum.
+      max_altitude: Maximum flight altitude, meters above WGS84 sea level datum.
+      hanger: Description of all sim aircraft that may be launched by this
+        simulator; see hanger.json for an example.
+      grid_client: Client with which to access the InterUSS Platform; see
+        interuss_platform.Client.
+    """
     self.origin = origin
     self.radius = radius
     self.period = period
@@ -146,6 +229,8 @@ class FlightSim(object):
     self._flightthread.start()
 
   def _flightloop(self):
+    """Background update loop to simulate current flights and launch new ones.
+    """
     launches = 0
     try:
       while True:
@@ -172,6 +257,7 @@ class FlightSim(object):
       log.critical('Flight loop exited because ' + str(e))
 
   def launch(self):
+    """Launch a sim flight for the next aircraft in the hanger."""
     with self._flightlock:
       flight = Flight(
         self.origin, self.radius, self.period,
@@ -197,6 +283,11 @@ class FlightSim(object):
     log.info('Launched ' + flight.uuid)
 
   def land(self, i):
+    """Force the selected simulated aircraft to land immediately.
+
+    Args:
+      i: Index of active flight to land.
+    """
     with self._flightlock:
       del self._flights[i]
 
@@ -205,6 +296,11 @@ class FlightSim(object):
         self._bounds = (LatLng(90, 180), LatLng(-90, -180))
 
   def get_flights_info(self):
+    """Get detailed flight info for all flights.
+
+    Returns:
+      Nested dict struct with details about all current flights.
+    """
     with self._flightlock:
       t = datetime.datetime.utcnow()
       info = []
@@ -219,6 +315,12 @@ class FlightSim(object):
       return info
 
   def get_flight_info(self, uuid_operation):
+    """Get the public portal flight info for the specified flight.
+
+    Returns:
+      Nested dict struct corresponding to a flight_info response entry in the
+      public portal API spec.
+    """
     with self._flightlock:
       for flight in self._flights:
         if flight.uuid == uuid_operation:
@@ -226,6 +328,12 @@ class FlightSim(object):
     return None
 
   def get_telemetries(self, dt):
+    """Get the public portal telemetry for all flights.
+
+    Returns:
+      Nested dict struct corresponding to public_portal response telemetry in
+      the public portal API spec.
+    """
     return [ac.get_telemetry(dt) for ac in self._flights if ac.is_flying()]
 
   def _get_area(self):
