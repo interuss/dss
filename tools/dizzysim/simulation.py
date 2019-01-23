@@ -292,7 +292,7 @@ class FlightSim(object):
       del self._flights[i]
 
       if not self._flights:
-        self.grid_client.remove_operations(self._get_area())
+        self.grid_client.remove_operations()
         self._bounds = (LatLng(90, 180), LatLng(-90, -180))
 
   def get_flights_info(self):
