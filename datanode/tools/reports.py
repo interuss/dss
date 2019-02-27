@@ -124,7 +124,7 @@ def print_uvrs(uvrs, now):
   """
   for uvr in uvrs:
     time_begin = parse_timestamp(uvr['effective_time_begin'])
-    time_end = parse_timestamp(uvr['effective_time_begin'])
+    time_end = parse_timestamp(uvr['effective_time_end'])
     td_begin = time_begin - now
     td_end = time_end - now
     begin_text = format_timedelta(time_begin - now)
