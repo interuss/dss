@@ -69,6 +69,16 @@ def metadata_diff(old_metadata, new_metadata):
       continue
     diff['data']['operators'].append(new_operator)
 
+  if 'uvrs' in diff['data']:
+    diff['data']['uvrs'] = []
+    if 'uvrs' in old_metadata['data']:
+      old_uvrs = set(json.dumps(uvr) for uvr in old_metadata['data']['uvrs'])
+    else:
+      old_uvrs = set()
+    for new_uvr in new_metadata['data']['uvrs']:
+      if json.dumps(new_uvr) not in old_uvrs:
+        diff['data']['uvrs'].append(new_uvr)
+
   return diff
 
 def loop(auth_key, auth_url, output_path, node_url, poll_interval_seconds):
