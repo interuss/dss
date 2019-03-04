@@ -21,6 +21,10 @@ import requests
 
 import storage_api
 
+# NOTE: A zookeeper instance must be available for these tests to succeed.
+# To host a suitable zookeeper instance on your local machine, run:
+#   docker run --net=host --rm zookeeper
+
 ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-api-test'
 
@@ -84,7 +88,7 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
   def testIntrospectWithValidToken(self):
     self.assertIsNotNone(os.environ.get('FIMS_AUTH'))
     self.assertIsNotNone(os.environ.get('INTERUSS_PUBLIC_KEY'))
-    endpoint = 'https://utmalpha.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials'
+    endpoint = 'https://utmalpha.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials&scope=utm.nasa.gov_read.constraint'
     headers = {'Authorization': 'Basic ' + os.environ.get('FIMS_AUTH', '')}
     r = requests.post(endpoint, headers=headers)
     self.assertEqual(200, r.status_code)

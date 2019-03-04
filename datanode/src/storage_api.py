@@ -72,7 +72,8 @@ import slippy_util
 # VERSION = '1.0.2.002'  # Standardize OAuth Authorization header, docker fix
 # VERSION = '1.0.2.003'  # slippy utility updates to support point/path/polygon
 # VERSION = '1.0.2.004'  # slippy non-breaking api changes to support path/polygon
-VERSION = '1.1.0.005'  # api changes to support multi-grid GET/PUT/DEL
+# VERSION = '1.1.0.005'  # api changes to support multi-grid GET/PUT/DEL
+VERSION = '1.1.0.006'  # augment information available at status endpoint
 
 TESTID = None
 
@@ -89,11 +90,47 @@ webapp = Flask(__name__)  # Global object serving the API
 @webapp.route('/', methods=['GET'])
 @webapp.route('/status', methods=['GET'])
 def Status():
-  # just a quick status checker, not really a health check
   log.debug('Status handler instantiated...')
-  return _FormatResult({'status': 'success',
-                        'message': 'OK',
-                        'version': VERSION})
+
+  # Check disk usage (make sure not filled with logs)
+  try:
+    usage_stats = os.statvfs('/')
+    usage = round(
+      100 * (1.0 - usage_stats.f_bavail / float(usage_stats.f_blocks)))
+  except EnvironmentError as e:
+    usage = str(e.message)
+
+  # Check ability to perform basic interaction with zookeeper
+  zk_version = wrapper.get_zookeeper_version()
+
+  # Check ability to perform full query from zookeeper
+  try:
+    result = wrapper.get(0, 0, 0)
+    zk_status = 'Unknown issue'
+  except Exception as e:
+    msg = str(e)
+    zk_status = type(e).__name__ + (' ' + msg if msg else '')
+    result = None
+  if result:
+    if result['status'] == 'success':
+      zk_status = 'ok'
+    else:
+      zk_status = result['message']
+
+  return _FormatResult({
+      'status': 'success',
+      'message': 'OK',
+      'data': {
+        'version': VERSION,
+        'system': {
+          'disk_usage': usage,
+          'zookeeper': {
+            'version': zk_version,
+            'connection': zk_status,
+          },
+        },
+      }
+   })
 
 
 @webapp.route('/introspect', methods=['GET'])
