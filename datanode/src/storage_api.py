@@ -72,7 +72,8 @@ import slippy_util
 # VERSION = '1.0.2.002'  # Standardize OAuth Authorization header, docker fix
 # VERSION = '1.0.2.003'  # slippy utility updates to support point/path/polygon
 # VERSION = '1.0.2.004'  # slippy non-breaking api changes to support path/polygon
-VERSION = '1.1.0.005'  # api changes to support multi-grid GET/PUT/DEL
+# VERSION = '1.1.0.005'  # api changes to support multi-grid GET/PUT/DEL
+VERSION = '1.1.0.006'  # augment information available at status endpoint
 
 TESTID = None
 
@@ -86,14 +87,68 @@ webapp = Flask(__name__)  # Global object serving the API
 ################    WEB SERVICE ENDPOINTS    #########################
 ######################################################################
 
+@webapp.route('/status/webserver', methods=['GET'])
+def WebserverStatus():
+  log.debug('Webserver status handler instantiated...')
+  return _FormatResult({
+    'status': 'success',
+    'message': 'OK',
+  })
+
+
 @webapp.route('/', methods=['GET'])
 @webapp.route('/status', methods=['GET'])
 def Status():
-  # just a quick status checker, not really a health check
   log.debug('Status handler instantiated...')
-  return _FormatResult({'status': 'success',
-                        'message': 'OK',
-                        'version': VERSION})
+
+  error_message = None
+
+  # Check disk usage (make sure not filled with logs)
+  try:
+    usage_stats = os.statvfs('/')
+    usage = round(
+      100 * (1.0 - usage_stats.f_bavail / float(usage_stats.f_blocks)))
+    if usage > 95:
+      error_message = 'Low disk space'
+  except EnvironmentError as e:
+    usage = str(e.message)
+
+  # Check ability to perform basic interaction with storage interface
+  success, storage_version = wrapper.get_version()
+  if not success:
+    error_message = storage_version
+
+  # Check ability to perform full query from storage interface
+  try:
+    result = wrapper.get(0, 0, 0)
+    storage_status = 'Unknown issue querying storage interface'
+  except Exception as e:
+    msg = str(e)
+    storage_status = type(e).__name__ + (' ' + msg if msg else '')
+    result = None
+  if result:
+    if result['status'] == 'success':
+      storage_status = 'ok'
+    else:
+      storage_status = result['message']
+      error_message = storage_status
+  elif not error_message:
+    error_message = 'Empty response from Zookeeper'
+
+  return _FormatResult({
+    'status': 'error' if error_message else 'success',
+    'message': error_message if error_message else 'OK',
+    'data': {
+      'version': VERSION,
+      'system': {
+        'disk_usage': usage,
+        'storage_interface': {
+          'version': storage_version,
+          'connection': storage_status,
+        },
+      },
+    }
+  })
 
 
 @webapp.route('/introspect', methods=['GET'])

@@ -41,6 +41,7 @@ import slippy_util
 
 # Kazoo is the zookeeper wrapper for python
 from kazoo.client import KazooClient
+from kazoo.exceptions import KazooException
 from kazoo.exceptions import BadVersionError
 from kazoo.exceptions import NoNodeError
 from kazoo.exceptions import RolledBackError
@@ -104,6 +105,16 @@ class USSMetadataManager(object):
   def __del__(self):
     log.debug('Destroying metadata manager object and disconnecting from zk...')
     self.zk.stop()
+
+  def get_state(self):
+    return self.zk.state
+
+  def get_version(self):
+    try:
+      return True, self.zk.server_version()
+    except KazooException as e:
+      msg = str(e)
+      return False, type(e).__name__ + (' ' + msg if msg else '')
 
   def set_verbose(self):
     log.setLevel(logging.DEBUG)
