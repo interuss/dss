@@ -95,12 +95,19 @@ class InterUSSStorageAPITestCase(unittest.TestCase):
   def testIntrospectWithValidToken(self):
     self.assertIsNotNone(os.environ.get('FIMS_AUTH'))
     self.assertIsNotNone(os.environ.get('INTERUSS_PUBLIC_KEY'))
-    endpoint = 'https://utmalpha.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials'
+    endpoint = 'https://utmalpha.arc.nasa.gov//fimsAuthServer/oauth/token?grant_type=client_credentials&scope=utm.nasa.gov_write.conflictmanagement'
     headers = {'Authorization': 'Basic ' + os.environ.get('FIMS_AUTH', '')}
     r = requests.post(endpoint, headers=headers)
     self.assertEqual(200, r.status_code)
     token = r.json()['access_token']
     result = self.app.get('/introspect', headers={'access_token': token})
+    self.assertEqual(200, result.status_code)
+    result = self.app.get('/introspect/10/223/355', headers={'access_token': token})
+    self.assertEqual(200, result.status_code)
+    result = self.app.get(
+        '/introspect/10?coords=48.832,-101.832,47.954,-101.832,47.954,-100.501,'
+        '48.832,-100.501,48.832,-101.832&coord_type=polygon',
+        headers={'access_token': token})
     self.assertEqual(200, result.status_code)
 
   def testSlippyConversionWithInvalidData(self):
