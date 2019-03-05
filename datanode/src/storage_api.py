@@ -87,50 +87,68 @@ webapp = Flask(__name__)  # Global object serving the API
 ################    WEB SERVICE ENDPOINTS    #########################
 ######################################################################
 
+@webapp.route('/status/webserver', methods=['GET'])
+def WebserverStatus():
+  log.debug('Webserver status handler instantiated...')
+  return _FormatResult({
+    'status': 'success',
+    'message': 'OK',
+  })
+
+
 @webapp.route('/', methods=['GET'])
 @webapp.route('/status', methods=['GET'])
 def Status():
   log.debug('Status handler instantiated...')
+
+  error_message = None
 
   # Check disk usage (make sure not filled with logs)
   try:
     usage_stats = os.statvfs('/')
     usage = round(
       100 * (1.0 - usage_stats.f_bavail / float(usage_stats.f_blocks)))
+    if usage > 95:
+      error_message = 'Low disk space'
   except EnvironmentError as e:
     usage = str(e.message)
 
-  # Check ability to perform basic interaction with zookeeper
-  zk_version = wrapper.get_zookeeper_version()
+  # Check ability to perform basic interaction with storage interface
+  success, storage_version = wrapper.get_version()
+  if not success:
+    error_message = storage_version
 
-  # Check ability to perform full query from zookeeper
+  # Check ability to perform full query from storage interface
   try:
     result = wrapper.get(0, 0, 0)
-    zk_status = 'Unknown issue'
+    storage_status = 'Unknown issue querying storage interface'
   except Exception as e:
     msg = str(e)
-    zk_status = type(e).__name__ + (' ' + msg if msg else '')
+    storage_status = type(e).__name__ + (' ' + msg if msg else '')
     result = None
   if result:
     if result['status'] == 'success':
-      zk_status = 'ok'
+      storage_status = 'ok'
     else:
-      zk_status = result['message']
+      storage_status = result['message']
+      error_message = storage_status
+  elif not error_message:
+    error_message = 'Empty response from Zookeeper'
 
   return _FormatResult({
-      'status': 'success',
-      'message': 'OK',
-      'data': {
-        'version': VERSION,
-        'system': {
-          'disk_usage': usage,
-          'zookeeper': {
-            'version': zk_version,
-            'connection': zk_status,
-          },
+    'status': 'error' if error_message else 'success',
+    'message': error_message if error_message else 'OK',
+    'data': {
+      'version': VERSION,
+      'system': {
+        'disk_usage': usage,
+        'storage_interface': {
+          'version': storage_version,
+          'connection': storage_status,
         },
-      }
-   })
+      },
+    }
+  })
 
 
 @webapp.route('/introspect', methods=['GET'])

@@ -109,11 +109,12 @@ class USSMetadataManager(object):
   def get_state(self):
     return self.zk.state
 
-  def get_zookeeper_version(self):
+  def get_version(self):
     try:
-      return self.zk.server_version()
+      return True, self.zk.server_version()
     except KazooException as e:
-      return e.message
+      msg = str(e)
+      return False, type(e).__name__ + (' ' + msg if msg else '')
 
   def set_verbose(self):
     log.setLevel(logging.DEBUG)
