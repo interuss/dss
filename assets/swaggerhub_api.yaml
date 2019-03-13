@@ -78,7 +78,7 @@ paths:
 
   /introspect:
     get:
-      summary: Status checker of an authorization token
+      summary: Checks whether an access token is valid for any of the available authorization authorities.
       produces:
       - application/json
       parameters:
@@ -87,6 +87,82 @@ paths:
         description: Access token to validate
         required: true
         type: string
+      responses:
+        200:
+          description: JSend version of validated access token
+          schema:
+            $ref: '#/definitions/JSendIntrospectResponse'
+        400:
+          description: Invalid/expired token or invalid format
+        403:
+          description: Access token not provided
+
+  /introspect/{zoom}/{x}/{y}:
+    get:
+      summary: Checks whether an access token is valid for an authorization authority appropriate to the specified slippy tile.
+      produces:
+        - application/json
+      parameters:
+        - name: access_token
+          in: header
+          description: Access token to validate
+          required: true
+          type: string
+        - name: zoom
+          in: path
+          description: Zoom level in slippy tile format
+          required: true
+          type: integer
+        - name: x
+          in: path
+          description: x tile number in slippy tile format
+          required: true
+          type: integer
+        - name: y
+          in: path
+          description: y tile number in slippy tile format
+          required: true
+          type: integer
+      responses:
+        200:
+          description: JSend version of validated access token
+          schema:
+            $ref: '#/definitions/JSendIntrospectResponse'
+        400:
+          description: Invalid/expired token or invalid format
+        403:
+          description: Access token not provided
+
+  /introspect/{zoom}:
+    get:
+      summary: Checks whether an access token is valid for an authorization authority appropriate to the specified area.
+      produces:
+        - application/json
+      parameters:
+        - name: access_token
+          in: header
+          description: Access token to validate
+          required: true
+          type: string
+        - name: zoom
+          in: path
+          description: Zoom level in slippy tile format
+          required: true
+          type: integer
+        - name: coords
+          in: query
+          description: CSV list of latitude,longitude,latitude,longitude...
+          required: true
+          type: string
+        - name: coord_type
+          in: query
+          description: Type of query (point, path, or polygon)
+          default: point
+          type: string
+          enum:
+            - point
+            - path
+            - polygon
       responses:
         200:
           description: JSend version of validated access token
