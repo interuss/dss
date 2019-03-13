@@ -21,7 +21,7 @@
 # docker run \
 #     -e INTERUSS_CONNECTIONSTRING="zookeeper_ip:2181" \
 #     -e INTERUSS_PUBLIC_KEY="${INTERUSS_PUBLIC_KEY}" \
-#     -p 8121:8121 -d interussplatform/storage_api
+#     -p 8120:8120 -d interussplatform/storage_api
 
 # Required environment variables:
 #   INTERUSS_CONNECTIONSTRING: Set of Zookeeper servers to which the storage API should connect.
@@ -29,7 +29,7 @@
 #   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.
 
 # Optional environment variables:
-#   INTERUSS_API_PORT: Port on which the InterUSS API will be served (default 8121)
+#   INTERUSS_API_PORT: Port on which the InterUSS API will be served via HTTP (default 8120)
 #   INTERUSS_API_SERVER: IP address that will respond to InterUSS API requests (default 0.0.0.0)
 #   INTERUSS_VERBOSE: True for more log messages from the InterUSS API (default true)
 #   INTERUSS_TESTID: Force testing mode with test data located in specific test id
@@ -43,7 +43,7 @@ RUN pip install --no-cache-dir python-dateutil kazoo flask PyJWT djangorestframe
 COPY . .
 
 ENV INTERUSS_API_SERVER 0.0.0.0
-ENV INTERUSS_API_PORT 8121
+ENV INTERUSS_API_PORT 8120
 ENV INTERUSS_VERBOSE true
 
 CMD gunicorn storage_api:webapp -b ${INTERUSS_API_SERVER}:${INTERUSS_API_PORT} --access-logfile -
