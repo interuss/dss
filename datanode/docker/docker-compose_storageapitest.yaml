@@ -18,9 +18,11 @@
 #   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.
 
 # Optional environment variables:
-#   INTERUSS_API_PORT: Port on which to provide the InterUSS Platform data node API (default 8121).
+#   INTERUSS_API_PORT: Port on which to provide the InterUSS Platform data node API via HTTP
+#                      (default 8120).
 
 # To bring up this system:
+# export INTERUSS_PUBLIC_KEY=<your public key>
 # docker-compose -f docker-compose_storageapitest.yaml -p datanode up
 
 version: '3.6'
@@ -41,9 +43,9 @@ services:
   storage_api:
     image: interussplatform/storage_api
     ports:
-      - "${INTERUSS_API_PORT:-8121}:${INTERUSS_API_PORT:-8121}"
+      - "${INTERUSS_API_PORT:-8120}:${INTERUSS_API_PORT:-8120}"
     environment:
-      - "${INTERUSS_API_PORT:-8121}"
+      - "${INTERUSS_API_PORT:-8120}"
       - INTERUSS_PUBLIC_KEY
       - INTERUSS_CONNECTIONSTRING=zoo:2181
     depends_on:

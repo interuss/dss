@@ -18,8 +18,6 @@
 #   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.
 
 # Optional environment variables:
-#   INTERUSS_API_PORT_HTTP: Port on which to provide the InterUSS Platform data node API via HTTP
-#     (default 8120).
 #   INTERUSS_API_PORT_HTTPS: Port on which to provide the InterUSS Platform data node API via HTTPS
 #     (default 8121).
 #   ZOO_MY_ID: Zookeeper ID of this node (default 1).
@@ -29,6 +27,7 @@
 #   INTERUSS_TESTID: Force testing mode with test data located in specific test id (if specified).
 
 # To bring up this system:
+# export INTERUSS_PUBLIC_KEY=<your public key>
 # docker-compose -p datanode up
 
 # Note that Zookeeper uses an anonymous volume that allows data to persist between system restarts.
@@ -51,7 +50,7 @@ services:
       - ZOO_SERVERS=${ZOO_SERVERS:-server.1=0.0.0.0:2888:3888}
 
   storage_api:
-    image: interussplatform/storage_api:tcl4
+    image: interussplatform/storage_api
     expose:
       - 5000
     environment:
@@ -66,10 +65,8 @@ services:
   reverse_proxy:
     image: interussplatform/reverse_proxy
     ports:
-      - "${INTERUSS_API_PORT_HTTP:-8120}:${INTERUSS_API_PORT_HTTP:-8120}"
       - "${INTERUSS_API_PORT_HTTPS:-8121}:${INTERUSS_API_PORT_HTTPS:-8121}"
     environment:
-      - INTERUSS_API_PORT_HTTP=${INTERUSS_API_PORT_HTTP:-8120}
       - INTERUSS_API_PORT_HTTPS=${INTERUSS_API_PORT_HTTPS:-8121}
       - STORAGE_API_SERVER=storage_api
       - STORAGE_API_PORT=5000
