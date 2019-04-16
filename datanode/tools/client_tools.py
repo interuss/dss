@@ -75,6 +75,19 @@ def get_metadata(token, url):
   return r.content
 
 
+def get_operation(token, uss_baseurl, gufi):
+  """Retrieve details of a single operation from a USS."""
+  url = os.path.join(uss_baseurl, 'operations', gufi)
+  try:
+    response = requests.get(url, headers={
+      'Cache-Control': 'no-cache', 'Authorization': 'Bearer ' + token})
+    return response.content, response.status_code
+  except HTTPError as e:
+    return 'HTTPError: ' + str(e), 500
+  except ValueError as e:
+    return 'ValueError: ' + str(e), 500
+
+
 def add_auth_arguments(parser):
   """Add arguments relating to OAuth authentication.
 
