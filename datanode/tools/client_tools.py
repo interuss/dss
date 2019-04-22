@@ -20,18 +20,19 @@ import json
 import os
 
 import requests
+import requests.exceptions
 
 try:
   from urllib.request import Request, urlopen, HTTPError  # Python 3
 except ImportError:
   from urllib2 import Request, urlopen, HTTPError  # Python 2
 
-DEFAULT_AUTH_URL = 'https://utmalpha.arc.nasa.gov/fimsAuthServer/oauth/token?grant_type=client_credentials&scope=utm.nasa.gov_write.conflictmanagement'
+DEFAULT_AUTH_URL = 'https://utmalpha.arc.nasa.gov/fimsAuthServer/oauth/token?grant_type=client_credentials'
 DEFAULT_HOST = 'https://node4.tcl4.interussplatform.com:8121/'
 DEFAULT_REQUEST_PATH = 'GridCellsOperator/10?coords=48.832,-101.832,47.954,-101.832,47.954,-100.501,48.832,-100.501,48.832,-101.832&coord_type=polygon'
 
 
-def get_token(auth_key, auth_url):
+def get_token(auth_key, auth_url, scope):
   """Call the specified OAuth server to retrieve an access token.
 
   Args:
@@ -44,7 +45,8 @@ def get_token(auth_key, auth_url):
   Raises:
     ValueError: When access_token was not returned properly.
   """
-  r = requests.post(auth_url, headers={'Authorization': 'Basic ' + auth_key})
+  url = auth_url + '&scope=' + scope
+  r = requests.post(url, headers={'Authorization': 'Basic ' + auth_key})
   result = r.content
   result_json = json.loads(result)
   if 'access_token' in result_json:
@@ -72,6 +74,10 @@ def get_metadata(token, url):
     json.loads(r.content)
   except ValueError:
     raise ValueError('Error getting metadata: ' + r.content)
+  except HTTPError as e:
+    raise ValueError('HTTPError getting metadata: ' + str(e))
+  except requests.exceptions.ConnectionError as e:
+    raise ValueError('ConnectionError getting metadata: ' + str(e))
   return r.content
 
 
@@ -85,7 +91,9 @@ def get_operation(token, uss_baseurl, gufi):
   except HTTPError as e:
     return 'HTTPError: ' + str(e), 500
   except ValueError as e:
-    return 'ValueError: ' + str(e), 500
+    return 'ValueError: ' + str(e), 400
+  except requests.exceptions.ConnectionError as e:
+    return 'Client ConnectionError: ' + str(e), 600
 
 
 def add_auth_arguments(parser):
