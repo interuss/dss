@@ -46,7 +46,9 @@ if __name__ == "__main__":
   if options.access_token:
     token = options.access_token
   else:
-    token = client_tools.get_token(options.auth_key, options.auth_url)
+    token_manager = client_tools.TokenManager(
+        options.auth_url, options.auth_key)
+    token = token_manager.get_token(client_tools.INTERUSS_SCOPE)
   node_url = client_tools.make_node_url(options)
   json_string = client_tools.get_metadata(token, node_url)
   metadata = json.loads(json_string)
