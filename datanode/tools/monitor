@@ -100,10 +100,7 @@ def loop(auth_key, auth_url, output_path, node_url, poll_interval_seconds,
   # Get an access token
   INTERUSS_SCOPE = 'utm.nasa.gov_write.conflictmanagement'
   USS_SCOPE = 'utm.nasa.gov_write.operation'
-  scopes = [INTERUSS_SCOPE]
-  if record_operations:
-    scopes.append(USS_SCOPE)
-  tokens = {scope: client_tools.get_token(auth_key, auth_url, scope) for scope in scopes}
+  token = client_tools.get_token(auth_key, auth_url, INTERUSS_SCOPE)
 
   old_metadata = {'sync_token': None, 'data': {'operators': []}}
   if output_path:
@@ -121,13 +118,13 @@ def loop(auth_key, auth_url, output_path, node_url, poll_interval_seconds,
   while True:
     # Poll metadata, refreshing access_token if necessary
     try:
-      new_metadata_string = client_tools.get_metadata(tokens[INTERUSS_SCOPE], node_url)
+      new_metadata_string = client_tools.get_metadata(token, node_url)
     except ValueError:
       print('')
       print('Access token expired; getting new one...')
-      tokens[INTERUSS_SCOPE] = client_tools.get_token(auth_key, auth_url)
-      print('Updated access token: ' + tokens[INTERUSS_SCOPE])
-      new_metadata_string = client_tools.get_metadata(tokens[INTERUSS_SCOPE], node_url)
+      token = client_tools.get_token(auth_key, auth_url, INTERUSS_SCOPE)
+      print('Updated access token: ' + token)
+      new_metadata_string = client_tools.get_metadata(token, node_url)
 
     new_metadata = json.loads(new_metadata_string)
     if new_metadata['sync_token'] != old_metadata['sync_token']:
@@ -141,19 +138,20 @@ def loop(auth_key, auth_url, output_path, node_url, poll_interval_seconds,
         filename = os.path.join(output_path, timestamp + '.json')
         with open(filename, 'w') as f:
           f.write(new_metadata_string)
-        for operator in diff['data']['operators']:
-          for summary in operator['operations']:
-            gufi = summary['gufi']
-            version = summary['version']
-            if gufi in operation_versions and operation_versions[gufi] == version:
-              continue
-            tokens[USS_SCOPE] = client_tools.get_token(auth_key, auth_url, USS_SCOPE)
-            op_string, code = client_tools.get_operation(tokens[USS_SCOPE], operator['uss_baseurl'], gufi)
-            if code == 200:
-              operation_versions[gufi] = version
-            filename = os.path.join(output_path, timestamp + '_' + gufi + '.json')
-            with open(filename, 'w') as f:
-              f.write(op_string)
+        if record_operations:
+          uss_token = client_tools.get_token(auth_key, auth_url, USS_SCOPE)
+          for operator in diff['data']['operators']:
+            for summary in operator['operations']:
+              gufi = summary['gufi']
+              version = summary['version']
+              if gufi in operation_versions and operation_versions[gufi] == version:
+                continue
+              op_string, code = client_tools.get_operation(uss_token, operator['uss_baseurl'], gufi)
+              if code == 200:
+                operation_versions[gufi] = version
+              filename = os.path.join(output_path, timestamp + '_' + gufi + '.json')
+              with open(filename, 'w') as f:
+                f.write(op_string)
 
       old_metadata = new_metadata
 
