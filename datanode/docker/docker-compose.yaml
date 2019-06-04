@@ -40,7 +40,7 @@ version: '3.6'
 services:
 
   zoo:
-    image: zookeeper
+    image: zookeeper:3.4
     ports:
       - "2888:2888"
       - "3888:3888"
