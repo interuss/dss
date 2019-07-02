@@ -15,21 +15,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
 import threading
 import unittest
 import uuid
 from dateutil import parser
-from kazoo.handlers.threading import KazooTimeoutError
 
 import storage_interface
 import test_utils
 import uss_metadata
 
-# NOTE: A zookeeper instance must be available for these tests to succeed.
-# To host a suitable zookeeper instance on your local machine, run:
-#   docker run --net=host --rm zookeeper
+# NOTE: A cockroach DB instance must be available for these tests to succeed.
+# To host a suitable cockroach instance on your local machine, run:
+#   docker run --rm --name crdb -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v19.1.2 start --insecure
+# Alternatively, you can point the test suite to a remote cockroach instance by setting
+# CRDB_TEST_CONNECTION_STRING in the env of the test.
+CRDB_TEST_CONNECTION_STRING = os.getenv(
+  'CRDB_TEST_CONNECTION_STRING',
+  'host=localhost port=26257 dbname=defaultdb user=root password='
+)
 
-ZK_TEST_CONNECTION_STRING = 'localhost:2181'
 TESTID = 'storage-interface-test-tcl4'
 PARALLEL_WORKERS = 10
 
@@ -42,7 +47,7 @@ class InterUSSStorageInterfaceTestCase(unittest.TestCase):
   def setUp(self):
     # IMPORTANT: Puts us in a test data location
     self.mm = storage_interface.USSMetadataManager(
-        ZK_TEST_CONNECTION_STRING, testgroupid=TESTID)
+        CRDB_TEST_CONNECTION_STRING, testgroupid=TESTID)
     self.mm.set_verbose()
 
   def tearDown(self):

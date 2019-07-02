@@ -14,7 +14,7 @@ information interface to translate grid cell USS information into the correct
 data storage format, and an information consistency store to ensure data is up
 to date.
 
-This module is the information interface to Zookeeper.
+This module is the information interface to Cockroach.
 
 
 Copyright 2018 Google LLC
@@ -41,13 +41,8 @@ import slippy_util
 
 import uvrs
 
-# Kazoo is the zookeeper wrapper for python
-from kazoo.client import KazooClient
-from kazoo.exceptions import BadVersionError
-from kazoo.exceptions import NoNodeError
-from kazoo.exceptions import RolledBackError
-from kazoo.handlers.threading import KazooTimeoutError
-from kazoo.protocol.states import KazooState
+# psycopg2 is a postgres database driver for python's DB API.
+import psycopg2
 
 # logging is our log infrastructure used for this application
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -58,13 +53,46 @@ log = logging.getLogger('InterUSS_DataNode_InformationInterface')
 USS_BASE_PREFIX = '/uss/gridcells/'
 TEST_BASE_PREFIX = '/test/'
 USS_METADATA_FILE = '/manifest'
-BAD_CHARACTER_CHECK = '\';(){}[]!@#$%^&*|"<>'
-CONNECTION_TIMEOUT = 2.5  # seconds
 DEFAULT_CONNECTION = 'localhost:2181'
 GRID_PATH = USS_BASE_PREFIX
 MAX_SAFE_INTEGER = 9007199254740991
 DELETE_ATTEMPTS = 3
 OK_STATUS = {200, 204}
+
+SQL_CREATE_TABLE = """
+  CREATE TABLE IF NOT EXISTS
+    grid (
+      tile STRING PRIMARY KEY NOT NULL,
+      uss_metadata STRING,
+      updated_at TIMESTAMPTZ NOT NULL
+    );
+"""
+
+SQL_SELECT_METADATA_AND_TRANSACTION_ID_FOR_TILE = """
+  SELECT
+    uss_metadata, updated_at
+  FROM
+    grid
+  WHERE
+    tile=%s;
+"""
+
+SQL_UPSERT_METADATA_FOR_TILE_AND_TRANSACTION_ID = """
+WITH data (tile, uss_metadata, updated_at) AS (
+  VALUES (%s, %s, transaction_timestamp())
+)
+UPSERT INTO
+  grid (tile, uss_metadata, updated_at)
+SELECT * FROM
+  data
+WHERE
+  EXISTS(SELECT updated_at FROM grid WHERE tile=%s and updated_at=%s)
+OR
+  NOT EXISTS (SELECT tile FROM grid WHERE tile=%s)
+RETURNING
+  updated_at;
+"""
+
 
 class USSMetadataManager(object):
   """Interfaces with the locking system to get, put, and delete USS metadata.
@@ -80,7 +108,7 @@ class USSMetadataManager(object):
 
     Args:
       connectionstring:
-        Zookeeper connection string - server:port,server:port,...
+        cokcroach connection string - following postgres URL syntax
       testgroupid:
         ID to use if in test mode, none for normal mode
     """
@@ -88,26 +116,22 @@ class USSMetadataManager(object):
       self.set_testmode(testgroupid)
     if not connectionstring:
       connectionstring = DEFAULT_CONNECTION
-    log.debug('Creating metadata manager object and connecting to zookeeper...')
+    log.debug('Creating metadata manager object and connecting to cockroach...')
     try:
-      if set(BAD_CHARACTER_CHECK) & set(connectionstring):
-        raise ValueError
-      self.zk = KazooClient(hosts=connectionstring, timeout=CONNECTION_TIMEOUT)
-      self.zk.add_listener(self.zookeeper_connection_listener)
-      self.zk.start()
+      self.conn = psycopg2.connect(connectionstring)
+      with self.conn.cursor() as curs:
+        curs.execute(SQL_CREATE_TABLE)
+        self.conn.commit()
       if testgroupid:
         self.delete_testdata(testgroupid)
-    except KazooTimeoutError:
-      log.error('Unable to connect to zookeeper using %s connection string...',
+    except psycopg2.Error:
+      log.error('Unable to connect to cockroach using %s connection string...',
                 connectionstring)
-      raise
-    except ValueError:
-      log.error('Connection string %s seems invalid...', connectionstring)
       raise
 
   def __del__(self):
-    log.debug('Destroying metadata manager object and disconnecting from zk...')
-    self.zk.stop()
+    log.debug('Destroying metadata manager object and disconnecting from cockroach...')
+    self.conn.close()
 
   def set_verbose(self):
     log.setLevel(logging.DEBUG)
@@ -119,22 +143,9 @@ class USSMetadataManager(object):
       testgroupid: ID to use if in test mode, none for normal mode
     """
     global GRID_PATH
-    global CONNECTION_TIMEOUT
     # Adjust parameters specifically for the test
     GRID_PATH = TEST_BASE_PREFIX + testgroupid + USS_BASE_PREFIX
     log.debug('Setting test path to %s...', GRID_PATH)
-    CONNECTION_TIMEOUT = 1.0
-
-  def zookeeper_connection_listener(self, state):
-    if state == KazooState.LOST:
-      # Register somewhere that the session was lost
-      log.error('Lost connection with the zookeeper servers...')
-    elif state == KazooState.SUSPENDED:
-      # Handle being disconnected from Zookeeper
-      log.error('Suspended connection with the zookeeper servers...')
-    elif state == KazooState.CONNECTED:
-      # Handle being connected/reconnected to Zookeeper
-      log.info('Connection restored with the zookeeper servers...')
 
   def delete_testdata(self, testgroupid=None):
     """Removes the test data from the servers.
@@ -146,15 +157,17 @@ class USSMetadataManager(object):
       testgroupid: ID to use if in test mode, none will remove all test data
     """
     if testgroupid:
-      path = TEST_BASE_PREFIX + testgroupid
+      path = TEST_BASE_PREFIX + testgroupid + "%"
     else:
-      path = TEST_BASE_PREFIX
-    self.zk.delete(path, recursive=True)
+      path = TEST_BASE_PREFIX + "%"
+    with self.conn.cursor() as curs:
+      curs.execute('DELETE FROM grid WHERE tile LIKE %s', [path])
+      self.conn.commit()
 
   def get(self, z, x, y):
     """Gets the metadata and snapshot token for a GridCell.
 
-    Reads data from zookeeper, including a snapshot token. The
+    Reads data from cockroach, including a snapshot token. The
     snapshot token is used as a reference when writing to ensure
     the data has not been updated between read and write.
 
@@ -170,20 +183,17 @@ class USSMetadataManager(object):
     #                   at least in a standard JSend format.
     status = 500
     if slippy_util.validate_slippy(z, x, y):
-      (content, metadata) = self._get_raw(z, x, y)
-      if metadata:
-        try:
-          m = uss_metadata.USSMetadata(content)
-          status = 200
-          result = {
-            'status': 'success',
-            'sync_token': metadata.last_modified_transaction_id,
-            'data': m.to_json()
-          }
-        except ValueError:
-          status = 412
-      else:
-        status = 404
+      (content, txid) = self._get_raw(z, x, y)
+      try:
+        m = uss_metadata.USSMetadata(content)
+        status = 200
+        result = {
+          'status': 'success',
+          'sync_token': txid,
+          'data': m.to_json()
+        }
+      except ValueError:
+        status = 412
     else:
       status = 400
     if status != 200:
@@ -224,13 +234,11 @@ class USSMetadataManager(object):
       return self._format_status_code_to_jsend(400, 'Slippy validation failed')
 
     # First we have to get the cell content
-    (content, metadata) = self._get_raw(z, x, y)
-    if not metadata:
-      return self._format_status_code_to_jsend(404, 'Could not get metadata')
+    (content, txid) = self._get_raw(z, x, y)
 
     # Quick check of the token; another is done on the actual set to be sure but
     # this check fails early and fast
-    if str(metadata.last_modified_transaction_id) != str(sync_token):
+    if txid != sync_token:
       return self._format_status_code_to_jsend(409, 'Sync token does not match')
 
     try:
@@ -242,7 +250,7 @@ class USSMetadataManager(object):
     except ValueError as e:
       return self._format_status_code_to_jsend(400, e.message)
     try:
-      status = self._set_raw(z, x, y, m, metadata.version)
+      status = self._set_raw(z, x, y, m, txid)
     except ValueError as e:
       log.error('Failed setting operator for %s with token %s because %s',
                 uss_id, str(sync_token), str(e))
@@ -280,13 +288,13 @@ class USSMetadataManager(object):
       return self._format_status_code_to_jsend(400, 'Slippy validation failed')
 
     # first we have to get the cell
-    (content, metadata) = self._get_raw(z, x, y)
-    if not metadata:
+    (content, txid) = self._get_raw(z, x, y)
+    if not txid:
       return self._format_status_code_to_jsend(404)
 
     # Quick check of the token, another is done on the actual set to be sure
     #    but this check fails early and fast
-    if str(metadata.last_modified_transaction_id) != str(sync_token):
+    if str(txid) != str(sync_token):
       return self._format_status_code_to_jsend(409)
 
     try:
@@ -301,7 +309,7 @@ class USSMetadataManager(object):
           404, 'Operator %s not found' % uss_id)
 
     try:
-      status = self._set_raw(z, x, y, m, metadata.version)
+      status = self._set_raw(z, x, y, m, txid)
     except ValueError:
       log.error('Failed setting operation for %s with token %s...',
                 gufi, str(sync_token))
@@ -328,13 +336,13 @@ class USSMetadataManager(object):
     status = 500
     if slippy_util.validate_slippy(z, x, y):
       # first we have to get the cell
-      (content, metadata) = self._get_raw(z, x, y)
-      if metadata:
+      (content, txid) = self._get_raw(z, x, y)
+      if txid:
         try:
           m = uss_metadata.USSMetadata(content)
           if m.remove_operator(uss_id):
             # TODO(pelletierb): Automatically retry on delete
-            status = self._set_raw(z, x, y, m, metadata.version)
+            status = self._set_raw(z, x, y, m, txid)
           else:
             status = 404
         except ValueError:
@@ -345,10 +353,10 @@ class USSMetadataManager(object):
       status = 400
     if status == 200:
       # Success, now get the metadata back to send back
-      (content, metadata) = self._get_raw(z, x, y)
+      (content, txid) = self._get_raw(z, x, y)
       result = {
         'status': 'success',
-        'sync_token': metadata.last_modified_transaction_id,
+        'sync_token': txid,
         'data': m.to_json()
       }
     else:
@@ -371,14 +379,13 @@ class USSMetadataManager(object):
     m = None
     if slippy_util.validate_slippy(z, x, y):
       # first we have to get the cell
-      (content, metadata) = self._get_raw(z, x, y)
-      if metadata:
+      (content, txid) = self._get_raw(z, x, y)
+      if txid:
         try:
           m = uss_metadata.USSMetadata(content)
           if m.remove_operation(uss_id, gufi):
             # TODO(pelletierb): Automatically retry on delete
-            status = self._set_raw(z, x, y, m,
-                                   metadata.version)
+            status = self._set_raw(z, x, y, m, txid)
           else:
             status = 404
         except ValueError:
@@ -388,11 +395,11 @@ class USSMetadataManager(object):
     else:
       status = 400
     if status == 200:
-      # Success, now get the metadata back to send back
-      (content, metadata) = self._get_raw(z, x, y)
+      # Success, now get the transaction id back to send back
+      (content, txid) = self._get_raw(z, x, y)
       result = {
         'status': 'success',
-        'sync_token': metadata.last_modified_transaction_id,
+        'sync_token': txid,
         'data': m.to_json()
       }
     else:
@@ -402,7 +409,7 @@ class USSMetadataManager(object):
   def get_multi(self, z, grids):
     """Gets the metadata and snapshot token for multiple GridCells.
 
-    Reads data from zookeeper, including a composite snapshot token. The
+    Reads data from cockroach, including a composite snapshot token. The
     snapshot token is used as a reference when writing to ensure
     the data has not been updated between read and write.
 
@@ -415,10 +422,10 @@ class USSMetadataManager(object):
     try:
       combined_meta, syncs = self._get_multi_raw(z, grids)
       log.debug('Found sync token %s for %d grids...',
-                self._hash_sync_tokens(syncs), len(syncs))
+                self._hash_transaction_ids(syncs), len(syncs))
       result = {
         'status': 'success',
-        'sync_token': self._hash_sync_tokens(syncs),
+        'sync_token': self._hash_transaction_ids(syncs),
         'data': combined_meta.to_json()
       }
     except ValueError as e:
@@ -461,8 +468,8 @@ class USSMetadataManager(object):
       # Quick check of the token, another is done on the actual set to be sure
       #    but this check fails early and fast
       log.debug('Found sync token %d for %d grids...',
-                self._hash_sync_tokens(syncs), len(syncs))
-      if str(self._hash_sync_tokens(syncs)) == str(sync_token):
+                self._hash_transaction_ids(syncs), len(syncs))
+      if str(self._hash_transaction_ids(syncs)) == str(sync_token):
         log.debug('Composite sync_token matches, continuing...')
         self._set_multi_raw(z, grids, syncs, uss_id, baseurl, announce,
                             earliest_operation, latest_operation, operations)
@@ -472,10 +479,10 @@ class USSMetadataManager(object):
       combined_meta, new_syncs = self._get_multi_raw(z, grids)
       result = {
         'status': 'success',
-        'sync_token': self._hash_sync_tokens(new_syncs),
+        'sync_token': self._hash_transaction_ids(new_syncs),
         'data': combined_meta.to_json()
       }
-    except (KeyError, RolledBackError) as e:
+    except (KeyError, psycopg2.DatabaseError) as e:
       result = self._format_status_code_to_jsend(409, e.message)
     except ValueError as e:
       result = self._format_status_code_to_jsend(400, e.message)
@@ -511,8 +518,8 @@ class USSMetadataManager(object):
       # Quick check of the token, another is done on the actual set to be sure
       #    but this check fails early and fast
       log.debug('Found composite sync token %d for %d grids...',
-                self._hash_sync_tokens(syncs), len(syncs))
-      if str(self._hash_sync_tokens(syncs)) == str(sync_token):
+                self._hash_transaction_ids(syncs), len(syncs))
+      if str(self._hash_transaction_ids(syncs)) == str(sync_token):
         log.debug('Composite sync_token matches, continuing...')
         self._set_multi_operation_raw(z, grids, syncs, uss_id, gufi,
                                       signature, begin, end)
@@ -522,10 +529,10 @@ class USSMetadataManager(object):
       combined_meta, new_syncs = self._get_multi_raw(z, grids)
       result = {
         'status': 'success',
-        'sync_token': self._hash_sync_tokens(new_syncs),
+        'sync_token': self._hash_transaction_ids(new_syncs),
         'data': combined_meta.to_json()
       }
-    except (KeyError, RolledBackError) as e:
+    except (KeyError, psycopg2.DatabaseError) as e:
       result = self._format_status_code_to_jsend(409, e.message)
     except ValueError as e:
       result = self._format_status_code_to_jsend(400, e.message)
@@ -554,17 +561,17 @@ class USSMetadataManager(object):
         y = grids[i][1]
         path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
                                    USS_METADATA_FILE)
-        (content, metadata) = self._get_raw(z, x, y)
+        (content, txid) = self._get_raw(z, x, y)
         m = uss_metadata.USSMetadata(content)
         m.insert_uvr(uvr)
-        contents.append((path, m, metadata.version))
+        contents.append((path, m, txid))
 
-      # Commit changes to Zookeeper
+      # Commit changes to cockroach
       self._execute_transaction(contents)
       log.debug('Completed updating multiple grids with UVR...')
 
       return self.get_multi(z, grids)
-    except RolledBackError as e:
+    except psycopg2.DatabaseError as e:
       result = self._format_status_code_to_jsend(409, e.message)
     except (KeyError, ValueError) as e:
       result = self._format_status_code_to_jsend(400, e.message)
@@ -592,12 +599,12 @@ class USSMetadataManager(object):
         raise ValueError('Invalid uss_id for deleting multi')
       for x, y in grids:
         if slippy_util.validate_slippy(z, x, y):
-          (content, metadata) = self._get_raw(z, x, y)
-          if metadata:
+          (content, txid) = self._get_raw(z, x, y)
+          if txid:
             m = uss_metadata.USSMetadata(content)
             m.remove_operator(uss_id)
             # TODO(pelletierb): Automatically retry on delete
-            status = self._set_raw(z, x, y, m, metadata.version)
+            status = self._set_raw(z, x, y, m, txid)
         else:
           raise ValueError('Invalid slippy grids for lookup')
       result = self.get_multi(z, grids)
@@ -625,13 +632,12 @@ class USSMetadataManager(object):
         raise ValueError('Invalid uss_id for deleting multi')
       for x, y in grids:
         if slippy_util.validate_slippy(z, x, y):
-          (content, metadata) = self._get_raw(z, x, y)
-          if metadata:
+          (content, txid) = self._get_raw(z, x, y)
+          if txid:
             m = uss_metadata.USSMetadata(content)
             if m.remove_operation(uss_id, gufi):
               # TODO(pelletierb): Automatically retry on delete
-              status = self._set_raw(z, x, y, m,
-                                     metadata.version)
+              status = self._set_raw(z, x, y, m, txid)
         else:
           raise ValueError('Invalid slippy grids for lookup')
       result = self.get_multi(z, grids)
@@ -659,8 +665,8 @@ class USSMetadataManager(object):
         for x, y in grids:
           if not slippy_util.validate_slippy(z, x, y):
             raise ValueError('Invalid slippy grids for lookup')
-          (content, metadata) = self._get_raw(z, x, y)
-          if metadata:
+          (content, txid) = self._get_raw(z, x, y)
+          if txid:
             m = uss_metadata.USSMetadata(content)
             removed_uvr = m.remove_uvr(uvr['message_id'])
             if removed_uvr:
@@ -671,7 +677,7 @@ class USSMetadataManager(object):
                     'the existing UVR exactly. Found %s in existing UVR in '
                     'grid cell (%d, %d) and %s in UVR deletion request' %
                     (diff[0], x, y, diff[1]))
-              deletions.append((z, x, y, m, metadata.version))
+              deletions.append((z, x, y, m, txid))
 
         # Now, attempt all mutations at once
         status = 200
@@ -695,7 +701,7 @@ class USSMetadataManager(object):
   ################       INTERNAL FUNCTIONS    #########################
   ######################################################################
   def _get_raw(self, z, x, y):
-    """Gets the raw content and metadata for a GridCell from zookeeper.
+    """Gets the raw content and the timestamp of the last update for a GridCell from cockroach.
 
     Args:
       z: zoom level in slippy tile format
@@ -703,24 +709,29 @@ class USSMetadataManager(object):
       y: y tile number in slippy tile format
     Returns:
       content: USS metadata
-      metadata: straight from zookeeper
+      transaction_id: id of the last transaction that updated the content (might be None).
     """
     path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
                                USS_METADATA_FILE)
-    log.debug('Getting metadata from zookeeper@%s...', path)
-    try:
-      c, m = self.zk.get(path)
-    except NoNodeError:
-      self.zk.ensure_path(path)
-      c, m = self.zk.get(path)
-    if c:
-      log.debug('Received raw content and metadata from zookeeper: %s', c)
-    if m:
-      log.debug('Received raw metadata from zookeeper: %s', m)
-    return c, m
+    log.debug('Getting metadata from cockroach@%s...', path)
+    with self.conn.cursor() as curs:
+      c = None
+      ts = None
+      curs.execute(
+        SQL_SELECT_METADATA_AND_TRANSACTION_ID_FOR_TILE,
+        [path]
+      )
+      if curs.rowcount > 0:
+        c, ts = curs.fetchone()
+      if c:
+        log.debug('Received raw content and metadata from cockroach: %s', c)
+      if ts:
+        log.debug('Received timestamp from cockroach: %s', ts)
+
+      return c, ts
 
   def _set_raw(self, z, x, y, m, version):
-    """Grabs the lock and updates the raw content for a GridCell in zookeeper.
+    """Grabs the lock and updates the raw content for a GridCell in cockroach.
 
     Args:
       z: zoom level in slippy tile format
@@ -735,15 +746,23 @@ class USSMetadataManager(object):
                                USS_METADATA_FILE)
     try:
       log.debug('Setting metadata to %s...', str(m.to_json(True)))
-      self.zk.set(path, json.dumps(m.to_json(True)), version)
-      status = 200
-    except BadVersionError:
-      log.error('Sync token updated before write for %s...', path)
+      with self.conn.cursor() as curs:
+        curs.execute(
+          SQL_UPSERT_METADATA_FOR_TILE_AND_TRANSACTION_ID,
+          [path, json.dumps(m.to_json(True)), path, version, path]
+        )
+        # TODO(vosst): Returning the new timestamp would be helpful to USSs
+        # as they don't have to resync after an update.
+        ts = curs.fetchone()
+        self.conn.commit()
+        status = 200
+    except (psycopg2.ProgrammingError, psycopg2.IntegrityError) as e:
+      log.error('Sync token updated before write for %s: %s', path, e)
       status = 409
     return status
 
   def _get_multi_raw(self, z, grids):
-    """Gets the raw content and metadata for multiple GridCells from zookeeper.
+    """Gets the raw content and metadata for multiple GridCells from cockroach.
 
     Args:
       z: zoom level in slippy tile format
@@ -752,7 +771,7 @@ class USSMetadataManager(object):
       content: Combined USS metadata
       syncs: list of sync tokens in the same order as the grids
     Raises:
-      IndexError: if it cannot find anything in zookeeper
+      IndexError: if it cannot find anything in cockroach
       ValueError: if the grid data is not in the right format
     """
     log.debug('Getting multiple grid metadata for %s...', str(grids))
@@ -760,19 +779,16 @@ class USSMetadataManager(object):
     syncs = []
     for x, y in grids:
       if slippy_util.validate_slippy(z, x, y):
-        (content, metadata) = self._get_raw(z, x, y)
-        if metadata:
-          combined_meta += uss_metadata.USSMetadata(content)
-          syncs.append(metadata.last_modified_transaction_id)
-        else:
-          raise IndexError('Unable to find metadata in platform')
+        (content, txid) = self._get_raw(z, x, y)
+        combined_meta += uss_metadata.USSMetadata(content)
+        syncs.append(txid)
       else:
         raise ValueError('Invalid slippy grids for lookup')
     if len(syncs) == 0:
       raise IndexError('Unable to find metadata in platform')
     return combined_meta, syncs
 
-  def _set_multi_raw(self, z, grids, sync_tokens, uss_id, baseurl, announce,
+  def _set_multi_raw(self, z, grids, versions, uss_id, baseurl, announce,
     earliest_operation, latest_operation, operations=None):
     """Grabs the lock and updates the raw content for multiple GridCells
 
@@ -790,48 +806,35 @@ class USSMetadataManager(object):
       latest_operation: upper bound of active or planned flight timestamp,
         used for quick filtering conflicts.
       operations: array of individual operations for this uss in these cells
+    Returns:
+      updatedVersions: new versions of all updated tiles
     Raises:
-      IndexError: if it cannot find anything in zookeeper
+      IndexError: if it cannot find anything in cockroach
       ValueError: if the grid data is not in the right format
     """
     log.debug('Setting multiple grid metadata for %s...', str(grids))
-    try:
-      contents = []
-      for i in range(len(grids)):
-        # First, get and update them all in memory, validate the sync_token
-        x = grids[i][0]
-        y = grids[i][1]
-        sync_token = sync_tokens[i]
-        path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
-                                   USS_METADATA_FILE)
-        (content, metadata) = self._get_raw(z, x, y)
-        if str(metadata.last_modified_transaction_id) == str(sync_token):
-          log.debug('Sync_token matches for %d, %d...', x, y)
-          m = uss_metadata.USSMetadata(content)
-          m.upsert_operator(uss_id, baseurl, announce,
-                            earliest_operation, latest_operation,
-                            z, x, y, operations)
-          contents.append((path, m, metadata.version))
-        else:
-          log.error(
-            'Sync token from USS (%s) does not match token from zk (%s)...',
-            str(sync_token), str(metadata.last_modified_transaction_id))
-          raise KeyError('Composite sync_token has changed')
-      # Now, start a transaction to update them all
-      #  the version will catch any changes and roll back any attempted
-      #  updates to the grids
-      log.debug('Starting transaction to write all grids at once...')
-      t = self.zk.transaction()
-      for path, m, version in contents:
-        t.set_data(path, json.dumps(m.to_json(True)), version)
-      log.debug('Committing transaction...')
-      results = t.commit()
-      if isinstance(results[0], RolledBackError):
-        raise KeyError('Rolled back multi-grid transaction due to grid change')
-      log.debug('Committed transaction successfully.')
-    except (KeyError, ValueError, IndexError) as e:
-      log.error('Error caught in set_multi_raw: %s', str(e))
-      raise e
+    contents = []
+    for i in range(len(grids)):
+      # First, get and update them all in memory, validate the sync_token
+      x = grids[i][0]
+      y = grids[i][1]
+      version = versions[i]
+      path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
+                                  USS_METADATA_FILE)
+      (content, txid) = self._get_raw(z, x, y)
+      if str(version) == str(txid):
+        log.debug('version matches for %d, %d...', x, y)
+        m = uss_metadata.USSMetadata(content)
+        m.upsert_operator(uss_id, baseurl, announce,
+                          earliest_operation, latest_operation,
+                          z, x, y, operations)
+        contents.append((path, m, version))
+      else:
+        log.error(
+          'Version from USS (%s) does not match version in cockroach (%s)...',
+          str(version), str(txid))
+        raise KeyError('Composite version has changed')
+    return self._execute_transaction(contents)
 
   def _set_multi_operation_raw(self, z, grids, sync_tokens, uss_id, gufi,
     signature, begin, end):
@@ -847,9 +850,9 @@ class USSMetadataManager(object):
       begin: start time of the operation.
       end: end time of the operation.
     Raises:
-      IndexError: if it cannot find anything in zookeeper
+      IndexError: if it cannot find anything in cockroach
       ValueError: if the grid data is not in the right format
-      RolledBackError: if update transaction does not complete
+      psycopg2.DatabaseError: if update transaction does not complete
     """
     log.debug('Setting multiple grid operation metadata for %s...', str(grids))
     try:
@@ -861,8 +864,8 @@ class USSMetadataManager(object):
         sync_token = sync_tokens[i]
         path = '%s/%s/%s/%s/%s' % (GRID_PATH, str(z), str(x), str(y),
                                    USS_METADATA_FILE)
-        (content, metadata) = self._get_raw(z, x, y)
-        if str(metadata.last_modified_transaction_id) == str(sync_token):
+        (content, txid) = self._get_raw(z, x, y)
+        if str(txid) == str(sync_token):
           log.debug('Sync_token matches for %d, %d...', x, y)
           m = uss_metadata.USSMetadata(content)
           # TODO(hikevin): refactor with multi_operator, as only one line diffs
@@ -871,15 +874,15 @@ class USSMetadataManager(object):
                       gufi, str(sync_token))
             raise ValueError('Failed setting operation in grid %d/%d/%d' %
                              (z, x, y))
-          contents.append((path, m, metadata.version))
+          contents.append((path, m, txid))
         else:
           log.error(
             'Sync token from USS (%s) does not match token from zk (%s)...',
-            str(sync_token), str(metadata.last_modified_transaction_id))
+            str(sync_token), str(txid))
           raise KeyError('Composite sync_token has changed')
 
       self._execute_transaction(contents)
-    except (KeyError, ValueError, IndexError, RolledBackError) as e:
+    except (KeyError, ValueError, IndexError, psycopg2.DatabaseError) as e:
       log.error('Error caught in set_multi_raw %s.', e.message)
       raise e
 
@@ -891,25 +894,26 @@ class USSMetadataManager(object):
 
     Args:
       contents: iterable of tuples of (path, USSMetadata, version)
-        path: Zookeeper path of grid cell data
+        path: key of the grid cell data
         USSMetadata: USSMetadata instance containing updated info
         version: previous version of grid cell data upon which the updated info
           is based
 
     Raises:
-      RolledBackError: if transaction could not be completed due to intermediate
+      psycopg2.DatabaseError: if transaction could not be completed due to intermediate
         updates.
     """
     log.debug('Starting transaction to write all grids at once...')
-    t = self.zk.transaction()
-    for path, m, version in contents:
-      t.set_data(path, json.dumps(m.to_json(True)), version)
-    log.debug('Committing transaction...')
-    results = t.commit()
-    if isinstance(results[0], RolledBackError):
-      raise RolledBackError(
-        'Rolled back multi-grid transaction due to grid change')
-    log.debug('Committed transaction successfully.')
+    updatedVersions = []
+    with self.conn.cursor() as curs:
+      for path, m, version in contents:
+        curs.execute(
+          SQL_UPSERT_METADATA_FOR_TILE_AND_TRANSACTION_ID,
+          [path, json.dumps(m.to_json(True)), path, version, path]
+        )
+        updatedVersions.append(curs.fetchone())
+      self.conn.commit()
+      return updatedVersions
 
   def _format_status_code_to_jsend(self, status, message=None):
     """Formats a response based on HTTP status code.
@@ -970,10 +974,10 @@ class USSMetadataManager(object):
     return result
 
   @staticmethod
-  def _hash_sync_tokens(syncs):
-    """Hashes a list of sync tokens into a single, positive 64-bit int.
+  def _hash_transaction_ids(txids):
+    """Hashes a list of transaction ids into a single, positive 64-bit int.
 
     For various languages, the limit to integers may be different, therefore
     we truncate to ensure the hash is the same on all implementations.
     """
-    return abs(hash(tuple(sorted(syncs)))) % MAX_SAFE_INTEGER
+    return abs(hash(tuple(sorted(filter(lambda x: x != None, txids))))) % MAX_SAFE_INTEGER
