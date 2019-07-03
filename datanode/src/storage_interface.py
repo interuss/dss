@@ -108,7 +108,7 @@ class USSMetadataManager(object):
 
     Args:
       connectionstring:
-        cokcroach connection string - following postgres URL syntax
+        cockroach connection string - following postgres URL syntax
       testgroupid:
         ID to use if in test mode, none for normal mode
     """
