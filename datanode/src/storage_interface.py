@@ -53,7 +53,7 @@ log = logging.getLogger('InterUSS_DataNode_InformationInterface')
 USS_BASE_PREFIX = '/uss/gridcells/'
 TEST_BASE_PREFIX = '/test/'
 USS_METADATA_FILE = '/manifest'
-DEFAULT_CONNECTION = 'localhost:2181'
+DEFAULT_CONNECTION = 'host=localhost port=26257 dbname=defaultdb user=root password='
 GRID_PATH = USS_BASE_PREFIX
 MAX_SAFE_INTEGER = 9007199254740991
 DELETE_ATTEMPTS = 3

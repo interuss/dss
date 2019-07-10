@@ -954,11 +954,11 @@ def ParseOptions(argv):
   parser = OptionParser(
       usage='usage: %prog [options]', version='%prog ' + VERSION)
   parser.add_option(
-      '-z',
-      '--zookeeper-servers',
+      '-c',
+      '--crdb',
       dest='connectionstring',
-      help='Specific zookeeper server connection string, '
-      'server:port,server:port...'
+      help='Specific cockroach DB server connection string, '
+      'host=localhost port=26257 dbname=defaultdb user=root password='
       '[or env variable INTERUSS_CONNECTIONSTRING]',
       metavar='CONNECTIONSTRING')
   parser.add_option(
