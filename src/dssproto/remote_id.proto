@@ -1,0 +1,311 @@
+syntax = "proto3";
+
+package dssproto;
+
+// import "google/api/annotations.proto";
+
+message DeleteUASReporterRequest {
+    // EntityUUID of the Entity.
+    string id = 1;
+}
+
+// Response for a request to delete an Entity.
+message DeleteUASReporterResponse {
+    // DSS reference to Entity that was just deleted.
+    UASReporter pre_reference = 1;
+
+    // DSS subscribers that this client now has the obligation to notify of the Entity just deleted.  This client must call DELETE for each provided URL according to the `/entity_details` path API.
+    repeated SubscriberToNotify subscribers = 2;
+}
+
+// Response for a successful request to delete an Subscription.
+message DeleteSubscriptionResponse {
+    // The Subscription which was deleted.
+    Subscription subscription = 1;
+}
+
+message DeleteSubscriptionRequest {
+    // SubscriptionUUID of the subscription of interest.
+    string id = 1;
+}
+
+// A declaration of an Entity.  The DSS reports only these EntityReferences and clients must obtain full details peer-to-peer from the creator/owner.
+// 
+// `details_url` is required for all Entity types except `PositionReporting`.
+message UASReporter {
+    string details_url = 1;
+
+    // A url endpoint to poll for RID flight data.
+    string flights_url = 2;
+
+    // Unique identifier for this object.  Created by client, and client must respond to a peer request for details about this Entity according to this ID.
+    string id = 3;
+
+    // Assigned by the DSS based on creating client’s ID (via access token).  Used for restricting mutation and deletion operations to owner, and only requiring EntitySignatures for unowned Entities.
+    string owner = 4;
+
+    // A planning client does not need to consider this Entity when considering time periods that will start after time_end.
+    string time_end = 5;
+
+    // A planning client does not need to consider this Entity when considering time periods that will end before start_time.
+    string time_start = 6;
+
+    // Extracted from the EntitySignature if specified, or assigned and incremented automatically otherwise.  When increased, indicates that an Entity has changed (allows another client client to optimize full Entity retrieval for only those Entities which have changed since client’s cache).
+    int32 version = 7;
+
+    // The bounding spacetime extents of this Entity.  Start and end times must be specified.  Spatial information is translated into DAR cells internally by the DSS then discarded.
+    Volume4D extents = 8;
+
+}
+
+// An enclosed area on the earth.
+// The bounding edges of this polygon shall be the shortest paths between connected vertices.  This means, for instance, that the edge between two points both defined at a particular latitude is not generally contained at that latitude.
+// The winding order shall be interpreted as the order which produces the smaller area.
+// The path between two vertices shall be the shortest possible path between those vertices.
+// Edges may not cross.
+// Vertices may not be duplicated.  In particular, the final polygon vertex shall not be identical to the first vertex.
+message GeoPolygon {
+    repeated LatLngPoint vertices = 1;
+}
+
+message SearchUASReportersRequest {
+    // The area in which to search for Entities.  Some Entities near this area but wholly outside it may also be returned.
+    string area = 1;
+
+    // If specified, indicates non-interest in any Entities that end before this time.
+    string earliest_time = 2;
+
+    // If specified, indicates non-interest in any Entities that start after this time.
+    string latest_time = 3;
+
+    // If specified, indicates non-interest in Entities entirely above this altitude in meters above the WGS84 datum.
+    double max_altitude = 4;
+
+    // If specified, indicates non-interest in Entities entirely below this altitude in meters above the WGS84 datum.
+    double min_altitude = 5;
+}
+
+// Response to DSS query for references to Entities in an area of interest.
+message SearchUASReportersResponse {
+    // Declarations/summaries/references of Entities in the area of interest.
+    repeated UASReporter pre_references = 1;
+}
+
+message GetSubscriptionRequest {
+    // SubscriptionUUID of the subscription of interest.
+    string id = 1;
+}
+
+message GetSubscriptionResponse {
+    Subscription subscription = 1;
+}
+
+message SearchSubscriptionsRequest {
+    // The area in which to search for Subscriptions.  Some Subscriptions near this area but wholly outside it may also be returned.
+    string area = 1;
+
+    // If specified, indicates non-interest in subscriptions for volumes entirely above this altitude in meters above the WGS84 datum.
+    double max_altitude = 2;
+
+    // If specified, indicates non-interest in subscriptions for volumes entirely below this altitude in meters above the WGS84 datum.
+    double min_altitude = 3;
+
+    // If specified, only return Subscriptions that are capable of producing notifications for the specified EntityTypes.
+    string types_filter = 4;
+}
+
+// Response to DSS query for subscriptions in a particular area.
+message SearchSubscriptionsResponse {
+    // Subscriptions that overlap the specified area.
+    repeated Subscription subscriptions = 1;
+}
+
+// Point on the earth's surface.
+message LatLngPoint {
+    double lat = 1;
+    double lng = 2;
+}
+
+// Parameters for a request to create or update a reference to an Entity in the DSS.
+message PutUASReporterRequest {
+    string details_url = 1;
+
+    // A url endpoint to poll for RID flight data.
+    string flights_url = 2;
+
+    // Unique identifier for this object.  Created by client, and client must respond to a peer request for details about this Entity according to this ID.
+    string id = 3;
+
+    // A planning client does not need to consider this Entity when considering time periods that will start after time_end.
+    string time_end = 4;
+
+    // A planning client does not need to consider this Entity when considering time periods that will end before start_time.
+    string time_start = 5;
+
+    // The bounding spacetime extents of this Entity.  Start and end times must be specified.  Spatial information is translated into DAR cells internally by the DSS then discarded.
+    Volume4D extents = 6;
+}
+
+// Response to a request to create or update a reference to an Entity in the DSS.
+message PutUASReporterResponse {
+    // Resulting reference stored in DSS.
+    UASReporter pre_reference = 1;
+
+    // DSS subscribers that this client now has the obligation to notify of the Entity changes just made.  This client must call PUT for each provided URL according to the `/entity_details` path API.
+    repeated SubscriberToNotify subscribers = 2;
+}
+
+// Parameters for a request to create or update a subscription in the DSS.
+message PutSubscriptionRequest {
+    string id = 1;
+
+    // This subscription will automatically be deleted after this time if it has not been refreshed by then.  If not specified when creating a subscription with a UTM scope, this subscription will be automatically deleted if it hasn't been used for a certain amount of time.  If not specified when creating a subscription without a UTM scope (such as for PositionReporting Entities), this value will be automatically set the maximum allowed Subscription duration in the future.
+    string expiry = 2;
+
+    // The geographic extents of the volume to subscribe to.
+    Volume3D extents = 3;
+
+    // Other clients will be instructed by the DSS to call this endpoint with created/updated Entity details when they create, update, or delete an Entity relevant to this Subscription.
+    string url = 4;
+}
+
+// Response for a request to create or update a subscription.
+message PutSubscriptionResponse {
+    // Result of the operation on the subscription.
+    Subscription subscription = 1;
+    // Declarations/summaries/references of Entities in the subscription area at the time of creation/update.
+    repeated UASReporter entities = 2;
+}
+
+// Subscriber to notify of a change/mutation in the airspace.  This is provided by the DSS to a client changing the airspace, and it is the responsibility of the client changing the airspace (they will receive a set of SubscriberToNotifies) to send an AreaChangeNotification to each specified `callback`.
+message SubscriberToNotify {
+    // Subscription(s) prompting this notification.
+    string subscription_id = 1;
+
+    // The endpoint that the client mutating the airspace should provide the updated Entity to.
+    string url = 2;
+}
+
+// Specification of a geographic area that a client is interested in on an ongoing basis (e.g., “planning area”).  Internal to the DSS.
+message Subscription {
+    // If set, this subscription will be automatically removed after this time.
+    string expires = 1;
+
+    // Unique identifier for this subscription.
+    string id = 2;
+
+    int32 notification_index = 3;
+
+    // Assigned by the DSS based on creating client’s ID (via access token).  Used for restricting mutation and deletion operations to owner.
+    string owner = 4;
+
+    // Other clients must call this endpoint with created/updated Entity details when requested by the DSS (requested when they change the airspace in the associated cells).
+    string url = 5;
+}
+
+message Altitude {
+    float value = 1;
+    string unit = 2;
+    string reference = 3;
+}
+
+// A three-dimensional geographic volume consisting of a vertically-extruded polygon.
+message Volume3D {
+    // Maximum bounding altitude of this volume.
+    Altitude altitude_hi = 1;
+
+    // Minimum bounding altitude of this volume.
+    Altitude altitude_lo = 2;
+
+    // Projection of this volume onto the earth's surface.
+    GeoPolygon footprint = 3;
+}
+
+// Contiguous block of geographic spacetime.
+message Volume4D {
+    // Constant spatial extent of this volume.
+    Volume3D spatial_volume = 1;
+
+    // End time of this volume.
+    string time_end = 2;
+
+    // Beginning time of this volume.
+    string time_start = 3;
+}
+
+service DSSService {
+    // DSS: /uas_reporters/{id}
+    // 
+    // Delete reference to an Entity.  USSs should not delete PositionReporting Entities before the end of the last managed flight plus the retention period.
+    rpc DeleteUASReporter(DeleteUASReporterRequest) returns (DeleteUASReporterResponse) {
+        option (google.api.http) = {
+            delete: "/uas_reporters/{id}"
+        };
+    }
+
+    // DSS: /subscriptions/{id}
+    // 
+    // Delete a subscription.
+    rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse) {
+        option (google.api.http) = {
+            delete: "/subscriptions/{id}"
+        };
+    }
+
+    // DSS: /uas_reporters
+    // 
+    // Retrieve references to all visible airspace Entities in the DAR for a given area during the given time.  Note that some Entities returned will lie entirely outside the requested area because an individual DAR cell cannot filter EntityReferences by exact geography.
+    // 
+    // Only PositionReporting Entities shall be visible to clients providing the `dss.read.position_reporting_entities` scope.
+    rpc SearchEntityReferences(SearchUASReportersRequest) returns (SearchUASReportersResponse) {
+        option (google.api.http) = {
+            get: "/uas_reporters"
+        };
+    }
+
+    // DSS: /subscriptions
+    // 
+    // Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain details of) changes to Entities in the DSS; they do not involve any other data transfer such as remote ID telemetry updates.  Only Subscriptions belonging to the caller are returned.
+    rpc SearchSubscriptions(SearchSubscriptionsRequest) returns (SearchSubscriptionsResponse) {
+        option (google.api.http) = {
+            get: "/subscriptions"
+        };
+    }
+
+    // DSS: /subscriptions/{id}
+    // 
+    // Verify the existence/valdity and state of a particular subscription.
+    rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
+        option (google.api.http) = {
+            get: "/subscriptions/{id}"
+        };
+    }
+
+    // DSS: /uas_reporters/{id}
+    // 
+    // Create or update reference to an Entity.  Unless otherwise specified, the EntityType of an existing Entity may not be changed.
+    // 
+    // The `details_url` field in the request body is required for all Entities except PositionReporting Entities.
+    // 
+    // `PositionReporting Entities`:
+    // Authorization scope `dss.write.position_reporting_entities` is required.  The DSS assumes the USS has already added the appropriate retention period to operation end time in EntityReference's `time_end` extents field before storing it.  Updating `time_start` is not allowed if it is before the current time.
+    // 
+    // `Operation Entities`:
+    // Authorization scope `dss.write.operation_entities` is required.
+    rpc PutUASReporter(PutUASReporterRequest) returns (PutUASReporterResponse) {
+        option (google.api.http) = {
+            put: "/uas_reporters/{id}"
+        };
+    }
+
+    // DSS: /subscriptions/{id}
+    // 
+    // Create or update a subscription.  Subscription notifications are only triggered by (and contain details of) changes to Entities in the DSS; they do not involve any other data transfer such as remote ID telemetry updates.
+    // 
+    // Note that the types of content that should be sent to the created subscription depends on the scope in the provided access token.
+    rpc PutSubscription(PutSubscriptionRequest) returns (PutSubscriptionResponse) {
+        option (google.api.http) = {
+            put: "/subscriptions/{id}"
+        };
+    }
+}
