@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"InterUSS-Platform/src/backend"
-	"InterUSS-Platform/src/dssproto"
+	"github.com/steeling/InterUSS-Platform/pkg/backend"
+	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 
 	"github.com/golang/glog"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"

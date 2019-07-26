@@ -1,7 +1,7 @@
 package backend
 
 import (
-	dspb "InterUSS-Platform/src/dssproto"
+	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"context"
 	"database/sql"
 )
