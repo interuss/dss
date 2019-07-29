@@ -1,0 +1,3 @@
+.PHONE: interuss
+interuss:
+	go get ./...
