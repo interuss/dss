@@ -40,7 +40,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	if err != nil {
 		return err
 	}
-	dssproto.RegisterDSSServiceServer(s, dss)
+	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, dss)
 
 	go func() {
 		defer s.GracefulStop()
@@ -62,7 +62,7 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 		grpc.WithTimeout(10 * time.Second),
 	}
 
-	err := dssproto.RegisterDSSServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	err := dssproto.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 	if err != nil {
 		return err
 	}
