@@ -665,11 +665,15 @@ definitions:
       are being provided).  The DSS reports only these declarations and clients
       must exchange flight information peer-to-peer.
     required:
+    - id
     - extents
     - flights_url
     - owner
     type: object
     properties:
+      id:
+        $ref: '#/definitions/UUIDv4'
+        description: Unique identifier for this service area.
       extents:
         $ref: '#/definitions/Volume4D'
         description: The bounding spacetime extents of this Identification Service
