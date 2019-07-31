@@ -1,0 +1,21 @@
+BasedOnStyle: Google
+---
+Language: Cpp
+ColumnLimit: 120
+AlignConsecutiveAssignments: true
+AlignOperands: true
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+---
+Language: Proto
+ColumnLimit: 150
+AlignConsecutiveAssignments: true
+AlignOperands: true
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
