@@ -6,7 +6,7 @@ Package dss is a reverse proxy.
 
 It translates gRPC into RESTful JSON APIs.
 */
-package dssproto
+package dss
 
 import (
 	"context"

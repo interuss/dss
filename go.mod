@@ -21,7 +21,7 @@ require (
 	golang.org/x/mobile v0.0.0-20190719004257-d2bd2a29d028 // indirect
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80 // indirect
 	golang.org/x/sys v0.0.0-20190730183949-1393eb018365 // indirect
-	golang.org/x/tools v0.0.0-20190731194443-c001e47e7f00 // indirect
+	golang.org/x/tools v0.0.0-20190731214159-1e85ed8060aa // indirect
 	google.golang.org/genproto v0.0.0-20190716160619-c506a9f90610
 	google.golang.org/grpc v1.22.1
 	gopkg.in/yaml.v2 v2.2.2 // indirect
