@@ -1,0 +1,1 @@
+All of these files are generated using [https://github.com/nytimes/openapi2proto](https://github.com/nytimes/openapi2proto) and [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway) using api.yaml present in the root level of this repository.

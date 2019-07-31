@@ -1,25 +1,22 @@
 package backend
 
 import (
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"context"
+
+	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 )
+
+type DSSStorageInterface interface{}
 
 type DSSServer struct {
 	store DSSStorageInterface
 }
 
 func NewServer() (*DSSServer, error) {
-	crdb, err := NewCRDB()
-	if err != nil {
-		return nil, err
-	}
-	return &DSSServer{
-		store: crdb,
-	}, nil
+	return &DSSServer{}, nil
 }
 
-func (s *DSSServer) DeleteUASReporter(ctx context.Context, req *dspb.DeleteUASReporterRequest) (*dspb.DeleteUASReporterResponse, error) {
+func (s *DSSServer) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (*dspb.DeleteIdentificationServiceAreaResponse, error) {
 	return nil, nil
 }
 
@@ -27,7 +24,7 @@ func (s *DSSServer) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubs
 	return nil, nil
 }
 
-func (s *DSSServer) SearchEntityReferences(ctx context.Context, req *dspb.SearchUASReportersRequest) (*dspb.SearchUASReportersResponse, error) {
+func (s *DSSServer) SearchIdentificationServiceAreas(ctx context.Context, req *dspb.SearchIdentificationServiceAreasRequest) (*dspb.SearchIdentificationServiceAreasResponse, error) {
 	return nil, nil
 }
 
@@ -39,7 +36,7 @@ func (s *DSSServer) GetSubscription(ctx context.Context, req *dspb.GetSubscripti
 	return nil, nil
 }
 
-func (s *DSSServer) PutUASReporter(ctx context.Context, req *dspb.PutUASReporterRequest) (*dspb.PutUASReporterResponse, error) {
+func (s *DSSServer) PutIdentificationServiceArea(ctx context.Context, req *dspb.PutIdentificationServiceAreaRequest) (*dspb.PutIdentificationServiceAreaResponse, error) {
 	return nil, nil
 }
 
