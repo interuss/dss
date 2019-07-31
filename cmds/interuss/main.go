@@ -3,35 +3,37 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	"github.com/steeling/InterUSS-Platform/pkg/logging"
 
-	"github.com/golang/glog"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 var (
 	address     = flag.String("addr", "127.0.0.1:8080", "address")
 	grpcBackend = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
-	mode        = flag.String("mode", "", "One of [backend, proxy].")
+	mode        = flag.String("mode", "undefined", "One of [backend, proxy].")
 )
 
 // RunGRPCServer starts the example gRPC service.
 // "network" and "address" are passed to net.Listen.
 func RunGRPCServer(ctx context.Context, address string) error {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+
 	l, err := net.Listen("tcp", address)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err := l.Close(); err != nil {
-			glog.Errorf("Failed to close %s: %v", address, err)
+			logger.Error("Failed to close listener", zap.String("address", address), zap.Error(err))
 		}
 	}()
 
@@ -75,18 +77,22 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 
 func main() {
 	flag.Parse()
-	var err error
+	var (
+		ctx    = context.Background()
+		logger = logging.WithValuesFromContext(ctx, logging.Logger)
+		err    error
+	)
 
 	switch *mode {
 	case "backend":
-		err = RunGRPCServer(context.Background(), *address)
+		err = RunGRPCServer(ctx, *address)
 	case "proxy":
-		err = RunHTTPProxy(context.Background(), *address, *grpcBackend)
+		err = RunHTTPProxy(ctx, *address, *grpcBackend)
 	default:
-		log.Fatalf("Unknown mode: %s", *mode)
+		logger.Fatal("Unknown mode", zap.String("mode", *mode))
 	}
 	if err != nil {
-		panic(err)
+		logger.Panic("Failed to execute service", zap.Error(err))
 	}
-	log.Print("Shutting down gracefully")
+	logger.Info("Shutting down gracefully")
 }
