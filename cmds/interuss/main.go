@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/steeling/InterUSS-Platform/pkg/backend"
+	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 
 	"github.com/golang/glog"
@@ -36,7 +36,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}()
 
 	s := grpc.NewServer()
-	dss, err := backend.NewServer()
+	dss, err := dss.NewServer(dss.NewNilStorageInterface())
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package backend
+package dss
 
 type Subscription struct {
 }
