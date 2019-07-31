@@ -38,7 +38,12 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}()
 
 	s := grpc.NewServer()
-	dss, err := dss.NewServer(dss.NewNilStorageInterface())
+	store := dss.NewNilStore()
+	defer store.Close()
+
+	dss := &dss.Server{
+		Store: dss.NewNilStore(),
+	}
 	if err != nil {
 		return err
 	}

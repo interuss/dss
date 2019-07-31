@@ -7,9 +7,11 @@ require (
 	github.com/golang/protobuf v1.3.2
 	github.com/google/pprof v0.0.0-20190723021845-34ac40c74b70 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.9.5
+	github.com/lib/pq v1.2.0
+	github.com/pkg/errors v0.8.1 // indirect
+	github.com/stretchr/testify v1.3.0
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/kr/pty v1.1.8 // indirect
-	github.com/pkg/errors v0.8.1 // indirect
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	go.uber.org/atomic v1.4.0 // indirect
