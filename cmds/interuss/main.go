@@ -17,12 +17,12 @@ import (
 )
 
 var (
-	address      = flag.String("addr", "127.0.0.1:8080", "address")
-	grpc_backend = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
-	mode         = flag.String("mode", "", "One of [backend, proxy].")
+	address     = flag.String("addr", "127.0.0.1:8080", "address")
+	grpcBackend = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
+	mode        = flag.String("mode", "", "One of [backend, proxy].")
 )
 
-// Run starts the example gRPC service.
+// RunGRPCServer starts the example gRPC service.
 // "network" and "address" are passed to net.Listen.
 func RunGRPCServer(ctx context.Context, address string) error {
 	l, err := net.Listen("tcp", address)
@@ -49,6 +49,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	return s.Serve(l)
 }
 
+// RunHTTPProxy starts the HTTP proxy for the DSS gRPC service on ctx, listening
+// on address, proxying to endpoint.
 func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -79,7 +81,7 @@ func main() {
 	case "backend":
 		err = RunGRPCServer(context.Background(), *address)
 	case "proxy":
-		err = RunHTTPProxy(context.Background(), *address, *grpc_backend)
+		err = RunHTTPProxy(context.Background(), *address, *grpcBackend)
 	default:
 		log.Fatalf("Unknown mode: %s", *mode)
 	}
