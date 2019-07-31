@@ -6,25 +6,20 @@ import (
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 )
 
-// StorageInterface abstracts interactions with a backend storage layer.
-type StorageInterface interface{}
+// Store abstracts interactions with a backend storage layer.
+type Store interface {
+	// Close closes the store and should release all resources.
+	Close() error
+}
 
-// NewNilStorageInterface returns a nil StorageInterface.
-func NewNilStorageInterface() StorageInterface {
+// NewNilStore returns a nil Store instance.
+func NewNilStore() Store {
 	return nil
 }
 
 // Server implements dssproto.DiscoveryAndSynchronizationService.
 type Server struct {
-	store StorageInterface
-}
-
-// NewServer returns a new Server instance using store or an error in case of
-// issues.
-func NewServer(store StorageInterface) (*Server, error) {
-	return &Server{
-		store: store,
-	}, nil
+	Store Store
 }
 
 func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (*dspb.DeleteIdentificationServiceAreaResponse, error) {
