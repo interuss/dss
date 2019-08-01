@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	uuid "github.com/satori/go.uuid"
 	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
@@ -21,6 +22,70 @@ var (
 	_ dss.Store = &Store{}
 
 	storeURI = flag.String("store-uri", "", "URI pointing to a Cockroach node")
+
+	begins, expires = func() (begins *timestamp.Timestamp, expires *timestamp.Timestamp) {
+		const offset = 15 * time.Second
+
+		begins, expires = ptypes.TimestampNow(), ptypes.TimestampNow()
+		begins.Seconds -= int64(offset.Seconds())
+		expires.Seconds += int64(offset.Seconds())
+
+		return begins, expires
+	}()
+
+	subscriptionsPool = []struct {
+		name  string
+		input *dspb.Subscription
+	}{
+		{
+			name: "a subscription without begins and expires",
+			input: &dspb.Subscription{
+				Id:    uuid.NewV4().String(),
+				Owner: "me-myself-and-i",
+				Callbacks: &dspb.SubscriptionCallbacks{
+					IdentificationServiceAreaUrl: "https://no/place/like/home",
+				},
+				NotificationIndex: 42,
+			},
+		},
+		{
+			name: "a subscription with begins and expires",
+			input: &dspb.Subscription{
+				Id:    uuid.NewV4().String(),
+				Owner: "me-myself-and-i",
+				Callbacks: &dspb.SubscriptionCallbacks{
+					IdentificationServiceAreaUrl: "https://no/place/like/home",
+				},
+				Begins:            begins,
+				Expires:           expires,
+				NotificationIndex: 42,
+			},
+		},
+		{
+			name: "a subscription with begins and without expires",
+			input: &dspb.Subscription{
+				Id:    uuid.NewV4().String(),
+				Owner: "me-myself-and-i",
+				Callbacks: &dspb.SubscriptionCallbacks{
+					IdentificationServiceAreaUrl: "https://no/place/like/home",
+				},
+				Begins:            begins,
+				NotificationIndex: 42,
+			},
+		},
+		{
+			name: "a subscription without begins and with expires",
+			input: &dspb.Subscription{
+				Id:    uuid.NewV4().String(),
+				Owner: "me-myself-and-i",
+				Callbacks: &dspb.SubscriptionCallbacks{
+					IdentificationServiceAreaUrl: "https://no/place/like/home",
+				},
+				Expires:           expires,
+				NotificationIndex: 42,
+			},
+		},
+	}
 )
 
 func init() {
@@ -95,6 +160,30 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestStoreGetSubscription(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	for _, r := range subscriptionsPool {
+		t.Run(r.name, func(t *testing.T) {
+			s1, err := store.insertSubscriptionUnchecked(ctx, r.input)
+			require.NoError(t, err)
+			require.NotNil(t, s1)
+
+			s2, err := store.GetSubscription(ctx, s1.Id)
+			require.NoError(t, err)
+			require.NotNil(t, s2)
+
+			require.Equal(t, *s1, *s2)
+		})
+	}
+}
+
 func TestStoreDeleteSubscription(t *testing.T) {
 	var (
 		ctx                  = context.Background()
@@ -104,59 +193,7 @@ func TestStoreDeleteSubscription(t *testing.T) {
 		require.NoError(t, tearDownStore())
 	}()
 
-	for _, r := range []struct {
-		name  string
-		input *dspb.Subscription
-	}{
-		{
-			name: "a subscription without begins and expires",
-			input: &dspb.Subscription{
-				Id:    uuid.NewV4().String(),
-				Owner: "me-myself-and-i",
-				Callbacks: &dspb.SubscriptionCallbacks{
-					IdentificationServiceAreaUrl: "https://no/place/like/home",
-				},
-				NotificationIndex: 42,
-			},
-		},
-		{
-			name: "a subscription with begins and expires",
-			input: &dspb.Subscription{
-				Id:    uuid.NewV4().String(),
-				Owner: "me-myself-and-i",
-				Callbacks: &dspb.SubscriptionCallbacks{
-					IdentificationServiceAreaUrl: "https://no/place/like/home",
-				},
-				Begins:            ptypes.TimestampNow(),
-				Expires:           ptypes.TimestampNow(),
-				NotificationIndex: 42,
-			},
-		},
-		{
-			name: "a subscription with begins and without expires",
-			input: &dspb.Subscription{
-				Id:    uuid.NewV4().String(),
-				Owner: "me-myself-and-i",
-				Callbacks: &dspb.SubscriptionCallbacks{
-					IdentificationServiceAreaUrl: "https://no/place/like/home",
-				},
-				Begins:            ptypes.TimestampNow(),
-				NotificationIndex: 42,
-			},
-		},
-		{
-			name: "a subscription without begins and with expires",
-			input: &dspb.Subscription{
-				Id:    uuid.NewV4().String(),
-				Owner: "me-myself-and-i",
-				Callbacks: &dspb.SubscriptionCallbacks{
-					IdentificationServiceAreaUrl: "https://no/place/like/home",
-				},
-				Expires:           ptypes.TimestampNow(),
-				NotificationIndex: 42,
-			},
-		},
-	} {
+	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
 			s1, err := store.insertSubscriptionUnchecked(ctx, r.input)
 			require.NoError(t, err)
