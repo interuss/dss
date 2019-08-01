@@ -10,6 +10,10 @@ import (
 type Store interface {
 	// Close closes the store and should release all resources.
 	Close() error
+
+	// DeleteSubscription deletes the subscription identified by "id" and
+	// returns the deleted subscription.
+	DeleteSubscription(ctx context.Context, id string) (*dspb.Subscription, error)
 }
 
 // NewNilStore returns a nil Store instance.
@@ -27,7 +31,16 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.
 }
 
 func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscriptionRequest) (*dspb.DeleteSubscriptionResponse, error) {
-	return nil, nil
+	subscription, err := s.Store.DeleteSubscription(ctx, req.GetId())
+	if err != nil {
+		// TODO(tvoss): Revisit once error propagation strategy is defined. We
+		// might want to avoid leaking raw error messages to callers and instead
+		// just return a generic error indicating a request ID.
+		return nil, err
+	}
+	return &dspb.DeleteSubscriptionResponse{
+		Subscription: subscription,
+	}, nil
 }
 
 func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb.SearchIdentificationServiceAreasRequest) (*dspb.SearchIdentificationServiceAreasResponse, error) {
