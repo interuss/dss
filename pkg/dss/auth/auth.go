@@ -16,6 +16,7 @@ type authClient struct {
 	publicKey []byte
 }
 
+// NewAuthClient returns a new authClient instance.
 func NewAuthClient(pkFile string) (*authClient, error) {
 	bytes, err := ioutil.ReadFile(pkFile)
 	if err != nil {
@@ -25,7 +26,6 @@ func NewAuthClient(pkFile string) (*authClient, error) {
 }
 
 func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-
 	tknStr, ok := getToken(ctx)
 	if !ok {
 		return nil, status.Errorf(codes.Unauthenticated, "missing token")
@@ -47,8 +47,10 @@ func getToken(ctx context.Context) (string, bool) {
 		return "", false
 	}
 	authHeader := headers.Get("authorization")
-	token := authHeader[0]
-	// Remove Bearer
-	tokenParts := strings.Split(token, "Bearer ")
-	return tokenParts[len(tokenParts)-1], true
+	if len(authHeader) == 0 {
+		return "", false
+	}
+
+	// Remove Bearer before returning.
+	return strings.TrimPrefix(authHeader[0], "Bearer "), true
 }
