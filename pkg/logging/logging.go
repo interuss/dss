@@ -2,6 +2,7 @@ package logging
 
 import (
 	"context"
+	"os"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -13,12 +14,24 @@ var (
 )
 
 func init() {
-	l, err := zap.NewProduction(
+	options := []zap.Option{
 		zap.AddCaller(), zap.AddStacktrace(zapcore.PanicLevel),
-	)
+	}
+
+	config := zap.NewProductionConfig()
+	if v := os.Getenv("DSS_LOG_LEVEL"); v != "" {
+		lvl := zapcore.InfoLevel
+		if err := lvl.UnmarshalText([]byte(v)); err != nil {
+			panic(err)
+		}
+		config.Level = zap.NewAtomicLevelAt(lvl)
+	}
+
+	l, err := config.Build(options...)
 	if err != nil {
 		panic(err)
 	}
+
 	Logger = l
 }
 

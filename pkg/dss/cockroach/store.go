@@ -72,6 +72,35 @@ func (sr *subscriptionsRow) scan(row *sql.Row) error {
 	)
 }
 
+func (sr *subscriptionsRow) toProtobuf() (*dspb.Subscription, error) {
+	result := &dspb.Subscription{
+		Id:    sr.id,
+		Owner: sr.owner,
+		Callbacks: &dspb.SubscriptionCallbacks{
+			IdentificationServiceAreaUrl: sr.url,
+		},
+		NotificationIndex: int32(sr.notificationIndex),
+	}
+
+	if sr.beginsAt.Valid {
+		ts, err := ptypes.TimestampProto(sr.beginsAt.Time)
+		if err != nil {
+			return nil, err
+		}
+		result.Begins = ts
+	}
+
+	if sr.expiresAt.Valid {
+		ts, err := ptypes.TimestampProto(sr.expiresAt.Time)
+		if err != nil {
+			return nil, err
+		}
+		result.Expires = ts
+	}
+
+	return result, nil
+}
+
 // Store is an implementation of dss.Store using
 // Cockroach DB as its backend store.
 type Store struct {
@@ -177,6 +206,39 @@ func (s *Store) insertSubscriptionUnchecked(ctx context.Context, subscription *d
 	return result, err
 }
 
+// GetSubscription returns the subscription identified by "id".
+func (s *Store) GetSubscription(ctx context.Context, id string) (*dspb.Subscription, error) {
+	const (
+		subscriptionQuery = `
+		SELECT * FROM
+			subscriptions
+		WHERE
+			id = $1`
+	)
+
+	tx, err := s.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	sr := subscriptionsRow{}
+
+	if err := sr.scan(tx.QueryRowContext(ctx, subscriptionQuery, id)); err != nil {
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	result, err := sr.toProtobuf()
+	if err != nil {
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
 func (s *Store) DeleteSubscription(ctx context.Context, id string) (*dspb.Subscription, error) {
@@ -201,29 +263,9 @@ func (s *Store) DeleteSubscription(ctx context.Context, id string) (*dspb.Subscr
 		return nil, multierr.Combine(err, tx.Rollback())
 	}
 
-	result := &dspb.Subscription{
-		Id:    sr.id,
-		Owner: sr.owner,
-		Callbacks: &dspb.SubscriptionCallbacks{
-			IdentificationServiceAreaUrl: sr.url,
-		},
-		NotificationIndex: int32(sr.notificationIndex),
-	}
-
-	if sr.beginsAt.Valid {
-		ts, err := ptypes.TimestampProto(sr.beginsAt.Time)
-		if err != nil {
-			return nil, multierr.Combine(err, tx.Rollback())
-		}
-		result.Begins = ts
-	}
-
-	if sr.expiresAt.Valid {
-		ts, err := ptypes.TimestampProto(sr.expiresAt.Time)
-		if err != nil {
-			return nil, multierr.Combine(err, tx.Rollback())
-		}
-		result.Expires = ts
+	result, err := sr.toProtobuf()
+	if err != nil {
+		return nil, multierr.Combine(err, tx.Rollback())
 	}
 
 	if err := tx.Commit(); err != nil {
