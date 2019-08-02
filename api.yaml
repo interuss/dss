@@ -121,6 +121,10 @@ paths:
           $ref: '#/definitions/URL'
         in: body
         required: true
+      - name: version
+        description: Optional. If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the service area does not exist.
+        type: string
+        in: body
       responses:
         200:
           schema:
@@ -213,6 +217,10 @@ paths:
         $ref: '#/definitions/UUIDv4'
       in: path
       required: true
+    - name: version
+      description: Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent deletions. Will error if present and the service area does not exist.
+      type: string
+      in: body
   /dss/subscriptions:
     summary: Subscriptions for airspace updates to a volume of interest.
     get:
@@ -342,6 +350,11 @@ paths:
           $ref: '#/definitions/SubscriptionCallbacks'
         in: body
         required: true
+      - name: version
+        description: Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+        type: string
+        in: body
+        required: false
       responses:
         200:
           schema:
@@ -440,6 +453,10 @@ paths:
         $ref: '#/definitions/UUIDv4'
       in: path
       required: true
+    - name: version
+      description: Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+      type: string
+      in: body
 definitions:
   Volume3D:
     description: A three-dimensional geographic volume consisting of a vertically-extruded
@@ -686,6 +703,9 @@ definitions:
           and only requiring EntitySignatures for unowned Entities.
         type: string
         example: myuss
+      version:
+        description: A versioning string which can be used for read-modify-write operations to maintain idempotency.
+        type: string
   Subscription:
     description: Specification of a geographic area that a client is interested
       in on an ongoing basis (e.g., “planning area”).  Internal to the DSS.
@@ -716,6 +736,9 @@ definitions:
         $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
         description: If set, this Subscription will not generate any notifications
           before this time.  RFC 3339 format, per OpenAPI specification.
+      version:
+        description: A versioning string which can be used for read-modify-write operations to maintain idempotency.
+        type: string
   SubscriptionCallbacks:
     description: Endpoints that should be called when an applicable event occurs.  At
       least one field must be specified.
