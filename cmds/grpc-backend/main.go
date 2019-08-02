@@ -38,7 +38,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		}
 	}()
 
-	ac, err := auth.NewAuthClient(*pkFile)
+	ac, err := auth.NewRSAAuthClient(*pkFile)
 	if err != nil {
 		return err
 	}
