@@ -8,6 +8,9 @@ import "google/protobuf/timestamp.proto";
 message DeleteIdentificationServiceAreaRequest {
     // EntityUUID of the Identification Service Area.
     string id = 1;
+
+    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent deletions. Will error if present and the service area does not exist.
+    string version = 2;
 }
 
 // Response for a request to delete an Identification Service Area.
@@ -22,6 +25,9 @@ message DeleteIdentificationServiceAreaResponse {
 message DeleteSubscriptionRequest {
     // SubscriptionUUID of the subscription of interest.
     string id = 1;
+
+    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+    string version = 2;
 }
 
 // Response for a successful request to delete an Subscription.
@@ -49,6 +55,9 @@ message GeoPolygon {
 message GetSubscriptionRequest {
     // SubscriptionUUID of the subscription of interest.
     string id = 1;
+
+    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+    string version = 2;
 }
 
 // Response to DSS query for subscriptions in a particular area.
@@ -67,6 +76,9 @@ message IdentificationServiceArea {
 
     // Assigned by the DSS based on creating client’s ID (via access token).  Used for restricting mutation and deletion operations to owner, and only requiring EntitySignatures for unowned Entities.
     string owner = 4;
+
+    // A versioning string which can be used for read-modify-write operations to maintain idempotency.
+    string version = 5;
 }
 
 // Point on the earth's surface.
@@ -93,6 +105,9 @@ message PutIdentificationServiceAreaRequest {
 
     // EntityUUID of the Identification Service Area.
     string id = 3;
+
+    // Optional. If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the service area does not exist.
+    string version = 4;
 }
 
 // Response to a request to create or update a reference to an Identification Service Area in the DSS.
@@ -117,6 +132,9 @@ message PutSubscriptionRequest {
 
     // SubscriptionUUID of the subscription of interest.  Must be created by client before `PUT` call to create AreaSubscription in DSS because the client may receive a notification at that subscription before receiving a response from the DSS.
     string id = 3;
+
+    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+    string version = 4;
 }
 
 // Response for a request to create or update a subscription.
@@ -192,6 +210,9 @@ message Subscription {
 
     // Assigned by the DSS based on creating client’s ID (via access token).  Used for restricting mutation and deletion operations to owner.
     string owner = 6;
+
+    // A versioning string which can be used for read-modify-write operations to maintain idempotency.
+    string version = 7;
 }
 
 // Endpoints that should be called when an applicable event occurs.  At least one field must be specified.
@@ -233,6 +254,7 @@ service DiscoveryAndSynchronizationService {
     rpc DeleteIdentificationServiceArea(DeleteIdentificationServiceAreaRequest) returns (DeleteIdentificationServiceAreaResponse) {
         option (google.api.http) = {
             delete: "/dss/identification_service_areas/{id}"
+            body: "version"
         };
     }
 
@@ -242,6 +264,7 @@ service DiscoveryAndSynchronizationService {
     rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse) {
         option (google.api.http) = {
             delete: "/dss/subscriptions/{id}"
+            body: "version"
         };
     }
 
@@ -251,6 +274,7 @@ service DiscoveryAndSynchronizationService {
     rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
         option (google.api.http) = {
             get: "/dss/subscriptions/{id}"
+            body: "version"
         };
     }
 
@@ -262,7 +286,7 @@ service DiscoveryAndSynchronizationService {
     rpc PutIdentificationServiceArea(PutIdentificationServiceAreaRequest) returns (PutIdentificationServiceAreaResponse) {
         option (google.api.http) = {
             put: "/dss/identification_service_areas/{id}"
-            body: "extents"
+            body: "version"
         };
     }
 
@@ -272,7 +296,7 @@ service DiscoveryAndSynchronizationService {
     rpc PutSubscription(PutSubscriptionRequest) returns (PutSubscriptionResponse) {
         option (google.api.http) = {
             put: "/dss/subscriptions/{id}"
-            body: "extents"
+            body: "version"
         };
     }
 
