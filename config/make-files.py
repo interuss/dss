@@ -56,8 +56,6 @@ create_clusters = [
 
 join_clusters = [
   # CockroachCluster(
-  #   zone='us-east4-a',
-  #   context='gke_wing-crdb-2_us-east4-a_cockroachdb2',
   #   lb_ip='external_ip_address',
   #   ca_certs_file='path_to_ca_public_cert',
   # ),
@@ -102,6 +100,11 @@ for cr in create_clusters:
   yaml_file = '%s/cockroachdb-statefulset-secure.yaml' % (cr.directory)
   with open(yaml_file, 'w') as f:
     check_call(['sed', 's/JOINLIST/%s/g;s/LOCALITYLIST/%s/g;s/PUBLIC_ADDR/%s/g' % (cr.join_str(), locality, cr.lb_ip), 'templates/cockroachdb-statefulset-secure.yaml'], stdout=f)
+
+for cr in create_clusters:
+  yaml_file = '%s/http-gateway.yaml' % (cr.directory)
+  with open(yaml_file, 'w') as f:
+    check_call(['sed', 's/YOUR_ZONE_HERE/%s/g' % (cr.zone), 'templates/http-gateway.yaml'], stdout=f)
 
 # Copy the setup script into each directory.
 cluster_init = 'true'

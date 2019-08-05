@@ -65,6 +65,7 @@ func NewRSAAuthClient(keyFile string) (*authClient, error) {
 }
 
 func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+
 	tknStr, ok := getToken(ctx)
 	if !ok {
 		return nil, status.Errorf(codes.Unauthenticated, "missing token")
