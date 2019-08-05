@@ -3,13 +3,19 @@ package cockroach
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
+	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/lib/pq" // Pull in the postgres database driver
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"go.uber.org/multierr"
 )
+
+type scanner interface {
+	Scan(fields ...interface{}) error
+}
 
 type subscriptionsRow struct {
 	id                string
@@ -23,8 +29,8 @@ type subscriptionsRow struct {
 	updatedAt         time.Time
 }
 
-func (sr *subscriptionsRow) scan(row *sql.Row) error {
-	return row.Scan(&sr.id,
+func (sr *subscriptionsRow) scan(scanner scanner) error {
+	return scanner.Scan(&sr.id,
 		&sr.owner,
 		&sr.url,
 		&sr.typesFilter,
@@ -82,7 +88,7 @@ func (s *Store) Close() error {
 // Please note that this function is only meant to be used in tests/benchmarks
 // to bootstrap a store with values. In particular, the function is not
 // validating timestamps of last updates.
-func (s *Store) insertSubscriptionUnchecked(ctx context.Context, subscription *dspb.Subscription) (*dspb.Subscription, error) {
+func (s *Store) insertSubscriptionUnchecked(ctx context.Context, subscription *dspb.Subscription, cells s2.CellUnion) (*dspb.Subscription, error) {
 	const (
 		subscriptionQuery = `
 		INSERT INTO
@@ -91,6 +97,12 @@ func (s *Store) insertSubscriptionUnchecked(ctx context.Context, subscription *d
 			($1, $2, $3, $4, $5, $6, $7, $8, transaction_timestamp())
 		RETURNING
 			*`
+		subscriptionCellQuery = `
+		INSERT INTO
+			cells_subscriptions
+		VALUES
+			($1, $2, $3, transaction_timestamp())
+		`
 	)
 
 	sr := subscriptionsRow{
@@ -136,6 +148,12 @@ func (s *Store) insertSubscriptionUnchecked(ctx context.Context, subscription *d
 		sr.expiresAt,
 	)); err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	for _, cell := range cells {
+		if _, err := tx.ExecContext(ctx, subscriptionCellQuery, cell, cell.Level(), sr.id); err != nil {
+			return nil, multierr.Combine(err, tx.Rollback())
+		}
 	}
 
 	result := &dspb.Subscription{
@@ -229,6 +247,67 @@ func (s *Store) DeleteSubscription(ctx context.Context, id string) (*dspb.Subscr
 
 	result, err := sr.toProtobuf()
 	if err != nil {
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// SearchSubscriptions returns all subscriptions in "cells".
+func (s *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*dspb.Subscription, error) {
+	const (
+		subscriptionsInCellsQuery = `
+			SELECT
+				subscriptions.*
+			FROM
+				subscriptions
+			LEFT JOIN 
+				(SELECT DISTINCT cells_subscriptions.subscription_id FROM cells_subscriptions WHERE cells_subscriptions.cell_id = ANY($1))
+			AS
+				unique_subscription_ids
+			ON
+				subscriptions.id = unique_subscription_ids.subscription_id
+			WHERE
+				subscriptions.owner = $2`
+	)
+
+	if len(cells) == 0 {
+		return nil, errors.New("missing cell IDs for query")
+	}
+
+	tx, err := s.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := tx.QueryContext(ctx, subscriptionsInCellsQuery, pq.Array(cells), owner)
+	if err != nil {
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+	defer rows.Close()
+
+	var (
+		row    = &subscriptionsRow{}
+		result = []*dspb.Subscription{}
+	)
+
+	for rows.Next() {
+		if err := row.scan(rows); err != nil {
+			return nil, multierr.Combine(err, tx.Rollback())
+		}
+		pb, err := row.toProtobuf()
+		if err != nil {
+			return nil, multierr.Combine(err, tx.Rollback())
+		}
+
+		result = append(result, pb)
+	}
+
+	if err := rows.Err(); err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
 	}
 

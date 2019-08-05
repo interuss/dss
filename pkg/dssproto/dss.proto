@@ -310,10 +310,17 @@ service DiscoveryAndSynchronizationService {
     }
 
     // /dss/subscriptions
-    // 
-    // Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-    // 
-    // Only Subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of Subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing Subscriptions in an area.
+    //
+    // Retrieve subscriptions intersecting an area of interest.  Subscription
+    // notifications are only triggered by (and contain full information of)
+    // changes to, creation of, or deletion of, Entities referenced by or stored
+    // in the DSS; they do not involve any data transfer (such as remote ID
+    // telemetry updates) apart from Entity information.
+    //
+    // Only Subscriptions belonging to the caller are returned.  This endpoint
+    // would be used if a USS lost track of Subscriptions they had created
+    // and/or wanted to resolve an error indicating that they had too many
+    // existing Subscriptions in an area.
     rpc SearchSubscriptions(SearchSubscriptionsRequest) returns (SearchSubscriptionsResponse) {
         option (google.api.http) = {
             get: "/dss/subscriptions"

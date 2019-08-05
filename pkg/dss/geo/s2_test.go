@@ -3,7 +3,17 @@ package geo
 import (
 	"testing"
 
+	"github.com/steeling/InterUSS-Platform/pkg/dss/geo/testdata"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+
+	"github.com/golang/geo/s2"
+	"github.com/stretchr/testify/require"
+)
+
+var (
+	// the winding of the loop (we take it from geojson, which defaults to CW),
+	// whereas S2 expects CCW.
+	loopWinding = WindingOrderCW
 )
 
 func TestGeoPolygonToCellIDs(t *testing.T) {
@@ -23,10 +33,54 @@ func TestGeoPolygonToCellIDs(t *testing.T) {
 			Lat: 37.421265,
 			Lng: -122.086504,
 		},
-	}})
+	}}, DefaultRegionCoverer)
 
-	want := []int64{9263817211305263104 9263824461210058752 9263824529929535488 9263824564289273856 9263827450507296768 9263827484867035136 9263827519226773504 9263827553586511872 9263827587946250240 9263827862824157184 9263827897183895552 9263827931543633920 9263827965903372288 9263828068982587392 9263828378220232704 9263828412579971072 9263828446939709440 9263828481299447808 9263828515659186176 9263828756177354752}
-	if want != got {
-		t.Errorf("want %v, got: %v", want, got)
+	want := s2.CellUnion{
+		s2.CellIDFromToken("808fb0ac"),
+		s2.CellIDFromToken("808fb744"),
+		s2.CellIDFromToken("808fb754"),
+		s2.CellIDFromToken("808fb75c"),
+		s2.CellIDFromToken("808fb9fc"),
+		s2.CellIDFromToken("808fba04"),
+		s2.CellIDFromToken("808fba0c"),
+		s2.CellIDFromToken("808fba14"),
+		s2.CellIDFromToken("808fba1c"),
+		s2.CellIDFromToken("808fba5c"),
+		s2.CellIDFromToken("808fba64"),
+		s2.CellIDFromToken("808fba6c"),
+		s2.CellIDFromToken("808fba74"),
+		s2.CellIDFromToken("808fba8c"),
+		s2.CellIDFromToken("808fbad4"),
+		s2.CellIDFromToken("808fbadc"),
+		s2.CellIDFromToken("808fbae4"),
+		s2.CellIDFromToken("808fbaec"),
+		s2.CellIDFromToken("808fbaf4"),
+		s2.CellIDFromToken("808fbb2c"),
 	}
+
+	require.Equal(t, want, got)
+}
+
+func TestParseAreaSucceedsForValidLoop(t *testing.T) {
+	cells, err := AreaToCellIDs(testdata.Loop, loopWinding, DefaultRegionCoverer)
+	require.NoError(t, err)
+	require.NotNil(t, cells)
+}
+
+func TestParseAreaFailsForEmptyString(t *testing.T) {
+	cells, err := AreaToCellIDs("", loopWinding, DefaultRegionCoverer)
+	require.Error(t, err)
+	require.Nil(t, cells)
+}
+
+func TestParseAreaFailsForLoopWithOnlyTwoPoints(t *testing.T) {
+	cells, err := AreaToCellIDs(testdata.LoopWithOnlyTwoPoints, loopWinding, DefaultRegionCoverer)
+	require.Error(t, err)
+	require.Nil(t, cells)
+}
+
+func TestParseAreaFailsForLoopWithOddNumberOfCoordinates(t *testing.T) {
+	cells, err := AreaToCellIDs(testdata.LoopWithOddNumberOfCoordinates, loopWinding, DefaultRegionCoverer)
+	require.Error(t, err)
+	require.Nil(t, cells)
 }

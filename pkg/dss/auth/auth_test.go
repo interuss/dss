@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -17,7 +18,8 @@ var hmacSampleSecret = []byte("secret_key")
 
 func symmetricTokenCtx(ctx context.Context, key []byte) context.Context {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"foo": "bar",
+		"foo":       "bar",
+		"client_id": "me",
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -30,7 +32,8 @@ func symmetricTokenCtx(ctx context.Context, key []byte) context.Context {
 
 func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey) context.Context {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"foo": "bar",
+		"foo":       "bar",
+		"client_id": "me",
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -93,4 +96,21 @@ func TestRSAAuthInterceptor(t *testing.T) {
 			t.Errorf("expected: %v, got: %v", test.code, status.Code(err))
 		}
 	}
+}
+
+func TestClaimsValidation(t *testing.T) {
+	claims := &claims{}
+	require.Error(t, claims.Valid())
+	claims.ClientID = "me"
+	require.NoError(t, claims.Valid())
+}
+
+func TestContextWithOwner(t *testing.T) {
+	ctx := context.Background()
+	owner, ok := OwnerFromContext(ctx)
+	require.False(t, ok)
+	ctx = ContextWithOwner(ctx, "me")
+	owner, ok = OwnerFromContext(ctx)
+	require.True(t, ok)
+	require.Equal(t, "me", owner)
 }
