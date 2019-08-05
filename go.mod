@@ -6,7 +6,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/golang/geo v0.0.0-20190507233405-a0e886e97a51
-	github.com/golang/protobuf v1.3.2
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.3.2
 	github.com/google/pprof v0.0.0-20190723021845-34ac40c74b70 // indirect
