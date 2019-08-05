@@ -1,0 +1,22 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: http-gateway
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: http-gateway
+    spec:
+      containers:
+      - name: http-gateway
+        image: http-gateway:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        command:
+          - "/bin/bash"
+          - "-ecx"
+          - "exec ./main.go  -grpc-backend=grpc-backend.YOUR_ZONE_NAME:TARGET_PORT -port=8080"
