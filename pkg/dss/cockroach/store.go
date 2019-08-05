@@ -3,49 +3,13 @@ package cockroach
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
-	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	_ "github.com/lib/pq" // Pull in the postgres database driver
+	"github.com/lib/pq" // Pull in the postgres database driver
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"go.uber.org/multierr"
 )
-
-// nullTime models a timestamp that could be NULL in the database. The model and
-// implementation follows prior art as in sql.Null* types.
-//
-// Please note that this is rather driver-specific. The postgres sql driver
-// errors out when trying to Scan a time.Time from a nil value. Other drivers
-// might behave differently.
-type nullTime struct {
-	Time  time.Time
-	Valid bool // Valid indicates whether Time carries a non-NULL value.
-}
-
-func (nt *nullTime) Scan(value interface{}) error {
-	if value == nil {
-		nt.Time = time.Time{}
-		nt.Valid = false
-		return nil
-	}
-
-	t, ok := value.(time.Time)
-	if !ok {
-		return fmt.Errorf("failed to cast database value, expected time.Time, got %T", value)
-	}
-	nt.Time, nt.Valid = t, ok
-
-	return nil
-}
-
-func (nt nullTime) Value() (driver.Value, error) {
-	if !nt.Valid {
-		return nil, nil
-	}
-	return nt.Time, nil
-}
 
 type subscriptionsRow struct {
 	id                string
@@ -53,9 +17,9 @@ type subscriptionsRow struct {
 	url               string
 	typesFilter       sql.NullString
 	notificationIndex int32
-	lastUsedAt        nullTime
-	beginsAt          nullTime
-	expiresAt         nullTime
+	lastUsedAt        pq.NullTime
+	beginsAt          pq.NullTime
+	expiresAt         pq.NullTime
 	updatedAt         time.Time
 }
 

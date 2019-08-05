@@ -207,36 +207,3 @@ func TestStoreDeleteSubscription(t *testing.T) {
 		})
 	}
 }
-
-func TestNullTimeScan(t *testing.T) {
-	nt := &nullTime{}
-
-	require.NoError(t, nt.Scan(nil))
-	require.True(t, nt.Time.IsZero())
-	require.False(t, nt.Valid)
-
-	now := time.Now()
-	require.NoError(t, nt.Scan(now))
-	require.False(t, nt.Time.IsZero())
-	require.True(t, nt.Valid)
-	require.Equal(t, now, nt.Time)
-
-	require.Error(t, nt.Scan("scanning from anything that is not a time.Time should fail"))
-}
-
-func TestNullTimeValue(t *testing.T) {
-	nt := &nullTime{}
-
-	value, err := nt.Value()
-	require.Nil(t, value)
-	require.NoError(t, err)
-
-	now := time.Now()
-	require.NoError(t, nt.Scan(now))
-	value, err = nt.Value()
-	require.NotNil(t, value)
-	require.NoError(t, err)
-	ts, ok := value.(time.Time)
-	require.True(t, ok)
-	require.Equal(t, now, ts)
-}
