@@ -1,8 +1,8 @@
 name: "build-n-test"
 resources:
   containers:
-    - container: build-golang-1.12-alpine
-      image: golang:1.12-alpine
+    - container: build-golang-1.12
+      image: golang:1.12
 trigger:
   branches:
     include:
@@ -13,7 +13,7 @@ jobs:
       parallel: 1
     pool:
       vmImage: "ubuntu-16.04"
-    container: "build-golang-1.12-alpine"
+    container: "build-golang-1.12"
     steps:
       - checkout: self
         clean: true
