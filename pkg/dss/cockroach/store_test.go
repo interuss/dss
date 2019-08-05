@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	uuid "github.com/satori/go.uuid"
@@ -156,7 +157,7 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		NotificationIndex: 42,
 		Begins:            tsb,
 		Expires:           tse,
-	})
+	}, s2.CellUnion{})
 	require.Error(t, err)
 }
 
@@ -171,7 +172,7 @@ func TestStoreGetSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			s1, err := store.insertSubscriptionUnchecked(ctx, r.input)
+			s1, err := store.insertSubscriptionUnchecked(ctx, r.input, s2.CellUnion{})
 			require.NoError(t, err)
 			require.NotNil(t, s1)
 
@@ -195,7 +196,7 @@ func TestStoreDeleteSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			s1, err := store.insertSubscriptionUnchecked(ctx, r.input)
+			s1, err := store.insertSubscriptionUnchecked(ctx, r.input, s2.CellUnion{})
 			require.NoError(t, err)
 			require.NotNil(t, s1)
 
@@ -205,5 +206,51 @@ func TestStoreDeleteSubscription(t *testing.T) {
 
 			require.Equal(t, *s1, *s2)
 		})
+	}
+}
+
+func TestStoreSearchSubscription(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	var (
+		inserted = []*dspb.Subscription{}
+		cells    = s2.CellUnion{
+			s2.CellID(42),
+			s2.CellID(84),
+			s2.CellID(126),
+			s2.CellID(168),
+		}
+		owners = []string{
+			"me",
+			"myself",
+			"and",
+			"i",
+		}
+	)
+
+	for i, r := range subscriptionsPool {
+		subscription := *r.input
+		subscription.Owner = owners[i]
+
+		s1, err := store.insertSubscriptionUnchecked(ctx, &subscription, cells[:i])
+		require.NoError(t, err)
+		require.NotNil(t, s1)
+
+		inserted = append(inserted, s1)
+	}
+
+	for _, owner := range owners {
+		found, err := store.SearchSubscriptions(ctx, cells, owner)
+		require.NoError(t, err)
+		require.NotNil(t, found)
+		// We insert one subscription per owner. Hence, no matter how many cells are touched by the subscription,
+		// the result should always be 1.
+		require.Len(t, found, 1)
 	}
 }
