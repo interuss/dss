@@ -24,5 +24,5 @@ jobs:
           set -exo pipefail
           export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
           make && make test
-        name: "build-and-test"
-        displayName: "build-and-test"
+        name: "build_and_test"
+        displayName: "build_and_test"
