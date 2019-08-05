@@ -12,6 +12,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
 
 	"github.com/golang/geo/s2"
+	"github.com/golang/protobuf/ptypes"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -38,6 +39,11 @@ func (ms *mockStore) DeleteSubscription(ctx context.Context, id string) (*dspb.S
 func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*dspb.Subscription, error) {
 	args := ms.Called(ctx, cells, owner)
 	return args.Get(0).([]*dspb.Subscription), args.Error(1)
+}
+
+func (ms *mockStore) DeleteIdentificationServiceArea(ctx context.Context, id string, owner string) (*dspb.IdentificationServiceArea, []*dspb.SubscriberToNotify, error) {
+	args := ms.Called(ctx, id, owner)
+	return args.Get(0).(*dspb.IdentificationServiceArea), args.Get(1).([]*dspb.SubscriberToNotify), args.Error(2)
 }
 
 func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
@@ -184,6 +190,68 @@ func TestSearchSubscriptionsCallsIntoStore(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.Len(t, resp.Subscriptions, 1)
+	require.True(t, ms.AssertExpectations(t))
+}
+
+func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
+	var (
+		id = uuid.NewV4().String()
+		ms = &mockStore{}
+		s  = &Server{
+			Store:   DecorateLogging(logging.Logger, ms),
+			Coverer: DefaultRegionCoverer,
+			winding: geo.WindingOrderCW,
+		}
+	)
+
+	_, err := s.DeleteIdentificationServiceArea(context.Background(), &dspb.DeleteIdentificationServiceAreaRequest{
+		Id: id,
+	})
+
+	require.Error(t, err)
+	require.True(t, ms.AssertExpectations(t))
+}
+
+func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
+	var (
+		id  = uuid.NewV4().String()
+		ctx = auth.ContextWithOwner(context.Background(), "foo")
+		ms  = &mockStore{}
+		s   = &Server{
+			Store:   DecorateLogging(logging.Logger, ms),
+			Coverer: DefaultRegionCoverer,
+			winding: geo.WindingOrderCW,
+		}
+	)
+
+	ms.On("DeleteIdentificationServiceArea", ctx, id, "foo").Return(
+		&dspb.IdentificationServiceArea{
+			Id:         id,
+			Owner:      "me-myself-and-i",
+			FlightsUrl: "https://no/place/like/home",
+			Extents: &dspb.Volume4D{
+				TimeStart: ptypes.TimestampNow(),
+				TimeEnd:   ptypes.TimestampNow(),
+			},
+		},
+		[]*dspb.SubscriberToNotify{
+			&dspb.SubscriberToNotify{
+				Subscriptions: []*dspb.SubscriptionState{
+					&dspb.SubscriptionState{
+						NotificationIndex: 42,
+					},
+				},
+				Url: "https://no/place/like/home",
+			},
+		}, error(nil),
+	)
+	resp, err := s.DeleteIdentificationServiceArea(ctx, &dspb.DeleteIdentificationServiceAreaRequest{
+		Id: id,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Len(t, resp.Subscribers, 1)
 	require.True(t, ms.AssertExpectations(t))
 }
 

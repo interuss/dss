@@ -87,6 +87,24 @@ var (
 			},
 		},
 	}
+
+	serviceAreasPool = []struct {
+		name  string
+		input *dspb.IdentificationServiceArea
+	}{
+		{
+			name: "a subscription without begins and expires",
+			input: &dspb.IdentificationServiceArea{
+				Id:         uuid.NewV4().String(),
+				Owner:      "me-myself-and-i",
+				FlightsUrl: "https://no/place/like/home/for/flights",
+				Extents: &dspb.Volume4D{
+					TimeStart: begins,
+					TimeEnd:   expires,
+				},
+			},
+		},
+	}
 )
 
 func init() {
@@ -252,5 +270,46 @@ func TestStoreSearchSubscription(t *testing.T) {
 		// We insert one subscription per owner. Hence, no matter how many cells are touched by the subscription,
 		// the result should always be 1.
 		require.Len(t, found, 1)
+	}
+}
+
+func TestStoreDeleteIdentificationServiceAreas(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	var (
+		insertedServiceAreas  = []*dspb.IdentificationServiceArea{}
+		insertedSubscriptions = []*dspb.Subscription{}
+		cells                 = s2.CellUnion{
+			s2.CellID(42),
+		}
+	)
+
+	for _, r := range subscriptionsPool {
+		s1, err := store.insertSubscriptionUnchecked(ctx, r.input, cells)
+		require.NoError(t, err)
+		require.NotNil(t, s1)
+
+		insertedSubscriptions = append(insertedSubscriptions, s1)
+	}
+
+	for _, r := range serviceAreasPool {
+		saOut, err := store.insertIdentificationServiceAreaUnchecked(ctx, r.input, cells)
+		require.NoError(t, err)
+		require.NotNil(t, saOut)
+
+		insertedServiceAreas = append(insertedServiceAreas, saOut)
+	}
+
+	for _, sa := range insertedServiceAreas {
+		serviceAreaOut, subscriptionsOut, err := store.DeleteIdentificationServiceArea(ctx, sa.GetId(), sa.GetOwner())
+		require.NoError(t, err)
+		require.NotNil(t, serviceAreaOut)
+		require.NotNil(t, subscriptionsOut)
 	}
 }

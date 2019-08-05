@@ -12,10 +12,34 @@ import (
 	"go.uber.org/zap"
 )
 
+// Default cell level choices.
+//
+// The level is chosen such that we operate on cells with an area of ~1km^2.
+const (
+	DefaultMinimumCellLevel int = 13
+	DefaultMaximumCellLevel int = 13
+)
+
+var (
+	// DefaultRegionCoverer is the default s2.RegionCoverer for mapping areas
+	// and extents to s2.CellUnion instances.
+	DefaultRegionCoverer = &s2.RegionCoverer{
+		MinLevel: DefaultMinimumCellLevel,
+		MaxLevel: DefaultMaximumCellLevel,
+		// TODO(tvoss): Fine-tune these values.
+		LevelMod: 3,
+		MaxCells: 10,
+	}
+)
+
 // Store abstracts interactions with a backend storage layer.
 type Store interface {
 	// Close closes the store and should release all resources.
 	Close() error
+
+	// DeleteIdentificationServiceArea deletes the IdentificationServiceArea identified by "id" and owned by "owner".
+	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
+	DeleteIdentificationServiceArea(ctx context.Context, id string, owner string) (*dspb.IdentificationServiceArea, []*dspb.SubscriberToNotify, error)
 
 	// GetSubscription returns the subscription identified by "id".
 	GetSubscription(ctx context.Context, id string) (*dspb.Subscription, error)
@@ -39,6 +63,18 @@ func (ls *loggingStore) Close() error {
 	return err
 }
 
+func (ls *loggingStore) DeleteIdentificationServiceArea(ctx context.Context, id string, owner string) (*dspb.IdentificationServiceArea, []*dspb.SubscriberToNotify, error) {
+	area, subscriptions, err := ls.next.DeleteIdentificationServiceArea(ctx, id, owner)
+	ls.logger.Debug(
+		"Store.DeleteIdentificationServiceArea",
+		zap.String("id", id),
+		zap.String("owner", owner),
+		zap.Any("area", area),
+		zap.Any("subscriptions", subscriptions),
+		zap.Error(err),
+	)
+	return area, subscriptions, err
+}
 func (ls *loggingStore) GetSubscription(ctx context.Context, id string) (*dspb.Subscription, error) {
 	subscription, err := ls.next.GetSubscription(ctx, id)
 	ls.logger.Debug("Store.GetSubscription", zap.String("id", id), zap.Any("subscription", subscription), zap.Error(err))
@@ -78,7 +114,26 @@ type Server struct {
 }
 
 func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (*dspb.DeleteIdentificationServiceAreaResponse, error) {
-	return nil, nil
+	owner, ok := auth.OwnerFromContext(ctx)
+	if !ok {
+		// TODO(tvoss): Revisit once error propagation strategy is defined. We
+		// might want to avoid leaking raw error messages to callers and instead
+		// just return a generic error indicating a request ID.
+		return nil, errors.New("missing owner from context")
+	}
+
+	isa, subscribers, err := s.Store.DeleteIdentificationServiceArea(ctx, req.GetId(), owner)
+	if err != nil {
+		// TODO(tvoss): Revisit once error propagation strategy is defined. We
+		// might want to avoid leaking raw error messages to callers and instead
+		// just return a generic error indicating a request ID.
+		return nil, err
+	}
+
+	return &dspb.DeleteIdentificationServiceAreaResponse{
+		ServiceArea: isa,
+		Subscribers: subscribers,
+	}, nil
 }
 
 func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscriptionRequest) (*dspb.DeleteSubscriptionResponse, error) {
