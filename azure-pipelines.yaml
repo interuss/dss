@@ -1,0 +1,28 @@
+name: "build-n-test"
+resources:
+  containers:
+    - container: build-golang-1.12-alpine
+      image: golang:1.12-alpine
+trigger:
+  branches:
+    include:
+      - "feature/rewrite"
+jobs:
+  - job: "PR"
+    strategy:
+      parallel: 1
+    pool:
+      vmImage: "ubuntu-16.04"
+    container: "build-golang-1.12-alpine"
+    steps:
+      - checkout: self
+        clean: true
+        lfs: true
+        submodules: recursive
+        persistCredentials: true
+      - bash: |
+          set -exo pipefail
+          export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
+          make && make test
+        name: "Build & Test"
+        displayName: "Build and Test"
