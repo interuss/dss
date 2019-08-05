@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	uuid "github.com/satori/go.uuid"
@@ -84,6 +85,18 @@ var (
 				},
 				Expires:           expires,
 				NotificationIndex: 42,
+			},
+		},
+		{
+			name: "a subscription with a version string",
+			input: &dspb.Subscription{
+				Id:    uuid.NewV4().String(),
+				Owner: "me-myself-and-i",
+				Callbacks: &dspb.SubscriptionCallbacks{
+					IdentificationServiceAreaUrl: "https://no/place/like/home",
+				},
+				NotificationIndex: 42,
+				Version:           "12t7ftmlhgo00",
 			},
 		},
 	}
@@ -166,7 +179,7 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 	tse, err := ptypes.TimestampProto(expires)
 	require.NoError(t, err)
 
-	_, err = store.insertSubscriptionUnchecked(ctx, &dspb.Subscription{
+	_, err = store.insertSubscription(ctx, &dspb.Subscription{
 		Id:    uuid.NewV4().String(),
 		Owner: "me-myself-and-i",
 		Callbacks: &dspb.SubscriptionCallbacks{
@@ -190,15 +203,54 @@ func TestStoreGetSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			s1, err := store.insertSubscriptionUnchecked(ctx, r.input, s2.CellUnion{})
+			sub1, err := store.insertSubscription(ctx, r.input, s2.CellUnion{})
 			require.NoError(t, err)
-			require.NotNil(t, s1)
+			require.NotNil(t, sub1)
 
-			s2, err := store.GetSubscription(ctx, s1.Id)
+			sub2, err := store.GetSubscription(ctx, sub1.Id)
 			require.NoError(t, err)
-			require.NotNil(t, s2)
+			require.NotNil(t, sub2)
 
-			require.Equal(t, *s1, *s2)
+			require.Equal(t, *sub1, *sub2)
+		})
+	}
+}
+
+func TestStoreInsertSubscription(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	for _, r := range subscriptionsPool {
+		t.Run(r.name, func(t *testing.T) {
+			sub1, err := store.insertSubscription(ctx, r.input, s2.CellUnion{})
+			require.NoError(t, err)
+			require.NotNil(t, sub1)
+
+			// Test changes without the version differing.
+			r2 := sub1
+			r2.Owner = "new test owner"
+			sub2, err := store.insertSubscription(ctx, r2, s2.CellUnion{})
+			require.NoError(t, err)
+			require.NotNil(t, sub2)
+			require.Equal(t, sub2.Owner, "new test owner")
+
+			r3 := proto.Clone(r.input).(*dspb.Subscription)
+			r3.Owner = "new test owner 2"
+			r3.Version = "version_mismatch"
+			sub3, err := store.insertSubscription(ctx, r3, s2.CellUnion{})
+			require.Error(t, err)
+			require.Nil(t, sub3)
+
+			sub4, err := store.GetSubscription(ctx, sub1.Id)
+			require.NoError(t, err)
+			require.NotNil(t, sub4)
+
+			require.Equal(t, *sub2, *sub4)
 		})
 	}
 }
@@ -214,15 +266,20 @@ func TestStoreDeleteSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			s1, err := store.insertSubscriptionUnchecked(ctx, r.input, s2.CellUnion{})
+			sub1, err := store.insertSubscription(ctx, r.input, s2.CellUnion{})
 			require.NoError(t, err)
-			require.NotNil(t, s1)
+			require.NotNil(t, sub1)
 
-			s2, err := store.DeleteSubscription(ctx, s1.Id)
+			// Ensure mismatched versions return an error
+			sub2, err := store.DeleteSubscription(ctx, sub1.Id, "a3cg3tcuhk000")
+			require.Error(t, err)
+			require.Nil(t, sub2)
+
+			sub3, err := store.DeleteSubscription(ctx, sub1.Id, sub1.Version)
 			require.NoError(t, err)
-			require.NotNil(t, s2)
+			require.NotNil(t, sub3)
 
-			require.Equal(t, *s1, *s2)
+			require.Equal(t, *sub1, *sub3)
 		})
 	}
 }
@@ -246,7 +303,8 @@ func TestStoreSearchSubscription(t *testing.T) {
 		}
 		owners = []string{
 			"me",
-			"myself",
+			"my",
+			"self",
 			"and",
 			"i",
 		}
@@ -256,11 +314,11 @@ func TestStoreSearchSubscription(t *testing.T) {
 		subscription := *r.input
 		subscription.Owner = owners[i]
 
-		s1, err := store.insertSubscriptionUnchecked(ctx, &subscription, cells[:i])
+		sub1, err := store.insertSubscription(ctx, &subscription, cells[:i])
 		require.NoError(t, err)
-		require.NotNil(t, s1)
+		require.NotNil(t, sub1)
 
-		inserted = append(inserted, s1)
+		inserted = append(inserted, sub1)
 	}
 
 	for _, owner := range owners {
@@ -291,7 +349,7 @@ func TestStoreDeleteIdentificationServiceAreas(t *testing.T) {
 	)
 
 	for _, r := range subscriptionsPool {
-		s1, err := store.insertSubscriptionUnchecked(ctx, r.input, cells)
+		s1, err := store.insertSubscription(ctx, r.input, cells)
 		require.NoError(t, err)
 		require.NotNil(t, s1)
 

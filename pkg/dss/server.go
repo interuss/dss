@@ -46,7 +46,7 @@ type Store interface {
 
 	// DeleteSubscription deletes the subscription identified by "id" and
 	// returns the deleted subscription.
-	DeleteSubscription(ctx context.Context, id string) (*dspb.Subscription, error)
+	DeleteSubscription(ctx context.Context, id, version string) (*dspb.Subscription, error)
 
 	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
 	SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*dspb.Subscription, error)
@@ -81,9 +81,9 @@ func (ls *loggingStore) GetSubscription(ctx context.Context, id string) (*dspb.S
 	return subscription, err
 }
 
-func (ls *loggingStore) DeleteSubscription(ctx context.Context, id string) (*dspb.Subscription, error) {
-	subscription, err := ls.next.DeleteSubscription(ctx, id)
-	ls.logger.Debug("Store.DeleteSubscription", zap.String("id", id), zap.Any("subscription", subscription), zap.Error(err))
+func (ls *loggingStore) DeleteSubscription(ctx context.Context, id, version string) (*dspb.Subscription, error) {
+	subscription, err := ls.next.DeleteSubscription(ctx, id, version)
+	ls.logger.Debug("Store.DeleteSubscription", zap.String("id", id), zap.String("version", version), zap.Any("subscription", subscription), zap.Error(err))
 	return subscription, err
 }
 
@@ -137,7 +137,7 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.
 }
 
 func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscriptionRequest) (*dspb.DeleteSubscriptionResponse, error) {
-	subscription, err := s.Store.DeleteSubscription(ctx, req.GetId())
+	subscription, err := s.Store.DeleteSubscription(ctx, req.GetId(), req.GetVersion())
 	if err != nil {
 		// TODO(tvoss): Revisit once error propagation strategy is defined. We
 		// might want to avoid leaking raw error messages to callers and instead

@@ -3,7 +3,9 @@ package cockroach
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -88,6 +90,45 @@ func (isar *identificationServiceAreaRow) toProtobuf() (*dspb.IdentificationServ
 	return result, nil
 }
 
+// Convert updatedAt to a string, why not make it smaller
+// WARNING: Changing this will cause RMW errors
+// 32 is the highest value allowed by strconv
+var versionBase = 32
+
+// nullTime models a timestamp that could be NULL in the database. The model and
+// implementation follows prior art as in sql.Null* types.
+//
+// Please note that this is rather driver-specific. The postgres sql driver
+// errors out when trying to Scan a time.Time from a nil value. Other drivers
+// might behave differently.
+type nullTime struct {
+	Time  time.Time
+	Valid bool // Valid indicates whether Time carries a non-NULL value.
+}
+
+func (nt *nullTime) Scan(value interface{}) error {
+	if value == nil {
+		nt.Time = time.Time{}
+		nt.Valid = false
+		return nil
+	}
+
+	t, ok := value.(time.Time)
+	if !ok {
+		return fmt.Errorf("failed to cast database value, expected time.Time, got %T", value)
+	}
+	nt.Time, nt.Valid = t, ok
+
+	return nil
+}
+
+func (nt nullTime) Value() (driver.Value, error) {
+	if !nt.Valid {
+		return nil, nil
+	}
+	return nt.Time, nil
+}
+
 type subscriptionsRow struct {
 	id                string
 	owner             string
@@ -121,6 +162,7 @@ func (sr *subscriptionsRow) toProtobuf() (*dspb.Subscription, error) {
 			IdentificationServiceAreaUrl: sr.url,
 		},
 		NotificationIndex: int32(sr.notificationIndex),
+		Version:           timestampToVersionString(sr.updatedAt),
 	}
 
 	if sr.beginsAt.Valid {
@@ -142,6 +184,55 @@ func (sr *subscriptionsRow) toProtobuf() (*dspb.Subscription, error) {
 	return result, nil
 }
 
+func versionStringToTimestamp(s string) (time.Time, error) {
+	var t time.Time
+	nanos, err := strconv.ParseUint(s, versionBase, 64)
+	if err != nil {
+		return t, err
+	}
+	return time.Unix(0, int64(nanos)), nil
+}
+
+func timestampToVersionString(t time.Time) string {
+	return strconv.FormatUint(uint64(t.UnixNano()), versionBase)
+}
+
+func (sr *subscriptionsRow) versionOK(version string) bool {
+	return version == "" || version == timestampToVersionString(sr.updatedAt)
+}
+
+// from or apply
+func (sr *subscriptionsRow) applyProtobuf(subscription *dspb.Subscription) error {
+	if subscription.Id != "" {
+		sr.id = subscription.Id
+	}
+
+	if subscription.Owner != "" {
+		sr.owner = subscription.Owner
+	}
+	if subscription.Callbacks.GetIdentificationServiceAreaUrl() != "" {
+		sr.url = subscription.Callbacks.GetIdentificationServiceAreaUrl()
+	}
+	if ts := subscription.GetBegins(); ts != nil {
+		begins, err := ptypes.Timestamp(ts)
+		if err != nil {
+			return err
+		}
+		sr.beginsAt.Time = begins
+		sr.beginsAt.Valid = true
+	}
+
+	if ts := subscription.GetExpires(); ts != nil {
+		expires, err := ptypes.Timestamp(ts)
+		if err != nil {
+			return err
+		}
+		sr.expiresAt.Time = expires
+		sr.expiresAt.Valid = true
+	}
+	return nil
+}
+
 // Store is an implementation of dss.Store using
 // Cockroach DB as its backend store.
 type Store struct {
@@ -153,16 +244,12 @@ func (s *Store) Close() error {
 	return s.DB.Close()
 }
 
-// insertSubscriptionUnchecked inserts subscription into the store and returns
+// insertSubscription inserts subscription into the store and returns
 // the resulting subscription including its ID.
-//
-// Please note that this function is only meant to be used in tests/benchmarks
-// to bootstrap a store with values. In particular, the function is not
-// validating timestamps of last updates.
-func (s *Store) insertSubscriptionUnchecked(ctx context.Context, subscription *dspb.Subscription, cells s2.CellUnion) (*dspb.Subscription, error) {
+func (s *Store) insertSubscription(ctx context.Context, subscription *dspb.Subscription, cells s2.CellUnion) (*dspb.Subscription, error) {
 	const (
-		subscriptionQuery = `
-		INSERT INTO
+		insertQuery = `
+		UPSERT INTO
 			subscriptions
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, transaction_timestamp())
@@ -174,41 +261,36 @@ func (s *Store) insertSubscriptionUnchecked(ctx context.Context, subscription *d
 		VALUES
 			($1, $2, $3, transaction_timestamp())
 		`
+		getQuery = `
+		SELECT * FROM
+			subscriptions
+		WHERE
+			id = $1`
 	)
-
-	sr := subscriptionsRow{
-		id:                subscription.GetId(),
-		owner:             subscription.GetOwner(),
-		url:               subscription.Callbacks.GetIdentificationServiceAreaUrl(),
-		notificationIndex: subscription.GetNotificationIndex(),
-	}
-
-	if ts := subscription.GetBegins(); ts != nil {
-		begins, err := ptypes.Timestamp(ts)
-		if err != nil {
-			return nil, err
-		}
-		sr.beginsAt.Time = begins
-		sr.beginsAt.Valid = true
-	}
-
-	if ts := subscription.GetExpires(); ts != nil {
-		expires, err := ptypes.Timestamp(ts)
-		if err != nil {
-			return nil, err
-		}
-		sr.expiresAt.Time = expires
-		sr.expiresAt.Valid = true
-	}
 
 	tx, err := s.Begin()
 	if err != nil {
 		return nil, err
 	}
 
+	sr := &subscriptionsRow{}
+
+	err = sr.scan(tx.QueryRowContext(ctx, getQuery, subscription.Id))
+
+	switch {
+	case err == sql.ErrNoRows: // Do nothing here.
+	case err != nil:
+		return nil, multierr.Combine(err, tx.Rollback())
+	case !sr.versionOK(subscription.Version):
+		err := fmt.Errorf("version mismatch for subscription %s", subscription.Id)
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	sr.applyProtobuf(subscription)
+
 	if err := sr.scan(tx.QueryRowContext(
 		ctx,
-		subscriptionQuery,
+		insertQuery,
 		sr.id,
 		sr.owner,
 		sr.url,
@@ -227,36 +309,15 @@ func (s *Store) insertSubscriptionUnchecked(ctx context.Context, subscription *d
 		}
 	}
 
-	result := &dspb.Subscription{
-		Id:    sr.id,
-		Owner: sr.owner,
-		Callbacks: &dspb.SubscriptionCallbacks{
-			IdentificationServiceAreaUrl: sr.url,
-		},
-		NotificationIndex: sr.notificationIndex,
-	}
-
-	if sr.beginsAt.Valid {
-		ts, err := ptypes.TimestampProto(sr.beginsAt.Time)
-		if err != nil {
-			return nil, multierr.Combine(err, tx.Rollback())
-		}
-		result.Begins = ts
-	}
-
-	if sr.expiresAt.Valid {
-		ts, err := ptypes.TimestampProto(sr.expiresAt.Time)
-		if err != nil {
-			return nil, multierr.Combine(err, tx.Rollback())
-		}
-		result.Expires = ts
+	result, err := sr.toProtobuf()
+	if err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-
-	return result, err
+	return result, nil
 }
 
 // GetSubscription returns the subscription identified by "id".
@@ -274,7 +335,7 @@ func (s *Store) GetSubscription(ctx context.Context, id string) (*dspb.Subscript
 		return nil, err
 	}
 
-	sr := subscriptionsRow{}
+	sr := &subscriptionsRow{}
 
 	if err := sr.scan(tx.QueryRowContext(ctx, subscriptionQuery, id)); err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
@@ -294,13 +355,22 @@ func (s *Store) GetSubscription(ctx context.Context, id string) (*dspb.Subscript
 
 // DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
-func (s *Store) DeleteSubscription(ctx context.Context, id string) (*dspb.Subscription, error) {
+func (s *Store) DeleteSubscription(ctx context.Context, id, version string) (*dspb.Subscription, error) {
 	const (
-		subscriptionQuery = `
+		blindQuery = `
 		DELETE FROM
 			subscriptions
 		WHERE
 			id = $1
+		RETURNING
+			*`
+
+		idempotentQuery = `
+		DELETE FROM
+			subscriptions
+		WHERE
+			id = $1
+			AND updated_at = $2
 		RETURNING
 			*`
 	)
@@ -310,10 +380,20 @@ func (s *Store) DeleteSubscription(ctx context.Context, id string) (*dspb.Subscr
 		return nil, err
 	}
 
-	sr := subscriptionsRow{}
-
-	if err := sr.scan(tx.QueryRowContext(ctx, subscriptionQuery, id)); err != nil {
-		return nil, multierr.Combine(err, tx.Rollback())
+	sr := &subscriptionsRow{}
+	switch version {
+	case "":
+		if err := sr.scan(tx.QueryRowContext(ctx, blindQuery, id)); err != nil {
+			return nil, multierr.Combine(err, tx.Rollback())
+		}
+	default:
+		updatedAt, err := versionStringToTimestamp(version)
+		if err != nil {
+			return nil, multierr.Combine(err, tx.Rollback())
+		}
+		if err := sr.scan(tx.QueryRowContext(ctx, idempotentQuery, id, updatedAt)); err != nil {
+			return nil, multierr.Combine(err, tx.Rollback())
+		}
 	}
 
 	result, err := sr.toProtobuf()

@@ -31,7 +31,7 @@ func (ms *mockStore) GetSubscription(ctx context.Context, id string) (*dspb.Subs
 	return args.Get(0).(*dspb.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) DeleteSubscription(ctx context.Context, id string) (*dspb.Subscription, error) {
+func (ms *mockStore) DeleteSubscription(ctx context.Context, id, version string) (*dspb.Subscription, error) {
 	args := ms.Called(ctx, id)
 	return args.Get(0).(*dspb.Subscription), args.Error(1)
 }
