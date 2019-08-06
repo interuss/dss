@@ -4,6 +4,8 @@ package dssproto;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+//TODO(steeling) consider leveraging the following import
+// import "google/protobuf/wrappers.proto";
 
 message DeleteIdentificationServiceAreaRequest {
     // EntityUUID of the Identification Service Area.
