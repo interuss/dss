@@ -249,7 +249,7 @@ func (s *Store) Close() error {
 func (s *Store) insertSubscription(ctx context.Context, subscription *dspb.Subscription, cells s2.CellUnion) (*dspb.Subscription, error) {
 	const (
 		insertQuery = `
-		UPSERT INTO
+		INSERT INTO
 			subscriptions
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, transaction_timestamp())
@@ -257,6 +257,67 @@ func (s *Store) insertSubscription(ctx context.Context, subscription *dspb.Subsc
 			*`
 		subscriptionCellQuery = `
 		INSERT INTO
+			cells_subscriptions
+		VALUES
+			($1, $2, $3, transaction_timestamp())
+		`
+	)
+
+	tx, err := s.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	sr := &subscriptionsRow{}
+
+	sr.applyProtobuf(subscription)
+
+	if err := sr.scan(tx.QueryRowContext(
+		ctx,
+		insertQuery,
+		sr.id,
+		sr.owner,
+		sr.url,
+		sr.typesFilter,
+		sr.notificationIndex,
+		sr.lastUsedAt,
+		sr.beginsAt,
+		sr.expiresAt,
+	)); err != nil {
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	for _, cell := range cells {
+		if _, err := tx.ExecContext(ctx, subscriptionCellQuery, cell, cell.Level(), sr.id); err != nil {
+			return nil, multierr.Combine(err, tx.Rollback())
+		}
+	}
+
+	result, err := sr.toProtobuf()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// updatesSubscription updates the subscription  and returns
+// the resulting subscription including its ID.
+func (s *Store) updateSubscription(ctx context.Context, subscription *dspb.Subscription, cells s2.CellUnion) (*dspb.Subscription, error) {
+	const (
+		// We use an upsert so we don't have to specify the column
+		updateQuery = `
+		UPSERT INTO
+		  subscriptions
+		VALUES
+			($1, $2, $3, $4, $5, $6, $7, $8, transaction_timestamp())
+		RETURNING
+			*`
+		subscriptionCellQuery = `
+		UPSERT INTO
 			cells_subscriptions
 		VALUES
 			($1, $2, $3, transaction_timestamp())
@@ -279,6 +340,7 @@ func (s *Store) insertSubscription(ctx context.Context, subscription *dspb.Subsc
 
 	switch {
 	case err == sql.ErrNoRows: // Do nothing here.
+		return nil, multierr.Combine(err, tx.Rollback())
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
 	case !sr.versionOK(subscription.Version):
@@ -290,7 +352,7 @@ func (s *Store) insertSubscription(ctx context.Context, subscription *dspb.Subsc
 
 	if err := sr.scan(tx.QueryRowContext(
 		ctx,
-		insertQuery,
+		updateQuery,
 		sr.id,
 		sr.owner,
 		sr.url,
@@ -303,6 +365,7 @@ func (s *Store) insertSubscription(ctx context.Context, subscription *dspb.Subsc
 		return nil, multierr.Combine(err, tx.Rollback())
 	}
 
+	// TODO(steeling) we also need to delete any leftover cells.
 	for _, cell := range cells {
 		if _, err := tx.ExecContext(ctx, subscriptionCellQuery, cell, cell.Level(), sr.id); err != nil {
 			return nil, multierr.Combine(err, tx.Rollback())

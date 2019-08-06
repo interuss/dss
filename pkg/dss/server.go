@@ -190,6 +190,14 @@ func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionR
 	}, nil
 }
 
+func (s *Server) PatchIdentificationServiceArea(ctx context.Context, req *dspb.PatchIdentificationServiceAreaRequest) (*dspb.PatchIdentificationServiceAreaResponse, error) {
+	return nil, nil
+}
+
+func (s *Server) PatchSubscription(ctx context.Context, req *dspb.PatchSubscriptionRequest) (*dspb.PatchSubscriptionResponse, error) {
+	return nil, nil
+}
+
 func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.PutIdentificationServiceAreaRequest) (*dspb.PutIdentificationServiceAreaResponse, error) {
 	return nil, nil
 }

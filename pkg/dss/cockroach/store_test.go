@@ -232,17 +232,48 @@ func TestStoreInsertSubscription(t *testing.T) {
 			require.NotNil(t, sub1)
 
 			// Test changes without the version differing.
+			r2 := *sub1
+			r2.Owner = "new test owner"
+			sub2, err := store.insertSubscription(ctx, &r2, s2.CellUnion{})
+			require.Error(t, err)
+			require.Nil(t, sub2)
+
+			sub3, err := store.GetSubscription(ctx, sub1.Id)
+			require.NoError(t, err)
+			require.NotNil(t, sub3)
+
+			require.Equal(t, *sub1, *sub3)
+		})
+	}
+}
+
+func TestStoreUpdateSubscription(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	for _, r := range subscriptionsPool {
+		t.Run(r.name, func(t *testing.T) {
+			sub1, err := store.insertSubscription(ctx, r.input, s2.CellUnion{})
+			require.NoError(t, err)
+			require.NotNil(t, sub1)
+
+			// Test changes without the version differing.
 			r2 := sub1
 			r2.Owner = "new test owner"
-			sub2, err := store.insertSubscription(ctx, r2, s2.CellUnion{})
+			sub2, err := store.updateSubscription(ctx, r2, s2.CellUnion{})
 			require.NoError(t, err)
 			require.NotNil(t, sub2)
 			require.Equal(t, sub2.Owner, "new test owner")
 
 			r3 := proto.Clone(r.input).(*dspb.Subscription)
 			r3.Owner = "new test owner 2"
-			r3.Version = "version_mismatch"
-			sub3, err := store.insertSubscription(ctx, r3, s2.CellUnion{})
+			r3.Version = "12t7ftmlhgo01"
+			sub3, err := store.updateSubscription(ctx, r3, s2.CellUnion{})
 			require.Error(t, err)
 			require.Nil(t, sub3)
 

@@ -87,6 +87,56 @@ message LatLngPoint {
     double lng = 2;
 }
 
+message PatchIdentificationServiceAreaRequest {
+    // The bounding spacetime extents of this Identification Service Area.  Start and end times must be specified.
+    // 
+    // These extents should not reveal any sensitive information about the flight or flights within them.  This means, for instance, that extents should not tightly-wrap a flight path, nor should they generally be centered around the takeoff point of a single flight.
+    Volume4D extents = 1;
+    string flights_url = 2;
+
+    // EntityUUID of the Identification Service Area.
+    string id = 3;
+
+    // Optional. If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the service area does not exist.
+    string version = 4;
+}
+
+// Response to a request to update a reference to an Identification Service Area in the DSS.
+message PatchIdentificationServiceAreaResponse {
+    // Resulting service area stored in DSS.
+    IdentificationServiceArea service_area = 1;
+
+    // DSS subscribers that this client now has the obligation to notify of the Identification Service Area changes just made.  This client must call PUT for each provided URL according to the `/uss/identification_service_areas/{id}` path API.
+    repeated SubscriberToNotify subscribers = 2;
+}
+
+message PatchSubscriptionRequest {
+    // Endpoints that should be called when an applicable event occurs.  At least one field must be specified.
+    SubscriptionCallbacks callbacks = 1;
+
+    // The spacetime extents of the volume to subscribe to.
+    // 
+    // This subscription will automatically be deleted after its end time if it has not been refreshed by then.  If end time is not specified, the value will be automatically set to 24 hours in the future.
+    // 
+    // Note that some Entities triggering notifications may lie entirely outside the requested area.
+    Volume4D extents = 2;
+
+    // SubscriptionUUID of the subscription of interest.  Must be created by client before `PUT` call to create AreaSubscription in DSS because the client may receive a notification at that subscription before receiving a response from the DSS.
+    string id = 3;
+
+    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+    string version = 4;
+}
+
+// Response for a request to update a subscription.
+message PatchSubscriptionResponse {
+    // Identification Service Areas in or near the subscription area at the time of creation/update, if `identification_service_area_url` callback was specified.
+    repeated IdentificationServiceArea service_areas = 1;
+
+    // Result of the operation on the subscription.
+    Subscription subscription = 2;
+}
+
 // Parameters of a message informing of new full information for an Identification Service Area.  Pushed (by a client, not the DSS) directly to clients with subscriptions when another client makes a change to airspace within a cell with a subscription.
 message PutIdentificationServiceAreaNotificationParameters {
     // Identification Service Area that the notifying client changed or created.
@@ -110,7 +160,7 @@ message PutIdentificationServiceAreaRequest {
     string version = 4;
 }
 
-// Response to a request to create or update a reference to an Identification Service Area in the DSS.
+// Response to a request to create a reference to an Identification Service Area in the DSS.
 message PutIdentificationServiceAreaResponse {
     // Resulting service area stored in DSS.
     IdentificationServiceArea service_area = 1;
@@ -137,7 +187,7 @@ message PutSubscriptionRequest {
     string version = 4;
 }
 
-// Response for a request to create or update a subscription.
+// Response for a request to create a subscription.
 message PutSubscriptionResponse {
     // Identification Service Areas in or near the subscription area at the time of creation/update, if `identification_service_area_url` callback was specified.
     repeated IdentificationServiceArea service_areas = 1;
@@ -280,7 +330,29 @@ service DiscoveryAndSynchronizationService {
 
     // /dss/identification_service_areas/{id}
     // 
-    // Create or update an Identification Service Area.
+    // Update an Identification Service Area.
+    // 
+    // The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
+    rpc PatchIdentificationServiceArea(PatchIdentificationServiceAreaRequest) returns (PatchIdentificationServiceAreaResponse) {
+        option (google.api.http) = {
+            patch: "/dss/identification_service_areas/{id}"
+            body: "version"
+        };
+    }
+
+    // /dss/subscriptions/{id}
+    // 
+    // Update a subscription.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
+    rpc PatchSubscription(PatchSubscriptionRequest) returns (PatchSubscriptionResponse) {
+        option (google.api.http) = {
+            patch: "/dss/subscriptions/{id}"
+            body: "version"
+        };
+    }
+
+    // /dss/identification_service_areas/{id}
+    // 
+    // Create an Identification Service Area.
     // 
     // The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
     rpc PutIdentificationServiceArea(PutIdentificationServiceAreaRequest) returns (PutIdentificationServiceAreaResponse) {
@@ -292,7 +364,7 @@ service DiscoveryAndSynchronizationService {
 
     // /dss/subscriptions/{id}
     // 
-    // Create or update a subscription.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
+    // Create a subscription.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
     rpc PutSubscription(PutSubscriptionRequest) returns (PutSubscriptionResponse) {
         option (google.api.http) = {
             put: "/dss/subscriptions/{id}"
@@ -310,17 +382,10 @@ service DiscoveryAndSynchronizationService {
     }
 
     // /dss/subscriptions
-    //
-    // Retrieve subscriptions intersecting an area of interest.  Subscription
-    // notifications are only triggered by (and contain full information of)
-    // changes to, creation of, or deletion of, Entities referenced by or stored
-    // in the DSS; they do not involve any data transfer (such as remote ID
-    // telemetry updates) apart from Entity information.
-    //
-    // Only Subscriptions belonging to the caller are returned.  This endpoint
-    // would be used if a USS lost track of Subscriptions they had created
-    // and/or wanted to resolve an error indicating that they had too many
-    // existing Subscriptions in an area.
+    // 
+    // Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
+    // 
+    // Only Subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of Subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing Subscriptions in an area.
     rpc SearchSubscriptions(SearchSubscriptionsRequest) returns (SearchSubscriptionsResponse) {
         option (google.api.http) = {
             get: "/dss/subscriptions"
