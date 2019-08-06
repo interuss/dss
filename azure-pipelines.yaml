@@ -1,8 +1,4 @@
 name: "build-n-test"
-resources:
-  containers:
-    - container: build-golang-1.12
-      image: golang:1.12
 trigger:
   branches:
     include:
@@ -13,16 +9,18 @@ jobs:
       parallel: 1
     pool:
       vmImage: "ubuntu-16.04"
-    container: "build-golang-1.12"
     steps:
       - checkout: self
         clean: true
         lfs: true
         submodules: recursive
         persistCredentials: true
+      - task: GoTool@0
+        inputs:
+          version: '1.12'
       - bash: |
           set -exo pipefail
           export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
-          make && make test
+          make && make test && make test-cockroach
         name: "build_and_test"
         displayName: "build_and_test"
