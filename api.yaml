@@ -129,11 +129,6 @@ paths:
         200:
           schema:
             $ref: '#/definitions/PutIdentificationServiceAreaResponse'
-          description: An existing Identification Service Area was updated successfully
-            in the DSS.
-        201:
-          schema:
-            $ref: '#/definitions/PutIdentificationServiceAreaResponse'
           description: A new Identification Service Area was created successfully
             in the DSS.
         400:
@@ -167,7 +162,76 @@ paths:
         - dss.write.identification_service_areas
       summary: /dss/identification_service_areas/{id}
       description: |-
-        Create or update an Identification Service Area.
+        Create an Identification Service Area.
+
+        The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
+    patch:
+      tags:
+      - dss
+      operationId: patchIdentificationServiceArea
+      parameters:
+      - name: id
+        description: EntityUUID of the Identification Service Area.
+        schema:
+          $ref: '#/definitions/UUIDv4'
+        in: path
+        required: true
+      - name: extents
+        description: |-
+          The bounding spacetime extents of this Identification Service Area.  Start and end times must be specified.
+
+          These extents should not reveal any sensitive information about the flight or flights within them.  This means, for instance, that extents should not tightly-wrap a flight path, nor should they generally be centered around the takeoff point of a single flight.
+        schema:
+          $ref: '#/definitions/Volume4D' 
+        in: body
+        required: true
+      - name: flights_url
+        schema:
+          $ref: '#/definitions/URL'
+        in: body
+        required: true
+      - name: version
+        description: Optional. If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the service area does not exist.
+        type: string
+        in: body
+      responses:
+        200:
+          schema:
+            $ref: '#/definitions/PatchIdentificationServiceAreaResponse'
+          description: An existing Identification Service Area was updated successfully
+            in the DSS.
+        400:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: |-
+            * One or more input parameters were missing or invalid.
+            * The request attempted to mutate the Identification Service Area in a disallowed way.
+        401:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: Bearer access token was not provided in Authorization header,
+            token could not be decoded, or token was invalid.
+        403:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: The access token was decoded successfully but did not include
+            a scope appropriate to this endpoint.
+        409:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: |-
+            * An Identification Service Area with the specified ID already exists.
+            * Despite repeated attempts, the DSS was unable to update the DAR because of other simultaneous changes.
+        413:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: The area of the Identification Service Area is too large.
+      security:
+      - AuthFromAuthorizationAuthority:
+        - dss.write.identification_service_areas
+      summary: /dss/identification_service_areas/{id}
+      description: |-
+        Update an Identification Service Area.
 
         The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
     delete:
@@ -359,10 +423,6 @@ paths:
         200:
           schema:
             $ref: '#/definitions/PutSubscriptionResponse'
-          description: An existing Subscription was updated successfully.
-        201:
-          schema:
-            $ref: '#/definitions/PutSubscriptionResponse'
           description: A new Subscription was created successfully.
         400:
           schema:
@@ -403,7 +463,93 @@ paths:
       - AuthFromAuthorizationAuthority:
         - dss.read.identification_service_areas
       summary: /dss/subscriptions/{id}
-      description: Create or update a subscription.  Subscription notifications are
+      description: Create a subscription.  Subscription notifications are
+        only triggered by (and contain full information of) changes to, creation of,
+        or deletion of, Entities referenced by or stored in the DSS; they do not involve
+        any data transfer (such as remote ID telemetry updates) apart from Entity
+        information.
+    patch:
+      tags:
+      - dss
+      operationId: patchSubscription
+      parameters:
+      - name: id
+        description: SubscriptionUUID of the subscription of interest.  Must be created
+          by client before `PUT` call to create AreaSubscription in DSS because the
+          client may receive a notification at that subscription before receiving
+          a response from the DSS.
+        schema:
+          $ref: '#/definitions/UUIDv4'
+        in: path
+        required: true
+      - name: extents
+        description: |-
+          The spacetime extents of the volume to subscribe to.
+
+          This subscription will automatically be deleted after its end time if it has not been refreshed by then.  If end time is not specified, the value will be automatically set to 24 hours in the future.
+
+          Note that some Entities triggering notifications may lie entirely outside the requested area.
+        schema:
+          $ref: '#/definitions/Volume4D'
+        in: body
+        required: true
+      - name: callbacks
+        description: Endpoints that should be called when an applicable event occurs.  At
+          least one field must be specified.
+        schema:
+          $ref: '#/definitions/SubscriptionCallbacks'
+        in: body
+        required: true
+      - name: version
+        description: Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+        type: string
+        in: body
+        required: false
+      responses:
+        200:
+          schema:
+            $ref: '#/definitions/PatchSubscriptionResponse'
+          description: The Subscription was successfully updated.
+        400:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: |-
+            * One or more input parameters were missing or invalid.
+            * The request attempted to mutate the Subscription in a disallowed way.
+        401:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: Bearer access token was not provided in Authorization header,
+            token could not be decoded, or token was invalid.
+        403:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: |-
+            * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
+            * An EntityType was specified in `types_filter` to which the scopes included in the access token do not provide access.
+        409:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: |-
+            * A Subscription with the specified ID already exists.
+            * Despite repeated attempts, the DSS was unable to update the DAR because of other simultaneous changes.
+        429:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: Client already has too many Subscriptions in the area where
+            a new Subscription was requested.  To correct this problem, the client
+            may query GET /subscriptions to see which Subscriptions are counting against
+            their limit.  This problem should not generally be encountered because
+            the Subscription limit should be above what any consumer that reasonably
+            aggregates their Subscriptions should request.  But, a Subscription limit
+            is necessary to bound performance requirements for DSS instances and would
+            likely be hit by, e.g., a large remote ID display provider that created
+            a Subscription for each of their display client users' views.
+      security:
+      - AuthFromAuthorizationAuthority:
+        - dss.read.identification_service_areas
+      summary: /dss/subscriptions/{id}
+      description: Update a subscription.  Subscription notifications are
         only triggered by (and contain full information of) changes to, creation of,
         or deletion of, Entities referenced by or stored in the DSS; they do not involve
         any data transfer (such as remote ID telemetry updates) apart from Entity
@@ -600,8 +746,27 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/LatLngPoint'
+  PatchIdentificationServiceAreaResponse:
+    description: Response to a request to update a reference to an Identification
+      Service Area in the DSS.
+    required:
+    - service_area
+    - subscribers
+    type: object
+    properties:
+      subscribers:
+        description: DSS subscribers that this client now has the obligation to
+          notify of the Identification Service Area changes just made.  This client
+          must call PUT for each provided URL according to the `/uss/identification_service_areas/{id}`
+          path API.
+        type: array
+        items:
+          $ref: '#/definitions/SubscriberToNotify'
+      service_area:
+        $ref: '#/definitions/IdentificationServiceArea'
+        description: Resulting service area stored in DSS.
   PutIdentificationServiceAreaResponse:
-    description: Response to a request to create or update a reference to an Identification
+    description: Response to a request to create a reference to an Identification
       Service Area in the DSS.
     required:
     - service_area
@@ -751,8 +916,24 @@ definitions:
           Subscription is created, modified, or deleted.  Must implement PUT and
           DELETE according to the `/uss/identification_service_areas/{id}` path
           API.
+  PatchSubscriptionResponse:
+    description: Response for a request to update a subscription.
+    required:
+    - subscription
+    type: object
+    properties:
+      service_areas:
+        description: Identification Service Areas in or near the subscription area
+          at the time of creation/update, if `identification_service_area_url` callback
+          was specified.
+        type: array
+        items:
+          $ref: '#/definitions/IdentificationServiceArea'
+      subscription:
+        $ref: '#/definitions/Subscription'
+        description: Result of the operation on the subscription.
   PutSubscriptionResponse:
-    description: Response for a request to create or update a subscription.
+    description: Response for a request to create a subscription.
     required:
     - subscription
     type: object
