@@ -21,6 +21,6 @@ jobs:
       - bash: |
           set -exo pipefail
           export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
-          make && make test
+          make && make test && make test-cockroach
         name: "build_and_test"
         displayName: "build_and_test"
