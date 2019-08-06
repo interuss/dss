@@ -8,7 +8,6 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
-	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
 
@@ -42,13 +41,12 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		return err
 	}
 
-	s := grpc.NewServer(grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(ac.AuthInterceptor)))
+	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(logging.Interceptor(), ac.AuthInterceptor))
 	if err != nil {
 		return err
 	}
 	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, &dss.Server{
-		Store:   dss.NewNilStore(),
-		Coverer: geo.DefaultRegionCoverer,
+		Store: dss.NewNilStore(),
 	})
 
 	go func() {

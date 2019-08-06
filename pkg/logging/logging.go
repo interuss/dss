@@ -4,8 +4,13 @@ import (
 	"context"
 	"os"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -33,6 +38,18 @@ func init() {
 	}
 
 	Logger = l
+	// Make sure that log statements internal to gRPC library are logged using the Logger as well.
+	grpcReplaceLogger(Logger)
+}
+
+func Interceptor() grpc.UnaryServerInterceptor {
+	opts := []grpc_zap.Option{
+		grpc_zap.WithLevels(grpc_zap.DefaultCodeToLevel),
+	}
+	return grpc_middleware.ChainUnaryServer(
+		grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+		grpc_zap.UnaryServerInterceptor(Logger, opts...),
+	)
 }
 
 // WithValuesFromContext augments logger with relevant fields from ctx and returns

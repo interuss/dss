@@ -10,12 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	// the winding of the loop (we take it from geojson, which defaults to CW),
-	// whereas S2 expects CCW.
-	loopWinding = WindingOrderCW
-)
-
 func TestGeoPolygonToCellIDs(t *testing.T) {
 	got := GeoPolygonToCellIDs(&dspb.GeoPolygon{Vertices: []*dspb.LatLngPoint{
 		// Stanford
@@ -33,7 +27,7 @@ func TestGeoPolygonToCellIDs(t *testing.T) {
 			Lat: 37.421265,
 			Lng: -122.086504,
 		},
-	}}, DefaultRegionCoverer)
+	}})
 
 	want := s2.CellUnion{
 		s2.CellIDFromToken("808fb0ac"),
@@ -62,25 +56,25 @@ func TestGeoPolygonToCellIDs(t *testing.T) {
 }
 
 func TestParseAreaSucceedsForValidLoop(t *testing.T) {
-	cells, err := AreaToCellIDs(testdata.Loop, loopWinding, DefaultRegionCoverer)
+	cells, err := AreaToCellIDs(testdata.Loop)
 	require.NoError(t, err)
 	require.NotNil(t, cells)
 }
 
 func TestParseAreaFailsForEmptyString(t *testing.T) {
-	cells, err := AreaToCellIDs("", loopWinding, DefaultRegionCoverer)
+	cells, err := AreaToCellIDs("")
 	require.Error(t, err)
 	require.Nil(t, cells)
 }
 
 func TestParseAreaFailsForLoopWithOnlyTwoPoints(t *testing.T) {
-	cells, err := AreaToCellIDs(testdata.LoopWithOnlyTwoPoints, loopWinding, DefaultRegionCoverer)
+	cells, err := AreaToCellIDs(testdata.LoopWithOnlyTwoPoints)
 	require.Error(t, err)
 	require.Nil(t, cells)
 }
 
 func TestParseAreaFailsForLoopWithOddNumberOfCoordinates(t *testing.T) {
-	cells, err := AreaToCellIDs(testdata.LoopWithOddNumberOfCoordinates, loopWinding, DefaultRegionCoverer)
+	cells, err := AreaToCellIDs(testdata.LoopWithOddNumberOfCoordinates)
 	require.Error(t, err)
 	require.Nil(t, cells)
 }
