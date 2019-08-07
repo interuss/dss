@@ -26,7 +26,7 @@ var (
 	storeURI = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 
 	begins, expires = func() (begins *timestamp.Timestamp, expires *timestamp.Timestamp) {
-		const offset = 15 * time.Second
+		const offset = 15 * time.Minute
 
 		begins, expires = ptypes.TimestampNow(), ptypes.TimestampNow()
 		begins.Seconds -= int64(offset.Seconds())
@@ -106,7 +106,7 @@ var (
 		input *dspb.IdentificationServiceArea
 	}{
 		{
-			name: "a subscription without begins and expires",
+			name: "a service area",
 			input: &dspb.IdentificationServiceArea{
 				Id:         uuid.NewV4().String(),
 				Owner:      "me-myself-and-i",
@@ -400,5 +400,116 @@ func TestStoreDeleteIdentificationServiceAreas(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, serviceAreaOut)
 		require.NotNil(t, subscriptionsOut)
+	}
+}
+
+func TestStoreSearchIdentificationServiceAreas(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		insertedServiceAreas = []*dspb.IdentificationServiceArea{}
+		cells                = s2.CellUnion{
+			s2.CellID(42),
+			s2.CellID(84),
+			s2.CellID(126),
+			s2.CellID(168),
+		}
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	for _, r := range serviceAreasPool {
+		saOut, err := store.insertIdentificationServiceAreaUnchecked(ctx, r.input, cells)
+		require.NoError(t, err)
+		require.NotNil(t, saOut)
+
+		insertedServiceAreas = append(insertedServiceAreas, saOut)
+	}
+
+	for _, r := range []struct {
+		name             string
+		cells            s2.CellUnion
+		timestampMutator func(time.Time, time.Time) (*time.Time, *time.Time)
+		expectedLen      int
+	}{
+		{
+			name:  "search for empty cell",
+			cells: s2.CellUnion{s2.CellID(210)},
+			timestampMutator: func(time.Time, time.Time) (*time.Time, *time.Time) {
+				return nil, nil
+			},
+			expectedLen: 0,
+		},
+		{
+			name:  "search for only one cell",
+			cells: s2.CellUnion{s2.CellID(42)},
+			timestampMutator: func(time.Time, time.Time) (*time.Time, *time.Time) {
+				return nil, nil
+			},
+			expectedLen: 1,
+		},
+		{
+			name:  "search with nil timestamps",
+			cells: cells,
+			timestampMutator: func(time.Time, time.Time) (*time.Time, *time.Time) {
+				return nil, nil
+			},
+			expectedLen: 1,
+		},
+		{
+			name:  "search with exact timestamps",
+			cells: cells,
+			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
+				return &start, &end
+			},
+			expectedLen: 1,
+		},
+		{
+			name:  "search with non-matching time span",
+			cells: cells,
+			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
+				var (
+					offset   = time.Duration(end.Sub(start).Seconds()/4) * time.Second
+					earliest = start.Add(offset)
+					latest   = end.Add(-offset)
+				)
+
+				return &earliest, &latest
+			},
+			expectedLen: 0,
+		},
+		{
+			name:  "search with expanded time span",
+			cells: cells,
+			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
+				var (
+					offset   = time.Duration(end.Sub(start).Seconds()/4) * time.Second
+					earliest = start.Add(-offset)
+					latest   = end.Add(offset)
+				)
+
+				return &earliest, &latest
+			},
+			expectedLen: 1,
+		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			for _, sa := range insertedServiceAreas {
+				start, err := ptypes.Timestamp(sa.GetExtents().GetTimeStart())
+				require.NoError(t, err)
+				end, err := ptypes.Timestamp(sa.GetExtents().GetTimeEnd())
+				require.NoError(t, err)
+
+				earliest, latest := r.timestampMutator(start, end)
+
+				serviceAreas, err := store.SearchIdentificationServiceAreas(ctx, r.cells, earliest, latest)
+				require.NoError(t, err)
+				require.Len(t, serviceAreas, r.expectedLen)
+				for i := 0; i < r.expectedLen; i++ {
+					require.Equal(t, sa.GetId(), serviceAreas[i].GetId())
+				}
+			}
+		})
 	}
 }
