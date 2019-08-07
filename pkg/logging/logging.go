@@ -14,34 +14,69 @@ import (
 )
 
 var (
+	// DefaultLevel is the default log level.
+	DefaultLevel = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+	// DefaultFormat is the default log format.
+	DefaultFormat = FormatJSON
+	// FormatConsole marks the console log format.
+	FormatConsole = "console"
+	// FormatJSON marks the JSON log format.
+	FormatJSON = "json"
 	// Logger is the default, system-wide logger.
 	Logger *zap.Logger
 )
 
 func init() {
+	var (
+		format = "json"
+		level  = DefaultLevel.String()
+	)
+	if v := os.Getenv("DSS_LOG_LEVEL"); v != "" {
+		level = v
+	}
+
+	if v := os.Getenv("DSS_LOG_FORMAT"); v != "" {
+		format = v
+	}
+
+	if err := setUpLogger(level, format); err != nil {
+		panic(err)
+	}
+}
+
+func setUpLogger(level string, format string) error {
+	lvl := DefaultLevel
+	if err := lvl.UnmarshalText([]byte(level)); err != nil {
+		return err
+	}
+
 	options := []zap.Option{
 		zap.AddCaller(), zap.AddStacktrace(zapcore.PanicLevel),
 	}
 
 	config := zap.NewProductionConfig()
-	if v := os.Getenv("DSS_LOG_LEVEL"); v != "" {
-		lvl := zapcore.InfoLevel
-		if err := lvl.UnmarshalText([]byte(v)); err != nil {
-			panic(err)
-		}
-		config.Level = zap.NewAtomicLevelAt(lvl)
-	}
+	config.Level = lvl
+	config.Encoding = format
 
 	l, err := config.Build(options...)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	Logger = l
 	// Make sure that log statements internal to gRPC library are logged using the Logger as well.
 	grpcReplaceLogger(Logger)
+
+	return nil
 }
 
+// Configure configures the default log "level" and the log "format".
+func Configure(level string, format string) error {
+	return setUpLogger(level, format)
+}
+
+// Interceptor returns a grpc.UnaryServerInterceptor that logs incoming requests
+// and associated tags to "Logger".
 func Interceptor() grpc.UnaryServerInterceptor {
 	opts := []grpc_zap.Option{
 		grpc_zap.WithLevels(grpc_zap.DefaultCodeToLevel),
