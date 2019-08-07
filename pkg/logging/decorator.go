@@ -2,6 +2,7 @@ package logging
 
 import (
 	"context"
+	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/steeling/InterUSS-Platform/pkg/dss"
@@ -32,6 +33,20 @@ func (ls *loggingStore) DeleteIdentificationServiceArea(ctx context.Context, id 
 	)
 	return area, subscriptions, err
 }
+
+func (ls *loggingStore) SearchIdentificationServiceAreas(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*dspb.IdentificationServiceArea, error) {
+	areas, err := ls.next.SearchIdentificationServiceAreas(ctx, cells, earliest, latest)
+	ls.logger.Debug(
+		"Store.SearchIdentificationServiceAreas",
+		zap.Any("cells", cells),
+		zap.Any("earliest", earliest),
+		zap.Any("latest", latest),
+		zap.Any("areas", areas),
+		zap.Error(err),
+	)
+	return areas, err
+}
+
 func (ls *loggingStore) GetSubscription(ctx context.Context, id string) (*dspb.Subscription, error) {
 	subscription, err := ls.next.GetSubscription(ctx, id)
 	ls.logger.Debug("Store.GetSubscription", zap.String("id", id), zap.Any("subscription", subscription), zap.Error(err))

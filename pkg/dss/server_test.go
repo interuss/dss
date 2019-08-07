@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
@@ -43,6 +44,11 @@ func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion
 func (ms *mockStore) DeleteIdentificationServiceArea(ctx context.Context, id string, owner string) (*dspb.IdentificationServiceArea, []*dspb.SubscriberToNotify, error) {
 	args := ms.Called(ctx, id, owner)
 	return args.Get(0).(*dspb.IdentificationServiceArea), args.Get(1).([]*dspb.SubscriberToNotify), args.Error(2)
+}
+
+func (ms *mockStore) SearchIdentificationServiceAreas(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*dspb.IdentificationServiceArea, error) {
+	args := ms.Called(ctx, cells, earliest, latest)
+	return args.Get(0).([]*dspb.IdentificationServiceArea), args.Error(1)
 }
 
 func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
@@ -239,6 +245,38 @@ func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.Len(t, resp.Subscribers, 1)
+	require.True(t, ms.AssertExpectations(t))
+}
+
+func TestSearchIdentificationServiceAreasCallsIntoStore(t *testing.T) {
+	var (
+		ctx = context.Background()
+		ms  = &mockStore{}
+		s   = &Server{
+			Store: ms,
+		}
+	)
+
+	ms.On("SearchIdentificationServiceAreas", ctx, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
+		[]*dspb.IdentificationServiceArea{
+			{
+				Id:         uuid.NewV4().String(),
+				Owner:      "me-myself-and-i",
+				FlightsUrl: "https://no/place/like/home",
+				Extents: &dspb.Volume4D{
+					TimeStart: ptypes.TimestampNow(),
+					TimeEnd:   ptypes.TimestampNow(),
+				},
+			},
+		}, error(nil),
+	)
+	resp, err := s.SearchIdentificationServiceAreas(ctx, &dspb.SearchIdentificationServiceAreasRequest{
+		Area: testdata.Loop,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Len(t, resp.ServiceAreas, 1)
 	require.True(t, ms.AssertExpectations(t))
 }
 

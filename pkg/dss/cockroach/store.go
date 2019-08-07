@@ -742,6 +742,81 @@ func (s *Store) DeleteIdentificationServiceArea(ctx context.Context, id string, 
 	return isa, subscribersToNotify, nil
 }
 
+// SearchIdentificationServiceAreas searches IdentificationServiceArea
+// instances that intersect with "cells" and, if set, the temporal volume
+// defined by "earliest" and "latest".
+func (s *Store) SearchIdentificationServiceAreas(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*dspb.IdentificationServiceArea, error) {
+	const (
+		serviceAreasInCellsQuery = `
+			SELECT
+				identification_service_areas.*
+			FROM
+				identification_service_areas
+			JOIN 
+				(SELECT DISTINCT
+					cells_identification_service_areas.identification_service_area_id
+				FROM
+					cells_identification_service_areas
+				WHERE
+					cells_identification_service_areas.cell_id = ANY($1)
+				)
+			AS
+				unique_identification_service_areas
+			ON
+				identification_service_areas.id = unique_identification_service_areas.identification_service_area_id
+			WHERE
+				COALESCE(identification_service_areas.starts_at >= $2, true)
+			AND
+				COALESCE(identification_service_areas.ends_at <= $3, true)`
+	)
+
+	if len(cells) == 0 {
+		return nil, errors.New("missing cell IDs for query")
+	}
+
+	cids := make([]int64, len(cells))
+	for i, cid := range cells {
+		cids[i] = int64(cid)
+	}
+
+	tx, err := s.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := tx.QueryContext(ctx, serviceAreasInCellsQuery, pq.Int64Array(cids), earliest, latest)
+	if err != nil {
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+	defer rows.Close()
+
+	var (
+		result = []*dspb.IdentificationServiceArea{}
+		isar   = &identificationServiceAreaRow{}
+	)
+
+	for rows.Next() {
+		if err := isar.scan(rows); err != nil {
+			return nil, multierr.Combine(err, tx.Rollback())
+		}
+
+		pb, err := isar.toProtobuf()
+		if err != nil {
+			return nil, multierr.Combine(err, tx.Rollback())
+		}
+		result = append(result, pb)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // Bootstrap bootstraps the underlying database with required tables.
 //
 // TODO: We should handle database migrations properly, but bootstrap both us
