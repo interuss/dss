@@ -5,21 +5,23 @@ import (
 	"flag"
 	"net"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
-	"go.uber.org/zap"
-	"google.golang.org/grpc/reflection"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
 	address    = flag.String("addr", "127.0.0.1:8080", "address")
 	pkFile     = flag.String("public_key_file", "", "Path to public Key to use for JWT decoding.")
 	reflectAPI = flag.Bool("reflect_api", false, "Whether to reflect the API.")
+	logFormat  = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
+	logLevel   = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
 )
 
 // RunGRPCServer starts the example gRPC service.
@@ -65,6 +67,11 @@ func RunGRPCServer(ctx context.Context, address string) error {
 
 func main() {
 	flag.Parse()
+
+	if err := logging.Configure(*logLevel, *logFormat); err != nil {
+		panic(err)
+	}
+
 	var (
 		ctx    = context.Background()
 		logger = logging.WithValuesFromContext(ctx, logging.Logger)
