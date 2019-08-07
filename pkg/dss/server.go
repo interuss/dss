@@ -10,6 +10,11 @@ import (
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 )
 
+var (
+	WriteISAScope = "dss.write.identification_service_areas"
+	ReadISAScope  = "dss.read.identification_service_areas"
+)
+
 type Store interface {
 	// Close closes the store and should release all resources.
 	Close() error
@@ -37,6 +42,20 @@ func NewNilStore() Store {
 // Server implements dssproto.DiscoveryAndSynchronizationService.
 type Server struct {
 	Store Store
+}
+
+func (s *Server) AuthScopes() map[string][]string {
+	return map[string][]string{
+		"GetIdentificationServiceArea":     []string{ReadISAScope},
+		"PutIdentificationServiceArea":     []string{WriteISAScope},
+		"PatchIdentificationServiceArea":   []string{WriteISAScope},
+		"DeleteIdentificationServiceArea":  []string{WriteISAScope},
+		"PutSubscription":                  []string{ReadISAScope},
+		"PatchSubscription":                []string{ReadISAScope},
+		"DeleteSubscription":               []string{ReadISAScope},
+		"SearchSubscriptions":              []string{ReadISAScope},
+		"SearchIdentificationServiceAreas": []string{ReadISAScope},
+	}
 }
 
 func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (*dspb.DeleteIdentificationServiceAreaResponse, error) {

@@ -12,7 +12,8 @@ var (
 
 type claims struct {
 	jwt.StandardClaims
-	ClientID string `json:"client_id"`
+	ClientID string   `json:"client_id"`
+	Scopes   []string `json:"scope"`
 }
 
 func (c *claims) Valid() error {
