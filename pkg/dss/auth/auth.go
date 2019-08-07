@@ -24,6 +24,14 @@ var (
 // ContextKey models auth-specific keys in a context.
 type ContextKey string
 
+type missingScopesError struct {
+	s []string
+}
+
+func (m *missingScopesError) Error() string {
+	return strings.Join(m.s, ", ")
+}
+
 // ContextWithOwner adds "owner" to "ctx".
 func ContextWithOwner(ctx context.Context, owner string) context.Context {
 	return context.WithValue(ctx, ContextKeyOwner, owner)
@@ -37,7 +45,8 @@ func OwnerFromContext(ctx context.Context) (string, bool) {
 }
 
 type authClient struct {
-	key interface{}
+	key            interface{}
+	requiredScopes map[string][]string
 }
 
 // NewSymmetricAuthClient returns a new authClient instance using symmetric keys.
@@ -64,6 +73,10 @@ func NewRSAAuthClient(keyFile string) (*authClient, error) {
 	return &authClient{key: key}, nil
 }
 
+func (a *authClient) RequireScopes(scopes map[string][]string) {
+	a.requiredScopes = scopes
+}
+
 func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 
 	tknStr, ok := getToken(ctx)
@@ -81,7 +94,35 @@ func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return nil, status.Errorf(codes.Unauthenticated, "invalid token")
 	}
 
+	if err := a.missingScopes(info, claims); err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "missing scopes: %v", err)
+	}
+
 	return handler(ContextWithOwner(ctx, claims.ClientID), req)
+}
+
+// Returns all of the required scopes that are missing.
+func (a *authClient) missingScopes(info *grpc.UnaryServerInfo, claims claims) error {
+	var (
+		parts      = strings.Split(info.FullMethod, "/")
+		method     = parts[len(parts)-1]
+		claimedMap = make(map[string]bool)
+		err        = &missingScopesError{}
+	)
+
+	for _, s := range claims.Scopes {
+		claimedMap[s] = true
+	}
+	for _, required := range a.requiredScopes[method] {
+		if ok := claimedMap[required]; !ok {
+			err.s = append(err.s, required)
+		}
+	}
+	// Need to explicitly return nil
+	if err.Error() == "" {
+		return nil
+	}
+	return err
 }
 
 func getToken(ctx context.Context) (string, bool) {

@@ -98,6 +98,55 @@ func TestRSAAuthInterceptor(t *testing.T) {
 	}
 }
 
+func TestMissingScopes(t *testing.T) {
+	ac := &authClient{requiredScopes: map[string][]string{
+		"PutFoo": []string{"required1", "required2"},
+	}}
+
+	var tests = []struct {
+		info   *grpc.UnaryServerInfo
+		claims claims
+		want   error
+	}{
+		{
+			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
+			claims{Scopes: []string{"required1", "required2"}},
+			nil,
+		},
+		{
+			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
+			claims{Scopes: []string{"required2"}},
+			&missingScopesError{[]string{"required1"}},
+		},
+		{
+			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
+			claims{Scopes: []string{"required1"}},
+			&missingScopesError{[]string{"required2"}},
+		},
+		{
+			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
+			claims{Scopes: []string{}},
+			&missingScopesError{[]string{"required1", "required2"}},
+		},
+	}
+	for _, tc := range tests {
+		got := ac.missingScopes(tc.info, tc.claims)
+		want := tc.want
+		// both are nil, terminate early.
+		if got == want {
+			continue
+		}
+		// 1 is nil, and the other is not
+		if (got == nil) != (want == nil) {
+			t.Errorf("got: %s, want %s", got, want)
+		}
+		// Neither are nil, but maybe still don't equal each other
+		if got.Error() != want.Error() {
+			t.Errorf("got: %s, want %s", got, want)
+		}
+	}
+}
+
 func TestClaimsValidation(t *testing.T) {
 	claims := &claims{}
 	require.Error(t, claims.Valid())

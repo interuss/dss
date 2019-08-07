@@ -10,15 +10,16 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
-
 	"go.uber.org/zap"
+	"google.golang.org/grpc/reflection"
 
 	"google.golang.org/grpc"
 )
 
 var (
-	address = flag.String("addr", "127.0.0.1:8080", "address")
-	pkFile  = flag.String("public_key_file", "", "Path to public Key to use for JWT decoding.")
+	address    = flag.String("addr", "127.0.0.1:8080", "address")
+	pkFile     = flag.String("public_key_file", "", "Path to public Key to use for JWT decoding.")
+	reflectAPI = flag.Bool("reflect_api", false, "Whether to reflect the API.")
 )
 
 // RunGRPCServer starts the example gRPC service.
@@ -36,18 +37,24 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		}
 	}()
 
+	dssServer := &dss.Server{
+		Store: dss.NewNilStore()}
+
 	ac, err := auth.NewRSAAuthClient(*pkFile)
 	if err != nil {
 		return err
 	}
+	ac.RequireScopes(dssServer.AuthScopes())
 
 	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(logging.Interceptor(), ac.AuthInterceptor))
 	if err != nil {
 		return err
 	}
-	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, &dss.Server{
-		Store: dss.NewNilStore(),
-	})
+	if *reflectAPI {
+		reflection.Register(s)
+	}
+
+	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 
 	go func() {
 		defer s.GracefulStop()
