@@ -9,7 +9,9 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
+	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
+	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 	"go.uber.org/multierr"
 )
 
@@ -172,6 +174,16 @@ func (c *Store) InsertISA(ctx context.Context, isa *models.IdentificationService
 		return nil, nil, err
 	}
 
+	_, err = c.fetchISAByIDAndOwner(ctx, tx, isa.ID, isa.Owner)
+	switch {
+	case err == sql.ErrNoRows:
+		break
+	case err != nil:
+		return nil, nil, multierr.Combine(err, tx.Rollback())
+	case err == nil:
+		return nil, nil, multierr.Combine(dss.ErrAlreadyExists, tx.Rollback())
+	}
+
 	isa, err = c.pushISA(ctx, tx, isa)
 	if err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
@@ -232,12 +244,11 @@ func (c *Store) DeleteISA(ctx context.Context, id string, owner, version string)
 	old, err := c.fetchISAByIDAndOwner(ctx, tx, id, owner)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, nil, multierr.Combine(err, tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.NotFound("not found"), tx.Rollback())
 	case err != nil:
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	case version != "" && version != old.Version():
-		err := fmt.Errorf("version mismatch for subscription %s", id)
-		return nil, nil, multierr.Combine(err, tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 	if err := c.populateISACells(ctx, tx, old); err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
@@ -288,6 +299,7 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 	)
 
 	if len(cells) == 0 {
+		// TODO(steeling): handle the rest of the errors
 		return nil, errors.New("missing cell IDs for query")
 	}
 

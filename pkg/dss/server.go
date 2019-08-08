@@ -2,7 +2,6 @@ package dss
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -10,6 +9,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 )
 
 var (
@@ -39,23 +39,17 @@ func (s *Server) AuthScopes() map[string][]string {
 func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (*dspb.DeleteIdentificationServiceAreaResponse, error) {
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		// TODO(tvoss): Revisit once error propagation strategy is defined. We
-		// might want to avoid leaking raw error messages to callers and instead
-		// just return a generic error indicating a request ID.
-		return nil, errors.New("missing owner from context")
+		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
 	isa, subscribers, err := s.Store.DeleteISA(ctx, req.GetId(), owner, req.Version)
 	if err != nil {
-		// TODO(tvoss): Revisit once error propagation strategy is defined. We
-		// might want to avoid leaking raw error messages to callers and instead
-		// just return a generic error indicating a request ID.
 		return nil, err
 	}
 
 	p, err := isa.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, dsserr.Internal(err.Error())
 	}
 	sp := make([]*dspb.SubscriberToNotify, len(subscribers))
 	for i, _ := range subscribers {
@@ -71,21 +65,15 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.
 func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscriptionRequest) (*dspb.DeleteSubscriptionResponse, error) {
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		// TODO(tvoss): Revisit once error propagation strategy is defined. We
-		// might want to avoid leaking raw error messages to callers and instead
-		// just return a generic error indicating a request ID.
-		return nil, errors.New("missing owner from context")
+		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 	subscription, err := s.Store.DeleteSubscription(ctx, req.GetId(), owner, req.GetVersion())
 	if err != nil {
-		// TODO(tvoss): Revisit once error propagation strategy is defined. We
-		// might want to avoid leaking raw error messages to callers and instead
-		// just return a generic error indicating a request ID.
 		return nil, err
 	}
 	p, err := subscription.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, dsserr.Internal(err.Error())
 	}
 	return &dspb.DeleteSubscriptionResponse{
 		Subscription: p,
@@ -95,10 +83,7 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscri
 func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb.SearchIdentificationServiceAreasRequest) (*dspb.SearchIdentificationServiceAreasResponse, error) {
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		// TODO(tvoss): Revisit once error propagation strategy is defined. We
-		// might want to avoid leaking raw error messages to callers and instead
-		// just return a generic error indicating a request ID.
-		return nil, err
+		return nil, dsserr.Internal(err.Error())
 	}
 
 	var (
@@ -110,10 +95,7 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb
 		if ts, err := ptypes.Timestamp(et); err == nil {
 			earliest = &ts
 		} else {
-			// TODO(tvoss): Revisit once error propagation strategy is defined. We
-			// might want to avoid leaking raw error messages to callers and instead
-			// just return a generic error indicating a request ID.
-			return nil, err
+			return nil, dsserr.Internal(err.Error())
 		}
 	}
 
@@ -121,18 +103,12 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb
 		if ts, err := ptypes.Timestamp(lt); err == nil {
 			latest = &ts
 		} else {
-			// TODO(tvoss): Revisit once error propagation strategy is defined. We
-			// might want to avoid leaking raw error messages to callers and instead
-			// just return a generic error indicating a request ID.
-			return nil, err
+			return nil, dsserr.Internal(err.Error())
 		}
 	}
 
 	isas, err := s.Store.SearchISAs(ctx, cu, earliest, latest)
 	if err != nil {
-		// TODO(tvoss): Revisit once error propagation strategy is defined. We
-		// might want to avoid leaking raw error messages to callers and instead
-		// just return a generic error indicating a request ID.
 		return nil, err
 	}
 
@@ -153,10 +129,7 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb
 func (s *Server) SearchSubscriptions(ctx context.Context, req *dspb.SearchSubscriptionsRequest) (*dspb.SearchSubscriptionsResponse, error) {
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		// TODO(tvoss): Revisit once error propagation strategy is defined. We
-		// might want to avoid leaking raw error messages to callers and instead
-		// just return a generic error indicating a request ID.
-		return nil, errors.New("missing owner from context")
+		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())

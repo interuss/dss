@@ -185,17 +185,31 @@ func TestStoreUpdateSubscription(t *testing.T) {
 
 			// Applying an empty subscription will return a copy
 			r3 := r.input.Apply(&models.Subscription{})
+
 			r3.Url = "new URL 2"
 			r3.UpdatedAt = time.Now()
 			sub3, err := store.UpdateSubscription(ctx, r3)
 			require.Error(t, err)
 			require.Nil(t, sub3)
 
-			sub4, err := store.GetSubscription(ctx, sub1.ID)
+			// Update should allow if version not supplied
+			r3.Url = "new URL 3"
+			r3.UpdatedAt = time.Time{}
+			sub4, err := store.UpdateSubscription(ctx, r3)
 			require.NoError(t, err)
 			require.NotNil(t, sub4)
 
-			require.Equal(t, *sub2, *sub4)
+			// Changing owner should error
+			r3.Owner = "new owner"
+			sub5, err := store.UpdateSubscription(ctx, r3)
+			require.Error(t, err)
+			require.Nil(t, sub5)
+
+			sub6, err := store.GetSubscription(ctx, sub1.ID)
+			require.NoError(t, err)
+			require.NotNil(t, sub6)
+
+			require.Equal(t, *sub4, *sub6)
 		})
 	}
 }

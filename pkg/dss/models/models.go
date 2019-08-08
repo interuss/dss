@@ -22,6 +22,9 @@ func versionStringToTimestamp(s string) (time.Time, error) {
 }
 
 func timestampToVersionString(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
 	return strconv.FormatUint(uint64(t.UnixNano()), versionBase)
 }
 

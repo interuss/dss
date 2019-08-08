@@ -18,10 +18,6 @@ type queryable interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
-type scanner interface {
-	Scan(fields ...interface{}) error
-}
-
 // Convert updatedAt to a string, why not make it smaller
 // WARNING: Changing this will cause RMW errors
 // 32 is the highest value allowed by strconv
@@ -87,7 +83,7 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		cell_id INT64 NOT NULL,
 		cell_level INT CHECK (cell_level BETWEEN 0 and 30),
 		identification_service_area_id UUID NOT NULL REFERENCES identification_service_areas (id) ON DELETE CASCADE,
-		updated_at TIMESTAMPTZ NOT NULL,
+		updated_at TIMESTAMPTZ NOT NULL,	
 		PRIMARY KEY (cell_id, identification_service_area_id),
 		INDEX cell_id_idx (cell_id),
 		INDEX identification_service_area_id_idx (identification_service_area_id)
