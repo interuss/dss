@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -127,8 +126,6 @@ func TestStoreSearchIdentificationServiceAreas(t *testing.T) {
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			for _, sa := range insertedServiceAreas {
-				fmt.Println(sa.StartTime)
-				fmt.Println(r.name, len(insertedServiceAreas), len(serviceAreasPool))
 				earliest, latest := r.timestampMutator(sa.StartTime.Time, sa.EndTime.Time)
 
 				serviceAreas, err := store.SearchISAs(ctx, r.cells, earliest, latest)
@@ -175,5 +172,25 @@ func TestStoreDeleteIdentificationServiceAreas(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, serviceAreaOut)
 		require.NotNil(t, subscriptionsOut)
+	}
+}
+
+func TestInsertISA(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+	for _, r := range serviceAreasPool {
+		area, _, err := store.InsertISA(ctx, r.input)
+		require.NoError(t, err)
+		require.NotNil(t, area)
+	}
+	for _, r := range serviceAreasPool {
+		area, _, err := store.InsertISA(ctx, r.input)
+		require.Error(t, err)
+		require.Nil(t, area)
 	}
 }

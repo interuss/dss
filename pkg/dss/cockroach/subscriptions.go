@@ -3,12 +3,13 @@ package cockroach
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
+	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
+	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 	"go.uber.org/multierr"
 )
 
@@ -135,7 +136,7 @@ func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) 
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
 	case err == nil:
-		return nil, multierr.Combine(errors.New("already exists"), tx.Rollback())
+		return nil, multierr.Combine(dss.ErrAlreadyExists, tx.Rollback())
 	}
 
 	s, err = c.pushSubscription(ctx, tx, s)
@@ -150,22 +151,20 @@ func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) 
 
 // updatesSubscription updates the subscription  and returns
 // the resulting subscription including its ID.
-// TODO(steeling) don't allow owners to update other owners' subscriptions
 func (c *Store) UpdateSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
 	tx, err := c.Begin()
 	if err != nil {
 		return nil, err
 	}
 
-	old, err := c.fetchSubscriptionByID(ctx, tx, s.ID)
+	old, err := c.fetchSubscriptionByIDAndOwner(ctx, tx, s.ID, s.Owner)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, multierr.Combine(err, tx.Rollback())
+		return nil, multierr.Combine(dsserr.NotFound("not found"), tx.Rollback())
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
 	case s.Version() != "" && s.Version() != old.Version():
-		err := fmt.Errorf("version mismatch for subscription %s", s.ID)
-		return nil, multierr.Combine(err, tx.Rollback())
+		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
 	s, err = c.pushSubscription(ctx, tx, old.Apply(s))
@@ -238,7 +237,7 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 	)
 
 	if len(cells) == 0 {
-		return nil, errors.New("missing cell IDs for query")
+		return nil, dsserr.BadRequest("no location provided")
 	}
 
 	tx, err := c.Begin()

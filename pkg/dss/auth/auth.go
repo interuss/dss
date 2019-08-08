@@ -10,10 +10,9 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -81,7 +80,7 @@ func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info 
 
 	tknStr, ok := getToken(ctx)
 	if !ok {
-		return nil, status.Errorf(codes.Unauthenticated, "missing token")
+		return nil, dsserr.Unauthenticated("missing token")
 	}
 
 	claims := claims{}
@@ -91,11 +90,11 @@ func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return a.key, nil
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid token")
+		return nil, dsserr.Unauthenticated("invalid token")
 	}
 
 	if err := a.missingScopes(info, claims); err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "missing scopes: %v", err)
+		return nil, dsserr.PermissionDenied(fmt.Sprintf("missing scopes: %v", err))
 	}
 
 	return handler(ContextWithOwner(ctx, claims.ClientID), req)

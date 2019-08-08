@@ -2,11 +2,19 @@ package dss
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	"go.uber.org/zap"
+)
+
+var (
+	ErrAlreadyExists   = errors.New("resource already exists")
+	ErrVersionMismatch = errors.New("version mismatch for resource")
+	ErrNotFound        = errors.New("resource not found")
+	ErrBadRequest      = errors.New("bad request")
 )
 
 type Store interface {
