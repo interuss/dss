@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	"go.uber.org/zap"
 )
 
@@ -13,24 +13,29 @@ type Store interface {
 	// Close closes the store and should release all resources.
 	Close() error
 
-	// SearchIdentificationServiceAreas searches IdentificationServiceArea
-	// instances that intersect with "cells" and, if set, the temporal volume
-	// defined by "earliest" and "latest".
-	SearchIdentificationServiceAreas(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*dspb.IdentificationServiceArea, error)
-
-	// DeleteIdentificationServiceArea deletes the IdentificationServiceArea identified by "id" and owned by "owner".
+	// Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-	DeleteIdentificationServiceArea(ctx context.Context, id string, owner string) (*dspb.IdentificationServiceArea, []*dspb.SubscriberToNotify, error)
+	DeleteISA(ctx context.Context, id, owner, version string) (*models.IdentificationServiceArea, []*models.Subscription, error)
+
+	InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error)
+
+	UpdateISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error)
+	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
+	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*models.IdentificationServiceArea, error)
 
 	// GetSubscription returns the subscription identified by "id".
-	GetSubscription(ctx context.Context, id string) (*dspb.Subscription, error)
+	GetSubscription(ctx context.Context, id string) (*models.Subscription, error)
 
-	// DeleteSubscription deletes the subscription identified by "id" and
+	// Delete deletes the subscription identified by "id" and
 	// returns the deleted subscription.
-	DeleteSubscription(ctx context.Context, id, version string) (*dspb.Subscription, error)
+	DeleteSubscription(ctx context.Context, id, owner, version string) (*models.Subscription, error)
+
+	InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error)
+
+	UpdateSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error)
 
 	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
-	SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*dspb.Subscription, error)
+	SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*models.Subscription, error)
 }
 
 // NewNilStore returns a nil Store instance.
@@ -49,8 +54,8 @@ func (ls *loggingStore) Close() error {
 	return err
 }
 
-func (ls *loggingStore) DeleteIdentificationServiceArea(ctx context.Context, id string, owner string) (*dspb.IdentificationServiceArea, []*dspb.SubscriberToNotify, error) {
-	area, subscriptions, err := ls.next.DeleteIdentificationServiceArea(ctx, id, owner)
+func (ls *loggingStore) DeleteISA(ctx context.Context, id, owner, version string) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+	area, subscriptions, err := ls.next.DeleteISA(ctx, id, owner, version)
 	ls.logger.Debug(
 		"Store.DeleteIdentificationServiceArea",
 		zap.String("id", id),
@@ -62,8 +67,8 @@ func (ls *loggingStore) DeleteIdentificationServiceArea(ctx context.Context, id 
 	return area, subscriptions, err
 }
 
-func (ls *loggingStore) SearchIdentificationServiceAreas(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*dspb.IdentificationServiceArea, error) {
-	areas, err := ls.next.SearchIdentificationServiceAreas(ctx, cells, earliest, latest)
+func (ls *loggingStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*models.IdentificationServiceArea, error) {
+	areas, err := ls.next.SearchISAs(ctx, cells, earliest, latest)
 	ls.logger.Debug(
 		"Store.SearchIdentificationServiceAreas",
 		zap.Any("cells", cells),
@@ -75,28 +80,20 @@ func (ls *loggingStore) SearchIdentificationServiceAreas(ctx context.Context, ce
 	return areas, err
 }
 
-func (ls *loggingStore) GetSubscription(ctx context.Context, id string) (*dspb.Subscription, error) {
+func (ls *loggingStore) GetSubscription(ctx context.Context, id string) (*models.Subscription, error) {
 	subscription, err := ls.next.GetSubscription(ctx, id)
 	ls.logger.Debug("Store.GetSubscription", zap.String("id", id), zap.Any("subscription", subscription), zap.Error(err))
 	return subscription, err
 }
 
-func (ls *loggingStore) DeleteSubscription(ctx context.Context, id, version string) (*dspb.Subscription, error) {
-	subscription, err := ls.next.DeleteSubscription(ctx, id, version)
+func (ls *loggingStore) DeleteSubscription(ctx context.Context, id, owner, version string) (*models.Subscription, error) {
+	subscription, err := ls.next.DeleteSubscription(ctx, id, owner, version)
 	ls.logger.Debug("Store.DeleteSubscription", zap.String("id", id), zap.String("version", version), zap.Any("subscription", subscription), zap.Error(err))
 	return subscription, err
 }
 
-func (ls *loggingStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*dspb.Subscription, error) {
+func (ls *loggingStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*models.Subscription, error) {
 	subscriptions, err := ls.next.SearchSubscriptions(ctx, cells, owner)
 	ls.logger.Debug("Store.SearchSubscriptions", zap.Any("cells", cells), zap.String("owner", owner), zap.Any("subscriptions", subscriptions), zap.Error(err))
 	return subscriptions, err
-}
-
-// DecorateWithLogging decorates store with logging at debug level.
-func DecorateWithLogging(logger *zap.Logger, store Store) Store {
-	return &loggingStore{
-		logger: logger,
-		next:   store,
-	}
 }
