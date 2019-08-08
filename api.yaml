@@ -45,13 +45,17 @@ paths:
         description: If specified, indicates non-interest in Identification Service
           Areas entirely below this altitude in meters above the WGS84 ellipsoid.
         schema:
-          type: number
+          type: 
+          - 'null'
+          - number
         in: query
       - name: max_altitude
         description: If specified, indicates non-interest in Identification Service
           Areas entirely above this altitude in meters above the WGS84 ellipsoid.
         schema:
-          type: number
+          type:
+          - 'null'
+          - number
         in: query
         required: true
       responses:
@@ -121,10 +125,6 @@ paths:
           $ref: '#/definitions/URL'
         in: body
         required: true
-      - name: version
-        description: Optional. If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the service area does not exist.
-        type: string
-        in: body
       responses:
         200:
           schema:
@@ -187,13 +187,19 @@ paths:
         required: true
       - name: url
         schema:
-          $ref: '#/definitions/URL'
+          description: Valid http or https URL.
+          pattern: '^https?:\/\/(?:\[[0-9a-fA-F]{0,4}(?::[0-9a-fA-F]{0,4}){2,7}\]|[^\0\t\r\n
+            #%\/:?@[\\\]]{1,63}(?:\.[^\0\t\r\n #%\/:?@[\\\]]{1,63}){1,126})(?::\d{1,5})?\/?'
+          type:
+            - string
+            - 'null'
         in: body
         required: true
       - name: version
-        description: Optional. If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the service area does not exist.
+        description: Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
         type: string
         in: body
+        required: true
       responses:
         200:
           schema:
@@ -238,6 +244,18 @@ paths:
       tags:
       - dss
       operationId: deleteIdentificationServiceArea
+      parameters:
+      - name: id
+        description: EntityUUID of the Identification Service Area.
+        schema:
+          $ref: '#/definitions/UUIDv4'
+        in: path
+        required: true
+      - name: version
+        description: Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
+        type: string
+        in: body
+        required: true
       responses:
         200:
           schema:
@@ -274,17 +292,6 @@ paths:
       description: Delete an Identification Service Area.  USSs should not delete
         Identification Service Areas before the end of the last managed flight plus
         the retention period.
-    parameters:
-    - name: id
-      description: EntityUUID of the Identification Service Area.
-      schema:
-        $ref: '#/definitions/UUIDv4'
-      in: path
-      required: true
-    - name: version
-      description: Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent deletions. Will error if present and the service area does not exist.
-      type: string
-      in: body
   /dss/subscriptions:
     summary: Subscriptions for airspace updates to a volume of interest.
     get:
@@ -292,6 +299,12 @@ paths:
       - dss
       operationId: searchSubscriptions
       parameters:
+      - name: id
+        description: SubscriptionUUID of the subscription of interest.
+        schema:
+          $ref: '#/definitions/UUIDv4'
+        in: path
+        required: true
       - name: area
         description: The area in which to search for Subscriptions.  Some Subscriptions
           near this area but wholly outside it may also be returned.
@@ -303,13 +316,17 @@ paths:
         description: If specified, indicates non-interest in subscriptions for volumes
           entirely below this altitude in meters above the WGS84 datum.
         schema:
-          type: number
+          type: 
+          - 'null'
+          - number
         in: query
       - name: max_altitude
         description: If specified, indicates non-interest in subscriptions for volumes
           entirely above this altitude in meters above the WGS84 datum.
         schema:
-          type: number
+          type:
+          - 'null'
+          - number
         in: query
       responses:
         200:
@@ -357,6 +374,13 @@ paths:
       tags:
       - dss
       operationId: getSubscription
+      parameters:
+      - name: id
+        description: SubscriptionUUID of the subscription of interest.
+        schema:
+          $ref: '#/definitions/UUIDv4'
+        in: path
+        required: true
       responses:
         200:
           schema:
@@ -414,11 +438,6 @@ paths:
           $ref: '#/definitions/SubscriptionCallbacks'
         in: body
         required: true
-      - name: version
-        description: Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
-        type: string
-        in: body
-        required: false
       responses:
         200:
           schema:
@@ -496,15 +515,18 @@ paths:
       - name: url
         description: Endpoints that should be called when an applicable event occurs.  At
           least one field must be specified.
-        schema:
-          $ref: '#/definitions/SubscriptionCallbacks'
+        pattern: '^https?:\/\/(?:\[[0-9a-fA-F]{0,4}(?::[0-9a-fA-F]{0,4}){2,7}\]|[^\0\t\r\n
+          #%\/:?@[\\\]]{1,63}(?:\.[^\0\t\r\n #%\/:?@[\\\]]{1,63}){1,126})(?::\d{1,5})?\/?'
+        type:
+          - string
+          - 'null'
         in: body
         required: true
       - name: version
-        description: Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+        description: Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
         type: string
         in: body
-        required: false
+        required: true
       responses:
         200:
           schema:
@@ -558,6 +580,18 @@ paths:
       tags:
       - dss
       operationId: deleteSubscription
+      parameters:
+      - name: id
+        description: SubscriptionUUID of the subscription of interest.
+        schema:
+          $ref: '#/definitions/UUIDv4'
+        in: path
+        required: true
+      - name: version
+        description: Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
+        type: string
+        in: body
+        required: true
       responses:
         200:
           schema:
@@ -592,17 +626,6 @@ paths:
         - dss.read.position_reporting_entities
       summary: /dss/subscriptions/{id}
       description: Delete a subscription.
-    parameters:
-    - name: id
-      description: SubscriptionUUID of the subscription of interest.
-      schema:
-        $ref: '#/definitions/UUIDv4'
-      in: path
-      required: true
-    - name: version
-      description: Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
-      type: string
-      in: body
 definitions:
   Volume3D:
     description: A three-dimensional geographic volume consisting of a vertically-extruded
@@ -727,7 +750,9 @@ definitions:
   Altitude:
     format: float
     description: An altitude, in meters, above the WGS84 ellipsoid.
-    type: number
+    type: 
+    - 'null'
+    - number
     example: 19.5
   GeoPolygon:
     description: |-
@@ -831,6 +856,7 @@ definitions:
     - id
     - url
     - owner
+    - version
     type: object
     properties:
       id:
@@ -863,6 +889,7 @@ definitions:
     - url
     - notification_index
     - owner
+    - version
     type: object
     properties:
       id:

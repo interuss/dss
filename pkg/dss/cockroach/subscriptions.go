@@ -163,7 +163,7 @@ func (c *Store) UpdateSubscription(ctx context.Context, s *models.Subscription) 
 		return nil, multierr.Combine(dsserr.NotFound("not found"), tx.Rollback())
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
-	case s.Version() != "" && s.Version() != old.Version():
+	case s.Version() != old.Version():
 		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
@@ -202,7 +202,7 @@ func (c *Store) DeleteSubscription(ctx context.Context, id, owner, version strin
 		return nil, multierr.Combine(err, tx.Rollback())
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
-	case version != "" && version != old.Version():
+	case version != old.Version():
 		err := fmt.Errorf("version mismatch for subscription %s", id)
 		return nil, multierr.Combine(err, tx.Rollback())
 	}

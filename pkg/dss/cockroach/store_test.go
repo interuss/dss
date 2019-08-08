@@ -21,8 +21,8 @@ var (
 
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	tempTime  = time.Now()
-	startTime = models.NullTime{Time: tempTime.AddDate(0, 0, -1), Valid: true}
-	endTime   = models.NullTime{Time: tempTime.AddDate(0, 0, 1), Valid: true}
+	startTime = tempTime.AddDate(0, 0, -1)
+	endTime   = tempTime.AddDate(0, 0, 1)
 )
 
 func init() {
@@ -83,8 +83,8 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		Owner:             "me-myself-and-i",
 		Url:               "https://no/place/like/home",
 		NotificationIndex: 42,
-		StartTime:         models.NullTime{begins, true},
-		EndTime:           models.NullTime{expires, true},
+		StartTime:         &begins,
+		EndTime:           &expires,
 	})
 	require.Error(t, err)
 }

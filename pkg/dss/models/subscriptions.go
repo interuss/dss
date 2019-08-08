@@ -18,11 +18,11 @@ type Subscription struct {
 	Owner             string
 	Cells             s2.CellUnion
 	// TODO(steeling): abstract NullTime away from models.
-	StartTime  NullTime
-	EndTime    NullTime
-	UpdatedAt  time.Time
-	AltitudeHi float32
-	AltitudeLo float32
+	StartTime  *time.Time
+	EndTime    *time.Time
+	UpdatedAt  *time.Time
+	AltitudeHi *float32
+	AltitudeLo *float32
 }
 
 // Apply fields from s2 onto s, preferring any fields set in s2.
@@ -34,20 +34,19 @@ func (s *Subscription) Apply(s2 *Subscription) *Subscription {
 	if s2.Cells != nil {
 		new.Cells = s2.Cells
 	}
-	if s2.StartTime.Valid {
+	if s2.StartTime != nil {
 		new.StartTime = s2.StartTime
 	}
-	if s2.EndTime.Valid {
+	if s2.EndTime != nil {
 		new.EndTime = s2.EndTime
 	}
-	if !s2.UpdatedAt.IsZero() {
+	if s2.UpdatedAt != nil {
 		new.UpdatedAt = s2.UpdatedAt
 	}
-	if s2.AltitudeHi != 0 {
+	if s2.AltitudeHi != nil {
 		new.AltitudeHi = s2.AltitudeHi
 	}
-	// TODO(steeling) what if the update is to make it 0, we need an omitempty, pointer, or some other type.
-	if s2.AltitudeLo != 0 {
+	if s2.AltitudeLo != nil {
 		new.AltitudeLo = s2.AltitudeLo
 	}
 	return &new
@@ -78,16 +77,16 @@ func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 		Version:           s.Version(),
 	}
 
-	if s.StartTime.Valid {
-		ts, err := ptypes.TimestampProto(s.StartTime.Time)
+	if s.StartTime != nil {
+		ts, err := ptypes.TimestampProto(*s.StartTime)
 		if err != nil {
 			return nil, err
 		}
 		result.StartTime = ts
 	}
 
-	if s.EndTime.Valid {
-		ts, err := ptypes.TimestampProto(s.EndTime.Time)
+	if s.EndTime != nil {
+		ts, err := ptypes.TimestampProto(*s.EndTime)
 		if err != nil {
 			return nil, err
 		}

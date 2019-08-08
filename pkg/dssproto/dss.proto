@@ -4,12 +4,13 @@ package dssproto;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
 
 message DeleteIdentificationServiceAreaRequest {
     // EntityUUID of the Identification Service Area.
     string id = 1;
 
-    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent deletions. Will error if present and the service area does not exist.
+    // Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
     string version = 2;
 }
 
@@ -26,7 +27,7 @@ message DeleteSubscriptionRequest {
     // SubscriptionUUID of the subscription of interest.
     string id = 1;
 
-    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+    // Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
     string version = 2;
 }
 
@@ -55,9 +56,6 @@ message GeoPolygon {
 message GetSubscriptionRequest {
     // SubscriptionUUID of the subscription of interest.
     string id = 1;
-
-    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
-    string version = 2;
 }
 
 // Response to DSS query for subscriptions in a particular area.
@@ -98,9 +96,9 @@ message PatchIdentificationServiceAreaRequest {
 
     // EntityUUID of the Identification Service Area.
     string id = 2;
-    string url = 3;
+    google.protobuf.StringValue url = 3;
 
-    // Optional. If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the service area does not exist.
+    // Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
     string version = 4;
 }
 
@@ -125,9 +123,9 @@ message PatchSubscriptionRequest {
     string id = 2;
 
     // Endpoints that should be called when an applicable event occurs.  At least one field must be specified.
-    string url = 3;
+    google.protobuf.StringValue url = 3;
 
-    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
+    // Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
     string version = 4;
 }
 
@@ -149,9 +147,6 @@ message PutIdentificationServiceAreaRequest {
     // EntityUUID of the Identification Service Area.
     string id = 2;
     string url = 3;
-
-    // Optional. If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the service area does not exist.
-    string version = 4;
 }
 
 // Response to a request to create a reference to an Identification Service Area in the DSS.
@@ -176,9 +171,6 @@ message PutSubscriptionRequest {
 
     // Endpoints that should be called when an applicable event occurs.  At least one field must be specified.
     string url = 3;
-
-    // Optional If present, will only update an existing entity if the versions are unchanged. Used for idempotent updates. Will error if present and the subscription does not exist.
-    string version = 4;
 }
 
 // Response for a request to create a subscription.
@@ -201,10 +193,10 @@ message SearchIdentificationServiceAreasRequest {
     google.protobuf.Timestamp latest_time = 3;
 
     // If specified, indicates non-interest in Identification Service Areas entirely above this altitude in meters above the WGS84 ellipsoid.
-    double max_altitude = 4;
+    google.protobuf.DoubleValue max_altitude = 4;
 
     // If specified, indicates non-interest in Identification Service Areas entirely below this altitude in meters above the WGS84 ellipsoid.
-    double min_altitude = 5;
+    google.protobuf.DoubleValue min_altitude = 5;
 }
 
 // Response to DSS query for Identification Service Areas in an area of interest.
@@ -217,11 +209,14 @@ message SearchSubscriptionsRequest {
     // The area in which to search for Subscriptions.  Some Subscriptions near this area but wholly outside it may also be returned.
     string area = 1;
 
+    // SubscriptionUUID of the subscription of interest.
+    string id = 2;
+
     // If specified, indicates non-interest in subscriptions for volumes entirely above this altitude in meters above the WGS84 datum.
-    double max_altitude = 2;
+    google.protobuf.DoubleValue max_altitude = 3;
 
     // If specified, indicates non-interest in subscriptions for volumes entirely below this altitude in meters above the WGS84 datum.
-    double min_altitude = 3;
+    google.protobuf.DoubleValue min_altitude = 4;
 }
 
 // Response to DSS query for subscriptions in a particular area.
@@ -268,10 +263,10 @@ message SubscriptionState {
 // A three-dimensional geographic volume consisting of a vertically-extruded polygon.
 message Volume3D {
     // Maximum bounding altitude of this volume.
-    float altitude_hi = 1;
+    google.protobuf.FloatValue altitude_hi = 1;
 
     // Minimum bounding altitude of this volume.
-    float altitude_lo = 2;
+    google.protobuf.FloatValue altitude_lo = 2;
 
     // Projection of this volume onto the earth's surface.
     GeoPolygon footprint = 3;
@@ -313,7 +308,6 @@ service DiscoveryAndSynchronizationService {
     rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
         option (google.api.http) = {
             get: "/dss/subscriptions/{id}"
-            body: "version"
         };
     }
 
@@ -325,7 +319,7 @@ service DiscoveryAndSynchronizationService {
     rpc PatchIdentificationServiceArea(PatchIdentificationServiceAreaRequest) returns (PatchIdentificationServiceAreaResponse) {
         option (google.api.http) = {
             patch: "/dss/identification_service_areas/{id}"
-            body: "version"
+            body: "extents"
         };
     }
 
@@ -335,7 +329,7 @@ service DiscoveryAndSynchronizationService {
     rpc PatchSubscription(PatchSubscriptionRequest) returns (PatchSubscriptionResponse) {
         option (google.api.http) = {
             patch: "/dss/subscriptions/{id}"
-            body: "version"
+            body: "extents"
         };
     }
 
@@ -347,7 +341,7 @@ service DiscoveryAndSynchronizationService {
     rpc PutIdentificationServiceArea(PutIdentificationServiceAreaRequest) returns (PutIdentificationServiceAreaResponse) {
         option (google.api.http) = {
             put: "/dss/identification_service_areas/{id}"
-            body: "version"
+            body: "extents"
         };
     }
 
@@ -357,7 +351,7 @@ service DiscoveryAndSynchronizationService {
     rpc PutSubscription(PutSubscriptionRequest) returns (PutSubscriptionResponse) {
         option (google.api.http) = {
             put: "/dss/subscriptions/{id}"
-            body: "version"
+            body: "extents"
         };
     }
 
