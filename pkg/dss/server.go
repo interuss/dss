@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
@@ -44,7 +45,7 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.
 		return nil, errors.New("missing owner from context")
 	}
 
-	isa, subscribers, err := s.Store.DeleteIdentificationServiceArea(ctx, req.GetId(), owner)
+	isa, subscribers, err := s.Store.DeleteISA(ctx, req.GetId(), owner, req.Version)
 	if err != nil {
 		// TODO(tvoss): Revisit once error propagation strategy is defined. We
 		// might want to avoid leaking raw error messages to callers and instead
@@ -52,22 +53,42 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.
 		return nil, err
 	}
 
+	p, err := isa.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	sp := make([]*dspb.SubscriberToNotify, len(subscribers))
+	for i, _ := range subscribers {
+		sp[i] = subscribers[i].ToNotifyProto()
+	}
+
 	return &dspb.DeleteIdentificationServiceAreaResponse{
-		ServiceArea: isa,
-		Subscribers: subscribers,
+		ServiceArea: p,
+		Subscribers: sp,
 	}, nil
 }
 
 func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscriptionRequest) (*dspb.DeleteSubscriptionResponse, error) {
-	subscription, err := s.Store.DeleteSubscription(ctx, req.GetId(), req.GetVersion())
+	owner, ok := auth.OwnerFromContext(ctx)
+	if !ok {
+		// TODO(tvoss): Revisit once error propagation strategy is defined. We
+		// might want to avoid leaking raw error messages to callers and instead
+		// just return a generic error indicating a request ID.
+		return nil, errors.New("missing owner from context")
+	}
+	subscription, err := s.Store.DeleteSubscription(ctx, req.GetId(), owner, req.GetVersion())
 	if err != nil {
 		// TODO(tvoss): Revisit once error propagation strategy is defined. We
 		// might want to avoid leaking raw error messages to callers and instead
 		// just return a generic error indicating a request ID.
 		return nil, err
 	}
+	p, err := subscription.ToProto()
+	if err != nil {
+		return nil, err
+	}
 	return &dspb.DeleteSubscriptionResponse{
-		Subscription: subscription,
+		Subscription: p,
 	}, nil
 }
 
@@ -107,7 +128,7 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb
 		}
 	}
 
-	serviceAreas, err := s.Store.SearchIdentificationServiceAreas(ctx, cu, earliest, latest)
+	isas, err := s.Store.SearchISAs(ctx, cu, earliest, latest)
 	if err != nil {
 		// TODO(tvoss): Revisit once error propagation strategy is defined. We
 		// might want to avoid leaking raw error messages to callers and instead
@@ -115,8 +136,17 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb
 		return nil, err
 	}
 
+	areas := make([]*dspb.IdentificationServiceArea, len(isas))
+	for i := range isas {
+		a, err := isas[i].ToProto()
+		if err != nil {
+			return nil, err
+		}
+		areas[i] = a
+	}
+
 	return &dspb.SearchIdentificationServiceAreasResponse{
-		ServiceAreas: serviceAreas,
+		ServiceAreas: areas,
 	}, nil
 }
 
@@ -138,9 +168,16 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *dspb.SearchSubscr
 	if err != nil {
 		return nil, err
 	}
+	sp := make([]*dspb.Subscription, len(subscriptions))
+	for i, _ := range subscriptions {
+		sp[i], err = subscriptions[i].ToProto()
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return &dspb.SearchSubscriptionsResponse{
-		Subscriptions: subscriptions,
+		Subscriptions: sp,
 	}, nil
 }
 
@@ -152,8 +189,12 @@ func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionR
 		// just return a generic error indicating a request ID.
 		return nil, err
 	}
+	p, err := subscription.ToProto()
+	if err != nil {
+		return nil, err
+	}
 	return &dspb.GetSubscriptionResponse{
-		Subscription: subscription,
+		Subscription: p,
 	}, nil
 }
 

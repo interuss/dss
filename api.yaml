@@ -116,7 +116,7 @@ paths:
           $ref: '#/definitions/Volume4D' 
         in: body
         required: true
-      - name: flights_url
+      - name: url
         schema:
           $ref: '#/definitions/URL'
         in: body
@@ -164,7 +164,7 @@ paths:
       description: |-
         Create an Identification Service Area.
 
-        The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
+        The DSS assumes the USS has already added the appropriate retention period to operation end time in `end_time` field before storing it.  Updating `start_time` is not allowed if it is before the current time.
     patch:
       tags:
       - dss
@@ -185,7 +185,7 @@ paths:
           $ref: '#/definitions/Volume4D' 
         in: body
         required: true
-      - name: flights_url
+      - name: url
         schema:
           $ref: '#/definitions/URL'
         in: body
@@ -233,7 +233,7 @@ paths:
       description: |-
         Update an Identification Service Area.
 
-        The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
+        The DSS assumes the USS has already added the appropriate retention period to operation end time in `end_time` field before storing it.  Updating `start_time` is not allowed if it is before the current time.
     delete:
       tags:
       - dss
@@ -407,7 +407,7 @@ paths:
           $ref: '#/definitions/Volume4D'
         in: body
         required: true
-      - name: callbacks
+      - name: url
         description: Endpoints that should be called when an applicable event occurs.  At
           least one field must be specified.
         schema:
@@ -493,7 +493,7 @@ paths:
           $ref: '#/definitions/Volume4D'
         in: body
         required: true
-      - name: callbacks
+      - name: url
         description: Endpoints that should be called when an applicable event occurs.  At
           least one field must be specified.
         schema:
@@ -629,9 +629,9 @@ definitions:
       spatial_volume:
         $ref: '#/definitions/Volume3D'
         description: Constant spatial extent of this volume.
-      time_start:
+      start_time:
         $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
-      time_end:
+      end_time:
         $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
   GetSubscriptionResponse:
     description: Response to DSS query for subscriptions in a particular area.
@@ -784,25 +784,6 @@ definitions:
       service_area:
         $ref: '#/definitions/IdentificationServiceArea'
         description: Resulting service area stored in DSS.
-  PutIdentificationServiceAreaNotificationParameters:
-    description: Parameters of a message informing of new full information for an
-      Identification Service Area.  Pushed (by a client, not the DSS) directly to
-      clients with subscriptions when another client makes a change to airspace
-      within a cell with a subscription.
-    required:
-    - service_area
-    - subscriptions
-    type: object
-    properties:
-      service_area:
-        $ref: '#/definitions/IdentificationServiceArea'
-        description: Identification Service Area that the notifying client changed
-          or created.
-      subscriptions:
-        description: Subscription(s) prompting this notification.
-        type: array
-        items:
-          $ref: '#/definitions/SubscriptionState'
   SubscriberToNotify:
     description: Subscriber to notify of a creation/change/deletion of a change
       in the airspace.  This is provided by the DSS to a client changing the airspace,
@@ -848,19 +829,22 @@ definitions:
       must exchange flight information peer-to-peer.
     required:
     - id
-    - extents
-    - flights_url
+    - url
     - owner
     type: object
     properties:
       id:
         $ref: '#/definitions/UUIDv4'
         description: Unique identifier for this service area.
-      extents:
-        $ref: '#/definitions/Volume4D'
-        description: The bounding spacetime extents of this Identification Service
-          Area.  Start and end times will both be specified.
-      flights_url:
+      end_time:
+        $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
+        description: If set, this subscription will be automatically removed after
+          this time.  RFC 3339 format, per OpenAPI specification.
+      start_time:
+        $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
+        description: If set, this Subscription will not generate any notifications
+          before this time.  RFC 3339 format, per OpenAPI specification.
+      url:
         $ref: '#/definitions/URL'
       owner:
         description: Assigned by the DSS based on creating client’s ID (via access
@@ -884,7 +868,7 @@ definitions:
       id:
         $ref: '#/definitions/UUIDv4'
         description: Unique identifier for this subscription.
-      callbacks:
+      url:
         $ref: '#/definitions/SubscriptionCallbacks'
       owner:
         description: Assigned by the DSS based on creating client’s ID (via access
@@ -893,11 +877,11 @@ definitions:
         example: myuss
       notification_index:
         $ref: '#/definitions/SubscriptionNotificationIndex'
-      expires:
+      end_time:
         $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
         description: If set, this subscription will be automatically removed after
           this time.  RFC 3339 format, per OpenAPI specification.
-      begins:
+      start_time:
         $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
         description: If set, this Subscription will not generate any notifications
           before this time.  RFC 3339 format, per OpenAPI specification.
@@ -907,15 +891,7 @@ definitions:
   SubscriptionCallbacks:
     description: Endpoints that should be called when an applicable event occurs.  At
       least one field must be specified.
-    type: object
-    properties:
-      identification_service_area_url:
-        $ref: '#/definitions/URL'
-        description: If specified, other clients will be instructed by the DSS to
-          call this endpoint when an Identification Service Area relevant to this
-          Subscription is created, modified, or deleted.  Must implement PUT and
-          DELETE according to the `/uss/identification_service_areas/{id}` path
-          API.
+    type: string
   PatchSubscriptionResponse:
     description: Response for a request to update a subscription.
     required:

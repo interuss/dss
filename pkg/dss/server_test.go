@@ -9,10 +9,10 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo/testdata"
+	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 
 	"github.com/golang/geo/s2"
-	"github.com/golang/protobuf/ptypes"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -26,42 +26,60 @@ func (ms *mockStore) Close() error {
 	return ms.Called().Error(0)
 }
 
-func (ms *mockStore) GetSubscription(ctx context.Context, id string) (*dspb.Subscription, error) {
+func (ms *mockStore) GetSubscription(ctx context.Context, id string) (*models.Subscription, error) {
 	args := ms.Called(ctx, id)
-	return args.Get(0).(*dspb.Subscription), args.Error(1)
+	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) DeleteSubscription(ctx context.Context, id, version string) (*dspb.Subscription, error) {
+func (ms *mockStore) DeleteSubscription(ctx context.Context, id, owner, version string) (*models.Subscription, error) {
 	args := ms.Called(ctx, id)
-	return args.Get(0).(*dspb.Subscription), args.Error(1)
+	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*dspb.Subscription, error) {
+func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*models.Subscription, error) {
 	args := ms.Called(ctx, cells, owner)
-	return args.Get(0).([]*dspb.Subscription), args.Error(1)
+	return args.Get(0).([]*models.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) DeleteIdentificationServiceArea(ctx context.Context, id string, owner string) (*dspb.IdentificationServiceArea, []*dspb.SubscriberToNotify, error) {
+func (ms *mockStore) DeleteISA(ctx context.Context, id string, owner, version string) (*models.IdentificationServiceArea, []*models.Subscription, error) {
 	args := ms.Called(ctx, id, owner)
-	return args.Get(0).(*dspb.IdentificationServiceArea), args.Get(1).([]*dspb.SubscriberToNotify), args.Error(2)
+	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
 
-func (ms *mockStore) SearchIdentificationServiceAreas(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*dspb.IdentificationServiceArea, error) {
+func (ms *mockStore) InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+	return nil, nil, nil
+}
+
+func (ms *mockStore) UpdateISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+	return nil, nil, nil
+}
+
+func (ms *mockStore) InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
+	return nil, nil
+}
+
+func (ms *mockStore) UpdateSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
+	return nil, nil
+}
+
+func (ms *mockStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*models.IdentificationServiceArea, error) {
 	args := ms.Called(ctx, cells, earliest, latest)
-	return args.Get(0).([]*dspb.IdentificationServiceArea), args.Error(1)
+	return args.Get(0).([]*models.IdentificationServiceArea), args.Error(1)
 }
 
 func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
+	ctx := auth.ContextWithOwner(context.Background(), "foo")
+
 	for _, r := range []struct {
 		name         string
 		id           string
-		subscription *dspb.Subscription
+		subscription *models.Subscription
 		err          error
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-store",
 			id:           uuid.NewV4().String(),
-			subscription: &dspb.Subscription{},
+			subscription: &models.Subscription{},
 		},
 		{
 			name: "error-is-returned-if-returned-from-store",
@@ -78,11 +96,10 @@ func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
 				Store: store,
 			}
 
-			response, err := s.DeleteSubscription(context.Background(), &dspb.DeleteSubscriptionRequest{
+			_, err := s.DeleteSubscription(ctx, &dspb.DeleteSubscriptionRequest{
 				Id: r.id,
 			})
 			require.Equal(t, r.err, err)
-			require.EqualValues(t, r.subscription, response.GetSubscription())
 			require.True(t, store.AssertExpectations(t))
 		})
 	}
@@ -92,13 +109,13 @@ func TestGetSubscriptionCallsIntoMockStore(t *testing.T) {
 	for _, r := range []struct {
 		name         string
 		id           string
-		subscription *dspb.Subscription
+		subscription *models.Subscription
 		err          error
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-store",
 			id:           uuid.NewV4().String(),
-			subscription: &dspb.Subscription{},
+			subscription: &models.Subscription{},
 		},
 		{
 			name: "error-is-returned-if-returned-from-store",
@@ -115,11 +132,10 @@ func TestGetSubscriptionCallsIntoMockStore(t *testing.T) {
 				Store: store,
 			}
 
-			response, err := s.GetSubscription(context.Background(), &dspb.GetSubscriptionRequest{
+			_, err := s.GetSubscription(context.Background(), &dspb.GetSubscriptionRequest{
 				Id: r.id,
 			})
 			require.Equal(t, r.err, err)
-			require.EqualValues(t, r.subscription, response.GetSubscription())
 			require.True(t, store.AssertExpectations(t))
 		})
 	}
@@ -169,13 +185,11 @@ func TestSearchSubscriptionsCallsIntoStore(t *testing.T) {
 	)
 
 	ms.On("SearchSubscriptions", mock.Anything, mock.Anything, "foo").Return(
-		[]*dspb.Subscription{
+		[]*models.Subscription{
 			{
-				Id:    uuid.NewV4().String(),
-				Owner: "me-myself-and-i",
-				Callbacks: &dspb.SubscriptionCallbacks{
-					IdentificationServiceAreaUrl: "https://no/place/like/home",
-				},
+				ID:                uuid.NewV4().String(),
+				Owner:             "me-myself-and-i",
+				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
 			},
 		}, error(nil),
@@ -217,24 +231,16 @@ func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
 		}
 	)
 
-	ms.On("DeleteIdentificationServiceArea", ctx, id, "foo").Return(
-		&dspb.IdentificationServiceArea{
-			Id:         id,
-			Owner:      "me-myself-and-i",
-			FlightsUrl: "https://no/place/like/home",
-			Extents: &dspb.Volume4D{
-				TimeStart: ptypes.TimestampNow(),
-				TimeEnd:   ptypes.TimestampNow(),
-			},
+	ms.On("DeleteISA", ctx, id, "foo").Return(
+		&models.IdentificationServiceArea{
+			ID:    id,
+			Owner: "me-myself-and-i",
+			Url:   "https://no/place/like/home",
 		},
-		[]*dspb.SubscriberToNotify{
-			&dspb.SubscriberToNotify{
-				Subscriptions: []*dspb.SubscriptionState{
-					&dspb.SubscriptionState{
-						NotificationIndex: 42,
-					},
-				},
-				Url: "https://no/place/like/home",
+		[]*models.Subscription{
+			{
+				NotificationIndex: 42,
+				Url:               "https://no/place/like/home",
 			},
 		}, error(nil),
 	)
@@ -257,16 +263,12 @@ func TestSearchIdentificationServiceAreasCallsIntoStore(t *testing.T) {
 		}
 	)
 
-	ms.On("SearchIdentificationServiceAreas", ctx, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
-		[]*dspb.IdentificationServiceArea{
+	ms.On("SearchISAs", ctx, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
+		[]*models.IdentificationServiceArea{
 			{
-				Id:         uuid.NewV4().String(),
-				Owner:      "me-myself-and-i",
-				FlightsUrl: "https://no/place/like/home",
-				Extents: &dspb.Volume4D{
-					TimeStart: ptypes.TimestampNow(),
-					TimeEnd:   ptypes.TimestampNow(),
-				},
+				ID:    uuid.NewV4().String(),
+				Owner: "me-myself-and-i",
+				Url:   "https://no/place/like/home",
 			},
 		}, error(nil),
 	)
