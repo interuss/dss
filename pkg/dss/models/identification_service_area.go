@@ -1,7 +1,6 @@
 package models
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -17,11 +16,11 @@ type IdentificationServiceArea struct {
 	Owner string
 	Cells s2.CellUnion
 	// TODO(steeling): abstract NullTime away from models.
-	StartTime  NullTime
-	EndTime    NullTime
-	UpdatedAt  time.Time
-	AltitudeHi float32
-	AltitudeLo float32
+	StartTime  *time.Time
+	EndTime    *time.Time
+	UpdatedAt  *time.Time
+	AltitudeHi *float32
+	AltitudeLo *float32
 }
 
 func (i *IdentificationServiceArea) Version() string {
@@ -37,20 +36,20 @@ func (s *IdentificationServiceArea) Apply(i2 *IdentificationServiceArea) *Identi
 	if i2.Cells != nil {
 		new.Cells = i2.Cells
 	}
-	if i2.StartTime.Valid {
+	if i2.StartTime != nil {
 		new.StartTime = i2.StartTime
 	}
-	if i2.EndTime.Valid {
+	if i2.EndTime != nil {
 		new.EndTime = i2.EndTime
 	}
-	if !i2.UpdatedAt.IsZero() {
+	if i2.UpdatedAt != nil {
 		new.UpdatedAt = i2.UpdatedAt
 	}
-	if i2.AltitudeHi != 0 {
+	if i2.AltitudeHi != nil {
 		new.AltitudeHi = i2.AltitudeHi
 	}
 	// TODO(steeling) what if the update is to make it 0, we need an omitempty, pointer, or some other type.
-	if i2.AltitudeLo != 0 {
+	if i2.AltitudeLo != nil {
 		new.AltitudeLo = i2.AltitudeLo
 	}
 	return &new
@@ -61,19 +60,19 @@ func (i *IdentificationServiceArea) ToProto() (*dspb.IdentificationServiceArea, 
 		Id:      i.ID,
 		Owner:   i.Owner,
 		Url:     i.Url,
-		Version: strconv.FormatInt(i.UpdatedAt.UnixNano(), 10),
+		Version: i.Version(),
 	}
 
-	if i.StartTime.Valid {
-		ts, err := ptypes.TimestampProto(i.StartTime.Time)
+	if i.StartTime != nil {
+		ts, err := ptypes.TimestampProto(*i.StartTime)
 		if err != nil {
 			return nil, err
 		}
 		result.StartTime = ts
 	}
 
-	if i.EndTime.Valid {
-		ts, err := ptypes.TimestampProto(i.EndTime.Time)
+	if i.EndTime != nil {
+		ts, err := ptypes.TimestampProto(*i.EndTime)
 		if err != nil {
 			return nil, err
 		}

@@ -31,8 +31,8 @@ var (
 				ID:                uuid.NewV4().String(),
 				Owner:             "me-myself-and-i",
 				Url:               "https://no/place/like/home",
-				StartTime:         startTime,
-				EndTime:           endTime,
+				StartTime:         &startTime,
+				EndTime:           &endTime,
 				NotificationIndex: 42,
 			},
 		},
@@ -42,7 +42,7 @@ var (
 				ID:                uuid.NewV4().String(),
 				Owner:             "me-myself-and-i",
 				Url:               "https://no/place/like/home",
-				StartTime:         startTime,
+				StartTime:         &startTime,
 				NotificationIndex: 42,
 			},
 		},
@@ -52,7 +52,7 @@ var (
 				ID:                uuid.NewV4().String(),
 				Owner:             "me-myself-and-i",
 				Url:               "https://no/place/like/home",
-				EndTime:           endTime,
+				EndTime:           &endTime,
 				NotificationIndex: 42,
 			},
 		},
@@ -63,7 +63,7 @@ var (
 				Owner:             "me-myself-and-i",
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
-				UpdatedAt:         startTime.Time,
+				UpdatedAt:         &startTime,
 			},
 		},
 		{
@@ -73,7 +73,7 @@ var (
 				Owner:             "you",
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
-				UpdatedAt:         startTime.Time,
+				UpdatedAt:         &startTime,
 			},
 		},
 	}
@@ -90,8 +90,8 @@ func TestDatabaseEnsuresStartTimeBeforeEndTime(t *testing.T) {
 	}()
 
 	var (
-		startTime = models.NullTime{Time: time.Now(), Valid: true}
-		endTime   = models.NullTime{Time: time.Now().Add(-5 * time.Minute), Valid: true}
+		startTime = time.Now()
+		endTime   = time.Now().Add(-5 * time.Minute)
 	)
 
 	_, err := store.InsertSubscription(ctx, &models.Subscription{
@@ -99,8 +99,8 @@ func TestDatabaseEnsuresStartTimeBeforeEndTime(t *testing.T) {
 		Owner:             "me-myself-and-i",
 		Url:               "https://no/place/like/home",
 		NotificationIndex: 42,
-		StartTime:         startTime,
-		EndTime:           endTime,
+		StartTime:         &startTime,
+		EndTime:           &endTime,
 	})
 	require.Error(t, err)
 }
@@ -146,7 +146,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 
 			// Test changes without the version differing.
 			r2 := *sub1
-			r2.Owner = "new test owner"
+			r2.Url = "new url"
 			sub2, err := store.InsertSubscription(ctx, &r2)
 			require.Error(t, err)
 			require.Nil(t, sub2)
@@ -186,18 +186,19 @@ func TestStoreUpdateSubscription(t *testing.T) {
 			// Applying an empty subscription will return a copy
 			r3 := r.input.Apply(&models.Subscription{})
 
+			tempTime := time.Now()
 			r3.Url = "new URL 2"
-			r3.UpdatedAt = time.Now()
+			r3.UpdatedAt = &tempTime
 			sub3, err := store.UpdateSubscription(ctx, r3)
 			require.Error(t, err)
 			require.Nil(t, sub3)
 
-			// Update should allow if version not supplied
+			// Versions should be explicitly required
 			r3.Url = "new URL 3"
-			r3.UpdatedAt = time.Time{}
+			r3.UpdatedAt = nil
 			sub4, err := store.UpdateSubscription(ctx, r3)
-			require.NoError(t, err)
-			require.NotNil(t, sub4)
+			require.Error(t, err)
+			require.Nil(t, sub4)
 
 			// Changing owner should error
 			r3.Owner = "new owner"
@@ -209,7 +210,7 @@ func TestStoreUpdateSubscription(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, sub6)
 
-			require.Equal(t, *sub4, *sub6)
+			require.Equal(t, *sub2, *sub6)
 		})
 	}
 }
@@ -234,11 +235,16 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			require.Error(t, err)
 			require.Nil(t, sub2)
 
-			sub3, err := store.DeleteSubscription(ctx, sub1.ID, sub1.Owner, sub1.Version())
-			require.NoError(t, err)
-			require.NotNil(t, sub3)
+			// Can't delete other users data.
+			sub3, err := store.DeleteSubscription(ctx, sub1.ID, "wrong owner", sub1.Version())
+			require.Error(t, err)
+			require.Nil(t, sub3)
 
-			require.Equal(t, *sub1, *sub3)
+			sub4, err := store.DeleteSubscription(ctx, sub1.ID, sub1.Owner, sub1.Version())
+			require.NoError(t, err)
+			require.NotNil(t, sub4)
+
+			require.Equal(t, *sub1, *sub4)
 		})
 	}
 }

@@ -247,7 +247,7 @@ func (c *Store) DeleteISA(ctx context.Context, id string, owner, version string)
 		return nil, nil, multierr.Combine(dsserr.NotFound("not found"), tx.Rollback())
 	case err != nil:
 		return nil, nil, multierr.Combine(err, tx.Rollback())
-	case version != "" && version != old.Version():
+	case version != old.Version():
 		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 	if err := c.populateISACells(ctx, tx, old); err != nil {

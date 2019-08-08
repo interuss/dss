@@ -22,8 +22,8 @@ var (
 				ID:        uuid.NewV4().String(),
 				Owner:     "me-myself-and-i",
 				Url:       "https://no/place/like/home/for/flights",
-				StartTime: startTime,
-				EndTime:   endTime,
+				StartTime: &startTime,
+				EndTime:   &endTime,
 				Cells: s2.CellUnion{
 					s2.CellID(42),
 				},
@@ -126,7 +126,7 @@ func TestStoreSearchIdentificationServiceAreas(t *testing.T) {
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			for _, sa := range insertedServiceAreas {
-				earliest, latest := r.timestampMutator(sa.StartTime.Time, sa.EndTime.Time)
+				earliest, latest := r.timestampMutator(*sa.StartTime, *sa.EndTime)
 
 				serviceAreas, err := store.SearchISAs(ctx, r.cells, earliest, latest)
 				require.NoError(t, err)
@@ -160,15 +160,16 @@ func TestStoreDeleteIdentificationServiceAreas(t *testing.T) {
 
 	for _, r := range serviceAreasPool {
 		tx, _ := store.Begin()
-		_, err := store.pushISA(ctx, tx, r.input)
+		isa, err := store.pushISA(ctx, tx, r.input)
 		tx.Commit()
 		require.NoError(t, err)
+		require.NotNil(t, isa)
 
-		insertedServiceAreas = append(insertedServiceAreas, r.input)
+		insertedServiceAreas = append(insertedServiceAreas, isa)
 	}
 
 	for _, sa := range insertedServiceAreas {
-		serviceAreaOut, subscriptionsOut, err := store.DeleteISA(ctx, sa.ID, sa.Owner, "")
+		serviceAreaOut, subscriptionsOut, err := store.DeleteISA(ctx, sa.ID, sa.Owner, sa.Version())
 		require.NoError(t, err)
 		require.NotNil(t, serviceAreaOut)
 		require.NotNil(t, subscriptionsOut)
