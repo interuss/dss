@@ -18,13 +18,6 @@ spec:
     app: grpc-backend
   type: LoadBalancer
 ---
-kind: ConfigMap 
-apiVersion: v1 
-metadata:
-  name: grpc-backend-config 
-data:
-  cockroach.uri: postgresql://root@localhost:26257?sslmode=disable 
----
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
@@ -65,5 +58,9 @@ spec:
                 key: cockroach.uri
         args:
           - -addr=:8081
-          - -cockroach_uri=$(DSS_COCKROACH_URI)
+          - -cockroach_host=cockroachdb.{{ .Namespace }}
+          - -cockroach_port=26257
+          - -cockroach_ssl_mode=verify-full
+          - -cockroach_user=root
+          - -cockroach_ssl_dir=/client-certs
           - -public_key_file=/public-certs/oauth.pem

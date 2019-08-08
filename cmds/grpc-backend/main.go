@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"net"
+	"strconv"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/steeling/InterUSS-Platform/pkg/dss"
@@ -17,12 +18,17 @@ import (
 )
 
 var (
-	address      = flag.String("addr", "127.0.0.1:8080", "address")
-	cockroachURI = flag.String("cockroach_uri", "", "URI pointing to a cockroach instance")
-	pkFile       = flag.String("public_key_file", "", "Path to public Key to use for JWT decoding.")
-	reflectAPI   = flag.Bool("reflect_api", false, "Whether to reflect the API.")
-	logFormat    = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
-	logLevel     = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
+	address    = flag.String("addr", "127.0.0.1:8080", "address")
+	pkFile     = flag.String("public_key_file", "", "Path to public Key to use for JWT decoding.")
+	reflectAPI = flag.Bool("reflect_api", false, "Whether to reflect the API.")
+	logFormat  = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
+	logLevel   = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
+
+	cockroachHost    = flag.String("cockroach_host", "", "cockroach host to connect to")
+	cockroachPort    = flag.Int("cockroach_port", 26257, "cockroach port to connect to")
+	cockroachSSLMode = flag.String("cockroach_ssl_mode", "disable", "cockroach sslmode")
+	cockroachUser    = flag.String("cockroach_user", "root", "cockroach user to authenticate as")
+	cockroachSSLDir  = flag.String("cockroach_ssl_dir", "", "directory to ssl certificates. Must contain files: ca.crt, client.<user>.crt, client.<user>.key")
 )
 
 // RunGRPCServer starts the example gRPC service.
@@ -40,9 +46,21 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		}
 	}()
 
-	store, err := cockroach.Dial(*cockroachURI)
+	uriParams := map[string]string{
+		"host":     *cockroachHost,
+		"port":     strconv.Itoa(*cockroachPort),
+		"user":     *cockroachUser,
+		"ssl_mode": *cockroachSSLMode,
+		"ssl_dir":  *cockroachSSLDir,
+	}
+	uri, err := cockroach.BuildURI(uriParams)
 	if err != nil {
-		logger.Panic("Failed to open connection to CRDB", zap.String("uri", *cockroachURI), zap.Error(err))
+		logger.Panic("Failed to build URI", zap.Error(err))
+	}
+
+	store, err := cockroach.Dial(uri)
+	if err != nil {
+		logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
 	}
 
 	if err := store.Bootstrap(ctx); err != nil {
