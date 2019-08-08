@@ -3,37 +3,32 @@ package cockroach
 import (
 	"context"
 	"database/sql"
-	"strconv"
-	"time"
 	// Pull in the postgres database driver
 )
 
+// Store is an implementation of dss.Store using
+// Cockroach DB as its backend store.
 type Store struct {
 	*sql.DB
+}
+
+// Dial returns a Store instance connected to a cockroach instance available at
+// "uri".
+func Dial(uri string) (*Store, error) {
+	db, err := sql.Open("postgres", uri)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Store{
+		DB: db,
+	}, nil
 }
 
 type queryable interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-}
-
-// Convert updatedAt to a string, why not make it smaller
-// WARNING: Changing this will cause RMW errors
-// 32 is the highest value allowed by strconv
-var versionBase = 32
-
-func versionStringToTimestamp(s string) (time.Time, error) {
-	var t time.Time
-	nanos, err := strconv.ParseUint(s, versionBase, 64)
-	if err != nil {
-		return t, err
-	}
-	return time.Unix(0, int64(nanos)), nil
-}
-
-func timestampToVersionString(t time.Time) string {
-	return strconv.FormatUint(uint64(t.UnixNano()), versionBase)
 }
 
 // Close closes the underlying DB connection.

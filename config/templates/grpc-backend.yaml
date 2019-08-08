@@ -18,6 +18,13 @@ spec:
     app: grpc-backend
   type: LoadBalancer
 ---
+kind: ConfigMap 
+apiVersion: v1 
+metadata:
+  name: grpc-backend-config 
+data:
+  cockroach.uri: postgresql://root@localhost:26257?sslmode=disable 
+---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
@@ -50,7 +57,13 @@ spec:
           mountPath: /cockroach-certs
         - name: public-certs
           mountPath: /public-certs
-        command:
-          - "/bin/bash"
-          - "-ecx"
-          - "exec ./main.go -addr=:8081 -public_key_file=/public-certs/oauth.pem"
+        env:
+          - name: DSS_COCKROACH_URI
+            valueFrom:
+              configMapKeyRef:
+                name: grpc-backend-config
+                key: cockroach.uri
+        args:
+          - -addr=:8081
+          - -cockroach_uri=$(DSS_COCKROACH_URI)
+          - -public_key_file=/public-certs/oauth.pem
