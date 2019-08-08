@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grpc-backend
+  labels:
+    app: grpc-backend
+  annotations:
+    # Enable automatic monitoring of all instances when Prometheus is running in the cluster.
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "_status/vars"
+    prometheus.io/port: "8080"
+spec:
+  ports:
+  - port: 8081
+    targetPort: 8081
+    name: grpc
+  selector:
+    app: grpc-backend
+  type: LoadBalancer
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: grpc-backend
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: grpc-backend
+    spec:
+      volumes:
+      - name: client-certs
+        secret:
+          secretName: cockroachdb.client.root
+          defaultMode: 256
+      - name: public-certs
+        secret:
+          secretName: dss.public.certs
+          defaultMode: 256
+      containers:
+      - name: grpc-backend
+        image: grpc-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8081
+          name: grpc
+        volumeMounts:
+        - name: client-certs
+          mountPath: /cockroach-certs
+        - name: public-certs
+          mountPath: /public-certs
+        command:
+          - "/bin/bash"
+          - "-ecx"
+          - "exec ./main.go -addr=:8081 -public_key_file=/public-certs/oauth.pem"
