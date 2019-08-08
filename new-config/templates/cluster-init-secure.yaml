@@ -1,0 +1,31 @@
+{{- if eq .Values.clusterInit true }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cluster-init-secure
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ .Chart.Name }}
+      containers:
+      - name: cluster-init
+        image: {{ .Values.image }}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: client-certs
+          mountPath: /cockroach-certs
+        command:
+          - "/cockroach/cockroach"
+          - "init"
+          - "--certs-dir=/cockroach-certs"
+          - "--host={{ .Chart.Name }}-0.{{ .Chart.Name }}"
+      restartPolicy: OnFailure
+      volumes:
+      - name: client-certs
+        secret:
+          secretName: cockroachdb.client.root
+          defaultMode: 256
+{{- end }}
