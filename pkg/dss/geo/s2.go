@@ -84,11 +84,11 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 		counter  = 0
 		scanner  = bufio.NewScanner(strings.NewReader(area))
 	)
-	numCoords := strings.Count(area, ",")/2 + 1
+	numCoords := strings.Count(area, ",") + 1
 	if numCoords%2 == 1 {
 		return nil, errOddNumberOfCoordinatesInAreaString
 	}
-	if numCoords < 3 {
+	if numCoords/2 < 3 {
 		return nil, errNotEnoughPointsInPolygon
 	}
 	scanner.Split(splitAtComma)

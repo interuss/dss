@@ -55,6 +55,18 @@ func TestGeoPolygonToCellIDs(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestParseAreaSuccessForOddNumberOfPoints(t *testing.T) {
+	cells, err := AreaToCellIDs(`37.4047,-122.1474,37.4037,-122.1485,37.4035,-122.1466`)
+	require.NoError(t, err)
+	require.NotNil(t, cells)
+}
+
+func TestParseAreaSuccessForEvenNumberOfPoints(t *testing.T) {
+	cells, err := AreaToCellIDs(`37.4047,-122.1474,37.4037,-122.1485,37.4035,-122.1466,37.4035,-122.1466`)
+	require.NoError(t, err)
+	require.NotNil(t, cells)
+}
+
 func TestParseAreaSucceedsForValidLoop(t *testing.T) {
 	cells, err := AreaToCellIDs(testdata.Loop)
 	require.NoError(t, err)
