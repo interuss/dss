@@ -11,6 +11,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/cockroach"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	"github.com/steeling/InterUSS-Platform/pkg/errors"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -77,7 +78,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 	ac.RequireScopes(dssServer.AuthScopes())
 
-	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(logging.Interceptor(), ac.AuthInterceptor))
+	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(errors.Interceptor(logger), logging.Interceptor(logger), ac.AuthInterceptor))
 	if err != nil {
 		return err
 	}

@@ -76,14 +76,14 @@ func Configure(level string, format string) error {
 }
 
 // Interceptor returns a grpc.UnaryServerInterceptor that logs incoming requests
-// and associated tags to "Logger".
-func Interceptor() grpc.UnaryServerInterceptor {
+// and associated tags to "logger".
+func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	opts := []grpc_zap.Option{
 		grpc_zap.WithLevels(grpc_zap.DefaultCodeToLevel),
 	}
 	return grpc_middleware.ChainUnaryServer(
 		grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-		grpc_zap.UnaryServerInterceptor(Logger, opts...),
+		grpc_zap.UnaryServerInterceptor(logger, opts...),
 	)
 }
 
