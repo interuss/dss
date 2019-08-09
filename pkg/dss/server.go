@@ -68,13 +68,13 @@ func (s *Server) PatchIdentificationServiceArea(ctx context.Context, req *dspb.P
 		ends = &ts
 	}
 
-	updated, err := models.VersionStringToTimestamp(req.GetVersion())
+	updated, err := models.Version(req.GetVersion()).ToTimestamp()
 	if err != nil {
 		return nil, dsserr.BadRequest(err.Error())
 	}
 
 	isa := &models.IdentificationServiceArea{
-		ID:        req.GetId(),
+		ID:        models.ID(req.GetId()),
 		Url:       req.GetUrl().GetValue(),
 		Owner:     owner,
 		Cells:     geo.Volume4DToCellIDs(req.GetExtents()),
@@ -137,7 +137,7 @@ func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.Put
 	}
 
 	isa := &models.IdentificationServiceArea{
-		ID:        req.GetId(),
+		ID:        models.ID(req.GetId()),
 		Url:       req.GetUrl(),
 		Owner:     owner,
 		Cells:     geo.Volume4DToCellIDs(req.GetExtents()),
@@ -181,7 +181,7 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-	isa, subscribers, err := s.Store.DeleteISA(ctx, req.GetId(), owner, req.Version)
+	isa, subscribers, err := s.Store.DeleteISA(ctx, models.ID(req.GetId()), owner, models.Version(req.GetVersion()))
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscri
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	subscription, err := s.Store.DeleteSubscription(ctx, req.GetId(), owner, req.GetVersion())
+	subscription, err := s.Store.DeleteSubscription(ctx, models.ID(req.GetId()), owner, models.Version(req.GetVersion()))
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *dspb.SearchSubscr
 }
 
 func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionRequest) (*dspb.GetSubscriptionResponse, error) {
-	subscription, err := s.Store.GetSubscription(ctx, req.GetId())
+	subscription, err := s.Store.GetSubscription(ctx, models.ID(req.GetId()))
 	if err != nil {
 		// TODO(tvoss): Revisit once error propagation strategy is defined. We
 		// might want to avoid leaking raw error messages to callers and instead

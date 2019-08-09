@@ -44,7 +44,7 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query strin
 	return payload, nil
 }
 
-func (c *Store) fetchSubscriptionsByCellsWithoutOwner(ctx context.Context, q queryable, cells []int64, owner string) ([]*models.Subscription, error) {
+func (c *Store) fetchSubscriptionsByCellsWithoutOwner(ctx context.Context, q queryable, cells []int64, owner models.Owner) ([]*models.Subscription, error) {
 	const (
 		subscriptionsQuery = `
 		 SELECT
@@ -80,13 +80,13 @@ func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string
 	return subs[0], nil
 }
 
-func (c *Store) fetchSubscriptionByID(ctx context.Context, q queryable, id string) (*models.Subscription, error) {
+func (c *Store) fetchSubscriptionByID(ctx context.Context, q queryable, id models.ID) (*models.Subscription, error) {
 	// TODO(steeling) don't fetch by *
 	const query = `SELECT * FROM subscriptions WHERE id = $1`
 	return c.fetchSubscription(ctx, q, query, id)
 }
 
-func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, id, owner string) (*models.Subscription, error) {
+func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, id models.ID, owner models.Owner) (*models.Subscription, error) {
 	// TODO(steeling) don't fetch by *
 	const query = `
 		SELECT * FROM
@@ -153,7 +153,7 @@ func (c *Store) pushSubscription(ctx context.Context, q queryable, s *models.Sub
 }
 
 // Get returns the subscription identified by "id".
-func (c *Store) GetSubscription(ctx context.Context, id string) (*models.Subscription, error) {
+func (c *Store) GetSubscription(ctx context.Context, id models.ID) (*models.Subscription, error) {
 	return c.fetchSubscriptionByID(ctx, c.DB, id)
 }
 
@@ -216,7 +216,7 @@ func (c *Store) UpdateSubscription(ctx context.Context, s *models.Subscription) 
 
 // DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
-func (c *Store) DeleteSubscription(ctx context.Context, id, owner, version string) (*models.Subscription, error) {
+func (c *Store) DeleteSubscription(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.Subscription, error) {
 	const (
 		query = `
 		DELETE FROM
@@ -255,7 +255,7 @@ func (c *Store) DeleteSubscription(ctx context.Context, id, owner, version strin
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
-func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*models.Subscription, error) {
+func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner models.Owner) ([]*models.Subscription, error) {
 	const (
 		query = `
 			SELECT

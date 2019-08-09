@@ -61,7 +61,7 @@ func (c *Store) fetchISA(ctx context.Context, q queryable, query string, args ..
 	return isas[0], nil
 }
 
-func (c *Store) fetchISAByID(ctx context.Context, q queryable, id string) (*models.IdentificationServiceArea, error) {
+func (c *Store) fetchISAByID(ctx context.Context, q queryable, id models.ID) (*models.IdentificationServiceArea, error) {
 	// TODO(steeling) don't fetch by *
 	const query = `
 		SELECT * FROM
@@ -71,7 +71,7 @@ func (c *Store) fetchISAByID(ctx context.Context, q queryable, id string) (*mode
 	return c.fetchISA(ctx, q, query, id)
 }
 
-func (c *Store) fetchISAByIDAndOwner(ctx context.Context, q queryable, id, owner string) (*models.IdentificationServiceArea, error) {
+func (c *Store) fetchISAByIDAndOwner(ctx context.Context, q queryable, id models.ID, owner models.Owner) (*models.IdentificationServiceArea, error) {
 	// TODO(steeling) don't fetch by *
 	const query = `
 		SELECT * FROM
@@ -242,7 +242,7 @@ func (c *Store) UpdateISA(ctx context.Context, isa *models.IdentificationService
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-func (c *Store) DeleteISA(ctx context.Context, id string, owner, version string) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error) {
 	const (
 		subscriptionsQuery = `
 		 SELECT

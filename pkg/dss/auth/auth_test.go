@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -155,11 +156,12 @@ func TestClaimsValidation(t *testing.T) {
 }
 
 func TestContextWithOwner(t *testing.T) {
+	expected := models.Owner("me")
 	ctx := context.Background()
 	owner, ok := OwnerFromContext(ctx)
 	require.False(t, ok)
-	ctx = ContextWithOwner(ctx, "me")
+	ctx = ContextWithOwner(ctx, expected)
 	owner, ok = OwnerFromContext(ctx)
 	require.True(t, ok)
-	require.Equal(t, "me", owner)
+	require.Equal(t, expected, owner)
 }
