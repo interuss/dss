@@ -112,7 +112,20 @@ func (c *Store) pushSubscription(ctx context.Context, q queryable, s *models.Sub
 		VALUES
 			($1, $2, $3)
 		`
+		deleteLeftOverCellsForSubscriptionQuery = `
+			DELETE FROM
+				cells_subscriptions
+			WHERE
+				cell_id != ALL($1)
+			AND
+				subscription_id = $2`
 	)
+
+	cids := make([]int64, len(s.Cells))
+	for i, cell := range s.Cells {
+		cids[i] = int64(cell)
+	}
+
 	cells := s.Cells
 	s, err := c.fetchSubscription(ctx, q, upsertQuery,
 		s.ID,
@@ -126,14 +139,17 @@ func (c *Store) pushSubscription(ctx context.Context, q queryable, s *models.Sub
 	}
 	s.Cells = cells
 
-	// TODO(steeling) we also need to delete any leftover cells.
 	for _, cell := range s.Cells {
 		if _, err := q.ExecContext(ctx, subscriptionCellQuery, cell, cell.Level(), s.ID); err != nil {
 			return nil, err
 		}
 	}
-	s.Cells = cells
-	return s, err
+
+	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
 // Get returns the subscription identified by "id".
