@@ -110,7 +110,7 @@ func (c *Store) pushSubscription(ctx context.Context, q queryable, s *models.Sub
 		UPSERT INTO
 			cells_subscriptions
 		VALUES
-			($1, $2, $3, transaction_timestamp())
+			($1, $2, $3)
 		`
 	)
 	cells := s.Cells
