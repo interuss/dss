@@ -11,9 +11,9 @@ import (
 type IdentificationServiceArea struct {
 	// Embed the proto
 	// Unfortunately some types don't implement scanner/valuer, so we add placeholders below.
-	ID    string
+	ID    ID
 	Url   string
-	Owner string
+	Owner Owner
 	Cells s2.CellUnion
 	// TODO(steeling): abstract NullTime away from models.
 	StartTime  *time.Time
@@ -23,8 +23,8 @@ type IdentificationServiceArea struct {
 	AltitudeLo *float32
 }
 
-func (i *IdentificationServiceArea) Version() string {
-	return TimestampToVersionString(i.UpdatedAt)
+func (i *IdentificationServiceArea) Version() Version {
+	return VersionFromTimestamp(i.UpdatedAt)
 }
 
 // Apply fields from s2 onto s, preferring any fields set in i2 except for ID
@@ -58,10 +58,10 @@ func (s *IdentificationServiceArea) Apply(i2 *IdentificationServiceArea) *Identi
 
 func (i *IdentificationServiceArea) ToProto() (*dspb.IdentificationServiceArea, error) {
 	result := &dspb.IdentificationServiceArea{
-		Id:      i.ID,
-		Owner:   i.Owner,
+		Id:      i.ID.String(),
+		Owner:   i.Owner.String(),
 		Url:     i.Url,
-		Version: i.Version(),
+		Version: i.Version().String(),
 	}
 
 	if i.StartTime != nil {

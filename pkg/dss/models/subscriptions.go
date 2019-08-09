@@ -12,10 +12,10 @@ import (
 type Subscription struct {
 	// Embed the proto
 	// Unfortunately some types don't implement scanner/valuer, so we add placeholders below.
-	ID                string
+	ID                ID
 	Url               string
 	NotificationIndex int
-	Owner             string
+	Owner             Owner
 	Cells             s2.CellUnion
 	// TODO(steeling): abstract NullTime away from models.
 	StartTime  *time.Time
@@ -59,23 +59,23 @@ func (s *Subscription) ToNotifyProto() *dspb.SubscriberToNotify {
 		Subscriptions: []*dspb.SubscriptionState{
 			&dspb.SubscriptionState{
 				NotificationIndex: int32(s.NotificationIndex),
-				Subscription:      s.ID,
+				Subscription:      s.ID.String(),
 			},
 		},
 	}
 }
 
-func (s *Subscription) Version() string {
-	return TimestampToVersionString(s.UpdatedAt)
+func (s *Subscription) Version() Version {
+	return VersionFromTimestamp(s.UpdatedAt)
 }
 
 func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 	result := &dspb.Subscription{
-		Id:                s.ID,
-		Owner:             s.Owner,
+		Id:                s.ID.String(),
+		Owner:             s.Owner.String(),
 		Url:               s.Url,
 		NotificationIndex: int32(s.NotificationIndex),
-		Version:           s.Version(),
+		Version:           s.Version().String(),
 	}
 
 	if s.StartTime != nil {

@@ -19,8 +19,8 @@ var (
 		{
 			name: "a subscription without startTime and endTime",
 			input: &models.IdentificationServiceArea{
-				ID:        uuid.NewV4().String(),
-				Owner:     uuid.NewV4().String(),
+				ID:        models.ID(uuid.NewV4().String()),
+				Owner:     models.Owner(uuid.NewV4().String()),
 				Url:       "https://no/place/like/home/for/flights",
 				StartTime: &startTime,
 				EndTime:   &endTime,

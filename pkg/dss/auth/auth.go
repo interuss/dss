@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -32,14 +33,14 @@ func (m *missingScopesError) Error() string {
 }
 
 // ContextWithOwner adds "owner" to "ctx".
-func ContextWithOwner(ctx context.Context, owner string) context.Context {
+func ContextWithOwner(ctx context.Context, owner models.Owner) context.Context {
 	return context.WithValue(ctx, ContextKeyOwner, owner)
 }
 
 // OwnerFromContext returns the value for owner from "ctx" and a boolean
 // indicating whether a valid value was present or not.
-func OwnerFromContext(ctx context.Context) (string, bool) {
-	owner, ok := ctx.Value(ContextKeyOwner).(string)
+func OwnerFromContext(ctx context.Context) (models.Owner, bool) {
+	owner, ok := ctx.Value(ContextKeyOwner).(models.Owner)
 	return owner, ok
 }
 
@@ -97,7 +98,7 @@ func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("missing scopes: %v", err))
 	}
 
-	return handler(ContextWithOwner(ctx, claims.ClientID), req)
+	return handler(ContextWithOwner(ctx, models.Owner(claims.ClientID)), req)
 }
 
 // Returns all of the required scopes that are missing.

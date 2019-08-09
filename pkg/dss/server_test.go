@@ -36,22 +36,22 @@ func (ms *mockStore) UpdateSubscription(ctx context.Context, s *models.Subscript
 	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) GetSubscription(ctx context.Context, id string) (*models.Subscription, error) {
+func (ms *mockStore) GetSubscription(ctx context.Context, id models.ID) (*models.Subscription, error) {
 	args := ms.Called(ctx, id)
 	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) DeleteSubscription(ctx context.Context, id, owner, version string) (*models.Subscription, error) {
+func (ms *mockStore) DeleteSubscription(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.Subscription, error) {
 	args := ms.Called(ctx, id, owner, version)
 	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner string) ([]*models.Subscription, error) {
+func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner models.Owner) ([]*models.Subscription, error) {
 	args := ms.Called(ctx, cells, owner)
 	return args.Get(0).([]*models.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) DeleteISA(ctx context.Context, id, owner, version string) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (ms *mockStore) DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error) {
 	args := ms.Called(ctx, id, owner, version)
 	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
@@ -76,18 +76,18 @@ func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
 
 	for _, r := range []struct {
 		name         string
-		id           string
+		id           models.ID
 		subscription *models.Subscription
 		err          error
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-store",
-			id:           uuid.NewV4().String(),
+			id:           models.ID(uuid.NewV4().String()),
 			subscription: &models.Subscription{},
 		},
 		{
 			name: "error-is-returned-if-returned-from-store",
-			id:   uuid.NewV4().String(),
+			id:   models.ID(uuid.NewV4().String()),
 			err:  errors.New("failed to look up subscription for ID"),
 		},
 	} {
@@ -101,7 +101,7 @@ func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
 			}
 
 			_, err := s.DeleteSubscription(ctx, &dspb.DeleteSubscriptionRequest{
-				Id: r.id,
+				Id: r.id.String(),
 			})
 			require.Equal(t, r.err, err)
 			require.True(t, store.AssertExpectations(t))
@@ -112,18 +112,18 @@ func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
 func TestGetSubscriptionCallsIntoMockStore(t *testing.T) {
 	for _, r := range []struct {
 		name         string
-		id           string
+		id           models.ID
 		subscription *models.Subscription
 		err          error
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-store",
-			id:           uuid.NewV4().String(),
+			id:           models.ID(uuid.NewV4().String()),
 			subscription: &models.Subscription{},
 		},
 		{
 			name: "error-is-returned-if-returned-from-store",
-			id:   uuid.NewV4().String(),
+			id:   models.ID(uuid.NewV4().String()),
 			err:  errors.New("failed to look up subscription for ID"),
 		},
 	} {
@@ -137,7 +137,7 @@ func TestGetSubscriptionCallsIntoMockStore(t *testing.T) {
 			}
 
 			_, err := s.GetSubscription(context.Background(), &dspb.GetSubscriptionRequest{
-				Id: r.id,
+				Id: r.id.String(),
 			})
 			require.Equal(t, r.err, err)
 			require.True(t, store.AssertExpectations(t))
@@ -181,18 +181,19 @@ func TestSearchSubscriptionsFailsForInvalidArea(t *testing.T) {
 
 func TestSearchSubscriptionsCallsIntoStore(t *testing.T) {
 	var (
-		ctx = auth.ContextWithOwner(context.Background(), "foo")
-		ms  = &mockStore{}
-		s   = &Server{
+		owner = models.Owner("foo")
+		ctx   = auth.ContextWithOwner(context.Background(), owner)
+		ms    = &mockStore{}
+		s     = &Server{
 			Store: ms,
 		}
 	)
 
-	ms.On("SearchSubscriptions", mock.Anything, mock.Anything, "foo").Return(
+	ms.On("SearchSubscriptions", mock.Anything, mock.Anything, owner).Return(
 		[]*models.Subscription{
 			{
-				ID:                uuid.NewV4().String(),
-				Owner:             "me-myself-and-i",
+				ID:                models.ID(uuid.NewV4().String()),
+				Owner:             owner,
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
 			},
@@ -227,18 +228,19 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 
 func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
 	var (
-		id  = uuid.NewV4().String()
-		ctx = auth.ContextWithOwner(context.Background(), "foo")
-		ms  = &mockStore{}
-		s   = &Server{
+		owner = models.Owner("foo")
+		id    = models.ID(uuid.NewV4().String())
+		ctx   = auth.ContextWithOwner(context.Background(), owner)
+		ms    = &mockStore{}
+		s     = &Server{
 			Store: ms,
 		}
 	)
 
-	ms.On("DeleteISA", ctx, id, "foo", mock.Anything).Return(
+	ms.On("DeleteISA", ctx, id, owner, mock.Anything).Return(
 		&models.IdentificationServiceArea{
-			ID:    id,
-			Owner: "me-myself-and-i",
+			ID:    models.ID(id),
+			Owner: models.Owner("me-myself-and-i"),
 			Url:   "https://no/place/like/home",
 		},
 		[]*models.Subscription{
@@ -249,7 +251,7 @@ func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
 		}, error(nil),
 	)
 	resp, err := s.DeleteIdentificationServiceArea(ctx, &dspb.DeleteIdentificationServiceAreaRequest{
-		Id: id,
+		Id: id.String(),
 	})
 
 	require.NoError(t, err)
@@ -270,8 +272,8 @@ func TestSearchIdentificationServiceAreasCallsIntoStore(t *testing.T) {
 	ms.On("SearchISAs", ctx, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
 		[]*models.IdentificationServiceArea{
 			{
-				ID:    uuid.NewV4().String(),
-				Owner: "me-myself-and-i",
+				ID:    models.ID(uuid.NewV4().String()),
+				Owner: models.Owner("me-myself-and-i"),
 				Url:   "https://no/place/like/home",
 			},
 		}, error(nil),
