@@ -129,7 +129,7 @@ func (c *Store) pushISA(ctx context.Context, q queryable, isa *models.Identifica
 			UPSERT INTO
 				cells_identification_service_areas
 			VALUES
-				($1, $2, $3, transaction_timestamp())`
+				($1, $2, $3)`
 		deleteLeftOverCellsForAreaQuery = `
 			DELETE FROM
 				cells_identification_service_areas
