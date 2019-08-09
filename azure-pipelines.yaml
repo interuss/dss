@@ -4,7 +4,28 @@ trigger:
     include:
       - "feature/rewrite"
 jobs:
-  - job: "PR"
+  - job: "docker"
+    strategy:
+      parallel: 2
+    pool:
+      vmImage: "ubuntu-16.04"
+    steps:
+      - checkout: self
+        clean: true
+        lfs: true
+        submodules: recursive
+        persistCredentials: true
+      - task: Docker@2
+        inputs:
+          command: build
+          Dockerfile: cmds/grpc-backend/Dockerfile
+          buildContext: "."
+      - task: Docker@2
+        inputs:
+          command: build
+          Dockerfile: cmds/http-gateway/Dockerfile
+          buildContext: "."
+  - job: "build_n_test"
     strategy:
       parallel: 1
     pool:
@@ -24,3 +45,4 @@ jobs:
           make && make test && make test-cockroach
         name: "build_and_test"
         displayName: "build_and_test"
+        
