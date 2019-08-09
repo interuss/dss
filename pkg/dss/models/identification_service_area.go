@@ -24,10 +24,11 @@ type IdentificationServiceArea struct {
 }
 
 func (i *IdentificationServiceArea) Version() string {
-	return timestampToVersionString(i.UpdatedAt)
+	return TimestampToVersionString(i.UpdatedAt)
 }
 
-// Apply fields from s2 onto s, preferring any fields set in i2.
+// Apply fields from s2 onto s, preferring any fields set in i2 except for ID
+// and Owner.
 func (s *IdentificationServiceArea) Apply(i2 *IdentificationServiceArea) *IdentificationServiceArea {
 	new := *s
 	if i2.Url != "" {

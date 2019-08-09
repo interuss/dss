@@ -20,7 +20,7 @@ var (
 			name: "a subscription without startTime and endTime",
 			input: &models.IdentificationServiceArea{
 				ID:        uuid.NewV4().String(),
-				Owner:     "me-myself-and-i",
+				Owner:     uuid.NewV4().String(),
 				Url:       "https://no/place/like/home/for/flights",
 				StartTime: &startTime,
 				EndTime:   &endTime,
@@ -32,7 +32,7 @@ var (
 	}
 )
 
-func TestStoreSearchIdentificationServiceAreas(t *testing.T) {
+func TestStoreSearchISAs(t *testing.T) {
 	var (
 		ctx   = context.Background()
 		cells = s2.CellUnion{
@@ -136,7 +136,84 @@ func TestStoreSearchIdentificationServiceAreas(t *testing.T) {
 	}
 }
 
-func TestStoreDeleteIdentificationServiceAreas(t *testing.T) {
+func TestStoreCreateAndUpdateISAs(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	var (
+		cells = s2.CellUnion{
+			s2.CellID(42),
+			s2.CellID(84),
+			s2.CellID(126),
+			s2.CellID(168),
+		}
+		insertedServiceAreas  []*models.IdentificationServiceArea
+		updatedServiceAreas   []*models.IdentificationServiceArea
+		insertedSubscriptions []*models.Subscription
+	)
+
+	for _, r := range subscriptionsPool {
+		s1, err := store.InsertSubscription(ctx, r.input.Apply(&models.Subscription{
+			Cells: cells,
+		}))
+		require.NoError(t, err)
+		require.NotNil(t, s1)
+
+		insertedSubscriptions = append(insertedSubscriptions, s1)
+	}
+
+	for _, r := range serviceAreasPool {
+		sa, subscriptions, err := store.InsertISA(ctx, r.input)
+		require.NoError(t, err)
+		require.NotNil(t, sa)
+		require.Len(t, subscriptions, len(insertedSubscriptions))
+
+		insertedServiceAreas = append(insertedServiceAreas, sa)
+	}
+
+	for _, r := range serviceAreasPool {
+		_, _, err := store.InsertISA(ctx, r.input)
+		require.Error(t, err)
+	}
+
+	// First pass updates the previously inserted service instances
+	// and obtains updated version tokens. We don't store those version tokens.
+	for _, sa := range insertedServiceAreas {
+		sa, subscriptions, err := store.UpdateISA(ctx, sa)
+		require.NoError(t, err)
+		require.NotNil(t, sa)
+		require.Len(t, subscriptions, len(insertedSubscriptions))
+
+		updatedServiceAreas = append(updatedServiceAreas, sa)
+	}
+
+	// The second pass should fail as we had a set of intermediate
+	// changes that is not reflected in the version tokens of the
+	// individual service areas.
+	for _, sa := range insertedServiceAreas {
+		sa, subscriptions, err := store.UpdateISA(ctx, sa)
+		require.Error(t, err)
+		require.Nil(t, sa)
+		require.Nil(t, subscriptions)
+
+		insertedServiceAreas = append(insertedServiceAreas, sa)
+	}
+
+	// Third pass provides the correct version tokens.
+	for _, sa := range updatedServiceAreas {
+		sa, subscriptions, err := store.UpdateISA(ctx, sa)
+		require.NoError(t, err)
+		require.NotNil(t, sa)
+		require.Len(t, subscriptions, len(insertedSubscriptions))
+	}
+}
+
+func TestStoreDeleteISAs(t *testing.T) {
 	var (
 		ctx                  = context.Background()
 		store, tearDownStore = setUpStore(ctx, t)
@@ -160,7 +237,7 @@ func TestStoreDeleteIdentificationServiceAreas(t *testing.T) {
 
 	for _, r := range serviceAreasPool {
 		tx, _ := store.Begin()
-		isa, err := store.pushISA(ctx, tx, r.input)
+		isa, _, err := store.pushISA(ctx, tx, r.input)
 		tx.Commit()
 		require.NoError(t, err)
 		require.NotNil(t, isa)

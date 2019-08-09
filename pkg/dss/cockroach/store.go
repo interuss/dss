@@ -102,6 +102,7 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		updated_at TIMESTAMPTZ NOT NULL,
 		INDEX starts_at_idx (starts_at),
 		INDEX ends_at_idx (ends_at),
+		INDEX updated_at_idx (updated_at),
 		CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)
 	);
 	CREATE TABLE IF NOT EXISTS cells_identification_service_areas (
@@ -111,7 +112,8 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		updated_at TIMESTAMPTZ NOT NULL,	
 		PRIMARY KEY (cell_id, identification_service_area_id),
 		INDEX cell_id_idx (cell_id),
-		INDEX identification_service_area_id_idx (identification_service_area_id)
+		INDEX identification_service_area_id_idx (identification_service_area_id),
+		INDEX updated_at_idx (updated_at)
 	);
 	`
 	_, err := s.ExecContext(ctx, query)
