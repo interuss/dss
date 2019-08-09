@@ -44,6 +44,26 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query strin
 	return payload, nil
 }
 
+func (c *Store) fetchSubscriptionsByCellsWithoutOwner(ctx context.Context, q queryable, cells []int64, owner string) ([]*models.Subscription, error) {
+	const (
+		subscriptionsQuery = `
+		 SELECT
+				subscriptions.*
+			FROM
+				subscriptions
+			LEFT JOIN 
+				(SELECT DISTINCT subscription_id FROM cells_subscriptions WHERE cell_id = ANY($1))
+			AS
+				unique_subscription_ids
+			ON
+				subscriptions.id = unique_subscription_ids.subscription_id
+			WHERE
+				subscriptions.owner != $2`
+	)
+
+	return c.fetchSubscriptions(ctx, q, subscriptionsQuery, pq.Array(cells), owner)
+}
+
 func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string, args ...interface{}) (*models.Subscription, error) {
 	// TODO(steeling) don't fetch by *
 	subs, err := c.fetchSubscriptions(ctx, q, query, args...)

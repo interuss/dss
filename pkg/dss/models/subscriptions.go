@@ -25,7 +25,8 @@ type Subscription struct {
 	AltitudeLo *float32
 }
 
-// Apply fields from s2 onto s, preferring any fields set in s2.
+// Apply fields from s2 onto s, preferring any fields set in s2 except for ID
+// and Owner.
 func (s *Subscription) Apply(s2 *Subscription) *Subscription {
 	new := *s
 	if s2.Url != "" {
@@ -65,7 +66,7 @@ func (s *Subscription) ToNotifyProto() *dspb.SubscriberToNotify {
 }
 
 func (s *Subscription) Version() string {
-	return timestampToVersionString(s.UpdatedAt)
+	return TimestampToVersionString(s.UpdatedAt)
 }
 
 func (s *Subscription) ToProto() (*dspb.Subscription, error) {

@@ -26,13 +26,23 @@ func (ms *mockStore) Close() error {
 	return ms.Called().Error(0)
 }
 
+func (ms *mockStore) InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
+	args := ms.Called(ctx, s)
+	return args.Get(0).(*models.Subscription), args.Error(1)
+}
+
+func (ms *mockStore) UpdateSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
+	args := ms.Called(ctx, s)
+	return args.Get(0).(*models.Subscription), args.Error(1)
+}
+
 func (ms *mockStore) GetSubscription(ctx context.Context, id string) (*models.Subscription, error) {
 	args := ms.Called(ctx, id)
 	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
 func (ms *mockStore) DeleteSubscription(ctx context.Context, id, owner, version string) (*models.Subscription, error) {
-	args := ms.Called(ctx, id)
+	args := ms.Called(ctx, id, owner, version)
 	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
@@ -41,25 +51,19 @@ func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion
 	return args.Get(0).([]*models.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) DeleteISA(ctx context.Context, id string, owner, version string) (*models.IdentificationServiceArea, []*models.Subscription, error) {
-	args := ms.Called(ctx, id, owner)
+func (ms *mockStore) DeleteISA(ctx context.Context, id, owner, version string) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+	args := ms.Called(ctx, id, owner, version)
 	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
 
 func (ms *mockStore) InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
-	return nil, nil, nil
+	args := ms.Called(ctx, isa)
+	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
 
 func (ms *mockStore) UpdateISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
-	return nil, nil, nil
-}
-
-func (ms *mockStore) InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
-	return nil, nil
-}
-
-func (ms *mockStore) UpdateSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
-	return nil, nil
+	args := ms.Called(ctx, isa)
+	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
 
 func (ms *mockStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*models.IdentificationServiceArea, error) {
@@ -89,7 +93,7 @@ func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			store := &mockStore{}
-			store.On("DeleteSubscription", mock.Anything, r.id).Return(
+			store.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, mock.Anything).Return(
 				r.subscription, r.err,
 			)
 			s := &Server{
@@ -231,7 +235,7 @@ func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
 		}
 	)
 
-	ms.On("DeleteISA", ctx, id, "foo").Return(
+	ms.On("DeleteISA", ctx, id, "foo", mock.Anything).Return(
 		&models.IdentificationServiceArea{
 			ID:    id,
 			Owner: "me-myself-and-i",

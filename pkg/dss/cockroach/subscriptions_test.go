@@ -20,7 +20,7 @@ var (
 			name: "a subscription without startTime and endTime",
 			input: &models.Subscription{
 				ID:                uuid.NewV4().String(),
-				Owner:             "me-myself-and-i",
+				Owner:             uuid.NewV4().String(),
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
 			},
@@ -29,7 +29,7 @@ var (
 			name: "a subscription with startTime and endTime",
 			input: &models.Subscription{
 				ID:                uuid.NewV4().String(),
-				Owner:             "me-myself-and-i",
+				Owner:             uuid.NewV4().String(),
 				Url:               "https://no/place/like/home",
 				StartTime:         &startTime,
 				EndTime:           &endTime,
@@ -40,7 +40,7 @@ var (
 			name: "a subscription with startTime and without endTime",
 			input: &models.Subscription{
 				ID:                uuid.NewV4().String(),
-				Owner:             "me-myself-and-i",
+				Owner:             uuid.NewV4().String(),
 				Url:               "https://no/place/like/home",
 				StartTime:         &startTime,
 				NotificationIndex: 42,
@@ -50,7 +50,7 @@ var (
 			name: "a subscription without startTime and with endTime",
 			input: &models.Subscription{
 				ID:                uuid.NewV4().String(),
-				Owner:             "me-myself-and-i",
+				Owner:             uuid.NewV4().String(),
 				Url:               "https://no/place/like/home",
 				EndTime:           &endTime,
 				NotificationIndex: 42,
@@ -60,7 +60,7 @@ var (
 			name: "a subscription with a version string",
 			input: &models.Subscription{
 				ID:                uuid.NewV4().String(),
-				Owner:             "me-myself-and-i",
+				Owner:             uuid.NewV4().String(),
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
 				UpdatedAt:         &startTime,
@@ -96,7 +96,7 @@ func TestDatabaseEnsuresStartTimeBeforeEndTime(t *testing.T) {
 
 	_, err := store.InsertSubscription(ctx, &models.Subscription{
 		ID:                uuid.NewV4().String(),
-		Owner:             "me-myself-and-i",
+		Owner:             uuid.NewV4().String(),
 		Url:               "https://no/place/like/home",
 		NotificationIndex: 42,
 		StartTime:         &startTime,

@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
+
 	"github.com/golang/protobuf/ptypes"
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
@@ -16,6 +18,10 @@ var (
 	WriteISAScope = "dss.write.identification_service_areas"
 	ReadISAScope  = "dss.read.identification_service_areas"
 )
+
+func ptrToFloat32(f float32) *float32 {
+	return &f
+}
 
 // Server implements dssproto.DiscoveryAndSynchronizationService.
 type Server struct {
@@ -34,6 +40,139 @@ func (s *Server) AuthScopes() map[string][]string {
 		"SearchSubscriptions":              []string{ReadISAScope},
 		"SearchIdentificationServiceAreas": []string{ReadISAScope},
 	}
+}
+
+func (s *Server) PatchIdentificationServiceArea(ctx context.Context, req *dspb.PatchIdentificationServiceAreaRequest) (*dspb.PatchIdentificationServiceAreaResponse, error) {
+	owner, ok := auth.OwnerFromContext(ctx)
+	if !ok {
+		return nil, dsserr.PermissionDenied("missing owner from context")
+	}
+
+	var (
+		starts *time.Time
+		ends   *time.Time
+	)
+	if startTime := req.GetExtents().GetStartTime(); startTime != nil {
+		ts, err := ptypes.Timestamp(startTime)
+		if err != nil {
+			return nil, dsserr.BadRequest(err.Error())
+		}
+		starts = &ts
+	}
+
+	if endTime := req.GetExtents().GetEndTime(); endTime != nil {
+		ts, err := ptypes.Timestamp(endTime)
+		if err != nil {
+			return nil, dsserr.BadRequest(err.Error())
+		}
+		ends = &ts
+	}
+
+	updated, err := models.VersionStringToTimestamp(req.GetVersion())
+	if err != nil {
+		return nil, dsserr.BadRequest(err.Error())
+	}
+
+	isa := &models.IdentificationServiceArea{
+		ID:        req.GetId(),
+		Url:       req.GetUrl().GetValue(),
+		Owner:     owner,
+		Cells:     geo.Volume4DToCellIDs(req.GetExtents()),
+		StartTime: starts,
+		EndTime:   ends,
+		UpdatedAt: &updated,
+	}
+	if wrapper := req.GetExtents().GetSpatialVolume().GetAltitudeHi(); wrapper != nil {
+		isa.AltitudeHi = ptrToFloat32(wrapper.GetValue())
+	}
+	if wrapper := req.GetExtents().GetSpatialVolume().GetAltitudeLo(); wrapper != nil {
+		isa.AltitudeLo = ptrToFloat32(wrapper.GetValue())
+	}
+
+	isa, subscribers, err := s.Store.UpdateISA(ctx, isa)
+	if err != nil {
+		return nil, err
+	}
+
+	pbISA, err := isa.ToProto()
+	if err == nil {
+		return nil, dsserr.Internal(err.Error())
+	}
+
+	pbSubscribers := []*dspb.SubscriberToNotify{}
+	for _, subscriber := range subscribers {
+		pbSubscribers = append(pbSubscribers, subscriber.ToNotifyProto())
+	}
+
+	return &dspb.PatchIdentificationServiceAreaResponse{
+		ServiceArea: pbISA,
+		Subscribers: pbSubscribers,
+	}, nil
+}
+
+func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.PutIdentificationServiceAreaRequest) (*dspb.PutIdentificationServiceAreaResponse, error) {
+	owner, ok := auth.OwnerFromContext(ctx)
+	if !ok {
+		return nil, dsserr.PermissionDenied("missing owner from context")
+	}
+
+	var (
+		starts *time.Time
+		ends   *time.Time
+	)
+	if startTime := req.GetExtents().GetStartTime(); startTime != nil {
+		ts, err := ptypes.Timestamp(startTime)
+		if err != nil {
+			return nil, dsserr.BadRequest(err.Error())
+		}
+		starts = &ts
+	}
+
+	if endTime := req.GetExtents().GetEndTime(); endTime != nil {
+		ts, err := ptypes.Timestamp(endTime)
+		if err != nil {
+			return nil, dsserr.BadRequest(err.Error())
+		}
+		ends = &ts
+	}
+
+	isa := &models.IdentificationServiceArea{
+		ID:        req.GetId(),
+		Url:       req.GetUrl(),
+		Owner:     owner,
+		Cells:     geo.Volume4DToCellIDs(req.GetExtents()),
+		StartTime: starts,
+		EndTime:   ends,
+	}
+	if wrapper := req.GetExtents().GetSpatialVolume().GetAltitudeHi(); wrapper != nil {
+		isa.AltitudeHi = ptrToFloat32(wrapper.GetValue())
+	}
+	if wrapper := req.GetExtents().GetSpatialVolume().GetAltitudeLo(); wrapper != nil {
+		isa.AltitudeLo = ptrToFloat32(wrapper.GetValue())
+	}
+
+	isa, subscribers, err := s.Store.InsertISA(ctx, isa)
+	if err != nil {
+		// TODO(tvoss): Revisit once error propagation strategy is defined. We
+		// might want to avoid leaking raw error messages to callers and instead
+		// just return a generic error indicating a request ID.
+		return nil, err
+	}
+
+	pbISA, err := isa.ToProto()
+	if err == nil {
+		return nil, dsserr.Internal(err.Error())
+	}
+
+	pbSubscribers := []*dspb.SubscriberToNotify{}
+	for _, subscriber := range subscribers {
+		pbSubscribers = append(pbSubscribers, subscriber.ToNotifyProto())
+	}
+
+	return &dspb.PutIdentificationServiceAreaResponse{
+		ServiceArea: pbISA,
+		Subscribers: pbSubscribers,
+	}, nil
 }
 
 func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (*dspb.DeleteIdentificationServiceAreaResponse, error) {
@@ -171,15 +310,7 @@ func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionR
 	}, nil
 }
 
-func (s *Server) PatchIdentificationServiceArea(ctx context.Context, req *dspb.PatchIdentificationServiceAreaRequest) (*dspb.PatchIdentificationServiceAreaResponse, error) {
-	return nil, nil
-}
-
 func (s *Server) PatchSubscription(ctx context.Context, req *dspb.PatchSubscriptionRequest) (*dspb.PatchSubscriptionResponse, error) {
-	return nil, nil
-}
-
-func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.PutIdentificationServiceAreaRequest) (*dspb.PutIdentificationServiceAreaResponse, error) {
 	return nil, nil
 }
 
