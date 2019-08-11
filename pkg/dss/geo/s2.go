@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"math"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,7 @@ const (
 	// DefaultMaximumCellLevel is the default minimum cell level, chosen such
 	// that the maximum cell size is ~1km^2.
 	DefaultMaximumCellLevel int = 13
+	maxAllowedSqMi              = 1000
 )
 
 var (
@@ -32,6 +34,9 @@ var (
 
 	errOddNumberOfCoordinatesInAreaString = errors.New("odd number of coordinates in area string")
 	errNotEnoughPointsInPolygon           = errors.New("not enough points in polygon")
+	errBadCoordSet                        = errors.New("coordinates did not create a well formed area")
+	errBadCoordSet                        = errors.New("area is too large")
+	maxArea                               = maxLoopArea()
 )
 
 // WindingOrder describes the winding order for enumerating
@@ -70,6 +75,14 @@ func GeoPolygonToCellIDs(geopolygon *dspb.GeoPolygon) s2.CellUnion {
 	loop := s2.LoopFromPoints(points)
 
 	return RegionCoverer.Covering(loop)
+}
+
+func maxLoopArea() float {
+	var (
+		sqMiEarth     = 197000000 // rought square miles of earth.
+		scalingFactor = sqMiEarth / 4 * math.Pi
+	)
+	return maxAllowedSqMi / scalingFactor
 }
 
 // AreaToCellIDs parses "area" in the format 'lat0,lon0,lat1,lon1,...'
@@ -113,7 +126,14 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 
 		counter++
 	}
-	// TODO(steeling): call this in a goroutine and leverage context.WithTimeout to ensure reasonably sized areas are used.
-	// Alternatively check if loop.Area() is fast, and if so calculate the area, and error if the area is too large.
-	return RegionCoverer.Covering(s2.LoopFromPoints(points)), nil
+	loop := s2.LoopFromPoints(points)
+	// TODO(steeling): consider setting max number of vertices.
+	area := loop.Area()
+	if area == 0 {
+		return nil, errBadCoordSet
+	}
+	if area > maxArea() {
+		return nil, errTooLarge
+	}
+	return RegionCoverer.Covering(loop), nil
 }
