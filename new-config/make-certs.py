@@ -49,7 +49,6 @@ class CockroachCluster():
 #     ),
 # ]
 
-
 join_clusters = [
     # CockroachCluster(
     #   lb_ip='external_ip_address',

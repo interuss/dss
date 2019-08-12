@@ -38,8 +38,8 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-func AlreadyExists(msg string) error {
-	return status.Error(codes.AlreadyExists, msg)
+func AlreadyExists(id string) error {
+	return status.Error(codes.AlreadyExists, "resource already exists: "+id)
 }
 
 func VersionMismatch(msg string) error {

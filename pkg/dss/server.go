@@ -19,10 +19,6 @@ var (
 	ReadISAScope  = "dss.read.identification_service_areas"
 )
 
-func ptrToFloat32(f float32) *float32 {
-	return &f
-}
-
 // Server implements dssproto.DiscoveryAndSynchronizationService.
 type Server struct {
 	Store Store
@@ -42,51 +38,42 @@ func (s *Server) AuthScopes() map[string][]string {
 	}
 }
 
+func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *dspb.GetIdentificationServiceAreaRequest) (*dspb.GetIdentificationServiceAreaResponse, error) {
+	isa, err := s.Store.GetISA(ctx, models.ID(req.GetId()))
+	if err != nil {
+		return nil, err
+	}
+	p, err := isa.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	return &dspb.GetIdentificationServiceAreaResponse{
+		IdentificationServiceArea: p,
+	}, nil
+}
+
 func (s *Server) PatchIdentificationServiceArea(ctx context.Context, req *dspb.PatchIdentificationServiceAreaRequest) (*dspb.PatchIdentificationServiceAreaResponse, error) {
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-
-	var (
-		starts *time.Time
-		ends   *time.Time
-	)
-	if startTime := req.GetExtents().GetStartTime(); startTime != nil {
-		ts, err := ptypes.Timestamp(startTime)
-		if err != nil {
-			return nil, dsserr.BadRequest(err.Error())
-		}
-		starts = &ts
+	params := req.GetParams()
+	if params == nil {
+		return nil, dsserr.BadRequest("missing params")
 	}
 
-	if endTime := req.GetExtents().GetEndTime(); endTime != nil {
-		ts, err := ptypes.Timestamp(endTime)
-		if err != nil {
-			return nil, dsserr.BadRequest(err.Error())
-		}
-		ends = &ts
-	}
-
-	updated, err := models.Version(req.GetVersion()).ToTimestamp()
+	updated, err := models.Version(params.GetVersion()).ToTimestamp()
 	if err != nil {
 		return nil, dsserr.BadRequest(err.Error())
 	}
-
 	isa := &models.IdentificationServiceArea{
 		ID:        models.ID(req.GetId()),
-		Url:       req.GetUrl().GetValue(),
+		Url:       params.GetUrl().GetValue(),
 		Owner:     owner,
-		Cells:     geo.Volume4DToCellIDs(req.GetExtents()),
-		StartTime: starts,
-		EndTime:   ends,
 		UpdatedAt: &updated,
 	}
-	if wrapper := req.GetExtents().GetSpatialVolume().GetAltitudeHi(); wrapper != nil {
-		isa.AltitudeHi = ptrToFloat32(wrapper.GetValue())
-	}
-	if wrapper := req.GetExtents().GetSpatialVolume().GetAltitudeLo(); wrapper != nil {
-		isa.AltitudeLo = ptrToFloat32(wrapper.GetValue())
+	if err := isa.SetExtents(params.GetExtents()); err != nil {
+		return nil, err
 	}
 
 	isa, subscribers, err := s.Store.UpdateISA(ctx, isa)
@@ -95,7 +82,7 @@ func (s *Server) PatchIdentificationServiceArea(ctx context.Context, req *dspb.P
 	}
 
 	pbISA, err := isa.ToProto()
-	if err == nil {
+	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
 
@@ -115,52 +102,28 @@ func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.Put
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-
-	var (
-		starts *time.Time
-		ends   *time.Time
-	)
-	if startTime := req.GetExtents().GetStartTime(); startTime != nil {
-		ts, err := ptypes.Timestamp(startTime)
-		if err != nil {
-			return nil, dsserr.BadRequest(err.Error())
-		}
-		starts = &ts
-	}
-
-	if endTime := req.GetExtents().GetEndTime(); endTime != nil {
-		ts, err := ptypes.Timestamp(endTime)
-		if err != nil {
-			return nil, dsserr.BadRequest(err.Error())
-		}
-		ends = &ts
+	params := req.GetParams()
+	if params == nil {
+		return nil, dsserr.BadRequest("missing params")
 	}
 
 	isa := &models.IdentificationServiceArea{
-		ID:        models.ID(req.GetId()),
-		Url:       req.GetUrl(),
-		Owner:     owner,
-		Cells:     geo.Volume4DToCellIDs(req.GetExtents()),
-		StartTime: starts,
-		EndTime:   ends,
+		ID:    models.ID(req.GetId()),
+		Url:   params.GetUrl(),
+		Owner: owner,
 	}
-	if wrapper := req.GetExtents().GetSpatialVolume().GetAltitudeHi(); wrapper != nil {
-		isa.AltitudeHi = ptrToFloat32(wrapper.GetValue())
-	}
-	if wrapper := req.GetExtents().GetSpatialVolume().GetAltitudeLo(); wrapper != nil {
-		isa.AltitudeLo = ptrToFloat32(wrapper.GetValue())
+
+	if err := isa.SetExtents(params.GetExtents()); err != nil {
+		return nil, err
 	}
 
 	isa, subscribers, err := s.Store.InsertISA(ctx, isa)
 	if err != nil {
-		// TODO(tvoss): Revisit once error propagation strategy is defined. We
-		// might want to avoid leaking raw error messages to callers and instead
-		// just return a generic error indicating a request ID.
 		return nil, err
 	}
 
 	pbISA, err := isa.ToProto()
-	if err == nil {
+	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
 
@@ -296,9 +259,6 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *dspb.SearchSubscr
 func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionRequest) (*dspb.GetSubscriptionResponse, error) {
 	subscription, err := s.Store.GetSubscription(ctx, models.ID(req.GetId()))
 	if err != nil {
-		// TODO(tvoss): Revisit once error propagation strategy is defined. We
-		// might want to avoid leaking raw error messages to callers and instead
-		// just return a generic error indicating a request ID.
 		return nil, err
 	}
 	p, err := subscription.ToProto()
@@ -311,9 +271,63 @@ func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionR
 }
 
 func (s *Server) PatchSubscription(ctx context.Context, req *dspb.PatchSubscriptionRequest) (*dspb.PatchSubscriptionResponse, error) {
-	return nil, nil
+	owner, ok := auth.OwnerFromContext(ctx)
+	if !ok {
+		return nil, dsserr.PermissionDenied("missing owner from context")
+	}
+	params := req.GetParams()
+	if params == nil {
+		return nil, dsserr.BadRequest("missing params")
+	}
+	updated, err := models.Version(params.GetVersion()).ToTimestamp()
+	if err != nil {
+		return nil, dsserr.BadRequest(err.Error())
+	}
+
+	sub := &models.Subscription{
+		ID:        models.ID(req.GetId()),
+		Url:       params.GetUrl().GetValue(),
+		Owner:     owner,
+		UpdatedAt: &updated,
+	}
+	if err := sub.SetExtents(params.GetExtents()); err != nil {
+		return nil, dsserr.BadRequest("bad extents")
+	}
+
+	p, err := sub.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	return &dspb.PatchSubscriptionResponse{
+		Subscription: p,
+	}, nil
 }
 
+// TODO(steeling) openapi 2 spec requires only 1 parameter in the body
 func (s *Server) PutSubscription(ctx context.Context, req *dspb.PutSubscriptionRequest) (*dspb.PutSubscriptionResponse, error) {
-	return nil, nil
+	owner, ok := auth.OwnerFromContext(ctx)
+	if !ok {
+		return nil, dsserr.PermissionDenied("missing owner from context")
+	}
+	params := req.GetParams()
+	if params == nil {
+		return nil, dsserr.BadRequest("missing params")
+	}
+
+	sub := &models.Subscription{
+		ID:    models.ID(req.GetId()),
+		Url:   params.GetUrl(),
+		Owner: owner,
+	}
+	if err := sub.SetExtents(params.GetExtents()); err != nil {
+		return nil, dsserr.BadRequest("bad extents")
+	}
+
+	p, err := sub.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	return &dspb.PutSubscriptionResponse{
+		Subscription: p,
+	}, nil
 }

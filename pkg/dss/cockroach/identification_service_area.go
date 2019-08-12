@@ -3,17 +3,18 @@ package cockroach
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
-	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 	"go.uber.org/multierr"
 )
+
+var isaFields = "identification_service_areas.id, identification_service_areas.owner, identification_service_areas.url, identification_service_areas.starts_at, identification_service_areas.ends_at, identification_service_areas.updated_at"
+var isaFieldsWithoutPrefix = "id, owner, url, starts_at, ends_at, updated_at"
 
 func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args ...interface{}) ([]*models.IdentificationServiceArea, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
@@ -47,7 +48,6 @@ func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args .
 }
 
 func (c *Store) fetchISA(ctx context.Context, q queryable, query string, args ...interface{}) (*models.IdentificationServiceArea, error) {
-	// TODO(steeling) don't fetch by *
 	isas, err := c.fetchISAs(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
@@ -62,24 +62,22 @@ func (c *Store) fetchISA(ctx context.Context, q queryable, query string, args ..
 }
 
 func (c *Store) fetchISAByID(ctx context.Context, q queryable, id models.ID) (*models.IdentificationServiceArea, error) {
-	// TODO(steeling) don't fetch by *
-	const query = `
-		SELECT * FROM
+	var query = fmt.Sprintf(`
+		SELECT %s FROM
 			identification_service_areas
 		WHERE
-			id = $1`
+			id = $1`, isaFields)
 	return c.fetchISA(ctx, q, query, id)
 }
 
 func (c *Store) fetchISAByIDAndOwner(ctx context.Context, q queryable, id models.ID, owner models.Owner) (*models.IdentificationServiceArea, error) {
-	// TODO(steeling) don't fetch by *
-	const query = `
-		SELECT * FROM
+	var query = fmt.Sprintf(`
+		SELECT %s FROM
 			identification_service_areas
 		WHERE
 			id = $1
 		AND
-			owner = $2`
+			owner = $2`, isaFields)
 	return c.fetchISA(ctx, q, query, id, owner)
 }
 
@@ -117,17 +115,19 @@ func (c *Store) populateISACells(ctx context.Context, q queryable, i *models.Ide
 // Returns the created/updated IdentificationServiceArea and all Subscriptions
 // affected by the operation.
 func (c *Store) pushISA(ctx context.Context, q queryable, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
-	const (
-		upsertAreasQuery = `
+	var (
+		upsertAreasQuery = fmt.Sprintf(`
 			UPSERT INTO
 				identification_service_areas
+				(%s)
 			VALUES
 				($1, $2, $3, $4, $5, transaction_timestamp())
 			RETURNING
-				*`
+				%s`, isaFieldsWithoutPrefix, isaFields)
 		upsertCellsForAreaQuery = `
 			UPSERT INTO
 				cells_identification_service_areas
+				(cell_id, cell_level, identification_service_area_id)
 			VALUES
 				($1, $2, $3)`
 		deleteLeftOverCellsForAreaQuery = `
@@ -140,38 +140,41 @@ func (c *Store) pushISA(ctx context.Context, q queryable, isa *models.Identifica
 	)
 
 	cids := make([]int64, len(isa.Cells))
+	clevels := make([]int, len(isa.Cells))
+
 	for i, cell := range isa.Cells {
 		cids[i] = int64(cell)
+		clevels[i] = cell.Level()
 	}
 
-	outISA := *isa
-	if err := q.QueryRowContext(ctx, upsertAreasQuery, isa.ID, isa.Owner, isa.Url, isa.StartTime, isa.EndTime).Scan(
-		&outISA.ID,
-		&outISA.Owner,
-		&outISA.Url,
-		&outISA.StartTime,
-		&outISA.EndTime,
-		&outISA.UpdatedAt,
-	); err != nil {
+	cells := isa.Cells
+	isa, err := c.fetchISA(ctx, q, upsertAreasQuery, isa.ID, isa.Owner, isa.Url, isa.StartTime, isa.EndTime)
+	if err != nil {
 		return nil, nil, err
 	}
+	isa.Cells = cells
 
-	for _, cell := range isa.Cells {
-		if _, err := q.ExecContext(ctx, upsertCellsForAreaQuery, cell, cell.Level(), outISA.ID); err != nil {
+	for i := range cids {
+		if _, err := q.ExecContext(ctx, upsertCellsForAreaQuery, cids[i], clevels[i], isa.ID); err != nil {
 			return nil, nil, err
 		}
 	}
 
-	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForAreaQuery, pq.Array(cids), outISA.ID); err != nil {
+	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForAreaQuery, pq.Array(cids), isa.ID); err != nil {
 		return nil, nil, err
 	}
 
-	subscriptions, err := c.fetchSubscriptionsByCellsWithoutOwner(ctx, q, cids, outISA.Owner)
+	subscriptions, err := c.fetchSubscriptionsByCellsWithoutOwner(ctx, q, cids, isa.Owner)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return &outISA, subscriptions, nil
+	return isa, subscriptions, nil
+}
+
+// Get returns the isa identified by "id".
+func (c *Store) GetISA(ctx context.Context, id models.ID) (*models.IdentificationServiceArea, error) {
+	return c.fetchISAByID(ctx, c.DB, id)
 }
 
 // InsertISA inserts the IdentificationServiceArea identified by "id" and owned
@@ -192,7 +195,7 @@ func (c *Store) InsertISA(ctx context.Context, isa *models.IdentificationService
 	case err != nil:
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	case err == nil:
-		return nil, nil, multierr.Combine(dss.ErrAlreadyExists, tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.AlreadyExists(isa.ID.String()), tx.Rollback())
 	}
 
 	area, subscribers, err := c.pushISA(ctx, tx, isa)
@@ -243,20 +246,7 @@ func (c *Store) UpdateISA(ctx context.Context, isa *models.IdentificationService
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
 func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error) {
-	const (
-		subscriptionsQuery = `
-		 SELECT
-				subscriptions.*
-			FROM
-				subscriptions
-			LEFT JOIN
-				(SELECT DISTINCT subscription_id FROM cells_subscriptions WHERE cell_id = ANY($1))
-			AS
-				unique_subscription_ids
-			ON
-				subscriptions.id = unique_subscription_ids.subscription_id
-			WHERE
-				subscriptions.owner != $2`
+	var (
 		deleteQuery = `
 			DELETE FROM
 				identification_service_areas
@@ -312,10 +302,10 @@ func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner,
 // instances that intersect with "cells" and, if set, the temporal volume
 // defined by "earliest" and "latest".
 func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*models.IdentificationServiceArea, error) {
-	const (
-		serviceAreasInCellsQuery = `
+	var (
+		serviceAreasInCellsQuery = fmt.Sprintf(`
 			SELECT
-				identification_service_areas.*
+				%s
 			FROM
 				identification_service_areas
 			JOIN 
@@ -333,12 +323,11 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 			WHERE
 				COALESCE(identification_service_areas.starts_at >= $2, true)
 			AND
-				COALESCE(identification_service_areas.ends_at <= $3, true)`
+				COALESCE(identification_service_areas.ends_at <= $3, true)`, isaFields)
 	)
 
 	if len(cells) == 0 {
-		// TODO(steeling): handle the rest of the errors
-		return nil, errors.New("missing cell IDs for query")
+		return nil, dsserr.BadRequest("missing cell IDs for query")
 	}
 
 	cids := make([]int64, len(cells))

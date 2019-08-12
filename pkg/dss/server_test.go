@@ -13,7 +13,7 @@ import (
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 
 	"github.com/golang/geo/s2"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -51,6 +51,11 @@ func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion
 	return args.Get(0).([]*models.Subscription), args.Error(1)
 }
 
+func (ms *mockStore) GetISA(ctx context.Context, id models.ID) (*models.IdentificationServiceArea, error) {
+	args := ms.Called(ctx, id)
+	return args.Get(0).(*models.IdentificationServiceArea), args.Error(1)
+}
+
 func (ms *mockStore) DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error) {
 	args := ms.Called(ctx, id, owner, version)
 	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
@@ -82,12 +87,12 @@ func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-store",
-			id:           models.ID(uuid.NewV4().String()),
+			id:           models.ID(uuid.New().String()),
 			subscription: &models.Subscription{},
 		},
 		{
 			name: "error-is-returned-if-returned-from-store",
-			id:   models.ID(uuid.NewV4().String()),
+			id:   models.ID(uuid.New().String()),
 			err:  errors.New("failed to look up subscription for ID"),
 		},
 	} {
@@ -118,12 +123,12 @@ func TestGetSubscriptionCallsIntoMockStore(t *testing.T) {
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-store",
-			id:           models.ID(uuid.NewV4().String()),
+			id:           models.ID(uuid.New().String()),
 			subscription: &models.Subscription{},
 		},
 		{
 			name: "error-is-returned-if-returned-from-store",
-			id:   models.ID(uuid.NewV4().String()),
+			id:   models.ID(uuid.New().String()),
 			err:  errors.New("failed to look up subscription for ID"),
 		},
 	} {
@@ -192,7 +197,7 @@ func TestSearchSubscriptionsCallsIntoStore(t *testing.T) {
 	ms.On("SearchSubscriptions", mock.Anything, mock.Anything, owner).Return(
 		[]*models.Subscription{
 			{
-				ID:                models.ID(uuid.NewV4().String()),
+				ID:                models.ID(uuid.New().String()),
 				Owner:             owner,
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
@@ -211,7 +216,7 @@ func TestSearchSubscriptionsCallsIntoStore(t *testing.T) {
 
 func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 	var (
-		id = uuid.NewV4().String()
+		id = uuid.New().String()
 		ms = &mockStore{}
 		s  = &Server{
 			Store: ms,
@@ -229,7 +234,7 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
 	var (
 		owner = models.Owner("foo")
-		id    = models.ID(uuid.NewV4().String())
+		id    = models.ID(uuid.New().String())
 		ctx   = auth.ContextWithOwner(context.Background(), owner)
 		ms    = &mockStore{}
 		s     = &Server{
@@ -272,7 +277,7 @@ func TestSearchIdentificationServiceAreasCallsIntoStore(t *testing.T) {
 	ms.On("SearchISAs", ctx, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
 		[]*models.IdentificationServiceArea{
 			{
-				ID:    models.ID(uuid.NewV4().String()),
+				ID:    models.ID(uuid.New().String()),
 				Owner: models.Owner("me-myself-and-i"),
 				Url:   "https://no/place/like/home",
 			},

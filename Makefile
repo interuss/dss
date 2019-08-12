@@ -14,6 +14,25 @@ install:
 lint: install
 	golint ./...
 
+pkg/dssproto/dss.pb.go: dss.proto
+	protoc -I/usr/local/include -I.   -I$GOPATH/src   -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssproto/dss.proto
+
+pkg/dssproto/dss.pb.gw.go: dss.proto
+	protoc -I/usr/local/include -I.   -I$GOPATH/src   -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssproto/dss.proto
+
+pkg/dssproto/dss.proto: install-proto-generation
+	openapi2proto -spec api.yaml -annotate > pkg/dssproto/dss.proto
+	sed -i '' 's/package ds/package dssproto/g;s/service DSService/service DSServiceV0/g' pkg/dssproto/dss.proto 
+
+
+.PHONY: install-proto-generation
+install-proto-generation:
+	go get -u github.com/NYTimes/openapi2proto/cmd/openapi2proto
+	go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+	go get -u github.com/golang/protobuf/protoc-gen-go
+
+
 .PHONY: test
 test:
 	go test -count=1 -v ./...

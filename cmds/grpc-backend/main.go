@@ -10,6 +10,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/cockroach"
+	"github.com/steeling/InterUSS-Platform/pkg/dss/validations"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"github.com/steeling/InterUSS-Platform/pkg/errors"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
@@ -78,7 +79,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 	ac.RequireScopes(dssServer.AuthScopes())
 
-	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(errors.Interceptor(logger), logging.Interceptor(logger), ac.AuthInterceptor))
+	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(errors.Interceptor(logger), logging.Interceptor(logger), ac.AuthInterceptor, validations.ValidationInterceptor))
 	if err != nil {
 		return err
 	}
@@ -86,7 +87,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		reflection.Register(s)
 	}
 
-	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
+	dssproto.RegisterDSServiceV0Server(s, dssServer)
 
 	go func() {
 		defer s.GracefulStop()

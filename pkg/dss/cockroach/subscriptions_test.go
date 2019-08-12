@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	"github.com/stretchr/testify/require"
 )
@@ -19,8 +19,8 @@ var (
 		{
 			name: "a subscription without startTime and endTime",
 			input: &models.Subscription{
-				ID:                models.ID(uuid.NewV4().String()),
-				Owner:             models.Owner(uuid.NewV4().String()),
+				ID:                models.ID(uuid.New().String()),
+				Owner:             models.Owner(uuid.New().String()),
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
 			},
@@ -28,8 +28,8 @@ var (
 		{
 			name: "a subscription with startTime and endTime",
 			input: &models.Subscription{
-				ID:                models.ID(uuid.NewV4().String()),
-				Owner:             models.Owner(uuid.NewV4().String()),
+				ID:                models.ID(uuid.New().String()),
+				Owner:             models.Owner(uuid.New().String()),
 				Url:               "https://no/place/like/home",
 				StartTime:         &startTime,
 				EndTime:           &endTime,
@@ -39,8 +39,8 @@ var (
 		{
 			name: "a subscription with startTime and without endTime",
 			input: &models.Subscription{
-				ID:                models.ID(uuid.NewV4().String()),
-				Owner:             models.Owner(uuid.NewV4().String()),
+				ID:                models.ID(uuid.New().String()),
+				Owner:             models.Owner(uuid.New().String()),
 				Url:               "https://no/place/like/home",
 				StartTime:         &startTime,
 				NotificationIndex: 42,
@@ -49,8 +49,8 @@ var (
 		{
 			name: "a subscription without startTime and with endTime",
 			input: &models.Subscription{
-				ID:                models.ID(uuid.NewV4().String()),
-				Owner:             models.Owner(uuid.NewV4().String()),
+				ID:                models.ID(uuid.New().String()),
+				Owner:             models.Owner(uuid.New().String()),
 				Url:               "https://no/place/like/home",
 				EndTime:           &endTime,
 				NotificationIndex: 42,
@@ -59,8 +59,8 @@ var (
 		{
 			name: "a subscription with a version string",
 			input: &models.Subscription{
-				ID:                models.ID(uuid.NewV4().String()),
-				Owner:             models.Owner(uuid.NewV4().String()),
+				ID:                models.ID(uuid.New().String()),
+				Owner:             models.Owner(uuid.New().String()),
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
 				UpdatedAt:         &startTime,
@@ -69,7 +69,7 @@ var (
 		{
 			name: "a subscription with a different owner",
 			input: &models.Subscription{
-				ID:                models.ID(uuid.NewV4().String()),
+				ID:                models.ID(uuid.New().String()),
 				Owner:             models.Owner("you"),
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
@@ -95,8 +95,8 @@ func TestDatabaseEnsuresStartTimeBeforeEndTime(t *testing.T) {
 	)
 
 	_, err := store.InsertSubscription(ctx, &models.Subscription{
-		ID:                models.ID(uuid.NewV4().String()),
-		Owner:             models.Owner(uuid.NewV4().String()),
+		ID:                models.ID(uuid.New().String()),
+		Owner:             models.Owner(uuid.New().String()),
 		Url:               "https://no/place/like/home",
 		NotificationIndex: 42,
 		StartTime:         &startTime,

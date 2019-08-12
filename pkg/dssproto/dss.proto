@@ -53,6 +53,16 @@ message GeoPolygon {
     repeated LatLngPoint vertices = 1;
 }
 
+message GetIdentificationServiceAreaRequest {
+    // EntityUUID of the Identification Service Area.
+    string id = 1;
+}
+
+// Response to DSS query for isa's in a particular area.
+message GetIdentificationServiceAreaResponse {
+    IdentificationServiceArea identification_service_area = 1;
+}
+
 message GetSubscriptionRequest {
     // SubscriptionUUID of the subscription of interest.
     string id = 1;
@@ -88,18 +98,24 @@ message LatLngPoint {
     double lng = 2;
 }
 
-message PatchIdentificationServiceAreaRequest {
+// Parameters for inserting a new identification_service_area.
+message PatchIdentificationServiceAreaParams {
     // The bounding spacetime extents of this Identification Service Area.  Start and end times must be specified.
     // 
     // These extents should not reveal any sensitive information about the flight or flights within them.  This means, for instance, that extents should not tightly-wrap a flight path, nor should they generally be centered around the takeoff point of a single flight.
     Volume4D extents = 1;
-
-    // EntityUUID of the Identification Service Area.
-    string id = 2;
-    google.protobuf.StringValue url = 3;
+    google.protobuf.StringValue url = 2;
 
     // Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
-    string version = 4;
+    string version = 3;
+}
+
+message PatchIdentificationServiceAreaRequest {
+    // EntityUUID of the Identification Service Area.
+    string id = 1;
+
+    // ISA params
+    PatchIdentificationServiceAreaParams params = 2;
 }
 
 // Response to a request to update a reference to an Identification Service Area in the DSS.
@@ -111,22 +127,26 @@ message PatchIdentificationServiceAreaResponse {
     repeated SubscriberToNotify subscribers = 2;
 }
 
-message PatchSubscriptionRequest {
+// Parameters for inserting a new identification_service_area.
+message PatchSubscriptionParams {
     // The spacetime extents of the volume to subscribe to.
     // 
     // This subscription will automatically be deleted after its end time if it has not been refreshed by then.  If end time is not specified, the value will be automatically set to 24 hours in the future.
     // 
     // Note that some Entities triggering notifications may lie entirely outside the requested area.
     Volume4D extents = 1;
-
-    // SubscriptionUUID of the subscription of interest.  Must be created by client before `PUT` call to create AreaSubscription in DSS because the client may receive a notification at that subscription before receiving a response from the DSS.
-    string id = 2;
-
-    // Endpoints that should be called when an applicable event occurs.  At least one field must be specified.
-    google.protobuf.StringValue url = 3;
+    google.protobuf.StringValue url = 2;
 
     // Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
-    string version = 4;
+    string version = 3;
+}
+
+message PatchSubscriptionRequest {
+    // SubscriptionUUID of the subscription of interest.  Must be created by client before `PUT` call to create AreaSubscription in DSS because the client may receive a notification at that subscription before receiving a response from the DSS.
+    string id = 1;
+
+    // Subscription params
+    PatchSubscriptionParams params = 2;
 }
 
 // Response for a request to update a subscription.
@@ -138,15 +158,21 @@ message PatchSubscriptionResponse {
     Subscription subscription = 2;
 }
 
-message PutIdentificationServiceAreaRequest {
+// Parameters for inserting a new identification_service_area.
+message PutIdentificationServiceAreaParams {
     // The bounding spacetime extents of this Identification Service Area.  Start and end times must be specified.
     // 
     // These extents should not reveal any sensitive information about the flight or flights within them.  This means, for instance, that extents should not tightly-wrap a flight path, nor should they generally be centered around the takeoff point of a single flight.
     Volume4D extents = 1;
+    string url = 2;
+}
 
+message PutIdentificationServiceAreaRequest {
     // EntityUUID of the Identification Service Area.
-    string id = 2;
-    string url = 3;
+    string id = 1;
+
+    // ISA params
+    PutIdentificationServiceAreaParams params = 2;
 }
 
 // Response to a request to create a reference to an Identification Service Area in the DSS.
@@ -158,19 +184,23 @@ message PutIdentificationServiceAreaResponse {
     repeated SubscriberToNotify subscribers = 2;
 }
 
-message PutSubscriptionRequest {
+// Parameters for inserting a new identification_service_area.
+message PutSubscriptionParams {
     // The spacetime extents of the volume to subscribe to.
     // 
     // This subscription will automatically be deleted after its end time if it has not been refreshed by then.  If end time is not specified, the value will be automatically set to 24 hours in the future.
     // 
     // Note that some Entities triggering notifications may lie entirely outside the requested area.
     Volume4D extents = 1;
+    string url = 2;
+}
 
+message PutSubscriptionRequest {
     // SubscriptionUUID of the subscription of interest.  Must be created by client before `PUT` call to create AreaSubscription in DSS because the client may receive a notification at that subscription before receiving a response from the DSS.
-    string id = 2;
+    string id = 1;
 
-    // Endpoints that should be called when an applicable event occurs.  At least one field must be specified.
-    string url = 3;
+    // Subscription params
+    PutSubscriptionParams params = 2;
 }
 
 // Response for a request to create a subscription.
@@ -281,97 +311,106 @@ message Volume4D {
     google.protobuf.Timestamp start_time = 3;
 }
 
-service DiscoveryAndSynchronizationService {
-    // /dss/identification_service_areas/{id}
+service DSServiceV0 {
+    // /identification_service_areas/{id}
     // 
     // Delete an Identification Service Area.  USSs should not delete Identification Service Areas before the end of the last managed flight plus the retention period.
     rpc DeleteIdentificationServiceArea(DeleteIdentificationServiceAreaRequest) returns (DeleteIdentificationServiceAreaResponse) {
         option (google.api.http) = {
-            delete: "/dss/identification_service_areas/{id}"
+            delete: "/dss/v0/identification_service_areas/{id}"
             body: "version"
         };
     }
 
-    // /dss/subscriptions/{id}
+    // /subscriptions/{id}
     // 
     // Delete a subscription.
     rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse) {
         option (google.api.http) = {
-            delete: "/dss/subscriptions/{id}"
+            delete: "/dss/v0/subscriptions/{id}"
             body: "version"
         };
     }
 
-    // /dss/subscriptions/{id}
+    // /identification_service_areas/{id}
+    // 
+    // Verify the existence/valdity and state of a particular IdentificationServiceArea.
+    rpc GetIdentificationServiceArea(GetIdentificationServiceAreaRequest) returns (GetIdentificationServiceAreaResponse) {
+        option (google.api.http) = {
+            get: "/dss/v0/identification_service_areas/{id}"
+        };
+    }
+
+    // /subscriptions/{id}
     // 
     // Verify the existence/valdity and state of a particular subscription.
     rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
         option (google.api.http) = {
-            get: "/dss/subscriptions/{id}"
+            get: "/dss/v0/subscriptions/{id}"
         };
     }
 
-    // /dss/identification_service_areas/{id}
+    // /identification_service_areas/{id}
     // 
     // Update an Identification Service Area.
     // 
     // The DSS assumes the USS has already added the appropriate retention period to operation end time in `end_time` field before storing it.  Updating `start_time` is not allowed if it is before the current time.
     rpc PatchIdentificationServiceArea(PatchIdentificationServiceAreaRequest) returns (PatchIdentificationServiceAreaResponse) {
         option (google.api.http) = {
-            patch: "/dss/identification_service_areas/{id}"
-            body: "extents"
+            patch: "/dss/v0/identification_service_areas/{id}"
+            body: "params"
         };
     }
 
-    // /dss/subscriptions/{id}
+    // /subscriptions/{id}
     // 
     // Update a subscription.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
     rpc PatchSubscription(PatchSubscriptionRequest) returns (PatchSubscriptionResponse) {
         option (google.api.http) = {
-            patch: "/dss/subscriptions/{id}"
-            body: "extents"
+            patch: "/dss/v0/subscriptions/{id}"
+            body: "params"
         };
     }
 
-    // /dss/identification_service_areas/{id}
+    // /identification_service_areas/{id}
     // 
     // Create an Identification Service Area.
     // 
     // The DSS assumes the USS has already added the appropriate retention period to operation end time in `end_time` field before storing it.  Updating `start_time` is not allowed if it is before the current time.
     rpc PutIdentificationServiceArea(PutIdentificationServiceAreaRequest) returns (PutIdentificationServiceAreaResponse) {
         option (google.api.http) = {
-            put: "/dss/identification_service_areas/{id}"
-            body: "extents"
+            put: "/dss/v0/identification_service_areas/{id}"
+            body: "params"
         };
     }
 
-    // /dss/subscriptions/{id}
+    // /subscriptions/{id}
     // 
     // Create a subscription.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
     rpc PutSubscription(PutSubscriptionRequest) returns (PutSubscriptionResponse) {
         option (google.api.http) = {
-            put: "/dss/subscriptions/{id}"
-            body: "extents"
+            put: "/dss/v0/subscriptions/{id}"
+            body: "params"
         };
     }
 
-    // /dss/identification_service_areas
+    // /identification_service_areas
     // 
     // Retrieve all Identification Service Areas in the DAR for a given area during the given time.  Note that some Identification Service Areas returned may lie entirely outside the requested area.
     rpc SearchIdentificationServiceAreas(SearchIdentificationServiceAreasRequest) returns (SearchIdentificationServiceAreasResponse) {
         option (google.api.http) = {
-            get: "/dss/identification_service_areas"
+            get: "/dss/v0/identification_service_areas"
         };
     }
 
-    // /dss/subscriptions
+    // /subscriptions
     // 
     // Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
     // 
     // Only Subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of Subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing Subscriptions in an area.
     rpc SearchSubscriptions(SearchSubscriptionsRequest) returns (SearchSubscriptionsResponse) {
         option (google.api.http) = {
-            get: "/dss/subscriptions"
+            get: "/dss/v0/subscriptions"
         };
     }
 }

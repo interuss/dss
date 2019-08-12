@@ -52,7 +52,7 @@ func BuildURI(params map[string]string) (string, error) {
 	if dir == "" {
 		return "", errors.New("missing crdb ssl_dir")
 	}
-	return fmt.Sprintf("postgresql://%s@%s:%s?sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.crt", u, h, p, ssl, dir, dir, u, dir, u), nil
+	return fmt.Sprintf("postgresql://%s@%s:%s?sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.key", u, h, p, ssl, dir, dir, u, dir, u), nil
 }
 
 type queryable interface {

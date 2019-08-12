@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	"github.com/stretchr/testify/require"
 )
@@ -19,8 +19,8 @@ var (
 		{
 			name: "a subscription without startTime and endTime",
 			input: &models.IdentificationServiceArea{
-				ID:        models.ID(uuid.NewV4().String()),
-				Owner:     models.Owner(uuid.NewV4().String()),
+				ID:        models.ID(uuid.New().String()),
+				Owner:     models.Owner(uuid.New().String()),
 				Url:       "https://no/place/like/home/for/flights",
 				StartTime: &startTime,
 				EndTime:   &endTime,
