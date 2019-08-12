@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 
 	"github.com/golang/geo/s2"
@@ -10,19 +11,16 @@ import (
 )
 
 type Subscription struct {
-	// Embed the proto
-	// Unfortunately some types don't implement scanner/valuer, so we add placeholders below.
 	ID                ID
 	Url               string
 	NotificationIndex int
 	Owner             Owner
 	Cells             s2.CellUnion
-	// TODO(steeling): abstract NullTime away from models.
-	StartTime  *time.Time
-	EndTime    *time.Time
-	UpdatedAt  *time.Time
-	AltitudeHi *float32
-	AltitudeLo *float32
+	StartTime         *time.Time
+	EndTime           *time.Time
+	UpdatedAt         *time.Time
+	AltitudeHi        *float32
+	AltitudeLo        *float32
 }
 
 // Apply fields from s2 onto s, preferring any fields set in s2 except for ID
@@ -94,4 +92,44 @@ func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 		result.EndTime = ts
 	}
 	return result, nil
+}
+
+func (s *Subscription) SetExtents(extents *dspb.Volume4D) error {
+	var err error
+	if extents == nil {
+		return nil
+	}
+	if startTime := extents.GetStartTime(); startTime != nil {
+		ts, err := ptypes.Timestamp(startTime)
+		if err != nil {
+			return err
+		}
+		s.StartTime = &ts
+	}
+
+	if endTime := extents.GetEndTime(); endTime != nil {
+		ts, err := ptypes.Timestamp(endTime)
+		if err != nil {
+			return err
+		}
+		s.EndTime = &ts
+	}
+
+	space := extents.GetSpatialVolume()
+	if space == nil {
+		return nil
+	}
+	if wrapper := space.GetAltitudeHi(); wrapper != nil {
+		s.AltitudeHi = ptrToFloat32(wrapper.GetValue())
+	}
+	if wrapper := space.GetAltitudeLo(); wrapper != nil {
+		s.AltitudeLo = ptrToFloat32(wrapper.GetValue())
+	}
+	footprint := space.GetFootprint()
+	if footprint == nil {
+		return nil
+	}
+	s.Cells, err = geo.GeoPolygonToCellIDs(footprint)
+
+	return err
 }

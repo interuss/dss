@@ -3,13 +3,13 @@ package geo
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"math"
 	"strconv"
 	"strings"
 
 	"github.com/golang/geo/s2"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 )
 
 const (
@@ -32,16 +32,12 @@ var (
 	// RegionCoverer provides an overridable interface to defaultRegionCoverer
 	RegionCoverer = defaultRegionCoverer
 
-	errOddNumberOfCoordinatesInAreaString = errors.New("odd number of coordinates in area string")
-	errNotEnoughPointsInPolygon           = errors.New("not enough points in polygon")
-	errBadCoordSet                        = errors.New("coordinates did not create a well formed area")
-	errAreaTooLarge                       = errors.New("area is too large")
+	errOddNumberOfCoordinatesInAreaString = dsserr.BadRequest("odd number of coordinates in area string")
+	errNotEnoughPointsInPolygon           = dsserr.BadRequest("not enough points in polygon")
+	errBadCoordSet                        = dsserr.BadRequest("coordinates did not create a well formed area")
+	errAreaTooLarge                       = dsserr.BadRequest("area is too large")
 	maxArea                               = maxLoopArea()
 )
-
-// WindingOrder describes the winding order for enumerating
-// vertices of an area.
-type WindingOrder int
 
 func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	if atEOF && len(data) == 0 {
@@ -59,22 +55,31 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	return 0, nil, nil
 }
 
-func Volume4DToCellIDs(v4 *dspb.Volume4D) s2.CellUnion {
+func Volume4DToCellIDs(v4 *dspb.Volume4D) (s2.CellUnion, error) {
+	if v4 == nil {
+		return nil, errBadCoordSet
+	}
 	return Volume3DToCellIDs(v4.SpatialVolume)
 }
 
-func Volume3DToCellIDs(v3 *dspb.Volume3D) s2.CellUnion {
+func Volume3DToCellIDs(v3 *dspb.Volume3D) (s2.CellUnion, error) {
+	if v3 == nil {
+		return nil, errBadCoordSet
+	}
 	return GeoPolygonToCellIDs(v3.Footprint)
 }
 
-func GeoPolygonToCellIDs(geopolygon *dspb.GeoPolygon) s2.CellUnion {
+func GeoPolygonToCellIDs(geopolygon *dspb.GeoPolygon) (s2.CellUnion, error) {
 	var points []s2.Point
+	if geopolygon == nil {
+		return nil, errBadCoordSet
+	}
 	for _, ltlng := range geopolygon.Vertices {
 		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(ltlng.Lat, ltlng.Lng)))
 	}
 	loop := s2.LoopFromPoints(points)
 
-	return RegionCoverer.Covering(loop)
+	return Covering(loop)
 }
 
 func maxLoopArea() float64 {
@@ -83,6 +88,18 @@ func maxLoopArea() float64 {
 		scalingFactor = sqMiEarth / 4. * math.Pi
 	)
 	return maxAllowedSqMi / scalingFactor
+}
+
+func Covering(loop *s2.Loop) (s2.CellUnion, error) {
+	// TODO(steeling): consider setting max number of vertices.
+	loopArea := loop.Area()
+	if loopArea <= 0 {
+		return nil, errBadCoordSet
+	}
+	if loopArea > maxLoopArea() {
+		return nil, errAreaTooLarge
+	}
+	return RegionCoverer.Covering(loop), nil
 }
 
 // AreaToCellIDs parses "area" in the format 'lat0,lon0,lat1,lon1,...'
@@ -126,14 +143,5 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 
 		counter++
 	}
-	loop := s2.LoopFromPoints(points)
-	// TODO(steeling): consider setting max number of vertices.
-	loopArea := loop.Area()
-	if !(loopArea > 0) {
-		return nil, errBadCoordSet
-	}
-	if loopArea > maxLoopArea() {
-		return nil, errAreaTooLarge
-	}
-	return RegionCoverer.Covering(loop), nil
+	return Covering(s2.LoopFromPoints(points))
 }

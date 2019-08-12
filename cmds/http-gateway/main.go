@@ -35,7 +35,7 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 		grpc.WithTimeout(10 * time.Second),
 	}
 
-	err := dssproto.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	err := dssproto.RegisterDSServiceV0HandlerFromEndpoint(ctx, mux, endpoint, opts)
 	if err != nil {
 		return err
 	}

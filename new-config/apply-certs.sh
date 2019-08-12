@@ -2,11 +2,10 @@
 
 # Paths to directories in which to store certificates and generated YAML files.
 NAMESPACE=
-CLUSTER_INIT=
 CLIENTS_CERTS_DIR=$(pwd)/generated/$NAMESPACE/client_certs_dir
 NODE_CERTS_DIR=$(pwd)/generated/$NAMESPACE/node_certs_dir
 DIR=$(pwd)
-CONTEXT=$(kubectl config get-contexts -o name)
+CONTEXT=$(kubectl config current-context)
 TEMPLATES_DIR=$DIR/templates
 # ------------------------------------------------------------------------------
 

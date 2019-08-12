@@ -2,23 +2,17 @@ package dss
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 )
 
-var (
-	ErrAlreadyExists   = errors.New("resource already exists")
-	ErrVersionMismatch = errors.New("version mismatch for resource")
-	ErrNotFound        = errors.New("resource not found")
-	ErrBadRequest      = errors.New("bad request")
-)
-
 type Store interface {
 	// Close closes the store and should release all resources.
 	Close() error
+
+	GetISA(ctx context.Context, id models.ID) (*models.IdentificationServiceArea, error)
 
 	// Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.

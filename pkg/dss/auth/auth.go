@@ -86,7 +86,6 @@ func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info 
 
 	claims := claims{}
 
-	// TODO(steeling): Modify to ParseWithClaims and inspect claims.
 	_, err := jwt.ParseWithClaims(tknStr, &claims, func(token *jwt.Token) (interface{}, error) {
 		return a.key, nil
 	})

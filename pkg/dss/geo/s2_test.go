@@ -11,7 +11,7 @@ import (
 )
 
 func TestGeoPolygonToCellIDs(t *testing.T) {
-	got := GeoPolygonToCellIDs(&dspb.GeoPolygon{Vertices: []*dspb.LatLngPoint{
+	got, err := GeoPolygonToCellIDs(&dspb.GeoPolygon{Vertices: []*dspb.LatLngPoint{
 		// Stanford
 		{
 			Lat: 37.427636,
@@ -51,7 +51,7 @@ func TestGeoPolygonToCellIDs(t *testing.T) {
 		s2.CellIDFromToken("808fbaf4"),
 		s2.CellIDFromToken("808fbb2c"),
 	}
-
+	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
 

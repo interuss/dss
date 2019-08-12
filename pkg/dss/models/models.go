@@ -41,9 +41,16 @@ func (v Version) String() string {
 
 func (v Version) ToTimestamp() (time.Time, error) {
 	var t time.Time
+	if v == "" {
+		return t, nil
+	}
 	nanos, err := strconv.ParseUint(string(v), versionBase, 64)
 	if err != nil {
 		return t, err
 	}
 	return time.Unix(0, int64(nanos)), nil
+}
+
+func ptrToFloat32(f float32) *float32 {
+	return &f
 }

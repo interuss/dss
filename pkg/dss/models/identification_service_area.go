@@ -5,17 +5,15 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 )
 
 type IdentificationServiceArea struct {
-	// Embed the proto
-	// Unfortunately some types don't implement scanner/valuer, so we add placeholders below.
-	ID    ID
-	Url   string
-	Owner Owner
-	Cells s2.CellUnion
-	// TODO(steeling): abstract NullTime away from models.
+	ID         ID
+	Url        string
+	Owner      Owner
+	Cells      s2.CellUnion
 	StartTime  *time.Time
 	EndTime    *time.Time
 	UpdatedAt  *time.Time
@@ -49,7 +47,6 @@ func (s *IdentificationServiceArea) Apply(i2 *IdentificationServiceArea) *Identi
 	if i2.AltitudeHi != nil {
 		new.AltitudeHi = i2.AltitudeHi
 	}
-	// TODO(steeling) what if the update is to make it 0, we need an omitempty, pointer, or some other type.
 	if i2.AltitudeLo != nil {
 		new.AltitudeLo = i2.AltitudeLo
 	}
@@ -80,4 +77,43 @@ func (i *IdentificationServiceArea) ToProto() (*dspb.IdentificationServiceArea, 
 		result.EndTime = ts
 	}
 	return result, nil
+}
+
+func (i *IdentificationServiceArea) SetExtents(extents *dspb.Volume4D) error {
+	var err error
+	if extents == nil {
+		return nil
+	}
+	if startTime := extents.GetStartTime(); startTime != nil {
+		ts, err := ptypes.Timestamp(startTime)
+		if err != nil {
+			return err
+		}
+		i.StartTime = &ts
+	}
+
+	if endTime := extents.GetEndTime(); endTime != nil {
+		ts, err := ptypes.Timestamp(endTime)
+		if err != nil {
+			return err
+		}
+		i.EndTime = &ts
+	}
+
+	space := extents.GetSpatialVolume()
+	if space == nil {
+		return nil
+	}
+	if wrapper := space.GetAltitudeHi(); wrapper != nil {
+		i.AltitudeHi = ptrToFloat32(wrapper.GetValue())
+	}
+	if wrapper := space.GetAltitudeLo(); wrapper != nil {
+		i.AltitudeLo = ptrToFloat32(wrapper.GetValue())
+	}
+	footprint := space.GetFootprint()
+	if footprint == nil {
+		return nil
+	}
+	i.Cells, err = geo.GeoPolygonToCellIDs(footprint)
+	return err
 }
