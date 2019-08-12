@@ -80,6 +80,7 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		starts_at TIMESTAMPTZ,
 		ends_at TIMESTAMPTZ,
 		updated_at TIMESTAMPTZ NOT NULL,
+		INDEX owner_idx (owner),
 		INDEX starts_at_idx (starts_at),
 		INDEX ends_at_idx (ends_at),
 		CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)
@@ -99,6 +100,7 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		starts_at TIMESTAMPTZ,
 		ends_at TIMESTAMPTZ,
 		updated_at TIMESTAMPTZ NOT NULL,
+		INDEX owner_idx (owner),
 		INDEX starts_at_idx (starts_at),
 		INDEX ends_at_idx (ends_at),
 		INDEX updated_at_idx (updated_at),
