@@ -35,7 +35,7 @@ var (
 	errOddNumberOfCoordinatesInAreaString = errors.New("odd number of coordinates in area string")
 	errNotEnoughPointsInPolygon           = errors.New("not enough points in polygon")
 	errBadCoordSet                        = errors.New("coordinates did not create a well formed area")
-	errBadCoordSet                        = errors.New("area is too large")
+	errAreaTooLarge                       = errors.New("area is too large")
 	maxArea                               = maxLoopArea()
 )
 
@@ -77,10 +77,10 @@ func GeoPolygonToCellIDs(geopolygon *dspb.GeoPolygon) s2.CellUnion {
 	return RegionCoverer.Covering(loop)
 }
 
-func maxLoopArea() float {
+func maxLoopArea() float64 {
 	var (
-		sqMiEarth     = 197000000 // rought square miles of earth.
-		scalingFactor = sqMiEarth / 4 * math.Pi
+		sqMiEarth     = 197000000. // rought square miles of earth.
+		scalingFactor = sqMiEarth / 4. * math.Pi
 	)
 	return maxAllowedSqMi / scalingFactor
 }
@@ -128,12 +128,12 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 	}
 	loop := s2.LoopFromPoints(points)
 	// TODO(steeling): consider setting max number of vertices.
-	area := loop.Area()
-	if area == 0 {
+	loopArea := loop.Area()
+	if !(loopArea > 0) {
 		return nil, errBadCoordSet
 	}
-	if area > maxArea() {
-		return nil, errTooLarge
+	if loopArea > maxLoopArea() {
+		return nil, errAreaTooLarge
 	}
 	return RegionCoverer.Covering(loop), nil
 }
