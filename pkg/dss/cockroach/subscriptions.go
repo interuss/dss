@@ -197,7 +197,7 @@ func (c *Store) UpdateSubscription(ctx context.Context, s *models.Subscription) 
 	old, err := c.fetchSubscriptionByIDAndOwner(ctx, tx, s.ID, s.Owner)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, multierr.Combine(dsserr.NotFound("not found"), tx.Rollback())
+		return nil, multierr.Combine(dsserr.NotFound(s.ID.String()), tx.Rollback())
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
 	case s.Version() != old.Version():
@@ -236,12 +236,11 @@ func (c *Store) DeleteSubscription(ctx context.Context, id models.ID, owner mode
 	old, err := c.fetchSubscriptionByIDAndOwner(ctx, tx, id, owner)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, multierr.Combine(err, tx.Rollback())
+		return nil, multierr.Combine(dsserr.NotFound(id.String()), tx.Rollback())
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
 	case version != old.Version():
-		err := fmt.Errorf("version mismatch for subscription %s", id)
-		return nil, multierr.Combine(err, tx.Rollback())
+		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
 	if _, err := tx.ExecContext(ctx, query, id, owner); err != nil {

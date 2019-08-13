@@ -90,10 +90,11 @@ func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return a.key, nil
 	})
 	if err != nil {
+		fmt.Println(err)
 		return nil, dsserr.Unauthenticated("invalid token")
 	}
 
-	if err := a.missingScopes(info, claims); err != nil {
+	if err := a.missingScopes(info, strings.Split(claims.ScopeString, " ")); err != nil {
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("missing scopes: %v", err))
 	}
 
@@ -101,7 +102,7 @@ func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info 
 }
 
 // Returns all of the required scopes that are missing.
-func (a *authClient) missingScopes(info *grpc.UnaryServerInfo, claims claims) error {
+func (a *authClient) missingScopes(info *grpc.UnaryServerInfo, scopes []string) error {
 	var (
 		parts      = strings.Split(info.FullMethod, "/")
 		method     = parts[len(parts)-1]
@@ -109,7 +110,7 @@ func (a *authClient) missingScopes(info *grpc.UnaryServerInfo, claims claims) er
 		err        = &missingScopesError{}
 	)
 
-	for _, s := range claims.Scopes {
+	for _, s := range scopes {
 		claimedMap[s] = true
 	}
 	for _, required := range a.requiredScopes[method] {

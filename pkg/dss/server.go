@@ -2,6 +2,7 @@ package dss
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
@@ -40,6 +41,9 @@ func (s *Server) AuthScopes() map[string][]string {
 
 func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *dspb.GetIdentificationServiceAreaRequest) (*dspb.GetIdentificationServiceAreaResponse, error) {
 	isa, err := s.Store.GetISA(ctx, models.ID(req.GetId()))
+	if err == sql.ErrNoRows {
+		return nil, dsserr.NotFound(req.GetId())
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +77,7 @@ func (s *Server) PatchIdentificationServiceArea(ctx context.Context, req *dspb.P
 		UpdatedAt: &updated,
 	}
 	if err := isa.SetExtents(params.GetExtents()); err != nil {
-		return nil, err
+		return nil, dsserr.BadRequest("bad extents")
 	}
 
 	isa, subscribers, err := s.Store.UpdateISA(ctx, isa)
@@ -114,7 +118,7 @@ func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.Put
 	}
 
 	if err := isa.SetExtents(params.GetExtents()); err != nil {
-		return nil, err
+		return nil, dsserr.BadRequest("bad extents")
 	}
 
 	isa, subscribers, err := s.Store.InsertISA(ctx, isa)
@@ -185,7 +189,7 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscri
 func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb.SearchIdentificationServiceAreasRequest) (*dspb.SearchIdentificationServiceAreasResponse, error) {
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, dsserr.Internal(err.Error())
+		return nil, dsserr.BadRequest("bad area")
 	}
 
 	var (
@@ -258,6 +262,9 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *dspb.SearchSubscr
 
 func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionRequest) (*dspb.GetSubscriptionResponse, error) {
 	subscription, err := s.Store.GetSubscription(ctx, models.ID(req.GetId()))
+	if err == sql.ErrNoRows {
+		return nil, dsserr.NotFound(req.GetId())
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -50,8 +50,8 @@ func Conflict(msg string) error {
 	return status.Error(codes.Aborted, msg)
 }
 
-func NotFound(msg string) error {
-	return status.Error(codes.NotFound, msg)
+func NotFound(id string) error {
+	return status.Error(codes.NotFound, "resource not found: "+id)
 }
 
 func BadRequest(msg string) error {

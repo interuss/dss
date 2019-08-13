@@ -129,13 +129,13 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 		case 0:
 			f, err := strconv.ParseFloat(trimmed, 64)
 			if err != nil {
-				return nil, err
+				return nil, errBadCoordSet
 			}
 			lat = f
 		case 1:
 			f, err := strconv.ParseFloat(trimmed, 64)
 			if err != nil {
-				return nil, err
+				return nil, errBadCoordSet
 			}
 			lng = f
 			points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(lat, lng)))

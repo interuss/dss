@@ -106,32 +106,32 @@ func TestMissingScopes(t *testing.T) {
 
 	var tests = []struct {
 		info   *grpc.UnaryServerInfo
-		claims claims
+		scopes []string
 		want   error
 	}{
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			claims{Scopes: []string{"required1", "required2"}},
+			[]string{"required1", "required2"},
 			nil,
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			claims{Scopes: []string{"required2"}},
+			[]string{"required2"},
 			&missingScopesError{[]string{"required1"}},
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			claims{Scopes: []string{"required1"}},
+			[]string{"required1"},
 			&missingScopesError{[]string{"required2"}},
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			claims{Scopes: []string{}},
+			[]string{},
 			&missingScopesError{[]string{"required1", "required2"}},
 		},
 	}
 	for _, tc := range tests {
-		got := ac.missingScopes(tc.info, tc.claims)
+		got := ac.missingScopes(tc.info, tc.scopes)
 		want := tc.want
 		// both are nil, terminate early.
 		if got == want {
