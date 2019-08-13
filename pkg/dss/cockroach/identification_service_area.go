@@ -224,7 +224,7 @@ func (c *Store) UpdateISA(ctx context.Context, isa *models.IdentificationService
 	old, err := c.fetchISAByIDAndOwner(ctx, tx, isa.ID, isa.Owner)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, nil, multierr.Combine(dsserr.NotFound("not found"), tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.NotFound(isa.ID.String()), tx.Rollback())
 	case err != nil:
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	case isa.Version() != old.Version():
@@ -268,7 +268,7 @@ func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner,
 	old, err := c.fetchISAByIDAndOwner(ctx, tx, id, owner)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, nil, multierr.Combine(dsserr.NotFound("not found"), tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.NotFound(id.String()), tx.Rollback())
 	case err != nil:
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	case version != old.Version():
