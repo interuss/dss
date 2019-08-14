@@ -19,5 +19,5 @@ spec:
     name: http
   selector:
     app: cockroachdb
-  sessionAffinity: None
+  sessionAffinity: ClientIP
   type: LoadBalancer
