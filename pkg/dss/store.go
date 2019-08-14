@@ -16,11 +16,10 @@ type Store interface {
 
 	// Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-	DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error)
+	DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version *models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error)
 
 	InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error)
 
-	UpdateISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error)
 	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
 	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*models.IdentificationServiceArea, error)
 
@@ -29,11 +28,9 @@ type Store interface {
 
 	// Delete deletes the subscription identified by "id" and
 	// returns the deleted subscription.
-	DeleteSubscription(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.Subscription, error)
+	DeleteSubscription(ctx context.Context, id models.ID, owner models.Owner, version *models.Version) (*models.Subscription, error)
 
 	InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error)
-
-	UpdateSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error)
 
 	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
 	SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner models.Owner) ([]*models.Subscription, error)

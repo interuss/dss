@@ -16,49 +16,17 @@ type IdentificationServiceArea struct {
 	Cells      s2.CellUnion
 	StartTime  *time.Time
 	EndTime    *time.Time
-	UpdatedAt  *time.Time
+	Version    *Version
 	AltitudeHi *float32
 	AltitudeLo *float32
 }
 
-func (i *IdentificationServiceArea) Version() Version {
-	return VersionFromTimestamp(i.UpdatedAt)
-}
-
-// Apply fields from s2 onto s, preferring any fields set in i2 except for ID
-// and Owner.
-func (s *IdentificationServiceArea) Apply(i2 *IdentificationServiceArea) *IdentificationServiceArea {
-	new := *s
-	if i2.Url != "" {
-		new.Url = i2.Url
-	}
-	if i2.Cells != nil {
-		new.Cells = i2.Cells
-	}
-	if i2.StartTime != nil {
-		new.StartTime = i2.StartTime
-	}
-	if i2.EndTime != nil {
-		new.EndTime = i2.EndTime
-	}
-	if i2.UpdatedAt != nil {
-		new.UpdatedAt = i2.UpdatedAt
-	}
-	if i2.AltitudeHi != nil {
-		new.AltitudeHi = i2.AltitudeHi
-	}
-	if i2.AltitudeLo != nil {
-		new.AltitudeLo = i2.AltitudeLo
-	}
-	return &new
-}
-
 func (i *IdentificationServiceArea) ToProto() (*dspb.IdentificationServiceArea, error) {
 	result := &dspb.IdentificationServiceArea{
-		Id:      i.ID.String(),
-		Owner:   i.Owner.String(),
-		Url:     i.Url,
-		Version: i.Version().String(),
+		Id:         i.ID.String(),
+		Owner:      i.Owner.String(),
+		FlightsUrl: i.Url,
+		Version:    i.Version.String(),
 	}
 
 	if i.StartTime != nil {
@@ -66,7 +34,7 @@ func (i *IdentificationServiceArea) ToProto() (*dspb.IdentificationServiceArea, 
 		if err != nil {
 			return nil, err
 		}
-		result.StartTime = ts
+		result.TimeStart = ts
 	}
 
 	if i.EndTime != nil {
@@ -74,7 +42,7 @@ func (i *IdentificationServiceArea) ToProto() (*dspb.IdentificationServiceArea, 
 		if err != nil {
 			return nil, err
 		}
-		result.EndTime = ts
+		result.TimeEnd = ts
 	}
 	return result, nil
 }
@@ -84,7 +52,7 @@ func (i *IdentificationServiceArea) SetExtents(extents *dspb.Volume4D) error {
 	if extents == nil {
 		return nil
 	}
-	if startTime := extents.GetStartTime(); startTime != nil {
+	if startTime := extents.GetTimeStart(); startTime != nil {
 		ts, err := ptypes.Timestamp(startTime)
 		if err != nil {
 			return err
@@ -92,7 +60,7 @@ func (i *IdentificationServiceArea) SetExtents(extents *dspb.Volume4D) error {
 		i.StartTime = &ts
 	}
 
-	if endTime := extents.GetEndTime(); endTime != nil {
+	if endTime := extents.GetTimeEnd(); endTime != nil {
 		ts, err := ptypes.Timestamp(endTime)
 		if err != nil {
 			return err

@@ -33,7 +33,7 @@ func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args .
 			&i.Url,
 			&i.StartTime,
 			&i.EndTime,
-			&i.UpdatedAt,
+			&i.Version,
 		)
 		if err != nil {
 			return nil, err
@@ -188,46 +188,13 @@ func (c *Store) InsertISA(ctx context.Context, isa *models.IdentificationService
 		return nil, nil, err
 	}
 
-	_, err = c.fetchISAByIDAndOwner(ctx, tx, isa.ID, isa.Owner)
+	old, err := c.fetchISAByIDAndOwner(ctx, tx, isa.ID, isa.Owner)
 	switch {
 	case err == sql.ErrNoRows:
 		break
 	case err != nil:
 		return nil, nil, multierr.Combine(err, tx.Rollback())
-	case err == nil:
-		return nil, nil, multierr.Combine(dsserr.AlreadyExists(isa.ID.String()), tx.Rollback())
-	}
-
-	area, subscribers, err := c.pushISA(ctx, tx, isa)
-	if err != nil {
-		return nil, nil, multierr.Combine(err, tx.Rollback())
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, nil, err
-	}
-
-	return area, subscribers, nil
-}
-
-// UpdateISA updates the IdentificationServiceArea identified by "id" and owned
-// by "owner", affecting "cells" in the time interval ["starts", "ends"].
-//
-// Returns the updated IdentificationServiceArea and all Subscriptions affected
-// by it.
-func (c *Store) UpdateISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
-	tx, err := c.Begin()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	old, err := c.fetchISAByIDAndOwner(ctx, tx, isa.ID, isa.Owner)
-	switch {
-	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, nil, multierr.Combine(dsserr.NotFound(isa.ID.String()), tx.Rollback())
-	case err != nil:
-		return nil, nil, multierr.Combine(err, tx.Rollback())
-	case isa.Version() != old.Version():
+	case !isa.Version.Empty() && !isa.Version.Matches(old.Version):
 		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
@@ -245,7 +212,7 @@ func (c *Store) UpdateISA(ctx context.Context, isa *models.IdentificationService
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version *models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error) {
 	var (
 		deleteQuery = `
 			DELETE FROM
@@ -271,7 +238,7 @@ func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner,
 		return nil, nil, multierr.Combine(dsserr.NotFound(id.String()), tx.Rollback())
 	case err != nil:
 		return nil, nil, multierr.Combine(err, tx.Rollback())
-	case version != old.Version():
+	case !version.Empty() && !version.Matches(old.Version):
 		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 	if err := c.populateISACells(ctx, tx, old); err != nil {

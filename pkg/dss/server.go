@@ -29,10 +29,8 @@ func (s *Server) AuthScopes() map[string][]string {
 	return map[string][]string{
 		"GetIdentificationServiceArea":     []string{ReadISAScope},
 		"PutIdentificationServiceArea":     []string{WriteISAScope},
-		"PatchIdentificationServiceArea":   []string{WriteISAScope},
 		"DeleteIdentificationServiceArea":  []string{WriteISAScope},
 		"PutSubscription":                  []string{ReadISAScope},
-		"PatchSubscription":                []string{ReadISAScope},
 		"DeleteSubscription":               []string{ReadISAScope},
 		"SearchSubscriptions":              []string{ReadISAScope},
 		"SearchIdentificationServiceAreas": []string{ReadISAScope},
@@ -56,51 +54,6 @@ func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *dspb.Get
 	}, nil
 }
 
-func (s *Server) PatchIdentificationServiceArea(ctx context.Context, req *dspb.PatchIdentificationServiceAreaRequest) (*dspb.PatchIdentificationServiceAreaResponse, error) {
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
-	}
-	params := req.GetParams()
-	if params == nil {
-		return nil, dsserr.BadRequest("missing params")
-	}
-
-	updated, err := models.Version(params.GetVersion()).ToTimestamp()
-	if err != nil {
-		return nil, dsserr.BadRequest(err.Error())
-	}
-	isa := &models.IdentificationServiceArea{
-		ID:        models.ID(req.GetId()),
-		Url:       params.GetUrl().GetValue(),
-		Owner:     owner,
-		UpdatedAt: &updated,
-	}
-	if err := isa.SetExtents(params.GetExtents()); err != nil {
-		return nil, dsserr.BadRequest("bad extents")
-	}
-
-	isa, subscribers, err := s.Store.UpdateISA(ctx, isa)
-	if err != nil {
-		return nil, err
-	}
-
-	pbISA, err := isa.ToProto()
-	if err != nil {
-		return nil, dsserr.Internal(err.Error())
-	}
-
-	pbSubscribers := []*dspb.SubscriberToNotify{}
-	for _, subscriber := range subscribers {
-		pbSubscribers = append(pbSubscribers, subscriber.ToNotifyProto())
-	}
-
-	return &dspb.PatchIdentificationServiceAreaResponse{
-		ServiceArea: pbISA,
-		Subscribers: pbSubscribers,
-	}, nil
-}
-
 func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.PutIdentificationServiceAreaRequest) (*dspb.PutIdentificationServiceAreaResponse, error) {
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -111,10 +64,16 @@ func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.Put
 		return nil, dsserr.BadRequest("missing params")
 	}
 
+	version, err := models.VersionFromString(params.GetVersion())
+	if err != nil {
+		return nil, dsserr.BadRequest("bad version")
+	}
+
 	isa := &models.IdentificationServiceArea{
-		ID:    models.ID(req.GetId()),
-		Url:   params.GetUrl(),
-		Owner: owner,
+		ID:      models.ID(req.GetId()),
+		Url:     params.GetFlightsUrl(),
+		Owner:   owner,
+		Version: version,
 	}
 
 	if err := isa.SetExtents(params.GetExtents()); err != nil {
@@ -147,8 +106,11 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-
-	isa, subscribers, err := s.Store.DeleteISA(ctx, models.ID(req.GetId()), owner, models.Version(req.GetVersion()))
+	version, err := models.VersionFromString(req.GetVersion())
+	if err != nil {
+		return nil, dsserr.BadRequest("bad version")
+	}
+	isa, subscribers, err := s.Store.DeleteISA(ctx, models.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +135,11 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscri
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	subscription, err := s.Store.DeleteSubscription(ctx, models.ID(req.GetId()), owner, models.Version(req.GetVersion()))
+	version, err := models.VersionFromString(req.GetVersion())
+	if err != nil {
+		return nil, dsserr.BadRequest("bad version")
+	}
+	subscription, err := s.Store.DeleteSubscription(ctx, models.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
 	}
@@ -277,39 +243,6 @@ func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionR
 	}, nil
 }
 
-func (s *Server) PatchSubscription(ctx context.Context, req *dspb.PatchSubscriptionRequest) (*dspb.PatchSubscriptionResponse, error) {
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
-	}
-	params := req.GetParams()
-	if params == nil {
-		return nil, dsserr.BadRequest("missing params")
-	}
-	updated, err := models.Version(params.GetVersion()).ToTimestamp()
-	if err != nil {
-		return nil, dsserr.BadRequest(err.Error())
-	}
-
-	sub := &models.Subscription{
-		ID:        models.ID(req.GetId()),
-		Url:       params.GetUrl().GetValue(),
-		Owner:     owner,
-		UpdatedAt: &updated,
-	}
-	if err := sub.SetExtents(params.GetExtents()); err != nil {
-		return nil, dsserr.BadRequest("bad extents")
-	}
-
-	p, err := sub.ToProto()
-	if err != nil {
-		return nil, err
-	}
-	return &dspb.PatchSubscriptionResponse{
-		Subscription: p,
-	}, nil
-}
-
 // TODO(steeling) openapi 2 spec requires only 1 parameter in the body
 func (s *Server) PutSubscription(ctx context.Context, req *dspb.PutSubscriptionRequest) (*dspb.PutSubscriptionResponse, error) {
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -321,11 +254,28 @@ func (s *Server) PutSubscription(ctx context.Context, req *dspb.PutSubscriptionR
 		return nil, dsserr.BadRequest("missing params")
 	}
 
-	sub := &models.Subscription{
-		ID:    models.ID(req.GetId()),
-		Url:   params.GetUrl(),
-		Owner: owner,
+	version, err := models.VersionFromString(params.GetVersion())
+	if err != nil {
+		return nil, dsserr.BadRequest("bad version")
 	}
+
+	if params.Callbacks == nil {
+		return nil, dsserr.BadRequest("no callbacks provided")
+
+	}
+
+	sub := &models.Subscription{
+		ID:      models.ID(req.GetId()),
+		Owner:   owner,
+		Url:     params.Callbacks.IdentificationServiceAreaUrl,
+		Version: version,
+	}
+
+	sub, err = s.Store.InsertSubscription(ctx, sub)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := sub.SetExtents(params.GetExtents()); err != nil {
 		return nil, dsserr.BadRequest("bad extents")
 	}

@@ -33,7 +33,7 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query strin
 			&s.NotificationIndex,
 			&s.StartTime,
 			&s.EndTime,
-			&s.UpdatedAt,
+			&s.Version,
 		)
 		if err != nil {
 			return nil, err
@@ -166,14 +166,14 @@ func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) 
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.fetchSubscriptionByID(ctx, tx, s.ID)
+	old, err := c.fetchSubscriptionByID(ctx, tx, s.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
-	case err == nil:
-		return nil, multierr.Combine(dsserr.AlreadyExists(s.ID.String()), tx.Rollback())
+	case !s.Version.Empty() && !s.Version.Matches(old.Version):
+		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
 	s, err = c.pushSubscription(ctx, tx, s)
@@ -186,38 +186,9 @@ func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) 
 	return s, nil
 }
 
-// updatesSubscription updates the subscription  and returns
-// the resulting subscription including its ID.
-func (c *Store) UpdateSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
-	tx, err := c.Begin()
-	if err != nil {
-		return nil, err
-	}
-
-	old, err := c.fetchSubscriptionByIDAndOwner(ctx, tx, s.ID, s.Owner)
-	switch {
-	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, multierr.Combine(dsserr.NotFound(s.ID.String()), tx.Rollback())
-	case err != nil:
-		return nil, multierr.Combine(err, tx.Rollback())
-	case s.Version() != old.Version():
-		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
-	}
-
-	s, err = c.pushSubscription(ctx, tx, old.Apply(s))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
 // DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
-func (c *Store) DeleteSubscription(ctx context.Context, id models.ID, owner models.Owner, version models.Version) (*models.Subscription, error) {
+func (c *Store) DeleteSubscription(ctx context.Context, id models.ID, owner models.Owner, version *models.Version) (*models.Subscription, error) {
 	const (
 		query = `
 		DELETE FROM
@@ -239,7 +210,7 @@ func (c *Store) DeleteSubscription(ctx context.Context, id models.ID, owner mode
 		return nil, multierr.Combine(dsserr.NotFound(id.String()), tx.Rollback())
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
-	case version != old.Version():
+	case !version.Empty() && !version.Matches(old.Version):
 		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
