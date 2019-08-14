@@ -47,9 +47,15 @@ spec:
           name: grpc
         volumeMounts:
         - name: client-certs
-          mountPath: /client-certs
+          mountPath: /cockroach-certs
         - name: public-certs
           mountPath: /public-certs
+        env:
+          - name: DSS_COCKROACH_URI
+            valueFrom:
+              configMapKeyRef:
+                name: grpc-backend-config
+                key: cockroach.uri
         args:
           - -addr=:8081
           - -cockroach_host=cockroachdb.{{ .Namespace }}
