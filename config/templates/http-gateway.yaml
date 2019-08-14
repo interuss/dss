@@ -19,4 +19,4 @@ spec:
         command:
           - "/bin/bash"
           - "-ecx"
-          - "exec ./main.go  -grpc-backend=grpc-backend.YOUR_ZONE_NAME:TARGET_PORT -port=8080"
+          - "exec ./main.go  -grpc-backend=grpc-backend.YOUR_ZONE_NAME:8081 -port=8080"

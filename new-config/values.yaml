@@ -14,3 +14,10 @@ storageSize: 100Gi
 GrpcPort: 26257
 HttpPort: 8080
 JoinExisting: []
+
+GrpcBackend:
+  image: 
+  replicas: 3
+HttpGateway:
+  image:
+  replicas: 3

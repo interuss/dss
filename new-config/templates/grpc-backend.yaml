@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grpc-backend
+  namespace: {{ .Values.namespace}}
   labels:
     app: grpc-backend
   annotations:
@@ -22,8 +23,9 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: grpc-backend
+  namespace: {{ .Values.namespace}}
 spec:
-  replicas: 1
+  replicas: {{ .Values.GrpcBackend.replicas }}
   template:
     metadata:
       labels:
@@ -40,17 +42,21 @@ spec:
           defaultMode: 256
       containers:
       - name: grpc-backend
-        image: grpc-backend:latest
+        image: {{ .Values.GrpcBackend.image }}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8081
           name: grpc
         volumeMounts:
         - name: client-certs
-          mountPath: /cockroach-certs
+          mountPath: /client-certs
         - name: public-certs
           mountPath: /public-certs
-        command:
-          - "/bin/bash"
-          - "-ecx"
-          - "exec ./main.go -addr=:8081 -public_key_file=/public-certs/oauth.pem"
+        args:
+          - -addr=:8081
+          - -cockroach_host=cockroachdb.{{ .Values.namespace }}
+          - -cockroach_port=26257
+          - -cockroach_ssl_mode=verify-full
+          - -cockroach_user=root
+          - -cockroach_ssl_dir=/client-certs
+          - -public_key_file=/public-certs/oauth.pem
