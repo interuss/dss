@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
+	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 
 	"github.com/golang/geo/s2"
@@ -18,37 +19,9 @@ type Subscription struct {
 	Cells             s2.CellUnion
 	StartTime         *time.Time
 	EndTime           *time.Time
-	UpdatedAt         *time.Time
+	Version           *Version
 	AltitudeHi        *float32
 	AltitudeLo        *float32
-}
-
-// Apply fields from s2 onto s, preferring any fields set in s2 except for ID
-// and Owner.
-func (s *Subscription) Apply(s2 *Subscription) *Subscription {
-	new := *s
-	if s2.Url != "" {
-		new.Url = s2.Url
-	}
-	if s2.Cells != nil {
-		new.Cells = s2.Cells
-	}
-	if s2.StartTime != nil {
-		new.StartTime = s2.StartTime
-	}
-	if s2.EndTime != nil {
-		new.EndTime = s2.EndTime
-	}
-	if s2.UpdatedAt != nil {
-		new.UpdatedAt = s2.UpdatedAt
-	}
-	if s2.AltitudeHi != nil {
-		new.AltitudeHi = s2.AltitudeHi
-	}
-	if s2.AltitudeLo != nil {
-		new.AltitudeLo = s2.AltitudeLo
-	}
-	return &new
 }
 
 func (s *Subscription) ToNotifyProto() *dspb.SubscriberToNotify {
@@ -63,17 +36,13 @@ func (s *Subscription) ToNotifyProto() *dspb.SubscriberToNotify {
 	}
 }
 
-func (s *Subscription) Version() Version {
-	return VersionFromTimestamp(s.UpdatedAt)
-}
-
 func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 	result := &dspb.Subscription{
 		Id:                s.ID.String(),
 		Owner:             s.Owner.String(),
-		Url:               s.Url,
+		Callbacks:         &dssproto.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.Url},
 		NotificationIndex: int32(s.NotificationIndex),
-		Version:           s.Version().String(),
+		Version:           s.Version.String(),
 	}
 
 	if s.StartTime != nil {
@@ -81,7 +50,7 @@ func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 		if err != nil {
 			return nil, err
 		}
-		result.StartTime = ts
+		result.Begins = ts
 	}
 
 	if s.EndTime != nil {
@@ -89,7 +58,7 @@ func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 		if err != nil {
 			return nil, err
 		}
-		result.EndTime = ts
+		result.Expires = ts
 	}
 	return result, nil
 }
@@ -99,7 +68,7 @@ func (s *Subscription) SetExtents(extents *dspb.Volume4D) error {
 	if extents == nil {
 		return nil
 	}
-	if startTime := extents.GetStartTime(); startTime != nil {
+	if startTime := extents.GetTimeStart(); startTime != nil {
 		ts, err := ptypes.Timestamp(startTime)
 		if err != nil {
 			return err
@@ -107,7 +76,7 @@ func (s *Subscription) SetExtents(extents *dspb.Volume4D) error {
 		s.StartTime = &ts
 	}
 
-	if endTime := extents.GetEndTime(); endTime != nil {
+	if endTime := extents.GetTimeEnd(); endTime != nil {
 		ts, err := ptypes.Timestamp(endTime)
 		if err != nil {
 			return err

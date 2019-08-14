@@ -63,7 +63,7 @@ var (
 				Owner:             models.Owner(uuid.New().String()),
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
-				UpdatedAt:         &startTime,
+				Version:           models.VersionFromTime(startTime),
 			},
 		},
 		{
@@ -73,7 +73,7 @@ var (
 				Owner:             models.Owner("you"),
 				Url:               "https://no/place/like/home",
 				NotificationIndex: 42,
-				UpdatedAt:         &startTime,
+				Version:           models.VersionFromTime(startTime),
 			},
 		},
 	}
@@ -148,69 +148,32 @@ func TestStoreInsertSubscription(t *testing.T) {
 			r2 := *sub1
 			r2.Url = "new url"
 			sub2, err := store.InsertSubscription(ctx, &r2)
-			require.Error(t, err)
-			require.Nil(t, sub2)
-
-			sub3, err := store.GetSubscription(ctx, sub1.ID)
-			require.NoError(t, err)
-			require.NotNil(t, sub3)
-
-			require.Equal(t, *sub1, *sub3)
-		})
-	}
-}
-
-func TestStoreUpdateSubscription(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
-
-	for _, r := range subscriptionsPool {
-		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.InsertSubscription(ctx, r.input)
-			require.NoError(t, err)
-			require.NotNil(t, sub1)
-
-			// Test changes without the version differing.
-			r2 := sub1
-			r2.Url = "new URL"
-			sub2, err := store.UpdateSubscription(ctx, r2)
 			require.NoError(t, err)
 			require.NotNil(t, sub2)
-			require.Equal(t, "new URL", sub2.Url)
+			require.Equal(t, "new url", sub2.Url)
 
-			// Applying an empty subscription will return a copy
-			r3 := r.input.Apply(&models.Subscription{})
+			// Test no version supplied works
+			r3 := *sub2
+			r3.Url = "new url 2"
+			r3.Version = nil
+			sub3, err := store.InsertSubscription(ctx, &r3)
+			require.NoError(t, err)
+			require.NotNil(t, sub3)
+			require.Equal(t, "new url 2", sub3.Url)
 
-			tempTime := time.Now()
-			r3.Url = "new URL 2"
-			r3.UpdatedAt = &tempTime
-			sub3, err := store.UpdateSubscription(ctx, r3)
-			require.Error(t, err)
-			require.Nil(t, sub3)
-
-			// Versions should be explicitly required
-			r3.Url = "new URL 3"
-			r3.UpdatedAt = nil
-			sub4, err := store.UpdateSubscription(ctx, r3)
+			// Bad version doesn't work
+			r4 := *sub2
+			r4.Url = "new url 3"
+			r4.Version = models.VersionFromTime(time.Now())
+			sub4, err := store.InsertSubscription(ctx, &r4)
 			require.Error(t, err)
 			require.Nil(t, sub4)
 
-			// Changing owner should error
-			r3.Owner = "new owner"
-			sub5, err := store.UpdateSubscription(ctx, r3)
-			require.Error(t, err)
-			require.Nil(t, sub5)
-
-			sub6, err := store.GetSubscription(ctx, sub1.ID)
+			sub5, err := store.GetSubscription(ctx, sub1.ID)
 			require.NoError(t, err)
-			require.NotNil(t, sub6)
+			require.NotNil(t, sub5)
 
-			require.Equal(t, *sub2, *sub6)
+			require.Equal(t, *sub3, *sub5)
 		})
 	}
 }
@@ -231,16 +194,18 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			require.NotNil(t, sub1)
 
 			// Ensure mismatched versions return an error
-			sub2, err := store.DeleteSubscription(ctx, sub1.ID, sub1.Owner, "a3cg3tcuhk000")
+			v, err := models.VersionFromString("a3cg3tcuhk000")
+			require.NoError(t, err)
+			sub2, err := store.DeleteSubscription(ctx, sub1.ID, sub1.Owner, v)
 			require.Error(t, err)
 			require.Nil(t, sub2)
 
 			// Can't delete other users data.
-			sub3, err := store.DeleteSubscription(ctx, sub1.ID, "wrong owner", sub1.Version())
+			sub3, err := store.DeleteSubscription(ctx, sub1.ID, "wrong owner", sub1.Version)
 			require.Error(t, err)
 			require.Nil(t, sub3)
 
-			sub4, err := store.DeleteSubscription(ctx, sub1.ID, sub1.Owner, sub1.Version())
+			sub4, err := store.DeleteSubscription(ctx, sub1.ID, sub1.Owner, sub1.Version)
 			require.NoError(t, err)
 			require.NotNil(t, sub4)
 

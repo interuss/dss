@@ -7,14 +7,11 @@ info:
     Interface to Discovery and Synchronization Service and service providers used by participating clients to discover and inform other service providers.
 
     Unless otherwise specified, fields specified in a message but not declared in the API shall be ignored.
-consumes:
-  - application/json
-produces:
-  - application/json
-basePath: /dss/v0
+basePath: /dss
 paths:
   /identification_service_areas:
     summary: Set of Identification Service Areas in the DSS.
+    description: ""
     get:
       tags:
       - dss
@@ -46,33 +43,19 @@ paths:
         description: If specified, indicates non-interest in Identification Service
           Areas entirely below this altitude in meters above the WGS84 ellipsoid.
         schema:
-          type: 
-          - 'null'
-          - number
+          type: number
         in: query
       - name: max_altitude
         description: If specified, indicates non-interest in Identification Service
           Areas entirely above this altitude in meters above the WGS84 ellipsoid.
         schema:
-          type:
-          - 'null'
-          - number
+          type: number
         in: query
         required: true
       responses:
         200:
           schema:
-            description: Response to DSS query for Identification Service Areas in an area
-              of interest.
-            required:
-            - service_areas
-            type: object
-            properties:
-              service_areas:
-                description: Identification Service Areas in the area of interest.
-                type: array
-                items:
-                  $ref: '#/definitions/IdentificationServiceArea'
+            $ref: '#/definitions/SearchIdentificationServiceAreasResponse'
           description: Identification Service Areas were successfully retrieved.
         400:
           schema:
@@ -95,7 +78,7 @@ paths:
       security:
       - AuthFromAuthorizationAuthority:
         - dss.read.identification_service_areas
-      summary: /identification_service_areas
+      summary: /dss/identification_service_areas
       description: Retrieve all Identification Service Areas in the DAR for a given
         area during the given time.  Note that some Identification Service Areas returned
         may lie entirely outside the requested area.
@@ -107,7 +90,7 @@ paths:
       operationId: getIdentificationServiceArea
       parameters:
       - name: id
-        description: EntityUUID of the Identification Service Area.
+        description: UUIDv4 of the Identification Service Area.
         schema:
           $ref: '#/definitions/UUIDv4'
         in: path
@@ -116,7 +99,7 @@ paths:
         200:
           schema:
             $ref: '#/definitions/GetIdentificationServiceAreaResponse'
-          description: IdentificationServiceArea information was retrieved successfully.
+          description: Subscription information was retrieved successfully.
         400:
           schema:
             $ref: '#/definitions/ErrorResponse'
@@ -131,10 +114,15 @@ paths:
             $ref: '#/definitions/ErrorResponse'
           description: The access token was decoded successfully but did not include
             a scope appropriate to this endpoint.
+        404:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: A Subscription with the specified ID was not found.
       security:
       - AuthFromAuthorizationAuthority:
         - dss.read.position_reporting_entities
-      summary: /identification_service_areas/{id}
+        - dss.write.position_reporting_entities
+      summary: /dss/identification_service_areas/{id}
       description: Verify the existence/valdity and state of a particular IdentificationServiceArea.
     put:
       tags:
@@ -142,19 +130,23 @@ paths:
       operationId: putIdentificationServiceArea
       parameters:
       - name: id
-        description: EntityUUID of the Identification Service Area.
+        description: UUIDv4 of the Identification Service Area.
         schema:
           $ref: '#/definitions/UUIDv4'
         in: path
         required: true
       - name: params
-        description: ISA params
         schema:
-          $ref: '#/definitions/PutIdentificationServiceAreaParams'
+          $ref: '#/definitions/PutIdentificationServiceAreaParameters'
         in: body
         required: true
       responses:
         200:
+          schema:
+            $ref: '#/definitions/PutIdentificationServiceAreaResponse'
+          description: An existing Identification Service Area was updated successfully
+            in the DSS.
+        201:
           schema:
             $ref: '#/definitions/PutIdentificationServiceAreaResponse'
           description: A new Identification Service Area was created successfully
@@ -188,84 +180,15 @@ paths:
       security:
       - AuthFromAuthorizationAuthority:
         - dss.write.identification_service_areas
-      summary: /identification_service_areas/{id}
+      summary: /dss/identification_service_areas/{id}
       description: |-
-        Create an Identification Service Area.
+        Create or update an Identification Service Area.
 
-        The DSS assumes the USS has already added the appropriate retention period to operation end time in `end_time` field before storing it.  Updating `start_time` is not allowed if it is before the current time.
-    patch:
-      tags:
-      - dss
-      operationId: patchIdentificationServiceArea
-      parameters:
-      - name: id
-        description: EntityUUID of the Identification Service Area.
-        schema:
-          $ref: '#/definitions/UUIDv4'
-        in: path
-        required: true
-      - name: params
-        description: ISA params
-        schema:
-          $ref: '#/definitions/PatchIdentificationServiceAreaParams'
-        in: body
-        required: true
-      responses:
-        200:
-          schema:
-            $ref: '#/definitions/PatchIdentificationServiceAreaResponse'
-          description: An existing Identification Service Area was updated successfully
-            in the DSS.
-        400:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: |-
-            * One or more input parameters were missing or invalid.
-            * The request attempted to mutate the Identification Service Area in a disallowed way.
-        401:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: Bearer access token was not provided in Authorization header,
-            token could not be decoded, or token was invalid.
-        403:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: The access token was decoded successfully but did not include
-            a scope appropriate to this endpoint.
-        409:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: |-
-            * An Identification Service Area with the specified ID already exists.
-            * Despite repeated attempts, the DSS was unable to update the DAR because of other simultaneous changes.
-        413:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: The area of the Identification Service Area is too large.
-      security:
-      - AuthFromAuthorizationAuthority:
-        - dss.write.identification_service_areas
-      summary: /identification_service_areas/{id}
-      description: |-
-        Update an Identification Service Area.
-
-        The DSS assumes the USS has already added the appropriate retention period to operation end time in `end_time` field before storing it.  Updating `start_time` is not allowed if it is before the current time.
+        The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
     delete:
       tags:
       - dss
       operationId: deleteIdentificationServiceArea
-      parameters:
-      - name: id
-        description: EntityUUID of the Identification Service Area.
-        schema:
-          $ref: '#/definitions/UUIDv4'
-        in: path
-        required: true
-      - name: version
-        description: Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
-        type: string
-        in: body
-        required: true
       responses:
         200:
           schema:
@@ -298,10 +221,22 @@ paths:
       security:
       - AuthFromAuthorizationAuthority:
         - dss.write.identification_service_areas
-      summary: /identification_service_areas/{id}
+      summary: /dss/identification_service_areas/{id}
       description: Delete an Identification Service Area.  USSs should not delete
         Identification Service Areas before the end of the last managed flight plus
         the retention period.
+      parameters:
+      - name: id
+        description: UUIDv4 of the Identification Service Area.
+        schema:
+          $ref: '#/definitions/UUIDv4'
+        in: path
+        required: true
+      - name: version
+        in: query
+        schema:
+          $ref: '#/definitions/Version'
+        required: true
   /subscriptions:
     summary: Subscriptions for airspace updates to a volume of interest.
     get:
@@ -309,12 +244,6 @@ paths:
       - dss
       operationId: searchSubscriptions
       parameters:
-      - name: id
-        description: SubscriptionUUID of the subscription of interest.
-        schema:
-          $ref: '#/definitions/UUIDv4'
-        in: path
-        required: true
       - name: area
         description: The area in which to search for Subscriptions.  Some Subscriptions
           near this area but wholly outside it may also be returned.
@@ -322,35 +251,10 @@ paths:
           $ref: '#/definitions/GeoPolygonString'
         in: query
         required: true
-      - name: min_altitude
-        description: If specified, indicates non-interest in subscriptions for volumes
-          entirely below this altitude in meters above the WGS84 datum.
-        schema:
-          type: 
-          - 'null'
-          - number
-        in: query
-      - name: max_altitude
-        description: If specified, indicates non-interest in subscriptions for volumes
-          entirely above this altitude in meters above the WGS84 datum.
-        schema:
-          type:
-          - 'null'
-          - number
-        in: query
       responses:
         200:
           schema:
-            description: Response to DSS query for subscriptions in a particular area.
-            required:
-            - subscriptions
-            type: object
-            properties:
-              subscriptions:
-                description: Subscriptions that overlap the specified area.
-                type: array
-                items:
-                  $ref: '#/definitions/Subscription'
+            $ref: '#/definitions/SearchSubscriptionsResponse'
           description: Subscriptions were retrieved successfully.
         400:
           schema:
@@ -373,7 +277,7 @@ paths:
       security:
       - AuthFromAuthorizationAuthority:
         - dss.read.identification_service_areas
-      summary: /subscriptions
+      summary: /dss/subscriptions
       description: |-
         Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
 
@@ -386,7 +290,7 @@ paths:
       operationId: getSubscription
       parameters:
       - name: id
-        description: SubscriptionUUID of the subscription of interest.
+        description: UUIDv4 of the Identification Service Area.
         schema:
           $ref: '#/definitions/UUIDv4'
         in: path
@@ -410,11 +314,15 @@ paths:
             $ref: '#/definitions/ErrorResponse'
           description: The access token was decoded successfully but did not include
             a scope appropriate to this endpoint.
+        404:
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+          description: A Subscription with the specified ID was not found.
       security:
       - AuthFromAuthorizationAuthority:
         - dss.read.position_reporting_entities
         - dss.write.position_reporting_entities
-      summary: /subscriptions/{id}
+      summary: /dss/subscriptions/{id}
       description: Verify the existence/valdity and state of a particular subscription.
     put:
       tags:
@@ -422,7 +330,7 @@ paths:
       operationId: putSubscription
       parameters:
       - name: id
-        description: SubscriptionUUID of the subscription of interest.  Must be created
+        description: UUIDV4 of the subscription of interest.  Must be created
           by client before `PUT` call to create AreaSubscription in DSS because the
           client may receive a notification at that subscription before receiving
           a response from the DSS.
@@ -431,13 +339,16 @@ paths:
         in: path
         required: true
       - name: params
-        description: Subscription params
         schema:
-          $ref: '#/definitions/PutSubscriptionParams'
+          $ref: '#/definitions/PutSubscriptionParameters'
         in: body
         required: true
       responses:
         200:
+          schema:
+            $ref: '#/definitions/PutSubscriptionResponse'
+          description: An existing Subscription was updated successfully.
+        201:
           schema:
             $ref: '#/definitions/PutSubscriptionResponse'
           description: A new Subscription was created successfully.
@@ -479,77 +390,8 @@ paths:
       security:
       - AuthFromAuthorizationAuthority:
         - dss.read.identification_service_areas
-      summary: /subscriptions/{id}
-      description: Create a subscription.  Subscription notifications are
-        only triggered by (and contain full information of) changes to, creation of,
-        or deletion of, Entities referenced by or stored in the DSS; they do not involve
-        any data transfer (such as remote ID telemetry updates) apart from Entity
-        information.
-    patch:
-      tags:
-      - dss
-      operationId: patchSubscription
-      parameters:
-      - name: id
-        description: SubscriptionUUID of the subscription of interest.  Must be created
-          by client before `PUT` call to create AreaSubscription in DSS because the
-          client may receive a notification at that subscription before receiving
-          a response from the DSS.
-        schema:
-          $ref: '#/definitions/UUIDv4'
-        in: path
-        required: true
-      - name: params
-        description: Subscription params
-        schema:
-          $ref: '#/definitions/PatchSubscriptionParams'
-        in: body
-        required: true
-      responses:
-        200:
-          schema:
-            $ref: '#/definitions/PatchSubscriptionResponse'
-          description: The Subscription was successfully updated.
-        400:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: |-
-            * One or more input parameters were missing or invalid.
-            * The request attempted to mutate the Subscription in a disallowed way.
-        401:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: Bearer access token was not provided in Authorization header,
-            token could not be decoded, or token was invalid.
-        403:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: |-
-            * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
-            * An EntityType was specified in `types_filter` to which the scopes included in the access token do not provide access.
-        409:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: |-
-            * A Subscription with the specified ID already exists.
-            * Despite repeated attempts, the DSS was unable to update the DAR because of other simultaneous changes.
-        429:
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-          description: Client already has too many Subscriptions in the area where
-            a new Subscription was requested.  To correct this problem, the client
-            may query GET /subscriptions to see which Subscriptions are counting against
-            their limit.  This problem should not generally be encountered because
-            the Subscription limit should be above what any consumer that reasonably
-            aggregates their Subscriptions should request.  But, a Subscription limit
-            is necessary to bound performance requirements for DSS instances and would
-            likely be hit by, e.g., a large remote ID display provider that created
-            a Subscription for each of their display client users' views.
-      security:
-      - AuthFromAuthorizationAuthority:
-        - dss.read.identification_service_areas
-      summary: /subscriptions/{id}
-      description: Update a subscription.  Subscription notifications are
+      summary: /dss/subscriptions/{id}
+      description: Create or update a subscription.  Subscription notifications are
         only triggered by (and contain full information of) changes to, creation of,
         or deletion of, Entities referenced by or stored in the DSS; they do not involve
         any data transfer (such as remote ID telemetry updates) apart from Entity
@@ -558,18 +400,6 @@ paths:
       tags:
       - dss
       operationId: deleteSubscription
-      parameters:
-      - name: id
-        description: SubscriptionUUID of the subscription of interest.
-        schema:
-          $ref: '#/definitions/UUIDv4'
-        in: path
-        required: true
-      - name: version
-        description: Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
-        type: string
-        in: body
-        required: true
       responses:
         200:
           schema:
@@ -602,8 +432,20 @@ paths:
       security:
       - AuthFromAuthorizationAuthority:
         - dss.read.position_reporting_entities
-      summary: /subscriptions/{id}
+      summary: /dss/subscriptions/{id}
       description: Delete a subscription.
+      parameters:
+      - name: id
+        description: UUIDV4 of the subscription of interest.
+        schema:
+          $ref: '#/definitions/UUIDv4'
+        in: path
+        required: true
+      - name: version
+        in: query
+        schema:
+          $ref: '#/definitions/Version'
+        required: true
 definitions:
   Volume3D:
     description: A three-dimensional geographic volume consisting of a vertically-extruded
@@ -614,13 +456,10 @@ definitions:
     properties:
       footprint:
         $ref: '#/definitions/GeoPolygon'
-        description: Projection of this volume onto the earth's surface.
       altitude_lo:
         $ref: '#/definitions/Altitude'
-        description: Minimum bounding altitude of this volume.
       altitude_hi:
         $ref: '#/definitions/Altitude'
-        description: Maximum bounding altitude of this volume.
   Volume4D:
     description: Contiguous block of geographic spacetime.
     required:
@@ -629,34 +468,47 @@ definitions:
     properties:
       spatial_volume:
         $ref: '#/definitions/Volume3D'
-        description: Constant spatial extent of this volume.
-      start_time:
+      time_start:
+        format: date-time
+        description: Beginning time of this volume.  RFC 3339 format, per OpenAPI
+          specification.
         $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
-      end_time:
+      time_end:
+        format: date-time
+        description: End time of this volume.  RFC 3339 format, per OpenAPI specification.
         $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
   GetSubscriptionResponse:
+    description: Response to DSS request for the subscription with the given id.
+    required:
+    - subscription
+    type: object
+    properties:
+      subscription:
+        $ref: '#/definitions/Subscription'
+  SearchSubscriptionsResponse:
     description: Response to DSS query for subscriptions in a particular area.
     required:
     - subscriptions
     type: object
     properties:
-      subscription: 
-        $ref: '#/definitions/Subscription'
+      subscriptions:
+        description: Subscriptions that overlap the specified area.
+        type: array
+        items:
+          $ref: '#/definitions/Subscription'
   GetIdentificationServiceAreaResponse:
-    description: Response to DSS query for isa's in a particular area.
+    description: Response to DSS request for the identification service area with the given id.
     required:
-    - identification_service_area
+    - identification_service_areas
     type: object
     properties:
-      identification_service_area: 
+      identification_service_area:
         $ref: '#/definitions/IdentificationServiceArea'
   URL:
     description: Valid http or https URL.
     pattern: '^https?:\/\/(?:\[[0-9a-fA-F]{0,4}(?::[0-9a-fA-F]{0,4}){2,7}\]|[^\0\t\r\n
       #%\/:?@[\\\]]{1,63}(?:\.[^\0\t\r\n #%\/:?@[\\\]]{1,63}){1,126})(?::\d{1,5})?\/?'
-    type: 
-      - string
-      - "null"
+    type: string
   SubscriptionNotificationIndex:
     format: int32
     description: Tracks the notifications sent for a subscription so the subscriber
@@ -680,6 +532,9 @@ definitions:
     pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
     type: string
     example: 03e5572a-f733-49af-bc14-8a18bd53ee39
+  Version:
+    description: A version string used to reference an object at a particular point in time. Any updates to an object must contain the corresponding version to maintain idempotent updates.
+    type: string
   ErrorResponse:
     description: Data provided when an off-nominal condition was encountered.
     type: object
@@ -696,7 +551,6 @@ definitions:
     properties:
       subscription:
         $ref: '#/definitions/Subscription'
-        description: The Subscription which was deleted.
   GeoPolygonString:
     description: |-
       Plain-string representation of a geographic polygon consisting of at least three geographic points describing a closed polygon on the earth.  Each point consists of latitude,longitude in degrees.  Points are also comma-delimited, so this parameter will look like `lat1,lng1,lat2,lng2,lat3,lng3,...`  Latitude values must fall in the range [-90, 90] and longitude values must fall in the range [-180, 180].
@@ -739,8 +593,8 @@ definitions:
     format: float
     description: An altitude, in meters, above the WGS84 ellipsoid.
     type: 
-    - 'null'
-    - number
+      - number
+      - "null"
     example: 19.5
   GeoPolygon:
     description: |-
@@ -759,26 +613,9 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/LatLngPoint'
-  PatchIdentificationServiceAreaResponse:
-    description: Response to a request to update a reference to an Identification Service Area in the DSS.
-    required:
-    - service_area
-    - subscribers
-    type: object
-    properties:
-      subscribers:
-        description: DSS subscribers that this client now has the obligation to
-          notify of the Identification Service Area changes just made.  This client
-          must call PUT for each provided URL according to the `/uss/identification_service_areas/{id}`
-          path API.
-        type: array
-        items:
-          $ref: '#/definitions/SubscriberToNotify'
-      service_area:
-        $ref: '#/definitions/IdentificationServiceArea'
-        description: Resulting service area stored in DSS.
   PutIdentificationServiceAreaResponse:
-    description: Response to a request to create a reference to an Identification Service Area in the DSS.
+    description: Response to a request to create or update a reference to an Identification
+      Service Area in the DSS.
     required:
     - service_area
     - subscribers
@@ -794,7 +631,18 @@ definitions:
           $ref: '#/definitions/SubscriberToNotify'
       service_area:
         $ref: '#/definitions/IdentificationServiceArea'
-        description: Resulting service area stored in DSS.
+  SearchIdentificationServiceAreasResponse:
+    description: Response to DSS query for Identification Service Areas in an area
+      of interest.
+    required:
+    - service_areas
+    type: object
+    properties:
+      service_areas:
+        description: Identification Service Areas in the area of interest.
+        type: array
+        items:
+          $ref: '#/definitions/IdentificationServiceArea'
   SubscriberToNotify:
     description: Subscriber to notify of a creation/change/deletion of a change
       in the airspace.  This is provided by the DSS to a client changing the airspace,
@@ -812,10 +660,21 @@ definitions:
         items:
           $ref: '#/definitions/SubscriptionState'
       url:
-        type: string
-        description: The endpoint that the client mutating the airspace should provide
-          the update to.  API depends on the DSS action taken that triggered this
-          notification request.
+        $ref: '#/definitions/URL'
+  PutIdentificationServiceAreaParameters:
+    description: Parameters for a request to create or update a reference to an
+      Identification Service Area in the DSS.
+    required:
+    - extents
+    - flights_url
+    type: object
+    properties:
+      extents:
+        $ref: '#/definitions/Volume4D'
+      flights_url:
+        $ref: '#/definitions/URL'
+      version:
+        $ref: '#/definitions/Version'
   DeleteIdentificationServiceAreaResponse:
     description: Response for a request to delete an Identification Service Area.
     required:
@@ -825,82 +684,14 @@ definitions:
     properties:
       service_area:
         $ref: '#/definitions/IdentificationServiceArea'
-        description: Indentification Service Area that was just deleted.
       subscribers:
         description: DSS subscribers that this client now has the obligation to
           notify of the Identification Service Area just deleted.  This client must
-          call DELETE for each provided URL according to the `/identification_service_areas`
+          call DELETE for each provided URL according to the `/uss/identification_service_areas`
           path API.
         type: array
         items:
           $ref: '#/definitions/SubscriberToNotify'
-  PutIdentificationServiceAreaParams:
-    description: Parameters for inserting a new identification_service_area.
-    required:
-    - extents
-    - url
-    type: object
-    properties:
-      extents:
-        description: |-
-          The bounding spacetime extents of this Identification Service Area.  Start and end times must be specified.
-
-          These extents should not reveal any sensitive information about the flight or flights within them.  This means, for instance, that extents should not tightly-wrap a flight path, nor should they generally be centered around the takeoff point of a single flight.
-        $ref: '#/definitions/Volume4D' 
-      url:
-       type: string
-  PatchIdentificationServiceAreaParams:
-    description: Parameters for inserting a new identification_service_area.
-    required:
-    - version
-    type: object
-    properties:
-      extents:
-        description: |-
-          The bounding spacetime extents of this Identification Service Area.  Start and end times must be specified.
-
-          These extents should not reveal any sensitive information about the flight or flights within them.  This means, for instance, that extents should not tightly-wrap a flight path, nor should they generally be centered around the takeoff point of a single flight.
-        $ref: '#/definitions/Volume4D' 
-      url:
-        type:
-          - string
-          - "null"
-      version:
-        description: Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
-        type: string
-  IdentificationServiceArea:
-    description: An Identification Service Area (area in which remote ID services
-      are being provided).  The DSS reports only these declarations and clients
-      must exchange flight information peer-to-peer.
-    required:
-    - id
-    - url
-    - owner
-    - version
-    type: object
-    properties:
-      id:
-        $ref: '#/definitions/UUIDv4'
-        description: Unique identifier for this service area.
-      end_time:
-        $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
-        description: If set, this subscription will be automatically removed after
-          this time.  RFC 3339 format, per OpenAPI specification.
-      start_time:
-        $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
-        description: If set, this Subscription will not generate any notifications
-          before this time.  RFC 3339 format, per OpenAPI specification.
-      url:
-        type: string
-      owner:
-        description: Assigned by the DSS based on creating client’s ID (via access
-          token).  Used for restricting mutation and deletion operations to owner,
-          and only requiring EntitySignatures for unowned Entities.
-        type: string
-        example: myuss
-      version:
-        description: A versioning string which can be used for read-modify-write operations to maintain idempotency.
-        type: string
   Subscription:
     description: Specification of a geographic area that a client is interested
       in on an ongoing basis (e.g., “planning area”).  Internal to the DSS.
@@ -914,9 +705,8 @@ definitions:
     properties:
       id:
         $ref: '#/definitions/UUIDv4'
-        description: Unique identifier for this subscription.
-      url:
-        type: string
+      callbacks:
+        $ref: '#/definitions/SubscriptionCallbacks'
       owner:
         description: Assigned by the DSS based on creating client’s ID (via access
           token).  Used for restricting mutation and deletion operations to owner.
@@ -924,119 +714,109 @@ definitions:
         example: myuss
       notification_index:
         $ref: '#/definitions/SubscriptionNotificationIndex'
-      end_time:
-        $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
+      expires:
         description: If set, this subscription will be automatically removed after
           this time.  RFC 3339 format, per OpenAPI specification.
-      start_time:
         $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
-        description: If set, this Subscription will not generate any notifications
-          before this time.  RFC 3339 format, per OpenAPI specification.
+      begins:
+        $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
       version:
-        description: A versioning string which can be used for read-modify-write operations to maintain idempotency.
-        type: string
+        $ref: '#/definitions/Version'
   SubscriptionCallbacks:
     description: Endpoints that should be called when an applicable event occurs.  At
       least one field must be specified.
-    type: 
-      - string
-      - "null"
-  PutSubscriptionParams:
-    description: Parameters for inserting a new identification_service_area.
+    type: object
+    properties:
+      identification_service_area_url:
+        $ref: '#/definitions/URL'
+  PutSubscriptionParameters:
+    description: Parameters for a request to create or update a subscription in
+      the DSS.
     required:
     - extents
-    - url
+    - callbacks
     type: object
     properties:
       extents:
-        description: |-
-          The spacetime extents of the volume to subscribe to.
-
-          This subscription will automatically be deleted after its end time if it has not been refreshed by then.  If end time is not specified, the value will be automatically set to 24 hours in the future.
-
-          Note that some Entities triggering notifications may lie entirely outside the requested area.
-        $ref: '#/definitions/Volume4D' 
-      url:
-       type: string
-  PatchSubscriptionParams:
-    description: Parameters for inserting a new identification_service_area.
+        $ref: '#/definitions/Volume4D'
+      callbacks:
+        $ref: '#/definitions/SubscriptionCallbacks'
+      version:
+        $ref: '#/definitions/Version'
+  PutSubscriptionResponse:
+    description: Response for a request to create or update a subscription.
     required:
+    - subscription
+    type: object
+    properties:
+      service_areas:
+        description: Identification Service Areas in or near the subscription area
+          at the time of creation/update, if `identification_service_area_url` callback
+          was specified.
+        type: array
+        items:
+          $ref: '#/definitions/IdentificationServiceArea'
+      subscription:
+        $ref: '#/definitions/Subscription'
+  IdentificationServiceArea:
+    description: An Identification Service Area (area in which remote ID services
+      are being provided).  The DSS reports only these declarations and clients
+      must exchange flight information peer-to-peer.
+    required:
+    - id
+    - flights_url
+    - owner
+    - time_start
+    - time_end
     - version
     type: object
     properties:
-      extents:
-        description: |-
-          The spacetime extents of the volume to subscribe to.
-
-          This subscription will automatically be deleted after its end time if it has not been refreshed by then.  If end time is not specified, the value will be automatically set to 24 hours in the future.
-
-          Note that some Entities triggering notifications may lie entirely outside the requested area.
-        $ref: '#/definitions/Volume4D' 
-      url:
-        type:
-          - string
-          - "null"
-      version:
-        description: Will only update an existing entity if the versions are unchanged. Used for idempotent updates.
+      id:
+        $ref: '#/definitions/UUIDv4'
+      flights_url:
+        $ref: '#/definitions/URL'
+      owner:
+        description: Assigned by the DSS based on creating client’s ID (via access
+          token).  Used for restricting mutation and deletion operations to owner,
+          and only requiring EntitySignatures for unowned Entities.
         type: string
-  PatchSubscriptionResponse:
-    description: Response for a request to update a subscription.
-    required:
-    - subscription
-    type: object
-    properties:
-      service_areas:
-        description: Identification Service Areas in or near the subscription area
-          at the time of creation/update, if `identification_service_area_url` callback
-          was specified.
-        type: array
-        items:
-          $ref: '#/definitions/IdentificationServiceArea'
-      subscription:
-        $ref: '#/definitions/Subscription'
-        description: Result of the operation on the subscription.
-  PutSubscriptionResponse:
-    description: Response for a request to create a subscription.
-    required:
-    - subscription
-    type: object
-    properties:
-      service_areas:
-        description: Identification Service Areas in or near the subscription area
-          at the time of creation/update, if `identification_service_area_url` callback
-          was specified.
-        type: array
-        items:
-          $ref: '#/definitions/IdentificationServiceArea'
-      subscription:
-        $ref: '#/definitions/Subscription'
-        description: Result of the operation on the subscription.
-securitySchemes:
-  AuthFromAuthorizationAuthority:
-    flows:
-      clientCredentials:
-        tokenUrl: https://example.com/oauth/token
-        scopes:
-          dss.read.identification_service_areas: Client may query, read, or create
-            subscriptions for Identification Service Areas for remote ID.  A remote
-            ID display provider shall be granted this scope upon request.
-          dss.write.identification_service_areas: Client may create, edit, and delete
-            Identification Service Areas for remote ID.  A remote ID service provider
-            shall be granted this scope upon request.
-    type: oauth2
-    description: |-
-      Authorization from, or on behalf of, an authorization authority.  This authority shall issue access tokens that are JSON Web Tokens as defined in RFC 7519, using the `RS256` algorithm for the signature, and publish to all providers the public key for verifying that signature.
+        example: myuss
+      time_start:
+        format: date-time
+        description: Beginning time of service.  RFC 3339 format, per OpenAPI specification.
+        $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
+      time_end:
+        format: date-time
+        description: End time of service.  RFC 3339 format, per OpenAPI specification.
+        $ref: 'google/protobuf/timestamp.proto#/google.protobuf.Timestamp'
+      version:
+        $ref: '#/definitions/Version'
+components:
+  securitySchemes:
+    AuthFromAuthorizationAuthority:
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            dss.read.identification_service_areas: Client may query, read, or create
+              subscriptions for Identification Service Areas for remote ID.  A remote
+              ID display provider shall be granted this scope upon request.
+            dss.write.identification_service_areas: Client may create, edit, and delete
+              Identification Service Areas for remote ID.  A remote ID service provider
+              shall be granted this scope upon request.
+      type: oauth2
+      description: |-
+        Authorization from, or on behalf of, an authorization authority.  This authority shall issue access tokens that are JSON Web Tokens as defined in RFC 7519, using the `RS256` algorithm for the signature, and publish to all providers the public key for verifying that signature.
 
-      The following fields shall be included in the JWT claim for access tokens issued by this authority:
-      * `iss`, with the URL at which the token generation request was received.
-      * `aud`, with audience requested by client.
-      * `exp`, with a time no further than 1 hour in the future.
-      * `client_id`, with unique ID of the client requesting the access token.
-      * `scope`, with an array of strings indicating the scopes granted.
+        The following fields shall be included in the JWT claim for access tokens issued by this authority:
+        * `iss`, with the URL at which the token generation request was received.
+        * `exp`, with a time no further than 1 hour in the future.
+        * `sub`, with unique ID of the client requesting the access token.
+        * `scope`, with an array of strings indicating the scopes granted.
 
-      Multiple scopes for a single token shall be granted if requested.
+        Multiple scopes for a single token shall be granted if requested.  The tokens granted by this authority shall protect against reuse of received tokens to impersonate the sender to other recipients (via use of the `aud` claim or other means).
 
-      Clients shall provide these access tokens in an `Authorization` header in the form `Bearer <token>` in accordance with RFC 6750.
+        Clients shall provide these access tokens in an `Authorization` header in the form `Bearer <token>` in accordance with RFC 6750.
 security:
 - AuthFromAuthorizationAuthority:
   - dss.read.position_reporting_entities
@@ -1048,8 +828,3 @@ security:
 tags:
 - name: dss
   description: Endpoints exposed by the DSS server.
-- name: p2p_rid
-  description: Endpoints exposed by remote ID service providers for peer-peer communication.
-- name: dar
-  description: Communication necessary to synchronize DSS airspace representation
-    information.
