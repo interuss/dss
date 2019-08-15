@@ -53,7 +53,6 @@ coverage.xml
 
 # Generated configs
 config/generated/
-new-config/generated/
 
 # Django stuff:
 *.log

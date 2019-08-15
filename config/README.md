@@ -1,32 +1,24 @@
-# InterUSS Platform configuration files
+# Multi-region cockroachdb setup
 
-## Introduction
+1. Make sure your `$KUBECONFIG` is pointed to the proper Kubernetes cluster and your context is set accordingly.
+2. Ensure cockroach binary is installed and is able to be run with `cockroach version`. We use this to generate the certs in the python script.
+3. Install helm because it is needed to generate the templates. (would like to transition to kustomize later on since its natively supported in kubectl)
+4. Be sure to run all scripts from within this directory.
+5. Uncomment and fill out the **create_clusters** section in the python script with a namespace and context.
+  * If you are joining existing clusters, make sure to fill in the join_clusters variable with the appropriate node addresses and the path to their public cert.
 
-This directory contains the steps, and some helper files to get CockroachDB setup, either creating a set of nodes from scratch, or joining nodes to an existing set of nodes.
+   Run the `make-certs.py` script to generate the certs
 
-## Caveats
+   > `python2.7 make-certs.py`
 
-* The join flag typically specifies 3-5 other nodes to join. The rest of the nodes are learned through a gossip protocol. Since we will run nodes on different networks, this set of helper files attempts to join a few local nodes, and uses a loadbalancer to find nodes on other networks.
-* The advertise-addr and locality-advertise-addr flags tell each CRDB node how to make itself discoverable. For nodes on the same network we can just use a hostname or internal IP, but for nodes on different networks we need to make sure they are discoverable. There's a handful of different ways to accomplish this
-  * Make every node's IP address static and external
-    * More difficult to manage, and mitigates some of the benefits of kubernetes, but makes discovery simple
-  * Advertise a loadbalancer IP to nodes on other networks.
-    * This is what we currently do in our setup, but is not required of every participating node. The downside to this is 2 extra hops: 1) to the loadbalancer which will then round robin the request to a node X. 2) Node X to the correct node, since the LB doesn't have the context for which node to visit. 
-      * CRDB supports arbitrary forwarding so this works for our use case.
-  * Setup DNS forwarding or mirroring
-  * Setup a VPN
-  * Leverage Multicluster Istio
-    * [Docs](https://istio.io/docs/concepts/multicluster-deployments/)
-    * [Example](https://github.com/GoogleCloudPlatform/istio-samples/tree/master/multicluster-gke/dual-control-plane)
-    * This is probably what we want to do in the long term. Again there is no requirement that every node needs to use Istio. We can have 1 set of nodes using Istio, another 2 that are on a VPN, another going through a Loadbalancer, etc.
-* We are using Cockroach's [combined certs](https://www.cockroachlabs.com/docs/stable/rotate-certificates.html#why-cockroachdb-creates-a-combined-ca-certificate) so that each participant can maintain secrecy of their certs private key. This means we all need to share the certs, to create the combined set.
-  * We should also practice coordinated cert rotation, say 1/month.
+   This script does 2 things:
+   This script does 3 things:
 
+- Builds a certificate directory structure
+- Creates certificates within their respective directory to be used by the `apply-certs.sh` script.
 
-## Steps
-
-1. Create a kubernetes cluster, ie: follow all of the substeps in Step 1. here: https://www.cockroachlabs.com/docs/stable/orchestrate-cockroachdb-with-kubernetes-multi-cluster.html
-2. Add the new cluster namespace and context to make-cluster.py, and add any clusters you are intending to join.
-3. Run `$ ./make-cluster.py`
-4. Set your new load balancer ip to static. These should have been output when running make-files.py.
-5. Configure firewall rules to allow ingress/egress traffic to port 26257. Also make sure that all internal traffic on this port is allowed.
+5. Fill out the `NAMESPACE` and `CLUSTER_INIT` variables at the top of `apply-certs.sh` and then run it to load the secrets into the script. This script will delete existing secrets on the cluster named `cockroachdb.client.root` and it will also create secrets on the cluster containing the certificates that were generated from the python script.
+6. Fill out the `values.yaml` file with at minimum the PublicAddr, namespace, and storageClass values.
+7. Run `helm template . > cockroachdb.yaml` to render the YAML.
+8. Run `kubectl apply -f cockroackdb.yaml` to apply it to the cluster.
+9. Make every node's IP address external and static. Ensure you're firewall rules will allow other operators' nodes to join.

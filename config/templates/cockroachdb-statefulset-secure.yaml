@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: cockroachdb
+  namespace: {{ .Values.namespace}}
   labels:
     app: cockroachdb
 ---
@@ -9,6 +10,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
   name: cockroachdb
+  namespace: {{ .Values.namespace}}
   labels:
     app: cockroachdb
 rules:
@@ -40,6 +42,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: cockroachdb
+  namespace: {{ .Values.namespace}}
   labels:
     app: cockroachdb
 roleRef:
@@ -49,7 +52,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: cockroachdb
-  namespace: default
+  namespace: {{ .Values.namespace}}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -74,6 +77,7 @@ metadata:
   # create a load-balanced ClusterIP and should not be used directly by clients
   # in most circumstances.
   name: cockroachdb
+  namespace: {{ .Values.namespace}}
   labels:
     app: cockroachdb
   annotations:
@@ -85,14 +89,14 @@ metadata:
     # Enable automatic monitoring of all instances when Prometheus is running in the cluster.
     prometheus.io/scrape: "true"
     prometheus.io/path: "_status/vars"
-    prometheus.io/port: "8080"
+    prometheus.io/port: "{{ .Values.HttpPort }}"
 spec:
   ports:
-  - port: 26257
-    targetPort: 26257
+  - port: {{ .Values.CockroachPort }}
+    targetPort: {{ .Values.CockroachPort }}
     name: grpc
-  - port: 8080
-    targetPort: 8080
+  - port: {{ .Values.HttpPort }}
+    targetPort: {{ .Values.HttpPort }}
     name: http
   # We want all pods in the StatefulSet to have their addresses published for
   # the sake of the other CockroachDB pods even before they're ready, since they
@@ -106,6 +110,7 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: cockroachdb-budget
+  namespace: {{ .Values.namespace}}
   labels:
     app: cockroachdb
 spec:
@@ -114,10 +119,35 @@ spec:
       app: cockroachdb
   maxUnavailable: 1
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  # This service is meant to be used by clients of the database. It exposes a ClusterIP that will
+  # automatically load balance connections to the different database pods.
+  name: cockroachdb-public
+  labels:
+    app: cockroachdb
+spec:
+  ports:
+  # The main port, served by gRPC, serves Postgres-flavor SQL, internode
+  # traffic and the cli.
+  - port: 26257
+    targetPort: 26257
+    name: grpc
+  # The secondary port serves the UI as well as health and debug endpoints.
+  - port: 8080
+    targetPort: 8080
+    name: http
+  selector:
+    app: cockroachdb
+  sessionAffinity: ClientIP
+  type: LoadBalancer
+---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   name: cockroachdb
+  namespace: {{ .Values.namespace}}
 spec:
   serviceName: "cockroachdb"
   replicas: 3
@@ -141,12 +171,12 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: cockroachdb
-        image: cockroachdb/cockroach:v19.1.3
+        image: {{ .Values.image }}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 26257
+        - containerPort: {{ .Values.CockroachPort }}
           name: grpc
-        - containerPort: 8080
+        - containerPort: {{ .Values.HttpPort }}
           name: http
         livenessProbe:
           httpGet:
@@ -170,13 +200,13 @@ spec:
           mountPath: /cockroach/cockroach-certs
         env:
         - name: COCKROACH_CHANNEL
-          value: kubernetes-multiregion
+          value: {{ .Values.cockroachChannel}}
         command:
           - "/bin/bash"
           - "-ecx"
           # The use of qualified `hostname -f` is crucial:
           # Other nodes aren't able to look up the unqualified hostname.
-          - "exec /cockroach/cockroach start --logtostderr --certs-dir /cockroach/cockroach-certs --advertise-addr PUBLIC_ADDR --locality-advertise-addr=LOCALITYLIST@$(hostname -f) --http-addr 0.0.0.0 --join JOINLIST --locality LOCALITYLIST --cache 25% --max-sql-memory 25%"
+          - "exec /cockroach/cockroach start --logtostderr --certs-dir /cockroach/cockroach-certs --advertise-addr {{ .Values.PublicAddr }} --locality-advertise-addr=zone={{ .Values.namespace }}@$(hostname -f) --http-addr 0.0.0.0 --join cockroachdb-0.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }},cockroachdb-1.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }},cockroachdb-2.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }}{{ if .Values.JoinExisting }},{{ join "," .Values.JoinExisting }}{{ end }} --locality=zone={{ .Values.namespace}} --cache 25% --max-sql-memory 25%"
       # No pre-stop hook is required, a SIGTERM plus some time is all that's
       # needed for graceful shutdown of a node.
       terminationGracePeriodSeconds: 60
@@ -195,8 +225,10 @@ spec:
   - metadata:
       name: datadir
     spec:
+      storageClassName: {{ .Values.storageClass }}
       accessModes:
         - "ReadWriteOnce"
       resources:
         requests:
-          storage: 100Gi
+          storage: {{ .Values.storageSize }}
+

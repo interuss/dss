@@ -1,3 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-gateway
+  labels:
+    app: http-gateway
+  annotations:
+    # Enable automatic monitoring of all instances when Prometheus is running in the cluster.
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "_status/vars"
+    prometheus.io/port: "8080"
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http-gateway
+  selector:
+    app: http-gateway
+  type: LoadBalancer
+---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
@@ -11,12 +31,12 @@ spec:
     spec:
       containers:
       - name: http-gateway
-        image: http-gateway:latest
+        image: {{ .gatewayImage }}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
-        command:
-          - "/bin/bash"
-          - "-ecx"
-          - "exec ./main.go  -grpc-backend=grpc-backend.YOUR_ZONE_NAME:TARGET_PORT -port=8080"
+        args:
+          - -grpc-backend=grpc-backend.{{ .Values.namespace }}:{{ .GrpcPort }}
+          - -addr=:{{ .HttpPort }}
+

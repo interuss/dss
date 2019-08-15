@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	address    = flag.String("addr", "127.0.0.1:8080", "address")
+	address    = flag.String("addr", ":8081", "address")
 	pkFile     = flag.String("public_key_file", "", "Path to public Key to use for JWT decoding.")
 	reflectAPI = flag.Bool("reflect_api", false, "Whether to reflect the API.")
 	logFormat  = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
