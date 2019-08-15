@@ -40,7 +40,7 @@ spec:
           defaultMode: 256
       containers:
       - name: grpc-backend
-        image: grpc-backend:latest
+        image: {{ .Values.backendImage }}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8081
@@ -50,17 +50,11 @@ spec:
           mountPath: /cockroach-certs
         - name: public-certs
           mountPath: /public-certs
-        env:
-          - name: DSS_COCKROACH_URI
-            valueFrom:
-              configMapKeyRef:
-                name: grpc-backend-config
-                key: cockroach.uri
         args:
-          - -addr=:8081
-          - -cockroach_host=cockroachdb.{{ .Namespace }}
-          - -cockroach_port=26257
+          - -addr=:{{ .GrpcPort }}
+          - -cockroach_host=cockroachdb-public.{{ .Values.namespace}}
+          - -cockroach_port={{ .CockroachPort }}
           - -cockroach_ssl_mode=verify-full
           - -cockroach_user=root
-          - -cockroach_ssl_dir=/client-certs
+          - -cockroach_ssl_dir=/cockroach-certs
           - -public_key_file=/public-certs/oauth.pem

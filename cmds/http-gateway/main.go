@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	address     = flag.String("addr", "127.0.0.1:8080", "address")
+	address     = flag.String("addr", ":8080", "address")
 	grpcBackend = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
 )
 
