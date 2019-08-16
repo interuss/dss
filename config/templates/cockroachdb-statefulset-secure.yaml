@@ -125,14 +125,15 @@ metadata:
   # This service is meant to be used by clients of the database. It exposes a ClusterIP that will
   # automatically load balance connections to the different database pods.
   name: cockroachdb-public
+  namespace: {{ .Values.namespace }}
   labels:
     app: cockroachdb
 spec:
   ports:
   # The main port, served by gRPC, serves Postgres-flavor SQL, internode
   # traffic and the cli.
-  - port: 26257
-    targetPort: 26257
+  - port: {{ .Values.CockroachPort }}
+    targetPort: {{ .Values.CockroachPort }}
     name: grpc
   # The secondary port serves the UI as well as health and debug endpoints.
   - port: 8080
@@ -201,12 +202,16 @@ spec:
         env:
         - name: COCKROACH_CHANNEL
           value: {{ .Values.cockroachChannel}}
+        {{- range $i, $ip := .Values.ips }}
+        - name: cockroachdb-{{ $i }}
+          value: {{ $ip }}
+        {{- end }}
         command:
           - "/bin/bash"
           - "-ecx"
           # The use of qualified `hostname -f` is crucial:
           # Other nodes aren't able to look up the unqualified hostname.
-          - "exec /cockroach/cockroach start --logtostderr --certs-dir /cockroach/cockroach-certs --advertise-addr {{ .Values.PublicAddr }} --locality-advertise-addr=zone={{ .Values.namespace }}@$(hostname -f) --http-addr 0.0.0.0 --join cockroachdb-0.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }},cockroachdb-1.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }},cockroachdb-2.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }}{{ if .Values.JoinExisting }},{{ join "," .Values.JoinExisting }}{{ end }} --locality=zone={{ .Values.namespace}} --cache 25% --max-sql-memory 25%"
+          - "exec /cockroach/cockroach start --logtostderr --certs-dir /cockroach/cockroach-certs --advertise-addr $(printenv $HOSTNAME) --locality-advertise-addr=zone={{ .Values.namespace }}@$(hostname -f) --http-addr 0.0.0.0 --join cockroachdb-0.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }},cockroachdb-1.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }},cockroachdb-2.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }}{{ if .Values.JoinExisting }},{{ join "," .Values.JoinExisting }}{{ end }} --locality=zone={{ .Values.namespace}} --cache 25% --max-sql-memory 25%"
       # No pre-stop hook is required, a SIGTERM plus some time is all that's
       # needed for graceful shutdown of a node.
       terminationGracePeriodSeconds: 60
@@ -231,4 +236,3 @@ spec:
       resources:
         requests:
           storage: {{ .Values.storageSize }}
-
