@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	overflow         = -1
 	serviceAreasPool = []struct {
 		name  string
 		input *models.IdentificationServiceArea
@@ -26,6 +27,7 @@ var (
 				EndTime:   &endTime,
 				Cells: s2.CellUnion{
 					s2.CellID(42),
+					s2.CellID(uint64(overflow)),
 				},
 			},
 		},
@@ -40,6 +42,7 @@ func TestStoreSearchISAs(t *testing.T) {
 			s2.CellID(84),
 			s2.CellID(126),
 			s2.CellID(168),
+			s2.CellID(uint64(overflow)),
 		}
 		insertedServiceAreas = []*models.IdentificationServiceArea{}
 		store, tearDownStore = setUpStore(ctx, t)
@@ -75,6 +78,14 @@ func TestStoreSearchISAs(t *testing.T) {
 		{
 			name:  "search for only one cell",
 			cells: s2.CellUnion{s2.CellID(42)},
+			timestampMutator: func(time.Time, time.Time) (*time.Time, *time.Time) {
+				return nil, nil
+			},
+			expectedLen: 1,
+		},
+		{
+			name:  "search for only one cell with high bit set",
+			cells: s2.CellUnion{s2.CellID(uint64(overflow))},
 			timestampMutator: func(time.Time, time.Time) (*time.Time, *time.Time) {
 				return nil, nil
 			},
