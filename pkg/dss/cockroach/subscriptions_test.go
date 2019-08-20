@@ -224,6 +224,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 	}()
 
 	var (
+		overflow = -1
 		inserted = []*models.Subscription{}
 		cells    = s2.CellUnion{
 			s2.CellID(42),
@@ -231,6 +232,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 			s2.CellID(126),
 			s2.CellID(168),
 			s2.CellID(200),
+			s2.CellID(overflow),
 		}
 		owners = []models.Owner{
 			"me",

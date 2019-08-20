@@ -252,7 +252,12 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 		return nil, err
 	}
 
-	subscriptions, err := c.fetchSubscriptions(ctx, tx, query, pq.Array(cells), owner)
+	cids := make([]int64, len(cells))
+	for i, cell := range cells {
+		cids[i] = int64(cell)
+	}
+
+	subscriptions, err := c.fetchSubscriptions(ctx, tx, query, pq.Array(cids), owner)
 	if err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
 	}

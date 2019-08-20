@@ -94,13 +94,14 @@ func (c *Store) populateISACells(ctx context.Context, q queryable, i *models.Ide
 		return err
 	}
 	defer rows.Close()
-	var cell s2.CellID
+	var cell int64
 	i.Cells = s2.CellUnion{}
+
 	for rows.Next() {
 		if err := rows.Scan(&cell); err != nil {
 			return err
 		}
-		i.Cells = append(i.Cells, cell)
+		i.Cells = append(i.Cells, s2.CellID(uint64(cell)))
 	}
 	if err := rows.Err(); err != nil {
 		return err
