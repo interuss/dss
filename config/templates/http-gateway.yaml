@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: http-gateway
+  namespace: {{ .Values.namespace}}
   labels:
     app: http-gateway
   annotations:
@@ -22,6 +23,7 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: http-gateway
+  namespace: {{ .Values.namespace}}
 spec:
   replicas: 1
   template:
