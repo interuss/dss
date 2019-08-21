@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/dgrijalva/jwt-go"
@@ -43,6 +45,15 @@ func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey) context.Context {
 	return metadata.NewIncomingContext(ctx, metadata.New(map[string]string{
 		"Authorization": "Bearer " + tokenString,
 	}))
+}
+
+func TestNewRSAAuthClient(t *testing.T) {
+	tmpfile, err := ioutil.TempFile("/tmp", "bad.pem")
+	require.NoError(t, tmpfile.Close())
+	// Test catches previous segfault.
+	_, err = NewRSAAuthClient(tmpfile.Name())
+	require.Error(t, err)
+	require.NoError(t, os.Remove(tmpfile.Name()))
 }
 
 func TestSymmetricAuthInterceptor(t *testing.T) {
