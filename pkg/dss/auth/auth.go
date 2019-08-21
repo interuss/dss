@@ -65,6 +65,9 @@ func NewRSAAuthClient(keyFile string) (*authClient, error) {
 		return nil, err
 	}
 	pub, _ := pem.Decode(bytes)
+	if pub == nil {
+		return nil, fmt.Errorf("error decoding keyFile")
+	}
 	parsedKey, err := x509.ParsePKIXPublicKey(pub.Bytes)
 	key, ok := parsedKey.(*rsa.PublicKey)
 	if !ok {
