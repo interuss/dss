@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: cockroachdb
-  namespace: {{ .Values.namespace}}
+  namespace: {{ .Values.namespace }}
   labels:
     app: cockroachdb
 ---
@@ -10,7 +10,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
   name: cockroachdb
-  namespace: {{ .Values.namespace}}
+  namespace: {{ .Values.namespace }}
   labels:
     app: cockroachdb
 rules:
@@ -42,7 +42,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: cockroachdb
-  namespace: {{ .Values.namespace}}
+  namespace: {{ .Values.namespace }}
   labels:
     app: cockroachdb
 roleRef:
@@ -52,7 +52,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: cockroachdb
-  namespace: {{ .Values.namespace}}
+  namespace: {{ .Values.namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -77,7 +77,7 @@ metadata:
   # create a load-balanced ClusterIP and should not be used directly by clients
   # in most circumstances.
   name: cockroachdb
-  namespace: {{ .Values.namespace}}
+  namespace: {{ .Values.namespace }}
   labels:
     app: cockroachdb
   annotations:
@@ -110,7 +110,7 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: cockroachdb-budget
-  namespace: {{ .Values.namespace}}
+  namespace: {{ .Values.namespace }}
   labels:
     app: cockroachdb
 spec:
@@ -148,7 +148,7 @@ apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   name: cockroachdb
-  namespace: {{ .Values.namespace}}
+  namespace: {{ .Values.namespace }}
 spec:
   serviceName: "cockroachdb"
   replicas: 3
@@ -202,16 +202,37 @@ spec:
         env:
         - name: COCKROACH_CHANNEL
           value: {{ .Values.cockroachChannel}}
+
+        # These are used by EXTERNAL_IP_FOR_$HOSTNAME below so the pods know
+        # their own external IP address to advertise to other nodes outside this
+        # zone.
         {{- range $i, $ip := .Values.ips }}
-        - name: cockroachdb-{{ $i }}
+        - name: EXTERNAL_IP_FOR_cockroachdb-{{ $i }}
           value: {{ $ip }}
         {{- end }}
+
         command:
           - "/bin/bash"
           - "-ecx"
           # The use of qualified `hostname -f` is crucial:
           # Other nodes aren't able to look up the unqualified hostname.
-          - "exec /cockroach/cockroach start --logtostderr --certs-dir /cockroach/cockroach-certs --advertise-addr $(printenv $HOSTNAME) --locality-advertise-addr=zone={{ .Values.namespace }}@$(hostname -f) --http-addr 0.0.0.0 --join cockroachdb-0.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }},cockroachdb-1.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }},cockroachdb-2.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }}{{ if .Values.JoinExisting }},{{ join "," .Values.JoinExisting }}{{ end }} --locality=zone={{ .Values.namespace}} --cache 25% --max-sql-memory 25%"
+          - >-
+            exec /cockroach/cockroach start
+            --logtostderr
+            --certs-dir "/cockroach/cockroach-certs"
+            --advertise-addr "$(printenv EXTERNAL_IP_FOR_$HOSTNAME)"
+            --locality-advertise-addr "zone={{ .Values.namespace }}@$(hostname -f)"
+            --http-addr 0.0.0.0
+            --join "{{ range $index := list 0 1 2 -}}
+                {{- if ne $index 0 }},{{ end -}}
+                cockroachdb-{{ $index }}.cockroachdb.{{ $.Values.namespace }}.svc.cluster.local:{{ $.Values.CockroachPort }}
+              {{- end -}}
+              {{- if .Values.JoinExisting -}}
+                ,{{ join "," .Values.JoinExisting -}}
+              {{ end }}"
+            --locality "zone={{ .Values.namespace }}"
+            --cache 25%
+            --max-sql-memory 25%
       # No pre-stop hook is required, a SIGTERM plus some time is all that's
       # needed for graceful shutdown of a node.
       terminationGracePeriodSeconds: 60
