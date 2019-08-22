@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
@@ -23,6 +24,8 @@ func symmetricTokenCtx(ctx context.Context, key []byte) context.Context {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"foo":       "bar",
 		"client_id": "me",
+		"exp":       100,
+		"nbf":       20,
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -33,10 +36,12 @@ func symmetricTokenCtx(ctx context.Context, key []byte) context.Context {
 	}))
 }
 
-func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey) context.Context {
+func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey, exp, nbf int64) context.Context {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"foo":       "bar",
 		"client_id": "me",
+		"exp":       exp,
+		"nbf":       nbf,
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -57,6 +62,11 @@ func TestNewRSAAuthClient(t *testing.T) {
 }
 
 func TestSymmetricAuthInterceptor(t *testing.T) {
+	jwt.TimeFunc = func() time.Time {
+		return time.Unix(42, 0)
+	}
+	defer func() { jwt.TimeFunc = time.Now }()
+
 	ctx := context.Background()
 	var authTests = []struct {
 		ctx  context.Context
@@ -80,6 +90,11 @@ func TestSymmetricAuthInterceptor(t *testing.T) {
 }
 
 func TestRSAAuthInterceptor(t *testing.T) {
+	jwt.TimeFunc = func() time.Time {
+		return time.Unix(42, 0)
+	}
+	defer func() { jwt.TimeFunc = time.Now }()
+
 	ctx := context.Background()
 	key, err := rsa.GenerateKey(rand.Reader, 512)
 	if err != nil {
@@ -95,8 +110,10 @@ func TestRSAAuthInterceptor(t *testing.T) {
 	}{
 		{ctx, codes.Unauthenticated},
 		{metadata.NewIncomingContext(ctx, metadata.New(nil)), codes.Unauthenticated},
-		{rsaTokenCtx(ctx, badKey), codes.Unauthenticated},
-		{rsaTokenCtx(ctx, key), codes.OK},
+		{rsaTokenCtx(ctx, badKey, 100, 20), codes.Unauthenticated},
+		{rsaTokenCtx(ctx, key, 100, 20), codes.OK},
+		{rsaTokenCtx(ctx, key, 30, 20), codes.Unauthenticated},  // Expired
+		{rsaTokenCtx(ctx, key, 100, 50), codes.Unauthenticated}, // Not valid yet
 	}
 
 	a := &authClient{key: &key.PublicKey}

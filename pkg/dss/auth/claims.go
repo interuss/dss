@@ -21,5 +21,5 @@ func (c *claims) Valid() error {
 		return errMissingOrEmptyClientID
 	}
 
-	return nil
+	return c.StandardClaims.Valid()
 }
