@@ -53,6 +53,7 @@ coverage.xml
 
 # Generated configs
 config/generated/
+config/cockroachdb.yaml
 
 # Django stuff:
 *.log
