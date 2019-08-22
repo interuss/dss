@@ -1,7 +1,14 @@
 #!/bin/bash
 
-# Paths to directories in which to store certificates and generated YAML files.
-for i in {0..2}
-  do
-    kubectl expose pod cockroachdb-$i --namespace $NAMESPACE --type=LoadBalancer --name=crdb-node-$i
-  done
+set -e
+
+if [[ "$#" -ne 1 ]]; then
+    echo "Usage: $0 NAMESPACE"
+    exit 1
+fi
+
+set -x
+
+for i in {0..2}; do
+    kubectl expose pod "cockroachdb-$i" --namespace "$NAMESPACE" --type LoadBalancer --name "crdb-node-$i"
+done

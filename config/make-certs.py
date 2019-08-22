@@ -1,27 +1,21 @@
 #!/usr/bin/env python
 
-import distutils.spawn
-import json
+import argparse
+import itertools
+import glob
 import os
-import stat
-from subprocess import check_call, check_output
-from sys import exit
-from time import sleep
-
-# This script builds a loadbalancer in the specified namespace and then generates certificates.
+import shutil
+import subprocess
 
 
-class CockroachCluster():
+class CockroachCluster(object):
 
-    def __init__(self, namespace='', ca_certs_file='', node_addrs=None):
+    def __init__(self, namespace):
         self.namespace = namespace
-        if ca_certs_file:
-            self.ca_certs_file = ca_certs_file
-        self.node_addrs = node_addrs or []
 
     @property
     def directory(self):
-        return os.path.join('./generated/', self.namespace)
+        return os.path.join('generated', self.namespace)
 
     @property
     def ca_certs_file(self):
@@ -39,35 +33,27 @@ class CockroachCluster():
     def node_certs_dir(self):
         return os.path.join(self.directory, 'node_certs_dir')
 
-# EDIT/UNCOMMENT THIS!!
 
-# create_clusters = [
-#     CockroachCluster(
-#         namespace=,
-#         node_addrs = [
-#         ]
-#     ),
-# ]
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Creates certificates for a new Cockroachdb cluster')
+    parser.add_argument('namespace', metavar='NAMESPACE')
+    parser.add_argument('--node-address', metavar='ADDRESS', nargs='*',
+        default=[], help='extra addresses to add to the node certificate')
+    parser.add_argument('--node-ca-cert', metavar='FILENAME', nargs='*',
+        default=[], help='paths to CA certificates of other clusters that the '
+        'new cluster will join')
 
-join_clusters = [
-    # CockroachCluster(
-    #   node_addrs=[],  # should correspond to the advertise addr flag of the other nodes. Can use wildcard notation.
-    #   ca_certs_file='path_to_ca_public_cert',
-    # ),
-]
-
-flatten = lambda l: [item for sublist in l for item in sublist]
-def node_addrs():
-    addrs = []
-
-    return flatten([cr.node_addrs for cr in join_clusters + create_clusters])
+    return parser.parse_args()
 
 
+def main():
+    args = parse_args()
+    cr = CockroachCluster(args.namespace)
 
-# Create cert folders, create the namespace, and apply the loadbalancer yaml.
-for cr in create_clusters:
+    # Create the generated directories.
     try:
-        os.mkdir('./generated')
+        os.mkdir('generated')
     except OSError:
         pass
     try:
@@ -75,45 +61,59 @@ for cr in create_clusters:
     except OSError:
         pass
 
-# Build CA certs file
-for cr in create_clusters:
-    try:
-        check_call('rm -r %s' % (cr.ca_certs_dir), shell=True)
-    except:
-        pass
+    # Create a CA for each new cluster.
+    # Delete and recreate the ca_certs_dir.
+    shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
     os.mkdir(cr.ca_certs_dir)
-    check_call(['cockroach', 'cert', 'create-ca', '--certs-dir',
-                cr.ca_certs_dir, '--ca-key', cr.ca_certs_dir+'/ca.key'])
 
-for cr in create_clusters:
-    for cr_join in create_clusters + join_clusters:
-        if cr == cr_join:
-            continue
-        check_call(['cat %s >> %s' %
-                    (cr_join.ca_certs_file, cr.ca_certs_file)], shell=True)
+    # Create the CA.
+    subprocess.check_call([
+        'cockroach', 'cert', 'create-ca',
+        '--certs-dir', cr.ca_certs_dir,
+        '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')])
 
+    # Combine the ca_certs_files of all the joined clusters to the new cluster's
+    # ca_certs_file.
+    with open(cr.ca_certs_file) as new_certs_fh:
+        for ca_cert_file in args.node_ca_cert:
+            with open(ca_cert_file) as ca_cert_fh:
+                new_certs_fh.write(ca_cert_fh.read())
+                new_certs_fh.write('\n')
 
-
-# Now we can set up the certs since we can get the lb's ip address.
-
-# Build node and client certs
-for cr in create_clusters:
-    try:
-        check_call('rm -r %s' % (cr.node_certs_dir), shell=True)
-    except:
-        pass
-    try:
-        check_call('rm -r %s' % (cr.client_certs_dir), shell=True)
-    except:
-        pass
+    # Build node and client certs.
+    # Delete and recreate the directories.
+    shutil.rmtree(cr.node_certs_dir, ignore_errors=True)
+    shutil.rmtree(cr.client_certs_dir, ignore_errors=True)
     os.mkdir(cr.client_certs_dir)
     os.mkdir(cr.node_certs_dir)
-    check_call(['cp', cr.ca_certs_file, cr.client_certs_dir])
-    check_call(['cockroach', 'cert', 'create-client', 'root', '--certs-dir',
-                cr.client_certs_dir, '--ca-key', cr.ca_certs_dir+'/ca.key'])
 
-    check_call(['cp %s %s ' % (cr.client_certs_dir +
-                               '/*', cr.node_certs_dir)], shell=True)
+    shutil.copy(cr.ca_certs_file, cr.client_certs_dir)
 
-    check_call(['cockroach', 'cert', 'create-node', '--certs-dir', cr.node_certs_dir, '--ca-key', cr.ca_certs_dir+'/ca.key', 'localhost'] + node_addrs() + ['127.0.0.1', 'cockroachdb-public', 'cockroachdb-public.default',
-                'cockroachdb-public.'+cr.namespace, 'cockroachdb-public.%s.svc.cluster.local' % (cr.namespace), '*.cockroachdb', '*.cockroachdb.'+cr.namespace, 'cockroachdb.'+cr.namespace, '*.cockroachdb.%s.svc.cluster.local' % (cr.namespace)])
+    subprocess.check_call([
+        'cockroach', 'cert', 'create-client', 'root',
+        '--certs-dir', cr.client_certs_dir,
+        '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')])
+
+    for filename in glob.glob(os.path.join(cr.client_certs_dir, '*')):
+        shutil.copy(filename, cr.node_certs_dir)
+
+    node_addresses = ['localhost']
+    node_addresses.extend(args.node_address)
+    node_addresses.extend([
+        'cockroachdb-public.%s' % cr.namespace,
+        'cockroachdb-public.%s.svc.cluster.local' % cr.namespace,
+        '*.cockroachdb',
+        '*.cockroachdb.%s' % cr.namespace,
+        'cockroachdb.%s' % cr.namespace,
+        '*.cockroachdb.%s.svc.cluster.local' % cr.namespace
+    ])
+
+    subprocess.check_call([
+        'cockroach', 'cert', 'create-node',
+        '--certs-dir', cr.node_certs_dir,
+        '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')]
+        + node_addresses)
+
+
+if __name__ == '__main__':
+    main()

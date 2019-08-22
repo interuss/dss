@@ -1,20 +1,31 @@
 #!/bin/bash
 
+set -e
+
+if [[ "$#" -ne 1 ]]; then
+    echo "Usage: $0 NAMESPACE"
+    exit 1
+fi
+
+NAMESPACE="$1"
+
+set -x
+
 # Paths to directories in which to store certificates and generated YAML files.
-CLIENTS_CERTS_DIR=$(pwd)/generated/$NAMESPACE/client_certs_dir
-NODE_CERTS_DIR=$(pwd)/generated/$NAMESPACE/node_certs_dir
-DIR=$(pwd)
-CONTEXT=$(kubectl config current-context)
-TEMPLATES_DIR=$DIR/templates
-# ------------------------------------------------------------------------------
+DIR="$(pwd)"
+CLIENTS_CERTS_DIR="$DIR/generated/$NAMESPACE/client_certs_dir"
+NODE_CERTS_DIR="$DIR/generated/$NAMESPACE/node_certs_dir"
+TEMPLATES_DIR="$DIR/templates"
 
-# Delete previous secrets in case they have changed
-kubectl create namespace $NAMESPACE --context $CONTEXT
+# Delete previous secrets in case they have changed.
+kubectl create namespace "$NAMESPACE" || true
 
-kubectl delete secret cockroachdb.client.root --context $CONTEXT 
-kubectl delete secret cockroachdb.client.root --namespace $NAMESPACE --context $CONTEXT
-kubectl delete secret cockroachdb.node --namespace $NAMESPACE --context $CONTEXT 
+kubectl delete secret cockroachdb.client.root || true
+kubectl delete secret cockroachdb.client.root --namespace "$NAMESPACE" || true
+kubectl delete secret cockroachdb.node --namespace "$NAMESPACE" || true
+kubectl delete secret dss.public.certs --namespace "$NAMESPACE" || true
 
-kubectl create secret generic cockroachdb.client.root --from-file $CLIENTS_CERTS_DIR --context $CONTEXT 
-kubectl create secret generic cockroachdb.client.root --namespace $NAMESPACE --from-file $CLIENTS_CERTS_DIR --context $CONTEXT
-kubectl create secret generic cockroachdb.node --namespace $NAMESPACE --from-file $NODE_CERTS_DIR --context $CONTEXT 
+kubectl create secret generic cockroachdb.client.root --from-file "$CLIENTS_CERTS_DIR"
+kubectl create secret generic cockroachdb.client.root --namespace "$NAMESPACE" --from-file "$CLIENTS_CERTS_DIR"
+kubectl create secret generic cockroachdb.node --namespace "$NAMESPACE" --from-file "$NODE_CERTS_DIR"
+kubectl create secret generic dss.public.certs --namespace "$NAMESPACE" --from-file oauth.pem
