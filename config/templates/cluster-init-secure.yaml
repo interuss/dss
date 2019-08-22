@@ -5,11 +5,11 @@ metadata:
   name: cluster-init-secure
   namespace: {{ .Values.namespace }}
   labels:
-    app: {{ .Chart.Name }}
+    app: cluster-init-secure
 spec:
   template:
     spec:
-      serviceAccountName: {{ .Chart.Name }}
+      serviceAccountName: cockroachdb
       containers:
       - name: cluster-init
         image: {{ .Values.image }}
@@ -21,7 +21,7 @@ spec:
           - "/cockroach/cockroach"
           - "init"
           - "--certs-dir=/cockroach-certs"
-          - "--host={{ .Chart.Name }}-0.{{ .Chart.Name }}"
+          - "--host=cockroachdb-0.cockroachdb.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.CockroachPort }}"
       restartPolicy: OnFailure
       volumes:
       - name: client-certs
