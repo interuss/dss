@@ -124,7 +124,7 @@ kind: Service
 metadata:
   # This service is meant to be used by clients of the database. It exposes a ClusterIP that will
   # automatically load balance connections to the different database pods.
-  name: cockroachdb-public
+  name: cockroachdb-balanced
   namespace: {{ .Values.namespace }}
   labels:
     app: cockroachdb
@@ -142,7 +142,6 @@ spec:
   selector:
     app: cockroachdb
   sessionAffinity: ClientIP
-  type: LoadBalancer
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
