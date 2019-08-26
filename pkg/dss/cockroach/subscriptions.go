@@ -52,7 +52,7 @@ func (c *Store) fetchSubscriptionsByCellsWithoutOwner(ctx context.Context, q que
 				%s
 			FROM
 				subscriptions
-			LEFT JOIN 
+			LEFT JOIN
 				(SELECT DISTINCT subscription_id FROM cells_subscriptions WHERE cell_id = ANY($1))
 			AS
 				unique_subscription_ids
@@ -172,7 +172,17 @@ func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) 
 		break
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
-	case !s.Version.Empty() && !s.Version.Matches(old.Version):
+	}
+
+	switch {
+	case old == nil && !s.Version.Empty():
+		// The user wants to update an existing subscription, but one wasn't found.
+		return nil, multierr.Combine(dsserr.NotFound(s.ID.String()), tx.Rollback())
+	case old != nil && s.Version.Empty():
+		// The user wants to create a new subscription but it already exists.
+		return nil, multierr.Combine(dsserr.AlreadyExists(s.ID.String()), tx.Rollback())
+	case old != nil && !s.Version.Matches(old.Version):
+		// The user wants to update a subscription but the version doesn't match.
 		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
@@ -233,7 +243,7 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 				%s
 			FROM
 				subscriptions
-			LEFT JOIN 
+			LEFT JOIN
 				(SELECT DISTINCT cells_subscriptions.subscription_id FROM cells_subscriptions WHERE cells_subscriptions.cell_id = ANY($1))
 			AS
 				unique_subscription_ids

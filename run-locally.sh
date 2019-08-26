@@ -7,12 +7,17 @@ docker run -d --rm --name dss-crdb-for-debugging -p 26257:26257 -p 8080:8080  co
 
 sleep 5
 echo "starting grpc backend on :8081"
-go run cmds/grpc-backend/main.go -cockroach_host localhost -public_key_file config/oauth.pem -reflect_api true &
+go run cmds/grpc-backend/main.go \
+    -cockroach_host localhost \
+    -public_key_file config/oauth.pem \
+    -reflect_api \
+    -log_format console \
+    -dump_requests &
 pid1=$!
 
 sleep 5
 echo "starting http-gateway on :8082"
-go run cmds/http-gateway/main.go -grpc-backend=localhost:8081 -addr :8082 &
+go run cmds/http-gateway/main.go -grpc-backend localhost:8081 -addr :8082 &
 pid2=$!
 
 wait $pid1 && wait $pid2

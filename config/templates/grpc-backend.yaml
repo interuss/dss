@@ -60,3 +60,4 @@ spec:
           - -cockroach_user=root
           - -cockroach_ssl_dir=/cockroach-certs
           - -public_key_file=/public-certs/oauth.pem
+          - -dump_requests

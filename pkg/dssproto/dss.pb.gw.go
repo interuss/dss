@@ -28,12 +28,8 @@ var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 
-var (
-	filter_DSService_DeleteIdentificationServiceArea_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
-
-func request_DSService_DeleteIdentificationServiceArea_0(ctx context.Context, marshaler runtime.Marshaler, client DSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteIdentificationServiceAreaRequest
+func request_DiscoveryAndSynchronizationService_DeleteV1DssIdentificationServiceAreasIdVersion_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteV1DssIdentificationServiceAreasIdVersionRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -54,58 +50,82 @@ func request_DSService_DeleteIdentificationServiceArea_0(ctx context.Context, ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DSService_DeleteIdentificationServiceArea_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	val, ok = pathParams["version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
 	}
 
-	msg, err := client.DeleteIdentificationServiceArea(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	protoReq.Version, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
+	}
+
+	msg, err := client.DeleteV1DssIdentificationServiceAreasIdVersion(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func request_DiscoveryAndSynchronizationService_DeleteV1DssSubscriptionsIdVersion_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteV1DssSubscriptionsIdVersionRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+	}
+
+	protoReq.Id, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+	}
+
+	val, ok = pathParams["version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
+	}
+
+	protoReq.Version, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
+	}
+
+	msg, err := client.DeleteV1DssSubscriptionsIdVersion(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
 var (
-	filter_DSService_DeleteSubscription_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_DSService_DeleteSubscription_0(ctx context.Context, marshaler runtime.Marshaler, client DSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteSubscriptionRequest
+func request_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetV1DssIdentificationServiceAreasRequest
 	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
-	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DSService_DeleteSubscription_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.DeleteSubscription(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetV1DssIdentificationServiceAreas(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_DSService_GetIdentificationServiceArea_0(ctx context.Context, marshaler runtime.Marshaler, client DSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetIdentificationServiceAreaRequest
+func request_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreasId_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetV1DssIdentificationServiceAreasIdRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -126,13 +146,33 @@ func request_DSService_GetIdentificationServiceArea_0(ctx context.Context, marsh
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
-	msg, err := client.GetIdentificationServiceArea(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetV1DssIdentificationServiceAreasId(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_DSService_GetSubscription_0(ctx context.Context, marshaler runtime.Marshaler, client DSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetSubscriptionRequest
+var (
+	filter_DiscoveryAndSynchronizationService_GetV1DssSubscriptions_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_DiscoveryAndSynchronizationService_GetV1DssSubscriptions_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetV1DssSubscriptionsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DiscoveryAndSynchronizationService_GetV1DssSubscriptions_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.GetV1DssSubscriptions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func request_DiscoveryAndSynchronizationService_GetV1DssSubscriptionsId_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetV1DssSubscriptionsIdRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -153,13 +193,13 @@ func request_DSService_GetSubscription_0(ctx context.Context, marshaler runtime.
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
-	msg, err := client.GetSubscription(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetV1DssSubscriptionsId(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_DSService_PutIdentificationServiceArea_0(ctx context.Context, marshaler runtime.Marshaler, client DSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutIdentificationServiceAreaRequest
+func request_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasId_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PutV1DssIdentificationServiceAreasIdRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -188,13 +228,13 @@ func request_DSService_PutIdentificationServiceArea_0(ctx context.Context, marsh
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
-	msg, err := client.PutIdentificationServiceArea(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.PutV1DssIdentificationServiceAreasId(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_DSService_PutSubscription_0(ctx context.Context, marshaler runtime.Marshaler, client DSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutSubscriptionRequest
+func request_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasIdVersion_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PutV1DssIdentificationServiceAreasIdVersionRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -223,54 +263,106 @@ func request_DSService_PutSubscription_0(ctx context.Context, marshaler runtime.
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
-	msg, err := client.PutSubscription(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	val, ok = pathParams["version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
+	}
+
+	protoReq.Version, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
+	}
+
+	msg, err := client.PutV1DssIdentificationServiceAreasIdVersion(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-var (
-	filter_DSService_SearchIdentificationServiceAreas_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
-func request_DSService_SearchIdentificationServiceAreas_0(ctx context.Context, marshaler runtime.Marshaler, client DSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SearchIdentificationServiceAreasRequest
+func request_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsId_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PutV1DssSubscriptionsIdRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DSService_SearchIdentificationServiceAreas_0); err != nil {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.SearchIdentificationServiceAreas(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+	}
+
+	protoReq.Id, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+	}
+
+	msg, err := client.PutV1DssSubscriptionsId(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-var (
-	filter_DSService_SearchSubscriptions_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
-func request_DSService_SearchSubscriptions_0(ctx context.Context, marshaler runtime.Marshaler, client DSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SearchSubscriptionsRequest
+func request_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsIdVersion_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryAndSynchronizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PutV1DssSubscriptionsIdVersionRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DSService_SearchSubscriptions_0); err != nil {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.SearchSubscriptions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+	}
+
+	protoReq.Id, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+	}
+
+	val, ok = pathParams["version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
+	}
+
+	protoReq.Version, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
+	}
+
+	msg, err := client.PutV1DssSubscriptionsIdVersion(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-// RegisterDSServiceHandlerFromEndpoint is same as RegisterDSServiceHandler but
+// RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint is same as RegisterDiscoveryAndSynchronizationServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterDSServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
@@ -290,23 +382,23 @@ func RegisterDSServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.Serv
 		}()
 	}()
 
-	return RegisterDSServiceHandler(ctx, mux, conn)
+	return RegisterDiscoveryAndSynchronizationServiceHandler(ctx, mux, conn)
 }
 
-// RegisterDSServiceHandler registers the http handlers for service DSService to "mux".
+// RegisterDiscoveryAndSynchronizationServiceHandler registers the http handlers for service DiscoveryAndSynchronizationService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterDSServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterDSServiceHandlerClient(ctx, mux, NewDSServiceClient(conn))
+func RegisterDiscoveryAndSynchronizationServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterDiscoveryAndSynchronizationServiceHandlerClient(ctx, mux, NewDiscoveryAndSynchronizationServiceClient(conn))
 }
 
-// RegisterDSServiceHandlerClient registers the http handlers for service DSService
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "DSServiceClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "DSServiceClient"
+// RegisterDiscoveryAndSynchronizationServiceHandlerClient registers the http handlers for service DiscoveryAndSynchronizationService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "DiscoveryAndSynchronizationServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "DiscoveryAndSynchronizationServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "DSServiceClient" to call the correct interceptors.
-func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client DSServiceClient) error {
+// "DiscoveryAndSynchronizationServiceClient" to call the correct interceptors.
+func RegisterDiscoveryAndSynchronizationServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client DiscoveryAndSynchronizationServiceClient) error {
 
-	mux.Handle("DELETE", pattern_DSService_DeleteIdentificationServiceArea_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_DiscoveryAndSynchronizationService_DeleteV1DssIdentificationServiceAreasIdVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -315,18 +407,18 @@ func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DSService_DeleteIdentificationServiceArea_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DiscoveryAndSynchronizationService_DeleteV1DssIdentificationServiceAreasIdVersion_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DSService_DeleteIdentificationServiceArea_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DiscoveryAndSynchronizationService_DeleteV1DssIdentificationServiceAreasIdVersion_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_DSService_DeleteSubscription_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_DiscoveryAndSynchronizationService_DeleteV1DssSubscriptionsIdVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -335,18 +427,18 @@ func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DSService_DeleteSubscription_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DiscoveryAndSynchronizationService_DeleteV1DssSubscriptionsIdVersion_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DSService_DeleteSubscription_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DiscoveryAndSynchronizationService_DeleteV1DssSubscriptionsIdVersion_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_DSService_GetIdentificationServiceArea_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -355,18 +447,18 @@ func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DSService_GetIdentificationServiceArea_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DSService_GetIdentificationServiceArea_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_DSService_GetSubscription_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreasId_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -375,18 +467,18 @@ func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DSService_GetSubscription_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreasId_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DSService_GetSubscription_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreasId_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PUT", pattern_DSService_PutIdentificationServiceArea_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_DiscoveryAndSynchronizationService_GetV1DssSubscriptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -395,18 +487,18 @@ func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DSService_PutIdentificationServiceArea_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DiscoveryAndSynchronizationService_GetV1DssSubscriptions_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DSService_PutIdentificationServiceArea_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DiscoveryAndSynchronizationService_GetV1DssSubscriptions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PUT", pattern_DSService_PutSubscription_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_DiscoveryAndSynchronizationService_GetV1DssSubscriptionsId_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -415,18 +507,18 @@ func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DSService_PutSubscription_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DiscoveryAndSynchronizationService_GetV1DssSubscriptionsId_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DSService_PutSubscription_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DiscoveryAndSynchronizationService_GetV1DssSubscriptionsId_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_DSService_SearchIdentificationServiceAreas_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasId_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -435,18 +527,18 @@ func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DSService_SearchIdentificationServiceAreas_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasId_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DSService_SearchIdentificationServiceAreas_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasId_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_DSService_SearchSubscriptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasIdVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -455,14 +547,54 @@ func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DSService_SearchSubscriptions_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasIdVersion_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DSService_SearchSubscriptions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasIdVersion_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsId_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsId_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsId_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsIdVersion_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsIdVersion_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsIdVersion_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -470,37 +602,45 @@ func RegisterDSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 }
 
 var (
-	pattern_DSService_DeleteIdentificationServiceArea_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"dss", "identification_service_areas", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DiscoveryAndSynchronizationService_DeleteV1DssIdentificationServiceAreasIdVersion_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "dss", "identification_service_areas", "id", "version"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_DSService_DeleteSubscription_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"dss", "subscriptions", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DiscoveryAndSynchronizationService_DeleteV1DssSubscriptionsIdVersion_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "dss", "subscriptions", "id", "version"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_DSService_GetIdentificationServiceArea_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"dss", "identification_service_areas", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "dss", "identification_service_areas"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_DSService_GetSubscription_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"dss", "subscriptions", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreasId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "dss", "identification_service_areas", "id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_DSService_PutIdentificationServiceArea_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"dss", "identification_service_areas", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DiscoveryAndSynchronizationService_GetV1DssSubscriptions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "dss", "subscriptions"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_DSService_PutSubscription_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"dss", "subscriptions", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DiscoveryAndSynchronizationService_GetV1DssSubscriptionsId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "dss", "subscriptions", "id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_DSService_SearchIdentificationServiceAreas_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"dss", "identification_service_areas"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "dss", "identification_service_areas", "id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_DSService_SearchSubscriptions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"dss", "subscriptions"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasIdVersion_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "dss", "identification_service_areas", "id", "version"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "dss", "subscriptions", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsIdVersion_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "dss", "subscriptions", "id", "version"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
-	forward_DSService_DeleteIdentificationServiceArea_0 = runtime.ForwardResponseMessage
+	forward_DiscoveryAndSynchronizationService_DeleteV1DssIdentificationServiceAreasIdVersion_0 = runtime.ForwardResponseMessage
 
-	forward_DSService_DeleteSubscription_0 = runtime.ForwardResponseMessage
+	forward_DiscoveryAndSynchronizationService_DeleteV1DssSubscriptionsIdVersion_0 = runtime.ForwardResponseMessage
 
-	forward_DSService_GetIdentificationServiceArea_0 = runtime.ForwardResponseMessage
+	forward_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_0 = runtime.ForwardResponseMessage
 
-	forward_DSService_GetSubscription_0 = runtime.ForwardResponseMessage
+	forward_DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreasId_0 = runtime.ForwardResponseMessage
 
-	forward_DSService_PutIdentificationServiceArea_0 = runtime.ForwardResponseMessage
+	forward_DiscoveryAndSynchronizationService_GetV1DssSubscriptions_0 = runtime.ForwardResponseMessage
 
-	forward_DSService_PutSubscription_0 = runtime.ForwardResponseMessage
+	forward_DiscoveryAndSynchronizationService_GetV1DssSubscriptionsId_0 = runtime.ForwardResponseMessage
 
-	forward_DSService_SearchIdentificationServiceAreas_0 = runtime.ForwardResponseMessage
+	forward_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasId_0 = runtime.ForwardResponseMessage
 
-	forward_DSService_SearchSubscriptions_0 = runtime.ForwardResponseMessage
+	forward_DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasIdVersion_0 = runtime.ForwardResponseMessage
+
+	forward_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsId_0 = runtime.ForwardResponseMessage
+
+	forward_DiscoveryAndSynchronizationService_PutV1DssSubscriptionsIdVersion_0 = runtime.ForwardResponseMessage
 )

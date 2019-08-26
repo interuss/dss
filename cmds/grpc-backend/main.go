@@ -20,11 +20,12 @@ import (
 )
 
 var (
-	address    = flag.String("addr", ":8081", "address")
-	pkFile     = flag.String("public_key_file", "", "Path to public Key to use for JWT decoding.")
-	reflectAPI = flag.Bool("reflect_api", false, "Whether to reflect the API.")
-	logFormat  = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
-	logLevel   = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
+	address      = flag.String("addr", ":8081", "address")
+	pkFile       = flag.String("public_key_file", "", "Path to public Key to use for JWT decoding.")
+	reflectAPI   = flag.Bool("reflect_api", false, "Whether to reflect the API.")
+	logFormat    = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
+	logLevel     = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
+	dumpRequests = flag.Bool("dump_requests", false, "Log request and response protos")
 
 	cockroachHost    = flag.String("cockroach_host", "", "cockroach host to connect to")
 	cockroachPort    = flag.Int("cockroach_port", 26257, "cockroach port to connect to")
@@ -79,7 +80,17 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 	ac.RequireScopes(dssServer.AuthScopes())
 
-	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(errors.Interceptor(logger), logging.Interceptor(logger), ac.AuthInterceptor, validations.ValidationInterceptor))
+	interceptors := []grpc.UnaryServerInterceptor{
+		errors.Interceptor(logger),
+		logging.Interceptor(logger),
+		ac.AuthInterceptor,
+		validations.ValidationInterceptor,
+	}
+	if *dumpRequests {
+		interceptors = append(interceptors, logging.DumpRequestResponseInterceptor(logger))
+	}
+
+	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(interceptors...))
 	if err != nil {
 		return err
 	}
@@ -87,7 +98,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		reflection.Register(s)
 	}
 
-	dssproto.RegisterDSServiceServer(s, dssServer)
+	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 
 	go func() {
 		defer s.GracefulStop()

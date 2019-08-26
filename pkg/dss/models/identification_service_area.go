@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
@@ -72,12 +73,8 @@ func (i *IdentificationServiceArea) SetExtents(extents *dspb.Volume4D) error {
 	if space == nil {
 		return nil
 	}
-	if wrapper := space.GetAltitudeHi(); wrapper != nil {
-		i.AltitudeHi = ptrToFloat32(wrapper.GetValue())
-	}
-	if wrapper := space.GetAltitudeLo(); wrapper != nil {
-		i.AltitudeLo = ptrToFloat32(wrapper.GetValue())
-	}
+	i.AltitudeHi = proto.Float32(space.GetAltitudeHi())
+	i.AltitudeLo = proto.Float32(space.GetAltitudeLo())
 	footprint := space.GetFootprint()
 	if footprint == nil {
 		return nil
