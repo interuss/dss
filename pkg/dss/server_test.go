@@ -95,7 +95,7 @@ func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.DeleteSubscription(ctx, &dspb.DeleteSubscriptionRequest{
+			_, err := s.DeleteV1DssSubscriptionsIdVersion(ctx, &dspb.DeleteV1DssSubscriptionsIdVersionRequest{
 				Id: r.id.String(),
 			})
 			require.Equal(t, r.err, err)
@@ -131,7 +131,7 @@ func TestGetSubscriptionCallsIntoMockStore(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.GetSubscription(context.Background(), &dspb.GetSubscriptionRequest{
+			_, err := s.GetV1DssSubscriptionsId(context.Background(), &dspb.GetV1DssSubscriptionsIdRequest{
 				Id: r.id.String(),
 			})
 			require.Equal(t, r.err, err)
@@ -149,7 +149,7 @@ func TestSearchSubscriptionsFailsIfOwnerMissingFromContext(t *testing.T) {
 		}
 	)
 
-	_, err := s.SearchSubscriptions(ctx, &dspb.SearchSubscriptionsRequest{
+	_, err := s.GetV1DssSubscriptions(ctx, &dspb.GetV1DssSubscriptionsRequest{
 		Area: testdata.Loop,
 	})
 
@@ -166,7 +166,7 @@ func TestSearchSubscriptionsFailsForInvalidArea(t *testing.T) {
 		}
 	)
 
-	_, err := s.SearchSubscriptions(ctx, &dspb.SearchSubscriptionsRequest{
+	_, err := s.GetV1DssSubscriptions(ctx, &dspb.GetV1DssSubscriptionsRequest{
 		Area: testdata.LoopWithOddNumberOfCoordinates,
 	})
 
@@ -194,7 +194,7 @@ func TestSearchSubscriptionsCallsIntoStore(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.SearchSubscriptions(ctx, &dspb.SearchSubscriptionsRequest{
+	resp, err := s.GetV1DssSubscriptions(ctx, &dspb.GetV1DssSubscriptionsRequest{
 		Area: testdata.Loop,
 	})
 
@@ -213,7 +213,7 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 		}
 	)
 
-	_, err := s.DeleteIdentificationServiceArea(context.Background(), &dspb.DeleteIdentificationServiceAreaRequest{
+	_, err := s.DeleteV1DssIdentificationServiceAreasIdVersion(context.Background(), &dspb.DeleteV1DssIdentificationServiceAreasIdVersionRequest{
 		Id: id,
 	})
 
@@ -245,7 +245,7 @@ func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.DeleteIdentificationServiceArea(ctx, &dspb.DeleteIdentificationServiceAreaRequest{
+	resp, err := s.DeleteV1DssIdentificationServiceAreasIdVersion(ctx, &dspb.DeleteV1DssIdentificationServiceAreasIdVersionRequest{
 		Id: id.String(),
 	})
 
@@ -273,7 +273,7 @@ func TestSearchIdentificationServiceAreasCallsIntoStore(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.SearchIdentificationServiceAreas(ctx, &dspb.SearchIdentificationServiceAreasRequest{
+	resp, err := s.GetV1DssIdentificationServiceAreas(ctx, &dspb.GetV1DssIdentificationServiceAreasRequest{
 		Area: testdata.Loop,
 	})
 

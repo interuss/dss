@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
@@ -30,7 +31,7 @@ func (s *Subscription) ToNotifyProto() *dspb.SubscriberToNotify {
 		Subscriptions: []*dspb.SubscriptionState{
 			&dspb.SubscriptionState{
 				NotificationIndex: int32(s.NotificationIndex),
-				Subscription:      s.ID.String(),
+				SubscriptionId:    s.ID.String(),
 			},
 		},
 	}
@@ -50,7 +51,7 @@ func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 		if err != nil {
 			return nil, err
 		}
-		result.Begins = ts
+		result.TimeStart = ts
 	}
 
 	if s.EndTime != nil {
@@ -58,7 +59,7 @@ func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 		if err != nil {
 			return nil, err
 		}
-		result.Expires = ts
+		result.TimeEnd = ts
 	}
 	return result, nil
 }
@@ -88,12 +89,8 @@ func (s *Subscription) SetExtents(extents *dspb.Volume4D) error {
 	if space == nil {
 		return nil
 	}
-	if wrapper := space.GetAltitudeHi(); wrapper != nil {
-		s.AltitudeHi = ptrToFloat32(wrapper.GetValue())
-	}
-	if wrapper := space.GetAltitudeLo(); wrapper != nil {
-		s.AltitudeLo = ptrToFloat32(wrapper.GetValue())
-	}
+	s.AltitudeHi = proto.Float32(space.GetAltitudeHi())
+	s.AltitudeLo = proto.Float32(space.GetAltitudeLo())
 	footprint := space.GetFootprint()
 	if footprint == nil {
 		return nil

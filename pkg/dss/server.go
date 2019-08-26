@@ -37,7 +37,10 @@ func (s *Server) AuthScopes() map[string][]string {
 	}
 }
 
-func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *dspb.GetIdentificationServiceAreaRequest) (*dspb.GetIdentificationServiceAreaResponse, error) {
+func (s *Server) GetV1DssIdentificationServiceAreasId(
+	ctx context.Context, req *dspb.GetV1DssIdentificationServiceAreasIdRequest) (
+	*dspb.GetIdentificationServiceAreaResponse, error) {
+
 	isa, err := s.Store.GetISA(ctx, models.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
@@ -54,29 +57,29 @@ func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *dspb.Get
 	}, nil
 }
 
-func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.PutIdentificationServiceAreaRequest) (*dspb.PutIdentificationServiceAreaResponse, error) {
+func (s *Server) createOrUpdateISA(
+	ctx context.Context, id string, version *models.Version, extents *dspb.Volume4D, flights_url string) (
+	*dspb.PutIdentificationServiceAreaResponse, error) {
+
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	params := req.GetParams()
-	if params == nil {
-		return nil, dsserr.BadRequest("missing params")
+	if flights_url == "" {
+		return nil, dsserr.BadRequest("missing required flights_url")
 	}
-
-	version, err := models.VersionFromString(params.GetVersion())
-	if err != nil {
-		return nil, dsserr.BadRequest("bad version")
+	if extents == nil {
+		return nil, dsserr.BadRequest("missing required extents")
 	}
 
 	isa := &models.IdentificationServiceArea{
-		ID:      models.ID(req.GetId()),
-		Url:     params.GetFlightsUrl(),
+		ID:      models.ID(id),
+		Url:     flights_url,
 		Owner:   owner,
 		Version: version,
 	}
 
-	if err := isa.SetExtents(params.GetExtents()); err != nil {
+	if err := isa.SetExtents(extents); err != nil {
 		return nil, dsserr.BadRequest("bad extents")
 	}
 
@@ -101,7 +104,32 @@ func (s *Server) PutIdentificationServiceArea(ctx context.Context, req *dspb.Put
 	}, nil
 }
 
-func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (*dspb.DeleteIdentificationServiceAreaResponse, error) {
+func (s *Server) PutV1DssIdentificationServiceAreasId(
+	ctx context.Context, req *dspb.PutV1DssIdentificationServiceAreasIdRequest) (
+	*dspb.PutIdentificationServiceAreaResponse, error) {
+
+	params := req.GetParams()
+	return s.createOrUpdateISA(ctx, req.GetId(), nil, params.Extents, params.GetFlightsUrl())
+}
+
+func (s *Server) PutV1DssIdentificationServiceAreasIdVersion(
+	ctx context.Context, req *dspb.PutV1DssIdentificationServiceAreasIdVersionRequest) (
+	*dspb.PutIdentificationServiceAreaResponse, error) {
+
+	params := req.GetParams()
+
+	version, err := models.VersionFromString(req.GetVersion())
+	if err != nil {
+		return nil, dsserr.BadRequest("bad version")
+	}
+
+	return s.createOrUpdateISA(ctx, req.GetId(), version, params.Extents, params.GetFlightsUrl())
+}
+
+func (s *Server) DeleteV1DssIdentificationServiceAreasIdVersion(
+	ctx context.Context, req *dspb.DeleteV1DssIdentificationServiceAreasIdVersionRequest) (
+	*dspb.DeleteIdentificationServiceAreaResponse, error) {
+
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
@@ -130,7 +158,10 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *dspb.
 	}, nil
 }
 
-func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscriptionRequest) (*dspb.DeleteSubscriptionResponse, error) {
+func (s *Server) DeleteV1DssSubscriptionsIdVersion(
+	ctx context.Context, req *dspb.DeleteV1DssSubscriptionsIdVersionRequest) (
+	*dspb.DeleteSubscriptionResponse, error) {
+
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
@@ -152,7 +183,10 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *dspb.DeleteSubscri
 	}, nil
 }
 
-func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb.SearchIdentificationServiceAreasRequest) (*dspb.SearchIdentificationServiceAreasResponse, error) {
+func (s *Server) GetV1DssIdentificationServiceAreas(
+	ctx context.Context, req *dspb.GetV1DssIdentificationServiceAreasRequest) (
+	*dspb.SearchIdentificationServiceAreasResponse, error) {
+
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
 		return nil, dsserr.BadRequest("bad area")
@@ -198,7 +232,10 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *dspb
 	}, nil
 }
 
-func (s *Server) SearchSubscriptions(ctx context.Context, req *dspb.SearchSubscriptionsRequest) (*dspb.SearchSubscriptionsResponse, error) {
+func (s *Server) GetV1DssSubscriptions(
+	ctx context.Context, req *dspb.GetV1DssSubscriptionsRequest) (
+	*dspb.SearchSubscriptionsResponse, error) {
+
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
@@ -206,7 +243,7 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *dspb.SearchSubscr
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, err
+		return nil, dsserr.BadRequest("bad area")
 	}
 
 	subscriptions, err := s.Store.SearchSubscriptions(ctx, cu, owner)
@@ -226,7 +263,10 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *dspb.SearchSubscr
 	}, nil
 }
 
-func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionRequest) (*dspb.GetSubscriptionResponse, error) {
+func (s *Server) GetV1DssSubscriptionsId(
+	ctx context.Context, req *dspb.GetV1DssSubscriptionsIdRequest) (
+	*dspb.GetSubscriptionResponse, error) {
+
 	subscription, err := s.Store.GetSubscription(ctx, models.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
@@ -243,40 +283,32 @@ func (s *Server) GetSubscription(ctx context.Context, req *dspb.GetSubscriptionR
 	}, nil
 }
 
-// TODO(steeling) openapi 2 spec requires only 1 parameter in the body
-func (s *Server) PutSubscription(ctx context.Context, req *dspb.PutSubscriptionRequest) (*dspb.PutSubscriptionResponse, error) {
+func (s *Server) createOrUpdateSubscription(
+	ctx context.Context, id string, version *models.Version, callbacks *dspb.SubscriptionCallbacks, extents *dspb.Volume4D) (
+	*dspb.PutSubscriptionResponse, error) {
+
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	params := req.GetParams()
-	if params == nil {
-		return nil, dsserr.BadRequest("missing params")
-	}
 
-	version, err := models.VersionFromString(params.GetVersion())
-	if err != nil {
-		return nil, dsserr.BadRequest("bad version")
-	}
-
-	if params.Callbacks == nil {
+	if callbacks == nil {
 		return nil, dsserr.BadRequest("no callbacks provided")
-
 	}
 
 	sub := &models.Subscription{
-		ID:      models.ID(req.GetId()),
+		ID:      models.ID(id),
 		Owner:   owner,
-		Url:     params.Callbacks.IdentificationServiceAreaUrl,
+		Url:     callbacks.IdentificationServiceAreaUrl,
 		Version: version,
 	}
 
-	sub, err = s.Store.InsertSubscription(ctx, sub)
+	sub, err := s.Store.InsertSubscription(ctx, sub)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := sub.SetExtents(params.GetExtents()); err != nil {
+	if err := sub.SetExtents(extents); err != nil {
 		return nil, dsserr.BadRequest("bad extents")
 	}
 
@@ -287,4 +319,26 @@ func (s *Server) PutSubscription(ctx context.Context, req *dspb.PutSubscriptionR
 	return &dspb.PutSubscriptionResponse{
 		Subscription: p,
 	}, nil
+}
+
+func (s *Server) PutV1DssSubscriptionsId(
+	ctx context.Context, req *dspb.PutV1DssSubscriptionsIdRequest) (
+	*dspb.PutSubscriptionResponse, error) {
+
+	params := req.GetParams()
+	return s.createOrUpdateSubscription(ctx, req.GetId(), nil, params.Callbacks, params.Extents)
+}
+
+func (s *Server) PutV1DssSubscriptionsIdVersion(
+	ctx context.Context, req *dspb.PutV1DssSubscriptionsIdVersionRequest) (
+	*dspb.PutSubscriptionResponse, error) {
+
+	params := req.GetParams()
+
+	version, err := models.VersionFromString(req.GetVersion())
+	if err != nil {
+		return nil, dsserr.BadRequest("bad version")
+	}
+
+	return s.createOrUpdateSubscription(ctx, req.GetId(), version, params.Callbacks, params.Extents)
 }

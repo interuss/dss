@@ -195,7 +195,17 @@ func (c *Store) InsertISA(ctx context.Context, isa *models.IdentificationService
 		break
 	case err != nil:
 		return nil, nil, multierr.Combine(err, tx.Rollback())
-	case !isa.Version.Empty() && !isa.Version.Matches(old.Version):
+	}
+
+	switch {
+	case old == nil && !isa.Version.Empty():
+		// The user wants to update an existing ISA, but one wasn't found.
+		return nil, nil, multierr.Combine(dsserr.NotFound(isa.ID.String()), tx.Rollback())
+	case old != nil && isa.Version.Empty():
+		// The user wants to create a new ISA but it already exists.
+		return nil, nil, multierr.Combine(dsserr.AlreadyExists(isa.ID.String()), tx.Rollback())
+	case old != nil && !isa.Version.Matches(old.Version):
+		// The user wants to update an ISA but the version doesn't match.
 		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
@@ -276,7 +286,7 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 				%s
 			FROM
 				identification_service_areas
-			JOIN 
+			JOIN
 				(SELECT DISTINCT
 					cells_identification_service_areas.identification_service_area_id
 				FROM

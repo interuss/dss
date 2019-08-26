@@ -56,26 +56,6 @@ var (
 				NotificationIndex: 42,
 			},
 		},
-		{
-			name: "a subscription with a version string",
-			input: &models.Subscription{
-				ID:                models.ID(uuid.New().String()),
-				Owner:             models.Owner(uuid.New().String()),
-				Url:               "https://no/place/like/home",
-				NotificationIndex: 42,
-				Version:           models.VersionFromTime(startTime),
-			},
-		},
-		{
-			name: "a subscription with a different owner",
-			input: &models.Subscription{
-				ID:                models.ID(uuid.New().String()),
-				Owner:             models.Owner("you"),
-				Url:               "https://no/place/like/home",
-				NotificationIndex: 42,
-				Version:           models.VersionFromTime(startTime),
-			},
-		},
 	}
 )
 
@@ -152,16 +132,15 @@ func TestStoreInsertSubscription(t *testing.T) {
 			require.NotNil(t, sub2)
 			require.Equal(t, "new url", sub2.Url)
 
-			// Test no version supplied works
+			// Test it doesn't work when Version is nil.
 			r3 := *sub2
 			r3.Url = "new url 2"
 			r3.Version = nil
 			sub3, err := store.InsertSubscription(ctx, &r3)
-			require.NoError(t, err)
-			require.NotNil(t, sub3)
-			require.Equal(t, "new url 2", sub3.Url)
+			require.Error(t, err)
+			require.Nil(t, sub3)
 
-			// Bad version doesn't work
+			// Bad version doesn't work.
 			r4 := *sub2
 			r4.Url = "new url 3"
 			r4.Version = models.VersionFromTime(time.Now())
@@ -173,7 +152,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, sub5)
 
-			require.Equal(t, *sub3, *sub5)
+			require.Equal(t, *sub2, *sub5)
 		})
 	}
 }
@@ -239,8 +218,6 @@ func TestStoreSearchSubscription(t *testing.T) {
 			"my",
 			"self",
 			"and",
-			"i",
-			"you",
 		}
 	)
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/gogo/protobuf/proto"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -92,4 +93,21 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 func WithValuesFromContext(ctx context.Context, logger *zap.Logger) *zap.Logger {
 	// Naive implementation for now, meant to evolve over time.
 	return logger
+}
+
+func DumpRequestResponseInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		logger.Sugar().Infof("Request (%s):\n%s",
+			info.FullMethod,
+			proto.MarshalTextString(req.(proto.Message)))
+
+		resp, err = handler(ctx, req)
+
+		if resp != nil && err == nil {
+			logger.Sugar().Infof("Response (%s):\n%s",
+				info.FullMethod,
+				proto.MarshalTextString(resp.(proto.Message)))
+		}
+		return
+	}
 }
