@@ -1,33 +1,12 @@
-# TCL4 USS to USS Communication and Synchronization Wrapper
+# USS to USS Communication and Synchronization Wrapper
 
-This repository contains a simple, open, and API used for separate UAS Service
-Suppliers (USS) to communicate during TCL4 UAS operations. This flexible and 
-distributed system is used to connect multiple USSs operating in the same general 
-area to share safety information while protecting operator and consumer privacy. 
-The system is focused on facilitating communication amongst actively operating USSs 
-with no details about UAS operations stored or processed on the InterUSS Platform.
-
-## NOTE: This is a NASA UTM Project branch specifically for TCL4
-**In the future, features in this branch could be pulled back into the InterUSS Platform.**
-
-### Main Differences from the master branch of the InterUSS Platform:
-
-*   This is not the trademarked and baselined version of the InterUSS Platform. It should be used for NASA TCL4 activities only.
-*   GridCellMetaData endpoint is called GridCellOperator.
-*   PUT GridCellOperator now uses a json body of the entire request, rather than form fields
-*   New and different data elements within a Grid Cell Operator:
-    * Removed scope, operation_endpoint, operation_format
-    * Added uss_baseurl (the location for the required TCL4 USS endpoints),
-    * Added announcement_level (an already operating USS can request for other USSs to contact
-      them when they update this cell),
-    * Added an array of operations (a list of operations including the gufi, start and end times,
-      and the operation signature)
-*   Added a new endpoint (GridCellOperation) for adding/updating/removing a single operation
-    * USSs must PUT a GridCellOperator at least once, and then can use GridCellOperation for single
-      updates. Useful for cells with lots of flights.
-    * USSs can also choose to use GridCellOperator and update the entire list of operations
-      every time.
-
+This repository contains a simple and open API used for separate UAS Service
+Suppliers (USS) to communicate during UAS operations, known as the InterUSS
+Platform™. This flexible and distributed system is used to connect multiple USSs
+operating in the same general area to share safety information while protecting
+operator and consumer privacy. The system is focused on facilitating
+communication amongst actively operating USSs with no details about UAS
+operations stored or processed on the InterUSS Platform.
 
 ### Main Features
 
@@ -46,16 +25,17 @@ with no details about UAS operations stored or processed on the InterUSS Platfor
 *   Auditing is available, as all USSs can verify the authorship and addition of
     erroneous conflictions.
 *   Deconfliction is simply defined as no overlapping flights in time and
-    volume. Negotiation is handled via NASA UTM protocols.
+    volume.
 
 For the API specification and online test area, see
-https://app.swaggerhub.com/apis/InterUSS_Platform/data_node_api/tcl4.0.1
+https://app.swaggerhub.com/apis/InterUSS_Platform/data_node_api.
 
 ## Sequence for USS information exchange
 
 ![Simple Sequence](assets/USS0.png)
 
-When a USS wants to plan a flight, the “planning USS” performs the following steps:
+When a USS wants to plan a flight, the “planning USS” performs the following
+steps:
 
 1.  Discover - Communicates with the InterUSS platform to discover what other
     USSs have an active operation in the specific area of flight and how to
@@ -76,23 +56,38 @@ When a USS wants to plan a flight, the “planning USS” performs the following
     of the world, industry provided OAuth solutions decided by the InterUSS
     Technical Steering Committee.
 
-A simple sequence diagram of USS A adding its record to the specific grid its operation is impacting. There are no other operations, so no need to contact other USSs (yet, more complicated sequences forthcoming). 
 ![Simple Sequence](assets/USS1.png)
 
-In this sequence, USS A is already operating (and marked itself as wanting updates [announcement_level=True]. USS B and USS C are planning two different operations concurrently.
-![Conflicting Sequence](assets/USS2.png)
-
-For an additional examples, this [Sequence Diagram](assets/USS3.png) shows a USS affecting multiple grids.
+For an additional examples, this [Sequence Diagram](assets/USS2.png) shows a
+more complex operation with three USSs, two trying to plan at the same time.
+This [Sequence Diagram](assets/USS3.png) shows a USS affecting multiple grids.
 This [Sequence Diagram](assets/USS4.png) shows another USS updating one of
-multiple grids during an update. 
+multiple grids during an update. And finally, this
+[Sequence Diagram](assets/USS5.png) shows different examples of protection with
+concurrent updates.
 
 ## Directories of Interest:
+* `config/` has all of the configuration required to deploy a DSS instance to a kubernetes cluster. The README in that directory contains more information.
+* `pkg/` contains all of the source code for the DSS. See the README in that directory for more information.
+* `cmds/` contains entry points and docker files for the actual binaries (the `http-gateway` and `grpc-backend`)
+* 
 
-*   datanode/docker: instructions to download and start your own datanode image
-    as well as the source to create your own docker image to test
-*   datanode/centos: instructions to download and start your own datanode image
-    on CentOS
-*   datanode/src: all of the source code for running the API and Interface layer
+## Notes
+
+* Currently this branch only supports the Remote ID API's. 
+* The current implementation relies on CockroachDB for data storage and synchronization between DSS participants. It is recommended to read up on CockroachDB for performance characteristics and operational caveats. We list some of the caveats that we've run into below:
+
+### CockroachDB Notes
+* CockroachDB (CRDB) currently uses certificates to authenticate clients and node to node communication. All of Node certs, client certs, and even a CA cert are all generated through the cockroach cli. The CA certs must be custom generated since the Node certs are require to have CN=node, which no public CA will sign.
+* CockroachDB allows public CA certs to be concatenated, to allow for certificate rotation. We abuse this to allow each DSS participant to bring their own CA cert.
+* CockroachDB nodes join the cluster virally. That is, each node keeps state on all the other nodes, and if a node connects to a new node, it will learn about the entire cluster through a gossip protocol.
+* Each CRDB node must be uniquely addressable and routable.
+  * Because of this, we expect each node to have it's own static IP and/or publicly resolvable hostname. In the future, we likely want to explore the use of Istio, which allows multi cluster private service discovery, layers on top it's own TLS so that we could run CRDB in insecure mode, and not worry about the certificate problems (Istio can use standard CA's), and would reduce latency by removing the extra hop of the CRDB per-node Loadbalancer we are currently using.
+* CRDB splits up data based on the locality string. Data replication strategy is a database variable. The CRDB nodes will traverse the key,values of the locality flag to determine how to divy up the replicas. This means there could be mroe than 7 participants of the DSS, with only 3 or 5 (or 7) replicas, and each participant would simply recieve a shard of a single replica.
+* CRDB clients talk to any CRDB node which will proxy traffic to the correct node(s).
+* There is an admin UI for CRDB (default port 8080). This should be locked down to internal traffic only.
+* The cluster init command must *only* ever be run against one node in the cluster. It seeds the data directories, and if it is run against another node it won't be able to join the cluster, or will create some splits within the cluster. The command is not dangerous once a node has joined a cluster that has been initiated, but it is possible a node's data directory gets destroyed so it should be avoided.
+
 
 ## Contribution
 
