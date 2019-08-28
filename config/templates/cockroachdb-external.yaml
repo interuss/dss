@@ -1,0 +1,30 @@
+{{ range $i, $ip := .Values.ExternalIPs.DBNodes }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cockroachdb-external-node-{{ $i }}
+  namespace: {{ $.Values.Namespace }}
+spec:
+  ports:
+  - port: {{ $.Values.CockroachPort }}
+    targetPort: {{ $.Values.CockroachPort }}
+  selector:
+    statefulset.kubernetes.io/pod-name: cockroachdb-{{ $i }}
+  type: LoadBalancer
+  loadBalancerIP: {{ $ip }}
+---
+{{ end }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cockroachdb-external-balanced
+  namespace: {{ $.Values.Namespace }}
+spec:
+  ports:
+  - port: {{ $.Values.CockroachPort }}
+    targetPort: {{ $.Values.CockroachPort }}
+  selector:
+    app: cockroachdb
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.ExternalIPs.DBBalanced }}

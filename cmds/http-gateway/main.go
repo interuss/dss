@@ -9,6 +9,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
 
+	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"go.uber.org/zap"
 
@@ -28,20 +29,29 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 
 	// Register gRPC server endpoint
 	// Note: Make sure the gRPC server is running properly and accessible
-	mux := runtime.NewServeMux()
+	grpcMux := runtime.NewServeMux()
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 		grpc.WithTimeout(10 * time.Second),
 	}
 
-	err := dssproto.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	err := dssproto.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts)
 	if err != nil {
 		return err
 	}
 
+	// Register a health check handler.
+	m := mux.NewRouter()
+	m.HandleFunc("/healthy", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ok"))
+	})
+
+	// Let grpcMux handle everything else.
+	m.NotFoundHandler = grpcMux
+
 	// Start HTTP server (and proxy calls to gRPC server endpoint)
-	return http.ListenAndServe(address, mux)
+	return http.ListenAndServe(address, m)
 }
 
 func main() {

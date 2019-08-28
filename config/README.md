@@ -61,13 +61,27 @@ and makes all future kubecfg commands target this cluster.
 
 ## Creating a new cockroachdb cluster
 
+1.  Create 5 static IP addresses.  How you do this depends on your cloud
+    provider.  3 IPs will be used for the 3 individual cockroachdb nodes, 1 IP
+    will be used to load balance amongst all the cockroachdb nodes, and 1 IP
+    will be used for the HTTPS frontend.  The HTTPS frontend IP will be used on
+    a Kubernetes Ingress, and if you're using Google Cloud it needs to be
+    created as a "Global" IP address.
+
+1.  Copy `values.yaml.template` to `values.yaml` and fill in the required fields
+    at the top.
+
 1.  Use the `make-certs.py` script in this directory to create certificates for
     the new cockroachdb cluster:
 
         ./make-certs.py $NAMESPACE \
-            [--node-address <ADDRESS>]
-            [--node-ca-cert <FILENAME>]
+            [--node-address <ADDRESS> ...]
+            [--node-ca-cert <FILENAME> ...]
 
+    *   --node-addresses needs to include all the hostnames or IP addresses that
+        other cockroachdb clusters will use to connect to your cluster.  It
+        should include the hostnames/IP addresses of the 3 individual
+        cockroachdb nodes and the 1 load balanced endpoint.
     *   If you are joining existing clusters, make sure to provide their public
         CA certificates with --node-ca-cert, and their addresses with
         --node-address.
@@ -78,26 +92,5 @@ and makes all future kubecfg commands target this cluster.
 
         ./apply-certs.sh $NAMESPACE
 
-1.  Copy `values.yaml.template` to `values.yaml` and fill in the required fields
-    at the top.
 1.  Run `helm template . > cockroachdb.yaml` to render the YAML.
 1.  Run `kubectl apply -f cockroachdb.yaml` to apply it to the cluster.
-1.  Use the `./expose.sh` script in this directory to create an external IP for
-    each pod:
-
-        ./expose.sh $NAMESPACE
-
-1.  Find out the external IP addresses that were just created:
-
-        kubectl get svc --namespace $NAMESPACE
-
-1.  Make these IPs static.  The way you do this depends on your cloud provider.
-1.  Add the external IP addresses for the `crdb-node-*` entries to the `ips`
-    list in the values.yaml file and re-run the `helm template` command.
-1.  Re-run the `./make-certs.py` script with the external IP addresses added to
-    `--node-address` flags, then re-run `./apply-certs.sh`.
-1.  Re-run the `kubectl apply` command to update production.  This should
-    restart the pods automatically, but in case it doesn't you can restart them
-    manually:
-
-        kubectl rollout restart --namespace $NAMESPACE statefulset cockroachdb
