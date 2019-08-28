@@ -1,0 +1,24 @@
+{{- if eq .Values.CreateGKEIngress true }}
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: https-certificate
+  namespace: {{ .Values.Namespace }}
+spec:
+  domains:
+    - {{ .Values.Hostnames.Frontend }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: https-ingress
+  namespace: {{ .Values.Namespace }}
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: {{ .Values.FrontendIPName }}
+    networking.gke.io/managed-certificates: https-certificate
+    kubernetes.io/ingress.allow-http: "false"
+spec:
+  backend:
+    serviceName: http-gateway
+    servicePort: {{ .Values.HttpPort }}
+{{ end }}

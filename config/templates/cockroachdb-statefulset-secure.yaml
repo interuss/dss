@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: cockroachdb
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.Namespace }}
   labels:
     app: cockroachdb
 ---
@@ -10,7 +10,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
   name: cockroachdb
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.Namespace }}
   labels:
     app: cockroachdb
 rules:
@@ -42,7 +42,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: cockroachdb
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.Namespace }}
   labels:
     app: cockroachdb
 roleRef:
@@ -52,7 +52,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: cockroachdb
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -77,7 +77,7 @@ metadata:
   # create a load-balanced ClusterIP and should not be used directly by clients
   # in most circumstances.
   name: cockroachdb
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.Namespace }}
   labels:
     app: cockroachdb
   annotations:
@@ -94,7 +94,7 @@ spec:
   ports:
   - port: {{ .Values.CockroachPort }}
     targetPort: {{ .Values.CockroachPort }}
-    name: grpc
+    name: cockroach
   - port: {{ .Values.HttpPort }}
     targetPort: {{ .Values.HttpPort }}
     name: http
@@ -110,7 +110,7 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: cockroachdb-budget
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.Namespace }}
   labels:
     app: cockroachdb
 spec:
@@ -125,7 +125,7 @@ metadata:
   # This service is meant to be used by clients of the database. It exposes a ClusterIP that will
   # automatically load balance connections to the different database pods.
   name: cockroachdb-balanced
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.Namespace }}
   labels:
     app: cockroachdb
 spec:
@@ -134,10 +134,10 @@ spec:
   # traffic and the cli.
   - port: {{ .Values.CockroachPort }}
     targetPort: {{ .Values.CockroachPort }}
-    name: grpc
+    name: cockroach
   # The secondary port serves the UI as well as health and debug endpoints.
-  - port: 8080
-    targetPort: 8080
+  - port: {{ .Values.HttpPort }}
+    targetPort: {{ .Values.HttpPort }}
     name: http
   selector:
     app: cockroachdb
@@ -147,7 +147,7 @@ apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   name: cockroachdb
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.Namespace }}
 spec:
   serviceName: "cockroachdb"
   replicas: 3
@@ -171,7 +171,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: cockroachdb
-        image: {{ .Values.image }}
+        image: {{ .Values.Image }}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: {{ .Values.CockroachPort }}
@@ -200,13 +200,13 @@ spec:
           mountPath: /cockroach/cockroach-certs
         env:
         - name: COCKROACH_CHANNEL
-          value: {{ .Values.cockroachChannel}}
+          value: {{ .Values.CockroachChannel }}
 
-        # These are used by EXTERNAL_IP_FOR_$HOSTNAME below so the pods know
+        # These are used by EXTERNAL_HOSTNAME_FOR_$HOSTNAME below so the pods know
         # their own external IP address to advertise to other nodes outside this
         # zone.
-        {{- range $i, $ip := .Values.ips }}
-        - name: EXTERNAL_IP_FOR_cockroachdb-{{ $i }}
+        {{- range $i, $ip := .Values.Hostnames.DBNodes }}
+        - name: EXTERNAL_HOSTNAME_FOR_cockroachdb-{{ $i }}
           value: {{ $ip }}
         {{- end }}
 
@@ -219,17 +219,17 @@ spec:
             exec /cockroach/cockroach start
             --logtostderr
             --certs-dir "/cockroach/cockroach-certs"
-            --advertise-addr "$(printenv EXTERNAL_IP_FOR_$HOSTNAME)"
-            --locality-advertise-addr "zone={{ .Values.namespace }}@$(hostname -f)"
+            --advertise-addr "$(printenv EXTERNAL_HOSTNAME_FOR_$HOSTNAME)"
+            --locality-advertise-addr "zone={{ .Values.Namespace }}@$(hostname -f)"
             --http-addr 0.0.0.0
             --join "{{ range $index := list 0 1 2 -}}
                 {{- if ne $index 0 }},{{ end -}}
-                cockroachdb-{{ $index }}.cockroachdb.{{ $.Values.namespace }}.svc.cluster.local:{{ $.Values.CockroachPort }}
+                cockroachdb-{{ $index }}.cockroachdb.{{ $.Values.Namespace }}.svc.cluster.local:{{ $.Values.CockroachPort }}
               {{- end -}}
               {{- if .Values.JoinExisting -}}
                 ,{{ join "," .Values.JoinExisting -}}
               {{ end }}"
-            --locality "zone={{ .Values.namespace }}"
+            --locality "zone={{ .Values.Namespace }}"
             --cache 25%
             --max-sql-memory 25%
       # No pre-stop hook is required, a SIGTERM plus some time is all that's
@@ -250,9 +250,9 @@ spec:
   - metadata:
       name: datadir
     spec:
-      storageClassName: {{ .Values.storageClass }}
+      storageClassName: {{ .Values.StorageClass }}
       accessModes:
         - "ReadWriteOnce"
       resources:
         requests:
-          storage: {{ .Values.storageSize }}
+          storage: {{ .Values.StorageSize }}
