@@ -18,6 +18,8 @@ import (
 var (
 	WriteISAScope = "dss.write.identification_service_areas"
 	ReadISAScope  = "dss.read.identification_service_areas"
+
+	maxSubscriptionDuration = time.Hour * 24
 )
 
 // Server implements dssproto.DiscoveryAndSynchronizationService.
@@ -303,13 +305,19 @@ func (s *Server) createOrUpdateSubscription(
 		Version: version,
 	}
 
+	if err := sub.SetExtents(extents); err != nil {
+		return nil, dsserr.BadRequest("bad extents")
+	}
+
+	// Limit the duration of the subscription.
+	if sub.EndTime.Sub(*sub.StartTime) > maxSubscriptionDuration {
+		truncatedEndTime := sub.StartTime.Add(maxSubscriptionDuration)
+		sub.EndTime = &truncatedEndTime
+	}
+
 	sub, err := s.Store.InsertSubscription(ctx, sub)
 	if err != nil {
 		return nil, err
-	}
-
-	if err := sub.SetExtents(extents); err != nil {
-		return nil, dsserr.BadRequest("bad extents")
 	}
 
 	p, err := sub.ToProto()
