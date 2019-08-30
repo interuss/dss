@@ -12,7 +12,8 @@ go run cmds/grpc-backend/main.go \
     -public_key_file config/oauth.pem \
     -reflect_api \
     -log_format console \
-    -dump_requests &
+    -dump_requests \
+    -jwt_audience localhost &
 pid1=$!
 
 sleep 5

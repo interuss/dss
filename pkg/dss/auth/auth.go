@@ -12,6 +12,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -45,21 +46,14 @@ func OwnerFromContext(ctx context.Context) (models.Owner, bool) {
 }
 
 type authClient struct {
-	key            interface{}
-	requiredScopes map[string][]string
-}
-
-// NewSymmetricAuthClient returns a new authClient instance using symmetric keys.
-func NewSymmetricAuthClient(keyFile string) (*authClient, error) {
-	bytes, err := ioutil.ReadFile(keyFile)
-	if err != nil {
-		return nil, err
-	}
-	return &authClient{key: bytes}, nil
+	logger           *zap.Logger
+	key              interface{}
+	requiredScopes   map[string][]string
+	requiredAudience string
 }
 
 // NewRSAAuthClient returns a new authClient instance which uses RSA.
-func NewRSAAuthClient(keyFile string) (*authClient, error) {
+func NewRSAAuthClient(keyFile string, logger *zap.Logger) (*authClient, error) {
 	bytes, err := ioutil.ReadFile(keyFile)
 	if err != nil {
 		return nil, err
@@ -73,11 +67,15 @@ func NewRSAAuthClient(keyFile string) (*authClient, error) {
 	if !ok {
 		return nil, fmt.Errorf("could not create rsa public key from %s", keyFile)
 	}
-	return &authClient{key: key}, nil
+	return &authClient{logger: logger, key: key}, nil
 }
 
 func (a *authClient) RequireScopes(scopes map[string][]string) {
 	a.requiredScopes = scopes
+}
+
+func (a *authClient) RequireAudience(audience string) {
+	a.requiredAudience = audience
 }
 
 func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -93,8 +91,13 @@ func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return a.key, nil
 	})
 	if err != nil {
-		fmt.Println(err)
+		a.logger.Error("token validation failed", zap.Error(err))
 		return nil, dsserr.Unauthenticated("invalid token")
+	}
+
+	if a.requiredAudience != "" && claims.Audience != a.requiredAudience {
+		return nil, dsserr.Unauthenticated(
+			fmt.Sprintf("invalid token audience, expected %v, got %v", a.requiredAudience, claims.Audience))
 	}
 
 	if err := a.missingScopes(info, strings.Split(claims.ScopeString, " ")); err != nil {

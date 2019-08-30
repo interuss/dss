@@ -12,6 +12,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -56,37 +57,9 @@ func TestNewRSAAuthClient(t *testing.T) {
 	tmpfile, err := ioutil.TempFile("/tmp", "bad.pem")
 	require.NoError(t, tmpfile.Close())
 	// Test catches previous segfault.
-	_, err = NewRSAAuthClient(tmpfile.Name())
+	_, err = NewRSAAuthClient(tmpfile.Name(), nil)
 	require.Error(t, err)
 	require.NoError(t, os.Remove(tmpfile.Name()))
-}
-
-func TestSymmetricAuthInterceptor(t *testing.T) {
-	jwt.TimeFunc = func() time.Time {
-		return time.Unix(42, 0)
-	}
-	defer func() { jwt.TimeFunc = time.Now }()
-
-	ctx := context.Background()
-	var authTests = []struct {
-		ctx  context.Context
-		code codes.Code
-	}{
-		{ctx, codes.Unauthenticated},
-		{metadata.NewIncomingContext(ctx, metadata.New(nil)), codes.Unauthenticated},
-		{symmetricTokenCtx(ctx, []byte("bad_signing_key")), codes.Unauthenticated},
-		{symmetricTokenCtx(ctx, hmacSampleSecret), codes.OK},
-	}
-
-	a := &authClient{key: hmacSampleSecret}
-
-	for _, test := range authTests {
-		_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},
-			func(ctx context.Context, req interface{}) (interface{}, error) { return nil, nil })
-		if status.Code(err) != test.code {
-			t.Errorf("expected: %v, got: %v", test.code, status.Code(err))
-		}
-	}
 }
 
 func TestRSAAuthInterceptor(t *testing.T) {
@@ -116,7 +89,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		{rsaTokenCtx(ctx, key, 100, 50), codes.Unauthenticated}, // Not valid yet
 	}
 
-	a := &authClient{key: &key.PublicKey}
+	a := &authClient{key: &key.PublicKey, logger: zap.L()}
 
 	for _, test := range authTests {
 		_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},

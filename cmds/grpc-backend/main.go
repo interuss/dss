@@ -12,7 +12,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss/cockroach"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/validations"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
-	"github.com/steeling/InterUSS-Platform/pkg/errors"
+	uss_errors "github.com/steeling/InterUSS-Platform/pkg/errors"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -32,12 +32,20 @@ var (
 	cockroachSSLMode = flag.String("cockroach_ssl_mode", "disable", "cockroach sslmode")
 	cockroachUser    = flag.String("cockroach_user", "root", "cockroach user to authenticate as")
 	cockroachSSLDir  = flag.String("cockroach_ssl_dir", "", "directory to ssl certificates. Must contain files: ca.crt, client.<user>.crt, client.<user>.key")
+
+	jwtAudience = flag.String("jwt_audience", "", "Require that JWTs contain this `aud` claim")
 )
 
 // RunGRPCServer starts the example gRPC service.
 // "network" and "address" are passed to net.Listen.
 func RunGRPCServer(ctx context.Context, address string) error {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+
+	if *jwtAudience == "" {
+		// TODO: Make this flag required once all parties can set audiences
+		// correctly.
+		logger.Warn("missing required --jwt_audience")
+	}
 
 	l, err := net.Listen("tcp", address)
 	if err != nil {
@@ -74,14 +82,15 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		Store: store,
 	}
 
-	ac, err := auth.NewRSAAuthClient(*pkFile)
+	ac, err := auth.NewRSAAuthClient(*pkFile, logger)
 	if err != nil {
 		return err
 	}
 	ac.RequireScopes(dssServer.AuthScopes())
+	ac.RequireAudience(*jwtAudience)
 
 	interceptors := []grpc.UnaryServerInterceptor{
-		errors.Interceptor(logger),
+		uss_errors.Interceptor(logger),
 		logging.Interceptor(logger),
 		ac.AuthInterceptor,
 		validations.ValidationInterceptor,
