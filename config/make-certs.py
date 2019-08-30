@@ -10,8 +10,9 @@ import subprocess
 
 class CockroachCluster(object):
 
-    def __init__(self, namespace):
+    def __init__(self, namespace, ca_certs_dir=None):
         self.namespace = namespace
+        self._ca_certs_dir = ca_certs_dir
 
     @property
     def directory(self):
@@ -23,6 +24,8 @@ class CockroachCluster(object):
 
     @property
     def ca_certs_dir(self):
+        if self._ca_certs_dir is not None:
+            return self._ca_certs_dir
         return os.path.join(self.directory, 'ca_certs_dir')
 
     @property
@@ -40,16 +43,17 @@ def parse_args():
     parser.add_argument('namespace', metavar='NAMESPACE')
     parser.add_argument('--node-address', metavar='ADDRESS', nargs='*',
         default=[], help='extra addresses to add to the node certificate')
-    parser.add_argument('--node-ca-cert', metavar='FILENAME', nargs='*',
-        default=[], help='paths to CA certificates of other clusters that the '
-        'new cluster will join')
+    parser.add_argument('--ca-certs-dir', metavar='FILENAME',
+        help='directory containing an existing CA cert and private key of a '
+        'cluster you want to join. All nodes in the cluster must be signed by '
+        'the same CA. If this flag is omitted a new CA will be created')
 
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    cr = CockroachCluster(args.namespace)
+    cr = CockroachCluster(args.namespace, args.ca_certs_dir)
 
     # Create the generated directories.
     try:
@@ -61,24 +65,17 @@ def main():
     except OSError:
         pass
 
-    # Create a CA for each new cluster.
-    # Delete and recreate the ca_certs_dir.
-    shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
-    os.mkdir(cr.ca_certs_dir)
+    if not args.ca_certs_dir:
+        # Create a new CA.
+        # Delete and recreate the ca_certs_dir.
+        shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
+        os.mkdir(cr.ca_certs_dir)
 
-    # Create the CA.
-    subprocess.check_call([
-        'cockroach', 'cert', 'create-ca',
-        '--certs-dir', cr.ca_certs_dir,
-        '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')])
-
-    # Combine the ca_certs_files of all the joined clusters to the new cluster's
-    # ca_certs_file.
-    with open(cr.ca_certs_file) as new_certs_fh:
-        for ca_cert_file in args.node_ca_cert:
-            with open(ca_cert_file) as ca_cert_fh:
-                new_certs_fh.write(ca_cert_fh.read())
-                new_certs_fh.write('\n')
+        # Create the CA.
+        subprocess.check_call([
+            'cockroach', 'cert', 'create-ca',
+            '--certs-dir', cr.ca_certs_dir,
+            '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')])
 
     # Build node and client certs.
     # Delete and recreate the directories.
