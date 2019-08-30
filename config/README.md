@@ -76,15 +76,17 @@ and makes all future kubecfg commands target this cluster.
 
         ./make-certs.py $NAMESPACE \
             [--node-address <ADDRESS> ...]
-            [--node-ca-cert <FILENAME> ...]
+            [--ca-certs-dir <CA_CERTS_DIR>]
 
     *   --node-addresses needs to include all the hostnames or IP addresses that
         other cockroachdb clusters will use to connect to your cluster.  It
         should include the hostnames/IP addresses of the 3 individual
         cockroachdb nodes and the 1 load balanced endpoint.
-    *   If you are joining existing clusters, make sure to provide their public
-        CA certificates with --node-ca-cert, and their addresses with
-        --node-address.
+    *   If you are joining existing clusters you need their CA certificate and
+        private key to sign your certificates.  This will likely mean that the
+        owners of the existing cluster will need to generate certificates for
+        you.  Set --ca-certs-dir to a directory containing `ca.crt` and `ca.key`
+        files.
 
 1.  Use the `apply-certs.sh` script in this directory to create secrets on the
     Kubernetes cluster containing the certificates and keys generated in the
@@ -94,3 +96,37 @@ and makes all future kubecfg commands target this cluster.
 
 1.  Run `helm template . > cockroachdb.yaml` to render the YAML.
 1.  Run `kubectl apply -f cockroachdb.yaml` to apply it to the cluster.
+
+
+## Joining an existing cockroachdb cluster
+
+Follow the steps above for creating a new cockroachdb cluster, but with the
+following differences:
+
+1.  In values.yaml, be sure to set ClusterInit to false otherwise you'll
+    reinitialize and destroy the existing cluster.
+1.  In values.yaml, add the host:ports of existing cockroachdb nodes to the
+    JoinExisting array.  You can use the loadbalanced hostnames or IP addresses
+    of other clusters (the DBBalanced hostname/IP), or you can specify each node
+    individually.
+1.  You must run ./make-certs.py with the --ca-certs-dir flag as described above
+    to use the existing cluster's CA to sign your certificates.
+
+## Using the cockroachdb web UI
+
+The cockroachdb web UI is not exposed publicly, but you can forward a port to
+your local machine using the kubectl command:
+
+### Create a user account
+
+    kubectl -n $NAMESPACE exec cockroachdb-0 -ti -- \
+        ./cockroach --certs-dir ./cockroach-certs \
+        user set $USERNAME --password
+
+### Access the web UI
+
+    kubectl -n $NAMESPACE port-forward cockroachdb-0 8888
+
+Then go to https://localhost:8888.  You'll have to ignore the HTTPS certificate
+warning.
+
