@@ -13,10 +13,28 @@ import (
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
 
 	"github.com/golang/geo/s2"
+	"github.com/golang/protobuf/ptypes"
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+func mustTimestamp(ts *tspb.Timestamp) *time.Time {
+	t, err := ptypes.Timestamp(ts)
+	if err != nil {
+		panic(err)
+	}
+	return &t
+}
+
+func mustGeoPolygonToCellIDs(p *dspb.GeoPolygon) s2.CellUnion {
+	cells, err := geo.GeoPolygonToCellIDs(p)
+	if err != nil {
+		panic(err)
+	}
+	return cells
+}
 
 type mockStore struct {
 	mock.Mock
@@ -66,7 +84,7 @@ func (ms *mockStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earlies
 	return args.Get(0).([]*models.IdentificationServiceArea), args.Error(1)
 }
 
-func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
+func TestDeleteSubscription(t *testing.T) {
 	ctx := auth.ContextWithOwner(context.Background(), "foo")
 
 	for _, r := range []struct {
@@ -104,7 +122,86 @@ func TestDeleteSubscriptionCallsIntoMockStore(t *testing.T) {
 	}
 }
 
-func TestGetSubscriptionCallsIntoMockStore(t *testing.T) {
+func TestCreateSubscription(t *testing.T) {
+	ctx := auth.ContextWithOwner(context.Background(), "foo")
+
+	volume4DWith48HDuration := *testdata.LoopVolume4D
+	volume4DWith48HDuration.TimeEnd = &tspb.Timestamp{
+		Seconds: volume4DWith48HDuration.TimeStart.Seconds + 48*60*60,
+	}
+
+	timestampWith24HDuration := tspb.Timestamp{
+		Seconds: volume4DWith48HDuration.TimeStart.Seconds + 24*60*60,
+	}
+
+	for _, r := range []struct {
+		name             string
+		id               models.ID
+		callbacks        *dspb.SubscriptionCallbacks
+		extents          *dspb.Volume4D
+		wantSubscription *models.Subscription
+		wantErr          error
+	}{
+		{
+			name: "success",
+			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: &dspb.SubscriptionCallbacks{
+				IdentificationServiceAreaUrl: "https://example.com",
+			},
+			extents: testdata.LoopVolume4D,
+			wantSubscription: &models.Subscription{
+				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				Owner:      "foo",
+				Url:        "https://example.com",
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
+				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
+				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
+				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
+				Cells:      mustGeoPolygonToCellIDs(testdata.LoopPolygon),
+			},
+		},
+		{
+			name: "end-time-truncated-after-24h",
+			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: &dspb.SubscriptionCallbacks{
+				IdentificationServiceAreaUrl: "https://example.com",
+			},
+			extents: &volume4DWith48HDuration,
+			wantSubscription: &models.Subscription{
+				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				Owner:      "foo",
+				Url:        "https://example.com",
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
+				EndTime:    mustTimestamp(&timestampWith24HDuration),
+				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
+				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
+				Cells:      mustGeoPolygonToCellIDs(testdata.LoopPolygon),
+			},
+		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			store := &mockStore{}
+			store.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
+				r.wantSubscription, nil,
+			)
+			s := &Server{
+				Store: store,
+			}
+
+			_, err := s.PutV1DssSubscriptionsId(ctx, &dspb.PutV1DssSubscriptionsIdRequest{
+				Id: r.id.String(),
+				Params: &dspb.CreateSubscriptionParameters{
+					Callbacks: r.callbacks,
+					Extents:   r.extents,
+				},
+			})
+			require.Equal(t, r.wantErr, err)
+			require.True(t, store.AssertExpectations(t))
+		})
+	}
+}
+
+func TestGetSubscription(t *testing.T) {
 	for _, r := range []struct {
 		name         string
 		id           models.ID
@@ -174,7 +271,7 @@ func TestSearchSubscriptionsFailsForInvalidArea(t *testing.T) {
 	require.True(t, ms.AssertExpectations(t))
 }
 
-func TestSearchSubscriptionsCallsIntoStore(t *testing.T) {
+func TestSearchSubscriptions(t *testing.T) {
 	var (
 		owner = models.Owner("foo")
 		ctx   = auth.ContextWithOwner(context.Background(), owner)
@@ -221,7 +318,7 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 	require.True(t, ms.AssertExpectations(t))
 }
 
-func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
+func TestDeleteIdentificationServiceArea(t *testing.T) {
 	var (
 		owner = models.Owner("foo")
 		id    = models.ID(uuid.New().String())
@@ -255,7 +352,7 @@ func TestDeleteIdentificationServiceAreaCallsIntoStore(t *testing.T) {
 	require.True(t, ms.AssertExpectations(t))
 }
 
-func TestSearchIdentificationServiceAreasCallsIntoStore(t *testing.T) {
+func TestSearchIdentificationServiceAreas(t *testing.T) {
 	var (
 		ctx = context.Background()
 		ms  = &mockStore{}
