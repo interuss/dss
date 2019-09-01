@@ -12,6 +12,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -21,9 +22,9 @@ var (
 	_ dss.Store = &Store{}
 
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
-	tempTime  = time.Now()
-	startTime = tempTime.AddDate(0, 0, -1)
-	endTime   = tempTime.AddDate(0, 0, 1)
+	fakeClock = clockwork.NewFakeClock()
+	startTime = fakeClock.Now().Add(-time.Minute)
+	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
 func init() {
@@ -54,6 +55,7 @@ func newStore() (*Store, error) {
 	return &Store{
 		DB:     db,
 		logger: zap.L(),
+		clock:  fakeClock,
 	}, nil
 }
 
@@ -80,7 +82,7 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		begins  = time.Now()
 		expires = begins.Add(-5 * time.Minute)
 	)
-	_, err := store.InsertSubscription(ctx, &models.Subscription{
+	_, err := store.InsertSubscription(ctx, models.Subscription{
 		ID:                models.ID(uuid.New().String()),
 		Owner:             "me-myself-and-i",
 		Url:               "https://no/place/like/home",

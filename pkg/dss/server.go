@@ -18,8 +18,6 @@ import (
 var (
 	WriteISAScope = "dss.write.identification_service_areas"
 	ReadISAScope  = "dss.read.identification_service_areas"
-
-	maxSubscriptionDuration = time.Hour * 24
 )
 
 // Server implements dssproto.DiscoveryAndSynchronizationService.
@@ -74,7 +72,7 @@ func (s *Server) createOrUpdateISA(
 		return nil, dsserr.BadRequest("missing required extents")
 	}
 
-	isa := &models.IdentificationServiceArea{
+	isa := models.IdentificationServiceArea{
 		ID:      models.ID(id),
 		Url:     flights_url,
 		Owner:   owner,
@@ -85,12 +83,12 @@ func (s *Server) createOrUpdateISA(
 		return nil, dsserr.BadRequest("bad extents")
 	}
 
-	isa, subscribers, err := s.Store.InsertISA(ctx, isa)
+	insertedISA, subscribers, err := s.Store.InsertISA(ctx, isa)
 	if err != nil {
 		return nil, err
 	}
 
-	pbISA, err := isa.ToProto()
+	pbISA, err := insertedISA.ToProto()
 	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
@@ -298,7 +296,7 @@ func (s *Server) createOrUpdateSubscription(
 		return nil, dsserr.BadRequest("no callbacks provided")
 	}
 
-	sub := &models.Subscription{
+	sub := models.Subscription{
 		ID:      models.ID(id),
 		Owner:   owner,
 		Url:     callbacks.IdentificationServiceAreaUrl,
@@ -309,18 +307,12 @@ func (s *Server) createOrUpdateSubscription(
 		return nil, dsserr.BadRequest("bad extents")
 	}
 
-	// Limit the duration of the subscription.
-	if sub.EndTime.Sub(*sub.StartTime) > maxSubscriptionDuration {
-		truncatedEndTime := sub.StartTime.Add(maxSubscriptionDuration)
-		sub.EndTime = &truncatedEndTime
-	}
-
-	sub, err := s.Store.InsertSubscription(ctx, sub)
+	insertedSub, err := s.Store.InsertSubscription(ctx, sub)
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := sub.ToProto()
+	p, err := insertedSub.ToProto()
 	if err != nil {
 		return nil, err
 	}

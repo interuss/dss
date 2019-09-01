@@ -199,7 +199,7 @@ func (c *Store) GetSubscription(ctx context.Context, id models.ID) (*models.Subs
 
 // Insert inserts subscription into the store and returns
 // the resulting subscription including its ID.
-func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
+func (c *Store) InsertSubscription(ctx context.Context, s models.Subscription) (*models.Subscription, error) {
 
 	tx, err := c.Begin()
 	if err != nil {
@@ -225,6 +225,11 @@ func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) 
 		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
+	// Validate and perhaps correct StartTime and EndTime.
+	if err := s.AdjustTimeRange(c.clock.Now(), old); err != nil {
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+
 	// Check the user hasn't created too many subscriptions in this area.
 	if old == nil {
 		count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, tx, s.Cells, s.Owner)
@@ -236,14 +241,14 @@ func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) 
 		}
 	}
 
-	s, err = c.pushSubscription(ctx, tx, s)
+	newSubscription, err := c.pushSubscription(ctx, tx, &s)
 	if err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	return s, nil
+	return newSubscription, nil
 }
 
 // DeleteSubscription deletes the subscription identified by "id" and

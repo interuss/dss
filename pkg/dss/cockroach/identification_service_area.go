@@ -183,7 +183,7 @@ func (c *Store) GetISA(ctx context.Context, id models.ID) (*models.Identificatio
 //
 // Returns the created IdentificationServiceArea and all Subscriptions affected
 // by it.
-func (c *Store) InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (c *Store) InsertISA(ctx context.Context, isa models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
 	tx, err := c.Begin()
 	if err != nil {
 		return nil, nil, err
@@ -209,7 +209,12 @@ func (c *Store) InsertISA(ctx context.Context, isa *models.IdentificationService
 		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	}
 
-	area, subscribers, err := c.pushISA(ctx, tx, isa)
+	// Validate and perhaps correct StartTime and EndTime.
+	if err := isa.AdjustTimeRange(c.clock.Now(), old); err != nil {
+		return nil, nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	area, subscribers, err := c.pushISA(ctx, tx, &isa)
 	if err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
