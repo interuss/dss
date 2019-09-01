@@ -21,28 +21,12 @@ import (
 
 var hmacSampleSecret = []byte("secret_key")
 
-func symmetricTokenCtx(ctx context.Context, key []byte) context.Context {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"foo":       "bar",
-		"client_id": "me",
-		"exp":       100,
-		"nbf":       20,
-	})
-
-	// Sign and get the complete encoded token as a string using the secret
-	// Ignore the error, it will fail the test anyways if it is not nil.
-	tokenString, _ := token.SignedString(key)
-	return metadata.NewIncomingContext(ctx, metadata.New(map[string]string{
-		"Authorization": "Bearer " + tokenString,
-	}))
-}
-
 func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey, exp, nbf int64) context.Context {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"foo":       "bar",
-		"client_id": "me",
-		"exp":       exp,
-		"nbf":       nbf,
+		"foo": "bar",
+		"exp": exp,
+		"nbf": nbf,
+		"sub": "real_owner",
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -151,13 +135,14 @@ func TestMissingScopes(t *testing.T) {
 
 func TestClaimsValidation(t *testing.T) {
 	claims := &claims{}
+
 	require.Error(t, claims.Valid())
-	claims.ClientID = "me"
+	claims.Subject = "real_owner"
 	require.NoError(t, claims.Valid())
 }
 
 func TestContextWithOwner(t *testing.T) {
-	expected := models.Owner("me")
+	expected := models.Owner("real_owner")
 	ctx := context.Background()
 	owner, ok := OwnerFromContext(ctx)
 	require.False(t, ok)
