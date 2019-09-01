@@ -12,24 +12,16 @@ import (
 )
 
 var (
-	overflow         = -1
-	serviceAreasPool = []struct {
-		name  string
-		input *models.IdentificationServiceArea
-	}{
-		{
-			name: "a subscription without startTime and endTime",
-			input: &models.IdentificationServiceArea{
-				ID:        models.ID(uuid.New().String()),
-				Owner:     models.Owner(uuid.New().String()),
-				Url:       "https://no/place/like/home/for/flights",
-				StartTime: &startTime,
-				EndTime:   &endTime,
-				Cells: s2.CellUnion{
-					s2.CellID(42),
-					s2.CellID(uint64(overflow)),
-				},
-			},
+	overflow    = -1
+	serviceArea = &models.IdentificationServiceArea{
+		ID:        models.ID(uuid.New().String()),
+		Owner:     models.Owner(uuid.New().String()),
+		Url:       "https://no/place/like/home/for/flights",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells: s2.CellUnion{
+			s2.CellID(uint64(overflow)),
+			s2.CellID(42),
 		},
 	}
 )
@@ -44,22 +36,18 @@ func TestStoreSearchISAs(t *testing.T) {
 			s2.CellID(168),
 			s2.CellID(uint64(overflow)),
 		}
-		insertedServiceAreas = []*models.IdentificationServiceArea{}
 		store, tearDownStore = setUpStore(ctx, t)
 	)
 	defer func() {
 		require.NoError(t, tearDownStore())
 	}()
 
-	for _, r := range serviceAreasPool {
-		copy := *r.input
-		copy.Cells = cells
-		saOut, _, err := store.InsertISA(ctx, &copy)
-		require.NoError(t, err)
-		require.NotNil(t, saOut)
-		require.Equal(t, copy.ID, saOut.ID)
-		insertedServiceAreas = append(insertedServiceAreas, saOut)
-	}
+	isa := *serviceArea
+	isa.Cells = cells
+	saOut, _, err := store.InsertISA(ctx, isa)
+	require.NoError(t, err)
+	require.NotNil(t, saOut)
+	require.Equal(t, isa.ID, saOut.ID)
 
 	for _, r := range []struct {
 		name             string
@@ -137,13 +125,11 @@ func TestStoreSearchISAs(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			for _, sa := range insertedServiceAreas {
-				earliest, latest := r.timestampMutator(*sa.StartTime, *sa.EndTime)
+			earliest, latest := r.timestampMutator(*saOut.StartTime, *saOut.EndTime)
 
-				serviceAreas, err := store.SearchISAs(ctx, r.cells, earliest, latest)
-				require.NoError(t, err)
-				require.Len(t, serviceAreas, r.expectedLen)
-			}
+			serviceAreas, err := store.SearchISAs(ctx, r.cells, earliest, latest)
+			require.NoError(t, err)
+			require.Len(t, serviceAreas, r.expectedLen)
 		})
 	}
 }
@@ -157,49 +143,158 @@ func TestStoreDeleteISAs(t *testing.T) {
 		require.NoError(t, tearDownStore())
 	}()
 
-	var (
-		insertedServiceAreas  = []*models.IdentificationServiceArea{}
-		insertedSubscriptions = []*models.Subscription{}
-	)
+	insertedSubscriptions := []*models.Subscription{}
 
 	for _, r := range subscriptionsPool {
 		copy := *r.input
 		copy.Cells = s2.CellUnion{s2.CellID(42)}
-		s1, err := store.InsertSubscription(ctx, &copy)
+		s1, err := store.InsertSubscription(ctx, copy)
 		require.NoError(t, err)
 		require.NotNil(t, s1)
 		insertedSubscriptions = append(insertedSubscriptions, s1)
 	}
 
-	for _, r := range serviceAreasPool {
-		tx, _ := store.Begin()
-		isa, _, err := store.pushISA(ctx, tx, r.input)
-		tx.Commit()
-		require.NoError(t, err)
-		require.NotNil(t, isa)
+	// Insert the ISA.
+	copy := *serviceArea
+	tx, _ := store.Begin()
+	isa, _, err := store.pushISA(ctx, tx, &copy)
+	tx.Commit()
+	require.NoError(t, err)
+	require.NotNil(t, isa)
 
-		insertedServiceAreas = append(insertedServiceAreas, isa)
-	}
-
-	for _, sa := range insertedServiceAreas {
-		serviceAreaOut, subscriptionsOut, err := store.DeleteISA(ctx, sa.ID, sa.Owner, sa.Version)
-		require.NoError(t, err)
-		require.NotNil(t, serviceAreaOut)
-		require.NotNil(t, subscriptionsOut)
+	// Delete the ISA.
+	serviceAreaOut, subscriptionsOut, err := store.DeleteISA(ctx, isa.ID, isa.Owner, isa.Version)
+	require.NoError(t, err)
+	require.Equal(t, isa, serviceAreaOut)
+	require.NotNil(t, subscriptionsOut)
+	require.Len(t, subscriptionsOut, len(subscriptionsPool))
+	for i, s := range subscriptionsPool {
+		require.Equal(t, s.input.Url, subscriptionsOut[i].Url)
 	}
 }
 
 func TestInsertISA(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
 	defer func() {
 		require.NoError(t, tearDownStore())
 	}()
-	for _, r := range serviceAreasPool {
-		area, _, err := store.InsertISA(ctx, r.input)
-		require.NoError(t, err)
-		require.NotNil(t, area)
+
+	for _, r := range []struct {
+		name                string
+		updateFromStartTime time.Time
+		updateFromEndTime   time.Time
+		startTime           time.Time
+		endTime             time.Time
+		wantErr             string
+		wantStartTime       time.Time
+		wantEndTime         time.Time
+	}{
+		{
+			name:    "missing-end-time",
+			wantErr: "rpc error: code = InvalidArgument desc = IdentificationServiceArea must have an end_time",
+		},
+		{
+			name:          "start-time-defaults-to-now",
+			endTime:       fakeClock.Now().Add(time.Hour),
+			wantStartTime: fakeClock.Now(),
+		},
+		{
+			name:      "start-time-in-the-past",
+			startTime: fakeClock.Now().Add(-6 * time.Minute),
+			endTime:   fakeClock.Now().Add(time.Hour),
+			wantErr:   "rpc error: code = InvalidArgument desc = IdentificationServiceArea start_time must not be in the past",
+		},
+		{
+			name:          "start-time-slighty-in-the-past",
+			startTime:     fakeClock.Now().Add(-4 * time.Minute),
+			endTime:       fakeClock.Now().Add(time.Hour),
+			wantStartTime: fakeClock.Now().Add(-4 * time.Minute),
+		},
+		{
+			name:      "end-time-before-start-time",
+			startTime: fakeClock.Now().Add(20 * time.Minute),
+			endTime:   fakeClock.Now().Add(10 * time.Minute),
+			wantErr:   "rpc error: code = InvalidArgument desc = IdentificationServiceArea end_time must be after start_time",
+		},
+		{
+			name:                "updating-keeps-old-times",
+			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
+			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
+			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
+			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
+		},
+		{
+			name:                "changing-start-time-to-past",
+			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
+			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
+			startTime:           fakeClock.Now().Add(-3 * time.Hour),
+			wantErr:             "rpc error: code = InvalidArgument desc = IdentificationServiceArea start_time must not be in the past",
+		},
+		{
+			name:                "changing-start-time-to-future",
+			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
+			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
+			startTime:           fakeClock.Now().Add(3 * time.Hour),
+			wantStartTime:       fakeClock.Now().Add(3 * time.Hour),
+			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
+		},
+		{
+			name:                "changing-end-time-to-future",
+			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
+			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
+			endTime:             fakeClock.Now().Add(3 * time.Hour),
+			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
+			wantEndTime:         fakeClock.Now().Add(3 * time.Hour),
+		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			id := models.ID(uuid.New().String())
+			owner := models.Owner(uuid.New().String())
+			var version *models.Version
+
+			// Insert a pre-existing ISA to simulate updating from something.
+			if !r.updateFromStartTime.IsZero() {
+				tx, err := store.Begin()
+				require.NoError(t, err)
+				existing, _, err := store.pushISA(ctx, tx, &models.IdentificationServiceArea{
+					ID:        id,
+					Owner:     owner,
+					StartTime: &r.updateFromStartTime,
+					EndTime:   &r.updateFromEndTime,
+				})
+				require.NoError(t, err)
+				require.NoError(t, tx.Commit())
+				version = existing.Version
+			}
+
+			sa := models.IdentificationServiceArea{
+				ID:      id,
+				Owner:   owner,
+				Version: version,
+			}
+			if !r.startTime.IsZero() {
+				sa.StartTime = &r.startTime
+			}
+			if !r.endTime.IsZero() {
+				sa.EndTime = &r.endTime
+			}
+			isa, _, err := store.InsertISA(ctx, sa)
+
+			if r.wantErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, r.wantErr)
+			}
+
+			if !r.wantStartTime.IsZero() {
+				require.NotNil(t, isa.StartTime)
+				require.Equal(t, r.wantStartTime, *isa.StartTime)
+			}
+			if !r.wantEndTime.IsZero() {
+				require.NotNil(t, isa.EndTime)
+				require.Equal(t, r.wantEndTime, *isa.EndTime)
+			}
+		})
 	}
 }

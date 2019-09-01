@@ -44,7 +44,7 @@ func (ms *mockStore) Close() error {
 	return ms.Called().Error(0)
 }
 
-func (ms *mockStore) InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
+func (ms *mockStore) InsertSubscription(ctx context.Context, s models.Subscription) (*models.Subscription, error) {
 	args := ms.Called(ctx, s)
 	return args.Get(0).(*models.Subscription), args.Error(1)
 }
@@ -74,7 +74,7 @@ func (ms *mockStore) DeleteISA(ctx context.Context, id models.ID, owner models.O
 	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
 
-func (ms *mockStore) InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (ms *mockStore) InsertISA(ctx context.Context, isa models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
 	args := ms.Called(ctx, isa)
 	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
@@ -125,21 +125,12 @@ func TestDeleteSubscription(t *testing.T) {
 func TestCreateSubscription(t *testing.T) {
 	ctx := auth.ContextWithOwner(context.Background(), "foo")
 
-	volume4DWith48HDuration := *testdata.LoopVolume4D
-	volume4DWith48HDuration.TimeEnd = &tspb.Timestamp{
-		Seconds: volume4DWith48HDuration.TimeStart.Seconds + 48*60*60,
-	}
-
-	timestampWith24HDuration := tspb.Timestamp{
-		Seconds: volume4DWith48HDuration.TimeStart.Seconds + 24*60*60,
-	}
-
 	for _, r := range []struct {
 		name             string
 		id               models.ID
 		callbacks        *dspb.SubscriptionCallbacks
 		extents          *dspb.Volume4D
-		wantSubscription *models.Subscription
+		wantSubscription models.Subscription
 		wantErr          error
 	}{
 		{
@@ -149,7 +140,7 @@ func TestCreateSubscription(t *testing.T) {
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
 			extents: testdata.LoopVolume4D,
-			wantSubscription: &models.Subscription{
+			wantSubscription: models.Subscription{
 				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 				Owner:      "foo",
 				Url:        "https://example.com",
@@ -160,29 +151,11 @@ func TestCreateSubscription(t *testing.T) {
 				Cells:      mustGeoPolygonToCellIDs(testdata.LoopPolygon),
 			},
 		},
-		{
-			name: "end-time-truncated-after-24h",
-			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &dspb.SubscriptionCallbacks{
-				IdentificationServiceAreaUrl: "https://example.com",
-			},
-			extents: &volume4DWith48HDuration,
-			wantSubscription: &models.Subscription{
-				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-				Owner:      "foo",
-				Url:        "https://example.com",
-				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
-				EndTime:    mustTimestamp(&timestampWith24HDuration),
-				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
-				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
-				Cells:      mustGeoPolygonToCellIDs(testdata.LoopPolygon),
-			},
-		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			store := &mockStore{}
 			store.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
-				r.wantSubscription, nil,
+				&r.wantSubscription, nil,
 			)
 			s := &Server{
 				Store: store,

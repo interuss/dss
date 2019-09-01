@@ -8,6 +8,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 )
 
 type IdentificationServiceArea struct {
@@ -81,4 +82,38 @@ func (i *IdentificationServiceArea) SetExtents(extents *dspb.Volume4D) error {
 	}
 	i.Cells, err = geo.GeoPolygonToCellIDs(footprint)
 	return err
+}
+
+func (s *IdentificationServiceArea) AdjustTimeRange(now time.Time, old *IdentificationServiceArea) error {
+	if s.StartTime == nil {
+		// If StartTime was omitted, default to Now() for new ISAs or re-
+		// use the existing time of existing ISAs.
+		if old == nil {
+			s.StartTime = &now
+		} else {
+			s.StartTime = old.StartTime
+		}
+	} else {
+		// If setting the StartTime explicitly ensure it is not too far in the past.
+		if now.Sub(*s.StartTime) > maxClockSkew {
+			return dsserr.BadRequest("IdentificationServiceArea start_time must not be in the past")
+		}
+	}
+
+	// If EndTime was omitted default to the existing ISA's EndTime.
+	if s.EndTime == nil && old != nil {
+		s.EndTime = old.EndTime
+	}
+
+	// EndTime cannot be omitted for new ISAs.
+	if s.EndTime == nil {
+		return dsserr.BadRequest("IdentificationServiceArea must have an end_time")
+	}
+
+	// EndTime cannot be before StartTime.
+	if s.EndTime.Sub(*s.StartTime) < 0 {
+		return dsserr.BadRequest("IdentificationServiceArea end_time must be after start_time")
+	}
+
+	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 )
 
@@ -14,12 +15,13 @@ import (
 type Store struct {
 	*sql.DB
 	logger *zap.Logger
+	clock  clockwork.Clock
 }
 
 // Dial returns a Store instance connected to a cockroach instance available at
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html
-func Dial(uri string, logger *zap.Logger) (*Store, error) {
+func Dial(uri string, logger *zap.Logger, clock clockwork.Clock) (*Store, error) {
 	db, err := sql.Open("postgres", uri)
 	if err != nil {
 		return nil, err
@@ -28,6 +30,7 @@ func Dial(uri string, logger *zap.Logger) (*Store, error) {
 	return &Store{
 		DB:     db,
 		logger: logger,
+		clock:  clock,
 	}, nil
 }
 
