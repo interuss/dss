@@ -13,6 +13,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 var (
@@ -51,7 +52,8 @@ func newStore() (*Store, error) {
 	}
 
 	return &Store{
-		DB: db,
+		DB:     db,
+		logger: zap.L(),
 	}, nil
 }
 

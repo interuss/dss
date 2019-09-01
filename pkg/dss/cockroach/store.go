@@ -5,26 +5,29 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	// Pull in the postgres database driver
+
+	"go.uber.org/zap"
 )
 
 // Store is an implementation of dss.Store using
 // Cockroach DB as its backend store.
 type Store struct {
 	*sql.DB
+	logger *zap.Logger
 }
 
 // Dial returns a Store instance connected to a cockroach instance available at
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html
-func Dial(uri string) (*Store, error) {
+func Dial(uri string, logger *zap.Logger) (*Store, error) {
 	db, err := sql.Open("postgres", uri)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Store{
-		DB: db,
+		DB:     db,
+		logger: logger,
 	}, nil
 }
 

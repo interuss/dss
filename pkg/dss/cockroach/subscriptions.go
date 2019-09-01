@@ -5,11 +5,18 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/golang/geo/s2"
-	"github.com/lib/pq"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
+
+	"github.com/golang/geo/s2"
+	"github.com/lib/pq"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
+)
+
+const (
+	// Defined in requirement DSS0030.
+	maxSubscriptionsPerArea = 10
 )
 
 var subscriptionFields = "subscriptions.id, subscriptions.owner, subscriptions.url, subscriptions.notification_index, subscriptions.starts_at, subscriptions.ends_at, subscriptions.updated_at"
@@ -91,6 +98,38 @@ func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, 
 			id = $1
 			AND owner = $2`, subscriptionFields)
 	return c.fetchSubscription(ctx, q, query, id, owner)
+}
+
+// fetchMaxSubscriptionCountByCellAndOwner counts how many subscriptions the
+// owner has in each one of these cells, and returns the number of subscriptions
+// in the cell with the highest number of subscriptions.
+func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
+	ctx context.Context, q queryable, cells s2.CellUnion, owner models.Owner) (int, error) {
+	var query = `
+    SELECT
+      MAX(subscriptions_per_cell_id)
+    FROM (
+      SELECT
+        COUNT(*) AS subscriptions_per_cell_id
+      FROM
+        subscriptions AS s,
+        cells_subscriptions as c
+      WHERE
+        s.id = c.subscription_id AND
+        s.owner = $1 AND
+        c.cell_id = ANY($2)
+      GROUP BY c.cell_id
+    )`
+
+	cids := make([]int64, len(cells))
+	for i, cell := range cells {
+		cids[i] = int64(cell)
+	}
+
+	row := q.QueryRowContext(ctx, query, owner, pq.Array(cids))
+	var ret int
+	err := row.Scan(&ret)
+	return ret, err
 }
 
 func (c *Store) pushSubscription(ctx context.Context, q queryable, s *models.Subscription) (*models.Subscription, error) {
@@ -184,6 +223,17 @@ func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) 
 	case old != nil && !s.Version.Matches(old.Version):
 		// The user wants to update a subscription but the version doesn't match.
 		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
+	}
+
+	// Check the user hasn't created too many subscriptions in this area.
+	if old == nil {
+		count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, tx, s.Cells, s.Owner)
+		if err != nil {
+			c.logger.Warn("Error fetching max subscription count", zap.Error(err))
+		} else if count >= maxSubscriptionsPerArea {
+			return nil, multierr.Combine(dsserr.Exhausted(
+				"too many existing subscriptions in this area"), tx.Rollback())
+		}
 	}
 
 	s, err = c.pushSubscription(ctx, tx, s)

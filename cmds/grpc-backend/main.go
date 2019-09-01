@@ -69,7 +69,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		logger.Panic("Failed to build URI", zap.Error(err))
 	}
 
-	store, err := cockroach.Dial(uri)
+	store, err := cockroach.Dial(uri, logger)
 	if err != nil {
 		logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
 	}
