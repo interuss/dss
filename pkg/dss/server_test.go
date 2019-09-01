@@ -154,6 +154,8 @@ func TestCreateSubscription(t *testing.T) {
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			store := &mockStore{}
+			store.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+				[]*models.IdentificationServiceArea(nil), nil)
 			store.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
 				&r.wantSubscription, nil,
 			)
@@ -172,6 +174,57 @@ func TestCreateSubscription(t *testing.T) {
 			require.True(t, store.AssertExpectations(t))
 		})
 	}
+}
+
+func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
+	ctx := auth.ContextWithOwner(context.Background(), "foo")
+
+	isas := []*models.IdentificationServiceArea{
+		&models.IdentificationServiceArea{
+			ID:    models.ID("8265221b-9528-4d45-900d-59a148e13850"),
+			Owner: models.Owner("me-myself-and-i"),
+			Url:   "https://no/place/like/home",
+		},
+	}
+
+	cells := mustGeoPolygonToCellIDs(testdata.LoopPolygon)
+	sub := models.Subscription{
+		ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+		Owner:      "foo",
+		Url:        "https://example.com",
+		StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
+		EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
+		AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
+		AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
+		Cells:      cells,
+	}
+
+	store := &mockStore{}
+	store.On("SearchISAs", mock.Anything, cells, mock.Anything, mock.Anything).Return(isas, nil)
+	store.On("InsertSubscription", mock.Anything, sub).Return(&sub, nil)
+	s := &Server{
+		Store: store,
+	}
+
+	resp, err := s.PutV1DssSubscriptionsId(ctx, &dspb.PutV1DssSubscriptionsIdRequest{
+		Id: sub.ID.String(),
+		Params: &dspb.CreateSubscriptionParameters{
+			Callbacks: &dspb.SubscriptionCallbacks{
+				IdentificationServiceAreaUrl: sub.Url,
+			},
+			Extents: testdata.LoopVolume4D,
+		},
+	})
+	require.Nil(t, err)
+	require.True(t, store.AssertExpectations(t))
+
+	require.Equal(t, []*dspb.IdentificationServiceArea{
+		&dspb.IdentificationServiceArea{
+			FlightsUrl: "https://no/place/like/home",
+			Id:         "8265221b-9528-4d45-900d-59a148e13850",
+			Owner:      "me-myself-and-i",
+		},
+	}, resp.ServiceAreas)
 }
 
 func TestGetSubscription(t *testing.T) {
