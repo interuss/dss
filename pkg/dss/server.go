@@ -316,8 +316,25 @@ func (s *Server) createOrUpdateSubscription(
 	if err != nil {
 		return nil, err
 	}
+
+	// Find ISAs that were in this subscription's area.
+	isas, err := s.Store.SearchISAs(ctx, sub.Cells, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the ISAs to protos.
+	isaProtos := make([]*dspb.IdentificationServiceArea, len(isas))
+	for i, isa := range isas {
+		isaProtos[i], err = isa.ToProto()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &dspb.PutSubscriptionResponse{
 		Subscription: p,
+		ServiceAreas: isaProtos,
 	}, nil
 }
 
