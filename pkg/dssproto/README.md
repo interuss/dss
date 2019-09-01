@@ -4,7 +4,7 @@ and [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway) using
 api.yaml present in the root level of this repository.
 
 api.yaml is copied from
-https://github.com/BenjaminPelletier/DiscoveryAndSynchronization/tree/3b25e0dc3720b021f5d54e515f2fecb2b1c90778.
+https://github.com/BenjaminPelletier/DiscoveryAndSynchronization/tree/c954debcf7511c918f5bc50904e7ab68e1c8dedd.
 
 The upstream openapi2proto does not support Open API v3, so we use a forked
 version from https://github.com/davidsansome/openapi2proto which supports enough
