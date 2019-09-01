@@ -53,7 +53,7 @@ func (s *Server) GetV1DssIdentificationServiceAreasId(
 		return nil, err
 	}
 	return &dspb.GetIdentificationServiceAreaResponse{
-		IdentificationServiceArea: p,
+		ServiceArea: p,
 	}, nil
 }
 
