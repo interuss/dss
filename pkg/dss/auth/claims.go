@@ -7,18 +7,17 @@ import (
 )
 
 var (
-	errMissingOrEmptyClientID = errors.New("Missing or empty client_id")
+	errMissingOrEmptySubject = errors.New("Missing or empty subject")
 )
 
 type claims struct {
 	jwt.StandardClaims
-	ClientID    string `json:"client_id"`
 	ScopeString string `json:"scope"`
 }
 
 func (c *claims) Valid() error {
-	if c.ClientID == "" {
-		return errMissingOrEmptyClientID
+	if c.Subject == "" {
+		return errMissingOrEmptySubject
 	}
 
 	return c.StandardClaims.Valid()

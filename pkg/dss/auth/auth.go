@@ -104,7 +104,7 @@ func (a *authClient) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("missing scopes: %v", err))
 	}
 
-	return handler(ContextWithOwner(ctx, models.Owner(claims.ClientID)), req)
+	return handler(ContextWithOwner(ctx, models.Owner(claims.Subject)), req)
 }
 
 // Returns all of the required scopes that are missing.
