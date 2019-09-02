@@ -164,7 +164,7 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 			name:      "start-time-in-the-past",
 			startTime: fakeClock.Now().Add(-6 * time.Minute),
 			endTime:   fakeClock.Now().Add(time.Hour),
-			wantErr:   "rpc error: code = InvalidArgument desc = subscription start_time must not be in the past",
+			wantErr:   "rpc error: code = InvalidArgument desc = subscription time_start must not be in the past",
 		},
 		{
 			name:          "start-time-slighty-in-the-past",
@@ -176,7 +176,7 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 			name:      "end-time-before-start-time",
 			startTime: fakeClock.Now().Add(20 * time.Minute),
 			endTime:   fakeClock.Now().Add(10 * time.Minute),
-			wantErr:   "rpc error: code = InvalidArgument desc = subscription end_time must be after start_time",
+			wantErr:   "rpc error: code = InvalidArgument desc = subscription time_end must be after time_start",
 		},
 		{
 			name:                "updating-keeps-old-times",
@@ -190,7 +190,7 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
 			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
 			startTime:           fakeClock.Now().Add(-3 * time.Hour),
-			wantErr:             "rpc error: code = InvalidArgument desc = subscription start_time must not be in the past",
+			wantErr:             "rpc error: code = InvalidArgument desc = subscription time_start must not be in the past",
 		},
 		{
 			name:                "changing-start-time-to-future",
