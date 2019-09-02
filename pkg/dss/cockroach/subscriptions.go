@@ -53,21 +53,38 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query strin
 	return payload, nil
 }
 
-func (c *Store) fetchSubscriptionsByCells(ctx context.Context, q queryable, cells []int64) ([]*models.Subscription, error) {
-	var subscriptionsQuery = fmt.Sprintf(`
-		 SELECT
-				%s
-			FROM
-				subscriptions
-			LEFT JOIN
-				(SELECT DISTINCT subscription_id FROM cells_subscriptions WHERE cell_id = ANY($1))
-			AS
-				unique_subscription_ids
-			ON
-				subscriptions.id = unique_subscription_ids.subscription_id
-			`, subscriptionFields)
+func (c *Store) fetchSubscriptionsForNotification(ctx context.Context, q queryable, cells []int64) ([]*models.Subscription, error) {
+	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
+	// UPDATE FROM query.
 
-	return c.fetchSubscriptions(ctx, q, subscriptionsQuery, pq.Array(cells))
+	// First: get unique subscription IDs.
+	var query = `
+			SELECT DISTINCT subscription_id
+			FROM cells_subscriptions
+			WHERE cell_id = ANY($1)`
+	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var subscriptionIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		subscriptionIDs = append(subscriptionIDs, id)
+	}
+
+	// Next: update the notification_index of each one and return the rest of the
+	// data.
+	var updateQuery = fmt.Sprintf(`
+			UPDATE subscriptions
+			SET notification_index = notification_index + 1
+			WHERE id = ANY($1)
+			RETURNING %s`, subscriptionFieldsWithoutPrefix)
+	return c.fetchSubscriptions(ctx, q, updateQuery, pq.Array(subscriptionIDs))
 }
 
 func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string, args ...interface{}) (*models.Subscription, error) {
