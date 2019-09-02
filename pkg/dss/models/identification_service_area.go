@@ -96,7 +96,7 @@ func (s *IdentificationServiceArea) AdjustTimeRange(now time.Time, old *Identifi
 	} else {
 		// If setting the StartTime explicitly ensure it is not too far in the past.
 		if now.Sub(*s.StartTime) > maxClockSkew {
-			return dsserr.BadRequest("IdentificationServiceArea tims_start must not be in the past")
+			return dsserr.BadRequest("IdentificationServiceArea time_start must not be in the past")
 		}
 	}
 
@@ -112,7 +112,7 @@ func (s *IdentificationServiceArea) AdjustTimeRange(now time.Time, old *Identifi
 
 	// EndTime cannot be before StartTime.
 	if s.EndTime.Sub(*s.StartTime) < 0 {
-		return dsserr.BadRequest("IdentificationServiceArea time_end must be after tims_start")
+		return dsserr.BadRequest("IdentificationServiceArea time_end must be after time_start")
 	}
 
 	return nil
