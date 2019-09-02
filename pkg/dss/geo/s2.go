@@ -143,5 +143,14 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 
 		counter++
 	}
-	return Covering(s2.LoopFromPoints(points))
+	loopAttempt := s2.LoopFromPoints(points)
+	if loopAttempt.Area() > maxLoopArea() {
+		// This probably happened because the vertices were not ordered counter-clockwise.
+		// We can try reversing to see if that's the case.
+		for i, j := 0, len(points)-1; i < j; i, j = i+1, j-1 {
+			points[i], points[j] = points[j], points[i]
+		}
+		loopAttempt = s2.LoopFromPoints(points)
+	}
+	return Covering(loopAttempt)
 }
