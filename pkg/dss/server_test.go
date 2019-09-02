@@ -11,6 +11,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo/testdata"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
@@ -151,14 +152,63 @@ func TestCreateSubscription(t *testing.T) {
 				Cells:      mustGeoPolygonToCellIDs(testdata.LoopPolygon),
 			},
 		},
+		{
+			name: "missing-extents",
+			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: &dspb.SubscriptionCallbacks{
+				IdentificationServiceAreaUrl: "https://example.com",
+			},
+			wantErr: dsserr.BadRequest("missing required extents"),
+		},
+		{
+			name: "missing-extents-spatial-volume",
+			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: &dspb.SubscriptionCallbacks{
+				IdentificationServiceAreaUrl: "https://example.com",
+			},
+			extents: &dspb.Volume4D{},
+			wantErr: dsserr.BadRequest("bad extents: missing required spatial_volume"),
+		},
+		{
+			name: "missing-spatial-volume-footprint",
+			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: &dspb.SubscriptionCallbacks{
+				IdentificationServiceAreaUrl: "https://example.com",
+			},
+			extents: &dspb.Volume4D{
+				SpatialVolume: &dspb.Volume3D{},
+			},
+			wantErr: dsserr.BadRequest("bad extents: spatial_volume missing required footprint"),
+		},
+		{
+			name: "missing-spatial-volume-footprint",
+			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: &dspb.SubscriptionCallbacks{
+				IdentificationServiceAreaUrl: "https://example.com",
+			},
+			extents: &dspb.Volume4D{
+				SpatialVolume: &dspb.Volume3D{
+					Footprint: &dspb.GeoPolygon{},
+				},
+			},
+			wantErr: dsserr.BadRequest("bad extents: not enough points in polygon"),
+		},
+		{
+			name:    "missing-callbacks",
+			id:      models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: testdata.LoopVolume4D,
+			wantErr: dsserr.BadRequest("missing required callbacks"),
+		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			store := &mockStore{}
-			store.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-				[]*models.IdentificationServiceArea(nil), nil)
-			store.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
-				&r.wantSubscription, nil,
-			)
+			if r.wantErr == nil {
+				store.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+					[]*models.IdentificationServiceArea(nil), nil)
+				store.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
+					&r.wantSubscription, nil,
+				)
+			}
 			s := &Server{
 				Store: store,
 			}
@@ -325,6 +375,96 @@ func TestSearchSubscriptions(t *testing.T) {
 	require.NotNil(t, resp)
 	require.Len(t, resp.Subscriptions, 1)
 	require.True(t, ms.AssertExpectations(t))
+}
+
+func TestCreateISA(t *testing.T) {
+	ctx := auth.ContextWithOwner(context.Background(), "foo")
+
+	for _, r := range []struct {
+		name       string
+		id         models.ID
+		extents    *dspb.Volume4D
+		flightsUrl string
+		wantISA    *models.IdentificationServiceArea
+		wantErr    error
+	}{
+		{
+			name:       "success",
+			id:         models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents:    testdata.LoopVolume4D,
+			flightsUrl: "https://example.com",
+			wantISA: &models.IdentificationServiceArea{
+				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				Url:        "https://example.com",
+				Owner:      "foo",
+				Cells:      mustGeoPolygonToCellIDs(testdata.LoopPolygon),
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
+				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
+				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
+				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
+			},
+		},
+		{
+			name:       "missing-extents",
+			id:         models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			flightsUrl: "https://example.com",
+			wantErr:    dsserr.BadRequest("missing required extents"),
+		},
+		{
+			name:       "missing-extents-spatial-volume",
+			id:         models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents:    &dspb.Volume4D{},
+			flightsUrl: "https://example.com",
+			wantErr:    dsserr.BadRequest("bad extents: missing required spatial_volume"),
+		},
+		{
+			name: "missing-spatial-volume-footprint",
+			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: &dspb.Volume4D{
+				SpatialVolume: &dspb.Volume3D{},
+			},
+			flightsUrl: "https://example.com",
+			wantErr:    dsserr.BadRequest("bad extents: spatial_volume missing required footprint"),
+		},
+		{
+			name: "missing-spatial-volume-footprint",
+			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: &dspb.Volume4D{
+				SpatialVolume: &dspb.Volume3D{
+					Footprint: &dspb.GeoPolygon{},
+				},
+			},
+			flightsUrl: "https://example.com",
+			wantErr:    dsserr.BadRequest("bad extents: not enough points in polygon"),
+		},
+		{
+			name:    "missing-flights-url",
+			id:      models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: testdata.LoopVolume4D,
+			wantErr: dsserr.BadRequest("missing required flights_url"),
+		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			store := &mockStore{}
+			if r.wantISA != nil {
+				store.On("InsertISA", mock.Anything, *r.wantISA).Return(
+					r.wantISA, []*models.Subscription(nil), nil)
+			}
+			s := &Server{
+				Store: store,
+			}
+
+			_, err := s.PutV1DssIdentificationServiceAreasId(ctx, &dspb.PutV1DssIdentificationServiceAreasIdRequest{
+				Id: r.id.String(),
+				Params: &dspb.CreateIdentificationServiceAreaParameters{
+					Extents:    r.extents,
+					FlightsUrl: r.flightsUrl,
+				},
+			})
+			require.Equal(t, r.wantErr, err)
+			require.True(t, store.AssertExpectations(t))
+		})
+	}
 }
 
 func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {

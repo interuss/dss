@@ -76,10 +76,16 @@ func GeoPolygonToCellIDs(geopolygon *dspb.GeoPolygon) (s2.CellUnion, error) {
 	for _, ltlng := range geopolygon.Vertices {
 		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(ltlng.Lat, ltlng.Lng)))
 	}
+	if len(points) < 3 {
+		return nil, errNotEnoughPointsInPolygon
+	}
 	return Covering(points)
 }
 
 func loopAreaKm2(loop *s2.Loop) float64 {
+	if loop.IsEmpty() {
+		return 0
+	}
 	const earthAreaKm2 = 510072000.0 // rough area of the earth in KM².
 	return (loop.Area() * earthAreaKm2) / 4.0 * math.Pi
 }
