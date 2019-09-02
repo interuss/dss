@@ -165,7 +165,7 @@ func (c *Store) pushISA(ctx context.Context, q queryable, isa *models.Identifica
 		return nil, nil, err
 	}
 
-	subscriptions, err := c.fetchSubscriptionsByCellsWithoutOwner(ctx, q, cids, isa.Owner)
+	subscriptions, err := c.fetchSubscriptionsByCells(ctx, q, cids)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -265,7 +265,7 @@ func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner,
 	for i, cell := range old.Cells {
 		cids[i] = int64(cell)
 	}
-	subscriptions, err := c.fetchSubscriptionsByCellsWithoutOwner(ctx, tx, cids, owner)
+	subscriptions, err := c.fetchSubscriptionsByCells(ctx, tx, cids)
 	if err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
