@@ -25,14 +25,20 @@ Hostnames:
   # The hostname of the HTTPS frontend.
   Frontend: <HOSTNAME>
 
-# Set this to true to enable Google Cloud specific configs that create a managed
-# SSL certificate and HTTPS load balancer (ingress) for the frontend.  If you're
-# using another cloud provider you need to create the ingress manually.
-CreateGKEIngress: true
+GKEIngress:
+  # Set this to true to enable Google Cloud specific configs that create a managed
+  # SSL certificate and HTTPS load balancer (ingress) for the frontend.  If you're
+  # using another cloud provider you need to create the ingress manually.
+  Enabled: true
 
-# Name of the static IP to use for the ingress.  This is the name of the Google
-# Cloud resource.
-FrontendIPName: <NAME>
+  # Name of the static IP to use for the ingress.  This is the name of the
+  # Google Cloud resource.
+  FrontendIPName: <NAME>
+
+  # Name of a pre-existing GCP SSL certificate to use for the ingress.  If this
+  # is specified then a ManagedCertificate resource will NOT be created.  Set
+  # to the empty string ("") to disable.
+  PreSharedCertName: <NAME>
 
 # Names of Docker images to use for the GRPC backend and the HTTP gateway.
 BackendImage:
