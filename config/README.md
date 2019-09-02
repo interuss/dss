@@ -38,6 +38,9 @@ Push your new image to Google Container Registry:
     docker push gcr.io/$CLOUD_PROJECT/http-gateway:$VERSION
     docker push gcr.io/$CLOUD_PROJECT/grpc-backend:$VERSION
 
+Use the `build.sh` script in this directory to build and push an image tagged
+with the current date and git commit hash.
+
 
 ## Creating a new Kubernetes cluster
 
