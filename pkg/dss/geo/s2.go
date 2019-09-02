@@ -3,13 +3,14 @@ package geo
 import (
 	"bufio"
 	"bytes"
+	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
 
 	"github.com/golang/geo/s2"
 	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
-	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 )
 
 const (
@@ -32,10 +33,9 @@ var (
 	// RegionCoverer provides an overridable interface to defaultRegionCoverer
 	RegionCoverer = defaultRegionCoverer
 
-	errOddNumberOfCoordinatesInAreaString = dsserr.BadRequest("odd number of coordinates in area string")
-	errNotEnoughPointsInPolygon           = dsserr.BadRequest("not enough points in polygon")
-	errBadCoordSet                        = dsserr.BadRequest("coordinates did not create a well formed area")
-	errAreaTooLarge                       = dsserr.BadRequest("area is too large")
+	errOddNumberOfCoordinatesInAreaString = errors.New("odd number of coordinates in area string")
+	errNotEnoughPointsInPolygon           = errors.New("not enough points in polygon")
+	errBadCoordSet                        = errors.New("coordinates did not create a well formed area")
 	maxArea                               = maxLoopArea()
 )
 
@@ -97,7 +97,7 @@ func Covering(loop *s2.Loop) (s2.CellUnion, error) {
 		return nil, errBadCoordSet
 	}
 	if loopArea > maxLoopArea() {
-		return nil, errAreaTooLarge
+		return nil, fmt.Errorf("area is too large (%f > %f)", loopArea, maxLoopArea())
 	}
 	return RegionCoverer.Covering(loop), nil
 }

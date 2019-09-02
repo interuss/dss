@@ -3,6 +3,7 @@ package dss
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
@@ -80,7 +81,7 @@ func (s *Server) createOrUpdateISA(
 	}
 
 	if err := isa.SetExtents(extents); err != nil {
-		return nil, dsserr.BadRequest("bad extents")
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
 	}
 
 	insertedISA, subscribers, err := s.Store.InsertISA(ctx, isa)
@@ -120,7 +121,7 @@ func (s *Server) PutV1DssIdentificationServiceAreasIdVersion(
 
 	version, err := models.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest("bad version")
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 
 	return s.createOrUpdateISA(ctx, req.GetId(), version, params.Extents, params.GetFlightsUrl())
@@ -136,7 +137,7 @@ func (s *Server) DeleteV1DssIdentificationServiceAreasIdVersion(
 	}
 	version, err := models.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest("bad version")
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 	isa, subscribers, err := s.Store.DeleteISA(ctx, models.ID(req.GetId()), owner, version)
 	if err != nil {
@@ -168,7 +169,7 @@ func (s *Server) DeleteV1DssSubscriptionsIdVersion(
 	}
 	version, err := models.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest("bad version")
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 	subscription, err := s.Store.DeleteSubscription(ctx, models.ID(req.GetId()), owner, version)
 	if err != nil {
@@ -189,7 +190,7 @@ func (s *Server) GetV1DssIdentificationServiceAreas(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, dsserr.BadRequest("bad area")
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad area: %s", err))
 	}
 
 	var (
@@ -243,7 +244,7 @@ func (s *Server) GetV1DssSubscriptions(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, dsserr.BadRequest("bad area")
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad area: %s", err))
 	}
 
 	subscriptions, err := s.Store.SearchSubscriptions(ctx, cu, owner)
@@ -304,7 +305,7 @@ func (s *Server) createOrUpdateSubscription(
 	}
 
 	if err := sub.SetExtents(extents); err != nil {
-		return nil, dsserr.BadRequest("bad extents")
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 
 	insertedSub, err := s.Store.InsertSubscription(ctx, sub)
@@ -354,7 +355,7 @@ func (s *Server) PutV1DssSubscriptionsIdVersion(
 
 	version, err := models.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest("bad version")
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 
 	return s.createOrUpdateSubscription(ctx, req.GetId(), version, params.Callbacks, params.Extents)
