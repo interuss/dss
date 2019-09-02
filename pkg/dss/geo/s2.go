@@ -76,26 +76,31 @@ func GeoPolygonToCellIDs(geopolygon *dspb.GeoPolygon) (s2.CellUnion, error) {
 	for _, ltlng := range geopolygon.Vertices {
 		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(ltlng.Lat, ltlng.Lng)))
 	}
-	loop := s2.LoopFromPoints(points)
-
-	return Covering(loop)
+	return Covering(points)
 }
 
-func loopAreaToKm2(loopArea float64) float64 {
+func loopAreaKm2(loop *s2.Loop) float64 {
 	const earthAreaKm2 = 510072000.0 // rough area of the earth in KM².
-	return (loopArea * earthAreaKm2) / 4.0 * math.Pi
+	return (loop.Area() * earthAreaKm2) / 4.0 * math.Pi
 }
 
-func Covering(loop *s2.Loop) (s2.CellUnion, error) {
-	// TODO(steeling): consider setting max number of vertices.
-	loopArea := loop.Area()
-	if loopArea <= 0 {
-		return nil, errBadCoordSet
+func Covering(points []s2.Point) (s2.CellUnion, error) {
+	loop := s2.LoopFromPoints(points)
+	if loopAreaKm2(loop) <= maxAllowedAreaKm2 {
+		return RegionCoverer.Covering(loop), nil
 	}
-	if loopAreaToKm2(loopArea) > maxAllowedAreaKm2 {
-		return nil, fmt.Errorf("area is too large (%fkm² > %fkm²)", loopAreaToKm2(loopArea), maxAllowedAreaKm2)
+
+	// This probably happened because the vertices were not ordered counter-clockwise.
+	// We can try reversing to see if that's the case.
+	for i, j := 0, len(points)-1; i < j; i, j = i+1, j-1 {
+		points[i], points[j] = points[j], points[i]
 	}
-	return RegionCoverer.Covering(loop), nil
+	loop = s2.LoopFromPoints(points)
+	if loopAreaKm2(loop) <= maxAllowedAreaKm2 {
+		return RegionCoverer.Covering(loop), nil
+	}
+
+	return nil, fmt.Errorf("area is too large (%fkm² > %fkm²)", loopAreaKm2(loop), maxAllowedAreaKm2)
 }
 
 // AreaToCellIDs parses "area" in the format 'lat0,lon0,lat1,lon1,...'
@@ -139,14 +144,5 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 
 		counter++
 	}
-	loopAttempt := s2.LoopFromPoints(points)
-	if loopAreaToKm2(loopAttempt.Area()) > maxAllowedAreaKm2 {
-		// This probably happened because the vertices were not ordered counter-clockwise.
-		// We can try reversing to see if that's the case.
-		for i, j := 0, len(points)-1; i < j; i, j = i+1, j-1 {
-			points[i], points[j] = points[j], points[i]
-		}
-		loopAttempt = s2.LoopFromPoints(points)
-	}
-	return Covering(loopAttempt)
+	return Covering(points)
 }
