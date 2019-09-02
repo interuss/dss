@@ -20,7 +20,7 @@ const (
 	// DefaultMaximumCellLevel is the default minimum cell level, chosen such
 	// that the maximum cell size is ~1km^2.
 	DefaultMaximumCellLevel int = 13
-	maxAllowedSqMi              = 1000
+	maxAllowedAreaKm2           = 2500.0
 )
 
 var (
@@ -36,7 +36,6 @@ var (
 	errOddNumberOfCoordinatesInAreaString = errors.New("odd number of coordinates in area string")
 	errNotEnoughPointsInPolygon           = errors.New("not enough points in polygon")
 	errBadCoordSet                        = errors.New("coordinates did not create a well formed area")
-	maxArea                               = maxLoopArea()
 )
 
 func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
@@ -82,12 +81,9 @@ func GeoPolygonToCellIDs(geopolygon *dspb.GeoPolygon) (s2.CellUnion, error) {
 	return Covering(loop)
 }
 
-func maxLoopArea() float64 {
-	var (
-		sqMiEarth     = 197000000. // rought square miles of earth.
-		scalingFactor = sqMiEarth / 4. * math.Pi
-	)
-	return maxAllowedSqMi / scalingFactor
+func loopAreaToKm2(loopArea float64) float64 {
+	const earthAreaKm2 = 510072000.0 // rough area of the earth in KM².
+	return (loopArea * earthAreaKm2) / 4.0 * math.Pi
 }
 
 func Covering(loop *s2.Loop) (s2.CellUnion, error) {
@@ -96,8 +92,8 @@ func Covering(loop *s2.Loop) (s2.CellUnion, error) {
 	if loopArea <= 0 {
 		return nil, errBadCoordSet
 	}
-	if loopArea > maxLoopArea() {
-		return nil, fmt.Errorf("area is too large (%f > %f)", loopArea, maxLoopArea())
+	if loopAreaToKm2(loopArea) > maxAllowedAreaKm2 {
+		return nil, fmt.Errorf("area is too large (%fkm² > %fkm²)", loopAreaToKm2(loopArea), maxAllowedAreaKm2)
 	}
 	return RegionCoverer.Covering(loop), nil
 }
@@ -144,7 +140,7 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 		counter++
 	}
 	loopAttempt := s2.LoopFromPoints(points)
-	if loopAttempt.Area() > maxLoopArea() {
+	if loopAreaToKm2(loopAttempt.Area()) > maxAllowedAreaKm2 {
 		// This probably happened because the vertices were not ordered counter-clockwise.
 		// We can try reversing to see if that's the case.
 		for i, j := 0, len(points)-1; i < j; i, j = i+1, j-1 {
