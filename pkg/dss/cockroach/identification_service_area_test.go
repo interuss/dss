@@ -151,16 +151,21 @@ func TestStoreDeleteISAs(t *testing.T) {
 		s1, err := store.InsertSubscription(ctx, copy)
 		require.NoError(t, err)
 		require.NotNil(t, s1)
+		require.Equal(t, 42, s1.NotificationIndex)
 		insertedSubscriptions = append(insertedSubscriptions, s1)
 	}
 
 	// Insert the ISA.
 	copy := *serviceArea
 	tx, _ := store.Begin()
-	isa, _, err := store.pushISA(ctx, tx, &copy)
+	isa, subscriptionsOut, err := store.pushISA(ctx, tx, &copy)
 	tx.Commit()
 	require.NoError(t, err)
 	require.NotNil(t, isa)
+
+	for i, _ := range insertedSubscriptions {
+		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
+	}
 
 	// Delete the ISA.
 	serviceAreaOut, subscriptionsOut, err := store.DeleteISA(ctx, isa.ID, isa.Owner, isa.Version)
@@ -170,6 +175,10 @@ func TestStoreDeleteISAs(t *testing.T) {
 	require.Len(t, subscriptionsOut, len(subscriptionsPool))
 	for i, s := range subscriptionsPool {
 		require.Equal(t, s.input.Url, subscriptionsOut[i].Url)
+	}
+
+	for i, _ := range insertedSubscriptions {
+		require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
 	}
 }
 
