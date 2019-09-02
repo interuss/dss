@@ -53,7 +53,7 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query strin
 	return payload, nil
 }
 
-func (c *Store) fetchSubscriptionsByCellsWithoutOwner(ctx context.Context, q queryable, cells []int64, owner models.Owner) ([]*models.Subscription, error) {
+func (c *Store) fetchSubscriptionsByCells(ctx context.Context, q queryable, cells []int64) ([]*models.Subscription, error) {
 	var subscriptionsQuery = fmt.Sprintf(`
 		 SELECT
 				%s
@@ -65,10 +65,9 @@ func (c *Store) fetchSubscriptionsByCellsWithoutOwner(ctx context.Context, q que
 				unique_subscription_ids
 			ON
 				subscriptions.id = unique_subscription_ids.subscription_id
-			WHERE
-				subscriptions.owner != $2`, subscriptionFields)
+			`, subscriptionFields)
 
-	return c.fetchSubscriptions(ctx, q, subscriptionsQuery, pq.Array(cells), owner)
+	return c.fetchSubscriptions(ctx, q, subscriptionsQuery, pq.Array(cells))
 }
 
 func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string, args ...interface{}) (*models.Subscription, error) {
