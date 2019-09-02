@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -98,16 +99,15 @@ func (s *Subscription) SetExtents(extents *dspb.Volume4D) error {
 
 	space := extents.GetSpatialVolume()
 	if space == nil {
-		return nil
+		return errors.New("missing required spatial_volume")
 	}
 	s.AltitudeHi = proto.Float32(space.GetAltitudeHi())
 	s.AltitudeLo = proto.Float32(space.GetAltitudeLo())
 	footprint := space.GetFootprint()
 	if footprint == nil {
-		return nil
+		return errors.New("spatial_volume missing required footprint")
 	}
 	s.Cells, err = geo.GeoPolygonToCellIDs(footprint)
-
 	return err
 }
 

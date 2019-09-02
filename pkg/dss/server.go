@@ -292,9 +292,11 @@ func (s *Server) createOrUpdateSubscription(
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-
 	if callbacks == nil {
-		return nil, dsserr.BadRequest("no callbacks provided")
+		return nil, dsserr.BadRequest("missing required callbacks")
+	}
+	if extents == nil {
+		return nil, dsserr.BadRequest("missing required extents")
 	}
 
 	sub := models.Subscription{
@@ -305,7 +307,7 @@ func (s *Server) createOrUpdateSubscription(
 	}
 
 	if err := sub.SetExtents(extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
 	}
 
 	insertedSub, err := s.Store.InsertSubscription(ctx, sub)
