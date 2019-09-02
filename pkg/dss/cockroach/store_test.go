@@ -32,6 +32,9 @@ func init() {
 }
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func() error) {
+	// Reset the clock for every test.
+	fakeClock = clockwork.NewFakeClock()
+
 	store, err := newStore()
 	if err != nil {
 		t.Skip(err)

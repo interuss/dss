@@ -134,6 +134,41 @@ func TestStoreSearchISAs(t *testing.T) {
 	}
 }
 
+func TestStoreExpiredISA(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	saOut, _, err := store.InsertISA(ctx, *serviceArea)
+	require.NoError(t, err)
+	require.NotNil(t, saOut)
+
+	// The ISA's endTime is one hour from now.
+	fakeClock.Advance(59 * time.Minute)
+
+	// We should still be able to find the ISA by searching and by ID.
+	serviceAreas, err := store.SearchISAs(ctx, serviceArea.Cells, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, serviceAreas, 1)
+
+	ret, err := store.GetISA(ctx, serviceArea.ID)
+	require.NoError(t, err)
+	require.NotNil(t, ret)
+
+	// But now the ISA has expired.
+	fakeClock.Advance(2 * time.Minute)
+
+	serviceAreas, err = store.SearchISAs(ctx, serviceArea.Cells, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, serviceAreas, 0)
+
+	ret, err = store.GetISA(ctx, serviceArea.ID)
+	require.Error(t, err)
+	require.Nil(t, ret)
+}
+
 func TestStoreDeleteISAs(t *testing.T) {
 	var (
 		ctx                  = context.Background()

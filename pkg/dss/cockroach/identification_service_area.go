@@ -66,8 +66,10 @@ func (c *Store) fetchISAByID(ctx context.Context, q queryable, id models.ID) (*m
 		SELECT %s FROM
 			identification_service_areas
 		WHERE
-			id = $1`, isaFields)
-	return c.fetchISA(ctx, q, query, id)
+			id = $1
+		AND
+			ends_at >= $2`, isaFields)
+	return c.fetchISA(ctx, q, query, id, c.clock.Now())
 }
 
 func (c *Store) fetchISAByIDAndOwner(ctx context.Context, q queryable, id models.ID, owner models.Owner) (*models.IdentificationServiceArea, error) {
@@ -77,8 +79,10 @@ func (c *Store) fetchISAByIDAndOwner(ctx context.Context, q queryable, id models
 		WHERE
 			id = $1
 		AND
-			owner = $2`, isaFields)
-	return c.fetchISA(ctx, q, query, id, owner)
+			owner = $2
+		AND
+			ends_at >= $3`, isaFields)
+	return c.fetchISA(ctx, q, query, id, owner, c.clock.Now())
 }
 
 func (c *Store) populateISACells(ctx context.Context, q queryable, i *models.IdentificationServiceArea) error {
@@ -307,7 +311,9 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 			WHERE
 				COALESCE(identification_service_areas.starts_at >= $2, true)
 			AND
-				COALESCE(identification_service_areas.ends_at <= $3, true)`, isaFields)
+				COALESCE(identification_service_areas.ends_at <= $3, true)
+			AND
+				identification_service_areas.ends_at >= $4`, isaFields)
 	)
 
 	if len(cells) == 0 {
@@ -324,7 +330,9 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 		return nil, err
 	}
 
-	result, err := c.fetchISAs(ctx, tx, serviceAreasInCellsQuery, pq.Array(cids), earliest, latest)
+	result, err := c.fetchISAs(
+		ctx, tx, serviceAreasInCellsQuery, pq.Array(cids), earliest, latest,
+		c.clock.Now())
 	if err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
 	}
