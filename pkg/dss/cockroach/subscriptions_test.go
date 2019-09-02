@@ -399,3 +399,43 @@ func TestStoreSearchSubscription(t *testing.T) {
 		require.Len(t, found, 1)
 	}
 }
+
+func TestStoreExpiredSubscription(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	sub := models.Subscription{
+		ID:    models.ID(uuid.New().String()),
+		Owner: models.Owner(uuid.New().String()),
+		Cells: s2.CellUnion{s2.CellID(42)},
+	}
+
+	_, err := store.InsertSubscription(ctx, sub)
+	require.NoError(t, err)
+
+	// The subscription's endTime is 24 hours from now.
+	fakeClock.Advance(23 * time.Hour)
+
+	// We should still be able to find the subscription by searching and by ID.
+	subs, err := store.SearchSubscriptions(ctx, sub.Cells, sub.Owner)
+	require.NoError(t, err)
+	require.Len(t, subs, 1)
+
+	ret, err := store.GetSubscription(ctx, sub.ID)
+	require.NoError(t, err)
+	require.NotNil(t, ret)
+
+	// But now the subscription has expired.
+	fakeClock.Advance(2 * time.Hour)
+
+	subs, err = store.SearchSubscriptions(ctx, sub.Cells, sub.Owner)
+	require.NoError(t, err)
+	require.Len(t, subs, 0)
+
+	ret, err = store.GetSubscription(ctx, sub.ID)
+	require.Error(t, err)
+	require.Nil(t, ret)
+}

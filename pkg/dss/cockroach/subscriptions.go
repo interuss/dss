@@ -53,7 +53,8 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query strin
 	return payload, nil
 }
 
-func (c *Store) fetchSubscriptionsForNotification(ctx context.Context, q queryable, cells []int64) ([]*models.Subscription, error) {
+func (c *Store) fetchSubscriptionsForNotification(
+	ctx context.Context, q queryable, cells []int64) ([]*models.Subscription, error) {
 	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
 	// UPDATE FROM query.
 
@@ -83,8 +84,10 @@ func (c *Store) fetchSubscriptionsForNotification(ctx context.Context, q queryab
 			UPDATE subscriptions
 			SET notification_index = notification_index + 1
 			WHERE id = ANY($1)
+			AND ends_at >= $2
 			RETURNING %s`, subscriptionFieldsWithoutPrefix)
-	return c.fetchSubscriptions(ctx, q, updateQuery, pq.Array(subscriptionIDs))
+	return c.fetchSubscriptions(
+		ctx, q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
 }
 
 func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string, args ...interface{}) (*models.Subscription, error) {
@@ -102,18 +105,21 @@ func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string
 }
 
 func (c *Store) fetchSubscriptionByID(ctx context.Context, q queryable, id models.ID) (*models.Subscription, error) {
-	var query = fmt.Sprintf(`SELECT %s FROM subscriptions WHERE id = $1`, subscriptionFields)
-	return c.fetchSubscription(ctx, q, query, id)
+	var query = fmt.Sprintf(`
+		SELECT %s FROM subscriptions
+		WHERE id = $1
+		AND ends_at >= $2`, subscriptionFields)
+	return c.fetchSubscription(ctx, q, query, id, c.clock.Now())
 }
 
 func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, id models.ID, owner models.Owner) (*models.Subscription, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
 			subscriptions
-		WHERE
-			id = $1
-			AND owner = $2`, subscriptionFields)
-	return c.fetchSubscription(ctx, q, query, id, owner)
+		WHERE id = $1
+		AND owner = $2
+		AND ends_at >= $3`, subscriptionFields)
+	return c.fetchSubscription(ctx, q, query, id, owner, c.clock.Now())
 }
 
 // fetchMaxSubscriptionCountByCellAndOwner counts how many subscriptions the
@@ -133,7 +139,8 @@ func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
       WHERE
         s.id = c.subscription_id AND
         s.owner = $1 AND
-        c.cell_id = ANY($2)
+        c.cell_id = ANY($2) AND
+        s.ends_at >= $3
       GROUP BY c.cell_id
     )`
 
@@ -142,7 +149,7 @@ func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
 		cids[i] = int64(cell)
 	}
 
-	row := q.QueryRowContext(ctx, query, owner, pq.Array(cids))
+	row := q.QueryRowContext(ctx, query, owner, pq.Array(cids), c.clock.Now())
 	var ret int
 	err := row.Scan(&ret)
 	return ret, err
@@ -321,7 +328,9 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 			ON
 				subscriptions.id = unique_subscription_ids.subscription_id
 			WHERE
-				subscriptions.owner = $2`, subscriptionFields)
+				subscriptions.owner = $2
+			AND
+				ends_at >= $3`, subscriptionFields)
 	)
 
 	if len(cells) == 0 {
@@ -338,7 +347,8 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 		cids[i] = int64(cell)
 	}
 
-	subscriptions, err := c.fetchSubscriptions(ctx, tx, query, pq.Array(cids), owner)
+	subscriptions, err := c.fetchSubscriptions(
+		ctx, tx, query, pq.Array(cids), owner, c.clock.Now())
 	if err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
 	}
