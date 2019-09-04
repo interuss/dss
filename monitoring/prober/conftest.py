@@ -6,7 +6,6 @@ from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
 import pytest
 
-
 SCOPES = [
     'dss.write.identification_service_areas',
     'dss.read.identification_service_areas',
@@ -14,6 +13,7 @@ SCOPES = [
 
 
 class AuthAdapter(requests.adapters.HTTPAdapter):
+
   def __init__(self, oauth_token_endpoint, oauth_session):
     super().__init__()
 
@@ -38,6 +38,7 @@ class AuthAdapter(requests.adapters.HTTPAdapter):
 
 
 class PrefixURLSession(requests.Session):
+
   def __init__(self, prefix_url):
     super().__init__()
 

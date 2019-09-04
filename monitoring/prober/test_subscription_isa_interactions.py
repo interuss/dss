@@ -1,4 +1,5 @@
 """Test subscriptions interact with ISAs:
+
   - Create an ISA.
   - Create a subscription, response should include the pre-existing ISA.
   - Modify the ISA, response should include the subscription.
@@ -15,20 +16,22 @@ def test_create_isa(session, isa1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = session.put('/identification_service_areas/{}'.format(isa1_uuid), json={
-    'extents': {
-      'spatial_volume': {
-        'footprint': {
-          'vertices': common.VERTICES,
-        },
-        'altitude_lo': 20,
-        'altitude_hi': 400,
-      },
-      'time_start': time_start.strftime(common.DATE_FORMAT),
-      'time_end': time_end.strftime(common.DATE_FORMAT),
-    },
-    'flights_url': 'https://example.com/dss',
-  })
+  resp = session.put(
+      '/identification_service_areas/{}'.format(isa1_uuid),
+      json={
+          'extents': {
+              'spatial_volume': {
+                  'footprint': {
+                      'vertices': common.VERTICES,
+                  },
+                  'altitude_lo': 20,
+                  'altitude_hi': 400,
+              },
+              'time_start': time_start.strftime(common.DATE_FORMAT),
+              'time_end': time_end.strftime(common.DATE_FORMAT),
+          },
+          'flights_url': 'https://example.com/dss',
+      })
   assert resp.status_code == 200
 
 
@@ -36,22 +39,24 @@ def test_create_subscription(session, isa1_uuid, sub1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = session.put('/subscriptions/{}'.format(sub1_uuid), json={
-    'extents': {
-      'spatial_volume': {
-        'footprint': {
-          'vertices': common.VERTICES,
-        },
-        'altitude_lo': 20,
-        'altitude_hi': 400,
-      },
-      'time_start': time_start.strftime(common.DATE_FORMAT),
-      'time_end': time_end.strftime(common.DATE_FORMAT),
-    },
-    'callbacks': {
-      'identification_service_area_url': 'https://example.com/foo'
-    },
-  })
+  resp = session.put(
+      '/subscriptions/{}'.format(sub1_uuid),
+      json={
+          'extents': {
+              'spatial_volume': {
+                  'footprint': {
+                      'vertices': common.VERTICES,
+                  },
+                  'altitude_lo': 20,
+                  'altitude_hi': 400,
+              },
+              'time_start': time_start.strftime(common.DATE_FORMAT),
+              'time_end': time_end.strftime(common.DATE_FORMAT),
+          },
+          'callbacks': {
+              'identification_service_area_url': 'https://example.com/foo'
+          },
+      })
   assert resp.status_code == 200
 
   # The response should include our ISA.
@@ -67,30 +72,31 @@ def test_modify_isa(session, isa1_uuid, sub1_uuid):
   version = resp.json()['service_area']['version']
 
   # Then modify it.
-  resp = session.put('/identification_service_areas/{}/{}'.format(isa1_uuid, version), json={
-    'extents': {
-      'spatial_volume': {
-        'footprint': {
-          'vertices': common.VERTICES,
-        },
-        'altitude_lo': 12345,
-        'altitude_hi': 67890,
-      },
-    },
-    'flights_url': 'https://example.com/dss',
-  })
+  resp = session.put(
+      '/identification_service_areas/{}/{}'.format(isa1_uuid, version),
+      json={
+          'extents': {
+              'spatial_volume': {
+                  'footprint': {
+                      'vertices': common.VERTICES,
+                  },
+                  'altitude_lo': 12345,
+                  'altitude_hi': 67890,
+              },
+          },
+          'flights_url': 'https://example.com/dss',
+      })
   assert resp.status_code == 200
 
   # The response should include our subscription.
   data = resp.json()
   assert {
-    'url': 'https://example.com/foo',
-    'subscriptions': [
-      {
-        'notification_index': 1,
-        'subscription_id': sub1_uuid,
-      },
-    ],
+      'url':
+          'https://example.com/foo',
+      'subscriptions': [{
+          'notification_index': 1,
+          'subscription_id': sub1_uuid,
+      },],
   } in data['subscribers']
 
 
@@ -101,19 +107,19 @@ def test_delete_isa(session, isa1_uuid, sub1_uuid):
   version = resp.json()['service_area']['version']
 
   # Then delete it.
-  resp = session.delete('/identification_service_areas/{}/{}'.format(isa1_uuid, version))
+  resp = session.delete('/identification_service_areas/{}/{}'.format(
+      isa1_uuid, version))
   assert resp.status_code == 200
 
   # The response should include our subscription.
   data = resp.json()
   assert {
-    'url': 'https://example.com/foo',
-    'subscriptions': [
-      {
-        'notification_index': 2,
-        'subscription_id': sub1_uuid,
-      },
-    ],
+      'url':
+          'https://example.com/foo',
+      'subscriptions': [{
+          'notification_index': 2,
+          'subscription_id': sub1_uuid,
+      },],
   } in data['subscribers']
 
 
