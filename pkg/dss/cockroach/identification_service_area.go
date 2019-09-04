@@ -331,7 +331,7 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 	}
 
 	result, err := c.fetchISAs(
-		ctx, tx, serviceAreasInCellsQuery, pq.Array(cids), earliest, latest,
+		ctx, tx, serviceAreasInCellsQuery, pq.Array(cids), latest, earliest,
 		c.clock.Now())
 	if err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
