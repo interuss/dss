@@ -13,6 +13,7 @@ SCOPES = [
 
 
 class AuthAdapter(requests.adapters.HTTPAdapter):
+  """Requests adapter that gets JWTs from an OAuth token provider."""
 
   def __init__(self, oauth_token_endpoint, oauth_session):
     super().__init__()
@@ -38,6 +39,7 @@ class AuthAdapter(requests.adapters.HTTPAdapter):
 
 
 class PrefixURLSession(requests.Session):
+  """Requests session that adds a prefix to URLs that start with a '/'."""
 
   def __init__(self, prefix_url):
     super().__init__()
@@ -51,8 +53,6 @@ class PrefixURLSession(requests.Session):
 
 
 def pytest_addoption(parser):
-  # Declare these as pytest options, so main.py can pass them through to
-  # make them available to test fixtures.
   parser.addoption('--service-account-json')
   parser.addoption('--oauth-token-endpoint')
   parser.addoption('--dss-endpoint')
@@ -78,20 +78,5 @@ def isa1_uuid():
 
 
 @pytest.fixture(scope='module')
-def isa2_uuid():
-  return str(uuid.uuid4())
-
-
-@pytest.fixture(scope='module')
-def isa3_uuid():
-  return str(uuid.uuid4())
-
-
-@pytest.fixture(scope='module')
 def sub1_uuid():
-  return str(uuid.uuid4())
-
-
-@pytest.fixture(scope='module')
-def sub2_uuid():
   return str(uuid.uuid4())
