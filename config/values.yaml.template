@@ -41,8 +41,12 @@ GKEIngress:
   PreSharedCertName: <NAME>
 
 # Names of Docker images to use for the GRPC backend and the HTTP gateway.
-BackendImage:
-GatewayImage:
+BackendImage: <IMAGE>
+GatewayImage: <IMAGE>
+
+# Name of a file inside the "jwt-public-certs" directory to use to verify
+# signatures on JWTs.
+JWTPublicCert: <FILENAME>
 
 
 # Optionally edit the values below.

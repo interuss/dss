@@ -58,6 +58,6 @@ spec:
           - -cockroach_ssl_mode=verify-full
           - -cockroach_user=root
           - -cockroach_ssl_dir=/cockroach-certs
-          - -public_key_file=/public-certs/oauth.pem
+          - -public_key_file=/public-certs/{{ .Values.JWTPublicCert }}
           - -dump_requests
           - -jwt_audience={{ .Values.Hostnames.Frontend }}
