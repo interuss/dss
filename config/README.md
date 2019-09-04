@@ -128,8 +128,8 @@ your local machine using the kubectl command:
 
 ### Access the web UI
 
-    kubectl -n $NAMESPACE port-forward cockroachdb-0 8888
+    kubectl -n $NAMESPACE port-forward cockroachdb-0 8080
 
-Then go to https://localhost:8888.  You'll have to ignore the HTTPS certificate
+Then go to https://localhost:8080.  You'll have to ignore the HTTPS certificate
 warning.
 
