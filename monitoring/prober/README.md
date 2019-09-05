@@ -13,6 +13,7 @@ pip install -r requirements.txt
 ```
 
 ### Running the prober
+Run the following command from the project's home directory:
 
 If authenticating with a service account:
 
@@ -28,12 +29,10 @@ pytest \
 Or if authenticating with a username/password/client_id:
 
 ```shell
-. ./env/bin/activate
-pytest \
+docker run --rm $(docker build -q -f monitoring/prober/Dockerfile monitoring/prober) \
     --oauth-token-endpoint <URL> \
     --oauth-username <USERNAME> \
     --oauth-password <PASSWORD> \
     --oauth-client_id <CLIENT_ID> \
     --dss-endpoint <URL> \
-    -vv .
 ```

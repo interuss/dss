@@ -105,6 +105,15 @@ def pytest_addoption(parser):
 def session(pytestconfig):
   oauth_token_endpoint = pytestconfig.getoption('oauth_token_endpoint')
 
+  # Create an auth adapter to get JWTs using the given credentials.  We can use
+  # either a service account or a username/password/client_id.
+  if pytestconfig.getoption('oauth_service_account_json') is not None:
+    auth_adapter = ServiceAccountAuthAdapter(oauth_token_endpoint,
+        pytestconfig.getoption('oauth_service_account_json'))
+  elif pytestconfig.getoption('oauth_username') is not None:
+    auth_adapter = UsernamePasswordAuthAdapter(oauth_token_endpoint,
+        pytestconfig.getoption('oauth_username'),
+        pytestconfig.getoption('oauth_password'),
         pytestconfig.getoption('oauth_client_id'))
   else:
     raise ValueError(

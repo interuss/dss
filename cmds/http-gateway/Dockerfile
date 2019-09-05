@@ -1,9 +1,20 @@
 FROM golang:1.12-alpine AS build
 RUN apk add git bash make
-ADD . /app
+RUN mkdir /app
 WORKDIR /app
+COPY go.mod .
+COPY go.sum .
+
+# Get dependancies - will also be cached if we won't change mod/sum
 RUN go mod download
-RUN make
+
+RUN mkdir pkg
+COPY pkg pkg
+
+RUN mkdir -p cmds/http-gateway
+COPY cmds/http-gateway cmds/http-gateway
+
+RUN go install ./...
 
 FROM alpine:latest
 RUN apk update && apk add ca-certificates
