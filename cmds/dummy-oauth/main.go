@@ -24,9 +24,22 @@ func getToken(w http.ResponseWriter, r *http.Request) {
   fmt.Println(r)
   w.Header().Set("Content-Type", "application/json")
   params := r.URL.Query()
+
+  aud := ""
+  auds := params["intended_audience"]
+  if len(auds) == 1 {
+    aud = auds[0]
+  }
+
+  scope := ""
+  scopes := params["scope"]
+  if len(scopes) == 1 {
+    scope = scopes[0]
+  }
   token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-    "aud":   params["intended_audience"],
-    "scope": params["scope"],
+    "aud":   aud,
+    "scope": scope,
+    "sub":   "fake-user",
   })
 
   // Sign and get the complete encoded token as a string using the secret
