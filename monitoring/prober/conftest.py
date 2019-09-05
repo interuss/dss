@@ -68,6 +68,7 @@ def session(pytestconfig):
   oauth_session = google_requests.AuthorizedSession(credentials)
 
   s = PrefixURLSession(pytestconfig.getoption('dss_endpoint'))
+  s.mount('http://', AuthAdapter(oauth_token_endpoint, oauth_session))
   s.mount('https://', AuthAdapter(oauth_token_endpoint, oauth_session))
   return s
 
