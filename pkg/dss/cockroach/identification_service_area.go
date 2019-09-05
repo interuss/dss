@@ -309,9 +309,9 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 			ON
 				identification_service_areas.id = unique_identification_service_areas.identification_service_area_id
 			WHERE
-				COALESCE(identification_service_areas.starts_at >= $2, true)
+				COALESCE(identification_service_areas.ends_at >= $2, true)
 			AND
-				COALESCE(identification_service_areas.ends_at <= $3, true)
+				COALESCE(identification_service_areas.starts_at <= $3, true)
 			AND
 				identification_service_areas.ends_at >= $4`, isaFields)
 	)
@@ -331,7 +331,7 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 	}
 
 	result, err := c.fetchISAs(
-		ctx, tx, serviceAreasInCellsQuery, pq.Array(cids), latest, earliest,
+		ctx, tx, serviceAreasInCellsQuery, pq.Array(cids), earliest, latest,
 		c.clock.Now())
 	if err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
