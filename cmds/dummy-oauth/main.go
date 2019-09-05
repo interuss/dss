@@ -5,6 +5,7 @@ import (
   "crypto/rsa"
   "encoding/json"
   "flag"
+  "fmt"
   "io/ioutil"
   "log"
   "net/http"
@@ -20,6 +21,7 @@ var (
 
 // TODO(steeling): add other parameters so we can test expired tokens, invalid tokens, etc.
 func getToken(w http.ResponseWriter, r *http.Request) {
+  fmt.Println(r)
   w.Header().Set("Content-Type", "application/json")
   params := r.URL.Query()
   token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
@@ -49,6 +51,7 @@ func readPrivateKey() (*rsa.PrivateKey, error) {
 }
 
 func main() {
+  flag.Parse()
   var err error
   privateKey, err = readPrivateKey()
   if err != nil {
