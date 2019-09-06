@@ -13,29 +13,65 @@ SCOPES = [
 
 
 class AuthAdapter(requests.adapters.HTTPAdapter):
-  """Requests adapter that gets JWTs from an OAuth token provider."""
+  """Base class for requests adapters that add JWTs to requests."""
 
-  def __init__(self, oauth_token_endpoint, oauth_session):
-    super().__init__()
+  def _issue_token(self, intended_audience):
+    """Subclasses must return a bearer token for the given audience."""
 
-    self._oauth_token_endpoint = oauth_token_endpoint
-    self._oauth_session = oauth_session
-    self._tokens = {}
-
-  def _get_token(self, intended_audience):
-    if intended_audience not in self._tokens:
-      url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
-          self._oauth_token_endpoint, urllib.parse.quote(' '.join(SCOPES)),
-          urllib.parse.quote(intended_audience))
-      response = self._oauth_session.post(url).json()
-      self._tokens[intended_audience] = response['access_token']
-
-    return self._tokens[intended_audience]
+    raise NotImplementedError()
 
   def add_headers(self, request, **kwargs):
     intended_audience = urllib.parse.urlparse(request.url).hostname
-    token = self._get_token(intended_audience)
+    if intended_audience not in self._tokens:
+      self._tokens[intended_audience] = self._issue_token(intended_audience)
+    token = self._tokens[intended_audience]
     request.headers['Authorization'] = 'Bearer ' + token
+
+
+class ServiceAccountAuthAdapter(AuthAdapter):
+  """Requests adapter that gets JWTs using a service account."""
+
+  def __init__(self, token_endpoint, service_account_json):
+    super().__init__()
+
+    credentials = service_account.Credentials.from_service_account_file(
+        service_account_json).with_scopes(['email'])
+    oauth_session = google_requests.AuthorizedSession(credentials)
+
+    self._oauth_token_endpoint = token_endpoint
+    self._oauth_session = oauth_session
+    self._tokens = {}
+
+  def _issue_token(self, intended_audience):
+    url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
+        self._oauth_token_endpoint, urllib.parse.quote(' '.join(SCOPES)),
+        urllib.parse.quote(intended_audience))
+    response = self._oauth_session.post(url).json()
+    return response['access_token']
+
+
+class UsernamePasswordAuthAdapter(AuthAdapter):
+  """Requests adapter that gets JWTs using a username and password."""
+
+  def __init__(self, token_endpoint, username, password, client_id):
+    super().__init__()
+
+    self._oauth_token_endpoint = token_endpoint
+    self._username = username
+    self._password = password
+    self._client_id = client_id
+    self._tokens = {}
+
+  def _issue_token(self, intended_audience):
+    response = requests.post(self._oauth_token_endpoint, data={
+      'grant_type': "password",
+      'username': self._username,
+      'password': self._password,
+      'client_id': self._client_id,
+      'scope': ' '.join(SCOPES),
+      'aud': intended_audience,
+    }).json()
+    return response['access_token']
 
 
 class PrefixURLSession(requests.Session):
@@ -53,23 +89,42 @@ class PrefixURLSession(requests.Session):
 
 
 def pytest_addoption(parser):
-  parser.addoption('--service-account-json')
-  parser.addoption('--oauth-token-endpoint')
   parser.addoption('--dss-endpoint')
+  parser.addoption('--oauth-token-endpoint')
+
+  parser.addoption('--oauth-service-account-json')
+
+  parser.addoption('--oauth-username')
+  parser.addoption('--oauth-password')
+  parser.addoption('--oauth-client-id')
 
 
 @pytest.fixture(scope='session')
 def session(pytestconfig):
-  service_account_json = pytestconfig.getoption('service_account_json')
   oauth_token_endpoint = pytestconfig.getoption('oauth_token_endpoint')
 
-  credentials = service_account.Credentials.from_service_account_file(
-      service_account_json).with_scopes(['email'])
-  oauth_session = google_requests.AuthorizedSession(credentials)
+  # Create an auth adapter to get JWTs using the given credentials.  We can use
+  # either a service account or a username/password/client_id.
+  if pytestconfig.getoption('oauth_service_account_json') is not None:
+    auth_adapter = ServiceAccountAuthAdapter(oauth_token_endpoint,
+        pytestconfig.getoption('oauth_service_account_json'))
+  elif pytestconfig.getoption('oauth_username') is not None:
+    auth_adapter = UsernamePasswordAuthAdapter(oauth_token_endpoint,
+        pytestconfig.getoption('oauth_username'),
+        pytestconfig.getoption('oauth_password'),
+        pytestconfig.getoption('oauth_client_id'))
+  else:
+    raise ValueError(
+        'You must provide either an OAuth service account, or a username, '
+        'password and client ID')
 
-  s = PrefixURLSession(pytestconfig.getoption('dss_endpoint'))
-  s.mount('http://', AuthAdapter(oauth_token_endpoint, oauth_session))
-  s.mount('https://', AuthAdapter(oauth_token_endpoint, oauth_session))
+  dss_endpoint = pytestconfig.getoption('dss_endpoint')
+  if dss_endpoint is None:
+    raise ValueError('Missing required --dss-endpoint')
+
+  s = PrefixURLSession(dss_endpoint)
+  s.mount('http://', auth_adapter)
+  s.mount('https://', auth_adapter)
   return s
 
 
