@@ -225,7 +225,7 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 			fmt.Sprintf("invalid token audience, expected %v, got %v", a.requiredAudience, claims.Audience))
 	}
 
-	if err := a.missingScopes(info, strings.Split(claims.ScopeString, " ")); err != nil {
+	if err := a.missingScopes(info, claims.Scopes); err != nil {
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("missing scopes: %v", err))
 	}
 
@@ -233,31 +233,29 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 }
 
 // Returns all of the required scopes that are missing.
-func (a *Authorizer) missingScopes(info *grpc.UnaryServerInfo, scopes []string) error {
+func (a *Authorizer) missingScopes(info *grpc.UnaryServerInfo, claimedScopes scopes) error {
 	var (
-		parts      = strings.Split(info.FullMethod, "/")
-		method     = parts[len(parts)-1]
-		claimedMap = make(map[string]bool)
-		err        = &missingScopesError{}
+		parts         = strings.Split(info.FullMethod, "/")
+		method        = parts[len(parts)-1]
+		missingScopes []string
 	)
-
-	for _, s := range scopes {
-		claimedMap[s] = true
-	}
 
 	if a.requiredScopes != nil {
 		for _, required := range a.requiredScopes[method] {
-			if ok := claimedMap[required]; !ok {
-				err.s = append(err.s, required)
+			if _, ok := claimedScopes[required]; !ok {
+				missingScopes = append(missingScopes, required)
 			}
 		}
 	}
 
 	// Need to explicitly return nil
-	if err.Error() == "" {
+	if len(missingScopes) == 0 {
 		return nil
 	}
-	return err
+
+	return &missingScopesError{
+		s: missingScopes,
+	}
 }
 
 func getToken(ctx context.Context) (string, bool) {
