@@ -78,13 +78,14 @@ and makes all future kubecfg commands target this cluster.
     the new cockroachdb cluster:
 
         ./make-certs.py $NAMESPACE \
-            [--node-address <ADDRESS> ...]
+            [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
             [--ca-certs-dir <CA_CERTS_DIR>]
 
-    *   --node-addresses needs to include all the hostnames or IP addresses that
-        other cockroachdb clusters will use to connect to your cluster.  It
-        should include the hostnames/IP addresses of the 3 individual
-        cockroachdb nodes and the 1 load balanced endpoint.
+    *   --node-address needs to include all the hostnames and/or IP addresses 
+        that other cockroachdb clusters will use to connect to your cluster.  It
+        should include the hostnames/IP addresses of the 3 individual cockroachdb 
+        nodes and the 1 load balanced endpoint.  The entries should be separated 
+        by spaces.
     *   If you are joining existing clusters you need their CA certificate and
         private key to sign your certificates.  This will likely mean that the
         owners of the existing cluster will need to generate certificates for
