@@ -146,27 +146,34 @@ func TestMissingScopes(t *testing.T) {
 
 	var tests = []struct {
 		info   *grpc.UnaryServerInfo
-		scopes []string
+		scopes map[string]struct{}
 		want   error
 	}{
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			[]string{"required1", "required2"},
+			map[string]struct{}{
+				"required1": struct{}{},
+				"required2": struct{}{},
+			},
 			nil,
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			[]string{"required2"},
+			map[string]struct{}{
+				"required2": struct{}{},
+			},
 			&missingScopesError{[]string{"required1"}},
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			[]string{"required1"},
+			map[string]struct{}{
+				"required1": struct{}{},
+			},
 			&missingScopesError{[]string{"required2"}},
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			[]string{},
+			map[string]struct{}{},
 			&missingScopesError{[]string{"required1", "required2"}},
 		},
 	}
