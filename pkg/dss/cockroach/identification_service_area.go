@@ -6,15 +6,28 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/geo/s2"
-	"github.com/lib/pq"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
 	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
+	"github.com/steeling/InterUSS-Platform/pkg/logging"
+
+	"github.com/golang/geo/s2"
+	"github.com/lib/pq"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 var isaFields = "identification_service_areas.id, identification_service_areas.owner, identification_service_areas.url, identification_service_areas.starts_at, identification_service_areas.ends_at, identification_service_areas.updated_at"
 var isaFieldsWithoutPrefix = "id, owner, url, starts_at, ends_at, updated_at"
+
+func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
+	if p := recover(); p != nil {
+		if err := tx.Rollback(); err != nil {
+			logging.WithValuesFromContext(ctx, logging.Logger).Error(
+				"failed to rollback transaction", zap.Error(err),
+			)
+		}
+	}
+}
 
 func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args ...interface{}) ([]*models.IdentificationServiceArea, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
@@ -193,6 +206,7 @@ func (c *Store) InsertISA(ctx context.Context, isa models.IdentificationServiceA
 	if err != nil {
 		return nil, nil, err
 	}
+	defer recoverRollbackRepanic(ctx, tx)
 
 	old, err := c.fetchISAByIDAndOwner(ctx, tx, isa.ID, isa.Owner)
 	switch {
@@ -251,6 +265,7 @@ func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner,
 	if err != nil {
 		return nil, nil, err
 	}
+	defer recoverRollbackRepanic(ctx, tx)
 
 	// We fetch to know whether to return a concurrency error, or a not found error
 	old, err := c.fetchISAByIDAndOwner(ctx, tx, id, owner)
@@ -329,6 +344,7 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 	if err != nil {
 		return nil, err
 	}
+	defer recoverRollbackRepanic(ctx, tx)
 
 	result, err := c.fetchISAs(
 		ctx, tx, serviceAreasInCellsQuery, pq.Array(cids), earliest, latest,
