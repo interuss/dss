@@ -38,5 +38,6 @@ require (
 	google.golang.org/api v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 	google.golang.org/grpc v1.23.0
+	gopkg.in/square/go-jose.v2 v2.3.1
 	honnef.co/go/tools v0.0.1-2019.2.2 // indirect
 )

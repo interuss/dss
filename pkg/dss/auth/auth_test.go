@@ -5,14 +5,15 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
+
+	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -37,11 +38,56 @@ func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey, exp, nbf int64) conte
 	}))
 }
 
+func TestJWKSResolver(t *testing.T) {
+	for _, row := range []struct {
+		endpoint string
+		keyID    string
+	}{
+		{
+			endpoint: "https://oauth.interussplatform.com/jwks.json",
+			keyID:    "1",
+		},
+		{
+			endpoint: "https://che.auth.airmap.com/realms/airmap/protocol/openid-connect/certs",
+			keyID:    "_3Zih37PTxv30PMQ3rT7lCyllGWsKFnceP_pCz1Yejs",
+		},
+	} {
+
+		t.Run(row.endpoint, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			u, err := url.Parse(row.endpoint)
+			require.NoError(t, err)
+
+			kr := &JWKSResolver{
+				Endpoint: u,
+				KeyID:    row.keyID,
+			}
+
+			var typ *rsa.PublicKey
+
+			key, err := kr.ResolveKey(ctx)
+			require.NoError(t, err)
+			require.NotNil(t, key)
+			require.IsType(t, typ, key)
+		})
+	}
+}
+
 func TestNewRSAAuthClient(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	tmpfile, err := ioutil.TempFile("/tmp", "bad.pem")
 	require.NoError(t, tmpfile.Close())
 	// Test catches previous segfault.
-	_, err = NewRSAAuthClient(tmpfile.Name(), nil)
+	_, err = NewRSAAuthorizer(ctx, Configuration{
+		KeyResolver: &FromFileKeyResolver{
+			KeyFile: tmpfile.Name(),
+		},
+		KeyRefreshTimeout: 1 * time.Millisecond,
+	})
 	require.Error(t, err)
 	require.NoError(t, os.Remove(tmpfile.Name()))
 }
@@ -52,7 +98,9 @@ func TestRSAAuthInterceptor(t *testing.T) {
 	}
 	defer func() { jwt.TimeFunc = time.Now }()
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	key, err := rsa.GenerateKey(rand.Reader, 512)
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +121,14 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		{rsaTokenCtx(ctx, key, 100, 50), codes.Unauthenticated}, // Not valid yet
 	}
 
-	a := &authClient{key: &key.PublicKey, logger: zap.L()}
+	a, err := NewRSAAuthorizer(ctx, Configuration{
+		KeyResolver: &fromMemoryKeyResolver{
+			Key: &key.PublicKey,
+		},
+		KeyRefreshTimeout: 1 * time.Millisecond,
+	})
+
+	require.NoError(t, err)
 
 	for _, test := range authTests {
 		_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},
@@ -85,7 +140,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 }
 
 func TestMissingScopes(t *testing.T) {
-	ac := &authClient{requiredScopes: map[string][]string{
+	ac := &Authorizer{requiredScopes: map[string][]string{
 		"PutFoo": []string{"required1", "required2"},
 	}}
 
