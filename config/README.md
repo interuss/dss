@@ -54,12 +54,12 @@ consult the Kubernetes documentation for other providers.
 
 Create a new cluster in the given zone:
 
-    gcloud --project $CLOUD_PROJECT container clusters create $CLUSTER_NAME --zone <ZONE>
+    gcloud --project $CLOUD_PROJECT container clusters create $CLUSTER_NAME --zone $ZONE
 
 Fetch credentials for the cluster.  This populates your \~/.kube/config file
 and makes all future kubecfg commands target this cluster.
 
-    gcloud --project $CLOUD_PROJECT container clusters get-credentials $CLUSTER_NAME
+    gcloud --project $CLOUD_PROJECT container clusters get-credentials $CLUSTER_NAME --zone $ZONE
 
 
 ## Creating a new cockroachdb cluster
