@@ -55,9 +55,15 @@ func setUpLogger(level string, format string) error {
 		zap.AddCaller(), zap.AddStacktrace(zapcore.PanicLevel),
 	}
 
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeDuration = zapcore.StringDurationEncoder
+	encoderConfig.StacktraceKey = "stack"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
 	config := zap.NewProductionConfig()
 	config.Level = lvl
 	config.Encoding = format
+	config.EncoderConfig = encoderConfig
 
 	l, err := config.Build(options...)
 	if err != nil {
