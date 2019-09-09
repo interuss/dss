@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/steeling/InterUSS-Platform/pkg/dss/build"
 	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
 
@@ -24,6 +25,10 @@ var (
 // RunHTTPProxy starts the HTTP proxy for the DSS gRPC service on ctx, listening
 // on address, proxying to endpoint.
 func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger).With(
+		zap.String("address", address), zap.String("endpoint", endpoint),
+	)
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -55,6 +60,8 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 
 	// Let grpcMux handle everything else.
 	m.NotFoundHandler = grpcMux
+
+	logger.Info("build", zap.Any("description", build.Describe()))
 
 	// Start HTTP server (and proxy calls to gRPC server endpoint)
 	return http.ListenAndServe(address, m)
