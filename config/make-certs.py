@@ -77,6 +77,8 @@ def main():
             '--certs-dir', cr.ca_certs_dir,
             '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')])
 
+        print('Created new CA certificate in {}'.format(cr.ca_certs_dir))
+
     # Build node and client certs.
     # Delete and recreate the directories.
     shutil.rmtree(cr.node_certs_dir, ignore_errors=True)
@@ -90,6 +92,8 @@ def main():
         'cockroach', 'cert', 'create-client', 'root',
         '--certs-dir', cr.client_certs_dir,
         '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')])
+
+    print('Created new client certificate in {}'.format(cr.client_certs_dir))
 
     for filename in glob.glob(os.path.join(cr.client_certs_dir, '*')):
         shutil.copy(filename, cr.node_certs_dir)
@@ -110,6 +114,8 @@ def main():
         '--certs-dir', cr.node_certs_dir,
         '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')]
         + node_addresses)
+
+    print('Created new node certificate in {}'.format(cr.node_certs_dir))
 
 
 if __name__ == '__main__':
