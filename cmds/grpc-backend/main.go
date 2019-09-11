@@ -35,11 +35,21 @@ var (
 	logLevel          = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
 	dumpRequests      = flag.Bool("dump_requests", false, "Log request and response protos")
 
-	cockroachHost    = flag.String("cockroach_host", "", "cockroach host to connect to")
-	cockroachPort    = flag.Int("cockroach_port", 26257, "cockroach port to connect to")
-	cockroachSSLMode = flag.String("cockroach_ssl_mode", "disable", "cockroach sslmode")
-	cockroachUser    = flag.String("cockroach_user", "root", "cockroach user to authenticate as")
-	cockroachSSLDir  = flag.String("cockroach_ssl_dir", "", "directory to ssl certificates. Must contain files: ca.crt, client.<user>.crt, client.<user>.key")
+	cockroachParams = struct {
+		host            *string
+		port            *int
+		sslMode         *string
+		sslDir          *string
+		user            *string
+		applicationName *string
+	}{
+		host:            flag.String("cockroach_host", "", "cockroach host to connect to"),
+		port:            flag.Int("cockroach_port", 26257, "cockroach port to connect to"),
+		sslMode:         flag.String("cockroach_ssl_mode", "disable", "cockroach sslmode"),
+		user:            flag.String("cockroach_user", "root", "cockroach user to authenticate as"),
+		sslDir:          flag.String("cockroach_ssl_dir", "", "directory to ssl certificates. Must contain files: ca.crt, client.<user>.crt, client.<user>.key"),
+		applicationName: flag.String("cockroach_application_name", "dss", "application name for tagging the connection to cockroach"),
+	}
 
 	jwtAudience = flag.String("jwt_audience", "", "Require that JWTs contain this `aud` claim")
 )
@@ -66,11 +76,12 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}()
 
 	uriParams := map[string]string{
-		"host":     *cockroachHost,
-		"port":     strconv.Itoa(*cockroachPort),
-		"user":     *cockroachUser,
-		"ssl_mode": *cockroachSSLMode,
-		"ssl_dir":  *cockroachSSLDir,
+		"host":             *cockroachParams.host,
+		"port":             strconv.Itoa(*cockroachParams.port),
+		"user":             *cockroachParams.user,
+		"ssl_mode":         *cockroachParams.sslMode,
+		"ssl_dir":          *cockroachParams.sslDir,
+		"application_name": *cockroachParams.applicationName,
 	}
 	uri, err := cockroach.BuildURI(uriParams)
 	if err != nil {
