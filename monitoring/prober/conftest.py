@@ -1,3 +1,4 @@
+import copy
 import requests
 import urllib.parse
 import uuid
@@ -63,13 +64,14 @@ class UsernamePasswordAuthAdapter(AuthAdapter):
     self._tokens = {}
 
   def _issue_token(self, intended_audience):
+    scopes = copy.copy(SCOPES)
+    scopes.append('aud:{}'.format(intended_audience))
     response = requests.post(self._oauth_token_endpoint, data={
       'grant_type': "password",
       'username': self._username,
       'password': self._password,
       'client_id': self._client_id,
-      'scope': ' '.join(SCOPES),
-      'aud': intended_audience,
+      'scope': ' '.join(scopes),
     }).json()
     return response['access_token']
 
