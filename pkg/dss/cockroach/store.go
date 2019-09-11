@@ -35,6 +35,10 @@ func Dial(uri string, logger *zap.Logger, clock clockwork.Clock) (*Store, error)
 }
 
 func BuildURI(params map[string]string) (string, error) {
+	an := params["application_name"]
+	if an == "" {
+		an = "dss"
+	}
 	h := params["host"]
 	if h == "" {
 		return "", errors.New("missing crdb hostname")
@@ -52,13 +56,17 @@ func BuildURI(params map[string]string) (string, error) {
 		return "", errors.New("missing crdb ssl_mode")
 	}
 	if ssl == "disable" {
-		return fmt.Sprintf("postgresql://%s@%s:%s?sslmode=disable", u, h, p), nil
+		return fmt.Sprintf("postgresql://%s@%s:%s?application_name=%s&sslmode=disable", u, h, p, an), nil
 	}
 	dir := params["ssl_dir"]
 	if dir == "" {
 		return "", errors.New("missing crdb ssl_dir")
 	}
-	return fmt.Sprintf("postgresql://%s@%s:%s?sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.key", u, h, p, ssl, dir, dir, u, dir, u), nil
+
+	return fmt.Sprintf(
+		"postgresql://%s@%s:%s?application_name=%s&sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.key",
+		u, h, p, an, ssl, dir, dir, u, dir, u,
+	), nil
 }
 
 type queryable interface {

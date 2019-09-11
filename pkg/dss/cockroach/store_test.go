@@ -105,13 +105,14 @@ func TestBuildURI(t *testing.T) {
 		{
 			name: "valid URI",
 			params: map[string]string{
-				"host":     "localhost",
-				"port":     "26257",
-				"user":     "root",
-				"ssl_mode": "enable",
-				"ssl_dir":  "/tmp",
+				"host":             "localhost",
+				"port":             "26257",
+				"user":             "root",
+				"ssl_mode":         "enable",
+				"ssl_dir":          "/tmp",
+				"application_name": "test-app",
 			},
-			want: "postgresql://root@localhost:26257?sslmode=enable&sslrootcert=/tmp/ca.crt&sslcert=/tmp/client.root.crt&sslkey=/tmp/client.root.key",
+			want: "postgresql://root@localhost:26257?application_name=test-app&sslmode=enable&sslrootcert=/tmp/ca.crt&sslcert=/tmp/client.root.crt&sslkey=/tmp/client.root.key",
 		},
 		{
 			name: "missing host",
@@ -161,7 +162,7 @@ func TestBuildURI(t *testing.T) {
 				"user":     "root",
 				"ssl_mode": "disable",
 			},
-			want: "postgresql://root@localhost:26257?sslmode=disable",
+			want: "postgresql://root@localhost:26257?application_name=dss&sslmode=disable",
 		},
 		{
 			name: "missing ssl_dir",
