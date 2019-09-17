@@ -6,5 +6,6 @@ RUN go mod download
 RUN make
 
 FROM alpine:latest
+RUN apk update && apk add ca-certificates
 COPY --from=build /go/bin/http-gateway /usr/bin
 ENTRYPOINT ["/usr/bin/http-gateway"]
