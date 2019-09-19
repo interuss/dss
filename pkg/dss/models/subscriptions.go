@@ -6,8 +6,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
-	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	"github.com/steeling/InterUSS-Platform/pkg/dss_v1"
+	dspb "github.com/steeling/InterUSS-Platform/pkg/dss_v1"
 	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 
 	"github.com/golang/geo/s2"
@@ -53,7 +53,7 @@ func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 	result := &dspb.Subscription{
 		Id:                s.ID.String(),
 		Owner:             s.Owner.String(),
-		Callbacks:         &dssproto.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.Url},
+		Callbacks:         &dss_v1.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.Url},
 		NotificationIndex: int32(s.NotificationIndex),
 		Version:           s.Version.String(),
 	}

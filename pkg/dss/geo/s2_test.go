@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo/testdata"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	dspb "github.com/steeling/InterUSS-Platform/pkg/dss_v1"
 
 	"github.com/golang/geo/s2"
 	"github.com/stretchr/testify/require"
