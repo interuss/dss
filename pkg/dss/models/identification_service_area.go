@@ -8,7 +8,7 @@ import (
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	dspb "github.com/steeling/InterUSS-Platform/pkg/dss_v1"
 	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 )
 

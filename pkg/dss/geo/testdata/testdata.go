@@ -1,7 +1,7 @@
 package testdata
 
 import (
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	dspb "github.com/steeling/InterUSS-Platform/pkg/dss_v1"
 
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 )

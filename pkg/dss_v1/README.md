@@ -13,4 +13,4 @@ of it for our api.yaml.  This is done by a package replacement in go.mod.
 To regenerate the files in this directory:
 
     cd InterUSS-Platform
-    make pkg/dssproto/dss.pb.go pkg/dssproto/dss.pb.gw.go
+    make pkg/dss_v1/dss.pb.go pkg/dss_v1/dss.pb.gw.go
