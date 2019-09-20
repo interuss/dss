@@ -304,4 +304,7 @@ def _pairwise(it):
   """Iterator for sets of lon,lat in an array."""
   it = iter(it)
   while True:
-    yield next(it), next(it)
+    try:
+      yield next(it), next(it)
+    except StopIteration:
+      return
