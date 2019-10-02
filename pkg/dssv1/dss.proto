@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package dss_v1;
+package dssv1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";

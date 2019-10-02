@@ -6,7 +6,7 @@ interuss:
 
 .PHONY: format
 format:
-	clang-format -style=file -i pkg/dss_v1/dss.proto
+	clang-format -style=file -i pkg/dssv1/dss.proto
 
 .PHONY: install
 install:
@@ -16,11 +16,11 @@ install:
 lint: install
 	golint ./...
 
-pkg/dss_v1/dss.pb.go:
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --go_out=plugins=grpc:. pkg/dss_v1/dss.proto
+pkg/dssv1/dss.pb.go:
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssv1/dss.proto
 
-pkg/dss_v1/dss.pb.gw.go:
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dss_v1/dss.proto
+pkg/dssv1/dss.pb.gw.go:
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssv1/dss.proto
 
 .PHONY: install-proto-generation
 install-proto-generation:

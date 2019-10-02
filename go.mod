@@ -34,7 +34,7 @@ require (
 	golang.org/x/mobile v0.0.0-20190823173732-30c70e3810e9 // indirect
 	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7 // indirect
 	golang.org/x/sys v0.0.0-20190825160603-fb81701db80f // indirect
-	golang.org/x/tools v0.0.0-20190826060629-95c3470cfb70 // indirect
+	golang.org/x/tools v0.0.0-20190927191325-030b2cf1153e // indirect
 	google.golang.org/api v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 	google.golang.org/grpc v1.23.0

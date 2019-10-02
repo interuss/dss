@@ -10,7 +10,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo/testdata"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dss_v1"
+	"github.com/steeling/InterUSS-Platform/pkg/dssv1"
 	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 
 	"github.com/golang/geo/s2"
@@ -29,7 +29,7 @@ func mustTimestamp(ts *tspb.Timestamp) *time.Time {
 	return &t
 }
 
-func mustGeoPolygonToCellIDs(p *dspb.GeoPolygon) s2.CellUnion {
+func mustGeoPolygonToCellIDs(p *dssv1.GeoPolygon) s2.CellUnion {
 	cells, err := geo.GeoPolygonToCellIDs(p)
 	if err != nil {
 		panic(err)
@@ -114,7 +114,7 @@ func TestDeleteSubscription(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.DeleteSubscription(ctx, &dspb.DeleteSubscriptionRequest{
+			_, err := s.DeleteSubscription(ctx, &dssv1.DeleteSubscriptionRequest{
 				Id: r.id.String(),
 			})
 			require.Equal(t, r.err, err)
@@ -129,15 +129,15 @@ func TestCreateSubscription(t *testing.T) {
 	for _, r := range []struct {
 		name             string
 		id               models.ID
-		callbacks        *dspb.SubscriptionCallbacks
-		extents          *dspb.Volume4D
+		callbacks        *dssv1.SubscriptionCallbacks
+		extents          *dssv1.Volume4D
 		wantSubscription models.Subscription
 		wantErr          error
 	}{
 		{
 			name: "success",
 			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &dspb.SubscriptionCallbacks{
+			callbacks: &dssv1.SubscriptionCallbacks{
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
 			extents: testdata.LoopVolume4D,
@@ -155,7 +155,7 @@ func TestCreateSubscription(t *testing.T) {
 		{
 			name: "missing-extents",
 			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &dspb.SubscriptionCallbacks{
+			callbacks: &dssv1.SubscriptionCallbacks{
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
 			wantErr: dsserr.BadRequest("missing required extents"),
@@ -163,32 +163,32 @@ func TestCreateSubscription(t *testing.T) {
 		{
 			name: "missing-extents-spatial-volume",
 			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &dspb.SubscriptionCallbacks{
+			callbacks: &dssv1.SubscriptionCallbacks{
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
-			extents: &dspb.Volume4D{},
+			extents: &dssv1.Volume4D{},
 			wantErr: dsserr.BadRequest("bad extents: missing required spatial_volume"),
 		},
 		{
 			name: "missing-spatial-volume-footprint",
 			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &dspb.SubscriptionCallbacks{
+			callbacks: &dssv1.SubscriptionCallbacks{
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
-			extents: &dspb.Volume4D{
-				SpatialVolume: &dspb.Volume3D{},
+			extents: &dssv1.Volume4D{
+				SpatialVolume: &dssv1.Volume3D{},
 			},
 			wantErr: dsserr.BadRequest("bad extents: spatial_volume missing required footprint"),
 		},
 		{
 			name: "missing-spatial-volume-footprint",
 			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &dspb.SubscriptionCallbacks{
+			callbacks: &dssv1.SubscriptionCallbacks{
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
-			extents: &dspb.Volume4D{
-				SpatialVolume: &dspb.Volume3D{
-					Footprint: &dspb.GeoPolygon{},
+			extents: &dssv1.Volume4D{
+				SpatialVolume: &dssv1.Volume3D{
+					Footprint: &dssv1.GeoPolygon{},
 				},
 			},
 			wantErr: dsserr.BadRequest("bad extents: not enough points in polygon"),
@@ -213,9 +213,9 @@ func TestCreateSubscription(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.CreateSubscription(ctx, &dspb.CreateSubscriptionRequest{
+			_, err := s.CreateSubscription(ctx, &dssv1.CreateSubscriptionRequest{
 				Id: r.id.String(),
-				Params: &dspb.CreateSubscriptionParameters{
+				Params: &dssv1.CreateSubscriptionParameters{
 					Callbacks: r.callbacks,
 					Extents:   r.extents,
 				},
@@ -256,10 +256,10 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 		Store: store,
 	}
 
-	resp, err := s.CreateSubscription(ctx, &dspb.CreateSubscriptionRequest{
+	resp, err := s.CreateSubscription(ctx, &dssv1.CreateSubscriptionRequest{
 		Id: sub.ID.String(),
-		Params: &dspb.CreateSubscriptionParameters{
-			Callbacks: &dspb.SubscriptionCallbacks{
+		Params: &dssv1.CreateSubscriptionParameters{
+			Callbacks: &dssv1.SubscriptionCallbacks{
 				IdentificationServiceAreaUrl: sub.Url,
 			},
 			Extents: testdata.LoopVolume4D,
@@ -268,8 +268,8 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, store.AssertExpectations(t))
 
-	require.Equal(t, []*dspb.IdentificationServiceArea{
-		&dspb.IdentificationServiceArea{
+	require.Equal(t, []*dssv1.IdentificationServiceArea{
+		&dssv1.IdentificationServiceArea{
 			FlightsUrl: "https://no/place/like/home",
 			Id:         "8265221b-9528-4d45-900d-59a148e13850",
 			Owner:      "me-myself-and-i",
@@ -304,7 +304,7 @@ func TestGetSubscription(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.GetSubscription(context.Background(), &dspb.GetSubscriptionRequest{
+			_, err := s.GetSubscription(context.Background(), &dssv1.GetSubscriptionRequest{
 				Id: r.id.String(),
 			})
 			require.Equal(t, r.err, err)
@@ -322,7 +322,7 @@ func TestSearchSubscriptionsFailsIfOwnerMissingFromContext(t *testing.T) {
 		}
 	)
 
-	_, err := s.SearchSubscriptions(ctx, &dspb.SearchSubscriptionsRequest{
+	_, err := s.SearchSubscriptions(ctx, &dssv1.SearchSubscriptionsRequest{
 		Area: testdata.Loop,
 	})
 
@@ -339,7 +339,7 @@ func TestSearchSubscriptionsFailsForInvalidArea(t *testing.T) {
 		}
 	)
 
-	_, err := s.SearchSubscriptions(ctx, &dspb.SearchSubscriptionsRequest{
+	_, err := s.SearchSubscriptions(ctx, &dssv1.SearchSubscriptionsRequest{
 		Area: testdata.LoopWithOddNumberOfCoordinates,
 	})
 
@@ -367,7 +367,7 @@ func TestSearchSubscriptions(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.SearchSubscriptions(ctx, &dspb.SearchSubscriptionsRequest{
+	resp, err := s.SearchSubscriptions(ctx, &dssv1.SearchSubscriptionsRequest{
 		Area: testdata.Loop,
 	})
 
@@ -383,7 +383,7 @@ func TestCreateISA(t *testing.T) {
 	for _, r := range []struct {
 		name       string
 		id         models.ID
-		extents    *dspb.Volume4D
+		extents    *dssv1.Volume4D
 		flightsUrl string
 		wantISA    *models.IdentificationServiceArea
 		wantErr    error
@@ -413,15 +413,15 @@ func TestCreateISA(t *testing.T) {
 		{
 			name:       "missing-extents-spatial-volume",
 			id:         models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents:    &dspb.Volume4D{},
+			extents:    &dssv1.Volume4D{},
 			flightsUrl: "https://example.com",
 			wantErr:    dsserr.BadRequest("bad extents: missing required spatial_volume"),
 		},
 		{
 			name: "missing-spatial-volume-footprint",
 			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents: &dspb.Volume4D{
-				SpatialVolume: &dspb.Volume3D{},
+			extents: &dssv1.Volume4D{
+				SpatialVolume: &dssv1.Volume3D{},
 			},
 			flightsUrl: "https://example.com",
 			wantErr:    dsserr.BadRequest("bad extents: spatial_volume missing required footprint"),
@@ -429,9 +429,9 @@ func TestCreateISA(t *testing.T) {
 		{
 			name: "missing-spatial-volume-footprint",
 			id:   models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents: &dspb.Volume4D{
-				SpatialVolume: &dspb.Volume3D{
-					Footprint: &dspb.GeoPolygon{},
+			extents: &dssv1.Volume4D{
+				SpatialVolume: &dssv1.Volume3D{
+					Footprint: &dssv1.GeoPolygon{},
 				},
 			},
 			flightsUrl: "https://example.com",
@@ -454,9 +454,9 @@ func TestCreateISA(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.CreateIdentificationServiceArea(ctx, &dspb.CreateIdentificationServiceAreaRequest{
+			_, err := s.CreateIdentificationServiceArea(ctx, &dssv1.CreateIdentificationServiceAreaRequest{
 				Id: r.id.String(),
-				Params: &dspb.CreateIdentificationServiceAreaParameters{
+				Params: &dssv1.CreateIdentificationServiceAreaParameters{
 					Extents:    r.extents,
 					FlightsUrl: r.flightsUrl,
 				},
@@ -476,7 +476,7 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 		}
 	)
 
-	_, err := s.DeleteIdentificationServiceArea(context.Background(), &dspb.DeleteIdentificationServiceAreaRequest{
+	_, err := s.DeleteIdentificationServiceArea(context.Background(), &dssv1.DeleteIdentificationServiceAreaRequest{
 		Id: id,
 	})
 
@@ -508,7 +508,7 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.DeleteIdentificationServiceArea(ctx, &dspb.DeleteIdentificationServiceAreaRequest{
+	resp, err := s.DeleteIdentificationServiceArea(ctx, &dssv1.DeleteIdentificationServiceAreaRequest{
 		Id: id.String(),
 	})
 
@@ -536,7 +536,7 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.SearchIdentificationServiceAreas(ctx, &dspb.SearchIdentificationServiceAreasRequest{
+	resp, err := s.SearchIdentificationServiceAreas(ctx, &dssv1.SearchIdentificationServiceAreasRequest{
 		Area: testdata.Loop,
 	})
 

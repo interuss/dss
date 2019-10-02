@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss/build"
-	"github.com/steeling/InterUSS-Platform/pkg/dss_v1"
+	"github.com/steeling/InterUSS-Platform/pkg/dssv1"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
 
 	"github.com/gorilla/mux"
@@ -47,7 +47,7 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 		grpc.WithTimeout(10 * time.Second),
 	}
 
-	err := dss_v1.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts)
+	err := dssv1.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts)
 	if err != nil {
 		return err
 	}

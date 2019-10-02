@@ -12,7 +12,7 @@ import (
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dss_v1"
+	"github.com/steeling/InterUSS-Platform/pkg/dssv1"
 	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
 )
 
@@ -21,7 +21,7 @@ var (
 	ReadISAScope  = "dss.read.identification_service_areas"
 )
 
-// Server implements dss_v1.DiscoveryAndSynchronizationService.
+// Server implements dssv1.DiscoveryAndSynchronizationService.
 type Server struct {
 	Store Store
 }
@@ -39,8 +39,8 @@ func (s *Server) AuthScopes() map[string][]string {
 }
 
 func (s *Server) GetIdentificationServiceArea(
-	ctx context.Context, req *dspb.GetIdentificationServiceAreaRequest) (
-	*dspb.GetIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *dssv1.GetIdentificationServiceAreaRequest) (
+	*dssv1.GetIdentificationServiceAreaResponse, error) {
 
 	isa, err := s.Store.GetISA(ctx, models.ID(req.GetId()))
 	if err == sql.ErrNoRows {
@@ -53,14 +53,14 @@ func (s *Server) GetIdentificationServiceArea(
 	if err != nil {
 		return nil, err
 	}
-	return &dspb.GetIdentificationServiceAreaResponse{
+	return &dssv1.GetIdentificationServiceAreaResponse{
 		ServiceArea: p,
 	}, nil
 }
 
 func (s *Server) createOrUpdateISA(
-	ctx context.Context, id string, version *models.Version, extents *dspb.Volume4D, flights_url string) (
-	*dspb.IdentificationServiceArea, []*dspb.SubscriberToNotify, error) {
+	ctx context.Context, id string, version *models.Version, extents *dssv1.Volume4D, flights_url string) (
+	*dssv1.IdentificationServiceArea, []*dssv1.SubscriberToNotify, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -94,7 +94,7 @@ func (s *Server) createOrUpdateISA(
 		return nil, nil, dsserr.Internal(err.Error())
 	}
 
-	pbSubscribers := []*dspb.SubscriberToNotify{}
+	pbSubscribers := []*dssv1.SubscriberToNotify{}
 	for _, subscriber := range subscribers {
 		pbSubscribers = append(pbSubscribers, subscriber.ToNotifyProto())
 	}
@@ -103,17 +103,17 @@ func (s *Server) createOrUpdateISA(
 }
 
 func (s *Server) CreateIdentificationServiceArea(
-	ctx context.Context, req *dspb.CreateIdentificationServiceAreaRequest) (
-	*dspb.CreateIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *dssv1.CreateIdentificationServiceAreaRequest) (
+	*dssv1.CreateIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
 	isa, subs, err := s.createOrUpdateISA(ctx, req.GetId(), nil, params.Extents, params.GetFlightsUrl())
-	return &dspb.CreateIdentificationServiceAreaResponse{ServiceArea: isa, Subscribers: subs}, err
+	return &dssv1.CreateIdentificationServiceAreaResponse{ServiceArea: isa, Subscribers: subs}, err
 }
 
 func (s *Server) UpdateIdentificationServiceArea(
-	ctx context.Context, req *dspb.UpdateIdentificationServiceAreaRequest) (
-	*dspb.UpdateIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *dssv1.UpdateIdentificationServiceAreaRequest) (
+	*dssv1.UpdateIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
 
@@ -123,12 +123,12 @@ func (s *Server) UpdateIdentificationServiceArea(
 	}
 
 	isa, subs, err := s.createOrUpdateISA(ctx, req.GetId(), version, params.Extents, params.GetFlightsUrl())
-	return &dspb.UpdateIdentificationServiceAreaResponse{ServiceArea: isa, Subscribers: subs}, err
+	return &dssv1.UpdateIdentificationServiceAreaResponse{ServiceArea: isa, Subscribers: subs}, err
 }
 
 func (s *Server) DeleteIdentificationServiceArea(
-	ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (
-	*dspb.DeleteIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *dssv1.DeleteIdentificationServiceAreaRequest) (
+	*dssv1.DeleteIdentificationServiceAreaResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -147,20 +147,20 @@ func (s *Server) DeleteIdentificationServiceArea(
 	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
-	sp := make([]*dspb.SubscriberToNotify, len(subscribers))
+	sp := make([]*dssv1.SubscriberToNotify, len(subscribers))
 	for i, _ := range subscribers {
 		sp[i] = subscribers[i].ToNotifyProto()
 	}
 
-	return &dspb.DeleteIdentificationServiceAreaResponse{
+	return &dssv1.DeleteIdentificationServiceAreaResponse{
 		ServiceArea: p,
 		Subscribers: sp,
 	}, nil
 }
 
 func (s *Server) DeleteSubscription(
-	ctx context.Context, req *dspb.DeleteSubscriptionRequest) (
-	*dspb.DeleteSubscriptionResponse, error) {
+	ctx context.Context, req *dssv1.DeleteSubscriptionRequest) (
+	*dssv1.DeleteSubscriptionResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -178,14 +178,14 @@ func (s *Server) DeleteSubscription(
 	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
-	return &dspb.DeleteSubscriptionResponse{
+	return &dssv1.DeleteSubscriptionResponse{
 		Subscription: p,
 	}, nil
 }
 
 func (s *Server) SearchIdentificationServiceAreas(
-	ctx context.Context, req *dspb.SearchIdentificationServiceAreasRequest) (
-	*dspb.SearchIdentificationServiceAreasResponse, error) {
+	ctx context.Context, req *dssv1.SearchIdentificationServiceAreasRequest) (
+	*dssv1.SearchIdentificationServiceAreasResponse, error) {
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
@@ -218,7 +218,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 		return nil, err
 	}
 
-	areas := make([]*dspb.IdentificationServiceArea, len(isas))
+	areas := make([]*dssv1.IdentificationServiceArea, len(isas))
 	for i := range isas {
 		a, err := isas[i].ToProto()
 		if err != nil {
@@ -227,14 +227,14 @@ func (s *Server) SearchIdentificationServiceAreas(
 		areas[i] = a
 	}
 
-	return &dspb.SearchIdentificationServiceAreasResponse{
+	return &dssv1.SearchIdentificationServiceAreasResponse{
 		ServiceAreas: areas,
 	}, nil
 }
 
 func (s *Server) SearchSubscriptions(
-	ctx context.Context, req *dspb.SearchSubscriptionsRequest) (
-	*dspb.SearchSubscriptionsResponse, error) {
+	ctx context.Context, req *dssv1.SearchSubscriptionsRequest) (
+	*dssv1.SearchSubscriptionsResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -250,7 +250,7 @@ func (s *Server) SearchSubscriptions(
 	if err != nil {
 		return nil, err
 	}
-	sp := make([]*dspb.Subscription, len(subscriptions))
+	sp := make([]*dssv1.Subscription, len(subscriptions))
 	for i, _ := range subscriptions {
 		sp[i], err = subscriptions[i].ToProto()
 		if err != nil {
@@ -258,14 +258,14 @@ func (s *Server) SearchSubscriptions(
 		}
 	}
 
-	return &dspb.SearchSubscriptionsResponse{
+	return &dssv1.SearchSubscriptionsResponse{
 		Subscriptions: sp,
 	}, nil
 }
 
 func (s *Server) GetSubscription(
-	ctx context.Context, req *dspb.GetSubscriptionRequest) (
-	*dspb.GetSubscriptionResponse, error) {
+	ctx context.Context, req *dssv1.GetSubscriptionRequest) (
+	*dssv1.GetSubscriptionResponse, error) {
 
 	subscription, err := s.Store.GetSubscription(ctx, models.ID(req.GetId()))
 	if err == sql.ErrNoRows {
@@ -278,14 +278,14 @@ func (s *Server) GetSubscription(
 	if err != nil {
 		return nil, err
 	}
-	return &dspb.GetSubscriptionResponse{
+	return &dssv1.GetSubscriptionResponse{
 		Subscription: p,
 	}, nil
 }
 
 func (s *Server) createOrUpdateSubscription(
-	ctx context.Context, id string, version *models.Version, callbacks *dspb.SubscriptionCallbacks, extents *dspb.Volume4D) (
-	*dspb.Subscription, []*dspb.IdentificationServiceArea, error) {
+	ctx context.Context, id string, version *models.Version, callbacks *dssv1.SubscriptionCallbacks, extents *dssv1.Volume4D) (
+	*dssv1.Subscription, []*dssv1.IdentificationServiceArea, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -326,7 +326,7 @@ func (s *Server) createOrUpdateSubscription(
 	}
 
 	// Convert the ISAs to protos.
-	isaProtos := make([]*dspb.IdentificationServiceArea, len(isas))
+	isaProtos := make([]*dssv1.IdentificationServiceArea, len(isas))
 	for i, isa := range isas {
 		isaProtos[i], err = isa.ToProto()
 		if err != nil {
@@ -338,17 +338,17 @@ func (s *Server) createOrUpdateSubscription(
 }
 
 func (s *Server) CreateSubscription(
-	ctx context.Context, req *dspb.CreateSubscriptionRequest) (
-	*dspb.CreateSubscriptionResponse, error) {
+	ctx context.Context, req *dssv1.CreateSubscriptionRequest) (
+	*dssv1.CreateSubscriptionResponse, error) {
 
 	params := req.GetParams()
 	sub, isas, err := s.createOrUpdateSubscription(ctx, req.GetId(), nil, params.Callbacks, params.Extents)
-	return &dspb.CreateSubscriptionResponse{Subscription: sub, ServiceAreas: isas}, err
+	return &dssv1.CreateSubscriptionResponse{Subscription: sub, ServiceAreas: isas}, err
 }
 
 func (s *Server) UpdateSubscription(
-	ctx context.Context, req *dspb.UpdateSubscriptionsRequest) (
-	*dspb.UpdateSubscriptionResponse, error) {
+	ctx context.Context, req *dssv1.UpdateSubscriptionsRequest) (
+	*dssv1.UpdateSubscriptionResponse, error) {
 
 	params := req.GetParams()
 
@@ -358,5 +358,5 @@ func (s *Server) UpdateSubscription(
 	}
 
 	sub, isas, err := s.createOrUpdateSubscription(ctx, req.GetId(), version, params.Callbacks, params.Extents)
-	return &dspb.UpdateSubscriptionResponse{Subscription: sub, ServiceAreas: isas}, err
+	return &dssv1.UpdateSubscriptionResponse{Subscription: sub, ServiceAreas: isas}, err
 }
