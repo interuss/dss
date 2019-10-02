@@ -1,0 +1,419 @@
+{
+	"info": {
+		"name": "InterUSS Platform - Local",
+		"_postman_id": "cd7f90d1-5024-4a16-af24-70c6fc5a8e9e",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Select http://localhost:8121, get status",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "0fe3574a-251b-4937-bc55-c4e774bb5fb7",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Message is OK\"] = data.message === \"OK\";",
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "7f54ece6-2694-4464-8f69-9274c63bfe22",
+						"type": "text/javascript",
+						"exec": [
+							"postman.setEnvironmentVariable(\"node\", \"http://localhost:8121\");",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/status",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"status"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Select https://localhost:8120, get status",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "0fe3574a-251b-4937-bc55-c4e774bb5fb7",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Message is OK\"] = data.message === \"OK\";",
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "b6aee480-e3f1-4979-9d08-072f554c6114",
+						"type": "text/javascript",
+						"exec": [
+							"postman.setEnvironmentVariable(\"node\", \"https://localhost:8120\");"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/status",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"status"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Slippy Conversion",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5fc7fc71-4112-4288-97ec-dfdfd487e652",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Correct zoom returned\"] = data.data.zoom === 11;",
+							"tests[\"Correct z returned\"] = data.data.grid_cells[0].zoom === 11;",
+							"tests[\"Correct x returned\"] = data.data.grid_cells[0].x === 565;",
+							"tests[\"Correct y returned\"] = data.data.grid_cells[0].y === 795;",
+							"tests[\"Correct link returned\"] = data.data.grid_cells[0].link === \"http://tile.openstreetmap.org/11/565/795.png\";",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/slippy/11?coords=37.193589,-80.590537,37.19,-80.59",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"slippy",
+						"11"
+					],
+					"query": [
+						{
+							"key": "coords",
+							"value": "37.193589,-80.590537,37.19,-80.59",
+							"equals": true
+						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Get Access Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "24652fca-4518-4841-a57f-2b8ac971141d",
+						"type": "text/javascript",
+						"exec": [
+							"",
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"",
+							"var data = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"production_token\", data.access_token);",
+							"",
+							"pm.test(\"Body contains Token\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"bearer\");",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "{{oauth_password}}",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "{{oauth_username}}",
+							"type": "string"
+						},
+						{
+							"key": "showPassword",
+							"value": true,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://utmalpha.arc.nasa.gov/fimsAuthServer/oauth/token?grant_type=client_credentials",
+					"protocol": "https",
+					"host": [
+						"utmalpha",
+						"arc",
+						"nasa",
+						"gov"
+					],
+					"path": [
+						"fimsAuthServer",
+						"oauth",
+						"token"
+					],
+					"query": [
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"equals": true
+						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Get Grid Cell",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7c2db295-0f7a-4f73-9e5e-958965eb28ec",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Version is set\"] = data.data.version >= 0;",
+							"tests[\"Sync token is returned\"] = data.sync_token > 0;",
+							"postman.setEnvironmentVariable(\"sync_token\", data.sync_token);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "access_token",
+						"value": "{{production_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/GridCellMetaData/11/565/795",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"GridCellMetaData",
+						"11",
+						"565",
+						"795"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "PUT Grid Cell",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7c2db295-0f7a-4f73-9e5e-958965eb28ec",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Version is set\"] = data.data.version >= 0;",
+							"tests[\"Sync token is returned\"] = data.sync_token > 0;",
+							"postman.setEnvironmentVariable(\"sync_token\", data.sync_token);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "access_token",
+						"value": "{{production_token}}"
+					},
+					{
+						"key": "sync_token",
+						"value": "{{sync_token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "scope",
+						"value": "utm.nasa.gov_write.message",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t  \"scope\": \"utm.nasa.gov_write.message\",\n\t  \"operation_endpoint\": \"http://localhost\",\n\t  \"operation_format\": \"NASA\",\n\t  \"uss_baseurl\": \"test-uss1-base\",\n\t  \"minimum_operation_timestamp\": \"2015-08-20T14:11:00.000Z\",\n\t  \"maximum_operation_timestamp\": \"2015-08-20T15:00:00.000Z\",\n\t  \"announcement_level\": \"NONE\",\n\t  \"operations\": [  ]\n}\n"
+				},
+				"url": {
+					"raw": "{{node}}/GridCellMetaData/11/565/795?",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"GridCellMetaData",
+						"11",
+						"565",
+						"795"
+					],
+					"query": [
+						{
+							"key": "gridcell_operator",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Grid Cell",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "51cef57b-139a-4403-989b-9714f11cd814",
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"var data = JSON.parse(responseBody) ;",
+							"tests[\"Status is success\"] = data.status === \"success\";",
+							"tests[\"Version is set\"] = data.data.version >= 0;",
+							"tests[\"Sync token is returned\"] = data.sync_token > 0;",
+							"postman.setEnvironmentVariable(\"sync_token\", data.sync_token);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "access_token",
+						"value": "{{production_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{node}}/GridCellMetaData/11/565/795",
+					"host": [
+						"{{node}}"
+					],
+					"path": [
+						"GridCellMetaData",
+						"11",
+						"565",
+						"795"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		}
+	]
+}

@@ -4,14 +4,14 @@ import (
 	"testing"
 
 	"github.com/steeling/InterUSS-Platform/pkg/dss/geo/testdata"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	"github.com/steeling/InterUSS-Platform/pkg/dssv1"
 
 	"github.com/golang/geo/s2"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGeoPolygonToCellIDs(t *testing.T) {
-	got, err := GeoPolygonToCellIDs(&dspb.GeoPolygon{Vertices: []*dspb.LatLngPoint{
+	got, err := GeoPolygonToCellIDs(&dssv1.GeoPolygon{Vertices: []*dssv1.LatLngPoint{
 		// Stanford
 		{
 			Lat: 37.427636,

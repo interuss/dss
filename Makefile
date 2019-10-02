@@ -6,7 +6,7 @@ interuss:
 
 .PHONY: format
 format:
-	clang-format -style=file -i pkg/dssproto/dss.proto
+	clang-format -style=file -i pkg/dssv1/dss.proto
 
 .PHONY: install
 install:
@@ -16,15 +16,11 @@ install:
 lint: install
 	golint ./...
 
-pkg/dssproto/dss.pb.go: pkg/dssproto/dss.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssproto/dss.proto
+pkg/dssv1/dss.pb.go:
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssv1/dss.proto
 
-pkg/dssproto/dss.pb.gw.go: pkg/dssproto/dss.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssproto/dss.proto
-
-pkg/dssproto/dss.proto: install-proto-generation
-	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto -spec api.yaml -annotate -out pkg/dssproto/dss.proto -tag dss -indent 2 -package dssproto
-
+pkg/dssv1/dss.pb.gw.go:
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssv1/dss.proto
 
 .PHONY: install-proto-generation
 install-proto-generation:

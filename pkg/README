@@ -3,7 +3,7 @@
 ## Notes:
 This code sets up an HTTP -> gRPC gateway, and a gRPC backend that will connect to CockroachDB.
 
-### dssproto
+### dssv1
 This is all generated!
 1. The .proto file is generated from the Swagger spec (with modifications) using openapi2proto https://github.com/nytimes/openapi2proto
   a. 'components/schemas' needs to be changed to 'definitions'

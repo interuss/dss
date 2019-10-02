@@ -13,7 +13,7 @@ import (
 	"github.com/steeling/InterUSS-Platform/pkg/dss/build"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/cockroach"
 	"github.com/steeling/InterUSS-Platform/pkg/dss/validations"
-	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	"github.com/steeling/InterUSS-Platform/pkg/dssv1"
 	uss_errors "github.com/steeling/InterUSS-Platform/pkg/errors"
 	"github.com/steeling/InterUSS-Platform/pkg/logging"
 
@@ -151,7 +151,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		reflection.Register(s)
 	}
 
-	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
+	dssv1.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 
 	logger.Info("build", zap.Any("description", build.Describe()))
 

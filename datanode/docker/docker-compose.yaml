@@ -1,0 +1,74 @@
+# Copyright 2018 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Brings up a full data node consisting of an nginx reverse proxy, storage API, and Zookeeper.
+
+# Required environment variables:
+#   INTERUSS_PUBLIC_KEY: Public key for InterUSS Platform OAuth.
+
+# Optional environment variables:
+#   INTERUSS_API_PORT_HTTPS: Port on which to provide the InterUSS Platform data node API via HTTPS
+#     (default 8121).
+#   ZOO_MY_ID: Zookeeper ID of this node (default 1).
+#   ZOO_SERVERS: List of Zookeeper servers.
+#     Example: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
+#   INTERUSS_VERBOSE: True for more log messages from the InterUSS API (default true)
+#   INTERUSS_TESTID: Force testing mode with test data located in specific test id (if specified).
+
+# To bring up this system:
+# export INTERUSS_PUBLIC_KEY=<your public key>
+# docker-compose -p datanode up
+
+# Note that Zookeeper uses an anonymous volume that allows data to persist between system restarts.
+# To force a clean start without any persisted data:
+# docker-compose -p datanode up --renew-anon-volumes
+
+version: '3.6'
+
+services:
+
+  zoo:
+    image: zookeeper
+    ports:
+      - "2888:2888"
+      - "3888:3888"
+    expose:
+      - 2181
+    environment:
+      - ZOO_MY_ID=${ZOO_MY_ID:-1}
+      - ZOO_SERVERS=${ZOO_SERVERS:-server.1=0.0.0.0:2888:3888}
+
+  storage_api:
+    image: interussplatform/storage_api
+    expose:
+      - 5000
+    environment:
+      - INTERUSS_API_PORT=5000
+      - INTERUSS_PUBLIC_KEY=${INTERUSS_PUBLIC_KEY:?INTERUSS_PUBLIC_KEY environment variable not set}
+      - INTERUSS_CONNECTIONSTRING=zoo:2181
+      - INTERUSS_VERBOSE=${INTERUSS_VERBOSE:-true}
+      - INTERUSS_TESTID=${INTERUSS_TESTID:-}
+    depends_on:
+      - zoo
+
+  reverse_proxy:
+    image: interussplatform/reverse_proxy
+    ports:
+      - "${INTERUSS_API_PORT_HTTPS:-8121}:${INTERUSS_API_PORT_HTTPS:-8121}"
+    environment:
+      - INTERUSS_API_PORT_HTTPS=${INTERUSS_API_PORT_HTTPS:-8121}
+      - STORAGE_API_SERVER=storage_api
+      - STORAGE_API_PORT=5000
+    depends_on:
+      - storage_api
