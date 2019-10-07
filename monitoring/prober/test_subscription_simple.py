@@ -13,7 +13,7 @@ import common
 
 
 def test_sub_does_not_exist(session, sub1_uuid):
-  resp = session.get('/subscriptions/{}'.format(sub1_uuid))
+  resp = session.get('/v1/dss/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 404
   assert resp.json()['message'] == 'resource not found: {}'.format(sub1_uuid)
 
@@ -23,7 +23,7 @@ def test_create_sub(session, sub1_uuid):
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/subscriptions/{}'.format(sub1_uuid),
+      '/v1/dss/subscriptions/{}'.format(sub1_uuid),
       json={
           'extents': {
               'spatial_volume': {
@@ -57,7 +57,7 @@ def test_create_sub(session, sub1_uuid):
 
 
 def test_get_sub_by_id(session, sub1_uuid):
-  resp = session.get('/subscriptions/{}'.format(sub1_uuid))
+  resp = session.get('/v1/dss/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 200
 
   data = resp.json()
@@ -69,28 +69,28 @@ def test_get_sub_by_id(session, sub1_uuid):
 
 
 def test_get_sub_by_search(session, sub1_uuid):
-  resp = session.get('/subscriptions?area={}'.format(common.GEO_POLYGON_STRING))
+  resp = session.get('/v1/dss/subscriptions?area={}'.format(common.GEO_POLYGON_STRING))
   assert resp.status_code == 200
   assert sub1_uuid in [x['id'] for x in resp.json()['subscriptions']]
 
 
 def test_delete_sub(session, sub1_uuid):
   # GET the sub first to find its version.
-  resp = session.get('/subscriptions/{}'.format(sub1_uuid))
+  resp = session.get('/v1/dss/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 200
   version = resp.json()['subscription']['version']
 
   # Then delete it.
-  resp = session.delete('/subscriptions/{}/{}'.format(sub1_uuid, version))
+  resp = session.delete('/v1/dss/subscriptions/{}/{}'.format(sub1_uuid, version))
   assert resp.status_code == 200
 
 
 def test_get_deleted_sub_by_id(session, sub1_uuid):
-  resp = session.get('/subscriptions/{}'.format(sub1_uuid))
+  resp = session.get('/v1/dss/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 404
 
 
 def test_get_deleted_sub_by_search(session, sub1_uuid):
-  resp = session.get('/subscriptions?area={}'.format(common.GEO_POLYGON_STRING))
+  resp = session.get('/v1/dss/subscriptions?area={}'.format(common.GEO_POLYGON_STRING))
   assert resp.status_code == 200
   assert sub1_uuid not in [x['id'] for x in resp.json()['subscriptions']]
