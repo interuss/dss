@@ -29,6 +29,25 @@ class AuthAdapter(requests.adapters.HTTPAdapter):
     request.headers['Authorization'] = 'Bearer ' + token
 
 
+class DummyOAuthServerAdapter(AuthAdapter):
+  """Requests adapter that gets JWTs that uses the Dummy OAuth Server"""
+
+  def __init__(self, token_endpoint):
+    super().__init__()
+
+    oauth_session = requests.Session()
+
+    self._oauth_token_endpoint = token_endpoint
+    self._oauth_session = oauth_session
+    self._tokens = {}
+
+  def _issue_token(self, intended_audience):
+    url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
+        self._oauth_token_endpoint, urllib.parse.quote(' '.join(SCOPES)),
+        urllib.parse.quote(intended_audience))
+    response = self._oauth_session.post(url).json()
+    return response['access_token']
+
 class ServiceAccountAuthAdapter(AuthAdapter):
   """Requests adapter that gets JWTs using a service account."""
 
@@ -38,6 +57,7 @@ class ServiceAccountAuthAdapter(AuthAdapter):
     credentials = service_account.Credentials.from_service_account_file(
         service_account_json).with_scopes(['email'])
     oauth_session = google_requests.AuthorizedSession(credentials)
+    oauth_session = requests.Session()
 
     self._oauth_token_endpoint = token_endpoint
     self._oauth_session = oauth_session
@@ -100,6 +120,8 @@ def pytest_addoption(parser):
   parser.addoption('--oauth-password')
   parser.addoption('--oauth-client-id')
 
+  parser.addoption('--use-dummy-oauth')
+
 
 @pytest.fixture(scope='session')
 def session(pytestconfig):
@@ -115,6 +137,8 @@ def session(pytestconfig):
         pytestconfig.getoption('oauth_username'),
         pytestconfig.getoption('oauth_password'),
         pytestconfig.getoption('oauth_client_id'))
+  elif pytestconfig.getoption('use_dummy_oauth') is not None:
+    auth_adapter = DummyOAuthServerAdapter(oauth_token_endpoint)
   else:
     raise ValueError(
         'You must provide either an OAuth service account, or a username, '

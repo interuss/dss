@@ -4,9 +4,14 @@ echo "cleaning up any crdb pre-existing containers"
 docker stop dss-crdb-for-debugging
 
 echo "Starting cockroachdb with admin port on :8080"
-docker run -d --rm --name dss-crdb-for-debugging -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v19.1.2 start --insecure > /dev/null
+docker run -d --rm --name dss-crdb-for-debugging \
+	-p 26257:26257 \
+	-p 8080:8080 \
+	cockroachdb/cockroach:v19.1.2 start \
+	--insecure > /dev/null
 
 
+echo " ------------ GRPC BACKEND ---------------- "
 # building grpc backend docker
 sleep 5
 echo "Building grpc-backend Container"
@@ -17,8 +22,8 @@ docker stop grpc-backend-for-testing
 
 echo "Starting grpc backend on :8081"
 docker run -d --rm --name grpc-backend-for-testing \
-	--link dss-crdb-for-debugging:crdb \
-	-v $(pwd)/config/test-certs/oauth.crt:/app/test.crt \
+        --link dss-crdb-for-debugging:crdb \
+	-v $(pwd)/config/test-certs/auth2.pem:/app/test.crt \
 	local-grpc-backend \
 	--cockroach_host crdb \
 	-public_key_file /app/test.crt \
@@ -28,6 +33,8 @@ docker run -d --rm --name grpc-backend-for-testing \
 	-jwt_audience local-gateway
 
 
+
+echo " ------------- HTTP GATEWAY -------------- "
 sleep 5
 echo "Building http-gateway container"
 docker build -q --rm -f cmds/http-gateway/Dockerfile . -t local-http-gateway
@@ -42,6 +49,7 @@ docker run -d --rm --name http-gateway-for-testing -p 8082:8082 \
 	-grpc-backend grpc:8081 \
 	-addr :8082
 
+echo " -------------- DUMMY OAUTH -------------- "
 sleep 5
 echo "Building dummy-oauth server container"
 docker build -q --rm -f cmds/dummy-oauth/Dockerfile . -t local-dummy-oauth
@@ -51,17 +59,23 @@ docker stop dummy-oauth-for-testing
 
 echo "Starting mock oauth server on : 8085"
 docker run -d --rm --name dummy-oauth-for-testing -p 8085:8085 \
-	-v $(pwd)/config/test-certs/oauth.key:/app/test.key \
+	-v $(pwd)/config/test-certs/auth2.key:/app/test.key \
 	local-dummy-oauth \
 	-private_key_file /app/test.key
 
+echo " -------------- PYTEST -------------- "
 sleep 5
-
 echo "Building Integration Test container"
 docker build -q --rm -f monitoring/prober/Dockerfile monitoring/prober -t e2e-test
 
 echo "Finally Begin Testing"
-docker run --link dummy-oauth-for-testing:oauth --link http-gateway-for-testing:local-gateway e2e-test --oauth-token-endpoint http://oauth:8085/token --dss-endpoint http://local-gateway:8082 -vv
+docker run --link dummy-oauth-for-testing:oauth \
+	--link http-gateway-for-testing:local-gateway \
+	e2e-test \
+	--oauth-token-endpoint http://oauth:8085/token \
+	--dss-endpoint http://local-gateway:8082 \
+	--use-dummy-oauth 1 \
+	-vv
 
 # ----------- clean up -----------
 echo "Stopping dummy oauth container"
