@@ -1,135 +1,140 @@
-# Multi-region cockroachdb setup
+# Deploying a DSS
+
+## Preface
+
+This doc provides a well-lit path for deploying the DSS and its dependencies (
+namely CockroachDB) on Kubernetes. This is not a requirement, and a DSS node
+can join a cluster as long as it meets the following requirements:
+
+*   Every CockroachDB node must advertise a unique and routable address.
+    *   It is preferred to use domain names with unique prefixes and homogenous
+        suffixes, ie: 0.c.dss.interussplatform.com.
+    *   This allows wildcard usage in the CRDB certificates.
+*   Every DSS node should run a minimum of 3 CockroachDB nodes.
+*   At least 3 CockroacbDB addresses must be shared with all participants.
+    *   If not using the recommended hostname prefix above, every cockroachDB
+        hostname must be shared with every participant.
+*   Every DSS node must supply and share their CockroachDB public certificate
+*   All CockroachDB nodes must be run in fully secure mode.
+*   The ordering of the `--locality` flag keys must be the same across all
+    CockroachDB nodes in the cluster.
+
+Note: we are investigating the use of service mesh frameworks to alleviate some
+of this operational overhead.
 
 ## Prerequisites
 
-Download & install:
+Download & install the following tools to your workstation:
 
-*   helm
+*   The [helm client](https://helm.sh/docs/using_helm/#installing-the-helm-client)
+    *   Required if deploying using the defined Kubernetes templates.
 *   kubectl
+    *   Required if deploying with Kubernetes.
 *   docker
-*   cockroachdb
+    *   Required if building new images of the DSS.
+*   Cockroachdb
+    *   Required to generate new CockroachDB certificates.
 *   Google Cloud SDK (if deploying on GCP)
-*   [Optional] Golang. Recommended to understand go, and the go toolchain.
+    * Required if deploying to Google Cloud.
+*   Golang.
+    *   Required if developing the DSS codebase.
 
 
 ## Building Docker images
 
-The grpc-backend and http-gateway binaries are built as docker images and pushed
-to a docker registry.  Which docker registry you use will depend on your
-individual requirements and choice of cloud platform.
 
-### Google Container Registry
+The grpc-backend and http-gateway are the 2 main binaries for processing DSS 
+requests. These are both built and pushed to a docker registry of your choice.
+You can easily find out how to push to a docker registry through a quick search.
+All major cloud providers have a docker registry service, or you can set up your
+own.
 
-List existing images:
+TODO(): The linux foundation should provide a default docker registry, with
+golden build versions.
 
-    gcloud --project $CLOUD_PROJECT container images list
-
-List the tags on an existing image:
-
-    gcloud --project $CLOUD_PROJECT container images list-tags gcr.io/$CLOUD_PROJECT/http-gateway
-
-Build a new image:
-
-    docker build -f cmds/http-gateway/Dockerfile  . -t gcr.io/$CLOUD_PROJECT/http-gateway:$VERSION
-    docker build -f cmds/grpc-backend/Dockerfile  . -t gcr.io/$CLOUD_PROJECT/grpc-backend:$VERSION
-
-Push your new image to Google Container Registry:
-
-    docker push gcr.io/$CLOUD_PROJECT/http-gateway:$VERSION
-    docker push gcr.io/$CLOUD_PROJECT/grpc-backend:$VERSION
+Set the environment variable `DOCKER_URL` to your docker registry url endpoint.
 
 Use the `build.sh` script in this directory to build and push an image tagged
 with the current date and git commit hash.
 
 
-## Creating a new Kubernetes cluster
+## Deploying the DSS on Kubernetes
 
-You need to create a Kubernetes cluster to run the cockroachdb instance and the
-gRPC and HTTP servers.  You can do this on any supported
-[cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/)
-or even on your own infrastructure.  Instructions for GCP are given below,
-consult the Kubernetes documentation for other providers.
+This secion discusses deploying a kubernetes service, although you can deploy 
+a DSS node however you like as long as it meets the above requirements. You can
+do this on any supported [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/)
+or even on your own infrastructure.  Consult the Kubernetes documentation for
+which ever provider you choose.
 
-### Google Container Engine
+1.  Create a new Kubernetes cluster as mentioned above. We recommend a new
+    cluster for each logically separate DSS.
 
-Create a new cluster in the given zone:
-
-    gcloud --project $CLOUD_PROJECT container clusters create $CLUSTER_NAME --zone $ZONE
-
-Fetch credentials for the cluster.  This populates your \~/.kube/config file
-and makes all future kubecfg commands target this cluster.
-
-    gcloud --project $CLOUD_PROJECT container clusters get-credentials $CLUSTER_NAME --zone $ZONE
-
-
-## Creating a new cockroachdb cluster
-
-1.  Create 5 static IP addresses.  How you do this depends on your cloud
-    provider.  3 IPs will be used for the 3 individual cockroachdb nodes, 1 IP
-    will be used to load balance amongst all the cockroachdb nodes, and 1 IP
-    will be used for the HTTPS frontend.  The HTTPS frontend IP will be used on
-    a Kubernetes Ingress, and if you're using Google Cloud it needs to be
-    created as a "Global" IP address.
+1.  Create your static IP addresses: 1 for each of your CockroachDB nodes (min
+    of 3) and 1 for the HTTPS Gateway's Ingress.  How you do this depends on
+    your cloud provider. Note: if you're using Google Cloud the HTTPS gateway
+    Ingress needs to be created as a "Global" IP address.
 
 1.  Copy `values.yaml.template` to `values.yaml` and fill in the required fields
     at the top.
 
 1.  Use the `make-certs.py` script in this directory to create certificates for
-    the new cockroachdb cluster:
+    the new CockroachDB cluster:
 
-        ./make-certs.py $NAMESPACE \
-            [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
-            [--ca-certs-dir <CA_CERTS_DIR>]
+        ./make-certs.py [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
+            [--ca-cert-to-join <CA_CERT_FILE>]
 
+*   Only supply the following flags if joining a cluster:
     *   --node-address needs to include all the hostnames and/or IP addresses 
-        that other cockroachdb clusters will use to connect to your cluster.  It
-        should include the hostnames/IP addresses of the 3 individual cockroachdb 
-        nodes and the 1 load balanced endpoint.  The entries should be separated 
-        by spaces.
-    *   If you are joining existing clusters you need their CA certificate and
-        private key to sign your certificates.  This will likely mean that the
-        owners of the existing cluster will need to generate certificates for
-        you.  Set --ca-certs-dir to a directory containing `ca.crt` and `ca.key`
-        files.
+        that other CockroachDB clusters will use to connect to your cluster.  It
+        should include the addresses of your nodes as well.  Wildcard notation
+        is supported, so you can use `*.<subdomain>.<domain>.com>`.  The
+        entries should be separated by spaces.
+    *   If you are joining existing clusters you need their CA public cert,
+        which is concatenated with yours.  Set `--ca-cert-to-join` to a `ca.crt`
+        file. Reach out to existing operators to request their public cert and
+        node hostnames.
 
 1.  Use the `apply-certs.sh` script in this directory to create secrets on the
     Kubernetes cluster containing the certificates and keys generated in the
     previous step.
 
-        ./apply-certs.sh $NAMESPACE
+        ./apply-certs.sh
 
 1.  Run `helm template . > cockroachdb.yaml` to render the YAML.
 1.  Run `kubectl apply -f cockroachdb.yaml` to apply it to the cluster.
 
 
-## Joining an existing cockroachdb cluster
+## Joining an existing CockroachDB cluster
 
-Follow the steps above for creating a new cockroachdb cluster, but with the
+Follow the steps above for creating a new CockroachDB cluster, but with the
 following differences:
 
-1.  In values.yaml, be sure to set ClusterInit to false otherwise you'll
-    reinitialize and destroy the existing cluster.
-1.  In values.yaml, add the host:ports of existing cockroachdb nodes to the
+1.  In values.yaml, be sure to set ClusterInit to false. This can initialize
+    the data directories on you cluster, and prevent you from joining an
+    existing cluster.
+1.  In values.yaml, add the host:ports of existing CockroachDB nodes to the
     JoinExisting array.  You can use the loadbalanced hostnames or IP addresses
     of other clusters (the DBBalanced hostname/IP), or you can specify each node
     individually.
-1.  You must run ./make-certs.py with the --ca-certs-dir flag as described above
-    to use the existing cluster's CA to sign your certificates.
+1.  You must run ./make-certs.py with the `--ca-cert-to-join` flag as described
+    above to use the existing cluster's CA to sign your certificates.
 
-## Using the cockroachdb web UI
+## Using the CockroachDB web UI
 
-The cockroachdb web UI is not exposed publicly, but you can forward a port to
+The CockroachDB web UI is not exposed publicly, but you can forward a port to
 your local machine using the kubectl command:
 
 ### Create a user account
 
-    kubectl -n $NAMESPACE exec cockroachdb-0 -ti -- \
+Pick a username and create an account:
+
+    kubectl -n dss-main exec cockroachdb-0 -ti -- \
         ./cockroach --certs-dir ./cockroach-certs \
         user set $USERNAME --password
 
 ### Access the web UI
 
-    kubectl -n $NAMESPACE port-forward cockroachdb-0 8080
+    kubectl -n dss-main port-forward cockroachdb-0 8080
 
 Then go to https://localhost:8080.  You'll have to ignore the HTTPS certificate
 warning.
