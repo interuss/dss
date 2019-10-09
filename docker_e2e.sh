@@ -68,10 +68,16 @@ sleep 5
 echo "Building Integration Test container"
 docker build -q --rm -f monitoring/prober/Dockerfile monitoring/prober -t e2e-test
 
+echo "Re/Create e2e_test_result file"
+touch $(pwd)/e2e_test_result
+cat /dev/null > $(pwd)/e2e_test_result
+
 echo "Finally Begin Testing"
 docker run --link dummy-oauth-for-testing:oauth \
 	--link http-gateway-for-testing:local-gateway \
+	-v $(pwd)/e2e_test_result:/app/test_result \
 	e2e-test \
+	--junitxml=/app/test_result \
 	--oauth-token-endpoint http://oauth:8085/token \
 	--dss-endpoint http://local-gateway:8082 \
 	--use-dummy-oauth 1 \
