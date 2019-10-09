@@ -1,5 +1,10 @@
 #!/bin/bash
 
+set -eo pipefail
+
+BASEDIR=$(readlink -e "$(dirname "$0")/..")
+cd "${BASEDIR}"
+
 echo "cleaning up any crdb pre-existing containers"
 docker stop dss-crdb-for-debugging
 
@@ -9,7 +14,6 @@ docker run -d --rm --name dss-crdb-for-debugging \
 	-p 8080:8080 \
 	cockroachdb/cockroach:v19.1.2 start \
 	--insecure > /dev/null
-
 
 echo " ------------ GRPC BACKEND ---------------- "
 # building grpc backend docker
