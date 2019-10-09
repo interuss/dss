@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"google.golang.org/grpc"
 )
 

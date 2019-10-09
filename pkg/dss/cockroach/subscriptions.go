@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
-	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
+	"github.com/interuss/dss/pkg/dss/models"
+	dsserr "github.com/interuss/dss/pkg/errors"
 
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"

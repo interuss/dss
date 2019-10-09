@@ -2,7 +2,7 @@ GOPATH := $(shell go env GOPATH)
 
 .PHONY: interuss
 interuss:
-	go install -ldflags "-X github.com/steeling/InterUSS-Platform/pkg/dss/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/steeling/InterUSS-Platform/pkg/dss/build.commit=$(shell git rev-parse --short HEAD) -X github.com/steeling/InterUSS-Platform/pkg/dss/build.host=$(shell hostname)" ./...
+	go install -ldflags "-X github.com/interuss/dss/pkg/dss/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/dss/build.commit=$(shell git rev-parse --short HEAD) -X github.com/interuss/dss/pkg/dss/build.host=$(shell hostname)" ./...
 
 .PHONY: format
 format:

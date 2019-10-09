@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
-	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
-	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
+	"github.com/interuss/dss/pkg/dss/geo"
+	"github.com/interuss/dss/pkg/dssproto"
+	dspb "github.com/interuss/dss/pkg/dssproto"
+	dsserr "github.com/interuss/dss/pkg/errors"
 
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
+	"github.com/interuss/dss/pkg/dss/models"
 )
 
 type Store interface {

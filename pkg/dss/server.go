@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
+	"github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/golang/protobuf/ptypes"
 
-	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
-	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
-	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
+	"github.com/interuss/dss/pkg/dss/auth"
+	"github.com/interuss/dss/pkg/dss/geo"
+	dspb "github.com/interuss/dss/pkg/dssproto"
+	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
 var (

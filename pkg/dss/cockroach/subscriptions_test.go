@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
-	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
+	"github.com/interuss/dss/pkg/dss/models"
 	"github.com/stretchr/testify/require"
 )
 
