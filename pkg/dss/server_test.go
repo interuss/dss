@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/steeling/InterUSS-Platform/pkg/dss/auth"
-	"github.com/steeling/InterUSS-Platform/pkg/dss/geo"
-	"github.com/steeling/InterUSS-Platform/pkg/dss/geo/testdata"
-	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
-	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
+	"github.com/interuss/dss/pkg/dss/auth"
+	"github.com/interuss/dss/pkg/dss/geo"
+	"github.com/interuss/dss/pkg/dss/geo/testdata"
+	"github.com/interuss/dss/pkg/dss/models"
+	dspb "github.com/interuss/dss/pkg/dssproto"
+	dsserr "github.com/interuss/dss/pkg/errors"
 
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"

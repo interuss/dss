@@ -3,8 +3,8 @@ package geo
 import (
 	"testing"
 
-	"github.com/steeling/InterUSS-Platform/pkg/dss/geo/testdata"
-	dspb "github.com/steeling/InterUSS-Platform/pkg/dssproto"
+	"github.com/interuss/dss/pkg/dss/geo/testdata"
+	dspb "github.com/interuss/dss/pkg/dssproto"
 
 	"github.com/golang/geo/s2"
 	"github.com/stretchr/testify/require"

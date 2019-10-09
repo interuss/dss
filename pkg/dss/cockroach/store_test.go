@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/steeling/InterUSS-Platform/pkg/dss"
-	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
+	"github.com/interuss/dss/pkg/dss"
+	"github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"

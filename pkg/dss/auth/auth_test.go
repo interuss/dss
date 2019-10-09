@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
+	"github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/require"

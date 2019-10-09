@@ -15,9 +15,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/steeling/InterUSS-Platform/pkg/dss/models"
-	dsserr "github.com/steeling/InterUSS-Platform/pkg/errors"
-	"github.com/steeling/InterUSS-Platform/pkg/logging"
+	"github.com/interuss/dss/pkg/dss/models"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/logging"
 
 	"github.com/dgrijalva/jwt-go"
 	"go.uber.org/zap"

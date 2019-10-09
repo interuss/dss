@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/steeling/InterUSS-Platform/pkg/dss/build"
-	"github.com/steeling/InterUSS-Platform/pkg/dssproto"
-	"github.com/steeling/InterUSS-Platform/pkg/logging"
+	"github.com/interuss/dss/pkg/dss/build"
+	"github.com/interuss/dss/pkg/dssproto"
+	"github.com/interuss/dss/pkg/logging"
 
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
