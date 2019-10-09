@@ -1,4 +1,5 @@
-package main
+// Package gencert generates a X.509 certificate & public key pair.
+package gencert
 
 import (
 	"bytes"
@@ -32,7 +33,7 @@ func pemBlockForKey(priv interface{}) *pem.Block {
 	case *ecdsa.PrivateKey:
 		b, err := x509.MarshalECPrivateKey(k)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to marshal ECDSA private key: %v", err)
+			log.Fatalf("Unable to marshal ECDSA private key: %v", err)
 			os.Exit(2)
 		}
 		return &pem.Block{Type: "EC PRIVATE KEY", Bytes: b}
