@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -24,9 +23,9 @@ func createGetTokenHandler(privateKey *rsa.PrivateKey) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestBytes, err := httputil.DumpRequest(r, true)
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		} else {
-			fmt.Println(string(requestBytes))
+			log.Println(string(requestBytes))
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -65,7 +64,7 @@ func createGetTokenHandler(privateKey *rsa.PrivateKey) http.Handler {
 			"access_token": tokenString,
 		})
 		if encodeError != nil {
-			log.Fatal(encodeError)
+			log.Panic(encodeError)
 		}
 	})
 }
@@ -82,8 +81,8 @@ func main() {
 	flag.Parse()
 	privateKey, err := readPrivateKey()
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 	http.Handle("/token", createGetTokenHandler(privateKey))
-	log.Fatal(http.ListenAndServe(*address, nil))
+	log.Panic(http.ListenAndServe(*address, nil))
 }
