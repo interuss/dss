@@ -2,11 +2,23 @@
 
 set -eo pipefail
 
-BASEDIR=$(readlink -e "$(dirname "$0")/..")
+echo "Re/Create e2e_test_result file"
+RESULTFILE="$(pwd)/e2e_test_result"
+touch $RESULTFILE
+cat /dev/null > $RESULTFILE
+
+OS=$(uname)
+if [[ $OS == "Darwin" ]]; then 
+	# OSX uses BSD readlink
+	BASEDIR="$(dirname $0)/.."
+else
+	BASEDIR=$(readlink -e "$(dirname "$0")/..")
+fi
+
 cd "${BASEDIR}"
 
 echo "cleaning up any crdb pre-existing containers"
-docker stop dss-crdb-for-debugging
+docker stop dss-crdb-for-debugging || echo "No CRDB to clean up"
 
 echo "Starting cockroachdb with admin port on :8080"
 docker run -d --rm --name dss-crdb-for-debugging \
@@ -15,14 +27,14 @@ docker run -d --rm --name dss-crdb-for-debugging \
 	cockroachdb/cockroach:v19.1.2 start \
 	--insecure > /dev/null
 
+sleep 5
 echo " ------------ GRPC BACKEND ---------------- "
 # building grpc backend docker
-sleep 5
 echo "Building grpc-backend Container"
 docker build -q --rm -f cmds/grpc-backend/Dockerfile . -t local-grpc-backend
 
 echo "Cleaning up any pre-existing grpc-backend container"
-docker stop grpc-backend-for-testing
+docker stop grpc-backend-for-testing || echo "No grpc backend to clean up"
 
 echo "Starting grpc backend on :8081"
 docker run -d --rm --name grpc-backend-for-testing \
@@ -36,15 +48,13 @@ docker run -d --rm --name grpc-backend-for-testing \
 	-dump_requests \
 	-jwt_audience local-gateway
 
-
-
-echo " ------------- HTTP GATEWAY -------------- "
 sleep 5
+echo " ------------- HTTP GATEWAY -------------- "
 echo "Building http-gateway container"
 docker build -q --rm -f cmds/http-gateway/Dockerfile . -t local-http-gateway
 
 echo "Cleaning up any pre-existing http-gateway container"
-docker stop http-gateway-for-testing
+docker stop http-gateway-for-testing || echo "No http gateway to clean up"
 
 echo "Starting http-gateway on :8082"
 docker run -d --rm --name http-gateway-for-testing -p 8082:8082 \
@@ -53,13 +63,13 @@ docker run -d --rm --name http-gateway-for-testing -p 8082:8082 \
 	-grpc-backend grpc:8081 \
 	-addr :8082
 
-echo " -------------- DUMMY OAUTH -------------- "
 sleep 5
+echo " -------------- DUMMY OAUTH -------------- "
 echo "Building dummy-oauth server container"
 docker build -q --rm -f cmds/dummy-oauth/Dockerfile . -t local-dummy-oauth
 
 echo "Cleaning up any pre-existing dummy-oauth container"
-docker stop dummy-oauth-for-testing
+docker stop dummy-oauth-for-testing || echo "No dummy oauth to clean up"
 
 echo "Starting mock oauth server on : 8085"
 docker run -d --rm --name dummy-oauth-for-testing -p 8085:8085 \
@@ -67,19 +77,15 @@ docker run -d --rm --name dummy-oauth-for-testing -p 8085:8085 \
 	local-dummy-oauth \
 	-private_key_file /app/test.key
 
-echo " -------------- PYTEST -------------- "
 sleep 5
+echo " -------------- PYTEST -------------- "
 echo "Building Integration Test container"
 docker build -q --rm -f monitoring/prober/Dockerfile monitoring/prober -t e2e-test
-
-echo "Re/Create e2e_test_result file"
-touch $(pwd)/e2e_test_result
-cat /dev/null > $(pwd)/e2e_test_result
 
 echo "Finally Begin Testing"
 docker run --link dummy-oauth-for-testing:oauth \
 	--link http-gateway-for-testing:local-gateway \
-	-v $(pwd)/e2e_test_result:/app/test_result \
+	-v $RESULTFILE:/app/test_result \
 	e2e-test \
 	--junitxml=/app/test_result \
 	--oauth-token-endpoint http://oauth:8085/token \
