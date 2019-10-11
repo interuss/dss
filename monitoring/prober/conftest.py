@@ -57,7 +57,6 @@ class ServiceAccountAuthAdapter(AuthAdapter):
     credentials = service_account.Credentials.from_service_account_file(
         service_account_json).with_scopes(['email'])
     oauth_session = google_requests.AuthorizedSession(credentials)
-    oauth_session = requests.Session()
 
     self._oauth_token_endpoint = token_endpoint
     self._oauth_session = oauth_session
@@ -99,18 +98,20 @@ class UsernamePasswordAuthAdapter(AuthAdapter):
 class PrefixURLSession(requests.Session):
   """Requests session that adds a prefix to URLs that start with a '/'."""
 
-  def __init__(self, prefix_url):
+  def __init__(self, prefix_url, version_role_prefix):
     super().__init__()
 
     self._prefix_url = prefix_url
+    self._version_role_prefix = version_role_prefix
 
   def prepare_request(self, request, **kwargs):
     if request.url.startswith('/'):
-      request.url = self._prefix_url + request.url
+      request.url = self._prefix_url + self._version_role_prefix + request.url
     return super().prepare_request(request, **kwargs)
 
 
 def pytest_addoption(parser):
+  parser.addoption('--api-version-role')
   parser.addoption('--dss-endpoint')
   parser.addoption('--oauth-token-endpoint')
 
@@ -128,7 +129,7 @@ def session(pytestconfig):
   oauth_token_endpoint = pytestconfig.getoption('oauth_token_endpoint')
 
   # Create an auth adapter to get JWTs using the given credentials.  We can use
-  # either a service account or a username/password/client_id.
+  # either a service account, a username/password/client_id or a dummy oauth server.
   if pytestconfig.getoption('oauth_service_account_json') is not None:
     auth_adapter = ServiceAccountAuthAdapter(oauth_token_endpoint,
         pytestconfig.getoption('oauth_service_account_json'))
@@ -147,8 +148,9 @@ def session(pytestconfig):
   dss_endpoint = pytestconfig.getoption('dss_endpoint')
   if dss_endpoint is None:
     raise ValueError('Missing required --dss-endpoint')
+  api_version_role = pytestconfig.getoption('api_version_role', '')
 
-  s = PrefixURLSession(dss_endpoint)
+  s = PrefixURLSession(dss_endpoint, api_version_role)
   s.mount('http://', auth_adapter)
   s.mount('https://', auth_adapter)
   return s
