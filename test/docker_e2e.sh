@@ -29,7 +29,6 @@ docker run -d --rm --name dss-crdb-for-debugging \
 
 sleep 5
 echo " ------------ GRPC BACKEND ---------------- "
-# building grpc backend docker
 echo "Building grpc-backend Container"
 docker build -q --rm -f cmds/grpc-backend/Dockerfile . -t local-grpc-backend
 
@@ -91,6 +90,7 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--oauth-token-endpoint http://oauth:8085/token \
 	--dss-endpoint http://local-gateway:8082 \
 	--use-dummy-oauth 1 \
+	--api-version-role '/v1/dss' \
 	-vv
 
 # ----------- clean up -----------

@@ -16,7 +16,7 @@ def test_isa_huge_area(session, isa1_uuid):
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/v1/dss/identification_service_areas/{}'.format(isa1_uuid),
+      '/identification_service_areas/{}'.format(isa1_uuid),
       json={
           'extents': {
               'spatial_volume': {
@@ -59,7 +59,7 @@ def test_isa_empty_vertices(session, isa1_uuid):
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/v1/dss/identification_service_areas/{}'.format(isa1_uuid),
+      '/identification_service_areas/{}'.format(isa1_uuid),
       json={
           'extents': {
               'spatial_volume': {
@@ -83,7 +83,7 @@ def test_isa_missing_footprint(session, isa1_uuid):
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/v1/dss/identification_service_areas/{}'.format(isa1_uuid),
+      '/identification_service_areas/{}'.format(isa1_uuid),
       json={
           'extents': {
               'spatial_volume': {
@@ -105,7 +105,7 @@ def test_isa_missing_spatial_volume(session, isa1_uuid):
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/v1/dss/identification_service_areas/{}'.format(isa1_uuid),
+      '/identification_service_areas/{}'.format(isa1_uuid),
       json={
           'extents': {
               'time_start': time_start.strftime(common.DATE_FORMAT),
@@ -123,7 +123,7 @@ def test_isa_missing_extents(session, isa1_uuid):
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/v1/dss/identification_service_areas/{}'.format(isa1_uuid),
+      '/identification_service_areas/{}'.format(isa1_uuid),
       json={
           'flights_url': 'https://example.com/dss',
       })
@@ -136,7 +136,7 @@ def test_isa_start_time_in_past(session, isa1_uuid):
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/v1/dss/identification_service_areas/{}'.format(isa1_uuid),
+      '/identification_service_areas/{}'.format(isa1_uuid),
       json={
           'extents': {
               'spatial_volume': {
@@ -161,7 +161,7 @@ def test_isa_start_time_after_time_end(session, isa1_uuid):
   time_end = time_start - datetime.timedelta(minutes=5)
 
   resp = session.put(
-      '/v1/dss/identification_service_areas/{}'.format(isa1_uuid),
+      '/identification_service_areas/{}'.format(isa1_uuid),
       json={
           'extents': {
               'spatial_volume': {

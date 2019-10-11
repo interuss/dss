@@ -17,7 +17,7 @@ def test_create_isa(session, isa1_uuid):
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/v1/dss/identification_service_areas/{}'.format(isa1_uuid),
+      '/identification_service_areas/{}'.format(isa1_uuid),
       json={
           'extents': {
               'spatial_volume': {
@@ -40,7 +40,7 @@ def test_create_subscription(session, isa1_uuid, sub1_uuid):
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/v1/dss/subscriptions/{}'.format(sub1_uuid),
+      '/subscriptions/{}'.format(sub1_uuid),
       json={
           'extents': {
               'spatial_volume': {
@@ -67,13 +67,13 @@ def test_create_subscription(session, isa1_uuid, sub1_uuid):
 
 def test_modify_isa(session, isa1_uuid, sub1_uuid):
   # GET the ISA first to find its version.
-  resp = session.get('/v1/dss/identification_service_areas/{}'.format(isa1_uuid))
+  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 200
   version = resp.json()['service_area']['version']
 
   # Then modify it.
   resp = session.put(
-      '/v1/dss/identification_service_areas/{}/{}'.format(isa1_uuid, version),
+      '/identification_service_areas/{}/{}'.format(isa1_uuid, version),
       json={
           'extents': {
               'spatial_volume': {
@@ -102,12 +102,12 @@ def test_modify_isa(session, isa1_uuid, sub1_uuid):
 
 def test_delete_isa(session, isa1_uuid, sub1_uuid):
   # GET the ISA first to find its version.
-  resp = session.get('/v1/dss/identification_service_areas/{}'.format(isa1_uuid))
+  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 200
   version = resp.json()['service_area']['version']
 
   # Then delete it.
-  resp = session.delete('/v1/dss/identification_service_areas/{}/{}'.format(
+  resp = session.delete('/identification_service_areas/{}/{}'.format(
       isa1_uuid, version))
   assert resp.status_code == 200
 
@@ -125,7 +125,7 @@ def test_delete_isa(session, isa1_uuid, sub1_uuid):
 
 def test_delete_subscription(session, sub1_uuid):
   # GET the sub first to find its version.
-  resp = session.get('/v1/dss/subscriptions/{}'.format(sub1_uuid))
+  resp = session.get('/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 200
 
   data = resp.json()
@@ -133,5 +133,5 @@ def test_delete_subscription(session, sub1_uuid):
   assert data['subscription']['notification_index'] == 2
 
   # Then delete it.
-  resp = session.delete('/v1/dss/subscriptions/{}/{}'.format(sub1_uuid, version))
+  resp = session.delete('/subscriptions/{}/{}'.format(sub1_uuid, version))
   assert resp.status_code == 200

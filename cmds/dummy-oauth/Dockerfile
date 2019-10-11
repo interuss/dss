@@ -5,7 +5,7 @@ WORKDIR /app
 COPY go.mod .
 COPY go.sum .
 
-# Get dependancies - will also be cached if we won't change mod/sum
+# Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download
 
 RUN mkdir -p cmds/dummy-oauth
