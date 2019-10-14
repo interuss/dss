@@ -27,7 +27,7 @@ can join a cluster as long as it meets the requirements below.
 *   Every DSS node should run a minimum of 3 CockroachDB nodes, which ensures
     enough nodes are always available to support failovers and gradual rollouts.
 *   At least 3 CockroacbDB addresses must be shared with all participants.
-    *   If not using the recommended hostname prefix above, every cockroachDB
+    *   If not using the recommended hostname prefix above, every CockroachDB
         hostname must be shared with every participant.
 *   Every DSS node must supply and share their CockroachDB public certificate
 *   All CockroachDB nodes must be run in secure mode, by supplying the
