@@ -1,10 +1,24 @@
 # Deploying a DSS
 
+
+
+## Glossary
+
+*   DSS cluster - an entire synchronized DSS, typically operated by multiple
+    organizations
+*   DSS node - a single logical replica in a synchronized cluster.
+
+
 ## Preface
+
 
 This doc provides a well-lit path for deploying the DSS and its dependencies (
 namely CockroachDB) on Kubernetes. This is not a requirement, and a DSS node
-can join a cluster as long as it meets the following requirements:
+can join a cluster as long as it meets the requirements below.
+
+
+## CockroachDB requirements
+
 
 *   Every CockroachDB node must advertise a unique and routable address.
     *   It is preferred to use domain names with unique prefixes and homogenous
@@ -15,14 +29,19 @@ can join a cluster as long as it meets the following requirements:
     *   If not using the recommended hostname prefix above, every cockroachDB
         hostname must be shared with every participant.
 *   Every DSS node must supply and share their CockroachDB public certificate
-*   All CockroachDB nodes must be run in fully secure mode.
+*   All CockroachDB nodes must be run in secure mode, by supplying the
+    `--certs-dir` and `--ca-key` flags.
+    * Do not specify `--insecure`
 *   The ordering of the `--locality` flag keys must be the same across all
     CockroachDB nodes in the cluster.
+*   All sharing must currently happen out of band.
 
 Note: we are investigating the use of service mesh frameworks to alleviate some
 of this operational overhead.
 
+
 ## Prerequisites
+
 
 Download & install the following tools to your workstation:
 
@@ -40,7 +59,7 @@ Download & install the following tools to your workstation:
     *   Required if developing the DSS codebase.
 
 
-## Building Docker images
+## Docker images
 
 
 The grpc-backend and http-gateway are the 2 main binaries for processing DSS 
@@ -49,8 +68,9 @@ You can easily find out how to push to a docker registry through a quick search.
 All major cloud providers have a docker registry service, or you can set up your
 own.
 
-TODO(): The linux foundation should provide a default docker registry, with
-golden build versions.
+
+### Building Docker images
+
 
 Set the environment variable `DOCKER_URL` to your docker registry url endpoint.
 
@@ -60,9 +80,10 @@ with the current date and git commit hash.
 
 ## Deploying the DSS on Kubernetes
 
-This secion discusses deploying a kubernetes service, although you can deploy 
-a DSS node however you like as long as it meets the above requirements. You can
-do this on any supported [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/)
+This secion discusses deploying a Kubernetes service, although you can deploy 
+a DSS node however you like as long as it meets the CockroachDB requirements
+above. You can do this on any supported
+[cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/)
 or even on your own infrastructure.  Consult the Kubernetes documentation for
 which ever provider you choose.
 
@@ -71,7 +92,7 @@ which ever provider you choose.
 
 1.  Create your static IP addresses: 1 for each of your CockroachDB nodes (min
     of 3) and 1 for the HTTPS Gateway's Ingress.  How you do this depends on
-    your cloud provider. Note: if you're using Google Cloud the HTTPS gateway
+    your cloud provider. Note: if you're using Google Cloud the HTTPS Gateway
     Ingress needs to be created as a "Global" IP address.
 
 1.  Copy `values.yaml.template` to `values.yaml` and fill in the required fields
@@ -106,6 +127,7 @@ which ever provider you choose.
 
 ## Joining an existing CockroachDB cluster
 
+
 Follow the steps above for creating a new CockroachDB cluster, but with the
 following differences:
 
@@ -119,12 +141,16 @@ following differences:
 1.  You must run ./make-certs.py with the `--ca-cert-to-join` flag as described
     above to use the existing cluster's CA to sign your certificates.
 
+
 ## Using the CockroachDB web UI
+
 
 The CockroachDB web UI is not exposed publicly, but you can forward a port to
 your local machine using the kubectl command:
 
+
 ### Create a user account
+
 
 Pick a username and create an account:
 
@@ -132,7 +158,9 @@ Pick a username and create an account:
         ./cockroach --certs-dir ./cockroach-certs \
         user set $USERNAME --password
 
+
 ### Access the web UI
+
 
     kubectl -n dss-main port-forward cockroachdb-0 8080
 
