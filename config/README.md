@@ -24,7 +24,8 @@ can join a cluster as long as it meets the requirements below.
     *   It is preferred to use domain names with unique prefixes and homogenous
         suffixes, ie: 0.c.dss.interussplatform.com.
     *   This allows wildcard usage in the CRDB certificates.
-*   Every DSS node should run a minimum of 3 CockroachDB nodes.
+*   Every DSS node should run a minimum of 3 CockroachDB nodes, which ensures
+    enough nodes are always to support failovers and gradual rollouts.
 *   At least 3 CockroacbDB addresses must be shared with all participants.
     *   If not using the recommended hostname prefix above, every cockroachDB
         hostname must be shared with every participant.
