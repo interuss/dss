@@ -25,7 +25,7 @@ can join a cluster as long as it meets the requirements below.
         suffixes, ie: 0.c.dss.interussplatform.com.
     *   This allows wildcard usage in the CRDB certificates.
 *   Every DSS node should run a minimum of 3 CockroachDB nodes, which ensures
-    enough nodes are always to support failovers and gradual rollouts.
+    enough nodes are always available to support failovers and gradual rollouts.
 *   At least 3 CockroacbDB addresses must be shared with all participants.
     *   If not using the recommended hostname prefix above, every cockroachDB
         hostname must be shared with every participant.
@@ -89,7 +89,7 @@ or even on your own infrastructure.  Consult the Kubernetes documentation for
 which ever provider you choose.
 
 1.  Create a new Kubernetes cluster as mentioned above. We recommend a new
-    cluster for each logically separate DSS.
+    cluster for each DSS node.
 
 1.  Create your static IP addresses: 1 for each of your CockroachDB nodes (min
     of 3) and 1 for the HTTPS Gateway's Ingress.  How you do this depends on
@@ -105,7 +105,7 @@ which ever provider you choose.
         ./make-certs.py [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
             [--ca-cert-to-join <CA_CERT_FILE>]
 
-*   Only supply the following flags if joining a cluster:
+*   Make sure you supply the following flags if joining an existing cluster:
     *   --node-address needs to include all the hostnames and/or IP addresses 
         that other CockroachDB clusters will use to connect to your cluster.  It
         should include the addresses of your nodes as well.  Wildcard notation

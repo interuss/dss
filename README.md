@@ -32,13 +32,13 @@ backend talks directly to CockroachDB.
 
 ### CockroachDB (CRDB)
 
-Individual CockRoach DB instances hosting sharded data. More information about 
-CockRoachDB 
+Individual CockroachDB instances hosting sharded data. More information about 
+CockroachDB 
 [here](https://www.cockroachlabs.com/docs/stable/architecture/overview.html).
 
 ## Directories of Interest:
 *   `config/` has all of the configuration required to deploy a DSS instance
-    (typically to a kubernetes cluster). The README in that directory contains
+    (typically to a Kubernetes cluster). The README in that directory contains
     more information.
 *   `pkg/` contains all of the source code for the DSS. See the README in that
     directory for more information.
