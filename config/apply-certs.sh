@@ -1,14 +1,6 @@
 #!/bin/bash
 
 set -e
-
-if [[ "$#" -ne 1 ]]; then
-    echo "Usage: $0 NAMESPACE"
-    exit 1
-fi
-
-NAMESPACE="$1"
-
 set -x
 
 # Paths to directories in which to store certificates and generated YAML files.
@@ -16,6 +8,7 @@ DIR="$(pwd)"
 CLIENTS_CERTS_DIR="$DIR/generated/$NAMESPACE/client_certs_dir"
 NODE_CERTS_DIR="$DIR/generated/$NAMESPACE/node_certs_dir"
 JWT_PUBLIC_CERTS_DIR="$DIR/jwt-public-certs"
+NAMESPACE="dss-main"
 
 # Delete previous secrets in case they have changed.
 kubectl create namespace "$NAMESPACE" || true

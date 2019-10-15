@@ -10,9 +10,17 @@ import subprocess
 
 class CockroachCluster(object):
 
-    def __init__(self, namespace, ca_certs_dir=None):
-        self.namespace = namespace
-        self._ca_certs_dir = ca_certs_dir
+    def __init__(self, ca_cert_to_join=None):
+        self._ca_cert_to_join = ca_cert_to_join
+
+    @property
+    def ca_cert_to_join(self):
+        return self._ca_cert_to_join
+    
+    @property
+    def namespace(self):
+        return 'dss-main'
+    
 
     @property
     def directory(self):
@@ -23,9 +31,11 @@ class CockroachCluster(object):
         return os.path.join(self.ca_certs_dir, 'ca.crt')
 
     @property
+    def ca_key_file(self):
+        return os.path.join(self.ca_certs_dir, 'ca.key')
+
+    @property
     def ca_certs_dir(self):
-        if self._ca_certs_dir is not None:
-            return self._ca_certs_dir
         return os.path.join(self.directory, 'ca_certs_dir')
 
     @property
@@ -40,20 +50,16 @@ class CockroachCluster(object):
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Creates certificates for a new Cockroachdb cluster')
-    parser.add_argument('namespace', metavar='NAMESPACE')
     parser.add_argument('--node-address', metavar='ADDRESS', nargs='*',
         default=[], help='extra addresses to add to the node certificate')
-    parser.add_argument('--ca-certs-dir', metavar='FILENAME',
-        help='directory containing an existing CA cert and private key of a '
-        'cluster you want to join. All nodes in the cluster must be signed by '
-        'the same CA. If this flag is omitted a new CA will be created')
-
+    parser.add_argument('--ca-cert-to-join', metavar='FILENAME',
+        help='file containing an existing CA cert of a cluster to join.')
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    cr = CockroachCluster(args.namespace, args.ca_certs_dir)
+    cr = CockroachCluster(args.ca_cert_to_join)
 
     # Create the generated directories.
     try:
@@ -65,19 +71,26 @@ def main():
     except OSError:
         pass
 
-    if not args.ca_certs_dir:
-        # Create a new CA.
-        # Delete and recreate the ca_certs_dir.
-        shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
-        os.mkdir(cr.ca_certs_dir)
+    # Create a new CA.
+    # Delete and recreate the ca_certs_dir.
+    shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
+    os.mkdir(cr.ca_certs_dir)
 
-        # Create the CA.
-        subprocess.check_call([
-            'cockroach', 'cert', 'create-ca',
-            '--certs-dir', cr.ca_certs_dir,
-            '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')])
+    # Create the CA.
+    subprocess.check_call([
+        'cockroach', 'cert', 'create-ca',
+        '--certs-dir', cr.ca_certs_dir,
+        '--ca-key', cr.ca_key_file])
 
-        print('Created new CA certificate in {}'.format(cr.ca_certs_dir))
+    # We slightly abuse the rotate certs feature:
+    # https://www.cockroachlabs.com/docs/stable/rotate-certificates.html
+    if cr.ca_cert_to_join:
+        with open(cr.ca_certs_file, 'a') as new_certs_fh:
+            with open(cr.ca_cert_to_join) as join_ca_cert_fh:
+                new_certs_fh.write(join_ca_cert_fh.read())
+                new_certs_fh.write('\n')
+
+    print('Created new CA certificate in {}'.format(cr.ca_certs_dir))
 
     # Build node and client certs.
     # Delete and recreate the directories.
@@ -91,7 +104,7 @@ def main():
     subprocess.check_call([
         'cockroach', 'cert', 'create-client', 'root',
         '--certs-dir', cr.client_certs_dir,
-        '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')])
+        '--ca-key', cr.ca_key_file])
 
     print('Created new client certificate in {}'.format(cr.client_certs_dir))
 
@@ -112,7 +125,7 @@ def main():
     subprocess.check_call([
         'cockroach', 'cert', 'create-node',
         '--certs-dir', cr.node_certs_dir,
-        '--ca-key', os.path.join(cr.ca_certs_dir, 'ca.key')]
+        '--ca-key', cr.ca_key_file]
         + node_addresses)
 
     print('Created new node certificate in {}'.format(cr.node_certs_dir))
