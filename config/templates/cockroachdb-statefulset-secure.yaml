@@ -220,7 +220,7 @@ spec:
             --logtostderr
             --certs-dir "/cockroach/cockroach-certs"
             --advertise-addr "$(printenv EXTERNAL_HOSTNAME_FOR_$HOSTNAME)"
-            --locality-advertise-addr "zone={{ .Values.Namespace }}@$(hostname -f)"
+            --locality-advertise-addr "zone={{ .Values.Locality }}@$(hostname -f)"
             --http-addr 0.0.0.0
             --join "{{ range $index := list 0 1 2 -}}
                 {{- if ne $index 0 }},{{ end -}}
@@ -229,7 +229,7 @@ spec:
               {{- if .Values.JoinExisting -}}
                 ,{{ join "," .Values.JoinExisting -}}
               {{ end }}"
-            --locality "zone={{ .Values.Namespace }}"
+            --locality "zone={{ .Values.Locality }}"
             --cache 25%
             --max-sql-memory 25%
       # No pre-stop hook is required, a SIGTERM plus some time is all that's

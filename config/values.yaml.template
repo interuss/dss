@@ -1,3 +1,6 @@
+# Used to determine replica boundaries in CockroachDB. Each organization must
+# use a different locality. It is recommended to use your companies name.
+Locality: <locality> 
 # External IP addresses.  You need to allocate 5 static IPs (how you do this
 # depends on your cloud provider) and list 4 of them here.  The 5th is referred
 # to by name (FrontendIPName) below.
