@@ -1,3 +1,5 @@
+MAX_SUB_PER_AREA = 10
+
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 VERTICES = [
@@ -21,3 +23,25 @@ VERTICES = [
 
 GEO_POLYGON_STRING = ','.join(
     '{},{}'.format(x['lat'], x['lng']) for x in VERTICES)
+
+HUGE_VERTICES = [
+    {
+        'lat': 130,
+        'lng': -23
+    },
+    {
+        'lat': 130,
+        'lng': -24
+    },
+    {
+        'lat': 132,
+        'lng': -24
+    },
+    {
+        'lat': 132,
+        'lng': -23
+    },
+]
+
+HUGE_GEO_POLYGON_STRING = ','.join(
+    '{},{}'.format(x['lat'], x['lng']) for x in HUGE_VERTICES)

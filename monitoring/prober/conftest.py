@@ -16,7 +16,7 @@ SCOPES = [
 class AuthAdapter(requests.adapters.HTTPAdapter):
   """Base class for requests adapters that add JWTs to requests."""
 
-  def _issue_token(self, intended_audience):
+  def issue_token(self, intended_audience, scopes):
     """Subclasses must return a bearer token for the given audience."""
 
     raise NotImplementedError()
@@ -24,7 +24,7 @@ class AuthAdapter(requests.adapters.HTTPAdapter):
   def add_headers(self, request, **kwargs):
     intended_audience = urllib.parse.urlparse(request.url).hostname
     if intended_audience not in self._tokens:
-      self._tokens[intended_audience] = self._issue_token(intended_audience)
+      self._tokens[intended_audience] = self.issue_token(intended_audience, SCOPES)
     token = self._tokens[intended_audience]
     request.headers['Authorization'] = 'Bearer ' + token
 
@@ -41,9 +41,9 @@ class DummyOAuthServerAdapter(AuthAdapter):
     self._oauth_session = oauth_session
     self._tokens = {}
 
-  def _issue_token(self, intended_audience):
+  def issue_token(self, intended_audience, scopes):
     url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
-        self._oauth_token_endpoint, urllib.parse.quote(' '.join(SCOPES)),
+        self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
         urllib.parse.quote(intended_audience))
     response = self._oauth_session.post(url).json()
     return response['access_token']
@@ -62,9 +62,9 @@ class ServiceAccountAuthAdapter(AuthAdapter):
     self._oauth_session = oauth_session
     self._tokens = {}
 
-  def _issue_token(self, intended_audience):
+  def issue_token(self, intended_audience, scopes):
     url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
-        self._oauth_token_endpoint, urllib.parse.quote(' '.join(SCOPES)),
+        self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
         urllib.parse.quote(intended_audience))
     response = self._oauth_session.post(url).json()
     return response['access_token']
@@ -82,8 +82,7 @@ class UsernamePasswordAuthAdapter(AuthAdapter):
     self._client_id = client_id
     self._tokens = {}
 
-  def _issue_token(self, intended_audience):
-    scopes = copy.copy(SCOPES)
+  def issue_token(self, intended_audience, scopes):
     scopes.append('aud:{}'.format(intended_audience))
     response = requests.post(self._oauth_token_endpoint, data={
       'grant_type': "password",
@@ -109,6 +108,10 @@ class PrefixURLSession(requests.Session):
       request.url = self._prefix_url + self._version_role_prefix + request.url
     return super().prepare_request(request, **kwargs)
 
+  def issue_token(self, scopes):
+    adapter = self.get_adapter(self._prefix_url)
+    intended_audience = urllib.parse.urlparse(self._prefix_url).hostname
+    return adapter.issue_token(intended_audience, scopes)
 
 def pytest_addoption(parser):
   parser.addoption('--api-version-role')
@@ -155,12 +158,37 @@ def session(pytestconfig):
   s.mount('https://', auth_adapter)
   return s
 
+@pytest.fixture(scope='function')
+def rogue_session(pytestconfig):
+  auth_adapter = requests.Session()
+  dss_endpoint = pytestconfig.getoption('dss_endpoint')
+  api_version_role = pytestconfig.getoption('api_version_role', '')
+  if dss_endpoint is None:
+    raise ValueError('Missing required --dss-endpoint')
+
+  s = PrefixURLSession(dss_endpoint, api_version_role)
+  s.mount('http://', auth_adapter)
+  s.mount('https://', auth_adapter)
+  return s
+
 
 @pytest.fixture(scope='module')
 def isa1_uuid():
   return str(uuid.uuid4())
 
 
+@pytest.fixture(scope='function')
+def isa2_uuid():
+  # short lived as this uuid used to test failure cases
+  return str(uuid.uuid4())
+
+
 @pytest.fixture(scope='module')
 def sub1_uuid():
+  return str(uuid.uuid4())
+
+
+@pytest.fixture(scope='function')
+def sub2_uuid():
+  # short lived as this uuid used to test failure cases
   return str(uuid.uuid4())
