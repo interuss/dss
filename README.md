@@ -9,31 +9,27 @@ operator and consumer privacy. The system is focused on facilitating
 communication amongst actively operating USSs with no details about UAS
 operations stored or processed in the DSS.
 
-
 ## Architecture
-
 
 See the [API specification here](https://tiny.cc/dssapi_rid)
 
 ### HTTP Frontend
 
-Serves as an Https gateway to the business logic, translating between Http Request
-and gRPC to allow users to communicate to the DSS via simple Https calls. This
+Serves as an HTTP gateway to the business logic, translating between HTTP Request
+and gRPC to allow users to communicate to the DSS via simple HTTP calls. This
 code is currently generated via
 [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway), and does not do
 much other than translation.
 
 ### gRPC Backend
 
-
 Component responsible for all the business logic as well as authentication. This
 backend talks directly to CockroachDB.
 
-
 ### CockroachDB (CRDB)
 
-Individual CockroachDB instances hosting sharded data. More information about 
-CockroachDB 
+Individual CockroachDB instances hosting sharded data. More information about
+CockroachDB
 [here](https://www.cockroachlabs.com/docs/stable/architecture/overview.html).
 
 ## Directories of Interest:
@@ -67,8 +63,8 @@ CockroachDB
     about the entire cluster through a gossip protocol.
 *   Each CRDB node must be uniquely addressable and routable.
     *   Because of this, we expect each node to have it's own static IP and/or
-    publicly resolvable hostname. In the future, we likely want to explore the
-    use of service mesh frameworks.
+        publicly resolvable hostname. In the future, we likely want to explore
+        the use of service mesh frameworks.
 *   CRDB splits up data based on the locality string. Data replication strategy
     is a database variable. The CRDB nodes will traverse the key,values of the
     locality flag to determine how to divy up the replicas. This means there
