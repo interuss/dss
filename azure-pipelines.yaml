@@ -18,12 +18,6 @@ jobs:
       - task: Docker@2
         inputs:
           command: build
-          Dockerfile: cmds/grpc-backend/Dockerfile
-          buildContext: "."
-      - task: Docker@2
-        inputs:
-          command: build
-          Dockerfile: cmds/http-gateway/Dockerfile
           buildContext: "."
   - job: "build_n_test"
     strategy:
