@@ -29,8 +29,12 @@ pkg/dssproto/dss.pb.gw.go: pkg/dssproto/dss.proto
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssproto/dss.proto
 
 pkg/dssproto/dss.proto: install-proto-generation
-	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto -spec api.yaml -annotate -out pkg/dssproto/dss.proto -tag dss -indent 2 -package dssproto
-
+	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
+		-spec interfaces/uastech/standards/remoteid/canonical.yaml -annotate \
+		-out pkg/dssproto/dss.proto \
+		-tag dss \
+		-indent 2 \
+		-package dssproto
 
 .PHONY: install-proto-generation
 install-proto-generation:

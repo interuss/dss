@@ -211,13 +211,18 @@ message LatLngPoint {
 
 // Parameters of a message informing of new full information for an Identification Service Area.  Pushed (by a client, not the DSS) directly to clients with subscriptions when another client makes a change to airspace within a cell with a subscription.
 message PutIdentificationServiceAreaNotificationParameters {
+  // The new or updated extents of the Identification Service Area.
+  // 
+  // Omitted if Identification Service Area was deleted.
+  Volume4D extents = 1;
+
   // Identification Service Area that the notifying client changed or created.
   // 
   // If this field is populated, the Identification Service Area was created or updated.  If this field is not populated, the Identification Service Area was deleted.
-  IdentificationServiceArea service_area = 1;
+  IdentificationServiceArea service_area = 2;
 
   // Subscription(s) prompting this notification.
-  repeated SubscriptionState subscriptions = 2;
+  repeated SubscriptionState subscriptions = 3;
 }
 
 // Response to a request to create or update a reference to an Identification Service Area in the DSS.
@@ -352,7 +357,7 @@ message RIDFlight {
   // Generic type of aircraft.
   RIDAircraftType aircraft_type = 1;
 
-  // The most up-to-date state of the aircraft.  Required unless `volumes` is specified.
+  // The most up-to-date state of the aircraft.  Required when the aircraft is currently in the requested area unless `volumes` is specified.
   // 
   // If current data is not being received from the UAS by the Service Provider, the lack of change in this field is sufficient to indicate that current data is not being received.
   RIDAircraftState current_state = 2;
@@ -513,7 +518,7 @@ message Volume4D {
   google.protobuf.Timestamp time_start = 3;
 }
 
-service DiscoveryAndSynchronizationService {
+service DiscoveryAndSynchronizationServiceUSSDSSUSSUSSService {
   // /dss/identification_service_areas/{id}/{version}
   // 
   // Delete an Identification Service Area.  USSs should not delete Identification Service Areas before the end of the last managed flight plus the retention period.
