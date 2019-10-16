@@ -1,3 +1,4 @@
+
 """Subscription input validation tests:
   - check we can't create too many SUBS (common.MAX_SUBS_PER_AREA)
   - check we can't create the SUB with a huge area
@@ -11,65 +12,75 @@ import uuid
 
 
 def test_create_sub_empty_vertices(session, sub2_uuid):
-    time_start = datetime.datetime.utcnow()
-    time_end = time_start + datetime.timedelta(seconds=10)
+  time_start = datetime.datetime.utcnow()
+  time_end = time_start + datetime.timedelta(seconds=10)
 
-    resp = session.put(
-        "/subscriptions/{}".format(sub2_uuid),
-        json={
-            "extents": {
-                "spatial_volume": {
-                    "footprint": {"vertices": []},
-                    "altitude_lo": 20,
-                    "altitude_hi": 400,
-                },
-                "time_start": time_start.strftime(common.DATE_FORMAT),
-                "time_end": time_end.strftime(common.DATE_FORMAT),
-            },
-            "callbacks": {"identification_service_area_url": "https://example.com/foo"},
-        },
-    )
-    assert resp.status_code == 400
+  resp = session.put(
+      '/subscriptions/{}'.format(sub2_uuid),
+      json={
+          'extents': {
+              'spatial_volume': {
+                  'footprint': {
+                      'vertices': [],
+                  },
+                  'altitude_lo': 20,
+                  'altitude_hi': 400,
+              },
+              'time_start': time_start.strftime(common.DATE_FORMAT),
+              'time_end': time_end.strftime(common.DATE_FORMAT),
+          },
+          'callbacks': {
+              'identification_service_area_url': 'https://example.com/foo'
+          },
+      })
+  assert resp.status_code == 400
 
 
 def test_create_sub_missing_footprint(session, sub2_uuid):
-    time_start = datetime.datetime.utcnow()
-    time_end = time_start + datetime.timedelta(seconds=10)
+  time_start = datetime.datetime.utcnow()
+  time_end = time_start + datetime.timedelta(seconds=10)
 
-    resp = session.put(
-        "/subscriptions/{}".format(sub2_uuid),
-        json={
-            "extents": {
-                "spatial_volume": {"altitude_lo": 20, "altitude_hi": 400},
-                "time_start": time_start.strftime(common.DATE_FORMAT),
-                "time_end": time_end.strftime(common.DATE_FORMAT),
-            },
-            "callbacks": {"identification_service_area_url": "https://example.com/foo"},
-        },
-    )
-    assert resp.status_code == 400
+  resp = session.put(
+      '/subscriptions/{}'.format(sub2_uuid),
+      json={
+          'extents': {
+              'spatial_volume': {
+                  'altitude_lo': 20,
+                  'altitude_hi': 400,
+              },
+              'time_start': time_start.strftime(common.DATE_FORMAT),
+              'time_end': time_end.strftime(common.DATE_FORMAT),
+          },
+          'callbacks': {
+              'identification_service_area_url': 'https://example.com/foo'
+          },
+      })
+  assert resp.status_code == 400
 
 
 def test_create_sub_with_huge_area(session, sub2_uuid):
-    time_start = datetime.datetime.utcnow()
-    time_end = time_start + datetime.timedelta(seconds=10)
+  time_start = datetime.datetime.utcnow()
+  time_end = time_start + datetime.timedelta(seconds=10)
 
-    resp = session.put(
-        "/subscriptions/{}".format(sub2_uuid),
-        json={
-            "extents": {
-                "spatial_volume": {
-                    "footprint": {"vertices": common.HUGE_VERTICES},
-                    "altitude_lo": 20,
-                    "altitude_hi": 400,
-                },
-                "time_start": time_start.strftime(common.DATE_FORMAT),
-                "time_end": time_end.strftime(common.DATE_FORMAT),
-            },
-            "callbacks": {"identification_service_area_url": "https://example.com/foo"},
-        },
-    )
-    assert resp.status_code == 400
+  resp = session.put(
+      '/subscriptions/{}'.format(sub2_uuid),
+      json={
+          'extents': {
+              'spatial_volume': {
+                  'footprint': {
+                      'vertices': common.HUGE_VERTICES,
+                  },
+                  'altitude_lo': 20,
+                  'altitude_hi': 400,
+              },
+              'time_start': time_start.strftime(common.DATE_FORMAT),
+              'time_end': time_end.strftime(common.DATE_FORMAT),
+          },
+          'callbacks': {
+              'identification_service_area_url': 'https://example.com/foo'
+          },
+      })
+  assert resp.status_code == 400
 
 
 def test_create_too_many_subs(session):
@@ -108,7 +119,6 @@ def test_create_too_many_subs(session):
         )
 
     assert all(all_resp)
-
 
 def test_create_sub_with_too_long_end_time(session, sub2_uuid):
     time_start = datetime.datetime.utcnow()
