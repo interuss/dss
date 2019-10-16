@@ -12,8 +12,6 @@ set -e -x
 VERSION="$(date -u +%Y-%m-%d)-$(git rev-parse --short HEAD)"
 
 cd "${BASEDIR}"
-docker build -f cmds/http-gateway/Dockerfile  . -t $DOCKER_URL/http-gateway:$VERSION
-docker build -f cmds/grpc-backend/Dockerfile  . -t $DOCKER_URL/grpc-backend:$VERSION
+docker build . -t $DOCKER_URL/dss:$VERSION
 
-docker push $DOCKER_URL/http-gateway:$VERSION
-docker push $DOCKER_URL/grpc-backend:$VERSION
+docker push $DOCKER_URL/dss:$VERSION

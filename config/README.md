@@ -83,6 +83,11 @@ with the current date and git commit hash.
 
 ## Deploying the DSS on Kubernetes
 
+Note: All DSS instances in the same cluster must point their ntpd at the
+same NTP Servers. [CockroachDB recommends](https://www.cockroachlabs.com/docs/stable/recommended-production-settings.html#considerations)
+using [Google's Public NTP](https://developers.google.com/time/) when
+running in a multi-cloud environment.
+
 This secion discusses deploying a Kubernetes service, although you can deploy 
 a DSS instance however you like as long as it meets the CockroachDB requirements
 above. You can do this on any supported
@@ -107,13 +112,14 @@ which ever provider you choose.
         ./make-certs.py [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
             [--ca-cert-to-join <CA_CERT_FILE>]
 
-*   Supply the following flags only if joining an existing CockroachDB cluster:
-    *   --node-address needs to include all the hostnames and/or IP addresses 
-        that other CockroachDB clusters will use to connect to your cluster.  It
-        should include the addresses of your nodes as well.  Wildcard notation
-        is supported, so you can use `*.<subdomain>.<domain>.com>`.  The
-        entries should be separated by spaces.
-    *   If you are joining existing clusters you need their CA public cert,
+    1.  If you want other clusters to be able to connect to your cluster
+        (including if you are joining an existing cluster) then `--node-address`
+        needs to include all the hostnames and/or IP addresses that other
+        CockroachDB clusters will use to connect to your cluster. Wildcard
+        notation is supported, so you can use `*.<subdomain>.<domain>.com>`.
+        The entries should be separated by spaces. These entries should
+        correspond to the entries in values.yaml Hostnames.DBNodes.
+    1.  If you are joining existing clusters you need their CA public cert,
         which is concatenated with yours.  Set `--ca-cert-to-join` to a `ca.crt`
         file. Reach out to existing operators to request their public cert and
         node hostnames.
@@ -138,9 +144,13 @@ following differences:
     the data directories on you cluster, and prevent you from joining an
     existing cluster.
 1.  In values.yaml, add the host:ports of existing CockroachDB nodes to the
-    JoinExisting array.  You can use the loadbalanced hostnames or IP addresses
-    of other clusters (the DBBalanced hostname/IP), or you can specify each node
-    individually.
+    JoinExisting array.  You should supply a minimum of 3 seed nodes to every 
+    CockroachDB node. These 3 nodes should be the same for every node (ie: every
+    node points to node 0, 1, and 2).  For external clusters you should point to
+    a minimum of 3, or you can use the loadbalanced hostnames or IP addresses
+    of other clusters (the DBBalanced hostname/IP). You should do this for every
+    cluster, including newly joined clusters. See CockroachDB's note on the 
+    [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
 1.  You must run ./make-certs.py with the `--ca-cert-to-join` flag as described
     above to use the existing cluster's CA to sign your certificates.
 
