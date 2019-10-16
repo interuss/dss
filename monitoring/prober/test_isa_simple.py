@@ -13,143 +13,156 @@ import common
 
 
 def test_isa_does_not_exist(session, isa1_uuid):
-  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
-  assert resp.status_code == 404
-  assert resp.json()['message'] == 'resource not found: {}'.format(isa1_uuid)
+    resp = session.get("/identification_service_areas/{}".format(isa1_uuid))
+    assert resp.status_code == 404
+    assert resp.json()["message"] == "resource not found: {}".format(isa1_uuid)
 
 
 def test_create_isa(session, isa1_uuid):
-  time_start = datetime.datetime.utcnow()
-  time_end = time_start + datetime.timedelta(minutes=60)
+    time_start = datetime.datetime.utcnow()
+    time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = session.put(
-      '/identification_service_areas/{}'.format(isa1_uuid),
-      json={
-          'extents': {
-              'spatial_volume': {
-                  'footprint': {
-                      'vertices': common.VERTICES,
-                  },
-                  'altitude_lo': 20,
-                  'altitude_hi': 400,
-              },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
-          },
-          'flights_url': 'https://example.com/dss',
-      })
-  assert resp.status_code == 200
+    resp = session.put(
+        "/identification_service_areas/{}".format(isa1_uuid),
+        json={
+            "extents": {
+                "spatial_volume": {
+                    "footprint": {"vertices": common.VERTICES},
+                    "altitude_lo": 20,
+                    "altitude_hi": 400,
+                },
+                "time_start": time_start.strftime(common.DATE_FORMAT),
+                "time_end": time_end.strftime(common.DATE_FORMAT),
+            },
+            "flights_url": "https://example.com/dss",
+        },
+    )
+    assert resp.status_code == 200
 
-  data = resp.json()
-  assert data['service_area']['id'] == isa1_uuid
-  assert data['service_area']['flights_url'] == 'https://example.com/dss'
-  assert data['service_area']['time_start'] == time_start.strftime(
-      common.DATE_FORMAT)
-  assert data['service_area']['time_end'] == time_end.strftime(
-      common.DATE_FORMAT)
-  assert re.match(r'[a-z0-9]{10,}$', data['service_area']['version'])
-  assert 'subscribers' in data
+    data = resp.json()
+    assert data["service_area"]["id"] == isa1_uuid
+    assert data["service_area"]["flights_url"] == "https://example.com/dss"
+    assert data["service_area"]["time_start"] == time_start.strftime(common.DATE_FORMAT)
+    assert data["service_area"]["time_end"] == time_end.strftime(common.DATE_FORMAT)
+    assert re.match(r"[a-z0-9]{10,}$", data["service_area"]["version"])
+    assert "subscribers" in data
 
 
 def test_get_isa_by_id(session, isa1_uuid):
-  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
-  assert resp.status_code == 200
+    resp = session.get("/identification_service_areas/{}".format(isa1_uuid))
+    assert resp.status_code == 200
 
-  data = resp.json()
-  assert data['service_area']['id'] == isa1_uuid
-  assert data['service_area']['flights_url'] == 'https://example.com/dss'
+    data = resp.json()
+    assert data["service_area"]["id"] == isa1_uuid
+    assert data["service_area"]["flights_url"] == "https://example.com/dss"
 
 
 def test_get_isa_by_search_missing_params(session):
-  resp = session.get('/identification_service_areas')
-  assert resp.status_code == 400
+    resp = session.get("/identification_service_areas")
+    assert resp.status_code == 400
 
 
 def test_get_isa_by_search(session, isa1_uuid):
-  resp = session.get('/identification_service_areas?area={}'.format(
-      common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
-  assert isa1_uuid in [x['id'] for x in resp.json()['service_areas']]
+    resp = session.get(
+        "/identification_service_areas?area={}".format(common.GEO_POLYGON_STRING)
+    )
+    assert resp.status_code == 200
+    assert isa1_uuid in [x["id"] for x in resp.json()["service_areas"]]
 
 
 def test_get_isa_by_search_earliest_time_included(session, isa1_uuid):
-  earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=59)
-  resp = session.get('/identification_service_areas'
-                     '?area={}&earliest_time={}'.format(
-                         common.GEO_POLYGON_STRING,
-                         earliest_time.strftime(common.DATE_FORMAT)))
-  assert resp.status_code == 200
-  assert isa1_uuid in [x['id'] for x in resp.json()['service_areas']]
+    earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=59)
+    resp = session.get(
+        "/identification_service_areas"
+        "?area={}&earliest_time={}".format(
+            common.GEO_POLYGON_STRING, earliest_time.strftime(common.DATE_FORMAT)
+        )
+    )
+    assert resp.status_code == 200
+    assert isa1_uuid in [x["id"] for x in resp.json()["service_areas"]]
 
 
 def test_get_isa_by_search_earliest_time_excluded(session, isa1_uuid):
-  earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=61)
-  resp = session.get('/identification_service_areas'
-                     '?area={}&earliest_time={}'.format(
-                         common.GEO_POLYGON_STRING,
-                         earliest_time.strftime(common.DATE_FORMAT)))
-  assert resp.status_code == 200
-  assert isa1_uuid not in [x['id'] for x in resp.json()['service_areas']]
+    earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=61)
+    resp = session.get(
+        "/identification_service_areas"
+        "?area={}&earliest_time={}".format(
+            common.GEO_POLYGON_STRING, earliest_time.strftime(common.DATE_FORMAT)
+        )
+    )
+    assert resp.status_code == 200
+    assert isa1_uuid not in [x["id"] for x in resp.json()["service_areas"]]
 
 
 def test_get_isa_by_search_latest_time_included(session, isa1_uuid):
-  latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
-  resp = session.get('/identification_service_areas'
-                     '?area={}&latest_time={}'.format(
-                         common.GEO_POLYGON_STRING,
-                         latest_time.strftime(common.DATE_FORMAT)))
-  assert resp.status_code == 200
-  assert isa1_uuid in [x['id'] for x in resp.json()['service_areas']]
+    latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
+    resp = session.get(
+        "/identification_service_areas"
+        "?area={}&latest_time={}".format(
+            common.GEO_POLYGON_STRING, latest_time.strftime(common.DATE_FORMAT)
+        )
+    )
+    assert resp.status_code == 200
+    assert isa1_uuid in [x["id"] for x in resp.json()["service_areas"]]
 
 
 def test_get_isa_by_search_latest_time_excluded(session, isa1_uuid):
-  latest_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
-  resp = session.get('/identification_service_areas'
-                     '?area={}&latest_time={}'.format(
-                         common.GEO_POLYGON_STRING,
-                         latest_time.strftime(common.DATE_FORMAT)))
-  assert resp.status_code == 200
-  assert isa1_uuid not in [x['id'] for x in resp.json()['service_areas']]
+    latest_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
+    resp = session.get(
+        "/identification_service_areas"
+        "?area={}&latest_time={}".format(
+            common.GEO_POLYGON_STRING, latest_time.strftime(common.DATE_FORMAT)
+        )
+    )
+    assert resp.status_code == 200
+    assert isa1_uuid not in [x["id"] for x in resp.json()["service_areas"]]
 
 
 def test_get_isa_by_search_area_only(session, isa1_uuid):
-  resp = session.get('/identification_service_areas'
-                     '?area={}'.format(common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
-  assert isa1_uuid in [x['id'] for x in resp.json()['service_areas']]
+    resp = session.get(
+        "/identification_service_areas" "?area={}".format(common.GEO_POLYGON_STRING)
+    )
+    assert resp.status_code == 200
+    assert isa1_uuid in [x["id"] for x in resp.json()["service_areas"]]
 
 
 def test_get_isa_by_search_huge_area(session, isa1_uuid):
-  resp = session.get('/identification_service_areas'
-                     '?area={}'.format(common.HUGE_GEO_POLYGON_STRING))
-  assert resp.status_code == 413
+    resp = session.get(
+        "/identification_service_areas"
+        "?area={}".format(common.HUGE_GEO_POLYGON_STRING)
+    )
+    assert resp.status_code == 413
 
 
 def test_delete_isa_wrong_version(session, isa1_uuid):
-  resp = session.delete('/identification_service_areas/{}/fake_version'.format(isa1_uuid))
-  assert resp.status_code == 400
+    resp = session.delete(
+        "/identification_service_areas/{}/fake_version".format(isa1_uuid)
+    )
+    assert resp.status_code == 400
 
 
 def test_delete_isa(session, isa1_uuid):
-  # GET the ISA first to find its version.
-  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
-  assert resp.status_code == 200
-  version = resp.json()['service_area']['version']
+    # GET the ISA first to find its version.
+    resp = session.get("/identification_service_areas/{}".format(isa1_uuid))
+    assert resp.status_code == 200
+    version = resp.json()["service_area"]["version"]
 
-  # Then delete it.
-  resp = session.delete('/identification_service_areas/{}/{}'.format(
-      isa1_uuid, version))
-  assert resp.status_code == 200
+    # Then delete it.
+    resp = session.delete(
+        "/identification_service_areas/{}/{}".format(isa1_uuid, version)
+    )
+    assert resp.status_code == 200
 
 
 def test_get_deleted_isa_by_id(session, isa1_uuid):
-  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
-  assert resp.status_code == 404
+    resp = session.get("/identification_service_areas/{}".format(isa1_uuid))
+    assert resp.status_code == 404
 
 
 def test_get_deleted_isa_by_search(session, isa1_uuid):
-  resp = session.get('/identification_service_areas?area={}'.format(
-      common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
-  assert isa1_uuid not in [x['id'] for x in resp.json()['service_areas']]
+    resp = session.get(
+        "/identification_service_areas?area={}".format(common.GEO_POLYGON_STRING)
+    )
+    assert resp.status_code == 200
+    assert isa1_uuid not in [x["id"] for x in resp.json()["service_areas"]]
 
