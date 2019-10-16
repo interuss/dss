@@ -8,15 +8,12 @@ COPY go.sum .
 # Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download
 
-RUN mkdir pkg
+COPY cmds cmds
 COPY pkg pkg
-
-RUN mkdir -p cmds/http-gateway
-COPY cmds/http-gateway cmds/http-gateway
 
 RUN go install ./...
 
 FROM alpine:latest
 RUN apk update && apk add ca-certificates
 COPY --from=build /go/bin/http-gateway /usr/bin
-ENTRYPOINT ["/usr/bin/http-gateway"]
+COPY --from=build /go/bin/grpc-backend /usr/bin
