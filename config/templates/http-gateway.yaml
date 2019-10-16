@@ -39,6 +39,7 @@ spec:
         - containerPort: {{ .Values.HttpPort }}
           name: http
         args:
+          - http-gateway
           - -grpc-backend=grpc-backend.{{ .Values.Namespace }}:{{ .Values.GrpcPort }}
           - -addr=:{{ .Values.HttpPort }}
         readinessProbe:

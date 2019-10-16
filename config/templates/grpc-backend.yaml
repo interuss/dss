@@ -52,6 +52,7 @@ spec:
         - name: public-certs
           mountPath: /public-certs
         args:
+          - grpc-backend
           - -addr=:{{ .Values.GrpcPort }}
           - -cockroach_host=cockroachdb-balanced.{{ .Values.Namespace }}
           - -cockroach_port={{ .Values.CockroachPort }}
