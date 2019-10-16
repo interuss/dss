@@ -1,5 +1,4 @@
-# USS to USS Communication and Synchronization Wrapper
-
+# USS to USS Communication and Synchronization Wrapper [![Build Status](https://dev.azure.com/astm/dss/_apis/build/status/interuss.dss?branchName=master)](https://dev.azure.com/astm/dss/_build/latest?definitionId=2&branchName=master)
 This repository contains a simple and open API used for separate UAS Service
 Suppliers (USS) to communicate during UAS operations, known as a Discovery and
 Synchronization Service (DSS) as described in the ASTM remote ID standard.
