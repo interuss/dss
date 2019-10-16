@@ -30,7 +30,7 @@ docker run -d --rm --name dss-crdb-for-debugging \
 sleep 5
 echo " -------------- BOOTSTRAP ----------------- "
 echo "Building local container for testing"
-docker build -q --rm . -t local-image
+docker build -q --rm . -t local-interuss-dss-image
 
 echo " ------------ GRPC BACKEND ---------------- "
 echo "Cleaning up any pre-existing grpc-backend container"
@@ -40,7 +40,7 @@ echo "Starting grpc backend on :8081"
 docker run -d --rm --name grpc-backend-for-testing \
         --link dss-crdb-for-debugging:crdb \
 	-v $(pwd)/config/test-certs/auth2.pem:/app/test.crt \
-	local-image \
+	local-interuss-dss-image \
 	grpc-backend \
 	--cockroach_host crdb \
 	-public_key_file /app/test.crt \
@@ -57,7 +57,7 @@ docker stop http-gateway-for-testing || echo "No http gateway to clean up"
 echo "Starting http-gateway on :8082"
 docker run -d --rm --name http-gateway-for-testing -p 8082:8082 \
 	--link grpc-backend-for-testing:grpc \
-	local-image \
+	local-interuss-dss-image \
 	http-gateway \
 	-grpc-backend grpc:8081 \
 	-addr :8082
