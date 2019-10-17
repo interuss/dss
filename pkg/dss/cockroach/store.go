@@ -85,6 +85,29 @@ func (s *Store) Close() error {
 // TODO: We should handle database migrations properly, but bootstrap both us
 // *and* the database with this manual approach here.
 func (s *Store) Bootstrap(ctx context.Context) error {
+	/*
+			The following tables correspond to the ASTM Remote ID standard A2.5.2.3:
+			a) Cell ID:
+					cells_identification_service_areas.cell_id
+			 		cells_subscriptions.cell_id
+			b) Subscription
+				 	i. subscriptions.id
+				 ii. subscriptions.owner
+				iii. subscriptions.url
+				 iv. subscriptions.starts_at and subscriptions.ends_at
+				  v. the mapping from cells_subscriptions.subscription_id and cell_id
+						 to subscriptions.id
+				 vi. subscriptions.notification_index
+			c) ISA
+		 		 	i. identification_service_areas.id
+				 ii. identification_service_areas.owner
+				iii. identification_service_areas.url
+				 iv. identification_service_areas.starts_at and
+						 identification_service_areas.ends_at
+				  v. the mapping from
+						 cells_identification_service_areas.subscription_id and cell_id
+						 to cells_identification_service_areas.id
+	*/
 	const query = `
 	CREATE TABLE IF NOT EXISTS subscriptions (
 		id UUID PRIMARY KEY,
