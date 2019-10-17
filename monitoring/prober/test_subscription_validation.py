@@ -84,41 +84,53 @@ def test_create_sub_with_huge_area(session, sub2_uuid):
 
 
 def test_create_too_many_subs(session):
-    time_start = datetime.datetime.utcnow()
-    time_end = time_start + datetime.timedelta(seconds=5)
-    all_resp = []
+  time_start = datetime.datetime.utcnow()
+  time_end = time_start + datetime.timedelta(seconds=1)
+  all_resp = []
 
-    # create 1 more than the max allowed Subscriptions per area
-    for index in range(common.MAX_SUB_PER_AREA + 1):
-        resp = session.put(
-            "/subscriptions/{}".format(str(uuid.uuid4())),
-            json={
-                "extents": {
-                    "spatial_volume": {
-                        "footprint": {
-                            "vertices": [
-                                {"lat": 37.440, "lng": -131.745},
-                                {"lat": 37.459, "lng": -131.745},
-                                {"lat": 37.459, "lng": -131.706},
-                                {"lat": 37.440, "lng": -131.706},
-                            ]
-                        },
-                        "altitude_lo": 20,
-                        "altitude_hi": 400,
+  # create 1 more than the max allowed Subscriptions per area
+  for index in range(common.MAX_SUB_PER_AREA + 1):
+    resp = session.put(
+        '/subscriptions/{}'.format(str(uuid.uuid4())),
+        json={
+            'extents': {
+                'spatial_volume': {
+                    'footprint': {
+                        'vertices': [
+                            {
+                                "lat": 37.440,
+                                "lng": -131.745,
+                            },
+                            {
+                                "lat": 37.459,
+                                "lng": -131.745,
+                            },
+                            {
+                                "lat": 37.459,
+                                "lng": -131.706,
+                            },
+                            {
+                                "lat": 37.440,
+                                "lng": -131.706,
+                            },
+                        ],
                     },
-                    "time_start": time_start.strftime(common.DATE_FORMAT),
-                    "time_end": time_end.strftime(common.DATE_FORMAT),
+                    'altitude_lo': 20,
+                    'altitude_hi': 400,
                 },
-                "callbacks": {
-                    "identification_service_area_url": "https://example.com/foo"
-                },
+                'time_start': time_start.strftime(common.DATE_FORMAT),
+                'time_end': time_end.strftime(common.DATE_FORMAT),
             },
-        )
-        all_resp.append(
-            resp.status_code == (429 if index == common.MAX_SUB_PER_AREA else 200)
-        )
+            'callbacks': {
+                'identification_service_area_url': 'https://example.com/foo'
+            },
+        })
+    all_resp.append(
+        resp.status_code == (429 if index == common.MAX_SUB_PER_AREA else 200)
+    )
 
-    assert all(all_resp)
+  assert all(all_resp)
+
 
 def test_create_sub_with_too_long_end_time(session, sub2_uuid):
     time_start = datetime.datetime.utcnow()
