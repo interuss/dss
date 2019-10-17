@@ -12,12 +12,16 @@ ExternalIPs:
     - <IP>
 
   # One IP for a loadbalancer in front of the three cockroach DB nodes.
+  # If you specify DBBalanced it must be present in the node-address flag in
+  make-certs.py either explicitly or via wildcard notation.
   DBBalanced: <IP>
 
 # DNS names for the three cockroach DB nodes and the HTTPS frontend.
 Hostnames:
   # Three cockroach DB hostnames.  The nodes will advertise themselves under
   # these names.  You can use IP addresses here if you don't have DNS names.
+  # These hostnames must correspond to the addresses passed to the
+  # --node-addresses flag in make-certs.py
   DBNodes:
     - <HOSTNAME>
     - <HOSTNAME>

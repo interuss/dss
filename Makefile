@@ -58,3 +58,7 @@ test-cockroach: cleanup-test-cockroach
 cleanup-test-cockroach:
 	@docker stop dss-crdb-for-testing > /dev/null 2>&1 || true
 	@docker rm dss-crdb-for-testing > /dev/null 2>&1 || true
+
+.PHONY: test-e2e
+test-e2e:
+	test/docker_e2e.sh
