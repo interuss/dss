@@ -1,0 +1,3 @@
+[submodule "interfaces/uastech/standards"]
+	path = interfaces/uastech/standards
+	url = https://github.com/uastech/standards
