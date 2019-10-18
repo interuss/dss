@@ -60,6 +60,11 @@ def test_get_isa_by_id(session, isa1_uuid):
   assert data['service_area']['flights_url'] == 'https://example.com/dss'
 
 
+def test_get_isa_by_search_missing_params(session):
+  resp = session.get('/identification_service_areas')
+  assert resp.status_code == 400
+
+
 def test_get_isa_by_search(session, isa1_uuid):
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))
@@ -107,6 +112,24 @@ def test_get_isa_by_search_latest_time_excluded(session, isa1_uuid):
   assert isa1_uuid not in [x['id'] for x in resp.json()['service_areas']]
 
 
+def test_get_isa_by_search_area_only(session, isa1_uuid):
+  resp = session.get('/identification_service_areas'
+                     '?area={}'.format(common.GEO_POLYGON_STRING))
+  assert resp.status_code == 200
+  assert isa1_uuid in [x['id'] for x in resp.json()['service_areas']]
+
+
+def test_get_isa_by_search_huge_area(session, isa1_uuid):
+  resp = session.get('/identification_service_areas'
+                     '?area={}'.format(common.HUGE_GEO_POLYGON_STRING))
+  assert resp.status_code == 413
+
+
+def test_delete_isa_wrong_version(session, isa1_uuid):
+  resp = session.delete('/identification_service_areas/{}/fake_version'.format(isa1_uuid))
+  assert resp.status_code == 400
+
+
 def test_delete_isa(session, isa1_uuid):
   # GET the ISA first to find its version.
   resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
@@ -129,3 +152,4 @@ def test_get_deleted_isa_by_search(session, isa1_uuid):
       common.GEO_POLYGON_STRING))
   assert resp.status_code == 200
   assert isa1_uuid not in [x['id'] for x in resp.json()['service_areas']]
+

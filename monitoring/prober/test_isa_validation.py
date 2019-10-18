@@ -21,24 +21,7 @@ def test_isa_huge_area(session, isa1_uuid):
           'extents': {
               'spatial_volume': {
                   'footprint': {
-                      'vertices': [
-                          {
-                              'lat': 130,
-                              'lng': -23
-                          },
-                          {
-                              'lat': 130,
-                              'lng': -24
-                          },
-                          {
-                              'lat': 132,
-                              'lng': -24
-                          },
-                          {
-                              'lat': 132,
-                              'lng': -23
-                          },
-                      ]
+                      'vertices': common.HUGE_VERTICES,
                   },
                   'altitude_lo': 20,
                   'altitude_hi': 400,
@@ -50,7 +33,7 @@ def test_isa_huge_area(session, isa1_uuid):
       })
   assert resp.status_code == 400
   assert resp.json(
-  )['message'] == ('bad extents: area is too large (5034048745.815665km² > '
+  )['message'] == ('bad extents: area is too large (5033985024.455878km² > '
                    '2500.000000km²)')
 
 

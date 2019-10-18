@@ -74,6 +74,11 @@ def test_get_sub_by_search(session, sub1_uuid):
   assert sub1_uuid in [x['id'] for x in resp.json()['subscriptions']]
 
 
+def test_get_sub_by_searching_huge_area(session, sub1_uuid):
+  resp = session.get('/subscriptions?area={}'.format(common.HUGE_GEO_POLYGON_STRING))
+  assert resp.status_code == 413 
+
+
 def test_delete_sub(session, sub1_uuid):
   # GET the sub first to find its version.
   resp = session.get('/subscriptions/{}'.format(sub1_uuid))
