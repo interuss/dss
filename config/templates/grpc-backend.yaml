@@ -35,6 +35,10 @@ spec:
         secret:
           secretName: cockroachdb.client.root
           defaultMode: 256
+      - name: ca-cert
+        secret:
+          secretName: cockroachdb.ca.crt
+          defaultMode: 256
       - name: public-certs
         secret:
           secretName: dss.public.certs
@@ -48,9 +52,16 @@ spec:
           name: grpc
         volumeMounts:
         - name: client-certs
-          mountPath: /cockroach-certs
+          mountPath: /cockroach-certs/client.root.key
+          subPath: client.root.key
+        - name: client-certs
+          mountPath: /cockroach-certs/client.root.crt
+          subPath: client.root.crt
         - name: public-certs
           mountPath: /public-certs
+        - name: ca-cert
+          mountPath: /cockroach-certs/ca.crt
+          subPath: ca.crt
         args:
           - grpc-backend
           - -addr=:{{ .Values.GrpcPort }}

@@ -82,11 +82,22 @@ def main():
     os.mkdir(cr.ca_certs_dir)
     os.mkdir(cr.ca_key_dir)
 
+    # Build node and client certs.
+    # Delete and recreate the directories.
+    shutil.rmtree(cr.node_certs_dir, ignore_errors=True)
+    shutil.rmtree(cr.client_certs_dir, ignore_errors=True)
+    os.mkdir(cr.client_certs_dir)
+    os.mkdir(cr.node_certs_dir)
+
     # Create the CA.
     subprocess.check_call([
         'cockroach', 'cert', 'create-ca',
         '--certs-dir', cr.ca_certs_dir,
         '--ca-key', cr.ca_key_file])
+
+    # Copy out the CA cert for generation, we delete these copy later.
+    shutil.copy(cr.ca_certs_file, cr.client_certs_dir)
+    shutil.copy(cr.ca_certs_file, cr.node_certs_dir)
 
     # We slightly abuse the rotate certs feature:
     # https://www.cockroachlabs.com/docs/stable/rotate-certificates.html
@@ -97,13 +108,6 @@ def main():
                 new_certs_fh.write('\n')
 
     print('Created new CA certificate in {}'.format(cr.ca_certs_dir))
-
-    # Build node and client certs.
-    # Delete and recreate the directories.
-    shutil.rmtree(cr.node_certs_dir, ignore_errors=True)
-    shutil.rmtree(cr.client_certs_dir, ignore_errors=True)
-    os.mkdir(cr.client_certs_dir)
-    os.mkdir(cr.node_certs_dir)
 
     subprocess.check_call([
         'cockroach', 'cert', 'create-client', 'root',
@@ -128,6 +132,9 @@ def main():
         '--certs-dir', cr.node_certs_dir,
         '--ca-key', cr.ca_key_file]
         + node_addresses)
+
+    subprocess.check_call(['rm', os.path.join(cr.node_certs_dir, 'ca.crt')])
+    subprocess.check_call(['rm', os.path.join(cr.client_certs_dir, 'ca.crt')])
 
     print('Created new node certificate in {}'.format(cr.node_certs_dir))
 
