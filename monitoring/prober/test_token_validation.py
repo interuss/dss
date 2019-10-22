@@ -2,6 +2,10 @@
   - Try to read DSS without Token
   - Try to read DSS with Token that cannot be decoded
   - Try to read and write DSS with Token missing and wrong Scope 
+
+  ASTM Compliance Test: DSS0010_USS_AUTH
+  This entire file is used to demonstrate that the DSS requires proper 
+  authentication tokens to perform actions on the DSS
 """
 
 import datetime
