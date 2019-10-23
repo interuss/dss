@@ -42,7 +42,7 @@ class DummyOAuthServerAdapter(AuthAdapter):
     self._tokens = {}
 
   def issue_token(self, intended_audience, scopes):
-    url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
+    url = '{}?grant_type=client_credentials&scope={}&intended_audience={}&issuer=dummy'.format(
         self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
         urllib.parse.quote(intended_audience))
     response = self._oauth_session.post(url).json()

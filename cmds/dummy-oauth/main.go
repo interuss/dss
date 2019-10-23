@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"strconv"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -46,9 +48,29 @@ func createGetTokenHandler(privateKey *rsa.PrivateKey) http.Handler {
 		if len(scopes) == 1 {
 			scope = scopes[0]
 		}
+
+		var (
+			issuer  string   = ""
+			issuers []string = params["issuer"]
+		)
+		if len(issuers) == 1 {
+			issuer = issuers[0]
+		}
+		var (
+			expireTime  int64    = time.Now().Add(time.Hour).Unix()
+			expireTimes []string = params["expire"]
+		)
+		if len(expireTimes) == 1 {
+			parsedTime, err := strconv.ParseInt(expireTimes[0], 10, 64)
+			if err != nil {
+				expireTime = parsedTime
+			}
+		}
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 			"aud":   aud,
 			"scope": scope,
+			"iss":   issuer,
+			"exp":   expireTime,
 			"sub":   "fake-user",
 		})
 
