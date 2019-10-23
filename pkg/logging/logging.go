@@ -101,6 +101,8 @@ func WithValuesFromContext(ctx context.Context, logger *zap.Logger) *zap.Logger 
 	return logger
 }
 
+// DumpRequestResponseInterceptor returns a grpc.UnaryServerInterceptor that
+// logs incoming requests and corresponding responses to 'logger'.
 func DumpRequestResponseInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		logger.Sugar().Infof("Request (%s):\n%s",

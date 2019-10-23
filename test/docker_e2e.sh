@@ -38,7 +38,7 @@ docker stop grpc-backend-for-testing || echo "No grpc backend to clean up"
 
 echo "Starting grpc backend on :8081"
 docker run -d --rm --name grpc-backend-for-testing \
-        --link dss-crdb-for-debugging:crdb \
+	--link dss-crdb-for-debugging:crdb \
 	-v $(pwd)/config/test-certs/auth2.pem:/app/test.crt \
 	local-interuss-dss-image \
 	grpc-backend \
@@ -48,6 +48,8 @@ docker run -d --rm --name grpc-backend-for-testing \
 	-log_format console \
 	-dump_requests \
 	-jwt_audience local-gateway
+
+docker logs -f grpc-backend-for-testing 2> grpc-backend-for-testing.log &
 
 sleep 5
 echo " ------------- HTTP GATEWAY -------------- "
@@ -60,7 +62,10 @@ docker run -d --rm --name http-gateway-for-testing -p 8082:8082 \
 	local-interuss-dss-image \
 	http-gateway \
 	-grpc-backend grpc:8081 \
-	-addr :8082
+	-addr :8082 \
+	-trace-requests
+
+docker logs -f http-gateway-for-testing 2> http-gateway-for-testing.log &
 
 sleep 5
 echo " -------------- DUMMY OAUTH -------------- "
