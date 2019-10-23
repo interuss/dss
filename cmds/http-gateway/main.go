@@ -10,16 +10,15 @@ import (
 	"github.com/interuss/dss/pkg/dssproto"
 	"github.com/interuss/dss/pkg/logging"
 
-	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"go.uber.org/zap"
-
 	"google.golang.org/grpc"
 )
 
 var (
-	address     = flag.String("addr", ":8080", "address")
-	grpcBackend = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
+	address       = flag.String("addr", ":8080", "Local address that the gateway binds to and listens on for incoming connections")
+	traceRequests = flag.Bool("trace-requests", false, "Logs HTTP request/response pairs to stderr if true")
+	grpcBackend   = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
 )
 
 // RunHTTPProxy starts the HTTP proxy for the DSS gRPC service on ctx, listening
@@ -41,6 +40,7 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 			Indent:       "  ",
 		}),
 	)
+
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
@@ -52,19 +52,21 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 		return err
 	}
 
-	// Register a health check handler.
-	m := mux.NewRouter()
-	m.HandleFunc("/healthy", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("ok"))
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/healthy" {
+			w.Write([]byte("ok"))
+		}
+		grpcMux.ServeHTTP(w, r)
 	})
 
-	// Let grpcMux handle everything else.
-	m.NotFoundHandler = grpcMux
+	if *traceRequests {
+		handler = logging.HTTPMiddleware(logger, handler)
+	}
 
 	logger.Info("build", zap.Any("description", build.Describe()))
 
 	// Start HTTP server (and proxy calls to gRPC server endpoint)
-	return http.ListenAndServe(address, m)
+	return http.ListenAndServe(address, handler)
 }
 
 func main() {
