@@ -243,6 +243,10 @@ spec:
         secret:
           secretName: cockroachdb.node
           defaultMode: 256
+      - name: ca-cert
+        secret:
+          secretName: cockroach.ca.crt
+          defaultMode: 256
   podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate

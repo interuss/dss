@@ -31,8 +31,12 @@ class CockroachCluster(object):
         return os.path.join(self.ca_certs_dir, 'ca.crt')
 
     @property
+    def ca_key_dir(self):
+        return os.path.join(self.directory, 'ca_key_dir')
+
+    @property
     def ca_key_file(self):
-        return os.path.join(self.ca_certs_dir, 'ca.key')
+        return os.path.join(self.ca_key_dir, 'ca.key')
 
     @property
     def ca_certs_dir(self):
@@ -74,7 +78,9 @@ def main():
     # Create a new CA.
     # Delete and recreate the ca_certs_dir.
     shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
+    shutil.rmtree(cr.ca_key_dir, ignore_errors=True)
     os.mkdir(cr.ca_certs_dir)
+    os.mkdir(cr.ca_key_dir)
 
     # Create the CA.
     subprocess.check_call([
@@ -99,17 +105,12 @@ def main():
     os.mkdir(cr.client_certs_dir)
     os.mkdir(cr.node_certs_dir)
 
-    shutil.copy(cr.ca_certs_file, cr.client_certs_dir)
-
     subprocess.check_call([
         'cockroach', 'cert', 'create-client', 'root',
         '--certs-dir', cr.client_certs_dir,
         '--ca-key', cr.ca_key_file])
 
     print('Created new client certificate in {}'.format(cr.client_certs_dir))
-
-    for filename in glob.glob(os.path.join(cr.client_certs_dir, '*')):
-        shutil.copy(filename, cr.node_certs_dir)
 
     node_addresses = ['localhost']
     node_addresses.extend(args.node_address)
