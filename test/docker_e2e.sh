@@ -110,3 +110,5 @@ docker stop grpc-backend-for-testing
 
 echo "Stopping crdb docker"
 docker stop dss-crdb-for-debugging
+
+jobs -p | xargs kill
