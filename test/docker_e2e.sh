@@ -49,8 +49,6 @@ docker run -d --rm --name grpc-backend-for-testing \
 	-dump_requests \
 	-jwt_audience local-gateway
 
-docker logs -f grpc-backend-for-testing 2> grpc-backend-for-testing.log &
-
 sleep 5
 echo " ------------- HTTP GATEWAY -------------- "
 echo "Cleaning up any pre-existing http-gateway container"
@@ -65,7 +63,7 @@ docker run -d --rm --name http-gateway-for-testing -p 8082:8082 \
 	-addr :8082 \
 	-trace-requests
 
-docker logs -f http-gateway-for-testing 2> http-gateway-for-testing.log &
+
 
 sleep 5
 echo " -------------- DUMMY OAUTH -------------- "
@@ -98,6 +96,9 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--api-version-role '/v1/dss' \
 	-vv
 
+docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
+docker logs grpc-backend-for-testing 2> grpc-backend-for-testing.log
+
 # ----------- clean up -----------
 echo "Stopping dummy oauth container"
 docker stop dummy-oauth-for-testing
@@ -110,5 +111,3 @@ docker stop grpc-backend-for-testing
 
 echo "Stopping crdb docker"
 docker stop dss-crdb-for-debugging
-
-jobs -p | xargs kill
