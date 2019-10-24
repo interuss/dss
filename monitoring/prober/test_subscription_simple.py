@@ -19,6 +19,7 @@ def test_sub_does_not_exist(session, sub1_uuid):
 
 
 def test_create_sub(session, sub1_uuid):
+  """ASTM Compliance Test: DSS0030_C_PUT_SUB."""
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
@@ -57,6 +58,7 @@ def test_create_sub(session, sub1_uuid):
 
 
 def test_get_sub_by_id(session, sub1_uuid):
+  """ASTM Compliance Test: DSS0030_E_GET_SUB_BY_ID."""
   resp = session.get('/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 200
 
@@ -69,6 +71,7 @@ def test_get_sub_by_id(session, sub1_uuid):
 
 
 def test_get_sub_by_search(session, sub1_uuid):
+  """ASTM Compliance Test: DSS0030_F_GET_SUBS_BY_AREA."""
   resp = session.get('/subscriptions?area={}'.format(common.GEO_POLYGON_STRING))
   assert resp.status_code == 200
   assert sub1_uuid in [x['id'] for x in resp.json()['subscriptions']]
@@ -80,6 +83,7 @@ def test_get_sub_by_searching_huge_area(session, sub1_uuid):
 
 
 def test_delete_sub(session, sub1_uuid):
+  """ASTM Compliance Test: DSS0030_D_DELETE_SUB."""
   # GET the sub first to find its version.
   resp = session.get('/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 200

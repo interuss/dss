@@ -84,6 +84,7 @@ def test_create_sub_with_huge_area(session, sub2_uuid):
 
 
 def test_create_too_many_subs(session):
+  """ASTM Compliance Test: DSS0050_MAX_SUBS_PER_AREA."""
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=1)
   all_resp = []
@@ -133,6 +134,7 @@ def test_create_too_many_subs(session):
 
 
 def test_create_sub_with_too_long_end_time(session, sub2_uuid):
+    """ASTM Compliance Test: DSS0060_MAX_SUBS_DURATION."""
     time_start = datetime.datetime.utcnow()
     time_end = time_start + datetime.timedelta(hours=(common.MAX_SUB_TIME_HRS + 1))
 

@@ -19,6 +19,7 @@ def test_isa_does_not_exist(session, isa1_uuid):
 
 
 def test_create_isa(session, isa1_uuid):
+  """ASTM Compliance Test: DSS0030_A_PUT_ISA."""
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
@@ -131,6 +132,7 @@ def test_delete_isa_wrong_version(session, isa1_uuid):
 
 
 def test_delete_isa(session, isa1_uuid):
+  """ASTM Compliance Test: DSS0030_B_DELETE_ISA."""
   # GET the ISA first to find its version.
   resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 200
