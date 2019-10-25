@@ -50,6 +50,14 @@ func (m *tokenExpireError) Error() string {
 	return m.msg
 }
 
+type tokenExpireTooFarError struct {
+	msg string
+}
+
+func (m *tokenExpireTooFarError) Error() string {
+	return m.msg
+}
+
 // ContextWithOwner adds "owner" to "ctx".
 func ContextWithOwner(ctx context.Context, owner models.Owner) context.Context {
 	return context.WithValue(ctx, ContextKeyOwner, owner)
@@ -255,7 +263,7 @@ func (a *Authorizer) checkExpired(claimedExpireTime int64) error {
 	}
 
 	if claimedExpireTime > now.Add(time.Hour).Unix() {
-		return &tokenExpireError{
+		return &tokenExpireTooFarError{
 			msg: "Token expiration time is too far in the furture, Max token duration is 1 Hour",
 		}
 	}

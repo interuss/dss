@@ -34,32 +34,27 @@ func createGetTokenHandler(privateKey *rsa.PrivateKey) http.Handler {
 		params := r.URL.Query()
 
 		var (
-			aud  string   = ""
-			auds []string = params["intended_audience"]
+			aud         string   = ""
+			auds        []string = params["intended_audience"]
+			scope       string   = ""
+			scopes      []string = params["scope"]
+			issuer      string   = ""
+			issuers     []string = params["issuer"]
+			expireTime  int64    = time.Now().Add(time.Hour).Unix()
+			expireTimes []string = params["expire"]
 		)
 		if len(auds) == 1 {
 			aud = auds[0]
 		}
 
-		var (
-			scope  string   = ""
-			scopes []string = params["scope"]
-		)
 		if len(scopes) == 1 {
 			scope = scopes[0]
 		}
 
-		var (
-			issuer  string   = ""
-			issuers []string = params["issuer"]
-		)
 		if len(issuers) == 1 {
 			issuer = issuers[0]
 		}
-		var (
-			expireTime  int64    = time.Now().Add(time.Hour).Unix()
-			expireTimes []string = params["expire"]
-		)
+
 		if len(expireTimes) == 1 {
 			parsedTime, err := strconv.ParseInt(expireTimes[0], 10, 64)
 			if err != nil {
