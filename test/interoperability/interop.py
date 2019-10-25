@@ -13,13 +13,18 @@ from typing import Dict
 def parseArgs() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Test Interoperability of DSSs")
     parser.add_argument("OAuth", help="URI to the OAuth Server.")
+
+    # When using Password OAuth flow, Username, Password, and Clients-id are
+    # necessary for authentication
     parser.add_argument("--username", help="Username used to get OAuth Token")
     parser.add_argument("--password", help="Password used to get OAuth Token")
     parser.add_argument(
-        "--clients-_id",
+        "--client-id",
         help="Client ID used to get OAuth Token, used with Username and Password",
     )
 
+    # When using Service Account OAuth flow, only the Service Account JSON File
+    # is required to request Token.
     parser.add_argument(
         "--service-account",
         "--svc",
@@ -37,9 +42,9 @@ def main() -> int:
     args = parseArgs()
 
     if args.service_account:
-        oauth_client = clients.OauthClient(
+        oauth_client = clients.OAuthClient(
             args.OAuth,
-            clients.AuthType.SVC_ACC,
+            clients.AuthType.SERVICE_ACCOUNT,
             service_account_json=args.service_account,
         )
     elif args.username:
@@ -64,8 +69,8 @@ def main() -> int:
     tests = InterOpTestSuite(dss_clients)
     tests.startTest()
 
-
     return os.EX_OK
+
 
 if __name__ == "__main__":
     sys.exit(main())

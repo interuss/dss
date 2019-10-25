@@ -3,20 +3,14 @@ import time
 from enum import Enum
 from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any, Tuple
 import urllib
 
 
 class AuthType(Enum):
     NONE = 0
-    SVC_ACC = 1
+    SERVICE_ACCOUNT = 1
     PASSWORD = 2
-
-
-SCOPES = [
-    "dss.write.identification_service_areas",
-    "dss.read.identification_service_areas",
-]
 
 
 class OAuthClient:
@@ -30,11 +24,11 @@ class OAuthClient:
         client_id: Optional[str] = "",
     ):
         self._endpoint = endpoint
-        self._token_cache = {}
-        self._req_params = {}
+        self.token_response_cache: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        self._req_params: Dict[str, str] = {}
         self.req = requests.Session()
 
-        if auth_type is AuthType.SVC_ACC:
+        if auth_type is AuthType.SERVICE_ACCOUNT:
             credentials = service_account.Credentials.from_service_account_file(
                 service_account_json
             ).with_scopes(["email"])
@@ -47,31 +41,45 @@ class OAuthClient:
                 "password": password,
                 "client_id": client_id,
             }
+        elif auth_type is AuthType.NONE:
+            # No special setup requred
+            pass
+        else:
+            # Something unknown was passed in
+            raise ("Unknown OAuth authentication Type")
         self.parameterized_url = False
 
     def _isExpired(self, token: Dict[str, Any]) -> bool:
-        expiration = token.get("expire_time")
+        expiration = token.get("expires_in")
+        request_time = token["request_time"]
         if not expiration:
             return False
-        return expiration > time.time()
+        return time.time() > (request_time + expiration)
 
     def getToken(self, scopes_list: List[str], audience: str) -> str:
         scopes = " ".join(scopes_list)
-        token = self._token_cache.get((scopes, audience))
+        token = self.token_response_cache.get((scopes, audience))
         if token is None or self._isExpired(token):
-            self._token_cache[(scopes, audience)] = self._issueToken(scopes, audience)
-        return self._token_cache[(scopes, audience)].get("access_token", "")
+            self.token_response_cache[(scopes, audience)] = self._issueToken(scopes, audience)
+        return self.token_response_cache[(scopes, audience)].get("access_token", "")
 
     def _issueToken(self, scopes, audience) -> Dict[str, Any]:
         data = {"scope": scopes, "intended_audience": audience}
         data.update(self._req_params)
+        request_time = time.time()
+        # Parameteterized URL is required to work with the Dummy Oauth Server
+        # as it currently doesn't read from parameters from request body
+        # TODO(charlie-pisuraj): Make Dummy OAuth Read params from request body
         if self.parameterized_url:
             param_str = "?" + "&".join([f"{key}={val}" for key, val in data.items()])
             response = self.req.post((self._endpoint + param_str))
         else:
+            # methods is a list of Tuples
             response = self.req.post(self._endpoint, data=data)
         response.raise_for_status()
-        return response.json()
+        token = response.json()
+        token["request_time"] = request_time
+        return token
 
 
 class DSSClient(requests.Session):
@@ -79,7 +87,6 @@ class DSSClient(requests.Session):
         super().__init__()
         self._host = host
         self._oauth_client = oauth_client
-        self.scope: List[str] = []
         self.intended_audience: str = ""
         self.scope: List[str] = [
             "dss.write.identification_service_areas",
