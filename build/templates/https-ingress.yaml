@@ -1,0 +1,33 @@
+{{- if eq .Values.GKEIngress.Enabled true }}
+
+{{- if eq .Values.GKEIngress.PreSharedCertName "" }}
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: https-certificate
+  namespace: {{ .Values.Namespace }}
+spec:
+  domains:
+    - {{ .Values.Hostnames.Frontend }}
+---
+{{ end }}
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: https-ingress
+  namespace: {{ .Values.Namespace }}
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: {{ .Values.GKEIngress.FrontendIPName }}
+    {{- if ne .Values.GKEIngress.PreSharedCertName "" }}
+    ingress.gcp.kubernetes.io/pre-shared-cert: {{ .Values.GKEIngress.PreSharedCertName }}
+    {{- else }}
+    networking.gke.io/managed-certificates: https-certificate
+    {{- end }}
+    kubernetes.io/ingress.allow-http: "false"
+spec:
+  backend:
+    serviceName: http-gateway
+    servicePort: {{ .Values.HttpPort }}
+
+{{ end }}
