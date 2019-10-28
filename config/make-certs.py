@@ -133,8 +133,8 @@ def main():
         '--ca-key', cr.ca_key_file]
         + node_addresses)
 
-    subprocess.check_call(['rm', os.path.join(cr.node_certs_dir, 'ca.crt')])
-    subprocess.check_call(['rm', os.path.join(cr.client_certs_dir, 'ca.crt')])
+    os.remove(os.path.join(cr.node_certs_dir, 'ca.crt'))
+    os.remove(os.path.join(cr.client_certs_dir, 'ca.crt'))
 
     print('Created new node certificate in {}'.format(cr.node_certs_dir))
 

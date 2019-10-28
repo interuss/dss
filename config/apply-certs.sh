@@ -19,7 +19,6 @@ kubectl create namespace "$NAMESPACE" || true
 kubectl delete secret cockroachdb.client.root || true
 kubectl delete secret cockroachdb.client.root --namespace "$NAMESPACE" || true
 kubectl delete secret cockroachdb.node --namespace "$NAMESPACE" || true
-kubectl delete secret cockroachdb.node --namespace "$NAMESPACE" || true
 kubectl delete secret cockroachdb.ca.crt --namespace "$NAMESPACE" || true
 kubectl delete secret cockroachdb.ca.key --namespace "$NAMESPACE" || true
 kubectl delete secret dss.public.certs --namespace "$NAMESPACE" || true
