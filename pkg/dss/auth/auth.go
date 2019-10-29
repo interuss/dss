@@ -29,8 +29,6 @@ import (
 var (
 	// ContextKeyOwner is the key to an owner value.
 	ContextKeyOwner ContextKey = "owner"
-	// Now allows test to override with specific time values
-	Now = time.Now
 )
 
 // ContextKey models auth-specific keys in a context.
@@ -42,22 +40,6 @@ type missingScopesError struct {
 
 func (m *missingScopesError) Error() string {
 	return strings.Join(m.s, ", ")
-}
-
-type tokenExpireError struct {
-	msg string
-}
-
-func (m *tokenExpireError) Error() string {
-	return m.msg
-}
-
-type tokenExpireTooFarError struct {
-	msg string
-}
-
-func (m *tokenExpireTooFarError) Error() string {
-	return m.msg
 }
 
 // ContextWithOwner adds "owner" to "ctx".
@@ -247,30 +229,7 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("missing scopes: %v", err))
 	}
 
-	if claims.Issuer == "" {
-		return nil, dsserr.Unauthenticated("missing issuer URI")
-	}
-
-	if err := a.checkExpired(claims.ExpiresAt); err != nil {
-		return nil, dsserr.Unauthenticated(fmt.Sprintf("%v", err))
-	}
-
 	return handler(ContextWithOwner(ctx, models.Owner(claims.Subject)), req)
-}
-
-func (a *Authorizer) checkExpired(claimedExpireTime int64) error {
-	now := Now()
-	if claimedExpireTime < now.Unix() {
-		msga := fmt.Sprintf("Token Expired or Expiration missing %v, %v", claimedExpireTime, now.Unix())
-		return &tokenExpireError{msg: msga}
-	}
-
-	if claimedExpireTime > now.Add(time.Hour).Unix() {
-		return &tokenExpireTooFarError{
-			msg: "Token expiration time is too far in the furture, Max token duration is 1 Hour",
-		}
-	}
-	return nil
 }
 
 // Returns all of the required scopes that are missing.

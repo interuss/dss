@@ -94,12 +94,13 @@ func TestNewRSAAuthClient(t *testing.T) {
 }
 
 func TestRSAAuthInterceptor(t *testing.T) {
-	Now = func() time.Time {
+	jwt.TimeFunc = func() time.Time {
 		return time.Unix(42, 0)
 	}
-	jwt.TimeFunc = Now
 
-	defer func() { jwt.TimeFunc = time.Now }()
+	defer func() {
+		jwt.TimeFunc = time.Now
+	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -199,11 +200,34 @@ func TestMissingScopes(t *testing.T) {
 }
 
 func TestClaimsValidation(t *testing.T) {
+	Now = func() time.Time {
+		return time.Unix(42, 0)
+	}
+	jwt.TimeFunc = Now
+
+	defer func() {
+		jwt.TimeFunc = time.Now
+		Now = time.Now
+	}()
+
 	claims := &claims{}
 
 	require.Error(t, claims.Valid())
+
 	claims.Subject = "real_owner"
+	claims.ExpiresAt = 45
+	claims.Issuer = "real_issuer"
+
 	require.NoError(t, claims.Valid())
+
+	// Test error out on expired token Now.Unix() = 42
+	claims.ExpiresAt = 41
+	require.Error(t, claims.Valid())
+
+	// Test error out on missing Issuer URI
+	claims.Issuer = ""
+	claims.ExpiresAt = 45
+	require.Error(t, claims.Valid())
 }
 
 func TestContextWithOwner(t *testing.T) {
