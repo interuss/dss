@@ -4,12 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
 var (
 	errMissingOrEmptySubject = errors.New("Missing or empty subject")
+	errTokenExpireTooFar     = errors.New("Token expiration time is too far in the furture, Max token duration is 1 Hour")
+	errMissingIssuer         = errors.New("Missing Issuer URI")
+	// Now allows test to override with specific time values
+	Now = time.Now
 )
 
 // scopes models a set of scopes.
@@ -38,6 +43,17 @@ type claims struct {
 func (c *claims) Valid() error {
 	if c.Subject == "" {
 		return errMissingOrEmptySubject
+	}
+	now := Now()
+
+	c.VerifyExpiresAt(now.Unix(), true)
+
+	if c.ExpiresAt > now.Add(time.Hour).Unix() {
+		return errTokenExpireTooFar
+	}
+
+	if c.Issuer == "" {
+		return errMissingIssuer
 	}
 
 	return c.StandardClaims.Valid()
