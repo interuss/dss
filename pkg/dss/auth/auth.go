@@ -29,6 +29,8 @@ import (
 var (
 	// ContextKeyOwner is the key to an owner value.
 	ContextKeyOwner ContextKey = "owner"
+	// Now allows test to override with specific time values
+	Now = time.Now
 )
 
 // ContextKey models auth-specific keys in a context.
@@ -257,9 +259,10 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 }
 
 func (a *Authorizer) checkExpired(claimedExpireTime int64) error {
-	now := time.Now()
+	now := Now()
 	if claimedExpireTime < now.Unix() {
-		return &tokenExpireError{msg: "Token Expired or Expiration missing"}
+		msga := fmt.Sprintf("Token Expired or Expiration missing %v, %v", claimedExpireTime, now.Unix())
+		return &tokenExpireError{msg: msga}
 	}
 
 	if claimedExpireTime > now.Add(time.Hour).Unix() {

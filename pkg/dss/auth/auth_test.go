@@ -28,6 +28,7 @@ func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey, exp, nbf int64) conte
 		"exp": exp,
 		"nbf": nbf,
 		"sub": "real_owner",
+		"iss": "baz",
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -93,9 +94,11 @@ func TestNewRSAAuthClient(t *testing.T) {
 }
 
 func TestRSAAuthInterceptor(t *testing.T) {
-	jwt.TimeFunc = func() time.Time {
+	Now = func() time.Time {
 		return time.Unix(42, 0)
 	}
+	jwt.TimeFunc = Now
+
 	defer func() { jwt.TimeFunc = time.Now }()
 
 	ctx, cancel := context.WithCancel(context.Background())
