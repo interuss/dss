@@ -197,7 +197,20 @@ spec:
         - name: datadir
           mountPath: /cockroach/cockroach-data
         - name: certs
-          mountPath: /cockroach/cockroach-certs
+          mountPath: /cockroach/cockroach-certs/node.crt
+          subPath: node.crt
+        - name: certs
+          mountPath: /cockroach/cockroach-certs/node.key
+          subPath: node.key
+        - name: client-certs
+          mountPath: /cockroach/cockroach-certs/client.root.crt
+          subPath: client.root.crt
+        - name: client-certs
+          mountPath: /cockroach/cockroach-certs/client.root.key
+          subPath: client.root.key
+        - name: ca-cert
+          mountPath: /cockroach/cockroach-certs/ca.crt
+          subPath: ca.crt
         env:
         - name: COCKROACH_CHANNEL
           value: {{ .Values.CockroachChannel }}
@@ -242,6 +255,14 @@ spec:
       - name: certs
         secret:
           secretName: cockroachdb.node
+          defaultMode: 256
+      - name: ca-cert
+        secret:
+          secretName: cockroachdb.ca.crt
+          defaultMode: 256
+      - name: client-certs
+        secret:
+          secretName: cockroachdb.client.root
           defaultMode: 256
   podManagementPolicy: Parallel
   updateStrategy:

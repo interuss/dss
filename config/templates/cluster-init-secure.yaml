@@ -16,7 +16,14 @@ spec:
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: client-certs
-          mountPath: /cockroach-certs
+          mountPath: /cockroach-certs/client.root.key
+          subPath: client.root.key
+        - name: client-certs
+          mountPath: /cockroach-certs/client.root.crt
+          subPath: client.root.crt
+        - name: ca-cert
+          mountPath: /cockroach-certs/ca.crt
+          subPath: ca.crt
         command:
           - "/cockroach/cockroach"
           - "init"
@@ -27,5 +34,9 @@ spec:
       - name: client-certs
         secret:
           secretName: cockroachdb.client.root
+          defaultMode: 256
+      - name: ca-cert
+        secret:
+          secretName: cockroachdb.ca.crt
           defaultMode: 256
 {{- end }}

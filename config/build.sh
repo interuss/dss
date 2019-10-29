@@ -15,3 +15,4 @@ cd "${BASEDIR}"
 docker build . -t $DOCKER_URL/dss:$VERSION
 
 docker push $DOCKER_URL/dss:$VERSION
+echo pushing docker image $DOCKER_URL/dss:$VERSION
