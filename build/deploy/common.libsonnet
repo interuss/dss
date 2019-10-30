@@ -1,19 +1,20 @@
+local kube = import "kube.libsonnet"; 
+
 {
   cockroach: {
     grpc_port: 26257,
     http_port: 8080,
-    volumes: {
+    volumes_: {
       client_certs: {
-        name: "client-certs",
         secretName: "cockroachdb.client.root",
         defaultMode: 256,
       },
       node_certs: {
-        name: "node-certs",
         secretName: "cockroachdb.node",
         defaultMode: 256,
       },
     },
+    volumes: kube.mapToNamedList(volumes_),
     volumeMounts: {
       client_certs: {
         name: "client-certs",
@@ -25,3 +26,17 @@
     }
   }
 }
+
+          # {
+          #   name: 'datadir',
+          #   persistentVolumeClaim: {
+          #     claimName: 'datadir',
+          #   },
+          # },
+          # {
+          #   name: 'certs',
+          #   secret: {
+          #     secretName: 'cockroachdb.node',
+          #     defaultMode: 256,
+          #   },
+          # },
