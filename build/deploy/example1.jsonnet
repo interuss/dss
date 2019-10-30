@@ -1,7 +1,7 @@
-local dss = import "dss.libsonnet";
+local base = import "base.libsonnet";
 
 
-dss {
+base {
   metadata+: {
     data: {
       cluster: "gke_example1",
