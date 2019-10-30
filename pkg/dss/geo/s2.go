@@ -21,6 +21,10 @@ const (
 	// that the maximum cell size is ~1km^2.
 	DefaultMaximumCellLevel int = 13
 	maxAllowedAreaKm2           = 2500.0
+	minLat                      = -90.0
+	maxLat                      = 90.0
+	minLng                      = -180.0
+	maxLng                      = 180.0
 )
 
 var (
@@ -74,6 +78,10 @@ func GeoPolygonToCellIDs(geopolygon *dspb.GeoPolygon) (s2.CellUnion, error) {
 		return nil, errBadCoordSet
 	}
 	for _, ltlng := range geopolygon.Vertices {
+		// ensure that coordinates passed are actually on earth
+		if (ltlng.Lat > maxLat) || (ltlng.Lat < minLat) || (ltlng.Lng > maxLng) || (ltlng.Lng < minLng) {
+			return nil, errBadCoordSet
+		}
 		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(ltlng.Lat, ltlng.Lng)))
 	}
 	if len(points) < 3 {
