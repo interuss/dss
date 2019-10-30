@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	// maxSubscriptionDuration is the largest allowed interval between StartTime
+	// MaxSubscriptionDuration is the largest allowed interval between StartTime
 	// and EndTime.
-	maxSubscriptionDuration = time.Hour * 24
+	MaxSubscriptionDuration = time.Hour * 24
 
 	// maxClockSkew is the largest allowed interval between the StartTime of a new
 	// subscription and the server's idea of the current time.
@@ -132,10 +132,9 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 		s.EndTime = old.EndTime
 	}
 
-	// Or if this is a new subscription default to StartTime + 1 day.  Also
-	// truncate long existing subscriptions to 1 day.
-	if s.EndTime == nil || s.EndTime.Sub(*s.StartTime) > maxSubscriptionDuration {
-		truncatedEndTime := s.StartTime.Add(maxSubscriptionDuration)
+	// Or if this is a new subscription default to StartTime + 1 day.
+	if s.EndTime == nil {
+		truncatedEndTime := s.StartTime.Add(MaxSubscriptionDuration)
 		s.EndTime = &truncatedEndTime
 	}
 
