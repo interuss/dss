@@ -213,8 +213,7 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
 			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
 			endTime:             fakeClock.Now().Add(24 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(18 * time.Hour),
+			wantErr:             "rpc error: code = InvalidArgument desc = subscription window exceeds 24 hours",
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {

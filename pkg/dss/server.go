@@ -298,16 +298,6 @@ func (s *Server) createOrUpdateSubscription(
 	if extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
 	}
-	var (
-		// if TimeEnd is not supplied default values to 0
-		// later in the code it will defaulted to 1 day after TimeStart
-		endTime   = time.Unix(extents.TimeEnd.GetSeconds(), 0)
-		startTime = time.Unix(extents.TimeStart.GetSeconds(), 0)
-		diff      = endTime.Sub(startTime)
-	)
-	if diff > models.MaxSubscriptionDuration {
-		return nil, dsserr.BadRequest("subscription window exceeds 24 hours")
-	}
 
 	sub := models.Subscription{
 		ID:      models.ID(id),
