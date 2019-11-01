@@ -73,7 +73,7 @@ docker build -q --rm -f cmds/dummy-oauth/Dockerfile . -t local-dummy-oauth
 echo "Cleaning up any pre-existing dummy-oauth container"
 docker stop dummy-oauth-for-testing || echo "No dummy oauth to clean up"
 
-echo "Starting mock oauth server on : 8085"
+echo "Starting mock oauth server on :8085"
 docker run -d --rm --name dummy-oauth-for-testing -p 8085:8085 \
 	-v $(pwd)/config/test-certs/auth2.key:/app/test.key \
 	local-dummy-oauth \

@@ -13,6 +13,12 @@ var (
 	errInternal = status.Error(codes.Internal, "Internal Server Error")
 )
 
+const (
+	// AreaTooLargeErr is the error that we want to signal to the http gateway
+	// that it should return 413 to client
+	AreaTooLargeErr codes.Code = 18
+)
+
 // Interceptor returns a grpc.UnaryServerInterceptor that inspects outgoing
 // errors and logs (to "logger") and replaces errors that are not *status.Status
 // instances or status instances that indicate an internal/unknown error.
@@ -73,4 +79,8 @@ func PermissionDenied(msg string) error {
 
 func Unauthenticated(msg string) error {
 	return status.Error(codes.Unauthenticated, msg)
+}
+
+func AreaTooLarge(msg string) error {
+	return status.Error(AreaTooLargeErr, msg)
 }
