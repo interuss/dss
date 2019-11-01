@@ -42,6 +42,16 @@ var (
 	errBadCoordSet                        = errors.New("coordinates did not create a well formed area")
 )
 
+// ErrAreaTooLarge is the error passed back when the requested Area is larger
+// than maxAllowedAreaKm2
+type ErrAreaTooLarge struct {
+	msg string
+}
+
+func (e *ErrAreaTooLarge) Error() string {
+	return e.msg
+}
+
 func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
@@ -114,7 +124,9 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 		return RegionCoverer.Covering(loop), nil
 	}
 
-	return nil, fmt.Errorf("area is too large (%fkm² > %fkm²)", loopAreaKm2(loop), maxAllowedAreaKm2)
+	return nil, &ErrAreaTooLarge{
+		msg: fmt.Sprintf("area is too large (%fkm² > %fkm²)", loopAreaKm2(loop), maxAllowedAreaKm2),
+	}
 }
 
 // AreaToCellIDs parses "area" in the format 'lat0,lon0,lat1,lon1,...'

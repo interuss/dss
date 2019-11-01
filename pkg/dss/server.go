@@ -190,7 +190,12 @@ func (s *Server) GetV1DssIdentificationServiceAreas(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad area: %s", err))
+		errMsg := fmt.Sprintf("bad area: %s", err)
+		switch err.(type) {
+		case *geo.ErrAreaTooLarge:
+			return nil, dsserr.AreaTooLarge(errMsg)
+		}
+		return nil, dsserr.BadRequest(errMsg)
 	}
 
 	var (
@@ -244,7 +249,12 @@ func (s *Server) GetV1DssSubscriptions(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad area: %s", err))
+		errMsg := fmt.Sprintf("bad area: %s", err)
+		switch err.(type) {
+		case *geo.ErrAreaTooLarge:
+			return nil, dsserr.AreaTooLarge(errMsg)
+		}
+		return nil, dsserr.BadRequest(errMsg)
 	}
 
 	subscriptions, err := s.Store.SearchSubscriptions(ctx, cu, owner)
@@ -252,7 +262,7 @@ func (s *Server) GetV1DssSubscriptions(
 		return nil, err
 	}
 	sp := make([]*dspb.Subscription, len(subscriptions))
-	for i, _ := range subscriptions {
+	for i := range subscriptions {
 		sp[i], err = subscriptions[i].ToProto()
 		if err != nil {
 			return nil, err
