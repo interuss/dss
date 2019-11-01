@@ -10,9 +10,10 @@ local common = import "common.libsonnet";
     spec+: {
       template+: {
         spec+: {
-          volumes: [
-            common.cockroach.volumes.client_certs,
-          ],
+          volumes_: {
+            client_certs: common.cockroach.volumes_.client_certs,
+            ca_certs: common.cockroach.volumes_.ca_certs,
+          },
           serviceAccountName: "cockroachdb",
           containers_:: {
             cluster_init: kube.Container("cluster-init") {
@@ -23,9 +24,7 @@ local common = import "common.libsonnet";
                 "certs-dir": "/cockroach-certs",
                 "host": "cockroachdb-0.cockroachdb." + job.namespace + ".svc.cluster.local:"+ job.cockroach_port,
               },
-              volumeMounts:: [
-                common.volumeMounts.client_certs,
-              ],
+              volumeMounts: [common.cockroach.caCertMount] + common.cockroach.clientCertMounts,
             },
           },
         },
