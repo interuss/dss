@@ -19,7 +19,6 @@ local crLabels = {
     local dbHostnameSuffix_ = self.dbHostnameSuffix,
     local locality_ = self.locality,
     local namespace_ = self.namespace,
-    dbHostnameSuffix:: error "must supply db hostname suffix",
     locality:: error "must supply locality",
     namespace: "default-ns",   # TODO: set namespace better.
     spec+: {
@@ -56,16 +55,7 @@ local crLabels = {
             cockroachdb: kube.Container("cockroachdb") {
               // TODO stub this.
               image: "cockroachdb",
-              volumeMounts:: [
-                {
-                  name: "certs",
-                  mountPath: "/cockroach/cockroach-certs"
-                },
-                {
-                  name: "datadir",
-                  mountPath: "/cockroach/cockroach-data",
-                },
-              ],
+              volumeMounts:: common.cockroach.volumeMounts,
               ports: [
                 {
                   containerPort: common.cockroach.grpc_port,
@@ -118,58 +108,29 @@ local crLabels = {
           },
           terminationGracePeriodSeconds: 60,
         },
-      }
+      },
+      podManagementPolicy: 'Parallel',
+      updateStrategy: {
+        type: 'RollingUpdate',
+      },
+      volumeClaimTemplates: [
+        {
+          metadata: {
+            name: 'datadir',
+          },
+          spec: {
+            storageClassName: "standard",
+            accessModes: [
+              'ReadWriteOnce',
+            ],
+            resources: {
+              requests: {
+                storage: "100Gi",
+              },
+            },
+          },
+        },
+      ],
     },
   },
 }
-
-
-# {
-#   spec: {
-#     template: {
-#       spec: {
-#         volumes: [
-#           {
-#             name: 'datadir',
-#             persistentVolumeClaim: {
-#               claimName: 'datadir',
-#             },
-#           },
-#           {
-#             name: 'certs',
-#             secret: {
-#               secretName: 'cockroachdb.node',
-#               defaultMode: 256,
-#             },
-#           },
-#         ],
-#       },
-#     },
-#     podManagementPolicy: 'Parallel',
-#     updateStrategy: {
-#       type: 'RollingUpdate',
-#     },
-#     volumeClaimTemplates: [
-#       {
-#         metadata: {
-#           name: 'datadir',
-#         },
-#         spec: {
-#           storageClassName: {
-#             '[object Object]': null,
-#           },
-#           accessModes: [
-#             'ReadWriteOnce',
-#           ],
-#           resources: {
-#             requests: {
-#               storage: {
-#                 '[object Object]': null,
-#               },
-#             },
-#           },
-#         },
-#       },
-#     ],
-#   },
-# }
