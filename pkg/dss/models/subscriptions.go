@@ -132,9 +132,8 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 		s.EndTime = old.EndTime
 	}
 
-	// Or if this is a new subscription default to StartTime + 1 day.  Also
-	// truncate long existing subscriptions to 1 day.
-	if s.EndTime == nil || s.EndTime.Sub(*s.StartTime) > maxSubscriptionDuration {
+	// Or if this is a new subscription default to StartTime + 1 day.
+	if s.EndTime == nil {
 		truncatedEndTime := s.StartTime.Add(maxSubscriptionDuration)
 		s.EndTime = &truncatedEndTime
 	}
@@ -142,6 +141,11 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 	// EndTime cannot be before StartTime.
 	if s.EndTime.Sub(*s.StartTime) < 0 {
 		return dsserr.BadRequest("subscription time_end must be after time_start")
+	}
+
+	// EndTime cannot be 24 hrs after StartTime
+	if s.EndTime.Sub(*s.StartTime) > maxSubscriptionDuration {
+		return dsserr.BadRequest("subscription window exceeds 24 hours")
 	}
 
 	return nil

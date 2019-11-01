@@ -154,3 +154,43 @@ def test_create_sub_with_too_long_end_time(session, sub2_uuid):
         },
     )
     assert resp.status_code == 400
+
+def test_update_sub_with_too_long_end_time(session, sub2_uuid):
+    """ASTM Compliance Test: DSS0060_MAX_SUBS_DURATION."""
+    time_start = datetime.datetime.utcnow()
+    time_end = time_start + datetime.timedelta(seconds=10)
+
+    resp = session.put(
+        "/subscriptions/{}".format(sub2_uuid),
+        json={
+            "extents": {
+                "spatial_volume": {
+                    "footprint": {"vertices": common.VERTICES},
+                    "altitude_lo": 20,
+                    "altitude_hi": 400,
+                },
+                "time_start": time_start.strftime(common.DATE_FORMAT),
+                "time_end": time_end.strftime(common.DATE_FORMAT),
+            },
+            "callbacks": {"identification_service_area_url": "https://example.com/foo"},
+        },
+    )
+    assert resp.status_code == 200
+
+    time_end = time_start + datetime.timedelta(hours=(common.MAX_SUB_TIME_HRS + 1))
+    resp = session.put(
+        "/subscriptions/{}/{}".format(sub2_uuid, resp.json()["subscription"]["version"]),
+        json={
+            "extents": {
+                "spatial_volume": {
+                    "footprint": {"vertices": common.VERTICES},
+                    "altitude_lo": 20,
+                    "altitude_hi": 400,
+                },
+                "time_start": time_start.strftime(common.DATE_FORMAT),
+                "time_end": time_end.strftime(common.DATE_FORMAT),
+            },
+            "callbacks": {"identification_service_area_url": "https://example.com/foo"},
+        },
+    )
+    assert resp.status_code == 400
