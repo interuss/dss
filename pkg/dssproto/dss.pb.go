@@ -284,7 +284,7 @@ func (x RIDHeight_RIDHeightReference) String() string {
 }
 
 func (RIDHeight_RIDHeightReference) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{30, 0}
+	return fileDescriptor_e6b4bd547de77484, []int{26, 0}
 }
 
 // Parameters for a request to create an Identification Service Area in the DSS.
@@ -340,6 +340,57 @@ func (m *CreateIdentificationServiceAreaParameters) GetFlightsUrl() string {
 	return ""
 }
 
+type CreateIdentificationServiceAreaRequest struct {
+	// EntityUUID of the Identification Service Area.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Request body.
+	Params               *CreateIdentificationServiceAreaParameters `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                   `json:"-"`
+	XXX_unrecognized     []byte                                     `json:"-"`
+	XXX_sizecache        int32                                      `json:"-"`
+}
+
+func (m *CreateIdentificationServiceAreaRequest) Reset() {
+	*m = CreateIdentificationServiceAreaRequest{}
+}
+func (m *CreateIdentificationServiceAreaRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateIdentificationServiceAreaRequest) ProtoMessage()    {}
+func (*CreateIdentificationServiceAreaRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{1}
+}
+
+func (m *CreateIdentificationServiceAreaRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateIdentificationServiceAreaRequest.Unmarshal(m, b)
+}
+func (m *CreateIdentificationServiceAreaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateIdentificationServiceAreaRequest.Marshal(b, m, deterministic)
+}
+func (m *CreateIdentificationServiceAreaRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateIdentificationServiceAreaRequest.Merge(m, src)
+}
+func (m *CreateIdentificationServiceAreaRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateIdentificationServiceAreaRequest.Size(m)
+}
+func (m *CreateIdentificationServiceAreaRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateIdentificationServiceAreaRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateIdentificationServiceAreaRequest proto.InternalMessageInfo
+
+func (m *CreateIdentificationServiceAreaRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *CreateIdentificationServiceAreaRequest) GetParams() *CreateIdentificationServiceAreaParameters {
+	if m != nil {
+		return m.Params
+	}
+	return nil
+}
+
 // Parameters for a request to create a subscription in the DSS.
 type CreateSubscriptionParameters struct {
 	Callbacks *SubscriptionCallbacks `protobuf:"bytes,1,opt,name=callbacks,proto3" json:"callbacks,omitempty"`
@@ -358,7 +409,7 @@ func (m *CreateSubscriptionParameters) Reset()         { *m = CreateSubscription
 func (m *CreateSubscriptionParameters) String() string { return proto.CompactTextString(m) }
 func (*CreateSubscriptionParameters) ProtoMessage()    {}
 func (*CreateSubscriptionParameters) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{1}
+	return fileDescriptor_e6b4bd547de77484, []int{2}
 }
 
 func (m *CreateSubscriptionParameters) XXX_Unmarshal(b []byte) error {
@@ -393,6 +444,106 @@ func (m *CreateSubscriptionParameters) GetExtents() *Volume4D {
 	return nil
 }
 
+type CreateSubscriptionRequest struct {
+	// SubscriptionUUID of the subscription of interest.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Request body.
+	Params               *CreateSubscriptionParameters `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *CreateSubscriptionRequest) Reset()         { *m = CreateSubscriptionRequest{} }
+func (m *CreateSubscriptionRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateSubscriptionRequest) ProtoMessage()    {}
+func (*CreateSubscriptionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{3}
+}
+
+func (m *CreateSubscriptionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateSubscriptionRequest.Unmarshal(m, b)
+}
+func (m *CreateSubscriptionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateSubscriptionRequest.Marshal(b, m, deterministic)
+}
+func (m *CreateSubscriptionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateSubscriptionRequest.Merge(m, src)
+}
+func (m *CreateSubscriptionRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateSubscriptionRequest.Size(m)
+}
+func (m *CreateSubscriptionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateSubscriptionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateSubscriptionRequest proto.InternalMessageInfo
+
+func (m *CreateSubscriptionRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *CreateSubscriptionRequest) GetParams() *CreateSubscriptionParameters {
+	if m != nil {
+		return m.Params
+	}
+	return nil
+}
+
+type DeleteIdentificationServiceAreaRequest struct {
+	// EntityUUID of the Identification Service Area.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Version string used to reference an Identification Service Area at a particular point in time. Any updates to an existing Identification Service Area must contain the corresponding version to maintain idempotent updates.
+	Version              string   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteIdentificationServiceAreaRequest) Reset() {
+	*m = DeleteIdentificationServiceAreaRequest{}
+}
+func (m *DeleteIdentificationServiceAreaRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteIdentificationServiceAreaRequest) ProtoMessage()    {}
+func (*DeleteIdentificationServiceAreaRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{4}
+}
+
+func (m *DeleteIdentificationServiceAreaRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteIdentificationServiceAreaRequest.Unmarshal(m, b)
+}
+func (m *DeleteIdentificationServiceAreaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteIdentificationServiceAreaRequest.Marshal(b, m, deterministic)
+}
+func (m *DeleteIdentificationServiceAreaRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteIdentificationServiceAreaRequest.Merge(m, src)
+}
+func (m *DeleteIdentificationServiceAreaRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteIdentificationServiceAreaRequest.Size(m)
+}
+func (m *DeleteIdentificationServiceAreaRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteIdentificationServiceAreaRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteIdentificationServiceAreaRequest proto.InternalMessageInfo
+
+func (m *DeleteIdentificationServiceAreaRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *DeleteIdentificationServiceAreaRequest) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
 // Response for a request to delete an Identification Service Area.
 type DeleteIdentificationServiceAreaResponse struct {
 	// Indentification Service Area that was just deleted.
@@ -410,7 +561,7 @@ func (m *DeleteIdentificationServiceAreaResponse) Reset() {
 func (m *DeleteIdentificationServiceAreaResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteIdentificationServiceAreaResponse) ProtoMessage()    {}
 func (*DeleteIdentificationServiceAreaResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{2}
+	return fileDescriptor_e6b4bd547de77484, []int{5}
 }
 
 func (m *DeleteIdentificationServiceAreaResponse) XXX_Unmarshal(b []byte) error {
@@ -445,6 +596,55 @@ func (m *DeleteIdentificationServiceAreaResponse) GetSubscribers() []*Subscriber
 	return nil
 }
 
+type DeleteSubscriptionRequest struct {
+	// SubscriptionUUID of the subscription of interest.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Version string used to reference a Subscription at a particular point in time. Any updates to an existing Subscription must contain the corresponding version to maintain idempotent updates.
+	Version              string   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteSubscriptionRequest) Reset()         { *m = DeleteSubscriptionRequest{} }
+func (m *DeleteSubscriptionRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteSubscriptionRequest) ProtoMessage()    {}
+func (*DeleteSubscriptionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{6}
+}
+
+func (m *DeleteSubscriptionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteSubscriptionRequest.Unmarshal(m, b)
+}
+func (m *DeleteSubscriptionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteSubscriptionRequest.Marshal(b, m, deterministic)
+}
+func (m *DeleteSubscriptionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteSubscriptionRequest.Merge(m, src)
+}
+func (m *DeleteSubscriptionRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteSubscriptionRequest.Size(m)
+}
+func (m *DeleteSubscriptionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteSubscriptionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteSubscriptionRequest proto.InternalMessageInfo
+
+func (m *DeleteSubscriptionRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *DeleteSubscriptionRequest) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
 // Response for a successful request to delete an Subscription.
 type DeleteSubscriptionResponse struct {
 	// The Subscription which was deleted.
@@ -458,7 +658,7 @@ func (m *DeleteSubscriptionResponse) Reset()         { *m = DeleteSubscriptionRe
 func (m *DeleteSubscriptionResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteSubscriptionResponse) ProtoMessage()    {}
 func (*DeleteSubscriptionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{3}
+	return fileDescriptor_e6b4bd547de77484, []int{7}
 }
 
 func (m *DeleteSubscriptionResponse) XXX_Unmarshal(b []byte) error {
@@ -486,110 +686,6 @@ func (m *DeleteSubscriptionResponse) GetSubscription() *Subscription {
 	return nil
 }
 
-type DeleteV1DssIdentificationServiceAreasIdVersionRequest struct {
-	// EntityUUID of the Identification Service Area.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Version string used to reference an Identification Service Area at a particular point in time. Any updates to an existing Identification Service Area must contain the corresponding version to maintain idempotent updates.
-	Version              string   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeleteV1DssIdentificationServiceAreasIdVersionRequest) Reset() {
-	*m = DeleteV1DssIdentificationServiceAreasIdVersionRequest{}
-}
-func (m *DeleteV1DssIdentificationServiceAreasIdVersionRequest) String() string {
-	return proto.CompactTextString(m)
-}
-func (*DeleteV1DssIdentificationServiceAreasIdVersionRequest) ProtoMessage() {}
-func (*DeleteV1DssIdentificationServiceAreasIdVersionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{4}
-}
-
-func (m *DeleteV1DssIdentificationServiceAreasIdVersionRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteV1DssIdentificationServiceAreasIdVersionRequest.Unmarshal(m, b)
-}
-func (m *DeleteV1DssIdentificationServiceAreasIdVersionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteV1DssIdentificationServiceAreasIdVersionRequest.Marshal(b, m, deterministic)
-}
-func (m *DeleteV1DssIdentificationServiceAreasIdVersionRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteV1DssIdentificationServiceAreasIdVersionRequest.Merge(m, src)
-}
-func (m *DeleteV1DssIdentificationServiceAreasIdVersionRequest) XXX_Size() int {
-	return xxx_messageInfo_DeleteV1DssIdentificationServiceAreasIdVersionRequest.Size(m)
-}
-func (m *DeleteV1DssIdentificationServiceAreasIdVersionRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteV1DssIdentificationServiceAreasIdVersionRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeleteV1DssIdentificationServiceAreasIdVersionRequest proto.InternalMessageInfo
-
-func (m *DeleteV1DssIdentificationServiceAreasIdVersionRequest) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-func (m *DeleteV1DssIdentificationServiceAreasIdVersionRequest) GetVersion() string {
-	if m != nil {
-		return m.Version
-	}
-	return ""
-}
-
-type DeleteV1DssSubscriptionsIdVersionRequest struct {
-	// SubscriptionUUID of the subscription of interest.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Version string used to reference a Subscription at a particular point in time. Any updates to an existing Subscription must contain the corresponding version to maintain idempotent updates.
-	Version              string   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeleteV1DssSubscriptionsIdVersionRequest) Reset() {
-	*m = DeleteV1DssSubscriptionsIdVersionRequest{}
-}
-func (m *DeleteV1DssSubscriptionsIdVersionRequest) String() string { return proto.CompactTextString(m) }
-func (*DeleteV1DssSubscriptionsIdVersionRequest) ProtoMessage()    {}
-func (*DeleteV1DssSubscriptionsIdVersionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{5}
-}
-
-func (m *DeleteV1DssSubscriptionsIdVersionRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteV1DssSubscriptionsIdVersionRequest.Unmarshal(m, b)
-}
-func (m *DeleteV1DssSubscriptionsIdVersionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteV1DssSubscriptionsIdVersionRequest.Marshal(b, m, deterministic)
-}
-func (m *DeleteV1DssSubscriptionsIdVersionRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteV1DssSubscriptionsIdVersionRequest.Merge(m, src)
-}
-func (m *DeleteV1DssSubscriptionsIdVersionRequest) XXX_Size() int {
-	return xxx_messageInfo_DeleteV1DssSubscriptionsIdVersionRequest.Size(m)
-}
-func (m *DeleteV1DssSubscriptionsIdVersionRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteV1DssSubscriptionsIdVersionRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeleteV1DssSubscriptionsIdVersionRequest proto.InternalMessageInfo
-
-func (m *DeleteV1DssSubscriptionsIdVersionRequest) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-func (m *DeleteV1DssSubscriptionsIdVersionRequest) GetVersion() string {
-	if m != nil {
-		return m.Version
-	}
-	return ""
-}
-
 // Data provided when an off-nominal condition was encountered.
 type ErrorResponse struct {
 	// Human-readable message indicating what error occurred and/or why.
@@ -603,7 +699,7 @@ func (m *ErrorResponse) Reset()         { *m = ErrorResponse{} }
 func (m *ErrorResponse) String() string { return proto.CompactTextString(m) }
 func (*ErrorResponse) ProtoMessage()    {}
 func (*ErrorResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{6}
+	return fileDescriptor_e6b4bd547de77484, []int{8}
 }
 
 func (m *ErrorResponse) XXX_Unmarshal(b []byte) error {
@@ -648,7 +744,7 @@ func (m *GeoPolygon) Reset()         { *m = GeoPolygon{} }
 func (m *GeoPolygon) String() string { return proto.CompactTextString(m) }
 func (*GeoPolygon) ProtoMessage()    {}
 func (*GeoPolygon) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{7}
+	return fileDescriptor_e6b4bd547de77484, []int{9}
 }
 
 func (m *GeoPolygon) XXX_Unmarshal(b []byte) error {
@@ -688,7 +784,7 @@ func (m *GetFlightDetailsResponse) Reset()         { *m = GetFlightDetailsRespon
 func (m *GetFlightDetailsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetFlightDetailsResponse) ProtoMessage()    {}
 func (*GetFlightDetailsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{8}
+	return fileDescriptor_e6b4bd547de77484, []int{10}
 }
 
 func (m *GetFlightDetailsResponse) XXX_Unmarshal(b []byte) error {
@@ -731,7 +827,7 @@ func (m *GetFlightsResponse) Reset()         { *m = GetFlightsResponse{} }
 func (m *GetFlightsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetFlightsResponse) ProtoMessage()    {}
 func (*GetFlightsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{9}
+	return fileDescriptor_e6b4bd547de77484, []int{11}
 }
 
 func (m *GetFlightsResponse) XXX_Unmarshal(b []byte) error {
@@ -766,6 +862,46 @@ func (m *GetFlightsResponse) GetTimestamp() *timestamp.Timestamp {
 	return nil
 }
 
+type GetIdentificationServiceAreaRequest struct {
+	// EntityUUID of the Identification Service Area.
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetIdentificationServiceAreaRequest) Reset()         { *m = GetIdentificationServiceAreaRequest{} }
+func (m *GetIdentificationServiceAreaRequest) String() string { return proto.CompactTextString(m) }
+func (*GetIdentificationServiceAreaRequest) ProtoMessage()    {}
+func (*GetIdentificationServiceAreaRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{12}
+}
+
+func (m *GetIdentificationServiceAreaRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetIdentificationServiceAreaRequest.Unmarshal(m, b)
+}
+func (m *GetIdentificationServiceAreaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetIdentificationServiceAreaRequest.Marshal(b, m, deterministic)
+}
+func (m *GetIdentificationServiceAreaRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetIdentificationServiceAreaRequest.Merge(m, src)
+}
+func (m *GetIdentificationServiceAreaRequest) XXX_Size() int {
+	return xxx_messageInfo_GetIdentificationServiceAreaRequest.Size(m)
+}
+func (m *GetIdentificationServiceAreaRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetIdentificationServiceAreaRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetIdentificationServiceAreaRequest proto.InternalMessageInfo
+
+func (m *GetIdentificationServiceAreaRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
 // Response to DSS request for the identification service area with the given id.
 type GetIdentificationServiceAreaResponse struct {
 	ServiceArea          *IdentificationServiceArea `protobuf:"bytes,1,opt,name=service_area,json=serviceArea,proto3" json:"service_area,omitempty"`
@@ -778,7 +914,7 @@ func (m *GetIdentificationServiceAreaResponse) Reset()         { *m = GetIdentif
 func (m *GetIdentificationServiceAreaResponse) String() string { return proto.CompactTextString(m) }
 func (*GetIdentificationServiceAreaResponse) ProtoMessage()    {}
 func (*GetIdentificationServiceAreaResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{10}
+	return fileDescriptor_e6b4bd547de77484, []int{13}
 }
 
 func (m *GetIdentificationServiceAreaResponse) XXX_Unmarshal(b []byte) error {
@@ -806,6 +942,46 @@ func (m *GetIdentificationServiceAreaResponse) GetServiceArea() *IdentificationS
 	return nil
 }
 
+type GetSubscriptionRequest struct {
+	// SubscriptionUUID of the subscription of interest.
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetSubscriptionRequest) Reset()         { *m = GetSubscriptionRequest{} }
+func (m *GetSubscriptionRequest) String() string { return proto.CompactTextString(m) }
+func (*GetSubscriptionRequest) ProtoMessage()    {}
+func (*GetSubscriptionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{14}
+}
+
+func (m *GetSubscriptionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetSubscriptionRequest.Unmarshal(m, b)
+}
+func (m *GetSubscriptionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetSubscriptionRequest.Marshal(b, m, deterministic)
+}
+func (m *GetSubscriptionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetSubscriptionRequest.Merge(m, src)
+}
+func (m *GetSubscriptionRequest) XXX_Size() int {
+	return xxx_messageInfo_GetSubscriptionRequest.Size(m)
+}
+func (m *GetSubscriptionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetSubscriptionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetSubscriptionRequest proto.InternalMessageInfo
+
+func (m *GetSubscriptionRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
 // Response to DSS request for the subscription with the given id.
 type GetSubscriptionResponse struct {
 	Subscription         *Subscription `protobuf:"bytes,1,opt,name=subscription,proto3" json:"subscription,omitempty"`
@@ -818,7 +994,7 @@ func (m *GetSubscriptionResponse) Reset()         { *m = GetSubscriptionResponse
 func (m *GetSubscriptionResponse) String() string { return proto.CompactTextString(m) }
 func (*GetSubscriptionResponse) ProtoMessage()    {}
 func (*GetSubscriptionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{11}
+	return fileDescriptor_e6b4bd547de77484, []int{15}
 }
 
 func (m *GetSubscriptionResponse) XXX_Unmarshal(b []byte) error {
@@ -844,190 +1020,6 @@ func (m *GetSubscriptionResponse) GetSubscription() *Subscription {
 		return m.Subscription
 	}
 	return nil
-}
-
-type GetV1DssIdentificationServiceAreasIdRequest struct {
-	// EntityUUID of the Identification Service Area.
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetV1DssIdentificationServiceAreasIdRequest) Reset() {
-	*m = GetV1DssIdentificationServiceAreasIdRequest{}
-}
-func (m *GetV1DssIdentificationServiceAreasIdRequest) String() string {
-	return proto.CompactTextString(m)
-}
-func (*GetV1DssIdentificationServiceAreasIdRequest) ProtoMessage() {}
-func (*GetV1DssIdentificationServiceAreasIdRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{12}
-}
-
-func (m *GetV1DssIdentificationServiceAreasIdRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetV1DssIdentificationServiceAreasIdRequest.Unmarshal(m, b)
-}
-func (m *GetV1DssIdentificationServiceAreasIdRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetV1DssIdentificationServiceAreasIdRequest.Marshal(b, m, deterministic)
-}
-func (m *GetV1DssIdentificationServiceAreasIdRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetV1DssIdentificationServiceAreasIdRequest.Merge(m, src)
-}
-func (m *GetV1DssIdentificationServiceAreasIdRequest) XXX_Size() int {
-	return xxx_messageInfo_GetV1DssIdentificationServiceAreasIdRequest.Size(m)
-}
-func (m *GetV1DssIdentificationServiceAreasIdRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetV1DssIdentificationServiceAreasIdRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetV1DssIdentificationServiceAreasIdRequest proto.InternalMessageInfo
-
-func (m *GetV1DssIdentificationServiceAreasIdRequest) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-type GetV1DssIdentificationServiceAreasRequest struct {
-	// The area in which to search for Identification Service Areas.  Some Identification Service Areas near this area but wholly outside it may also be returned.
-	Area string `protobuf:"bytes,1,opt,name=area,proto3" json:"area,omitempty"`
-	// If specified, indicates non-interest in any Identification Service Areas that end before this time.  RFC 3339 format, per OpenAPI specification.
-	EarliestTime *timestamp.Timestamp `protobuf:"bytes,2,opt,name=earliest_time,json=earliestTime,proto3" json:"earliest_time,omitempty"`
-	// If specified, indicates non-interest in any Identification Service Areas that start after this time.  RFC 3339 format, per OpenAPI specification.
-	LatestTime           *timestamp.Timestamp `protobuf:"bytes,3,opt,name=latest_time,json=latestTime,proto3" json:"latest_time,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
-}
-
-func (m *GetV1DssIdentificationServiceAreasRequest) Reset() {
-	*m = GetV1DssIdentificationServiceAreasRequest{}
-}
-func (m *GetV1DssIdentificationServiceAreasRequest) String() string { return proto.CompactTextString(m) }
-func (*GetV1DssIdentificationServiceAreasRequest) ProtoMessage()    {}
-func (*GetV1DssIdentificationServiceAreasRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{13}
-}
-
-func (m *GetV1DssIdentificationServiceAreasRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetV1DssIdentificationServiceAreasRequest.Unmarshal(m, b)
-}
-func (m *GetV1DssIdentificationServiceAreasRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetV1DssIdentificationServiceAreasRequest.Marshal(b, m, deterministic)
-}
-func (m *GetV1DssIdentificationServiceAreasRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetV1DssIdentificationServiceAreasRequest.Merge(m, src)
-}
-func (m *GetV1DssIdentificationServiceAreasRequest) XXX_Size() int {
-	return xxx_messageInfo_GetV1DssIdentificationServiceAreasRequest.Size(m)
-}
-func (m *GetV1DssIdentificationServiceAreasRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetV1DssIdentificationServiceAreasRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetV1DssIdentificationServiceAreasRequest proto.InternalMessageInfo
-
-func (m *GetV1DssIdentificationServiceAreasRequest) GetArea() string {
-	if m != nil {
-		return m.Area
-	}
-	return ""
-}
-
-func (m *GetV1DssIdentificationServiceAreasRequest) GetEarliestTime() *timestamp.Timestamp {
-	if m != nil {
-		return m.EarliestTime
-	}
-	return nil
-}
-
-func (m *GetV1DssIdentificationServiceAreasRequest) GetLatestTime() *timestamp.Timestamp {
-	if m != nil {
-		return m.LatestTime
-	}
-	return nil
-}
-
-type GetV1DssSubscriptionsIdRequest struct {
-	// SubscriptionUUID of the subscription of interest.
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetV1DssSubscriptionsIdRequest) Reset()         { *m = GetV1DssSubscriptionsIdRequest{} }
-func (m *GetV1DssSubscriptionsIdRequest) String() string { return proto.CompactTextString(m) }
-func (*GetV1DssSubscriptionsIdRequest) ProtoMessage()    {}
-func (*GetV1DssSubscriptionsIdRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{14}
-}
-
-func (m *GetV1DssSubscriptionsIdRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetV1DssSubscriptionsIdRequest.Unmarshal(m, b)
-}
-func (m *GetV1DssSubscriptionsIdRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetV1DssSubscriptionsIdRequest.Marshal(b, m, deterministic)
-}
-func (m *GetV1DssSubscriptionsIdRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetV1DssSubscriptionsIdRequest.Merge(m, src)
-}
-func (m *GetV1DssSubscriptionsIdRequest) XXX_Size() int {
-	return xxx_messageInfo_GetV1DssSubscriptionsIdRequest.Size(m)
-}
-func (m *GetV1DssSubscriptionsIdRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetV1DssSubscriptionsIdRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetV1DssSubscriptionsIdRequest proto.InternalMessageInfo
-
-func (m *GetV1DssSubscriptionsIdRequest) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-type GetV1DssSubscriptionsRequest struct {
-	// The area in which to search for Subscriptions.  Some Subscriptions near this area but wholly outside it may also be returned.
-	Area                 string   `protobuf:"bytes,1,opt,name=area,proto3" json:"area,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetV1DssSubscriptionsRequest) Reset()         { *m = GetV1DssSubscriptionsRequest{} }
-func (m *GetV1DssSubscriptionsRequest) String() string { return proto.CompactTextString(m) }
-func (*GetV1DssSubscriptionsRequest) ProtoMessage()    {}
-func (*GetV1DssSubscriptionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{15}
-}
-
-func (m *GetV1DssSubscriptionsRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetV1DssSubscriptionsRequest.Unmarshal(m, b)
-}
-func (m *GetV1DssSubscriptionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetV1DssSubscriptionsRequest.Marshal(b, m, deterministic)
-}
-func (m *GetV1DssSubscriptionsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetV1DssSubscriptionsRequest.Merge(m, src)
-}
-func (m *GetV1DssSubscriptionsRequest) XXX_Size() int {
-	return xxx_messageInfo_GetV1DssSubscriptionsRequest.Size(m)
-}
-func (m *GetV1DssSubscriptionsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetV1DssSubscriptionsRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetV1DssSubscriptionsRequest proto.InternalMessageInfo
-
-func (m *GetV1DssSubscriptionsRequest) GetArea() string {
-	if m != nil {
-		return m.Area
-	}
-	return ""
 }
 
 // An Identification Service Area (area in which remote ID services are being provided).  The DSS reports only these declarations and clients must exchange flight information peer-to-peer.
@@ -1164,12 +1156,16 @@ func (m *LatLngPoint) GetLng() float64 {
 
 // Parameters of a message informing of new full information for an Identification Service Area.  Pushed (by a client, not the DSS) directly to clients with subscriptions when another client makes a change to airspace within a cell with a subscription.
 type PutIdentificationServiceAreaNotificationParameters struct {
+	// The new or updated extents of the Identification Service Area.
+	//
+	// Omitted if Identification Service Area was deleted.
+	Extents *Volume4D `protobuf:"bytes,1,opt,name=extents,proto3" json:"extents,omitempty"`
 	// Identification Service Area that the notifying client changed or created.
 	//
 	// If this field is populated, the Identification Service Area was created or updated.  If this field is not populated, the Identification Service Area was deleted.
-	ServiceArea *IdentificationServiceArea `protobuf:"bytes,1,opt,name=service_area,json=serviceArea,proto3" json:"service_area,omitempty"`
+	ServiceArea *IdentificationServiceArea `protobuf:"bytes,2,opt,name=service_area,json=serviceArea,proto3" json:"service_area,omitempty"`
 	// Subscription(s) prompting this notification.
-	Subscriptions        []*SubscriptionState `protobuf:"bytes,2,rep,name=subscriptions,proto3" json:"subscriptions,omitempty"`
+	Subscriptions        []*SubscriptionState `protobuf:"bytes,3,rep,name=subscriptions,proto3" json:"subscriptions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -1203,6 +1199,13 @@ func (m *PutIdentificationServiceAreaNotificationParameters) XXX_DiscardUnknown(
 }
 
 var xxx_messageInfo_PutIdentificationServiceAreaNotificationParameters proto.InternalMessageInfo
+
+func (m *PutIdentificationServiceAreaNotificationParameters) GetExtents() *Volume4D {
+	if m != nil {
+		return m.Extents
+	}
+	return nil
+}
 
 func (m *PutIdentificationServiceAreaNotificationParameters) GetServiceArea() *IdentificationServiceArea {
 	if m != nil {
@@ -1318,228 +1321,6 @@ func (m *PutSubscriptionResponse) GetSubscription() *Subscription {
 	return nil
 }
 
-type PutV1DssIdentificationServiceAreasIdRequest struct {
-	// EntityUUID of the Identification Service Area.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Request body.
-	Params               *CreateIdentificationServiceAreaParameters `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                                   `json:"-"`
-	XXX_unrecognized     []byte                                     `json:"-"`
-	XXX_sizecache        int32                                      `json:"-"`
-}
-
-func (m *PutV1DssIdentificationServiceAreasIdRequest) Reset() {
-	*m = PutV1DssIdentificationServiceAreasIdRequest{}
-}
-func (m *PutV1DssIdentificationServiceAreasIdRequest) String() string {
-	return proto.CompactTextString(m)
-}
-func (*PutV1DssIdentificationServiceAreasIdRequest) ProtoMessage() {}
-func (*PutV1DssIdentificationServiceAreasIdRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{21}
-}
-
-func (m *PutV1DssIdentificationServiceAreasIdRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_PutV1DssIdentificationServiceAreasIdRequest.Unmarshal(m, b)
-}
-func (m *PutV1DssIdentificationServiceAreasIdRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_PutV1DssIdentificationServiceAreasIdRequest.Marshal(b, m, deterministic)
-}
-func (m *PutV1DssIdentificationServiceAreasIdRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PutV1DssIdentificationServiceAreasIdRequest.Merge(m, src)
-}
-func (m *PutV1DssIdentificationServiceAreasIdRequest) XXX_Size() int {
-	return xxx_messageInfo_PutV1DssIdentificationServiceAreasIdRequest.Size(m)
-}
-func (m *PutV1DssIdentificationServiceAreasIdRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_PutV1DssIdentificationServiceAreasIdRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PutV1DssIdentificationServiceAreasIdRequest proto.InternalMessageInfo
-
-func (m *PutV1DssIdentificationServiceAreasIdRequest) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-func (m *PutV1DssIdentificationServiceAreasIdRequest) GetParams() *CreateIdentificationServiceAreaParameters {
-	if m != nil {
-		return m.Params
-	}
-	return nil
-}
-
-type PutV1DssIdentificationServiceAreasIdVersionRequest struct {
-	// EntityUUID of the Identification Service Area.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Request body.
-	Params *UpdateIdentificationServiceAreaParameters `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
-	// Version string used to reference an Identification Service Area at a particular point in time. Any updates to an existing Identification Service Area must contain the corresponding version to maintain idempotent updates.
-	Version              string   `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) Reset() {
-	*m = PutV1DssIdentificationServiceAreasIdVersionRequest{}
-}
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) String() string {
-	return proto.CompactTextString(m)
-}
-func (*PutV1DssIdentificationServiceAreasIdVersionRequest) ProtoMessage() {}
-func (*PutV1DssIdentificationServiceAreasIdVersionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{22}
-}
-
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_PutV1DssIdentificationServiceAreasIdVersionRequest.Unmarshal(m, b)
-}
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_PutV1DssIdentificationServiceAreasIdVersionRequest.Marshal(b, m, deterministic)
-}
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PutV1DssIdentificationServiceAreasIdVersionRequest.Merge(m, src)
-}
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) XXX_Size() int {
-	return xxx_messageInfo_PutV1DssIdentificationServiceAreasIdVersionRequest.Size(m)
-}
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_PutV1DssIdentificationServiceAreasIdVersionRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PutV1DssIdentificationServiceAreasIdVersionRequest proto.InternalMessageInfo
-
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) GetParams() *UpdateIdentificationServiceAreaParameters {
-	if m != nil {
-		return m.Params
-	}
-	return nil
-}
-
-func (m *PutV1DssIdentificationServiceAreasIdVersionRequest) GetVersion() string {
-	if m != nil {
-		return m.Version
-	}
-	return ""
-}
-
-type PutV1DssSubscriptionsIdRequest struct {
-	// SubscriptionUUID of the subscription of interest.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Request body.
-	Params               *CreateSubscriptionParameters `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
-	XXX_unrecognized     []byte                        `json:"-"`
-	XXX_sizecache        int32                         `json:"-"`
-}
-
-func (m *PutV1DssSubscriptionsIdRequest) Reset()         { *m = PutV1DssSubscriptionsIdRequest{} }
-func (m *PutV1DssSubscriptionsIdRequest) String() string { return proto.CompactTextString(m) }
-func (*PutV1DssSubscriptionsIdRequest) ProtoMessage()    {}
-func (*PutV1DssSubscriptionsIdRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{23}
-}
-
-func (m *PutV1DssSubscriptionsIdRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_PutV1DssSubscriptionsIdRequest.Unmarshal(m, b)
-}
-func (m *PutV1DssSubscriptionsIdRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_PutV1DssSubscriptionsIdRequest.Marshal(b, m, deterministic)
-}
-func (m *PutV1DssSubscriptionsIdRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PutV1DssSubscriptionsIdRequest.Merge(m, src)
-}
-func (m *PutV1DssSubscriptionsIdRequest) XXX_Size() int {
-	return xxx_messageInfo_PutV1DssSubscriptionsIdRequest.Size(m)
-}
-func (m *PutV1DssSubscriptionsIdRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_PutV1DssSubscriptionsIdRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PutV1DssSubscriptionsIdRequest proto.InternalMessageInfo
-
-func (m *PutV1DssSubscriptionsIdRequest) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-func (m *PutV1DssSubscriptionsIdRequest) GetParams() *CreateSubscriptionParameters {
-	if m != nil {
-		return m.Params
-	}
-	return nil
-}
-
-type PutV1DssSubscriptionsIdVersionRequest struct {
-	// SubscriptionUUID of the subscription of interest.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Request body.
-	Params *UpdateSubscriptionParameters `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
-	// Version string used to reference a Subscription at a particular point in time. Any updates to an existing Subscription must contain the corresponding version to maintain idempotent updates.
-	Version              string   `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *PutV1DssSubscriptionsIdVersionRequest) Reset()         { *m = PutV1DssSubscriptionsIdVersionRequest{} }
-func (m *PutV1DssSubscriptionsIdVersionRequest) String() string { return proto.CompactTextString(m) }
-func (*PutV1DssSubscriptionsIdVersionRequest) ProtoMessage()    {}
-func (*PutV1DssSubscriptionsIdVersionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{24}
-}
-
-func (m *PutV1DssSubscriptionsIdVersionRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_PutV1DssSubscriptionsIdVersionRequest.Unmarshal(m, b)
-}
-func (m *PutV1DssSubscriptionsIdVersionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_PutV1DssSubscriptionsIdVersionRequest.Marshal(b, m, deterministic)
-}
-func (m *PutV1DssSubscriptionsIdVersionRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PutV1DssSubscriptionsIdVersionRequest.Merge(m, src)
-}
-func (m *PutV1DssSubscriptionsIdVersionRequest) XXX_Size() int {
-	return xxx_messageInfo_PutV1DssSubscriptionsIdVersionRequest.Size(m)
-}
-func (m *PutV1DssSubscriptionsIdVersionRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_PutV1DssSubscriptionsIdVersionRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PutV1DssSubscriptionsIdVersionRequest proto.InternalMessageInfo
-
-func (m *PutV1DssSubscriptionsIdVersionRequest) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-func (m *PutV1DssSubscriptionsIdVersionRequest) GetParams() *UpdateSubscriptionParameters {
-	if m != nil {
-		return m.Params
-	}
-	return nil
-}
-
-func (m *PutV1DssSubscriptionsIdVersionRequest) GetVersion() string {
-	if m != nil {
-		return m.Version
-	}
-	return ""
-}
-
 // Position of an aircraft as reported for remote ID purposes.
 type RIDAircraftPosition struct {
 	// Horizontal error that is likely to be present in this reported position.  Required when `extrapolated` field is true and always in the entry for the current state.
@@ -1563,7 +1344,7 @@ func (m *RIDAircraftPosition) Reset()         { *m = RIDAircraftPosition{} }
 func (m *RIDAircraftPosition) String() string { return proto.CompactTextString(m) }
 func (*RIDAircraftPosition) ProtoMessage()    {}
 func (*RIDAircraftPosition) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{25}
+	return fileDescriptor_e6b4bd547de77484, []int{21}
 }
 
 func (m *RIDAircraftPosition) XXX_Unmarshal(b []byte) error {
@@ -1671,7 +1452,7 @@ func (m *RIDAircraftState) Reset()         { *m = RIDAircraftState{} }
 func (m *RIDAircraftState) String() string { return proto.CompactTextString(m) }
 func (*RIDAircraftState) ProtoMessage()    {}
 func (*RIDAircraftState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{26}
+	return fileDescriptor_e6b4bd547de77484, []int{22}
 }
 
 func (m *RIDAircraftState) XXX_Unmarshal(b []byte) error {
@@ -1812,7 +1593,7 @@ func (m *RIDAuthData) Reset()         { *m = RIDAuthData{} }
 func (m *RIDAuthData) String() string { return proto.CompactTextString(m) }
 func (*RIDAuthData) ProtoMessage()    {}
 func (*RIDAuthData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{27}
+	return fileDescriptor_e6b4bd547de77484, []int{23}
 }
 
 func (m *RIDAuthData) XXX_Unmarshal(b []byte) error {
@@ -1851,7 +1632,7 @@ func (m *RIDAuthData) GetFormat() string {
 type RIDFlight struct {
 	// Generic type of aircraft.
 	AircraftType RIDAircraftType `protobuf:"varint,1,opt,name=aircraft_type,json=aircraftType,proto3,enum=dssproto.RIDAircraftType" json:"aircraft_type,omitempty"`
-	// The most up-to-date state of the aircraft.  Required unless `volumes` is specified.
+	// The most up-to-date state of the aircraft.  Required when the aircraft is currently in the requested area unless `volumes` is specified.
 	//
 	// If current data is not being received from the UAS by the Service Provider, the lack of change in this field is sufficient to indicate that current data is not being received.
 	CurrentState *RIDAircraftState `protobuf:"bytes,2,opt,name=current_state,json=currentState,proto3" json:"current_state,omitempty"`
@@ -1875,7 +1656,7 @@ func (m *RIDFlight) Reset()         { *m = RIDFlight{} }
 func (m *RIDFlight) String() string { return proto.CompactTextString(m) }
 func (*RIDFlight) ProtoMessage()    {}
 func (*RIDFlight) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{28}
+	return fileDescriptor_e6b4bd547de77484, []int{24}
 }
 
 func (m *RIDFlight) XXX_Unmarshal(b []byte) error {
@@ -1962,7 +1743,7 @@ func (m *RIDFlightDetails) Reset()         { *m = RIDFlightDetails{} }
 func (m *RIDFlightDetails) String() string { return proto.CompactTextString(m) }
 func (*RIDFlightDetails) ProtoMessage()    {}
 func (*RIDFlightDetails) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{29}
+	return fileDescriptor_e6b4bd547de77484, []int{25}
 }
 
 func (m *RIDFlightDetails) XXX_Unmarshal(b []byte) error {
@@ -2047,7 +1828,7 @@ func (m *RIDHeight) Reset()         { *m = RIDHeight{} }
 func (m *RIDHeight) String() string { return proto.CompactTextString(m) }
 func (*RIDHeight) ProtoMessage()    {}
 func (*RIDHeight) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{30}
+	return fileDescriptor_e6b4bd547de77484, []int{26}
 }
 
 func (m *RIDHeight) XXX_Unmarshal(b []byte) error {
@@ -2095,7 +1876,7 @@ func (m *RIDRecentAircraftPosition) Reset()         { *m = RIDRecentAircraftPosi
 func (m *RIDRecentAircraftPosition) String() string { return proto.CompactTextString(m) }
 func (*RIDRecentAircraftPosition) ProtoMessage()    {}
 func (*RIDRecentAircraftPosition) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{31}
+	return fileDescriptor_e6b4bd547de77484, []int{27}
 }
 
 func (m *RIDRecentAircraftPosition) XXX_Unmarshal(b []byte) error {
@@ -2130,6 +1911,66 @@ func (m *RIDRecentAircraftPosition) GetTime() *timestamp.Timestamp {
 	return nil
 }
 
+type SearchIdentificationServiceAreasRequest struct {
+	// The area in which to search for Identification Service Areas.  Some Identification Service Areas near this area but wholly outside it may also be returned.
+	Area string `protobuf:"bytes,1,opt,name=area,proto3" json:"area,omitempty"`
+	// If specified, indicates non-interest in any Identification Service Areas that end before this time.  RFC 3339 format, per OpenAPI specification.
+	EarliestTime *timestamp.Timestamp `protobuf:"bytes,2,opt,name=earliest_time,json=earliestTime,proto3" json:"earliest_time,omitempty"`
+	// If specified, indicates non-interest in any Identification Service Areas that start after this time.  RFC 3339 format, per OpenAPI specification.
+	LatestTime           *timestamp.Timestamp `protobuf:"bytes,3,opt,name=latest_time,json=latestTime,proto3" json:"latest_time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *SearchIdentificationServiceAreasRequest) Reset() {
+	*m = SearchIdentificationServiceAreasRequest{}
+}
+func (m *SearchIdentificationServiceAreasRequest) String() string { return proto.CompactTextString(m) }
+func (*SearchIdentificationServiceAreasRequest) ProtoMessage()    {}
+func (*SearchIdentificationServiceAreasRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{28}
+}
+
+func (m *SearchIdentificationServiceAreasRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SearchIdentificationServiceAreasRequest.Unmarshal(m, b)
+}
+func (m *SearchIdentificationServiceAreasRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SearchIdentificationServiceAreasRequest.Marshal(b, m, deterministic)
+}
+func (m *SearchIdentificationServiceAreasRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchIdentificationServiceAreasRequest.Merge(m, src)
+}
+func (m *SearchIdentificationServiceAreasRequest) XXX_Size() int {
+	return xxx_messageInfo_SearchIdentificationServiceAreasRequest.Size(m)
+}
+func (m *SearchIdentificationServiceAreasRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SearchIdentificationServiceAreasRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SearchIdentificationServiceAreasRequest proto.InternalMessageInfo
+
+func (m *SearchIdentificationServiceAreasRequest) GetArea() string {
+	if m != nil {
+		return m.Area
+	}
+	return ""
+}
+
+func (m *SearchIdentificationServiceAreasRequest) GetEarliestTime() *timestamp.Timestamp {
+	if m != nil {
+		return m.EarliestTime
+	}
+	return nil
+}
+
+func (m *SearchIdentificationServiceAreasRequest) GetLatestTime() *timestamp.Timestamp {
+	if m != nil {
+		return m.LatestTime
+	}
+	return nil
+}
+
 // Response to DSS query for Identification Service Areas in an area of interest.
 type SearchIdentificationServiceAreasResponse struct {
 	// Identification Service Areas in the area of interest.
@@ -2145,7 +1986,7 @@ func (m *SearchIdentificationServiceAreasResponse) Reset() {
 func (m *SearchIdentificationServiceAreasResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchIdentificationServiceAreasResponse) ProtoMessage()    {}
 func (*SearchIdentificationServiceAreasResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{32}
+	return fileDescriptor_e6b4bd547de77484, []int{29}
 }
 
 func (m *SearchIdentificationServiceAreasResponse) XXX_Unmarshal(b []byte) error {
@@ -2173,6 +2014,46 @@ func (m *SearchIdentificationServiceAreasResponse) GetServiceAreas() []*Identifi
 	return nil
 }
 
+type SearchSubscriptionsRequest struct {
+	// The area in which to search for Subscriptions.  Some Subscriptions near this area but wholly outside it may also be returned.
+	Area                 string   `protobuf:"bytes,1,opt,name=area,proto3" json:"area,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SearchSubscriptionsRequest) Reset()         { *m = SearchSubscriptionsRequest{} }
+func (m *SearchSubscriptionsRequest) String() string { return proto.CompactTextString(m) }
+func (*SearchSubscriptionsRequest) ProtoMessage()    {}
+func (*SearchSubscriptionsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{30}
+}
+
+func (m *SearchSubscriptionsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SearchSubscriptionsRequest.Unmarshal(m, b)
+}
+func (m *SearchSubscriptionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SearchSubscriptionsRequest.Marshal(b, m, deterministic)
+}
+func (m *SearchSubscriptionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchSubscriptionsRequest.Merge(m, src)
+}
+func (m *SearchSubscriptionsRequest) XXX_Size() int {
+	return xxx_messageInfo_SearchSubscriptionsRequest.Size(m)
+}
+func (m *SearchSubscriptionsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SearchSubscriptionsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SearchSubscriptionsRequest proto.InternalMessageInfo
+
+func (m *SearchSubscriptionsRequest) GetArea() string {
+	if m != nil {
+		return m.Area
+	}
+	return ""
+}
+
 // Response to DSS query for subscriptions in a particular area.
 type SearchSubscriptionsResponse struct {
 	// Subscriptions that overlap the specified area.
@@ -2186,7 +2067,7 @@ func (m *SearchSubscriptionsResponse) Reset()         { *m = SearchSubscriptions
 func (m *SearchSubscriptionsResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchSubscriptionsResponse) ProtoMessage()    {}
 func (*SearchSubscriptionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{33}
+	return fileDescriptor_e6b4bd547de77484, []int{31}
 }
 
 func (m *SearchSubscriptionsResponse) XXX_Unmarshal(b []byte) error {
@@ -2229,7 +2110,7 @@ func (m *SubscriberToNotify) Reset()         { *m = SubscriberToNotify{} }
 func (m *SubscriberToNotify) String() string { return proto.CompactTextString(m) }
 func (*SubscriberToNotify) ProtoMessage()    {}
 func (*SubscriberToNotify) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{34}
+	return fileDescriptor_e6b4bd547de77484, []int{32}
 }
 
 func (m *SubscriberToNotify) XXX_Unmarshal(b []byte) error {
@@ -2286,7 +2167,7 @@ func (m *Subscription) Reset()         { *m = Subscription{} }
 func (m *Subscription) String() string { return proto.CompactTextString(m) }
 func (*Subscription) ProtoMessage()    {}
 func (*Subscription) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{35}
+	return fileDescriptor_e6b4bd547de77484, []int{33}
 }
 
 func (m *Subscription) XXX_Unmarshal(b []byte) error {
@@ -2369,7 +2250,7 @@ func (m *SubscriptionCallbacks) Reset()         { *m = SubscriptionCallbacks{} }
 func (m *SubscriptionCallbacks) String() string { return proto.CompactTextString(m) }
 func (*SubscriptionCallbacks) ProtoMessage()    {}
 func (*SubscriptionCallbacks) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{36}
+	return fileDescriptor_e6b4bd547de77484, []int{34}
 }
 
 func (m *SubscriptionCallbacks) XXX_Unmarshal(b []byte) error {
@@ -2410,7 +2291,7 @@ func (m *SubscriptionState) Reset()         { *m = SubscriptionState{} }
 func (m *SubscriptionState) String() string { return proto.CompactTextString(m) }
 func (*SubscriptionState) ProtoMessage()    {}
 func (*SubscriptionState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{37}
+	return fileDescriptor_e6b4bd547de77484, []int{35}
 }
 
 func (m *SubscriptionState) XXX_Unmarshal(b []byte) error {
@@ -2463,7 +2344,7 @@ func (m *UpdateIdentificationServiceAreaParameters) Reset() {
 func (m *UpdateIdentificationServiceAreaParameters) String() string { return proto.CompactTextString(m) }
 func (*UpdateIdentificationServiceAreaParameters) ProtoMessage()    {}
 func (*UpdateIdentificationServiceAreaParameters) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{38}
+	return fileDescriptor_e6b4bd547de77484, []int{36}
 }
 
 func (m *UpdateIdentificationServiceAreaParameters) XXX_Unmarshal(b []byte) error {
@@ -2498,6 +2379,66 @@ func (m *UpdateIdentificationServiceAreaParameters) GetFlightsUrl() string {
 	return ""
 }
 
+type UpdateIdentificationServiceAreaRequest struct {
+	// EntityUUID of the Identification Service Area.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Request body.
+	Params *UpdateIdentificationServiceAreaParameters `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
+	// Version string used to reference an Identification Service Area at a particular point in time. Any updates to an existing Identification Service Area must contain the corresponding version to maintain idempotent updates.
+	Version              string   `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UpdateIdentificationServiceAreaRequest) Reset() {
+	*m = UpdateIdentificationServiceAreaRequest{}
+}
+func (m *UpdateIdentificationServiceAreaRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateIdentificationServiceAreaRequest) ProtoMessage()    {}
+func (*UpdateIdentificationServiceAreaRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{37}
+}
+
+func (m *UpdateIdentificationServiceAreaRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateIdentificationServiceAreaRequest.Unmarshal(m, b)
+}
+func (m *UpdateIdentificationServiceAreaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateIdentificationServiceAreaRequest.Marshal(b, m, deterministic)
+}
+func (m *UpdateIdentificationServiceAreaRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateIdentificationServiceAreaRequest.Merge(m, src)
+}
+func (m *UpdateIdentificationServiceAreaRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateIdentificationServiceAreaRequest.Size(m)
+}
+func (m *UpdateIdentificationServiceAreaRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateIdentificationServiceAreaRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateIdentificationServiceAreaRequest proto.InternalMessageInfo
+
+func (m *UpdateIdentificationServiceAreaRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *UpdateIdentificationServiceAreaRequest) GetParams() *UpdateIdentificationServiceAreaParameters {
+	if m != nil {
+		return m.Params
+	}
+	return nil
+}
+
+func (m *UpdateIdentificationServiceAreaRequest) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
 // Parameters for a request to update a subscription in the DSS.
 type UpdateSubscriptionParameters struct {
 	Callbacks *SubscriptionCallbacks `protobuf:"bytes,1,opt,name=callbacks,proto3" json:"callbacks,omitempty"`
@@ -2516,7 +2457,7 @@ func (m *UpdateSubscriptionParameters) Reset()         { *m = UpdateSubscription
 func (m *UpdateSubscriptionParameters) String() string { return proto.CompactTextString(m) }
 func (*UpdateSubscriptionParameters) ProtoMessage()    {}
 func (*UpdateSubscriptionParameters) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e6b4bd547de77484, []int{39}
+	return fileDescriptor_e6b4bd547de77484, []int{38}
 }
 
 func (m *UpdateSubscriptionParameters) XXX_Unmarshal(b []byte) error {
@@ -2549,6 +2490,64 @@ func (m *UpdateSubscriptionParameters) GetExtents() *Volume4D {
 		return m.Extents
 	}
 	return nil
+}
+
+type UpdateSubscriptionRequest struct {
+	// SubscriptionUUID of the subscription of interest.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Request body.
+	Params *UpdateSubscriptionParameters `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
+	// Version string used to reference a Subscription at a particular point in time. Any updates to an existing Subscription must contain the corresponding version to maintain idempotent updates.
+	Version              string   `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UpdateSubscriptionRequest) Reset()         { *m = UpdateSubscriptionRequest{} }
+func (m *UpdateSubscriptionRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateSubscriptionRequest) ProtoMessage()    {}
+func (*UpdateSubscriptionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e6b4bd547de77484, []int{39}
+}
+
+func (m *UpdateSubscriptionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateSubscriptionRequest.Unmarshal(m, b)
+}
+func (m *UpdateSubscriptionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateSubscriptionRequest.Marshal(b, m, deterministic)
+}
+func (m *UpdateSubscriptionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateSubscriptionRequest.Merge(m, src)
+}
+func (m *UpdateSubscriptionRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateSubscriptionRequest.Size(m)
+}
+func (m *UpdateSubscriptionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateSubscriptionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateSubscriptionRequest proto.InternalMessageInfo
+
+func (m *UpdateSubscriptionRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *UpdateSubscriptionRequest) GetParams() *UpdateSubscriptionParameters {
+	if m != nil {
+		return m.Params
+	}
+	return nil
+}
+
+func (m *UpdateSubscriptionRequest) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
 }
 
 // A three-dimensional geographic volume consisting of a vertically-extruded polygon.
@@ -2677,30 +2676,26 @@ func init() {
 	proto.RegisterEnum("dssproto.VerticalAccuracy", VerticalAccuracy_name, VerticalAccuracy_value)
 	proto.RegisterEnum("dssproto.RIDHeight_RIDHeightReference", RIDHeight_RIDHeightReference_name, RIDHeight_RIDHeightReference_value)
 	proto.RegisterType((*CreateIdentificationServiceAreaParameters)(nil), "dssproto.CreateIdentificationServiceAreaParameters")
+	proto.RegisterType((*CreateIdentificationServiceAreaRequest)(nil), "dssproto.CreateIdentificationServiceAreaRequest")
 	proto.RegisterType((*CreateSubscriptionParameters)(nil), "dssproto.CreateSubscriptionParameters")
+	proto.RegisterType((*CreateSubscriptionRequest)(nil), "dssproto.CreateSubscriptionRequest")
+	proto.RegisterType((*DeleteIdentificationServiceAreaRequest)(nil), "dssproto.DeleteIdentificationServiceAreaRequest")
 	proto.RegisterType((*DeleteIdentificationServiceAreaResponse)(nil), "dssproto.DeleteIdentificationServiceAreaResponse")
+	proto.RegisterType((*DeleteSubscriptionRequest)(nil), "dssproto.DeleteSubscriptionRequest")
 	proto.RegisterType((*DeleteSubscriptionResponse)(nil), "dssproto.DeleteSubscriptionResponse")
-	proto.RegisterType((*DeleteV1DssIdentificationServiceAreasIdVersionRequest)(nil), "dssproto.DeleteV1DssIdentificationServiceAreasIdVersionRequest")
-	proto.RegisterType((*DeleteV1DssSubscriptionsIdVersionRequest)(nil), "dssproto.DeleteV1DssSubscriptionsIdVersionRequest")
 	proto.RegisterType((*ErrorResponse)(nil), "dssproto.ErrorResponse")
 	proto.RegisterType((*GeoPolygon)(nil), "dssproto.GeoPolygon")
 	proto.RegisterType((*GetFlightDetailsResponse)(nil), "dssproto.GetFlightDetailsResponse")
 	proto.RegisterType((*GetFlightsResponse)(nil), "dssproto.GetFlightsResponse")
+	proto.RegisterType((*GetIdentificationServiceAreaRequest)(nil), "dssproto.GetIdentificationServiceAreaRequest")
 	proto.RegisterType((*GetIdentificationServiceAreaResponse)(nil), "dssproto.GetIdentificationServiceAreaResponse")
+	proto.RegisterType((*GetSubscriptionRequest)(nil), "dssproto.GetSubscriptionRequest")
 	proto.RegisterType((*GetSubscriptionResponse)(nil), "dssproto.GetSubscriptionResponse")
-	proto.RegisterType((*GetV1DssIdentificationServiceAreasIdRequest)(nil), "dssproto.GetV1DssIdentificationServiceAreasIdRequest")
-	proto.RegisterType((*GetV1DssIdentificationServiceAreasRequest)(nil), "dssproto.GetV1DssIdentificationServiceAreasRequest")
-	proto.RegisterType((*GetV1DssSubscriptionsIdRequest)(nil), "dssproto.GetV1DssSubscriptionsIdRequest")
-	proto.RegisterType((*GetV1DssSubscriptionsRequest)(nil), "dssproto.GetV1DssSubscriptionsRequest")
 	proto.RegisterType((*IdentificationServiceArea)(nil), "dssproto.IdentificationServiceArea")
 	proto.RegisterType((*LatLngPoint)(nil), "dssproto.LatLngPoint")
 	proto.RegisterType((*PutIdentificationServiceAreaNotificationParameters)(nil), "dssproto.PutIdentificationServiceAreaNotificationParameters")
 	proto.RegisterType((*PutIdentificationServiceAreaResponse)(nil), "dssproto.PutIdentificationServiceAreaResponse")
 	proto.RegisterType((*PutSubscriptionResponse)(nil), "dssproto.PutSubscriptionResponse")
-	proto.RegisterType((*PutV1DssIdentificationServiceAreasIdRequest)(nil), "dssproto.PutV1DssIdentificationServiceAreasIdRequest")
-	proto.RegisterType((*PutV1DssIdentificationServiceAreasIdVersionRequest)(nil), "dssproto.PutV1DssIdentificationServiceAreasIdVersionRequest")
-	proto.RegisterType((*PutV1DssSubscriptionsIdRequest)(nil), "dssproto.PutV1DssSubscriptionsIdRequest")
-	proto.RegisterType((*PutV1DssSubscriptionsIdVersionRequest)(nil), "dssproto.PutV1DssSubscriptionsIdVersionRequest")
 	proto.RegisterType((*RIDAircraftPosition)(nil), "dssproto.RIDAircraftPosition")
 	proto.RegisterType((*RIDAircraftState)(nil), "dssproto.RIDAircraftState")
 	proto.RegisterType((*RIDAuthData)(nil), "dssproto.RIDAuthData")
@@ -2708,14 +2703,18 @@ func init() {
 	proto.RegisterType((*RIDFlightDetails)(nil), "dssproto.RIDFlightDetails")
 	proto.RegisterType((*RIDHeight)(nil), "dssproto.RIDHeight")
 	proto.RegisterType((*RIDRecentAircraftPosition)(nil), "dssproto.RIDRecentAircraftPosition")
+	proto.RegisterType((*SearchIdentificationServiceAreasRequest)(nil), "dssproto.SearchIdentificationServiceAreasRequest")
 	proto.RegisterType((*SearchIdentificationServiceAreasResponse)(nil), "dssproto.SearchIdentificationServiceAreasResponse")
+	proto.RegisterType((*SearchSubscriptionsRequest)(nil), "dssproto.SearchSubscriptionsRequest")
 	proto.RegisterType((*SearchSubscriptionsResponse)(nil), "dssproto.SearchSubscriptionsResponse")
 	proto.RegisterType((*SubscriberToNotify)(nil), "dssproto.SubscriberToNotify")
 	proto.RegisterType((*Subscription)(nil), "dssproto.Subscription")
 	proto.RegisterType((*SubscriptionCallbacks)(nil), "dssproto.SubscriptionCallbacks")
 	proto.RegisterType((*SubscriptionState)(nil), "dssproto.SubscriptionState")
 	proto.RegisterType((*UpdateIdentificationServiceAreaParameters)(nil), "dssproto.UpdateIdentificationServiceAreaParameters")
+	proto.RegisterType((*UpdateIdentificationServiceAreaRequest)(nil), "dssproto.UpdateIdentificationServiceAreaRequest")
 	proto.RegisterType((*UpdateSubscriptionParameters)(nil), "dssproto.UpdateSubscriptionParameters")
+	proto.RegisterType((*UpdateSubscriptionRequest)(nil), "dssproto.UpdateSubscriptionRequest")
 	proto.RegisterType((*Volume3D)(nil), "dssproto.Volume3D")
 	proto.RegisterType((*Volume4D)(nil), "dssproto.Volume4D")
 }
@@ -2723,177 +2722,175 @@ func init() {
 func init() { proto.RegisterFile("pkg/dssproto/dss.proto", fileDescriptor_e6b4bd547de77484) }
 
 var fileDescriptor_e6b4bd547de77484 = []byte{
-	// 2708 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x59, 0x4b, 0x6f, 0x23, 0xc7,
-	0x11, 0xf6, 0x50, 0xe2, 0xab, 0x48, 0x4a, 0xa3, 0xde, 0x17, 0x97, 0x96, 0xbd, 0xde, 0xf1, 0xee,
-	0x7a, 0x57, 0x6b, 0xeb, 0xb9, 0x02, 0xb2, 0x7e, 0xac, 0x3d, 0x2b, 0x8e, 0x44, 0x62, 0x29, 0x92,
-	0x68, 0x52, 0x72, 0x82, 0x00, 0x19, 0x8c, 0xc8, 0x96, 0x34, 0x58, 0x6a, 0x86, 0x99, 0x69, 0x2a,
-	0xd6, 0x1a, 0x06, 0x82, 0x00, 0xc9, 0xc1, 0x39, 0xe5, 0x71, 0x0d, 0x72, 0x8f, 0x01, 0x03, 0x39,
-	0x25, 0x40, 0x12, 0x24, 0xa7, 0x20, 0x77, 0x23, 0xc8, 0x35, 0x01, 0x72, 0xce, 0x6f, 0x08, 0xba,
-	0x7b, 0x5e, 0xa4, 0xf8, 0x92, 0xbc, 0x31, 0x72, 0x9a, 0xa9, 0xea, 0xaa, 0xae, 0xaf, 0xab, 0xab,
-	0xab, 0xab, 0xbb, 0xe1, 0x7a, 0xf7, 0xf9, 0xd1, 0x4a, 0xdb, 0x75, 0xbb, 0x8e, 0x4d, 0x6d, 0xf6,
-	0xb3, 0xcc, 0xff, 0x50, 0xca, 0xe7, 0x15, 0x16, 0x8f, 0x6c, 0xfb, 0xa8, 0x43, 0x56, 0x8c, 0xae,
-	0xb9, 0x62, 0x58, 0x96, 0x4d, 0x0d, 0x6a, 0xda, 0x96, 0x27, 0x57, 0xb8, 0xe5, 0xb5, 0x72, 0xea,
-	0xa0, 0x77, 0xb8, 0x42, 0xcd, 0x13, 0xe2, 0x52, 0xe3, 0xa4, 0x2b, 0x04, 0x94, 0x17, 0xf0, 0x60,
-	0xcb, 0x21, 0x06, 0x25, 0xe5, 0x36, 0xb1, 0xa8, 0x79, 0x68, 0xb6, 0xb8, 0x7e, 0x83, 0x38, 0xa7,
-	0x66, 0x8b, 0xa8, 0x0e, 0x31, 0xea, 0x86, 0x63, 0x9c, 0x10, 0x4a, 0x1c, 0x17, 0xbd, 0x0d, 0x49,
-	0xf2, 0x09, 0x25, 0x16, 0x75, 0xf3, 0xd2, 0x1b, 0xd2, 0xfd, 0xcc, 0x3a, 0x5a, 0xf6, 0x71, 0x2c,
-	0xef, 0xdb, 0x9d, 0xde, 0x09, 0x79, 0x54, 0xc4, 0xbe, 0x08, 0xba, 0x05, 0x99, 0xc3, 0x8e, 0x79,
-	0x74, 0x4c, 0x5d, 0xbd, 0xe7, 0x74, 0xf2, 0xb1, 0x37, 0xa4, 0xfb, 0x69, 0x0c, 0x1e, 0x6b, 0xcf,
-	0xe9, 0x28, 0x3f, 0x95, 0x60, 0x51, 0x18, 0x6f, 0xf4, 0x0e, 0xdc, 0x96, 0x63, 0x76, 0x99, 0xe9,
-	0x88, 0xbd, 0x0f, 0x20, 0xdd, 0x32, 0x3a, 0x9d, 0x03, 0xa3, 0xf5, 0xdc, 0xb7, 0x78, 0x2b, 0xb4,
-	0x18, 0x55, 0xda, 0xf2, 0xc5, 0x70, 0xa8, 0x11, 0x85, 0x1b, 0x9b, 0x08, 0x57, 0xf9, 0xad, 0x04,
-	0x6f, 0x15, 0x49, 0x87, 0x8c, 0x71, 0x05, 0x26, 0x6e, 0xd7, 0xb6, 0x5c, 0x82, 0xb6, 0x21, 0xeb,
-	0x0a, 0xb6, 0x6e, 0x38, 0xc4, 0xf0, 0xb0, 0xbd, 0x19, 0x76, 0x3f, 0xba, 0x8b, 0x8c, 0x1b, 0x12,
-	0xe8, 0x09, 0x64, 0x5c, 0x31, 0x8a, 0x03, 0xe2, 0x30, 0x94, 0x33, 0xf7, 0x33, 0xeb, 0x8b, 0xe7,
-	0x86, 0x78, 0x40, 0x9c, 0xa6, 0x5d, 0xb5, 0xa9, 0x79, 0x78, 0x86, 0xa3, 0x0a, 0xca, 0xb7, 0xa1,
-	0x20, 0x20, 0x47, 0x7d, 0x11, 0xa0, 0x7c, 0x17, 0xb2, 0x6e, 0x84, 0xef, 0xa1, 0xbc, 0x3e, 0xdc,
-	0x83, 0xb8, 0x4f, 0x56, 0x31, 0x60, 0x53, 0xf4, 0xbc, 0xbf, 0x56, 0x74, 0xdd, 0x91, 0xc3, 0x71,
-	0xcb, 0xed, 0x7d, 0xe2, 0xb8, 0xdc, 0xea, 0xf7, 0x7b, 0xc4, 0xa5, 0x68, 0x0e, 0x62, 0x66, 0x9b,
-	0x9b, 0x4a, 0xe3, 0x98, 0xd9, 0x46, 0x79, 0x48, 0x9e, 0x0a, 0x09, 0x2f, 0x02, 0x7c, 0x52, 0x69,
-	0xc2, 0xfd, 0x88, 0x89, 0x28, 0x96, 0xaf, 0xd3, 0xeb, 0x03, 0xc8, 0x69, 0x8e, 0x63, 0x3b, 0x81,
-	0x17, 0xf2, 0x90, 0x3c, 0x21, 0xae, 0x6b, 0x1c, 0x11, 0x4f, 0xdf, 0x27, 0x95, 0x0f, 0x01, 0x76,
-	0x88, 0x5d, 0xb7, 0x3b, 0x67, 0x47, 0xb6, 0x85, 0xd6, 0x20, 0x75, 0x4a, 0x1c, 0x6a, 0xb6, 0x08,
-	0x8b, 0x35, 0x36, 0x11, 0xd7, 0x42, 0x4f, 0x55, 0x0c, 0x5a, 0xb1, 0x8e, 0xea, 0xb6, 0x69, 0x51,
-	0x1c, 0x88, 0x29, 0x75, 0xc8, 0xef, 0x10, 0xba, 0xcd, 0x23, 0xba, 0x48, 0xa8, 0x61, 0x76, 0xdc,
-	0xc0, 0xec, 0x23, 0x48, 0xb6, 0x05, 0xcb, 0xf3, 0x7b, 0x21, 0xec, 0x0d, 0x97, 0x8b, 0xfd, 0x4a,
-	0xbe, 0xa8, 0xf2, 0x19, 0xa0, 0xa0, 0xc7, 0xb0, 0xaf, 0x77, 0x20, 0xe9, 0x2d, 0x1b, 0x0f, 0xd9,
-	0x95, 0x21, 0x7d, 0x61, 0x5f, 0x06, 0x7d, 0x0b, 0xd2, 0xc1, 0x32, 0xf7, 0x22, 0xbf, 0xb0, 0x2c,
-	0x12, 0xc1, 0xb2, 0x9f, 0x08, 0x96, 0x9b, 0xbe, 0x04, 0x0e, 0x85, 0x15, 0x0b, 0xee, 0xec, 0x10,
-	0xfa, 0x8d, 0xc5, 0xbf, 0xb2, 0x07, 0x37, 0x76, 0x08, 0x7d, 0xe9, 0xc1, 0xfb, 0x01, 0x3c, 0xdc,
-	0x21, 0x74, 0x62, 0xe4, 0x8e, 0x08, 0x2e, 0xe5, 0x4f, 0x12, 0x3c, 0x98, 0xac, 0xef, 0x6b, 0x23,
-	0x98, 0x0d, 0x7c, 0x90, 0xc6, 0xfc, 0x1f, 0x7d, 0x08, 0x39, 0x62, 0x38, 0x1d, 0x93, 0xb8, 0x54,
-	0x67, 0xde, 0x9d, 0x62, 0x16, 0xb2, 0xbe, 0x02, 0x63, 0xa1, 0xf7, 0x20, 0xd3, 0x31, 0x68, 0xa0,
-	0x3e, 0x33, 0x51, 0x1d, 0x84, 0x38, 0x63, 0x28, 0xab, 0xf0, 0xba, 0x0f, 0x7f, 0x60, 0x55, 0x8d,
-	0x1a, 0xf1, 0x3a, 0x2c, 0x0e, 0xd5, 0x18, 0x33, 0x46, 0xe5, 0x3f, 0x12, 0xdc, 0x1c, 0xe9, 0x9d,
-	0xc1, 0xe4, 0x2f, 0x0d, 0x26, 0x7f, 0x0f, 0x42, 0x2c, 0x58, 0xd1, 0x57, 0x21, 0x6e, 0xff, 0xc0,
-	0x22, 0x0e, 0x1f, 0x6b, 0x1a, 0x0b, 0x02, 0x6d, 0x42, 0x8a, 0x39, 0x40, 0x27, 0x56, 0x3b, 0x3f,
-	0x3b, 0xd1, 0x09, 0x49, 0x26, 0xab, 0x59, 0x6d, 0xf4, 0x18, 0x80, 0xab, 0xb9, 0xd4, 0x70, 0x68,
-	0x3e, 0x3e, 0xdd, 0x12, 0x68, 0x30, 0xe1, 0x68, 0x66, 0x49, 0xf4, 0x67, 0x96, 0x35, 0xc8, 0x44,
-	0xd2, 0x00, 0x92, 0x61, 0xa6, 0x63, 0x50, 0x3e, 0x32, 0x09, 0xb3, 0x5f, 0xce, 0xb1, 0x8e, 0xf8,
-	0x98, 0x18, 0xc7, 0x3a, 0x52, 0xfe, 0x2c, 0xc1, 0x7a, 0xbd, 0x37, 0x7a, 0x41, 0xf1, 0x9c, 0xee,
-	0xb1, 0x23, 0xfb, 0xde, 0xcb, 0xda, 0x5e, 0x54, 0xc8, 0x45, 0xd7, 0x85, 0xbf, 0xc1, 0xbc, 0x3a,
-	0x7c, 0x11, 0x35, 0xa8, 0x41, 0x09, 0xee, 0xd7, 0x50, 0xbe, 0x94, 0xe0, 0xce, 0xb8, 0x11, 0xfc,
-	0xdf, 0x6d, 0x89, 0xbf, 0x96, 0xe0, 0x46, 0xbd, 0x37, 0x3c, 0xa7, 0x94, 0x20, 0x17, 0xc5, 0xe8,
-	0x67, 0xd3, 0xa9, 0x40, 0x66, 0x23, 0x20, 0xdd, 0x73, 0xd9, 0x29, 0x76, 0x81, 0xec, 0xf4, 0xb9,
-	0x04, 0x0f, 0xeb, 0xbd, 0x4b, 0xa7, 0x27, 0xf4, 0x0c, 0x12, 0x5d, 0x16, 0x2b, 0x7e, 0x55, 0xb3,
-	0x11, 0x5a, 0x9d, 0xba, 0x94, 0xc3, 0x5e, 0x17, 0xca, 0x17, 0x22, 0x42, 0xbf, 0xee, 0x2e, 0x3f,
-	0x06, 0xd3, 0x5e, 0xb7, 0x7d, 0x31, 0x4c, 0xd1, 0x25, 0x38, 0xd3, 0xbf, 0x04, 0xbb, 0xf0, 0xba,
-	0x0f, 0x76, 0xba, 0xcc, 0x86, 0x9e, 0x0c, 0x00, 0xbb, 0x37, 0xe8, 0xac, 0xe1, 0xa5, 0x67, 0xe0,
-	0x9f, 0x9f, 0x49, 0x70, 0x77, 0x84, 0xc9, 0x09, 0x2e, 0x19, 0x63, 0x59, 0xb8, 0x64, 0xbc, 0xe5,
-	0x31, 0x5e, 0xf8, 0x65, 0x0c, 0xae, 0xe0, 0x72, 0x51, 0x35, 0x9d, 0x96, 0x63, 0x1c, 0xd2, 0xba,
-	0xed, 0x9a, 0xac, 0x0f, 0xf4, 0x1e, 0x80, 0xd1, 0x6a, 0xf5, 0x1c, 0xa3, 0x75, 0xa6, 0x1f, 0x73,
-	0x24, 0x73, 0xd1, 0x95, 0x53, 0xb2, 0x1d, 0xf3, 0x85, 0x6d, 0x51, 0xa3, 0xa3, 0x7a, 0x52, 0x38,
-	0xed, 0xcb, 0x97, 0x58, 0xca, 0x0c, 0x94, 0x4f, 0x39, 0xe4, 0xb9, 0x68, 0xc9, 0xb2, 0xcf, 0x6b,
-	0x9e, 0x61, 0xaa, 0xfb, 0x2c, 0xef, 0x19, 0x1d, 0xca, 0x51, 0xc6, 0x30, 0xfb, 0x45, 0x0a, 0x64,
-	0xc9, 0x27, 0xd4, 0x31, 0xba, 0x36, 0xdb, 0x96, 0x44, 0xea, 0x4e, 0xe1, 0x3e, 0x9e, 0x9f, 0x3f,
-	0xe3, 0xe7, 0xf2, 0x67, 0x22, 0xc8, 0x9f, 0xe8, 0x21, 0x2c, 0x74, 0x1d, 0xe2, 0xba, 0x3d, 0x87,
-	0xe8, 0x46, 0x87, 0x9a, 0xb4, 0xd7, 0x26, 0xf9, 0x24, 0xb7, 0x23, 0xfb, 0x0d, 0xaa, 0xc7, 0x57,
-	0xfe, 0x11, 0x07, 0x39, 0xe2, 0x16, 0x9e, 0xce, 0xd0, 0x9b, 0x90, 0x3b, 0x72, 0xec, 0x5e, 0x57,
-	0x6f, 0x11, 0xb3, 0x63, 0x5a, 0x47, 0xdc, 0x2d, 0x31, 0x9c, 0xe5, 0xcc, 0x2d, 0xc1, 0x63, 0x9b,
-	0x95, 0x27, 0x64, 0xf7, 0x2c, 0xca, 0x07, 0x1f, 0xc7, 0x20, 0x44, 0x18, 0x27, 0x14, 0x38, 0xec,
-	0xd8, 0xb6, 0xe3, 0x8d, 0x54, 0x08, 0x6c, 0x33, 0x0e, 0xba, 0x0d, 0xa2, 0x47, 0xdd, 0x31, 0xda,
-	0x66, 0xcf, 0xe5, 0x03, 0x8e, 0x61, 0xa1, 0x84, 0x39, 0x0b, 0x7d, 0x04, 0x73, 0x42, 0x24, 0xd8,
-	0xd0, 0x26, 0xef, 0x4b, 0xa2, 0xd3, 0xa6, 0xb7, 0xab, 0x15, 0x41, 0x8e, 0xf4, 0x20, 0xf6, 0xb6,
-	0xc4, 0xc4, 0x3e, 0xe6, 0x82, 0x3e, 0xc4, 0x06, 0xf7, 0x10, 0x12, 0xc7, 0x84, 0x6d, 0xc3, 0xdc,
-	0x91, 0x83, 0xb5, 0x64, 0x89, 0x37, 0x61, 0x4f, 0x04, 0xed, 0x02, 0xb2, 0xbb, 0xc4, 0xe1, 0x8b,
-	0xd6, 0xe8, 0x30, 0x9b, 0xb4, 0xe7, 0xe6, 0x53, 0x3c, 0x3a, 0x5e, 0xef, 0x53, 0xac, 0x85, 0x62,
-	0x0d, 0x2e, 0x85, 0x17, 0xec, 0x41, 0x16, 0x7a, 0x0c, 0xa9, 0xae, 0x17, 0xad, 0xf9, 0x34, 0xb7,
-	0xfe, 0x5a, 0x5f, 0x27, 0x83, 0x21, 0x8d, 0x03, 0x71, 0x56, 0x1f, 0xb8, 0x5d, 0x42, 0xda, 0x79,
-	0xe0, 0xae, 0x15, 0x04, 0x7a, 0x02, 0x73, 0xfc, 0x47, 0xf7, 0xa3, 0x31, 0x9f, 0xe1, 0xd8, 0x6e,
-	0x44, 0x32, 0x31, 0x6b, 0x0f, 0xc2, 0x36, 0xe7, 0x46, 0xc9, 0xfe, 0x52, 0x39, 0x7b, 0x81, 0x52,
-	0x19, 0xbd, 0x03, 0x28, 0x20, 0x42, 0xeb, 0x39, 0x0e, 0x6e, 0x21, 0x68, 0x09, 0x0c, 0x5d, 0x85,
-	0x38, 0x75, 0x8c, 0xd6, 0xf3, 0xfc, 0x9c, 0x80, 0xcf, 0x09, 0x74, 0x17, 0xe6, 0x4e, 0xbd, 0x85,
-	0xa5, 0x8b, 0xd1, 0xcd, 0xf3, 0xe6, 0x9c, 0xcf, 0xe5, 0xe0, 0x95, 0xc7, 0x90, 0x61, 0xce, 0xe9,
-	0xd1, 0xe3, 0xa2, 0x41, 0x0d, 0x56, 0x8d, 0xb5, 0x0d, 0x1a, 0x54, 0x63, 0xec, 0x1f, 0x5d, 0x87,
-	0xc4, 0xa1, 0xed, 0x9c, 0x18, 0xd4, 0x2b, 0xa9, 0x3c, 0x4a, 0xf9, 0x7d, 0x0c, 0xd2, 0xc1, 0x11,
-	0x01, 0x3d, 0x81, 0x9c, 0xe1, 0xb9, 0x58, 0xa7, 0x67, 0x5d, 0xe2, 0x25, 0x89, 0x9b, 0x43, 0x27,
-	0xa1, 0x79, 0xd6, 0x25, 0x38, 0x6b, 0x44, 0x28, 0x56, 0xd7, 0xb6, 0x7a, 0x8e, 0x43, 0x2c, 0xca,
-	0x43, 0x21, 0xac, 0x6b, 0x87, 0xe9, 0x8b, 0x7a, 0x22, 0xeb, 0x29, 0x88, 0xe5, 0x28, 0x92, 0xe4,
-	0x4c, 0x90, 0x24, 0xab, 0x20, 0x3b, 0xa4, 0xc5, 0xfa, 0xf3, 0x27, 0x9a, 0xad, 0x9d, 0x81, 0x4d,
-	0x19, 0x97, 0x8b, 0x98, 0x0b, 0x9d, 0x0b, 0x8f, 0x79, 0xa1, 0xec, 0xd3, 0x2e, 0x5a, 0x84, 0xb4,
-	0x6b, 0x9e, 0xf4, 0x44, 0xd6, 0x89, 0xf3, 0xac, 0x13, 0x32, 0xd0, 0xdb, 0x90, 0x3c, 0xe5, 0xe7,
-	0x7e, 0x37, 0x9f, 0xe0, 0x46, 0x86, 0x5e, 0x08, 0x78, 0x22, 0xca, 0x5f, 0x63, 0x3c, 0x9f, 0xf4,
-	0x9d, 0xd4, 0xd0, 0x3a, 0xa4, 0x8d, 0x1e, 0x3d, 0xd6, 0x83, 0x09, 0xe8, 0x3b, 0x26, 0x46, 0x66,
-	0x09, 0xa7, 0x0c, 0x7f, 0xbe, 0x06, 0x4b, 0xdd, 0x0d, 0xb8, 0x16, 0x2c, 0x0d, 0xbd, 0x4d, 0xc2,
-	0x2a, 0x42, 0xf8, 0xe5, 0x6a, 0xd0, 0x58, 0x0c, 0xdb, 0x58, 0x0a, 0x12, 0x7c, 0xdb, 0xd1, 0x4d,
-	0x91, 0x51, 0xd3, 0x18, 0x7c, 0x56, 0xb9, 0x8d, 0x9e, 0xc2, 0x42, 0x20, 0xd0, 0xb1, 0xc5, 0x3e,
-	0xeb, 0xa5, 0x98, 0x11, 0x07, 0x59, 0xd9, 0x97, 0xaf, 0x78, 0xe2, 0x68, 0x05, 0xae, 0x38, 0xe4,
-	0xc8, 0x74, 0xa9, 0x07, 0xce, 0xea, 0x9d, 0x1c, 0x10, 0xc7, 0x2b, 0x84, 0x51, 0xb4, 0xa9, 0xca,
-	0x5b, 0x58, 0x7a, 0x75, 0x89, 0x63, 0x1a, 0x1d, 0x5f, 0x34, 0xc9, 0x45, 0xb3, 0x82, 0x29, 0x84,
-	0x94, 0xbf, 0x4b, 0x3c, 0x06, 0x45, 0x6a, 0x41, 0x05, 0x48, 0xb5, 0x4d, 0x97, 0x1a, 0x56, 0x8b,
-	0x78, 0xc9, 0x38, 0xa0, 0x51, 0x11, 0xd2, 0x0e, 0x39, 0x24, 0x0e, 0x61, 0x8d, 0x62, 0x0f, 0xba,
-	0x37, 0x24, 0x3d, 0x45, 0x12, 0x95, 0x2f, 0x8d, 0x43, 0x45, 0xe5, 0x10, 0xd0, 0x79, 0x01, 0xf4,
-	0x00, 0xee, 0xe2, 0x72, 0x51, 0x2f, 0x69, 0xe5, 0x9d, 0x52, 0x53, 0xc7, 0xda, 0xb6, 0x86, 0xb5,
-	0xea, 0x96, 0xa6, 0x37, 0xd5, 0x67, 0x5a, 0x6d, 0x7b, 0x5b, 0xaf, 0xd4, 0xb6, 0xd4, 0x66, 0xb9,
-	0x56, 0x95, 0x5f, 0x41, 0x77, 0xe1, 0xf6, 0x50, 0xd1, 0x1d, 0x5c, 0xdb, 0xab, 0x16, 0xf5, 0x8a,
-	0xb6, 0xaf, 0x55, 0x64, 0x49, 0xf9, 0x89, 0x04, 0x37, 0x47, 0xc6, 0x66, 0x5f, 0xae, 0x93, 0x2e,
-	0x96, 0xeb, 0x96, 0x61, 0x76, 0xca, 0x53, 0x23, 0x97, 0x53, 0x28, 0xdc, 0x6f, 0x10, 0xc3, 0x69,
-	0x1d, 0x8f, 0x3b, 0xad, 0xbe, 0xec, 0x1a, 0x58, 0xf9, 0x2e, 0xbc, 0x2a, 0xac, 0x0e, 0x1c, 0x19,
-	0x3d, 0x43, 0xef, 0x0f, 0x1e, 0x3e, 0x84, 0xa1, 0x51, 0x35, 0xf2, 0xc0, 0xb9, 0xc3, 0x04, 0x74,
-	0xbe, 0xd2, 0x3f, 0x7f, 0xa0, 0x91, 0x2e, 0x7a, 0xa0, 0x61, 0x45, 0x46, 0x78, 0x1b, 0xc9, 0x7e,
-	0x95, 0x2f, 0x63, 0x90, 0x8d, 0xaa, 0x7d, 0xdd, 0x6b, 0xc7, 0xc1, 0xe5, 0xfe, 0x0e, 0x20, 0x2b,
-	0x72, 0xce, 0xd3, 0x4d, 0xab, 0x4d, 0x3e, 0xe1, 0x6b, 0x3d, 0x8e, 0x17, 0xa2, 0x2d, 0x65, 0xd6,
-	0x10, 0x1e, 0x84, 0x67, 0x47, 0x1d, 0x84, 0xe3, 0x97, 0x3d, 0x08, 0x27, 0x2e, 0x79, 0x10, 0x4e,
-	0xf6, 0xd7, 0x9f, 0xdf, 0x83, 0x6b, 0x43, 0x9d, 0x80, 0x34, 0xb8, 0x65, 0xf6, 0x05, 0x8f, 0x1e,
-	0x0d, 0xb5, 0xc8, 0x45, 0xc0, 0xa2, 0x39, 0x2a, 0xc6, 0xf6, 0x9c, 0x8e, 0xf2, 0x1c, 0x16, 0xce,
-	0x4d, 0xe3, 0x08, 0x2f, 0x4a, 0xa3, 0xbc, 0xf8, 0x16, 0xcc, 0x47, 0xe7, 0x5d, 0x0f, 0x66, 0x64,
-	0x2e, 0xca, 0x2e, 0xb7, 0x95, 0x17, 0xf0, 0x60, 0xea, 0x13, 0xca, 0xff, 0xe2, 0x02, 0x7c, 0xdc,
-	0x59, 0xe0, 0x9b, 0xbd, 0x00, 0xff, 0xa1, 0x04, 0x29, 0xc1, 0xdd, 0x28, 0x32, 0xec, 0x7e, 0xc1,
-	0xad, 0x1f, 0x9b, 0x5e, 0xa2, 0x06, 0x9f, 0x55, 0x32, 0xfb, 0x04, 0x3a, 0x36, 0xef, 0x3f, 0x22,
-	0x50, 0xb1, 0xd9, 0x4e, 0x79, 0x68, 0xdb, 0xb4, 0xeb, 0x98, 0x16, 0xf5, 0x2e, 0xb0, 0xae, 0x86,
-	0xe6, 0xc3, 0x8b, 0x57, 0x1c, 0x8a, 0x29, 0xbf, 0x0b, 0x20, 0x3c, 0x2a, 0xa2, 0xc7, 0xac, 0xb6,
-	0x33, 0x28, 0xdb, 0x5c, 0xc4, 0x96, 0x3c, 0xca, 0xe7, 0x1b, 0x45, 0x56, 0xd6, 0x71, 0x49, 0xc1,
-	0xe8, 0x5b, 0x2d, 0xb1, 0xcb, 0xae, 0x96, 0x99, 0x0b, 0xac, 0x96, 0xa5, 0xaf, 0x24, 0x40, 0xe7,
-	0x0f, 0x58, 0x68, 0x0e, 0xa0, 0xa4, 0xea, 0x7b, 0xd5, 0x67, 0xd5, 0xda, 0xc7, 0x6c, 0x67, 0x59,
-	0x80, 0x5c, 0x49, 0x57, 0xd7, 0x56, 0xf5, 0xea, 0xae, 0x5e, 0xaf, 0xec, 0x35, 0x64, 0x09, 0x65,
-	0x21, 0xe5, 0xb3, 0xe4, 0x18, 0xca, 0x40, 0xb2, 0xa4, 0xab, 0x8f, 0x18, 0x31, 0xe3, 0x11, 0xeb,
-	0x8c, 0x98, 0xf5, 0x88, 0x35, 0x46, 0xc4, 0x3d, 0xa5, 0xd5, 0x4d, 0x46, 0x25, 0x7c, 0x6a, 0x83,
-	0x51, 0x49, 0x9f, 0xe2, 0x92, 0x29, 0x94, 0x83, 0x34, 0xa3, 0x84, 0x68, 0x1a, 0x01, 0x24, 0x4a,
-	0xba, 0xba, 0xb1, 0xba, 0x2b, 0x83, 0xf7, 0xbf, 0xb6, 0xba, 0x2b, 0x67, 0x50, 0x1a, 0xe2, 0x8c,
-	0xbf, 0x2b, 0x67, 0xbd, 0xdf, 0xb5, 0x5d, 0x39, 0xb7, 0xf4, 0xab, 0x18, 0xcc, 0x0f, 0x54, 0x84,
-	0x48, 0x86, 0x6c, 0xb5, 0xd6, 0xd4, 0x8b, 0xda, 0x56, 0x45, 0xc5, 0x5a, 0x51, 0x7e, 0x85, 0x99,
-	0x50, 0x35, 0x5c, 0xab, 0x57, 0xd4, 0xaa, 0x26, 0x4b, 0x6c, 0xcc, 0xb8, 0xd6, 0xac, 0xe1, 0x2d,
-	0xac, 0x6e, 0x37, 0xe5, 0x18, 0x6b, 0xde, 0xf9, 0x8e, 0xdf, 0x3c, 0x83, 0x52, 0x30, 0xbb, 0xdf,
-	0xac, 0x55, 0xe4, 0x59, 0x34, 0x0f, 0x99, 0x1a, 0xae, 0x96, 0x9b, 0xa5, 0x5a, 0xbd, 0xa9, 0x61,
-	0x39, 0xce, 0x00, 0xed, 0x54, 0xca, 0x45, 0x0d, 0xcb, 0x09, 0x26, 0xf6, 0xac, 0xdc, 0xd4, 0xe4,
-	0x24, 0x33, 0xb8, 0x8d, 0x35, 0x4d, 0x7f, 0xaa, 0x56, 0x2a, 0xb5, 0x5a, 0x55, 0x4e, 0xa1, 0x2b,
-	0x30, 0xbf, 0xa5, 0xd6, 0x9b, 0xe5, 0xfd, 0x90, 0x99, 0x66, 0xfe, 0x51, 0xcb, 0xb8, 0x51, 0x2a,
-	0xd7, 0x65, 0x40, 0x05, 0xb8, 0xce, 0x75, 0xb6, 0xd5, 0x4a, 0x45, 0xaf, 0x61, 0xbd, 0xae, 0x62,
-	0x75, 0xab, 0xb4, 0xd7, 0xd4, 0xe4, 0x0c, 0xb3, 0x82, 0x6b, 0x5b, 0xcf, 0xb4, 0xa6, 0x9c, 0x45,
-	0xaf, 0xc1, 0xcd, 0xa6, 0xd6, 0x2c, 0x69, 0x58, 0x2b, 0xea, 0xf5, 0xda, 0xc7, 0xfc, 0xab, 0x96,
-	0x3d, 0xe8, 0x39, 0x66, 0xc8, 0xdb, 0xf3, 0x6b, 0x4f, 0x1b, 0x4d, 0x75, 0xab, 0xa2, 0xc9, 0x73,
-	0xcc, 0x3f, 0x35, 0xa6, 0x22, 0xcf, 0x2f, 0x7d, 0x04, 0x57, 0x87, 0x1d, 0x7d, 0x98, 0x0b, 0xf6,
-	0xaa, 0x11, 0x0f, 0xb1, 0x81, 0xf1, 0x7e, 0xc4, 0x7c, 0xab, 0x65, 0xfc, 0xb4, 0x86, 0xab, 0x9a,
-	0x1c, 0x5b, 0x3a, 0x86, 0x5c, 0xdf, 0x01, 0x85, 0xa9, 0x36, 0x06, 0x22, 0xa6, 0xc1, 0x27, 0xa9,
-	0xde, 0x88, 0x44, 0x8c, 0xcf, 0x12, 0x11, 0xd3, 0x60, 0x33, 0x57, 0x6f, 0x88, 0x88, 0x61, 0x4d,
-	0x8c, 0x98, 0xf5, 0xe4, 0x56, 0x79, 0x53, 0x7c, 0xe9, 0x53, 0x90, 0x07, 0x0f, 0xf1, 0xcc, 0xd8,
-	0x7e, 0xd4, 0x98, 0x0c, 0xd9, 0x7d, 0x5d, 0x5d, 0xdb, 0x5c, 0x0d, 0xa2, 0x33, 0x03, 0x49, 0x8f,
-	0x23, 0xc7, 0xd8, 0x30, 0xf6, 0x75, 0xf5, 0xd1, 0x26, 0x8b, 0x4d, 0xf1, 0xbf, 0xbe, 0xc9, 0x42,
-	0x53, 0xfc, 0xb3, 0x40, 0x8a, 0x33, 0xef, 0xec, 0xf3, 0x40, 0x4a, 0x78, 0xbf, 0x6b, 0xbb, 0x72,
-	0x72, 0xfd, 0x8f, 0x73, 0xa0, 0x14, 0x4d, 0xb7, 0x65, 0x9f, 0x12, 0xe7, 0x4c, 0xb5, 0xda, 0x8d,
-	0x33, 0xab, 0x75, 0xec, 0xd8, 0x96, 0xf9, 0x22, 0x9a, 0x6d, 0xd1, 0xbf, 0x24, 0x58, 0xbe, 0xd8,
-	0xb3, 0x13, 0xfa, 0x30, 0xcc, 0x06, 0x97, 0x7a, 0xb0, 0x2a, 0xac, 0x0d, 0x76, 0x30, 0xf1, 0xae,
-	0x53, 0x79, 0xef, 0x47, 0x5f, 0xfd, 0xfb, 0x17, 0xb1, 0xcd, 0xa5, 0x8d, 0x95, 0xd3, 0xb5, 0x95,
-	0xb6, 0xeb, 0xae, 0x8c, 0xd9, 0xf5, 0xdc, 0x95, 0x4f, 0xcd, 0xf6, 0x67, 0x2b, 0x9f, 0x7a, 0x9b,
-	0xe7, 0x67, 0xe8, 0x0b, 0x09, 0x6e, 0x4f, 0x7c, 0xf7, 0x42, 0xeb, 0x43, 0x87, 0x35, 0xf6, 0x06,
-	0xaa, 0x70, 0x67, 0x50, 0x67, 0xd8, 0x25, 0xa8, 0xf2, 0x36, 0x07, 0x7f, 0x6f, 0xe9, 0x8e, 0x0f,
-	0xbe, 0xaf, 0x3e, 0x1a, 0x44, 0xfb, 0x07, 0x09, 0x94, 0xc9, 0x6f, 0x21, 0x68, 0x23, 0x9a, 0xd9,
-	0xa7, 0x7c, 0x39, 0x29, 0x44, 0xc6, 0x38, 0x6d, 0xf9, 0xea, 0xa3, 0x47, 0x77, 0xa6, 0x71, 0x3d,
-	0xfa, 0x8b, 0xc4, 0x1f, 0xb4, 0x26, 0x86, 0x04, 0xda, 0xbc, 0x08, 0xfe, 0xe0, 0xb6, 0xb1, 0xb0,
-	0xdc, 0xa7, 0x36, 0x39, 0x70, 0xd6, 0x38, 0xfa, 0x87, 0xe8, 0xc1, 0xd4, 0x81, 0x83, 0x7e, 0x2c,
-	0xc1, 0xb5, 0xa1, 0x6f, 0x33, 0xe8, 0xde, 0x79, 0xcc, 0xc3, 0x1e, 0x6f, 0x0a, 0x77, 0x07, 0xdd,
-	0x3c, 0xb4, 0x5e, 0x57, 0x5e, 0xe3, 0xd8, 0x6e, 0xa0, 0x6b, 0x43, 0xe3, 0x02, 0x7d, 0x2e, 0xf1,
-	0xb7, 0xba, 0x61, 0x61, 0x88, 0xee, 0x4f, 0x40, 0x12, 0x3a, 0xec, 0x76, 0x9f, 0xe4, 0xd0, 0xf8,
-	0x54, 0x38, 0x8e, 0x45, 0x54, 0x18, 0x1d, 0x9f, 0xe8, 0x6f, 0xe2, 0x55, 0xe2, 0x42, 0xf3, 0x7a,
-	0x81, 0x2b, 0xf7, 0xe8, 0xbc, 0x4e, 0xf3, 0xf8, 0xa1, 0x3c, 0xe6, 0x98, 0x37, 0x0a, 0xd3, 0xcf,
-	0xeb, 0xbb, 0xfe, 0x35, 0xef, 0x3f, 0xa7, 0x7c, 0x0d, 0xf0, 0x13, 0xc3, 0xfb, 0x17, 0x1b, 0xd1,
-	0x40, 0x8a, 0xb8, 0xe8, 0xc0, 0xb6, 0xf8, 0xc0, 0x3e, 0x28, 0x5c, 0x26, 0xd3, 0x05, 0x43, 0xfc,
-	0xb9, 0x78, 0x92, 0x99, 0x14, 0x3a, 0xe3, 0x6f, 0xf6, 0xa3, 0xa1, 0x33, 0xe2, 0x7d, 0x47, 0x59,
-	0xe2, 0x68, 0xef, 0x14, 0xc6, 0x84, 0x4e, 0x00, 0xea, 0x37, 0xd2, 0xc8, 0xb7, 0x04, 0xdf, 0xd5,
-	0x2b, 0x13, 0xb1, 0x0d, 0x78, 0x77, 0x0a, 0x88, 0x8f, 0x38, 0xc4, 0xe5, 0xc2, 0x54, 0xd9, 0xd7,
-	0x07, 0x7b, 0x90, 0xe0, 0x9d, 0x6e, 0xfc, 0x37, 0x00, 0x00, 0xff, 0xff, 0x34, 0xa7, 0x22, 0xc4,
-	0x0f, 0x24, 0x00, 0x00,
+	// 2681 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x59, 0xdd, 0x6f, 0xe3, 0xc6,
+	0x11, 0x0f, 0x65, 0xeb, 0x6b, 0x24, 0xd9, 0xf4, 0xde, 0x97, 0xac, 0x38, 0xf5, 0x85, 0xe7, 0xbb,
+	0xdc, 0x39, 0x39, 0x7f, 0x9e, 0x81, 0x5e, 0xd2, 0x5c, 0xc2, 0xb3, 0x68, 0x4b, 0x38, 0x59, 0x12,
+	0x56, 0xb2, 0xd3, 0xa2, 0x40, 0x09, 0x5a, 0x5a, 0xcb, 0xc4, 0xc9, 0xa4, 0x4a, 0xae, 0xdc, 0xf8,
+	0x82, 0x00, 0x6d, 0x81, 0x14, 0x05, 0x82, 0xbe, 0x34, 0x7d, 0x2d, 0xf2, 0x1f, 0x04, 0xed, 0x53,
+	0x0a, 0x14, 0xe8, 0x4b, 0x81, 0xa2, 0xef, 0x41, 0xd1, 0x7f, 0xa0, 0xaf, 0xed, 0xdf, 0x50, 0xec,
+	0x72, 0x49, 0x51, 0x5f, 0x96, 0xec, 0x06, 0x68, 0x9e, 0xb8, 0x33, 0xfb, 0x9b, 0xdd, 0xd9, 0xd9,
+	0x99, 0xd9, 0x59, 0x2e, 0xdc, 0xee, 0xbc, 0x6c, 0xad, 0x37, 0x5d, 0xb7, 0xe3, 0xd8, 0xd4, 0x66,
+	0x8d, 0x35, 0xde, 0x42, 0x09, 0x9f, 0x97, 0x5b, 0x6a, 0xd9, 0x76, 0xab, 0x4d, 0xd6, 0x8d, 0x8e,
+	0xb9, 0x6e, 0x58, 0x96, 0x4d, 0x0d, 0x6a, 0xda, 0x96, 0xc0, 0xe5, 0x96, 0x45, 0x2f, 0xa7, 0x8e,
+	0xbb, 0x27, 0xeb, 0xd4, 0x3c, 0x23, 0x2e, 0x35, 0xce, 0x3a, 0x1e, 0x40, 0x79, 0x05, 0x8f, 0x76,
+	0x1d, 0x62, 0x50, 0x52, 0x6c, 0x12, 0x8b, 0x9a, 0x27, 0x66, 0x83, 0xcb, 0xd7, 0x88, 0x73, 0x6e,
+	0x36, 0x88, 0xea, 0x10, 0xa3, 0x6a, 0x38, 0xc6, 0x19, 0xa1, 0xc4, 0x71, 0xd1, 0x3b, 0x10, 0x27,
+	0x1f, 0x53, 0x62, 0x51, 0x37, 0x2b, 0xdd, 0x95, 0x1e, 0xa6, 0xb6, 0xd0, 0x9a, 0xaf, 0xc7, 0xda,
+	0x91, 0xdd, 0xee, 0x9e, 0x91, 0x27, 0x79, 0xec, 0x43, 0xd0, 0x32, 0xa4, 0x4e, 0xda, 0x66, 0xeb,
+	0x94, 0xba, 0x7a, 0xd7, 0x69, 0x67, 0x23, 0x77, 0xa5, 0x87, 0x49, 0x0c, 0x82, 0x75, 0xe8, 0xb4,
+	0x95, 0xcf, 0x24, 0x78, 0x30, 0x61, 0x72, 0x4c, 0x7e, 0xda, 0x25, 0x2e, 0x45, 0x73, 0x10, 0x31,
+	0x9b, 0x7c, 0xd2, 0x24, 0x8e, 0x98, 0x4d, 0xf4, 0x02, 0x62, 0x1d, 0xa6, 0x97, 0xcb, 0x87, 0x4d,
+	0x6d, 0x6d, 0xf7, 0x14, 0x99, 0x7a, 0x39, 0x58, 0x0c, 0xa1, 0x7c, 0x2e, 0xc1, 0x92, 0x27, 0x55,
+	0xeb, 0x1e, 0xbb, 0x0d, 0xc7, 0xec, 0x30, 0x99, 0xd0, 0xba, 0xdf, 0x87, 0x64, 0xc3, 0x68, 0xb7,
+	0x8f, 0x8d, 0xc6, 0x4b, 0x7f, 0xe5, 0xcb, 0xbd, 0x09, 0xc3, 0x42, 0xbb, 0x3e, 0x0c, 0xf7, 0x24,
+	0xc2, 0x66, 0x8b, 0x4c, 0x34, 0x9b, 0xf2, 0x12, 0x16, 0x87, 0x95, 0x19, 0x67, 0x87, 0x67, 0x03,
+	0x76, 0x78, 0x30, 0x68, 0x87, 0xd1, 0x2b, 0x0a, 0x96, 0x8e, 0xe1, 0x41, 0x9e, 0xb4, 0xc9, 0x35,
+	0x76, 0x20, 0x0b, 0xf1, 0x73, 0xe2, 0xb8, 0xa6, 0x6d, 0x89, 0x9d, 0xf5, 0x49, 0xe5, 0x8f, 0x12,
+	0xbc, 0x35, 0x71, 0x50, 0xb7, 0x63, 0x5b, 0x2e, 0x41, 0x7b, 0x90, 0x76, 0x3d, 0xb6, 0x6e, 0x38,
+	0xc4, 0x10, 0xc6, 0xbd, 0xd7, 0x5b, 0xc5, 0xf8, 0x21, 0x52, 0x6e, 0x8f, 0x40, 0xcf, 0x20, 0xe5,
+	0x7a, 0x2b, 0x3d, 0x26, 0x0e, 0x33, 0xc6, 0xcc, 0xc3, 0xd4, 0xd6, 0xd2, 0xd0, 0x1e, 0x1d, 0x13,
+	0xa7, 0x6e, 0x97, 0x6d, 0x6a, 0x9e, 0x5c, 0xe0, 0xb0, 0x80, 0xa2, 0xc1, 0xa2, 0xa7, 0xf2, 0x34,
+	0x46, 0x1f, 0xbf, 0xf4, 0x1f, 0x42, 0x6e, 0xd4, 0x30, 0x62, 0xb1, 0xef, 0x42, 0xda, 0x0d, 0xf1,
+	0xc5, 0x62, 0x6f, 0x8f, 0xf6, 0x24, 0xdc, 0x87, 0x55, 0x1e, 0x41, 0x46, 0x73, 0x1c, 0xdb, 0x09,
+	0x06, 0xcb, 0x42, 0xfc, 0x8c, 0xb8, 0xae, 0xd1, 0x22, 0x42, 0x33, 0x9f, 0x54, 0x3e, 0x00, 0xd8,
+	0x27, 0x76, 0xd5, 0x6e, 0x5f, 0xb4, 0x6c, 0x0b, 0x6d, 0x42, 0xe2, 0x9c, 0x38, 0xd4, 0x6c, 0x10,
+	0xe6, 0xba, 0xcc, 0x2c, 0xb7, 0x7a, 0x13, 0x96, 0x0c, 0x5a, 0xb2, 0x5a, 0x55, 0xdb, 0xb4, 0x28,
+	0x0e, 0x60, 0x4a, 0x15, 0xb2, 0xfb, 0x84, 0xee, 0xf1, 0x40, 0xcd, 0x13, 0x6a, 0x98, 0x6d, 0x37,
+	0x98, 0xf6, 0x09, 0xc4, 0x9b, 0x1e, 0x4b, 0xa8, 0x9f, 0xeb, 0x8d, 0x86, 0x8b, 0xf9, 0x7e, 0x21,
+	0x1f, 0xaa, 0x7c, 0x0a, 0x28, 0x18, 0xb1, 0x37, 0xd6, 0x63, 0x88, 0x8b, 0x6c, 0x20, 0x34, 0xbb,
+	0x31, 0x62, 0x2c, 0xec, 0x63, 0xd0, 0xf7, 0x21, 0x19, 0x64, 0x2f, 0xe1, 0xee, 0xb9, 0x35, 0x2f,
+	0xbf, 0xad, 0xf9, 0xf9, 0x6d, 0xad, 0xee, 0x23, 0x70, 0x0f, 0xac, 0xec, 0xc0, 0xbd, 0x7d, 0x42,
+	0xaf, 0xea, 0xe2, 0x8a, 0x05, 0x2b, 0x97, 0x8b, 0x7d, 0xbb, 0x4e, 0xac, 0x3c, 0x84, 0xdb, 0xfb,
+	0x84, 0x4e, 0xe1, 0x81, 0xca, 0x21, 0xdc, 0x19, 0x42, 0x7e, 0x0b, 0x4e, 0xf6, 0x1f, 0x09, 0x16,
+	0xc7, 0xea, 0x3a, 0x98, 0xcf, 0xa5, 0xc1, 0x7c, 0x2e, 0xb4, 0x8c, 0x04, 0x71, 0x72, 0x13, 0xa2,
+	0xf6, 0xcf, 0x2c, 0xe2, 0x64, 0x67, 0x38, 0xcb, 0x23, 0xd0, 0x0e, 0x24, 0xd8, 0xce, 0xe8, 0xc4,
+	0x6a, 0x66, 0x67, 0x27, 0xee, 0x62, 0x9c, 0x61, 0x35, 0xab, 0x89, 0x9e, 0x02, 0x70, 0x31, 0x97,
+	0x1a, 0x0e, 0xcd, 0x46, 0xa7, 0xdb, 0xfe, 0x1a, 0x03, 0x87, 0xe3, 0x35, 0xd6, 0x1f, 0xaf, 0x9b,
+	0x90, 0x0a, 0x85, 0x00, 0x92, 0x61, 0xa6, 0x6d, 0x50, 0xbe, 0x32, 0x09, 0xb3, 0x26, 0xe7, 0x58,
+	0x2d, 0xbe, 0x26, 0xc6, 0xb1, 0x5a, 0xca, 0xbf, 0x25, 0xd8, 0xaa, 0x76, 0xc7, 0x7b, 0x05, 0xcf,
+	0x2e, 0x82, 0x7d, 0xed, 0xa3, 0x73, 0xd0, 0xa3, 0x22, 0xd7, 0x4c, 0x8b, 0x2a, 0x64, 0xc2, 0x1b,
+	0xec, 0x66, 0x67, 0x78, 0x9c, 0xbd, 0x3e, 0xda, 0x1b, 0x6a, 0xd4, 0xa0, 0x04, 0xf7, 0x4b, 0x28,
+	0x5f, 0x49, 0xb0, 0x72, 0xd9, 0x7a, 0xbf, 0x73, 0xa9, 0xfc, 0x4b, 0x09, 0xee, 0x54, 0xbb, 0xa3,
+	0x83, 0xa3, 0x00, 0x99, 0xb0, 0x8e, 0x7e, 0xde, 0x99, 0x4a, 0xc9, 0x74, 0x48, 0x49, 0x77, 0x28,
+	0xcc, 0x22, 0x57, 0x08, 0xb3, 0xdf, 0x45, 0xe0, 0x06, 0x2e, 0xe6, 0x55, 0xd3, 0x69, 0x38, 0xc6,
+	0x09, 0xad, 0xda, 0xae, 0xc9, 0xf8, 0xe8, 0x3d, 0x00, 0xa3, 0xd1, 0xe8, 0x3a, 0x46, 0xe3, 0x42,
+	0x3f, 0xe5, 0xf6, 0x9b, 0x0b, 0x2f, 0xbc, 0x60, 0x3b, 0xe6, 0x2b, 0xdb, 0xa2, 0x46, 0x5b, 0x15,
+	0x28, 0x9c, 0xf4, 0xf1, 0x05, 0x16, 0x1f, 0x81, 0xf0, 0x39, 0x57, 0x67, 0x2e, 0x9c, 0x9b, 0x8f,
+	0x78, 0x72, 0x1f, 0x25, 0x7a, 0xc4, 0x9c, 0xdc, 0x68, 0x53, 0x1e, 0xa5, 0x11, 0xcc, 0x9a, 0x48,
+	0x81, 0x34, 0xf9, 0x98, 0x3a, 0x46, 0xc7, 0x6e, 0x1b, 0x94, 0x78, 0x71, 0x9a, 0xc0, 0x7d, 0x3c,
+	0x3f, 0x58, 0xa2, 0x43, 0xc1, 0x12, 0x0b, 0x82, 0x05, 0xbd, 0x0d, 0x0b, 0x1d, 0x87, 0xb8, 0x6e,
+	0xd7, 0x21, 0xba, 0xd1, 0xa6, 0x26, 0xed, 0x36, 0x49, 0x36, 0xce, 0xe7, 0x91, 0xfd, 0x0e, 0x55,
+	0xf0, 0x95, 0x7f, 0x46, 0x41, 0x0e, 0x99, 0x85, 0x7b, 0x23, 0xba, 0x07, 0x99, 0x96, 0x63, 0x77,
+	0x3b, 0x7a, 0x83, 0x98, 0x6d, 0xd3, 0x6a, 0x71, 0xb3, 0x44, 0x70, 0x9a, 0x33, 0x77, 0x3d, 0x1e,
+	0xcb, 0x4c, 0x02, 0x64, 0x77, 0x2d, 0xca, 0x17, 0x1f, 0xc5, 0xe0, 0x41, 0x18, 0xa7, 0x07, 0x38,
+	0x69, 0xdb, 0xb6, 0x23, 0x56, 0xea, 0x01, 0xf6, 0x18, 0x07, 0xbd, 0x09, 0xde, 0x88, 0xba, 0x63,
+	0x34, 0xcd, 0xae, 0xcb, 0x17, 0x1c, 0xc1, 0x9e, 0x10, 0xe6, 0x2c, 0xf4, 0x21, 0xcc, 0x79, 0x90,
+	0x20, 0x7b, 0x4d, 0x4e, 0x42, 0xde, 0xa0, 0x75, 0x91, 0xc2, 0xf2, 0x20, 0x87, 0x46, 0xf0, 0x12,
+	0x59, 0x6c, 0xe2, 0x18, 0x73, 0xc1, 0x18, 0x5e, 0x36, 0x7b, 0x1b, 0x62, 0xa7, 0x84, 0xe5, 0x5c,
+	0x6e, 0xc8, 0xc1, 0x43, 0xb3, 0xc0, 0xbb, 0xb0, 0x80, 0xa0, 0x03, 0x40, 0x76, 0x87, 0x38, 0xdc,
+	0x99, 0x8d, 0x36, 0x9b, 0x93, 0x76, 0xdd, 0x6c, 0x82, 0x7b, 0xc7, 0xf7, 0xfa, 0x04, 0x2b, 0x3d,
+	0x58, 0x8d, 0xa3, 0xf0, 0x82, 0x3d, 0xc8, 0x42, 0x4f, 0x21, 0xd1, 0x11, 0xde, 0x9a, 0x4d, 0xf2,
+	0xd9, 0xdf, 0xe8, 0x1b, 0x64, 0xd0, 0xa5, 0x71, 0x00, 0x67, 0x87, 0x81, 0xdb, 0x21, 0xa4, 0x99,
+	0x05, 0x6e, 0x5a, 0x8f, 0x40, 0xcf, 0x60, 0x8e, 0x37, 0x74, 0xdf, 0x1b, 0xb3, 0x29, 0xae, 0xdb,
+	0x9d, 0x50, 0x20, 0xb1, 0xfe, 0xc0, 0x6d, 0x33, 0x6e, 0x98, 0xec, 0xaf, 0x09, 0xd2, 0x57, 0xa8,
+	0x09, 0xd0, 0x63, 0x40, 0x01, 0xd1, 0x9b, 0x3d, 0xc3, 0x95, 0x5b, 0x08, 0x7a, 0x82, 0x89, 0x6e,
+	0x42, 0x94, 0x3a, 0x46, 0xe3, 0x65, 0x76, 0xce, 0x53, 0x9f, 0x13, 0xe8, 0x3e, 0xcc, 0x9d, 0x8b,
+	0xc0, 0xd2, 0xbd, 0xd5, 0xcd, 0xf3, 0xee, 0x8c, 0xcf, 0xe5, 0xca, 0x2b, 0x4f, 0x21, 0xc5, 0x8c,
+	0xd3, 0xa5, 0xa7, 0x79, 0x83, 0x1a, 0x08, 0xc1, 0x6c, 0xd3, 0xa0, 0x86, 0x38, 0x41, 0x79, 0x1b,
+	0xdd, 0x86, 0xd8, 0x89, 0xed, 0x9c, 0x19, 0x54, 0x9c, 0x9f, 0x82, 0x52, 0xfe, 0x14, 0x81, 0x64,
+	0x50, 0x0b, 0xa1, 0x67, 0x90, 0x31, 0x84, 0x89, 0x75, 0x7a, 0xd1, 0x21, 0x22, 0x49, 0x2c, 0x8e,
+	0xdc, 0x84, 0xfa, 0x45, 0x87, 0xe0, 0xb4, 0x11, 0xa2, 0xd0, 0x07, 0x90, 0x69, 0x74, 0x1d, 0x87,
+	0x58, 0x94, 0xbb, 0x02, 0x09, 0xca, 0xa8, 0x51, 0xf2, 0xde, 0x71, 0x90, 0x16, 0x02, 0x5e, 0x38,
+	0x7a, 0x47, 0xfc, 0x4c, 0x70, 0xc4, 0x97, 0x41, 0x76, 0x48, 0x83, 0x8d, 0xe7, 0x6f, 0x34, 0x8b,
+	0x9d, 0x81, 0x9c, 0x8a, 0x8b, 0x79, 0xcc, 0x41, 0x43, 0xee, 0x31, 0xef, 0x09, 0xfb, 0xb4, 0x8b,
+	0x96, 0x20, 0xe9, 0x9a, 0x67, 0x5d, 0x2f, 0xeb, 0x44, 0x79, 0xd6, 0xe9, 0x31, 0xd8, 0x21, 0x7a,
+	0xce, 0xcf, 0x4a, 0x37, 0x1b, 0xe3, 0x93, 0x8c, 0x3c, 0x44, 0x05, 0x44, 0xf9, 0x5b, 0x84, 0xe7,
+	0x93, 0xbe, 0x92, 0x14, 0x6d, 0x41, 0xd2, 0xe8, 0xd2, 0x53, 0x3d, 0xd8, 0x80, 0xbe, 0x7a, 0x38,
+	0xb4, 0x4b, 0x38, 0x61, 0xf8, 0xfb, 0x35, 0x58, 0xd7, 0x6c, 0xc3, 0xad, 0x20, 0x34, 0xf4, 0x26,
+	0xe9, 0x1d, 0x02, 0x9e, 0x5d, 0x6e, 0x06, 0x9d, 0xf9, 0x5e, 0x1f, 0x4b, 0x41, 0x1e, 0xdf, 0x76,
+	0x74, 0xd3, 0xcb, 0xa8, 0x49, 0x0c, 0x3e, 0xab, 0xd8, 0x44, 0xcf, 0x61, 0x21, 0x00, 0xb4, 0x6d,
+	0xef, 0xfc, 0x11, 0x29, 0x66, 0x4c, 0xc5, 0x2e, 0xfb, 0xf8, 0x92, 0x80, 0xa3, 0x75, 0xb8, 0xe1,
+	0x90, 0x96, 0xe9, 0x52, 0xa1, 0x9c, 0xd5, 0x3d, 0x3b, 0x26, 0x8e, 0xa8, 0x7a, 0x50, 0xb8, 0xab,
+	0xcc, 0x7b, 0x58, 0x7a, 0x75, 0x89, 0x63, 0x1a, 0x6d, 0x1f, 0x1a, 0xe7, 0xd0, 0xb4, 0xc7, 0xf4,
+	0x40, 0xca, 0x3f, 0x24, 0xee, 0x83, 0x5e, 0x6a, 0x41, 0x39, 0x48, 0x34, 0x4d, 0x97, 0x1a, 0x56,
+	0x83, 0x88, 0x64, 0x1c, 0xd0, 0x28, 0x0f, 0x49, 0x87, 0x9c, 0x10, 0x87, 0xb0, 0x4e, 0xef, 0x0c,
+	0x7a, 0x30, 0x22, 0x3d, 0x85, 0x12, 0x95, 0x8f, 0xc6, 0x3d, 0x41, 0xe5, 0x04, 0xd0, 0x30, 0x00,
+	0x3d, 0x82, 0xfb, 0xb8, 0x98, 0xd7, 0x0b, 0x5a, 0x71, 0xbf, 0x50, 0xd7, 0xb1, 0xb6, 0xa7, 0x61,
+	0xad, 0xbc, 0xab, 0xe9, 0x75, 0xf5, 0x85, 0x56, 0xd9, 0xdb, 0xd3, 0x4b, 0x95, 0x5d, 0xb5, 0x5e,
+	0xac, 0x94, 0xe5, 0xd7, 0xd0, 0x7d, 0x78, 0x73, 0x24, 0x74, 0x1f, 0x57, 0x0e, 0xcb, 0x79, 0xbd,
+	0xa4, 0x1d, 0x69, 0x25, 0x59, 0x52, 0x7e, 0x25, 0xc1, 0xe2, 0x58, 0xdf, 0xec, 0xcb, 0x75, 0xd2,
+	0xd5, 0x72, 0xdd, 0x1a, 0xcc, 0xb2, 0x0c, 0x32, 0xc5, 0x25, 0x85, 0xe3, 0x94, 0x3f, 0x4b, 0xf0,
+	0x56, 0x8d, 0x18, 0x4e, 0xe3, 0x74, 0x6c, 0xf9, 0xe1, 0xfa, 0x57, 0x01, 0x04, 0xb3, 0x41, 0x79,
+	0x95, 0xc4, 0xbc, 0xcd, 0xc2, 0x9a, 0x18, 0x4e, 0xdb, 0x24, 0x2e, 0xd5, 0xa7, 0x9c, 0x38, 0xed,
+	0x0b, 0x30, 0x16, 0x7a, 0x0f, 0x52, 0x2c, 0xc2, 0x7c, 0xf1, 0x99, 0x89, 0xe2, 0xe0, 0xc1, 0x19,
+	0x43, 0xa1, 0xf0, 0x70, 0xb2, 0xf2, 0xdf, 0x76, 0x01, 0xa6, 0x6c, 0x40, 0xce, 0x9b, 0x35, 0x5c,
+	0x68, 0x5d, 0x66, 0x25, 0xe5, 0xc7, 0xf0, 0xfa, 0x48, 0x09, 0xa1, 0xda, 0x0f, 0x06, 0x6b, 0x65,
+	0x4f, 0xb5, 0x71, 0x25, 0xdd, 0x40, 0x99, 0x6c, 0x02, 0x1a, 0x2e, 0x4c, 0x87, 0xeb, 0x6f, 0xe9,
+	0xaa, 0xf5, 0x37, 0x2b, 0xaa, 0x7a, 0x7f, 0xcf, 0x58, 0x53, 0xf9, 0x2a, 0x02, 0xe9, 0xb0, 0xd8,
+	0xff, 0xfa, 0x7b, 0x6a, 0x30, 0xbd, 0x3d, 0x06, 0x64, 0x85, 0x2e, 0x31, 0xba, 0x69, 0x35, 0xc9,
+	0xc7, 0xdc, 0x27, 0xa2, 0x78, 0x21, 0xdc, 0x53, 0x64, 0x1d, 0xbd, 0x5b, 0xde, 0xec, 0xb8, 0x5b,
+	0x5e, 0xf4, 0xba, 0xb7, 0xbc, 0xd8, 0x35, 0x6f, 0x79, 0xf1, 0xfe, 0x5b, 0xde, 0x4f, 0xe0, 0xd6,
+	0x48, 0x23, 0x20, 0x0d, 0x96, 0xcd, 0x3e, 0x77, 0xd3, 0xc3, 0xce, 0x19, 0xba, 0xe5, 0x2e, 0x99,
+	0xe3, 0xbc, 0xf2, 0xd0, 0x69, 0x2b, 0x2f, 0x61, 0x61, 0x68, 0x1b, 0xc7, 0x58, 0x51, 0x1a, 0x67,
+	0xc5, 0xb7, 0x60, 0x3e, 0xbc, 0xef, 0x7a, 0xb0, 0x23, 0x73, 0x61, 0x76, 0xb1, 0xa9, 0xbc, 0x82,
+	0x47, 0x87, 0x9d, 0xe6, 0xff, 0xe7, 0x87, 0xed, 0x97, 0x12, 0x3c, 0x98, 0x30, 0xf9, 0x35, 0x7e,
+	0xd8, 0x4e, 0xbd, 0x1c, 0xff, 0xaf, 0x65, 0x78, 0xab, 0x67, 0xfa, 0xb7, 0xfa, 0x73, 0x09, 0x96,
+	0xbc, 0xf1, 0xbe, 0x0b, 0xbf, 0x72, 0x3f, 0x93, 0x60, 0x71, 0x58, 0x9b, 0x6b, 0xfc, 0xcb, 0xbd,
+	0x6c, 0x49, 0x53, 0x58, 0xe5, 0xe7, 0x12, 0x24, 0x3c, 0xed, 0xb6, 0xf3, 0x6c, 0x97, 0xfd, 0xab,
+	0x98, 0x7e, 0x6a, 0x8a, 0x23, 0x1c, 0x7c, 0x56, 0xc1, 0xec, 0x03, 0xb4, 0x6d, 0xae, 0x4c, 0x08,
+	0x50, 0xb2, 0x59, 0x0d, 0x75, 0x62, 0xdb, 0xb4, 0xe3, 0x98, 0x16, 0x15, 0x67, 0xc5, 0xcd, 0x9e,
+	0xae, 0xbd, 0x7f, 0x8f, 0xb8, 0x07, 0x53, 0xbe, 0x0e, 0x54, 0x78, 0x92, 0x47, 0x4f, 0x59, 0xd5,
+	0x6f, 0x50, 0x56, 0x76, 0x78, 0xc5, 0xda, 0x38, 0xef, 0xdc, 0xce, 0xb3, 0x82, 0x9f, 0x23, 0x3d,
+	0x46, 0x5f, 0x5e, 0x89, 0x5c, 0x37, 0xaf, 0xcc, 0x5c, 0x21, 0xaf, 0xac, 0x7e, 0x23, 0x01, 0x1a,
+	0xbe, 0x7a, 0xa3, 0x39, 0x80, 0x82, 0xaa, 0x1f, 0x96, 0x5f, 0x94, 0x2b, 0x1f, 0xb1, 0x9a, 0x63,
+	0x01, 0x32, 0x05, 0x5d, 0xdd, 0xdc, 0xd0, 0xcb, 0x07, 0x7a, 0xb5, 0x74, 0x58, 0x93, 0x25, 0x94,
+	0x86, 0x84, 0xcf, 0x92, 0x23, 0x28, 0x05, 0xf1, 0x82, 0xae, 0x3e, 0x61, 0xc4, 0x8c, 0x20, 0xb6,
+	0x18, 0x31, 0x2b, 0x88, 0x4d, 0x46, 0x44, 0x85, 0xd0, 0xc6, 0x0e, 0xa3, 0x62, 0x3e, 0xb5, 0xcd,
+	0xa8, 0xb8, 0x4f, 0x71, 0x64, 0x02, 0x65, 0x20, 0xc9, 0x28, 0x0f, 0x9a, 0x44, 0x00, 0xb1, 0x82,
+	0xae, 0x6e, 0x6f, 0x1c, 0xc8, 0x20, 0xda, 0x9b, 0x1b, 0x07, 0x72, 0x0a, 0x25, 0x21, 0xca, 0xf8,
+	0x07, 0x72, 0x5a, 0x34, 0x37, 0x0f, 0xe4, 0xcc, 0xea, 0xef, 0x23, 0x30, 0x3f, 0x70, 0x57, 0x40,
+	0x32, 0xa4, 0xcb, 0x95, 0xba, 0x9e, 0xd7, 0x76, 0x4b, 0x2a, 0xd6, 0xf2, 0xf2, 0x6b, 0x6c, 0x0a,
+	0x55, 0xc3, 0x95, 0x6a, 0x49, 0x2d, 0x6b, 0xb2, 0xc4, 0xd6, 0x8c, 0x2b, 0xf5, 0x0a, 0xde, 0xc5,
+	0xea, 0x5e, 0x5d, 0x8e, 0xb0, 0xee, 0xfd, 0x1f, 0xf9, 0xdd, 0x33, 0x28, 0x01, 0xb3, 0x47, 0xf5,
+	0x4a, 0x49, 0x9e, 0x45, 0xf3, 0x90, 0xaa, 0xe0, 0x72, 0xb1, 0x5e, 0xa8, 0x54, 0xeb, 0x1a, 0x96,
+	0xa3, 0x4c, 0xa1, 0xfd, 0x52, 0x31, 0xaf, 0x61, 0x39, 0xc6, 0x60, 0x2f, 0x8a, 0x75, 0x4d, 0x8e,
+	0xb3, 0x09, 0xf7, 0xb0, 0xa6, 0xe9, 0xcf, 0xd5, 0x52, 0xa9, 0x52, 0x29, 0xcb, 0x09, 0x74, 0x03,
+	0xe6, 0x77, 0xd5, 0x6a, 0xbd, 0x78, 0xd4, 0x63, 0x26, 0x99, 0x7d, 0xd4, 0x22, 0xae, 0x15, 0x8a,
+	0x55, 0x19, 0x50, 0x0e, 0x6e, 0x73, 0x99, 0x3d, 0xb5, 0x54, 0xd2, 0x2b, 0x58, 0xaf, 0xaa, 0x58,
+	0xdd, 0x2d, 0x1c, 0xd6, 0x35, 0x39, 0xc5, 0x66, 0xc1, 0x95, 0xdd, 0x17, 0x5a, 0x5d, 0x4e, 0xa3,
+	0x37, 0x60, 0xb1, 0xae, 0xd5, 0x0b, 0x1a, 0xd6, 0xf2, 0x7a, 0xb5, 0xf2, 0x11, 0xff, 0xaa, 0x45,
+	0xa1, 0x7a, 0x86, 0x4d, 0x24, 0xaa, 0xc1, 0xca, 0xf3, 0x5a, 0x5d, 0xdd, 0x2d, 0x69, 0xf2, 0x1c,
+	0xb3, 0x4f, 0x85, 0x89, 0xc8, 0xf3, 0xab, 0x1f, 0xc2, 0xcd, 0x51, 0x97, 0x62, 0x66, 0x82, 0xc3,
+	0x72, 0xc8, 0x42, 0x6c, 0x61, 0x7c, 0x1c, 0x6f, 0xbf, 0xd5, 0x22, 0x7e, 0x5e, 0xc1, 0x65, 0x4d,
+	0x8e, 0xac, 0x9e, 0x42, 0xa6, 0xef, 0xea, 0xca, 0x44, 0x6b, 0x03, 0x1e, 0x53, 0xe3, 0x9b, 0x54,
+	0xad, 0x85, 0x3c, 0xc6, 0x67, 0x79, 0x1e, 0x53, 0x63, 0x3b, 0x57, 0xad, 0x79, 0x1e, 0xc3, 0xba,
+	0x18, 0x31, 0x2b, 0x70, 0x1b, 0xbc, 0x2b, 0xba, 0xfa, 0x09, 0xc8, 0x83, 0xbf, 0x77, 0xd8, 0x64,
+	0x47, 0xe1, 0xc9, 0x64, 0x48, 0x1f, 0xe9, 0xea, 0xe6, 0xce, 0x46, 0xe0, 0x9d, 0x29, 0x88, 0x0b,
+	0x8e, 0x1c, 0x61, 0xcb, 0x38, 0xd2, 0xd5, 0x27, 0x3b, 0xcc, 0x37, 0xbd, 0xf6, 0xd6, 0x0e, 0x73,
+	0x4d, 0xaf, 0xcd, 0x1c, 0x29, 0xca, 0xac, 0x73, 0xc4, 0x1d, 0x29, 0x26, 0x9a, 0x9b, 0x07, 0x72,
+	0x7c, 0xeb, 0x8b, 0x0c, 0x28, 0x79, 0xd3, 0x6d, 0xd8, 0xe7, 0xc4, 0xb9, 0x50, 0xad, 0x66, 0xed,
+	0xc2, 0x6a, 0x9c, 0x3a, 0xb6, 0x65, 0xbe, 0x0a, 0x27, 0x72, 0xf4, 0x17, 0x09, 0x96, 0x27, 0xbc,
+	0xcc, 0xa1, 0x8d, 0xa9, 0x1f, 0xf1, 0x44, 0x0a, 0xcd, 0xad, 0xf5, 0x24, 0xa6, 0xf9, 0x47, 0xa9,
+	0x3c, 0xfd, 0xe5, 0x37, 0xff, 0xfa, 0x22, 0xb2, 0x9d, 0x7b, 0xb4, 0x7e, 0xbe, 0xb9, 0xde, 0x74,
+	0xdd, 0xf5, 0x4b, 0x8e, 0x7f, 0x77, 0xfd, 0x13, 0xb3, 0xf9, 0xe9, 0xbb, 0x7e, 0x76, 0xfd, 0xb5,
+	0x04, 0x68, 0xf8, 0x49, 0x0d, 0xdd, 0xbb, 0xec, 0xc1, 0xcd, 0x57, 0xf3, 0xcd, 0x3e, 0x35, 0x47,
+	0xfd, 0x99, 0x54, 0x56, 0xb9, 0x66, 0x2b, 0xb9, 0x9c, 0xaf, 0x59, 0x5f, 0x15, 0xd8, 0xaf, 0xca,
+	0x5f, 0x25, 0x58, 0x9e, 0xf0, 0xc0, 0x16, 0xb6, 0xe5, 0x74, 0x0f, 0x7c, 0xb9, 0xcd, 0x2b, 0x48,
+	0x08, 0xa5, 0xdf, 0xe3, 0x4a, 0xef, 0xac, 0x6e, 0x4f, 0x6d, 0xce, 0xf5, 0x4f, 0xc4, 0x99, 0xf4,
+	0x29, 0xfa, 0x8d, 0x04, 0x68, 0xf8, 0xb1, 0x2c, 0x6c, 0xd0, 0xb1, 0x2f, 0x72, 0xb9, 0x95, 0xcb,
+	0x41, 0x42, 0xbd, 0x77, 0xb8, 0x7a, 0x0f, 0x56, 0x57, 0xc6, 0xdb, 0x34, 0xa4, 0xcf, 0x1f, 0x24,
+	0x58, 0xba, 0xec, 0xb9, 0x07, 0x3d, 0x0e, 0x9f, 0x71, 0xf4, 0x2a, 0xbe, 0x39, 0xcd, 0x2b, 0x92,
+	0xb2, 0xc9, 0xb5, 0x7d, 0x1b, 0x4d, 0xef, 0x9b, 0xe8, 0x15, 0xcc, 0x0f, 0x3c, 0x03, 0xa1, 0xbb,
+	0x7d, 0xb3, 0x4e, 0x70, 0xc6, 0x31, 0x6f, 0x48, 0x8a, 0xc2, 0x55, 0x59, 0x42, 0x97, 0x38, 0x23,
+	0xfa, 0x5a, 0x82, 0xbb, 0x93, 0xae, 0x7d, 0x28, 0xe4, 0x53, 0x53, 0xde, 0x6f, 0x73, 0x5b, 0x57,
+	0x11, 0xe9, 0xdf, 0x68, 0xb4, 0x32, 0x8d, 0xe9, 0xd0, 0x2f, 0x24, 0xb8, 0x31, 0xe2, 0x22, 0x88,
+	0x56, 0x06, 0x67, 0x1e, 0x75, 0xb3, 0xcc, 0xdd, 0x9f, 0x80, 0x12, 0x2a, 0xbd, 0xc1, 0x55, 0xba,
+	0x83, 0x6e, 0x8d, 0x34, 0x21, 0xfa, 0xbb, 0x04, 0xcb, 0x13, 0xea, 0xde, 0x70, 0x08, 0x4f, 0x57,
+	0x74, 0x5f, 0x39, 0x1d, 0xee, 0x72, 0x25, 0xdf, 0xcf, 0x5d, 0x27, 0x7e, 0x83, 0x6c, 0xf4, 0x5b,
+	0x09, 0xd0, 0x70, 0x7d, 0x1a, 0x8e, 0xe3, 0xb1, 0x25, 0xf0, 0x34, 0x89, 0xf1, 0x09, 0xd7, 0x71,
+	0x2d, 0x37, 0x55, 0x10, 0xfb, 0x4a, 0x1d, 0xc7, 0xf8, 0xa0, 0xdb, 0xff, 0x0d, 0x00, 0x00, 0xff,
+	0xff, 0xd2, 0xc2, 0x5f, 0xde, 0x40, 0x23, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -2908,56 +2905,56 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type DiscoveryAndSynchronizationServiceClient interface {
-	// /dss/identification_service_areas/{id}/{version}
-	//
-	// Delete an Identification Service Area.  USSs should not delete Identification Service Areas before the end of the last managed flight plus the retention period.
-	DeleteV1DssIdentificationServiceAreasIdVersion(ctx context.Context, in *DeleteV1DssIdentificationServiceAreasIdVersionRequest, opts ...grpc.CallOption) (*DeleteIdentificationServiceAreaResponse, error)
-	// /dss/subscriptions/{id}/{version}
-	//
-	// Delete a subscription.
-	DeleteV1DssSubscriptionsIdVersion(ctx context.Context, in *DeleteV1DssSubscriptionsIdVersionRequest, opts ...grpc.CallOption) (*DeleteSubscriptionResponse, error)
-	// /dss/identification_service_areas
-	//
-	// Retrieve all Identification Service Areas in the DAR for a given area during the given time.  Note that some Identification Service Areas returned may lie entirely outside the requested area.
-	GetV1DssIdentificationServiceAreas(ctx context.Context, in *GetV1DssIdentificationServiceAreasRequest, opts ...grpc.CallOption) (*SearchIdentificationServiceAreasResponse, error)
-	// /dss/identification_service_areas/{id}
-	//
-	// Retrieve full information of an Identification Service Area owned by the client.
-	GetV1DssIdentificationServiceAreasId(ctx context.Context, in *GetV1DssIdentificationServiceAreasIdRequest, opts ...grpc.CallOption) (*GetIdentificationServiceAreaResponse, error)
-	// /dss/subscriptions
-	//
-	// Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	//
-	// Only Subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of Subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing Subscriptions in an area.
-	GetV1DssSubscriptions(ctx context.Context, in *GetV1DssSubscriptionsRequest, opts ...grpc.CallOption) (*SearchSubscriptionsResponse, error)
-	// /dss/subscriptions/{id}
-	//
-	// Verify the existence/valdity and state of a particular subscription.
-	GetV1DssSubscriptionsId(ctx context.Context, in *GetV1DssSubscriptionsIdRequest, opts ...grpc.CallOption) (*GetSubscriptionResponse, error)
 	// /dss/identification_service_areas/{id}
 	//
 	// Create a new Identification Service Area.  This call will fail if an Identification Service Area with the same ID already exists.
 	//
 	// The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.
-	PutV1DssIdentificationServiceAreasId(ctx context.Context, in *PutV1DssIdentificationServiceAreasIdRequest, opts ...grpc.CallOption) (*PutIdentificationServiceAreaResponse, error)
-	// /dss/identification_service_areas/{id}/{version}
-	//
-	// Update an Identification Service Area.  The full content of the existing Identification Service Area will be replaced with the provided information as only the most recent version is retained.
-	//
-	// The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
-	PutV1DssIdentificationServiceAreasIdVersion(ctx context.Context, in *PutV1DssIdentificationServiceAreasIdVersionRequest, opts ...grpc.CallOption) (*PutIdentificationServiceAreaResponse, error)
+	CreateIdentificationServiceArea(ctx context.Context, in *CreateIdentificationServiceAreaRequest, opts ...grpc.CallOption) (*PutIdentificationServiceAreaResponse, error)
 	// /dss/subscriptions/{id}
 	//
 	// Create a subscription.  This call will fail if a Subscription with the same ID already exists.
 	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	PutV1DssSubscriptionsId(ctx context.Context, in *PutV1DssSubscriptionsIdRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error)
+	CreateSubscription(ctx context.Context, in *CreateSubscriptionRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error)
+	// /dss/identification_service_areas/{id}/{version}
+	//
+	// Delete an Identification Service Area.  USSs should not delete Identification Service Areas before the end of the last managed flight plus the retention period.
+	DeleteIdentificationServiceArea(ctx context.Context, in *DeleteIdentificationServiceAreaRequest, opts ...grpc.CallOption) (*DeleteIdentificationServiceAreaResponse, error)
+	// /dss/subscriptions/{id}/{version}
+	//
+	// Delete a subscription.
+	DeleteSubscription(ctx context.Context, in *DeleteSubscriptionRequest, opts ...grpc.CallOption) (*DeleteSubscriptionResponse, error)
+	// /dss/identification_service_areas/{id}
+	//
+	// Retrieve full information of an Identification Service Area owned by the client.
+	GetIdentificationServiceArea(ctx context.Context, in *GetIdentificationServiceAreaRequest, opts ...grpc.CallOption) (*GetIdentificationServiceAreaResponse, error)
+	// /dss/subscriptions/{id}
+	//
+	// Verify the existence/valdity and state of a particular subscription.
+	GetSubscription(ctx context.Context, in *GetSubscriptionRequest, opts ...grpc.CallOption) (*GetSubscriptionResponse, error)
+	// /dss/identification_service_areas
+	//
+	// Retrieve all Identification Service Areas in the DAR for a given area during the given time.  Note that some Identification Service Areas returned may lie entirely outside the requested area.
+	SearchIdentificationServiceAreas(ctx context.Context, in *SearchIdentificationServiceAreasRequest, opts ...grpc.CallOption) (*SearchIdentificationServiceAreasResponse, error)
+	// /dss/subscriptions
+	//
+	// Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
+	//
+	// Only Subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of Subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing Subscriptions in an area.
+	SearchSubscriptions(ctx context.Context, in *SearchSubscriptionsRequest, opts ...grpc.CallOption) (*SearchSubscriptionsResponse, error)
+	// /dss/identification_service_areas/{id}/{version}
+	//
+	// Update an Identification Service Area.  The full content of the existing Identification Service Area will be replaced with the provided information as only the most recent version is retained.
+	//
+	// The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
+	UpdateIdentificationServiceArea(ctx context.Context, in *UpdateIdentificationServiceAreaRequest, opts ...grpc.CallOption) (*PutIdentificationServiceAreaResponse, error)
 	// /dss/subscriptions/{id}/{version}
 	//
 	// Update a Subscription.  The full content of the existing Subscription will be replaced with the provided information as only the most recent version is retained.
 	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	PutV1DssSubscriptionsIdVersion(ctx context.Context, in *PutV1DssSubscriptionsIdVersionRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error)
+	UpdateSubscription(ctx context.Context, in *UpdateSubscriptionRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error)
 }
 
 type discoveryAndSynchronizationServiceClient struct {
@@ -2968,90 +2965,90 @@ func NewDiscoveryAndSynchronizationServiceClient(cc *grpc.ClientConn) DiscoveryA
 	return &discoveryAndSynchronizationServiceClient{cc}
 }
 
-func (c *discoveryAndSynchronizationServiceClient) DeleteV1DssIdentificationServiceAreasIdVersion(ctx context.Context, in *DeleteV1DssIdentificationServiceAreasIdVersionRequest, opts ...grpc.CallOption) (*DeleteIdentificationServiceAreaResponse, error) {
+func (c *discoveryAndSynchronizationServiceClient) CreateIdentificationServiceArea(ctx context.Context, in *CreateIdentificationServiceAreaRequest, opts ...grpc.CallOption) (*PutIdentificationServiceAreaResponse, error) {
+	out := new(PutIdentificationServiceAreaResponse)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *discoveryAndSynchronizationServiceClient) CreateSubscription(ctx context.Context, in *CreateSubscriptionRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error) {
+	out := new(PutSubscriptionResponse)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/CreateSubscription", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *discoveryAndSynchronizationServiceClient) DeleteIdentificationServiceArea(ctx context.Context, in *DeleteIdentificationServiceAreaRequest, opts ...grpc.CallOption) (*DeleteIdentificationServiceAreaResponse, error) {
 	out := new(DeleteIdentificationServiceAreaResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/DeleteV1DssIdentificationServiceAreasIdVersion", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *discoveryAndSynchronizationServiceClient) DeleteV1DssSubscriptionsIdVersion(ctx context.Context, in *DeleteV1DssSubscriptionsIdVersionRequest, opts ...grpc.CallOption) (*DeleteSubscriptionResponse, error) {
+func (c *discoveryAndSynchronizationServiceClient) DeleteSubscription(ctx context.Context, in *DeleteSubscriptionRequest, opts ...grpc.CallOption) (*DeleteSubscriptionResponse, error) {
 	out := new(DeleteSubscriptionResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/DeleteV1DssSubscriptionsIdVersion", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/DeleteSubscription", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *discoveryAndSynchronizationServiceClient) GetV1DssIdentificationServiceAreas(ctx context.Context, in *GetV1DssIdentificationServiceAreasRequest, opts ...grpc.CallOption) (*SearchIdentificationServiceAreasResponse, error) {
-	out := new(SearchIdentificationServiceAreasResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/GetV1DssIdentificationServiceAreas", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *discoveryAndSynchronizationServiceClient) GetV1DssIdentificationServiceAreasId(ctx context.Context, in *GetV1DssIdentificationServiceAreasIdRequest, opts ...grpc.CallOption) (*GetIdentificationServiceAreaResponse, error) {
+func (c *discoveryAndSynchronizationServiceClient) GetIdentificationServiceArea(ctx context.Context, in *GetIdentificationServiceAreaRequest, opts ...grpc.CallOption) (*GetIdentificationServiceAreaResponse, error) {
 	out := new(GetIdentificationServiceAreaResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/GetV1DssIdentificationServiceAreasId", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/GetIdentificationServiceArea", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *discoveryAndSynchronizationServiceClient) GetV1DssSubscriptions(ctx context.Context, in *GetV1DssSubscriptionsRequest, opts ...grpc.CallOption) (*SearchSubscriptionsResponse, error) {
-	out := new(SearchSubscriptionsResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/GetV1DssSubscriptions", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *discoveryAndSynchronizationServiceClient) GetV1DssSubscriptionsId(ctx context.Context, in *GetV1DssSubscriptionsIdRequest, opts ...grpc.CallOption) (*GetSubscriptionResponse, error) {
+func (c *discoveryAndSynchronizationServiceClient) GetSubscription(ctx context.Context, in *GetSubscriptionRequest, opts ...grpc.CallOption) (*GetSubscriptionResponse, error) {
 	out := new(GetSubscriptionResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/GetV1DssSubscriptionsId", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/GetSubscription", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *discoveryAndSynchronizationServiceClient) PutV1DssIdentificationServiceAreasId(ctx context.Context, in *PutV1DssIdentificationServiceAreasIdRequest, opts ...grpc.CallOption) (*PutIdentificationServiceAreaResponse, error) {
+func (c *discoveryAndSynchronizationServiceClient) SearchIdentificationServiceAreas(ctx context.Context, in *SearchIdentificationServiceAreasRequest, opts ...grpc.CallOption) (*SearchIdentificationServiceAreasResponse, error) {
+	out := new(SearchIdentificationServiceAreasResponse)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *discoveryAndSynchronizationServiceClient) SearchSubscriptions(ctx context.Context, in *SearchSubscriptionsRequest, opts ...grpc.CallOption) (*SearchSubscriptionsResponse, error) {
+	out := new(SearchSubscriptionsResponse)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/SearchSubscriptions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *discoveryAndSynchronizationServiceClient) UpdateIdentificationServiceArea(ctx context.Context, in *UpdateIdentificationServiceAreaRequest, opts ...grpc.CallOption) (*PutIdentificationServiceAreaResponse, error) {
 	out := new(PutIdentificationServiceAreaResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/PutV1DssIdentificationServiceAreasId", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *discoveryAndSynchronizationServiceClient) PutV1DssIdentificationServiceAreasIdVersion(ctx context.Context, in *PutV1DssIdentificationServiceAreasIdVersionRequest, opts ...grpc.CallOption) (*PutIdentificationServiceAreaResponse, error) {
-	out := new(PutIdentificationServiceAreaResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/PutV1DssIdentificationServiceAreasIdVersion", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *discoveryAndSynchronizationServiceClient) PutV1DssSubscriptionsId(ctx context.Context, in *PutV1DssSubscriptionsIdRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error) {
+func (c *discoveryAndSynchronizationServiceClient) UpdateSubscription(ctx context.Context, in *UpdateSubscriptionRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error) {
 	out := new(PutSubscriptionResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/PutV1DssSubscriptionsId", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *discoveryAndSynchronizationServiceClient) PutV1DssSubscriptionsIdVersion(ctx context.Context, in *PutV1DssSubscriptionsIdVersionRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error) {
-	out := new(PutSubscriptionResponse)
-	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/PutV1DssSubscriptionsIdVersion", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dssproto.DiscoveryAndSynchronizationService/UpdateSubscription", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3060,273 +3057,273 @@ func (c *discoveryAndSynchronizationServiceClient) PutV1DssSubscriptionsIdVersio
 
 // DiscoveryAndSynchronizationServiceServer is the server API for DiscoveryAndSynchronizationService service.
 type DiscoveryAndSynchronizationServiceServer interface {
-	// /dss/identification_service_areas/{id}/{version}
-	//
-	// Delete an Identification Service Area.  USSs should not delete Identification Service Areas before the end of the last managed flight plus the retention period.
-	DeleteV1DssIdentificationServiceAreasIdVersion(context.Context, *DeleteV1DssIdentificationServiceAreasIdVersionRequest) (*DeleteIdentificationServiceAreaResponse, error)
-	// /dss/subscriptions/{id}/{version}
-	//
-	// Delete a subscription.
-	DeleteV1DssSubscriptionsIdVersion(context.Context, *DeleteV1DssSubscriptionsIdVersionRequest) (*DeleteSubscriptionResponse, error)
-	// /dss/identification_service_areas
-	//
-	// Retrieve all Identification Service Areas in the DAR for a given area during the given time.  Note that some Identification Service Areas returned may lie entirely outside the requested area.
-	GetV1DssIdentificationServiceAreas(context.Context, *GetV1DssIdentificationServiceAreasRequest) (*SearchIdentificationServiceAreasResponse, error)
-	// /dss/identification_service_areas/{id}
-	//
-	// Retrieve full information of an Identification Service Area owned by the client.
-	GetV1DssIdentificationServiceAreasId(context.Context, *GetV1DssIdentificationServiceAreasIdRequest) (*GetIdentificationServiceAreaResponse, error)
-	// /dss/subscriptions
-	//
-	// Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	//
-	// Only Subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of Subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing Subscriptions in an area.
-	GetV1DssSubscriptions(context.Context, *GetV1DssSubscriptionsRequest) (*SearchSubscriptionsResponse, error)
-	// /dss/subscriptions/{id}
-	//
-	// Verify the existence/valdity and state of a particular subscription.
-	GetV1DssSubscriptionsId(context.Context, *GetV1DssSubscriptionsIdRequest) (*GetSubscriptionResponse, error)
 	// /dss/identification_service_areas/{id}
 	//
 	// Create a new Identification Service Area.  This call will fail if an Identification Service Area with the same ID already exists.
 	//
 	// The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.
-	PutV1DssIdentificationServiceAreasId(context.Context, *PutV1DssIdentificationServiceAreasIdRequest) (*PutIdentificationServiceAreaResponse, error)
-	// /dss/identification_service_areas/{id}/{version}
-	//
-	// Update an Identification Service Area.  The full content of the existing Identification Service Area will be replaced with the provided information as only the most recent version is retained.
-	//
-	// The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
-	PutV1DssIdentificationServiceAreasIdVersion(context.Context, *PutV1DssIdentificationServiceAreasIdVersionRequest) (*PutIdentificationServiceAreaResponse, error)
+	CreateIdentificationServiceArea(context.Context, *CreateIdentificationServiceAreaRequest) (*PutIdentificationServiceAreaResponse, error)
 	// /dss/subscriptions/{id}
 	//
 	// Create a subscription.  This call will fail if a Subscription with the same ID already exists.
 	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	PutV1DssSubscriptionsId(context.Context, *PutV1DssSubscriptionsIdRequest) (*PutSubscriptionResponse, error)
+	CreateSubscription(context.Context, *CreateSubscriptionRequest) (*PutSubscriptionResponse, error)
+	// /dss/identification_service_areas/{id}/{version}
+	//
+	// Delete an Identification Service Area.  USSs should not delete Identification Service Areas before the end of the last managed flight plus the retention period.
+	DeleteIdentificationServiceArea(context.Context, *DeleteIdentificationServiceAreaRequest) (*DeleteIdentificationServiceAreaResponse, error)
+	// /dss/subscriptions/{id}/{version}
+	//
+	// Delete a subscription.
+	DeleteSubscription(context.Context, *DeleteSubscriptionRequest) (*DeleteSubscriptionResponse, error)
+	// /dss/identification_service_areas/{id}
+	//
+	// Retrieve full information of an Identification Service Area owned by the client.
+	GetIdentificationServiceArea(context.Context, *GetIdentificationServiceAreaRequest) (*GetIdentificationServiceAreaResponse, error)
+	// /dss/subscriptions/{id}
+	//
+	// Verify the existence/valdity and state of a particular subscription.
+	GetSubscription(context.Context, *GetSubscriptionRequest) (*GetSubscriptionResponse, error)
+	// /dss/identification_service_areas
+	//
+	// Retrieve all Identification Service Areas in the DAR for a given area during the given time.  Note that some Identification Service Areas returned may lie entirely outside the requested area.
+	SearchIdentificationServiceAreas(context.Context, *SearchIdentificationServiceAreasRequest) (*SearchIdentificationServiceAreasResponse, error)
+	// /dss/subscriptions
+	//
+	// Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
+	//
+	// Only Subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of Subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing Subscriptions in an area.
+	SearchSubscriptions(context.Context, *SearchSubscriptionsRequest) (*SearchSubscriptionsResponse, error)
+	// /dss/identification_service_areas/{id}/{version}
+	//
+	// Update an Identification Service Area.  The full content of the existing Identification Service Area will be replaced with the provided information as only the most recent version is retained.
+	//
+	// The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
+	UpdateIdentificationServiceArea(context.Context, *UpdateIdentificationServiceAreaRequest) (*PutIdentificationServiceAreaResponse, error)
 	// /dss/subscriptions/{id}/{version}
 	//
 	// Update a Subscription.  The full content of the existing Subscription will be replaced with the provided information as only the most recent version is retained.
 	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	PutV1DssSubscriptionsIdVersion(context.Context, *PutV1DssSubscriptionsIdVersionRequest) (*PutSubscriptionResponse, error)
+	UpdateSubscription(context.Context, *UpdateSubscriptionRequest) (*PutSubscriptionResponse, error)
 }
 
 // UnimplementedDiscoveryAndSynchronizationServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedDiscoveryAndSynchronizationServiceServer struct {
 }
 
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) DeleteV1DssIdentificationServiceAreasIdVersion(ctx context.Context, req *DeleteV1DssIdentificationServiceAreasIdVersionRequest) (*DeleteIdentificationServiceAreaResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteV1DssIdentificationServiceAreasIdVersion not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) CreateIdentificationServiceArea(ctx context.Context, req *CreateIdentificationServiceAreaRequest) (*PutIdentificationServiceAreaResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateIdentificationServiceArea not implemented")
 }
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) DeleteV1DssSubscriptionsIdVersion(ctx context.Context, req *DeleteV1DssSubscriptionsIdVersionRequest) (*DeleteSubscriptionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteV1DssSubscriptionsIdVersion not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) CreateSubscription(ctx context.Context, req *CreateSubscriptionRequest) (*PutSubscriptionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateSubscription not implemented")
 }
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) GetV1DssIdentificationServiceAreas(ctx context.Context, req *GetV1DssIdentificationServiceAreasRequest) (*SearchIdentificationServiceAreasResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetV1DssIdentificationServiceAreas not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) DeleteIdentificationServiceArea(ctx context.Context, req *DeleteIdentificationServiceAreaRequest) (*DeleteIdentificationServiceAreaResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteIdentificationServiceArea not implemented")
 }
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) GetV1DssIdentificationServiceAreasId(ctx context.Context, req *GetV1DssIdentificationServiceAreasIdRequest) (*GetIdentificationServiceAreaResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetV1DssIdentificationServiceAreasId not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) DeleteSubscription(ctx context.Context, req *DeleteSubscriptionRequest) (*DeleteSubscriptionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSubscription not implemented")
 }
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) GetV1DssSubscriptions(ctx context.Context, req *GetV1DssSubscriptionsRequest) (*SearchSubscriptionsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetV1DssSubscriptions not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) GetIdentificationServiceArea(ctx context.Context, req *GetIdentificationServiceAreaRequest) (*GetIdentificationServiceAreaResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIdentificationServiceArea not implemented")
 }
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) GetV1DssSubscriptionsId(ctx context.Context, req *GetV1DssSubscriptionsIdRequest) (*GetSubscriptionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetV1DssSubscriptionsId not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) GetSubscription(ctx context.Context, req *GetSubscriptionRequest) (*GetSubscriptionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSubscription not implemented")
 }
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) PutV1DssIdentificationServiceAreasId(ctx context.Context, req *PutV1DssIdentificationServiceAreasIdRequest) (*PutIdentificationServiceAreaResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PutV1DssIdentificationServiceAreasId not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) SearchIdentificationServiceAreas(ctx context.Context, req *SearchIdentificationServiceAreasRequest) (*SearchIdentificationServiceAreasResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchIdentificationServiceAreas not implemented")
 }
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) PutV1DssIdentificationServiceAreasIdVersion(ctx context.Context, req *PutV1DssIdentificationServiceAreasIdVersionRequest) (*PutIdentificationServiceAreaResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PutV1DssIdentificationServiceAreasIdVersion not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) SearchSubscriptions(ctx context.Context, req *SearchSubscriptionsRequest) (*SearchSubscriptionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchSubscriptions not implemented")
 }
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) PutV1DssSubscriptionsId(ctx context.Context, req *PutV1DssSubscriptionsIdRequest) (*PutSubscriptionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PutV1DssSubscriptionsId not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) UpdateIdentificationServiceArea(ctx context.Context, req *UpdateIdentificationServiceAreaRequest) (*PutIdentificationServiceAreaResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateIdentificationServiceArea not implemented")
 }
-func (*UnimplementedDiscoveryAndSynchronizationServiceServer) PutV1DssSubscriptionsIdVersion(ctx context.Context, req *PutV1DssSubscriptionsIdVersionRequest) (*PutSubscriptionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PutV1DssSubscriptionsIdVersion not implemented")
+func (*UnimplementedDiscoveryAndSynchronizationServiceServer) UpdateSubscription(ctx context.Context, req *UpdateSubscriptionRequest) (*PutSubscriptionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubscription not implemented")
 }
 
 func RegisterDiscoveryAndSynchronizationServiceServer(s *grpc.Server, srv DiscoveryAndSynchronizationServiceServer) {
 	s.RegisterService(&_DiscoveryAndSynchronizationService_serviceDesc, srv)
 }
 
-func _DiscoveryAndSynchronizationService_DeleteV1DssIdentificationServiceAreasIdVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteV1DssIdentificationServiceAreasIdVersionRequest)
+func _DiscoveryAndSynchronizationService_CreateIdentificationServiceArea_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateIdentificationServiceAreaRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).DeleteV1DssIdentificationServiceAreasIdVersion(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).CreateIdentificationServiceArea(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/DeleteV1DssIdentificationServiceAreasIdVersion",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).DeleteV1DssIdentificationServiceAreasIdVersion(ctx, req.(*DeleteV1DssIdentificationServiceAreasIdVersionRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).CreateIdentificationServiceArea(ctx, req.(*CreateIdentificationServiceAreaRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryAndSynchronizationService_DeleteV1DssSubscriptionsIdVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteV1DssSubscriptionsIdVersionRequest)
+func _DiscoveryAndSynchronizationService_CreateSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSubscriptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).DeleteV1DssSubscriptionsIdVersion(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).CreateSubscription(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/DeleteV1DssSubscriptionsIdVersion",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/CreateSubscription",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).DeleteV1DssSubscriptionsIdVersion(ctx, req.(*DeleteV1DssSubscriptionsIdVersionRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).CreateSubscription(ctx, req.(*CreateSubscriptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetV1DssIdentificationServiceAreasRequest)
+func _DiscoveryAndSynchronizationService_DeleteIdentificationServiceArea_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteIdentificationServiceAreaRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).GetV1DssIdentificationServiceAreas(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).DeleteIdentificationServiceArea(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/GetV1DssIdentificationServiceAreas",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).GetV1DssIdentificationServiceAreas(ctx, req.(*GetV1DssIdentificationServiceAreasRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).DeleteIdentificationServiceArea(ctx, req.(*DeleteIdentificationServiceAreaRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreasId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetV1DssIdentificationServiceAreasIdRequest)
+func _DiscoveryAndSynchronizationService_DeleteSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSubscriptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).GetV1DssIdentificationServiceAreasId(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).DeleteSubscription(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/GetV1DssIdentificationServiceAreasId",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/DeleteSubscription",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).GetV1DssIdentificationServiceAreasId(ctx, req.(*GetV1DssIdentificationServiceAreasIdRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).DeleteSubscription(ctx, req.(*DeleteSubscriptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryAndSynchronizationService_GetV1DssSubscriptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetV1DssSubscriptionsRequest)
+func _DiscoveryAndSynchronizationService_GetIdentificationServiceArea_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIdentificationServiceAreaRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).GetV1DssSubscriptions(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).GetIdentificationServiceArea(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/GetV1DssSubscriptions",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/GetIdentificationServiceArea",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).GetV1DssSubscriptions(ctx, req.(*GetV1DssSubscriptionsRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).GetIdentificationServiceArea(ctx, req.(*GetIdentificationServiceAreaRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryAndSynchronizationService_GetV1DssSubscriptionsId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetV1DssSubscriptionsIdRequest)
+func _DiscoveryAndSynchronizationService_GetSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSubscriptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).GetV1DssSubscriptionsId(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).GetSubscription(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/GetV1DssSubscriptionsId",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/GetSubscription",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).GetV1DssSubscriptionsId(ctx, req.(*GetV1DssSubscriptionsIdRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).GetSubscription(ctx, req.(*GetSubscriptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PutV1DssIdentificationServiceAreasIdRequest)
+func _DiscoveryAndSynchronizationService_SearchIdentificationServiceAreas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchIdentificationServiceAreasRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).PutV1DssIdentificationServiceAreasId(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).SearchIdentificationServiceAreas(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/PutV1DssIdentificationServiceAreasId",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).PutV1DssIdentificationServiceAreasId(ctx, req.(*PutV1DssIdentificationServiceAreasIdRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).SearchIdentificationServiceAreas(ctx, req.(*SearchIdentificationServiceAreasRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasIdVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PutV1DssIdentificationServiceAreasIdVersionRequest)
+func _DiscoveryAndSynchronizationService_SearchSubscriptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchSubscriptionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).PutV1DssIdentificationServiceAreasIdVersion(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).SearchSubscriptions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/PutV1DssIdentificationServiceAreasIdVersion",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/SearchSubscriptions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).PutV1DssIdentificationServiceAreasIdVersion(ctx, req.(*PutV1DssIdentificationServiceAreasIdVersionRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).SearchSubscriptions(ctx, req.(*SearchSubscriptionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryAndSynchronizationService_PutV1DssSubscriptionsId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PutV1DssSubscriptionsIdRequest)
+func _DiscoveryAndSynchronizationService_UpdateIdentificationServiceArea_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateIdentificationServiceAreaRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).PutV1DssSubscriptionsId(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).UpdateIdentificationServiceArea(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/PutV1DssSubscriptionsId",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).PutV1DssSubscriptionsId(ctx, req.(*PutV1DssSubscriptionsIdRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).UpdateIdentificationServiceArea(ctx, req.(*UpdateIdentificationServiceAreaRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryAndSynchronizationService_PutV1DssSubscriptionsIdVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PutV1DssSubscriptionsIdVersionRequest)
+func _DiscoveryAndSynchronizationService_UpdateSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSubscriptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryAndSynchronizationServiceServer).PutV1DssSubscriptionsIdVersion(ctx, in)
+		return srv.(DiscoveryAndSynchronizationServiceServer).UpdateSubscription(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/PutV1DssSubscriptionsIdVersion",
+		FullMethod: "/dssproto.DiscoveryAndSynchronizationService/UpdateSubscription",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryAndSynchronizationServiceServer).PutV1DssSubscriptionsIdVersion(ctx, req.(*PutV1DssSubscriptionsIdVersionRequest))
+		return srv.(DiscoveryAndSynchronizationServiceServer).UpdateSubscription(ctx, req.(*UpdateSubscriptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3336,44 +3333,44 @@ var _DiscoveryAndSynchronizationService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*DiscoveryAndSynchronizationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "DeleteV1DssIdentificationServiceAreasIdVersion",
-			Handler:    _DiscoveryAndSynchronizationService_DeleteV1DssIdentificationServiceAreasIdVersion_Handler,
+			MethodName: "CreateIdentificationServiceArea",
+			Handler:    _DiscoveryAndSynchronizationService_CreateIdentificationServiceArea_Handler,
 		},
 		{
-			MethodName: "DeleteV1DssSubscriptionsIdVersion",
-			Handler:    _DiscoveryAndSynchronizationService_DeleteV1DssSubscriptionsIdVersion_Handler,
+			MethodName: "CreateSubscription",
+			Handler:    _DiscoveryAndSynchronizationService_CreateSubscription_Handler,
 		},
 		{
-			MethodName: "GetV1DssIdentificationServiceAreas",
-			Handler:    _DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreas_Handler,
+			MethodName: "DeleteIdentificationServiceArea",
+			Handler:    _DiscoveryAndSynchronizationService_DeleteIdentificationServiceArea_Handler,
 		},
 		{
-			MethodName: "GetV1DssIdentificationServiceAreasId",
-			Handler:    _DiscoveryAndSynchronizationService_GetV1DssIdentificationServiceAreasId_Handler,
+			MethodName: "DeleteSubscription",
+			Handler:    _DiscoveryAndSynchronizationService_DeleteSubscription_Handler,
 		},
 		{
-			MethodName: "GetV1DssSubscriptions",
-			Handler:    _DiscoveryAndSynchronizationService_GetV1DssSubscriptions_Handler,
+			MethodName: "GetIdentificationServiceArea",
+			Handler:    _DiscoveryAndSynchronizationService_GetIdentificationServiceArea_Handler,
 		},
 		{
-			MethodName: "GetV1DssSubscriptionsId",
-			Handler:    _DiscoveryAndSynchronizationService_GetV1DssSubscriptionsId_Handler,
+			MethodName: "GetSubscription",
+			Handler:    _DiscoveryAndSynchronizationService_GetSubscription_Handler,
 		},
 		{
-			MethodName: "PutV1DssIdentificationServiceAreasId",
-			Handler:    _DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasId_Handler,
+			MethodName: "SearchIdentificationServiceAreas",
+			Handler:    _DiscoveryAndSynchronizationService_SearchIdentificationServiceAreas_Handler,
 		},
 		{
-			MethodName: "PutV1DssIdentificationServiceAreasIdVersion",
-			Handler:    _DiscoveryAndSynchronizationService_PutV1DssIdentificationServiceAreasIdVersion_Handler,
+			MethodName: "SearchSubscriptions",
+			Handler:    _DiscoveryAndSynchronizationService_SearchSubscriptions_Handler,
 		},
 		{
-			MethodName: "PutV1DssSubscriptionsId",
-			Handler:    _DiscoveryAndSynchronizationService_PutV1DssSubscriptionsId_Handler,
+			MethodName: "UpdateIdentificationServiceArea",
+			Handler:    _DiscoveryAndSynchronizationService_UpdateIdentificationServiceArea_Handler,
 		},
 		{
-			MethodName: "PutV1DssSubscriptionsIdVersion",
-			Handler:    _DiscoveryAndSynchronizationService_PutV1DssSubscriptionsIdVersion_Handler,
+			MethodName: "UpdateSubscription",
+			Handler:    _DiscoveryAndSynchronizationService_UpdateSubscription_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
