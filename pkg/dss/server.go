@@ -28,13 +28,16 @@ type Server struct {
 
 func (s *Server) AuthScopes() map[string][]string {
 	return map[string][]string{
-		"GetIdentificationServiceArea":     []string{ReadISAScope},
 		"CreateIdentificationServiceArea":  []string{WriteISAScope},
 		"DeleteIdentificationServiceArea":  []string{WriteISAScope},
-		"CreateSubscription":               []string{WriteISAScope},
-		"DeleteSubscription":               []string{ReadISAScope},
-		"SearchSubscriptions":              []string{ReadISAScope},
+		"GetIdentificationServiceArea":     []string{ReadISAScope},
 		"SearchIdentificationServiceAreas": []string{ReadISAScope},
+		"UpdateIdentificationServiceArea":  []string{WriteISAScope},
+		"CreateSubscription":               []string{WriteISAScope},
+		"DeleteSubscription":               []string{WriteISAScope},
+		"GetSubscription":                  []string{ReadISAScope},
+		"SearchSubscriptions":              []string{ReadISAScope},
+		"UpdateSubscription":               []string{WriteISAScope},
 	}
 }
 
