@@ -129,7 +129,7 @@ func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
 	ctx context.Context, q queryable, cells s2.CellUnion, owner models.Owner) (int, error) {
 	var query = `
     SELECT
-      MAX(subscriptions_per_cell_id)
+      IFNULL(MAX(subscriptions_per_cell_id), 0)
     FROM (
       SELECT
         COUNT(*) AS subscriptions_per_cell_id
@@ -220,7 +220,7 @@ func (c *Store) GetSubscription(ctx context.Context, id models.ID) (*models.Subs
 	return c.fetchSubscriptionByID(ctx, c.DB, id)
 }
 
-// Insert inserts subscription into the store and returns
+// InsertSubscription inserts subscription into the store and returns
 // the resulting subscription including its ID.
 func (c *Store) InsertSubscription(ctx context.Context, s models.Subscription) (*models.Subscription, error) {
 
@@ -258,6 +258,8 @@ func (c *Store) InsertSubscription(ctx context.Context, s models.Subscription) (
 		count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, tx, s.Cells, s.Owner)
 		if err != nil {
 			c.logger.Warn("Error fetching max subscription count", zap.Error(err))
+			return nil, multierr.Combine(dsserr.Internal(
+				"failed to fetch subscription count, rejecting request"), tx.Rollback())
 		} else if count >= maxSubscriptionsPerArea {
 			return nil, multierr.Combine(dsserr.Exhausted(
 				"too many existing subscriptions in this area"), tx.Rollback())
