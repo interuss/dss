@@ -4,5 +4,8 @@
   objectItems(o): [[k, o[k]] for k in std.objectFields(o)],
   filter(o, fields): { [field]: o[field] for field in std.setInter(std.objectFields(o), fields) },
   exclude(o, fields): { [field]: o[field] for field in std.setDiff(std.objectFields(o), fields) },
+<<<<<<< HEAD
   makeArgs(o): ['--%s=%s' % kv for kv in $.objectItems(o)]
+=======
+>>>>>>> All files in
 }

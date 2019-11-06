@@ -1,5 +1,8 @@
 local base = import 'base.libsonnet';
+<<<<<<< HEAD
 local util = import 'util.libsonnet';
+=======
+>>>>>>> All files in
 local volumes = import 'volumes.libsonnet';
 
 {
@@ -44,15 +47,27 @@ local volumes = import 'volumes.libsonnet';
           },
           soloContainer:: base.Container('cockroachdb') {
             image: metadata.cockroach.image,
+<<<<<<< HEAD
             volumeMounts: volumes.cockroachMounts,
+=======
+            volumeMounts:: volumes.cockroachMounts,
+>>>>>>> All files in
             ports: [
               {
                 name: 'cockroach',
                 containerPort: metadata.cockroach.grpc_port,
+<<<<<<< HEAD
+=======
+                targetPort: metadata.cockroach.grpc_port,
+>>>>>>> All files in
               },
               {
                 name: 'http',
                 containerPort: metadata.cockroach.http_port,
+<<<<<<< HEAD
+=======
+                targetPort: metadata.cockroach.http_port,
+>>>>>>> All files in
               },
             ],
             env: [
@@ -83,6 +98,7 @@ local volumes = import 'volumes.libsonnet';
             command: [
               '/bin/bash',
               '-ecx',
+<<<<<<< HEAD
               'exec /cockroach/cockroach start ' + std.join(' ', util.makeArgs(self.command_args_)),
             ],
             command_args_:: {
@@ -92,6 +108,17 @@ local volumes = import 'volumes.libsonnet';
                              + metadata.cockroach.JoinExisting),
               logtostderr: true,
               locality: 'zone=' + metadata.cockroach.locality,
+=======
+              'exec',
+              '/cockroach/cockroach',
+              'start',
+            ],
+            args_:: {
+              'certs-dir': '/cockroach-certs',
+              'advertise-addr': '${HOSTNAME##*-}.' + metadata.cockroach.hostnameSuffix,
+              join: 'cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local',
+              logtostderr: true,
+>>>>>>> All files in
               'locality-advertise-addr': 'zone=' + metadata.cockroach.locality + '@$(hostname -f)',
               'http-addr': '0.0.0.0',
               cache: '25%',
@@ -102,6 +129,12 @@ local volumes = import 'volumes.libsonnet';
         },
       },
       podManagementPolicy: 'Parallel',
+<<<<<<< HEAD
+=======
+      updateStrategy: {
+        type: 'RollingUpdate',
+      },
+>>>>>>> All files in
       volumeClaimTemplates: [
         {
           metadata: {
