@@ -2,6 +2,7 @@
 <<<<<<< HEAD
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
+<<<<<<< HEAD
 
 local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
   metadata+: {
@@ -267,6 +268,8 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
 =======
 local base = import 'base.libsonnet';
 >>>>>>> All files in
+=======
+>>>>>>> jsonnet and kubecfg documentation
 
 local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
   metadata+: {
@@ -287,21 +290,18 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
         template+: {
           spec+: {
             volumes_: {
-              client_certs: metadata.cockroach.volumes_.client_certs,
-              ca_certs: metadata.cockroach.volumes_.ca_certs,
+              client_certs: volumes.volumes.client_certs,
+              ca_certs: volumes.volumes.ca_certs,
             },
             serviceAccountName: 'cockroachdb',
-            containers_:: {
-              cluster_init: base.Container('cluster-init') {
-                // TODO stub this.
-                image: 'cockroachdb',
-                command: ['/cockroach/cockroach', 'init'],
-                args_:: {
-                  'certs-dir': '/cockroach-certs',
-                  host: 'cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local:' + metadata.cockroach.grpc_port,
-                },
-                volumeMounts: [metadata.cockroach.caCertMount] + metadata.cockroach.clientCertMounts,
+            soloContainer:: base.Container('cluster-init') {
+              image: metadata.cockroach.image,
+              command: ['/cockroach/cockroach', 'init'],
+              args_:: {
+                'certs-dir': '/cockroach/cockroach-certs',
+                host: 'cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local:' + metadata.cockroach.grpc_port,
               },
+              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
             },
           },
         },

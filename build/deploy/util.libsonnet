@@ -5,7 +5,11 @@
   filter(o, fields): { [field]: o[field] for field in std.setInter(std.objectFields(o), fields) },
   exclude(o, fields): { [field]: o[field] for field in std.setDiff(std.objectFields(o), fields) },
 <<<<<<< HEAD
+<<<<<<< HEAD
   makeArgs(o): ['--%s=%s' % kv for kv in $.objectItems(o)]
 =======
 >>>>>>> All files in
+=======
+  makeArgs(o): ['--%s=%s' % kv for kv in $.objectItems(o)]
+>>>>>>> jsonnet and kubecfg documentation
 }

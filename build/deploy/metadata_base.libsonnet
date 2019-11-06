@@ -10,9 +10,13 @@
     balancedIP: error 'must supply the balanced ip address',
     nodeIPs: error 'must supply the per-node ip addresses as an array',
 <<<<<<< HEAD
+<<<<<<< HEAD
     JoinExisting: [],
 =======
 >>>>>>> All files in
+=======
+    JoinExisting: [],
+>>>>>>> jsonnet and kubecfg documentation
   },
   PSP: {
     roleRef: '',

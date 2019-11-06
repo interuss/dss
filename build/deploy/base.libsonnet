@@ -50,7 +50,7 @@ local util = import 'util.libsonnet';
     },
   },
 
-  Deployment(metadata, name): $._Object('apps/v1', 'Deployment', name, metadata) {
+  Deployment(metadata, name): $._Object('apps/v1beta1', 'Deployment', name, metadata) {
     local deployment = self,
     app:: error "must specify app",
 
@@ -174,7 +174,7 @@ local util = import 'util.libsonnet';
     imagePullPolicy: if std.endsWith(self.image, ':latest') then 'Always' else 'IfNotPresent',
 
     args_:: {},
-    args: ['--%s=%s' % kv for kv in util.objectItems(self.args_)],
+    args: util.makeArgs(self.args_),
 
     stdin: false,
     tty: false,
