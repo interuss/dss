@@ -1,212 +1,255 @@
-{
-  apiVersion: 'v1',
-  kind: 'ServiceAccount',
-  metadata: {
-    name: 'cockroachdb',
-    labels: {
-      app: 'cockroachdb',
-    },
+local base = import 'base.libsonnet';
+
+local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
+  metadata+: {
+    namespace: metadata.namespace,
   },
-}
-
-
-{
-  apiVersion: 'rbac.authorization.k8s.io/v1beta1',
-  kind: 'Role',
-  metadata: {
-    name: 'cockroachdb',
-    labels: {
-      app: 'cockroachdb',
-    },
+  port:: metadata.cockroach.grpc_port,
+  app: 'cockroachdb',
+  spec+: {
+    type: 'LoadBalancer',
+    loadBalancerIP: ip,
   },
-  rules: [
-    {
-      apiGroups: [
-        '',
-      ],
-      resources: [
-        'secrets',
-      ],
-      verbs: [
-        'create',
-        'get',
-      ],
-    },
-  ],
-}
-
+};
 
 {
-  apiVersion: 'rbac.authorization.k8s.io/v1beta1',
-  kind: 'ClusterRole',
-  metadata: {
-    name: 'cockroachdb',
-    labels: {
-      app: 'cockroachdb',
-    },
-  },
-  rules: [
-    {
-      apiGroups: [
-        'certificates.k8s.io',
-      ],
-      resources: [
-        'certificatesigningrequests',
-      ],
-      verbs: [
-        'create',
-        'get',
-        'watch',
-      ],
-    },
-  ],
-}
-
-{
-  apiVersion: 'rbac.authorization.k8s.io/v1beta1',
-  kind: 'RoleBinding',
-  metadata: {
-    name: 'cockroachdb',
-    labels: {
-      app: 'cockroachdb',
-    },
-  },
-  roleRef: {
-    apiGroup: 'rbac.authorization.k8s.io',
-    kind: 'Role',
-    name: 'cockroachdb',
-  },
-  subjects: [
-    {
-      kind: 'ServiceAccount',
-      name: 'cockroachdb',
-    },
-  ],
-}
-
-{
-  apiVersion: 'rbac.authorization.k8s.io/v1beta1',
-  kind: 'ClusterRoleBinding',
-  metadata: {
-    name: 'cockroachdb',
-    labels: {
-      app: 'cockroachdb',
-    },
-  },
-  roleRef: {
-    apiGroup: 'rbac.authorization.k8s.io',
-    kind: 'ClusterRole',
-    name: 'cockroachdb',
-  },
-  subjects: [
-    {
-      kind: 'ServiceAccount',
-      name: 'cockroachdb',
-      namespace: 'default',
-    },
-  ],
-}
-
-
-
-{
-  apiVersion: 'v1',
-  kind: 'Service',
-  metadata: {
-    name: 'cockroachdb',
-    labels: {
-      app: 'cockroachdb',
-    },
-    annotations: {
-      'service.alpha.kubernetes.io/tolerate-unready-endpoints': 'true',
-      'prometheus.io/scrape': 'true',
-      'prometheus.io/path': '_status/vars',
-      'prometheus.io/port': '{{ .Values.HttpPort }}',
-    },
-  },
-  spec: {
-    ports: [
-      {
-        port: {
-          '[object Object]': null,
+  all(metadata): {
+    CockroachInit: if metadata.cockroach.shouldInit then base.Job(metadata, 'init') {
+      spec+: {
+        template+: {
+          spec+: {
+            volumes_: {
+              client_certs: metadata.cockroach.volumes_.client_certs,
+              ca_certs: metadata.cockroach.volumes_.ca_certs,
+            },
+            serviceAccountName: 'cockroachdb',
+            containers_:: {
+              cluster_init: base.Container('cluster-init') {
+                // TODO stub this.
+                image: 'cockroachdb',
+                command: ['/cockroach/cockroach', 'init'],
+                args_:: {
+                  'certs-dir': '/cockroach-certs',
+                  host: 'cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local:' + metadata.cockroach.grpc_port,
+                },
+                volumeMounts: [metadata.cockroach.caCertMount] + metadata.cockroach.clientCertMounts,
+              },
+            },
+          },
         },
-        targetPort: {
-          '[object Object]': null,
-        },
-        name: 'cockroach',
       },
-      {
-        port: {
-          '[object Object]': null,
+    } else null,
+
+    Balanced: cockroachLB(metadata, 'cockroach-db-external-balanced', metadata.cockroach.balancedIP),
+
+    NodeGateways: [
+      cockroachLB(metadata, 'cockroach-db-external-node-' + i, metadata.cockroach.nodeIPs[i]) {
+        spec+: {
+          selector: {
+            'statefulset.kubernetes.io/pod-name': 'cockroachdb-' + i,
+          },
         },
-        targetPort: {
-          '[object Object]': null,
-        },
-        name: 'http',
-      },
+      }
+      for i in std.range(0, std.length(metadata.cockroach.nodeIPs) - 1)
     ],
-    publishNotReadyAddresses: true,
-    clusterIP: 'None',
-    selector: {
-      app: 'cockroachdb',
-    },
-  },
-}
 
-
-{
-  apiVersion: 'policy/v1beta1',
-  kind: 'PodDisruptionBudget',
-  metadata: {
-    name: 'cockroachdb-budget',
-    labels: {
-      app: 'cockroachdb',
-    },
-  },
-  spec: {
-    selector: {
-      matchLabels: {
-        app: 'cockroachdb',
+    svcAccount: {
+      apiVersion: 'v1',
+      kind: 'ServiceAccount',
+      metadata: {
+        namespace: metadata.namespace,
+        name: 'cockroachdb',
+        labels: {
+          app: 'cockroachdb',
+        },
       },
     },
-    maxUnavailable: 1,
-  },
-}
+
+    role: {
+      apiVersion: 'rbac.authorization.k8s.io/v1beta1',
+      kind: 'Role',
+      metadata: {
+        namespace: metadata.namespace,
+        name: 'cockroachdb',
+        labels: {
+          app: 'cockroachdb',
+        },
+      },
+      rules: [
+        {
+          apiGroups: [
+            '',
+          ],
+          resources: [
+            'secrets',
+          ],
+          verbs: [
+            'create',
+            'get',
+          ],
+        },
+      ],
+    },
 
 
-{
-  apiVersion: 'v1',
-  kind: 'Service',
-  metadata: {
-    name: 'cockroachdb-balanced',
-    labels: {
-      app: 'cockroachdb',
-    },
-  },
-  spec: {
-    ports: [
-      {
-        port: {
-          '[object Object]': null,
+    clusterRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1beta1',
+      kind: 'ClusterRole',
+      metadata: {
+        name: 'cockroachdb',
+        labels: {
+          app: 'cockroachdb',
         },
-        targetPort: {
-          '[object Object]': null,
-        },
-        name: 'cockroach',
       },
-      {
-        port: {
-          '[object Object]': null,
+      rules: [
+        {
+          apiGroups: [
+            'certificates.k8s.io',
+          ],
+          resources: [
+            'certificatesigningrequests',
+          ],
+          verbs: [
+            'create',
+            'get',
+            'watch',
+          ],
         },
-        targetPort: {
-          '[object Object]': null,
-        },
-        name: 'http',
-      },
-    ],
-    selector: {
-      app: 'cockroachdb',
+      ],
     },
-    sessionAffinity: 'ClientIP',
+
+    roleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1beta1',
+      kind: 'RoleBinding',
+      metadata: {
+        namespace: metadata.namespace,
+        name: 'cockroachdb',
+        labels: {
+          app: 'cockroachdb',
+        },
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'Role',
+        name: 'cockroachdb',
+      },
+      subjects: [
+        {
+          kind: 'ServiceAccount',
+          name: 'cockroachdb',
+          namespace: metadata.namespace,
+        },
+      ],
+    },
+
+    clusterRoleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1beta1',
+      kind: 'ClusterRoleBinding',
+      metadata: {
+        name: 'cockroachdb',
+        labels: {
+          app: 'cockroachdb',
+        },
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'ClusterRole',
+        name: 'cockroachdb',
+      },
+      subjects: [
+        {
+          kind: 'ServiceAccount',
+          name: 'cockroachdb',
+          namespace: 'default',
+        },
+      ],
+    },
+
+    service: {
+      apiVersion: 'v1',
+      kind: 'Service',
+      metadata: {
+        namespace: metadata.namespace,
+        name: 'cockroachdb',
+        labels: {
+          app: 'cockroachdb',
+        },
+        annotations: {
+          'service.alpha.kubernetes.io/tolerate-unready-endpoints': 'true',
+          'prometheus.io/scrape': 'true',
+          'prometheus.io/path': '_status/vars',
+          'prometheus.io/port': metadata.cockroach.http_port,
+        },
+      },
+      spec: {
+        ports: [
+          {
+            port: metadata.cockroach.grpc_port,
+            targetPort: metadata.cockroach.grpc_port,
+            name: 'cockroach',
+          },
+          {
+            port: metadata.cockroach.http_port,
+            targetPort: metadata.cockroach.http_port,
+            name: 'http',
+          },
+        ],
+        publishNotReadyAddresses: true,
+        clusterIP: 'None',
+        selector: {
+          app: 'cockroachdb',
+        },
+      },
+    },
+
+    podDisruptionBudget: {
+      apiVersion: 'policy/v1beta1',
+      kind: 'PodDisruptionBudget',
+      metadata: {
+        namespace: metadata.namespace,
+        name: 'cockroachdb-budget',
+        labels: {
+          app: 'cockroachdb',
+        },
+      },
+      spec: {
+        selector: {
+          matchLabels: {
+            app: 'cockroachdb',
+          },
+        },
+        maxUnavailable: 1,
+      },
+    },
+
+    cockroachBalanced: {
+      apiVersion: 'v1',
+      kind: 'Service',
+      metadata: {
+        namespace: metadata.namespace,
+        name: 'cockroachdb-balanced',
+        labels: {
+          app: 'cockroachdb',
+        },
+      },
+      spec: {
+        ports: [
+          {
+            port: metadata.cockroach.grpc_port,
+            targetPort: metadata.cockroach.grpc_port,
+            name: 'cockroach',
+          },
+          {
+            port: metadata.cockroach.http_port,
+            targetPort: metadata.cockroach.http_port,
+            name: 'http',
+          },
+        ],
+        selector: {
+          app: 'cockroachdb',
+        },
+        sessionAffinity: 'ClientIP',
+      },
+    },
   },
 }
