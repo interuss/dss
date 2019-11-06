@@ -48,7 +48,7 @@ of this operational overhead.
 
 Download & install the following tools to your workstation:
 
-*   The [helm client](https://helm.sh/docs/using_helm/#installing-the-helm-client)
+*   The [kubecfg client](https://github.com/bitnami/kubecfg#install)
     *   Required if deploying using the defined Kubernetes templates.
 *   kubectl
     *   Required if deploying with Kubernetes.
@@ -60,6 +60,8 @@ Download & install the following tools to your workstation:
     * Required if deploying to Google Cloud.
 *   Golang.
     *   Required if developing the DSS codebase.
+*   Optional - [Jsonnet](https://github.com/google/jsonnet)
+    * Recommended if editing the jsonnet templates.
 
 
 ## Docker images
@@ -103,8 +105,8 @@ which ever provider you choose.
     your cloud provider. Note: if you're using Google Cloud the HTTPS Gateway
     Ingress needs to be created as a "Global" IP address.
 
-1.  Copy `values.yaml.template` to `values.yaml` and fill in the required fields
-    at the top.
+1.  Copy `deploy/examples/minimum.jsonnet` to `dss.jsonnet` and fill in with
+    your fields.
 
 1.  Use the `make-certs.py` script in this directory to create certificates for
     the new CockroachDB cluster:
@@ -118,7 +120,7 @@ which ever provider you choose.
         CockroachDB clusters will use to connect to your cluster. Wildcard
         notation is supported, so you can use `*.<subdomain>.<domain>.com>`.
         The entries should be separated by spaces. These entries should
-        correspond to the entries in values.yaml Hostnames.DBNodes.
+        correspond to the entries in dss.jsonnet cockroach.nodeIPs.
     1.  If you are joining existing clusters you need their CA public cert,
         which is concatenated with yours.  Set `--ca-cert-to-join` to a `ca.crt`
         file. Reach out to existing operators to request their public cert and
@@ -130,7 +132,7 @@ which ever provider you choose.
 
         ./apply-certs.sh
 
-1.  Run `helm template . > cockroachdb.yaml` to render the YAML.
+1.  Run `kubecfg show <your_leaf_file.jsonnet> > dss.yaml` to render the YAML.
 1.  Run `kubectl apply -f cockroachdb.yaml` to apply it to the cluster.
 
 
@@ -140,10 +142,10 @@ which ever provider you choose.
 Follow the steps above for creating a new CockroachDB cluster, but with the
 following differences:
 
-1.  In values.yaml, be sure to set ClusterInit to false. This can initialize
-    the data directories on you cluster, and prevent you from joining an
-    existing cluster.
-1.  In values.yaml, add the host:ports of existing CockroachDB nodes to the
+1.  In dss.jsonnet, make sure you don't set shouldInit to true. This can
+    initialize the data directories on you cluster, and prevent you from joining
+    an existing cluster.
+1.  In dss.jsonnet, add the host:ports of existing CockroachDB nodes to the
     JoinExisting array.  You should supply a minimum of 3 seed nodes to every 
     CockroachDB node. These 3 nodes should be the same for every node (ie: every
     node points to node 0, 1, and 2).  For external clusters you should point to
