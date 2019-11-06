@@ -1,4 +1,5 @@
 local base = import 'base.libsonnet';
+local util = import 'util.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
 {
@@ -43,17 +44,15 @@ local volumes = import 'volumes.libsonnet';
           },
           soloContainer:: base.Container('cockroachdb') {
             image: metadata.cockroach.image,
-            volumeMounts:: volumes.cockroachMounts,
+            volumeMounts: volumes.cockroachMounts,
             ports: [
               {
                 name: 'cockroach',
                 containerPort: metadata.cockroach.grpc_port,
-                targetPort: metadata.cockroach.grpc_port,
               },
               {
                 name: 'http',
                 containerPort: metadata.cockroach.http_port,
-                targetPort: metadata.cockroach.http_port,
               },
             ],
             env: [
@@ -84,15 +83,15 @@ local volumes = import 'volumes.libsonnet';
             command: [
               '/bin/bash',
               '-ecx',
-              'exec',
-              '/cockroach/cockroach',
-              'start',
+              'exec /cockroach/cockroach start ' + std.join(' ', util.makeArgs(self.command_args_)),
             ],
-            args_:: {
-              'certs-dir': '/cockroach-certs',
+            command_args_:: {
+              'certs-dir': '/cockroach/cockroach-certs',
               'advertise-addr': '${HOSTNAME##*-}.' + metadata.cockroach.hostnameSuffix,
-              join: 'cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local',
+              join: std.join(',', ['cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local']
+                             + metadata.cockroach.JoinExisting),
               logtostderr: true,
+              locality: 'zone=' + metadata.cockroach.locality,
               'locality-advertise-addr': 'zone=' + metadata.cockroach.locality + '@$(hostname -f)',
               'http-addr': '0.0.0.0',
               cache: '25%',
@@ -103,9 +102,6 @@ local volumes = import 'volumes.libsonnet';
         },
       },
       podManagementPolicy: 'Parallel',
-      updateStrategy: {
-        type: 'RollingUpdate',
-      },
       volumeClaimTemplates: [
         {
           metadata: {

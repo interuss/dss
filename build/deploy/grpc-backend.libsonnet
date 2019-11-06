@@ -38,7 +38,7 @@ local volumes = import 'volumes.libsonnet';
                 cockroach_port: metadata.cockroach.grpc_port,
                 cockroach_ssl_mode: 'verify-full',
                 cockroach_user: 'root',
-                cockroach_ssl_dir: '/cockroach-certs',
+                cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 public_key_file: '/public-certs/' + metadata.backend.pubKey,
                 dump_requests: true,
                 jwt_audience: metadata.gateway.hostname,
