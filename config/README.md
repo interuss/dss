@@ -81,7 +81,14 @@ Use the `build.sh` script in this directory to build and push an image tagged
 with the current date and git commit hash.
 
 
+## Running locally
+
+
+Simply run the `run-locally.sh` script in this directory.
+
+
 ## Deploying the DSS on Kubernetes
+
 
 Note: All DSS instances in the same cluster must point their ntpd at the
 same NTP Servers. [CockroachDB recommends](https://www.cockroachlabs.com/docs/stable/recommended-production-settings.html#considerations)
@@ -98,10 +105,14 @@ which ever provider you choose.
 1.  Create a new Kubernetes cluster as mentioned above. We recommend a new
     cluster for each DSS instance.
 
-1.  Create your static IP addresses: 1 for each of your CockroachDB nodes (min
-    of 3) and 1 for the HTTPS Gateway's Ingress.  How you do this depends on
-    your cloud provider. Note: if you're using Google Cloud the HTTPS Gateway
-    Ingress needs to be created as a "Global" IP address.
+1.  Create your static IP addresses. How you do this depends on your cloud
+    provider:
+    *   1 for the HTTPS Gateway's Ingress. Note: if you're using Google Cloud
+        the HTTPS Gateway Ingress needs to be created as a "Global" IP address.
+    *   If you want to be able to join other clusters, you'll need static IP's 
+        for each of your CockroachDB nodes (min of 3).
+    *   [OPTIONAL] 1 for a loadbalancer across your CockroachDB nodes to provide
+        a single join target for other users.
 
 1.  Copy `values.yaml.template` to `values.yaml` and fill in the required fields
     at the top.
