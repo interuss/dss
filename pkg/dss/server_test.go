@@ -87,27 +87,31 @@ func (ms *mockStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earlies
 
 func TestDeleteSubscription(t *testing.T) {
 	ctx := auth.ContextWithOwner(context.Background(), "foo")
+	version, _ := models.VersionFromString("bar", true)
 
 	for _, r := range []struct {
 		name         string
 		id           models.ID
+		version      *models.Version
 		subscription *models.Subscription
 		err          error
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-store",
 			id:           models.ID(uuid.New().String()),
+			version:      version,
 			subscription: &models.Subscription{},
 		},
 		{
-			name: "error-is-returned-if-returned-from-store",
-			id:   models.ID(uuid.New().String()),
-			err:  errors.New("failed to look up subscription for ID"),
+			name:    "error-is-returned-if-returned-from-store",
+			id:      models.ID(uuid.New().String()),
+			version: version,
+			err:     errors.New("failed to look up subscription for ID"),
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			store := &mockStore{}
-			store.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, mock.Anything).Return(
+			store.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, r.version).Return(
 				r.subscription, r.err,
 			)
 			s := &Server{
@@ -486,20 +490,22 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 
 func TestDeleteIdentificationServiceArea(t *testing.T) {
 	var (
-		owner = models.Owner("foo")
-		id    = models.ID(uuid.New().String())
-		ctx   = auth.ContextWithOwner(context.Background(), owner)
-		ms    = &mockStore{}
-		s     = &Server{
+		owner        = models.Owner("foo")
+		id           = models.ID(uuid.New().String())
+		version, err = models.VersionFromString("bar", true)
+		ctx          = auth.ContextWithOwner(context.Background(), owner)
+		ms           = &mockStore{}
+		s            = &Server{
 			Store: ms,
 		}
 	)
 
 	ms.On("DeleteISA", ctx, id, owner, mock.Anything).Return(
 		&models.IdentificationServiceArea{
-			ID:    models.ID(id),
-			Owner: models.Owner("me-myself-and-i"),
-			Url:   "https://no/place/like/home",
+			ID:      models.ID(id),
+			Owner:   models.Owner("me-myself-and-i"),
+			Url:     "https://no/place/like/home",
+			Version: version,
 		},
 		[]*models.Subscription{
 			{
