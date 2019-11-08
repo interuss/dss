@@ -330,7 +330,7 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			require.NotNil(t, sub1)
 
 			// Ensure mismatched versions return an error
-			v, err := models.VersionFromString("a3cg3tcuhk000")
+			v, err := models.VersionFromString("a3cg3tcuhk000", true)
 			require.NoError(t, err)
 			sub2, err := store.DeleteSubscription(ctx, sub1.ID, sub1.Owner, v)
 			require.Error(t, err)

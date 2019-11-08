@@ -64,7 +64,7 @@ class OAuthClient:
         return self.token_response_cache[(scopes, audience)].get("access_token", "")
 
     def _issueToken(self, scopes, audience) -> Dict[str, Any]:
-        data = {"scope": scopes, "intended_audience": audience}
+        data = {"scope": scopes, "intended_audience": audience, "issuer": "dummy"}
         data.update(self._req_params)
         request_time = time.time()
         # Parameteterized URL is required to work with the Dummy Oauth Server

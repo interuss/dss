@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"strconv"
 	"time"
 )
@@ -29,9 +30,12 @@ func (owner Owner) String() string {
 	return string(owner)
 }
 
-func VersionFromString(s string) (*Version, error) {
+func VersionFromString(s string, required bool) (*Version, error) {
 	v := &Version{s: s}
 	if s == "" {
+		if required {
+			return nil, errors.New("requires version string")
+		}
 		return nil, nil
 	}
 	nanos, err := strconv.ParseUint(string(s), versionBase, 64)
