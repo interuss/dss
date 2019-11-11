@@ -87,7 +87,7 @@ func (ms *mockStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earlies
 
 func TestDeleteSubscription(t *testing.T) {
 	ctx := auth.ContextWithOwner(context.Background(), "foo")
-	version, _ := models.VersionFromString("bar", true)
+	version, _ := models.VersionFromString("bar", models.EmptyVersionPolicyRequireNonEmpty)
 
 	for _, r := range []struct {
 		name         string
@@ -492,7 +492,7 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 	var (
 		owner        = models.Owner("foo")
 		id           = models.ID(uuid.New().String())
-		version, err = models.VersionFromString("bar", true)
+		version, err = models.VersionFromString("bar", models.EmptyVersionPolicyRequireNonEmpty)
 		ctx          = auth.ContextWithOwner(context.Background(), owner)
 		ms           = &mockStore{}
 		s            = &Server{

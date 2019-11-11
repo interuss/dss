@@ -122,7 +122,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 	params := req.GetParams()
 
-	version, err := models.VersionFromString(req.GetVersion(), true)
+	version, err := models.VersionFromString(req.GetVersion(), models.EmptyVersionPolicyRequireNonEmpty)
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
@@ -138,7 +138,7 @@ func (s *Server) DeleteIdentificationServiceArea(
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	version, err := models.VersionFromString(req.GetVersion(), true)
+	version, err := models.VersionFromString(req.GetVersion(), models.EmptyVersionPolicyRequireNonEmpty)
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
@@ -170,7 +170,7 @@ func (s *Server) DeleteSubscription(
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	version, err := models.VersionFromString(req.GetVersion(), true)
+	version, err := models.VersionFromString(req.GetVersion(), models.EmptyVersionPolicyRequireNonEmpty)
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
@@ -368,7 +368,7 @@ func (s *Server) UpdateSubscription(
 
 	params := req.GetParams()
 
-	version, err := models.VersionFromString(req.GetVersion(), true)
+	version, err := models.VersionFromString(req.GetVersion(), models.EmptyVersionPolicyRequireNonEmpty)
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}

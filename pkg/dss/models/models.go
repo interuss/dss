@@ -6,13 +6,6 @@ import (
 	"time"
 )
 
-const (
-	// Convert updatedAt to a string, why not make it smaller
-	// WARNING: Changing this will cause RMW errors
-	// 32 is the highest value allowed by strconv
-	versionBase = 32
-)
-
 type (
 	ID      string
 	Owner   string
@@ -20,6 +13,16 @@ type (
 		t time.Time
 		s string
 	}
+	EmptyVersionPolicy int
+)
+
+const (
+	// Convert updatedAt to a string, why not make it smaller
+	// WARNING: Changing this will cause RMW errors
+	// 32 is the highest value allowed by strconv
+	versionBase                                          = 32
+	EmptyVersionPolicyRequireNonEmpty EmptyVersionPolicy = 0
+	EmptyVersionPolicyRelaxed         EmptyVersionPolicy = 1
 )
 
 func (id ID) String() string {
@@ -30,10 +33,10 @@ func (owner Owner) String() string {
 	return string(owner)
 }
 
-func VersionFromString(s string, required bool) (*Version, error) {
+func VersionFromString(s string, evp EmptyVersionPolicy) (*Version, error) {
 	v := &Version{s: s}
 	if s == "" {
-		if required {
+		if evp == EmptyVersionPolicyRequireNonEmpty {
 			return nil, errors.New("requires version string")
 		}
 		return nil, nil
