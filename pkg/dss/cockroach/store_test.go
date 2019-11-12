@@ -27,10 +27,6 @@ var (
 	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
-func init() {
-	flag.Parse()
-}
-
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func() error) {
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
