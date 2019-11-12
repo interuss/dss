@@ -5,6 +5,7 @@ local gateway = import '../http-gateway.libsonnet';
 
 local metadata = prod.metadata {
   namespace: 'dss-main',
+  clusterName: 'your_cluster_context',
   cockroach+: {
     hostnameSuffix: 'db.your_hostname_suffix.com',
     locality: 'your_unique_locality',

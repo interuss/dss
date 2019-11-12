@@ -4,6 +4,7 @@ local metadataBase = import '../metadata_base.libsonnet';
 
 local metadata = metadataBase {
   namespace: 'dss-main',
+  clusterName: 'your_cluster_context',
   cockroach+: {
     hostnameSuffix: 'db.your_hostname_suffix.com',
     locality: 'your_unique_locality',
@@ -14,7 +15,7 @@ local metadata = metadataBase {
   gateway+: {
     ipName: 'your-ingress-name',
     image: 'your_image_name',
-    hostname: 'your_hostname.com',
+    hostname: 'yourhostname.com',
   },
   backend+: {
     image: 'your_image_name',
