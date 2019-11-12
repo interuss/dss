@@ -128,6 +128,9 @@ which ever provider you choose.
         which is concatenated with yours.  Set `--ca-cert-to-join` to a `ca.crt`
         file. Reach out to existing operators to request their public cert and
         node hostnames.
+    1.  Note: If you are creating multiple clusters at once, and joining them
+        together you likely want to copy the nth cluster's `ca.crt` into the the
+        rest of the clusters, such that ca.crt is the same across all 3 clusters
 
 1. Build the docker file as described in the section below.
 
