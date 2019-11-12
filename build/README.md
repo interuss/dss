@@ -75,8 +75,6 @@ You can easily find out how to push to a docker registry through a quick search.
 All major cloud providers have a docker registry service, or you can set up your
 own.
 
-go install ./cmds/kubejsonnet
-
 
 ## Running locally
 
