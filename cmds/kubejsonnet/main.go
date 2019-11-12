@@ -62,6 +62,8 @@ func main() {
 	// TODO(steeling): consider leveraging a CLI framework like cobra.
 	// If these features ever make it into kubecfg, we can ditch this tool
 	// completely.
+	// https://github.com/bitnami/kubecfg/issues/273 and
+	// https://github.com/bitnami/kubecfg/issues/274
 	if len(os.Args) != 3 {
 		usage()
 	}
