@@ -1,6 +1,6 @@
 // This file shows the mimimum information required to get a DSS instance running in Kubernetes.
-local dss = import '../dss.libsonnet';
-local metadataBase = import '../metadata_base.libsonnet';
+local dss = import '../../deploy/dss.libsonnet';
+local metadataBase = import '../../deploy/metadata_base.libsonnet';
 
 local metadata = metadataBase {
   namespace: 'dss-main',
