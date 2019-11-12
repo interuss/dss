@@ -28,18 +28,21 @@ type Server struct {
 
 func (s *Server) AuthScopes() map[string][]string {
 	return map[string][]string{
-		"GetIdentificationServiceArea":     []string{ReadISAScope},
-		"PutIdentificationServiceArea":     []string{WriteISAScope},
+		"CreateIdentificationServiceArea":  []string{WriteISAScope},
 		"DeleteIdentificationServiceArea":  []string{WriteISAScope},
-		"PutSubscription":                  []string{ReadISAScope},
-		"DeleteSubscription":               []string{ReadISAScope},
-		"SearchSubscriptions":              []string{ReadISAScope},
+		"GetIdentificationServiceArea":     []string{ReadISAScope},
 		"SearchIdentificationServiceAreas": []string{ReadISAScope},
+		"UpdateIdentificationServiceArea":  []string{WriteISAScope},
+		"CreateSubscription":               []string{WriteISAScope},
+		"DeleteSubscription":               []string{WriteISAScope},
+		"GetSubscription":                  []string{ReadISAScope},
+		"SearchSubscriptions":              []string{ReadISAScope},
+		"UpdateSubscription":               []string{WriteISAScope},
 	}
 }
 
-func (s *Server) GetV1DssIdentificationServiceAreasId(
-	ctx context.Context, req *dspb.GetV1DssIdentificationServiceAreasIdRequest) (
+func (s *Server) GetIdentificationServiceArea(
+	ctx context.Context, req *dspb.GetIdentificationServiceAreaRequest) (
 	*dspb.GetIdentificationServiceAreaResponse, error) {
 
 	isa, err := s.Store.GetISA(ctx, models.ID(req.GetId()))
@@ -105,16 +108,16 @@ func (s *Server) createOrUpdateISA(
 	}, nil
 }
 
-func (s *Server) PutV1DssIdentificationServiceAreasId(
-	ctx context.Context, req *dspb.PutV1DssIdentificationServiceAreasIdRequest) (
+func (s *Server) CreateIdentificationServiceArea(
+	ctx context.Context, req *dspb.CreateIdentificationServiceAreaRequest) (
 	*dspb.PutIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
 	return s.createOrUpdateISA(ctx, req.GetId(), nil, params.Extents, params.GetFlightsUrl())
 }
 
-func (s *Server) PutV1DssIdentificationServiceAreasIdVersion(
-	ctx context.Context, req *dspb.PutV1DssIdentificationServiceAreasIdVersionRequest) (
+func (s *Server) UpdateIdentificationServiceArea(
+	ctx context.Context, req *dspb.UpdateIdentificationServiceAreaRequest) (
 	*dspb.PutIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
@@ -127,8 +130,8 @@ func (s *Server) PutV1DssIdentificationServiceAreasIdVersion(
 	return s.createOrUpdateISA(ctx, req.GetId(), version, params.Extents, params.GetFlightsUrl())
 }
 
-func (s *Server) DeleteV1DssIdentificationServiceAreasIdVersion(
-	ctx context.Context, req *dspb.DeleteV1DssIdentificationServiceAreasIdVersionRequest) (
+func (s *Server) DeleteIdentificationServiceArea(
+	ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (
 	*dspb.DeleteIdentificationServiceAreaResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -159,8 +162,8 @@ func (s *Server) DeleteV1DssIdentificationServiceAreasIdVersion(
 	}, nil
 }
 
-func (s *Server) DeleteV1DssSubscriptionsIdVersion(
-	ctx context.Context, req *dspb.DeleteV1DssSubscriptionsIdVersionRequest) (
+func (s *Server) DeleteSubscription(
+	ctx context.Context, req *dspb.DeleteSubscriptionRequest) (
 	*dspb.DeleteSubscriptionResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -184,8 +187,8 @@ func (s *Server) DeleteV1DssSubscriptionsIdVersion(
 	}, nil
 }
 
-func (s *Server) GetV1DssIdentificationServiceAreas(
-	ctx context.Context, req *dspb.GetV1DssIdentificationServiceAreasRequest) (
+func (s *Server) SearchIdentificationServiceAreas(
+	ctx context.Context, req *dspb.SearchIdentificationServiceAreasRequest) (
 	*dspb.SearchIdentificationServiceAreasResponse, error) {
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
@@ -238,8 +241,8 @@ func (s *Server) GetV1DssIdentificationServiceAreas(
 	}, nil
 }
 
-func (s *Server) GetV1DssSubscriptions(
-	ctx context.Context, req *dspb.GetV1DssSubscriptionsRequest) (
+func (s *Server) SearchSubscriptions(
+	ctx context.Context, req *dspb.SearchSubscriptionsRequest) (
 	*dspb.SearchSubscriptionsResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -274,8 +277,8 @@ func (s *Server) GetV1DssSubscriptions(
 	}, nil
 }
 
-func (s *Server) GetV1DssSubscriptionsId(
-	ctx context.Context, req *dspb.GetV1DssSubscriptionsIdRequest) (
+func (s *Server) GetSubscription(
+	ctx context.Context, req *dspb.GetSubscriptionRequest) (
 	*dspb.GetSubscriptionResponse, error) {
 
 	subscription, err := s.Store.GetSubscription(ctx, models.ID(req.GetId()))
@@ -351,16 +354,16 @@ func (s *Server) createOrUpdateSubscription(
 	}, nil
 }
 
-func (s *Server) PutV1DssSubscriptionsId(
-	ctx context.Context, req *dspb.PutV1DssSubscriptionsIdRequest) (
+func (s *Server) CreateSubscription(
+	ctx context.Context, req *dspb.CreateSubscriptionRequest) (
 	*dspb.PutSubscriptionResponse, error) {
 
 	params := req.GetParams()
 	return s.createOrUpdateSubscription(ctx, req.GetId(), nil, params.Callbacks, params.Extents)
 }
 
-func (s *Server) PutV1DssSubscriptionsIdVersion(
-	ctx context.Context, req *dspb.PutV1DssSubscriptionsIdVersionRequest) (
+func (s *Server) UpdateSubscription(
+	ctx context.Context, req *dspb.UpdateSubscriptionRequest) (
 	*dspb.PutSubscriptionResponse, error) {
 
 	params := req.GetParams()

@@ -114,7 +114,7 @@ func TestDeleteSubscription(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.DeleteV1DssSubscriptionsIdVersion(ctx, &dspb.DeleteV1DssSubscriptionsIdVersionRequest{
+			_, err := s.DeleteSubscription(ctx, &dspb.DeleteSubscriptionRequest{
 				Id: r.id.String(),
 			})
 			require.Equal(t, r.err, err)
@@ -213,7 +213,7 @@ func TestCreateSubscription(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.PutV1DssSubscriptionsId(ctx, &dspb.PutV1DssSubscriptionsIdRequest{
+			_, err := s.CreateSubscription(ctx, &dspb.CreateSubscriptionRequest{
 				Id: r.id.String(),
 				Params: &dspb.CreateSubscriptionParameters{
 					Callbacks: r.callbacks,
@@ -256,7 +256,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 		Store: store,
 	}
 
-	resp, err := s.PutV1DssSubscriptionsId(ctx, &dspb.PutV1DssSubscriptionsIdRequest{
+	resp, err := s.CreateSubscription(ctx, &dspb.CreateSubscriptionRequest{
 		Id: sub.ID.String(),
 		Params: &dspb.CreateSubscriptionParameters{
 			Callbacks: &dspb.SubscriptionCallbacks{
@@ -304,7 +304,7 @@ func TestGetSubscription(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.GetV1DssSubscriptionsId(context.Background(), &dspb.GetV1DssSubscriptionsIdRequest{
+			_, err := s.GetSubscription(context.Background(), &dspb.GetSubscriptionRequest{
 				Id: r.id.String(),
 			})
 			require.Equal(t, r.err, err)
@@ -322,7 +322,7 @@ func TestSearchSubscriptionsFailsIfOwnerMissingFromContext(t *testing.T) {
 		}
 	)
 
-	_, err := s.GetV1DssSubscriptions(ctx, &dspb.GetV1DssSubscriptionsRequest{
+	_, err := s.SearchSubscriptions(ctx, &dspb.SearchSubscriptionsRequest{
 		Area: testdata.Loop,
 	})
 
@@ -339,7 +339,7 @@ func TestSearchSubscriptionsFailsForInvalidArea(t *testing.T) {
 		}
 	)
 
-	_, err := s.GetV1DssSubscriptions(ctx, &dspb.GetV1DssSubscriptionsRequest{
+	_, err := s.SearchSubscriptions(ctx, &dspb.SearchSubscriptionsRequest{
 		Area: testdata.LoopWithOddNumberOfCoordinates,
 	})
 
@@ -367,7 +367,7 @@ func TestSearchSubscriptions(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.GetV1DssSubscriptions(ctx, &dspb.GetV1DssSubscriptionsRequest{
+	resp, err := s.SearchSubscriptions(ctx, &dspb.SearchSubscriptionsRequest{
 		Area: testdata.Loop,
 	})
 
@@ -454,7 +454,7 @@ func TestCreateISA(t *testing.T) {
 				Store: store,
 			}
 
-			_, err := s.PutV1DssIdentificationServiceAreasId(ctx, &dspb.PutV1DssIdentificationServiceAreasIdRequest{
+			_, err := s.CreateIdentificationServiceArea(ctx, &dspb.CreateIdentificationServiceAreaRequest{
 				Id: r.id.String(),
 				Params: &dspb.CreateIdentificationServiceAreaParameters{
 					Extents:    r.extents,
@@ -476,7 +476,7 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 		}
 	)
 
-	_, err := s.DeleteV1DssIdentificationServiceAreasIdVersion(context.Background(), &dspb.DeleteV1DssIdentificationServiceAreasIdVersionRequest{
+	_, err := s.DeleteIdentificationServiceArea(context.Background(), &dspb.DeleteIdentificationServiceAreaRequest{
 		Id: id,
 	})
 
@@ -508,7 +508,7 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.DeleteV1DssIdentificationServiceAreasIdVersion(ctx, &dspb.DeleteV1DssIdentificationServiceAreasIdVersionRequest{
+	resp, err := s.DeleteIdentificationServiceArea(ctx, &dspb.DeleteIdentificationServiceAreaRequest{
 		Id: id.String(),
 	})
 
@@ -536,7 +536,7 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.GetV1DssIdentificationServiceAreas(ctx, &dspb.GetV1DssIdentificationServiceAreasRequest{
+	resp, err := s.SearchIdentificationServiceAreas(ctx, &dspb.SearchIdentificationServiceAreasRequest{
 		Area: testdata.Loop,
 	})
 
