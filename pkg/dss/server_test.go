@@ -119,7 +119,7 @@ func TestDeleteSubscription(t *testing.T) {
 			}
 
 			_, err := s.DeleteSubscription(ctx, &dspb.DeleteSubscriptionRequest{
-				Id: r.id.String(),
+				Id: r.id.String(), Version: r.version.String(),
 			})
 			require.Equal(t, r.err, err)
 			require.True(t, store.AssertExpectations(t))
@@ -515,7 +515,7 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 		}, error(nil),
 	)
 	resp, err := s.DeleteIdentificationServiceArea(ctx, &dspb.DeleteIdentificationServiceAreaRequest{
-		Id: id.String(),
+		Id: id.String(), Version: version.String(),
 	})
 
 	require.NoError(t, err)
