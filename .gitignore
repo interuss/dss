@@ -52,9 +52,10 @@ e2e_test_result
 *.pot
 
 # Generated configs
-config/generated/
-config/cockroachdb.yaml
-config/values.yaml
+build/generated/
+build/cockroachdb.yaml
+build/values.yaml
+build/dss.yaml
 
 # Django stuff:
 *.log

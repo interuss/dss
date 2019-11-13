@@ -39,7 +39,7 @@ docker stop grpc-backend-for-testing || echo "No grpc backend to clean up"
 echo "Starting grpc backend on :8081"
 docker run -d --rm --name grpc-backend-for-testing \
 	--link dss-crdb-for-debugging:crdb \
-	-v $(pwd)/config/test-certs/auth2.pem:/app/test.crt \
+	-v $(pwd)/build/test-certs/auth2.pem:/app/test.crt \
 	local-interuss-dss-image \
 	grpc-backend \
 	--cockroach_host crdb \
@@ -75,7 +75,7 @@ docker stop dummy-oauth-for-testing || echo "No dummy oauth to clean up"
 
 echo "Starting mock oauth server on :8085"
 docker run -d --rm --name dummy-oauth-for-testing -p 8085:8085 \
-	-v $(pwd)/config/test-certs/auth2.key:/app/test.key \
+	-v $(pwd)/build/test-certs/auth2.key:/app/test.key \
 	local-dummy-oauth \
 	-private_key_file /app/test.key
 
