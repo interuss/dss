@@ -82,6 +82,16 @@ def test_get_sub_by_searching_huge_area(session, sub1_uuid):
   assert resp.status_code == 413 
 
 
+def test_delete_sub_empty_version(session, sub1_uuid):
+  resp = session.delete('/subscriptions/{}/'.format(sub1_uuid))
+  assert resp.status_code == 400
+
+
+def test_delete_sub_wrong_version(session, sub1_uuid):
+  resp = session.delete('/subscriptions/{}/fake_version'.format(sub1_uuid))
+  assert resp.status_code == 400
+
+
 def test_delete_sub(session, sub1_uuid):
   """ASTM Compliance Test: DSS0030_D_DELETE_SUB."""
   # GET the sub first to find its version.

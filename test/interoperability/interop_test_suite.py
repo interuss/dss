@@ -59,7 +59,7 @@ class InterOpTestSuite:
                     LOG.error(msg)
                     LOG.debug(f"Cleaning up round {round + 1}")
                     ts.cleanUp(self.dss_clients, primary_dss)
-                    break;
+                    break
 
             LOG.debug(f"Cleaning up round {round + 1}")
             ts.cleanUp(self.dss_clients, primary_dss)
@@ -97,11 +97,16 @@ class TestSteps:
 
     def cleanUp(self, dss_map, primary_dss):
         dss = dss_map[primary_dss]
-        for entity_type, uuid in self.context.values():
+        for entity_type, stored_uuid in self.context.values():
             if entity_type == "ISA":
-                dss.delete(f"/identification_service_areas/{uuid}/")
+                version = self.context[stored_uuid].uuid
+                dss.delete(f"/identification_service_areas/{stored_uuid}/{version}")
             elif entity_type == "SUB":
-                dss.delete(f"/subscriptions/{uuid}/")
+                version = self.context[stored_uuid].uuid
+                dss.delete(f"/subscriptions/{stored_uuid}/{version}")
+            elif entity_type == "VERSION":
+                # do nothing
+                continue
             else:
                 LOG.warning(f"Unknown Type: {entity_type}")
 
@@ -129,6 +134,12 @@ class TestSteps:
         assert (
             resp.status_code == 200
         ), f"Failed to insert ISA to {primary_dss}. Error: {resp.json()['error']}"
+
+        # save ISA_1 Version String
+        self.context[self.context["isa_1_uuid"].uuid] = TestContext(
+            "VERSION",
+            resp.json()["service_area"]["version"],
+        )
 
     def testStep2(
         self,
@@ -164,6 +175,12 @@ class TestSteps:
             assert (
                 self.context["isa_1_uuid"].uuid in isa_ids
             ), f"{dss} did not return ISA from testStep1 when creating Subscription"
+
+            # save SUB_1 Version String
+            self.context[sub_1_uuid] = TestContext(
+                "VERSION",
+                data["subscription"]["version"],
+            )
 
     def testStep3(
         self,
@@ -249,7 +266,8 @@ class TestSteps:
         dss = dss_map[primary_dss]
         for name, entity in self.context.items():
             if name.startswith("sub_1_"):
-                resp = dss.delete(f"/subscriptions/{entity.uuid}/")
+                version = self.context[entity.uuid].uuid
+                resp = dss.delete(f"/subscriptions/{entity.uuid}/{version}")
                 assert (
                     resp.status_code == 200
                 ), f"Failed to delete {entity.uuid} from Primary DSS: {primary_dss}"
@@ -335,6 +353,13 @@ class TestSteps:
                 self.context["isa_1_uuid"].uuid not in isa_ids
             ), f"{dss} returned expired ISA_1 when creating Subscription"
 
+            # save SUB_2 Version String
+            self.context[sub_2_uuid] = TestContext(
+                "VERSION",
+                data["subscription"]["version"],
+            )
+
+
     def testStep10(
         self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
     ) -> None:
@@ -372,12 +397,20 @@ class TestSteps:
             missing_subs == set()
         ), f"{primary_dss} returned too few Subscriptions, missing: {missing_subs}"
 
+        # save ISA_2 Version String
+        self.context[self.context["isa_2_uuid"].uuid] = TestContext(
+            "VERSION",
+            resp.json()["service_area"]["version"],
+        )
+
     def testStep11(
         self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
     ) -> None:
         """ISA deletion triggers subscription notification requests"""
+        isa_2_uuid = self.context["isa_2_uuid"].uuid
+        version = self.context[isa_2_uuid].uuid
         resp = dss_map[primary_dss].delete(
-            f"/identification_service_areas/{self.context['isa_2_uuid'].uuid}/"
+            f"/identification_service_areas/{isa_2_uuid}/{version}"
         )
         assert (
             resp.status_code == 200
@@ -428,6 +461,12 @@ class TestSteps:
             found_expired_sub == []
         ), f"Found expired Subscriptions: {found_expired_sub}"
 
+        # save ISA_3 Version String
+        self.context[self.context["isa_3_uuid"].uuid] = TestContext(
+            "VERSION",
+            resp.json()["service_area"]["version"],
+        )
+
     def testStep13(
         self,
         dss_map: Dict[str, clients.DSSClient],
@@ -471,8 +510,9 @@ class TestSteps:
         """ISA deletion does not trigger subscription
         notification requests for expired Subscriptions"""
         isa_3_uuid = self.context["isa_3_uuid"].uuid
+        version = self.context[isa_3_uuid].uuid
         resp = dss_map[primary_dss].delete(
-            f"/identification_service_areas/{isa_3_uuid}/"
+            f"/identification_service_areas/{isa_3_uuid}/{version}"
         )
         assert resp.status_code == 200, f"Failed to delete ISA_3 from {primary_dss}"
 
@@ -518,6 +558,12 @@ class TestSteps:
                 self.context["isa_3_uuid"].uuid not in isa_ids
             ), f"{dss} returned deleted ISA_3 when creating Subscription"
 
+            # save SUB_3 Version String
+            self.context[sub_3_uuid] = TestContext(
+                "VERSION",
+                data["subscription"]["version"],
+            )
+
     def testStep17(
         self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
     ) -> None:
@@ -527,5 +573,6 @@ class TestSteps:
             if name.startswith("sub_3_"):
                 all_sub_3.add(entity.uuid)
         for sub_3_uuid in all_sub_3:
-            resp = dss_map[primary_dss].delete(f"/subscriptions/{sub_3_uuid}/")
+            version = self.context[sub_3_uuid].uuid
+            resp = dss_map[primary_dss].delete(f"/subscriptions/{sub_3_uuid}/{version}")
             assert resp.status_code == 200, "Failed to delete SUB_3 from Primary DSS"

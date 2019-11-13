@@ -131,6 +131,11 @@ def test_delete_isa_wrong_version(session, isa1_uuid):
   assert resp.status_code == 400
 
 
+def test_delete_isa_empty_version(session, isa1_uuid):
+  resp = session.delete('/identification_service_areas/{}/'.format(isa1_uuid))
+  assert resp.status_code == 400
+
+
 def test_delete_isa(session, isa1_uuid):
   """ASTM Compliance Test: DSS0030_B_DELETE_ISA."""
   # GET the ISA first to find its version.
