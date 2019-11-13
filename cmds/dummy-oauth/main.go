@@ -17,7 +17,7 @@ import (
 
 var (
 	address = flag.String("addr", ":8085", "address")
-	keyFile = flag.String("private_key_file", "config/test-certs/oauth.key", "oauth private key file")
+	keyFile = flag.String("private_key_file", "build/test-certs/oauth.key", "oauth private key file")
 )
 
 // TODO(steeling): add other parameters so we can test expired tokens, invalid tokens, etc.

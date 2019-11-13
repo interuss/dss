@@ -9,7 +9,7 @@ sleep 5
 echo "starting grpc backend on :8081"
 go run cmds/grpc-backend/main.go \
     -cockroach_host localhost \
-    -public_key_file config/jwt-public-certs/us-demo.pem \
+    -public_key_file build/jwt-public-certs/us-demo.pem \
     -reflect_api \
     -log_format console \
     -dump_requests \
