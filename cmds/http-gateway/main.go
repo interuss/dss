@@ -65,8 +65,9 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/healthy" {
 			w.Write([]byte("ok"))
+		} else {
+			grpcMux.ServeHTTP(w, r)
 		}
-		grpcMux.ServeHTTP(w, r)
 	})
 
 	if *traceRequests {
