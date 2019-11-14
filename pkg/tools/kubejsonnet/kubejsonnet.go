@@ -58,7 +58,7 @@ func (c *Command) Diff() (string, error) {
 }
 
 func (c *Command) Run(ctx context.Context) (string, error) {
-	out, err := exec.CommandContext(ctx, "kubectl", "doff", "--context", c.cluster, "-f", c.tempFile).Output()
+	out, err := exec.CommandContext(ctx, "kubectl", "diff", "--context", c.cluster, "-f", c.tempFile).Output()
 	if exitError, ok := err.(*exec.ExitError); ok {
 		err = errors.New(string(exitError.Stderr))
 	}
