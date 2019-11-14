@@ -18,7 +18,7 @@ NODE_CERTS_DIR="$DIR/workspace/$CONTEXT/node_certs_dir"
 CA_KEY_DIR="$DIR/workspace/$CONTEXT/ca_key_dir"
 CA_CRT_DIR="$DIR/workspace/$CONTEXT/ca_certs_dir"
 JWT_PUBLIC_CERTS_DIR="$DIR/jwt-public-certs"
-UPLOAD_CA_KEY=false
+UPLOAD_CA_KEY=true
 
 # Delete previous secrets in case they have changed.
 kubectl create namespace "$NAMESPACE"  --context "$CONTEXT" || true
