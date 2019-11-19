@@ -220,7 +220,7 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return nil, dsserr.Unauthenticated("invalid token")
 	}
 
-	if a.requiredAudience != "" && claims.Audience != a.requiredAudience {
+	if claims.Audience != a.requiredAudience {
 		return nil, dsserr.Unauthenticated(
 			fmt.Sprintf("invalid token audience, expected %v, got %v", a.requiredAudience, claims.Audience))
 	}
