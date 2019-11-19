@@ -101,7 +101,8 @@ which ever provider you choose.
 1.  Use the `make-certs.py` script in this directory to create certificates for
     the new CockroachDB cluster:
 
-        ./make-certs.py <cluster_context> [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
+        ./make-certs.py --cluster <cluster_context>
+            [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
             [--ca-cert-to-join <CA_CERT_FILE>]
 
     1.  If you want other clusters to be able to connect to your cluster
