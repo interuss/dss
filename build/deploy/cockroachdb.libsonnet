@@ -1,12 +1,5 @@
 local base = import 'base.libsonnet';
-<<<<<<< HEAD
-<<<<<<< HEAD
 local util = import 'util.libsonnet';
-=======
->>>>>>> All files in
-=======
-local util = import 'util.libsonnet';
->>>>>>> jsonnet and kubecfg documentation
 local volumes = import 'volumes.libsonnet';
 
 {
@@ -51,7 +44,7 @@ local volumes = import 'volumes.libsonnet';
           },
           soloContainer:: base.Container('cockroachdb') {
             image: metadata.cockroach.image,
-            volumeMounts:: volumes.cockroachMounts,
+            volumeMounts: volumes.cockroachMounts,
             ports: [
               {
                 name: 'cockroach',
