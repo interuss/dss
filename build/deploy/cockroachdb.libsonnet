@@ -51,37 +51,17 @@ local volumes = import 'volumes.libsonnet';
           },
           soloContainer:: base.Container('cockroachdb') {
             image: metadata.cockroach.image,
-<<<<<<< HEAD
-<<<<<<< HEAD
-            volumeMounts: volumes.cockroachMounts,
-=======
             volumeMounts:: volumes.cockroachMounts,
->>>>>>> All files in
-=======
-            volumeMounts: volumes.cockroachMounts,
->>>>>>> jsonnet and kubecfg documentation
             ports: [
               {
                 name: 'cockroach',
                 containerPort: metadata.cockroach.grpc_port,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
                 targetPort: metadata.cockroach.grpc_port,
->>>>>>> All files in
-=======
->>>>>>> jsonnet and kubecfg documentation
               },
               {
                 name: 'http',
                 containerPort: metadata.cockroach.http_port,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
                 targetPort: metadata.cockroach.http_port,
->>>>>>> All files in
-=======
->>>>>>> jsonnet and kubecfg documentation
               },
             ],
             env: [
@@ -112,8 +92,6 @@ local volumes = import 'volumes.libsonnet';
             command: [
               '/bin/bash',
               '-ecx',
-<<<<<<< HEAD
-<<<<<<< HEAD
               'exec /cockroach/cockroach start ' + std.join(' ', util.makeArgs(self.command_args_)),
             ],
             command_args_:: {
@@ -123,25 +101,6 @@ local volumes = import 'volumes.libsonnet';
                              + metadata.cockroach.JoinExisting),
               logtostderr: true,
               locality: 'zone=' + metadata.cockroach.locality,
-=======
-              'exec',
-              '/cockroach/cockroach',
-              'start',
-=======
-              'exec /cockroach/cockroach start ' + std.join(' ', util.makeArgs(self.command_args_)),
->>>>>>> jsonnet and kubecfg documentation
-            ],
-            command_args_:: {
-              'certs-dir': '/cockroach/cockroach-certs',
-              'advertise-addr': '${HOSTNAME##*-}.' + metadata.cockroach.hostnameSuffix,
-              join: std.join(',', ['cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local']
-                             + metadata.cockroach.JoinExisting),
-              logtostderr: true,
-<<<<<<< HEAD
->>>>>>> All files in
-=======
-              locality: 'zone=' + metadata.cockroach.locality,
->>>>>>> jsonnet and kubecfg documentation
               'locality-advertise-addr': 'zone=' + metadata.cockroach.locality + '@$(hostname -f)',
               'http-addr': '0.0.0.0',
               cache: '25%',
@@ -152,15 +111,9 @@ local volumes = import 'volumes.libsonnet';
         },
       },
       podManagementPolicy: 'Parallel',
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
       updateStrategy: {
         type: 'RollingUpdate',
       },
->>>>>>> All files in
-=======
->>>>>>> jsonnet and kubecfg documentation
       volumeClaimTemplates: [
         {
           metadata: {

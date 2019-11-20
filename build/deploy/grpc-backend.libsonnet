@@ -38,15 +38,7 @@ local volumes = import 'volumes.libsonnet';
                 cockroach_port: metadata.cockroach.grpc_port,
                 cockroach_ssl_mode: 'verify-full',
                 cockroach_user: 'root',
-<<<<<<< HEAD
-<<<<<<< HEAD
                 cockroach_ssl_dir: '/cockroach/cockroach-certs',
-=======
-                cockroach_ssl_dir: '/cockroach-certs',
->>>>>>> All files in
-=======
-                cockroach_ssl_dir: '/cockroach/cockroach-certs',
->>>>>>> jsonnet and kubecfg documentation
                 public_key_file: '/public-certs/' + metadata.backend.pubKey,
                 dump_requests: true,
                 jwt_audience: metadata.gateway.hostname,
