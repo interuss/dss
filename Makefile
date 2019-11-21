@@ -43,8 +43,12 @@ install-proto-generation:
 	go get github.com/golang/protobuf/protoc-gen-go
 
 
+.PHONY: install-kubecfg
+install-kubecfg:
+	go install github.com/bitnami/kubecfg
+
 .PHONY: test
-test:
+test: install-kubecfg
 	go test -count=1 -v ./...
 
 .PHONY: test-cockroach
