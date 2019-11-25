@@ -1,4 +1,24 @@
 GOPATH := $(shell go env GOPATH)
+GOBIN := $(GOPATH)/bin
+
+ifeq ($(OS),Windows_NT)
+  detected_OS := Windows
+else
+  detected_OS := $(shell uname -s)
+endif
+
+ifeq ($(detected_OS),Windows)
+	kubecfg_download := "unsupported"
+endif
+ifeq ($(detected_OS),Darwin)  # Mac OS X
+	kubecfg_download := "https://github.com/bitnami/kubecfg/releases/download/v0.13.1/kubecfg-darwin-amd64"
+endif
+ifeq ($(detected_OS),Linux)
+	kubecfg_download := "https://github.com/bitnami/kubecfg/releases/download/v0.13.1/kubecfg-linux-amd64"
+endif
+
+kubecfg_file := $(shell basename $(kubecfg_download))
+
 
 .PHONY: interuss
 interuss:
@@ -43,9 +63,10 @@ install-proto-generation:
 	go get github.com/golang/protobuf/protoc-gen-go
 
 
-.PHONY: install-kubecfg
-install-kubecfg:
-	go install github.com/bitnami/kubecfg
+.PHONY: kubecfg
+kubecfg:
+	wget $(kubecfg_download) -O ./temp/$(kubecfg_file)
+	install ./temp/$(kubecfg_file) $(GOBIN)/kubecfg
 
 .PHONY: test
 test: install-kubecfg

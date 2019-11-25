@@ -58,6 +58,8 @@ build/cockroachdb.yaml
 build/values.yaml
 build/dss.yaml
 
+temp
+
 # Django stuff:
 *.log
 local_settings.py
