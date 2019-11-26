@@ -69,7 +69,7 @@ kubecfg:
 	install ./temp/$(kubecfg_file) $(GOBIN)/kubecfg
 
 .PHONY: test
-test: install-kubecfg
+test: kubecfg
 	go test -count=1 -v ./...
 
 .PHONY: test-cockroach
