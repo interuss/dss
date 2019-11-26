@@ -65,6 +65,7 @@ install-proto-generation:
 
 .PHONY: kubecfg
 kubecfg:
+	mkdir -p temp
 	wget $(kubecfg_download) -O ./temp/$(kubecfg_file)
 	install ./temp/$(kubecfg_file) $(GOBIN)/kubecfg
 
