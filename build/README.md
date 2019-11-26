@@ -48,6 +48,8 @@ of this operational overhead.
 
 Download & install the following tools to your workstation:
 
+*   Install the custom kubejsonnet binary for better config management. Run:
+    `go install ./cmds/kubejsonnet` from the root directory of this project.
 *   The [kubecfg client](https://github.com/bitnami/kubecfg#install)
     *   Required if deploying using the defined Kubernetes templates.
 *   kubectl
@@ -74,21 +76,15 @@ All major cloud providers have a docker registry service, or you can set up your
 own.
 
 
-### Building Docker images
-
-
-Set the environment variable `DOCKER_URL` to your docker registry url endpoint.
-
-Use the `build.sh` script in this directory to build and push an image tagged
-with the current date and git commit hash.
-
-
+<<<<<<< HEAD:build/README.md
 ## Running locally
 
 
 Simply run the `run-locally.sh` script in this directory.
 
 
+=======
+>>>>>>> 2796bc35e8bf4ee777c1a9e43b558bb4c9d8d767:build/README.md
 ## Deploying the DSS on Kubernetes
 
 
@@ -116,13 +112,11 @@ which ever provider you choose.
     *   [OPTIONAL] 1 for a loadbalancer across your CockroachDB nodes to provide
         a single join target for other users.
 
-1.  Copy `deploy/examples/minimum.jsonnet` to `dss.jsonnet` and fill in with
-    your fields.
-
 1.  Use the `make-certs.py` script in this directory to create certificates for
     the new CockroachDB cluster:
 
-        ./make-certs.py [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
+        ./make-certs.py --cluster <cluster_context>
+            [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
             [--ca-cert-to-join <CA_CERT_FILE>]
 
     1.  If you want other clusters to be able to connect to your cluster
@@ -136,15 +130,35 @@ which ever provider you choose.
         which is concatenated with yours.  Set `--ca-cert-to-join` to a `ca.crt`
         file. Reach out to existing operators to request their public cert and
         node hostnames.
+    1.  Note: If you are creating multiple clusters at once, and joining them
+        together you likely want to copy the nth cluster's `ca.crt` into the the
+        rest of the clusters, such that ca.crt is the same across all 3 clusters
+
+1. Build the docker file as described in the section below.
+
+1.  Copy `deploy/examples/minimum.jsonnet` to
+    `workspace/<your_cluster_context>/dss.jsonnet` and fill in with your fields.
 
 1.  Use the `apply-certs.sh` script in this directory to create secrets on the
     Kubernetes cluster containing the certificates and keys generated in the
     previous step.
 
-        ./apply-certs.sh
+        ./apply-certs.sh <cluster_context>
 
-1.  Run `kubecfg show <your_leaf_file.jsonnet> > dss.yaml` to render the YAML.
-1.  Run `kubectl apply -f cockroachdb.yaml` to apply it to the cluster.
+1.  Follow the steps below before running the final command if you are joining
+    existing clusters.
+
+1.  Run `kubejsonnet apply workspace/<context>/dss.jsonnet>` to apply it to the
+    cluster.
+
+
+### Building Docker images
+
+
+Set the environment variable `DOCKER_URL` to your docker registry url endpoint.
+
+Use the `build.sh` script in this directory to build and push an image tagged
+with the current date and git commit hash.
 
 
 ## Joining an existing CockroachDB cluster
@@ -156,6 +170,7 @@ following differences:
 1.  In dss.jsonnet, make sure you don't set shouldInit to true. This can
     initialize the data directories on you cluster, and prevent you from joining
     an existing cluster.
+
 1.  In dss.jsonnet, add the host:ports of existing CockroachDB nodes to the
     JoinExisting array.  You should supply a minimum of 3 seed nodes to every 
     CockroachDB node. These 3 nodes should be the same for every node (ie: every
@@ -164,8 +179,18 @@ following differences:
     of other clusters (the DBBalanced hostname/IP). You should do this for every
     cluster, including newly joined clusters. See CockroachDB's note on the 
     [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
+
 1.  You must run ./make-certs.py with the `--ca-cert-to-join` flag as described
     above to use the existing cluster's CA to sign your certificates.
+
+1.  You must share ca.crt with the cluster(s) you are trying to join, and have
+    them apply the new ca.crt, which now contains both your cluster and the
+    original clusters public certs, to enable secure bi-directional
+    communication.
+
+1.  All of the original clusters must then perform a rolling restart of their 
+    cockroachdb pods to pick up the new certificates.
+    `kubectl rollout restart statefulset/cockroachdb --namespace dss-main`
 
 
 ## Using the CockroachDB web UI

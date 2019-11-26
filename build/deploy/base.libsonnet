@@ -40,6 +40,8 @@ local util = import 'util.libsonnet';
     },
   },
 
+  ConfigMap(metadata, name): $._Object('v1', 'ConfigMap', name, metadata),
+
   Service(metadata, name): $._Object('v1', 'Service', name, metadata) {
     local service = self,
     app:: error "must specify app",
