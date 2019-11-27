@@ -254,16 +254,17 @@ func (c *Store) InsertSubscription(ctx context.Context, s models.Subscription) (
 	}
 
 	// Check the user hasn't created too many subscriptions in this area.
-	if old == nil {
-		count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, tx, s.Cells, s.Owner)
-		if err != nil {
-			c.logger.Warn("Error fetching max subscription count", zap.Error(err))
-			return nil, multierr.Combine(dsserr.Internal(
-				"failed to fetch subscription count, rejecting request"), tx.Rollback())
-		} else if count >= maxSubscriptionsPerArea {
-			return nil, multierr.Combine(dsserr.Exhausted(
-				"too many existing subscriptions in this area"), tx.Rollback())
+	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, tx, s.Cells, s.Owner)
+	if err != nil {
+		c.logger.Warn("Error fetching max subscription count", zap.Error(err))
+		return nil, multierr.Combine(dsserr.Internal(
+			"failed to fetch subscription count, rejecting request"), tx.Rollback())
+	} else if count >= maxSubscriptionsPerArea {
+		errMsg := "too many existing subscriptions in this area already"
+		if old != nil {
+			errMsg = errMsg + ", rejecting update request"
 		}
+		return nil, multierr.Combine(dsserr.Exhausted(errMsg), tx.Rollback())
 	}
 
 	newSubscription, err := c.pushSubscription(ctx, tx, &s)

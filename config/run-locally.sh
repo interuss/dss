@@ -9,7 +9,7 @@ sleep 5
 echo "starting grpc backend on :8081"
 go run cmds/grpc-backend/main.go \
     -cockroach_host localhost \
-    -public_key_file build/jwt-public-certs/us-demo.pem \
+    -public_key_file build/test-certs/auth2.pem \
     -reflect_api \
     -log_format console \
     -dump_requests \
@@ -21,5 +21,10 @@ echo "starting http-gateway on :8082"
 go run cmds/http-gateway/main.go -grpc-backend localhost:8081 -addr :8082 &
 pid2=$!
 
-wait $pid1 && wait $pid2
+sleep 5
+echo "starting dummy oauth server on :8085"
+go run cmds/dummy-oauth/main.go -private_key_file build/test-certs/auth2.key &
+pid3=$!
+
+wait $pid1 && wait $pid2 && wait $pid3
 docker stop dss-crdb-for-debugging
