@@ -32,9 +32,9 @@ CockroachDB
 [here](https://www.cockroachlabs.com/docs/stable/architecture/overview.html).
 
 ## Directories of Interest:
-*   `config/` has all of the configuration required to deploy a DSS instance
-    (typically to a Kubernetes cluster). The README in that directory contains
-    more information.
+*   `build/` has all of the configuration required to build and deploy a DSS
+    instance (typically to a Kubernetes cluster). The README in that directory
+    contains more information.
 *   `pkg/` contains all of the source code for the DSS. See the README in that
     directory for more information.
 *   `cmds/` contains entry points and docker files for the actual binaries (the
