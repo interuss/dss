@@ -5,6 +5,10 @@ docker stop dss-crdb-for-debugging
 echo "starting cockroachdb with admin port on :8080"
 docker run -d --rm --name dss-crdb-for-debugging -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v19.1.2 start --insecure > /dev/null
 
+BASEDIR=$(readlink -e "$(dirname "$0")/..")
+
+cd "${BASEDIR}"
+
 sleep 5
 echo "starting grpc backend on :8081"
 go run cmds/grpc-backend/main.go \
@@ -25,6 +29,17 @@ sleep 5
 echo "starting dummy oauth server on :8085"
 go run cmds/dummy-oauth/main.go -private_key_file build/test-certs/auth2.key &
 pid3=$!
+
+
+if [ -d "/proc/${pid1}" ] && [ -d "/proc/${pid2}" ] && [ -d "/proc/${pid3}" ]
+then
+    echo "All system, GO!"
+    echo "Dummy OAuth Server Address:      http://localhost:8085/token"
+    echo "DSS HTTP Gateway Server Address: http://localhost:8082/healthy"
+else
+    echo "Process did not start correctly."
+fi
+
 
 wait $pid1 && wait $pid2 && wait $pid3
 docker stop dss-crdb-for-debugging
