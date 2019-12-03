@@ -76,15 +76,12 @@ All major cloud providers have a docker registry service, or you can set up your
 own.
 
 
-<<<<<<< HEAD:build/README.md
 ## Running locally
 
 
 Simply run the `run-locally.sh` script in this directory.
 
 
-=======
->>>>>>> 2796bc35e8bf4ee777c1a9e43b558bb4c9d8d767:build/README.md
 ## Deploying the DSS on Kubernetes
 
 
