@@ -56,7 +56,7 @@ local util = import 'util.libsonnet';
       annotations: if service.enable_monitoring then {
         'prometheus.io/scrape': 'true',
         'prometheus.io/path': '_status/vars',
-        'prometheus.io/port': std.toString(service.port)
+        'prometheus.io/port': std.toString(service.port),
       } else {},
     },
     spec: {
