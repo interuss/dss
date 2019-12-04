@@ -1,4 +1,6 @@
-// ?grant_type=client_credentials&scope={}&intended_audience={}
+// Query parameters for dummy-oauth (at http://hostname:addr/token):
+// ?grant_type=client_credentials&scope={}&intended_audience={}&issuer={}
+
 package main
 
 import (
