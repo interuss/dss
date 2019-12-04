@@ -49,12 +49,10 @@ local volumes = import 'volumes.libsonnet';
               {
                 name: 'cockroach',
                 containerPort: metadata.cockroach.grpc_port,
-                targetPort: metadata.cockroach.grpc_port,
               },
               {
                 name: 'http',
                 containerPort: metadata.cockroach.http_port,
-                targetPort: metadata.cockroach.http_port,
               },
             ],
             env: [
