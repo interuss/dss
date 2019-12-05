@@ -1,0 +1,42 @@
+# Brings up a full stand-alone DSS sandbox environment with locally-built dss
+# and dummy-oauth InterUSS images.
+
+# To bring up this system:
+# docker-compose -f docker-compose_dss.yaml -p dss_sandbox up
+
+version: '3.7'
+
+services:
+
+  dss-crdb-for-debugging:
+    image: cockroachdb/cockroach:v19.1.2
+    command: start --insecure
+    expose:
+      - 26257
+    ports:
+      - "8080:8080"
+    restart: always
+
+  grpc-backend-for-debugging:
+    image: interuss-local/dss
+    volumes:
+      - $PWD/../test-certs:/var/test-certs:ro
+    command: /usr/bin/grpc-backend -cockroach_host dss-crdb-for-debugging -public_key_file /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -jwt_audience localhost
+    expose:
+      - 8081
+    depends_on:
+      - dss-crdb-for-debugging
+
+  http-gateway-for-debugging:
+    image: interuss-local/dss
+    command: /usr/bin/http-gateway -grpc-backend grpc-backend-for-debugging:8081 -addr :8082
+    ports:
+      - "8082:8082"
+    depends_on:
+      - grpc-backend-for-debugging
+
+  dummy-oauth:
+    image: interuss-local/dummy-oauth
+    command: -private_key_file /var/test-certs/auth2.key
+    ports:
+      - "8085:8085"

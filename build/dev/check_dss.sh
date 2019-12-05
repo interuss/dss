@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# This script will verify basic functionality of a locally-deployed standalone
+# DSS instance using any of the deployment methods described in
+# standalone_instance.md.
+
 jq --version > /dev/null
 if [ $? -ne 0 ]; then
   echo "This script requires the jq utility.  On Debian Linux, install with"
