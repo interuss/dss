@@ -1,10 +1,14 @@
 #!/bin/bash
 
 if [ "$1" == "" ]; then
-  echo "usage: ./apply-certs.sh <cluster_context>"
+  echo "usage: ./apply-certs.sh <cluster_context> <namespace>"
   exit 1
 fi
 
+if [ "$2" == "" ]; then
+  echo "usage: ./apply-certs.sh <cluster_context> <namespace>"
+  exit 1
+fi
 
 set -e
 set -x
@@ -12,7 +16,7 @@ set -x
 # Paths to directories in which to store certificates and generated YAML files.
 CONTEXT="$1"
 DIR="$(pwd)"
-NAMESPACE="dss-main"
+NAMESPACE="$2"
 CLIENTS_CERTS_DIR="$DIR/workspace/$CONTEXT/client_certs_dir"
 NODE_CERTS_DIR="$DIR/workspace/$CONTEXT/node_certs_dir"
 CA_KEY_DIR="$DIR/workspace/$CONTEXT/ca_key_dir"
