@@ -15,4 +15,5 @@ RUN go install ./...
 
 FROM alpine:latest
 COPY --from=build /go/bin/dummy-oauth /usr/bin
+COPY build/test-certs /var/test-certs
 ENTRYPOINT ["/usr/bin/dummy-oauth"]
