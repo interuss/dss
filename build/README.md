@@ -175,7 +175,7 @@ following differences:
 
 1.  All of the original clusters must then perform a rolling restart of their
     cockroachdb pods to pick up the new certificates.
-    `kubectl rollout restart statefulset/cockroachdb --namespace dss-main`
+    `kubectl rollout restart statefulset/cockroachdb --namespace <NAMESPACE>`
 
 ## Using the CockroachDB web UI
 
@@ -186,13 +186,13 @@ your local machine using the kubectl command:
 
 Pick a username and create an account:
 
-    kubectl -n dss-main exec cockroachdb-0 -ti -- \
+    kubectl -n $NAMESPACE exec cockroachdb-0 -ti -- \
         ./cockroach --certs-dir ./cockroach-certs \
         user set $USERNAME --password
 
 ### Access the web UI
 
-    kubectl -n dss-main port-forward cockroachdb-0 8080
+    kubectl -n $NAMESPACE port-forward cockroachdb-0 8080
 
 Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
 warning.
