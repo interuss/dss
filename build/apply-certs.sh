@@ -1,12 +1,12 @@
 #!/bin/bash
 
 if [ "$1" == "" ]; then
-  echo "usage: ./apply-certs.sh <cluster_context> <namespace>"
+  echo "usage: ./apply-certs.sh <CLUSTER_CONTEXT> <NAMESPACE>"
   exit 1
 fi
 
 if [ "$2" == "" ]; then
-  echo "usage: ./apply-certs.sh <cluster_context> <namespace>"
+  echo "usage: ./apply-certs.sh <CLUSTER_CONTEXT> <NAMESPACE>"
   exit 1
 fi
 

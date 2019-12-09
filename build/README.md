@@ -103,8 +103,7 @@ which ever provider you choose.
 1.  Use the `make-certs.py` script in this directory to create certificates for
     the new CockroachDB cluster:
 
-        ./make-certs.py --cluster <cluster_context>
-            [--namespace <NAMESPACE>]
+        ./make-certs.py --cluster <CLUSTER_CONTEXT> --namespace <NAMESPACE>
             [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
             [--ca-cert-to-join <CA_CERT_FILE>]
 
@@ -126,18 +125,18 @@ which ever provider you choose.
 1.  Build the docker file as described in the section below.
 
 1.  Copy `deploy/examples/minimum.jsonnet` to
-    `workspace/<your_cluster_context>/dss.jsonnet` and fill in with your fields.
+    `workspace/<CLUSTER_CONTEXT>/dss.jsonnet` and fill in with your fields.
 
 1.  Use the `apply-certs.sh` script in this directory to create secrets on the
     Kubernetes cluster containing the certificates and keys generated in the
     previous step.
 
-        ./apply-certs.sh <cluster_context> <namespace>
+        ./apply-certs.sh <CLUSTER_CONTEXT> <NAMESPACE>
 
 1.  Follow the steps below before running the final command if you are joining
     existing clusters.
 
-1.  Run `kubejsonnet apply workspace/<context>/dss.jsonnet>` to apply it to the
+1.  Run `kubejsonnet apply workspace/<CLUSTER_CONTEXT>/dss.jsonnet>` to apply it to the
     cluster.
 
 ### Building Docker images
@@ -186,13 +185,13 @@ your local machine using the kubectl command:
 
 Pick a username and create an account:
 
-    kubectl -n $NAMESPACE exec cockroachdb-0 -ti -- \
+    kubectl -n <NAMESPACE> exec cockroachdb-0 -ti -- \
         ./cockroach --certs-dir ./cockroach-certs \
         user set $USERNAME --password
 
 ### Access the web UI
 
-    kubectl -n $NAMESPACE port-forward cockroachdb-0 8080
+    kubectl -n <NAMESPACE> port-forward cockroachdb-0 8080
 
 Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
 warning.
