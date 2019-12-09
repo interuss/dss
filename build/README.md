@@ -1,15 +1,16 @@
 # Deploying a DSS instance
 
 ## Deployment options
+
 This document describes how to deploy a production DSS instance to interoperate with other DSS instances in a DSS Region.
 
 To run a local DSS instance for testing, evaluation, or development, see [dev/standalone_instance.md](dev/standalone_instance.md).
 
 ## Glossary
 
-*   DSS Region - an entire synchronized DSS, typically operated by multiple
-    organizations.
-*   DSS instance - a single logical replica in a DSS Region.
+- DSS Region - an entire synchronized DSS, typically operated by multiple
+  organizations.
+- DSS instance - a single logical replica in a DSS Region.
 
 ## Preface
 
@@ -86,6 +87,8 @@ which ever provider you choose.
 
 1.  Create a new Kubernetes cluster as mentioned above. We recommend a new
     cluster for each DSS instance.
+
+1.  Create a namespace for your Kubernetes cluster in which the DSS services will reside. This can be achieved with `kubectl create ns <NAMESPACE>`. Alternatively, you may want deploy in a namespace that already exists, so keep track of the namespace for later steps.
 
 1.  Create your static IP addresses. How you do this depends on your cloud
     provider:

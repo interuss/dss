@@ -10,7 +10,7 @@ import subprocess
 
 class CockroachCluster(object):
 
-    def __init__(self, cluster, ca_cert_to_join=None, namespace=None):
+    def __init__(self, cluster, namespace, ca_cert_to_join=None):
         self._ca_cert_to_join = ca_cert_to_join
         self._cluster = cluster
         self._namespace = namespace
@@ -55,10 +55,10 @@ class CockroachCluster(object):
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Creates certificates for a new Cockroachdb cluster')
-    parser.add_argument('--cluster', metavar='CLUSTER',
+    parser.add_argument('--cluster', metavar='CLUSTER', required=True,
                         help='kubernetes cluster context name')
-    parser.add_argument('--namespace', metavar='NAMESPACE',
-                        default="dss-main", help='kubernetes cluster namespace name')
+    parser.add_argument('--namespace', metavar='NAMESPACE', required=True,
+                        help='kubernetes cluster namespace you are deploying to.')
     parser.add_argument('--node-address', metavar='ADDRESS', nargs='*',
                         default=[], help='extra addresses to add to the node certificate')
     parser.add_argument('--ca-cert-to-join', metavar='FILENAME',
@@ -68,7 +68,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    cr = CockroachCluster(args.cluster, args.ca_cert_to_join, args.namespace)
+    cr = CockroachCluster(args.cluster, args.namespace, args.ca_cert_to_join)
 
     # Create the generated directories.
     try:
