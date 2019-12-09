@@ -3,7 +3,7 @@ local dss = import '../../deploy/dss.libsonnet';
 local metadataBase = import '../../deploy/metadata_base.libsonnet';
 
 local metadata = metadataBase {
-  namespace: 'your_namespace',
+  namespace: 'your_namespace', //Same namespace used in the make-certs.py and apply-certs.sh scripts
   clusterName: 'your_cluster_context',
   cockroach+: {
     hostnameSuffix: 'db.your_hostname_suffix.com',
