@@ -1,16 +1,27 @@
 #!/bin/bash
 
-if [[ ! -z "docker container ls --filter name=dss-crdb-for-debugging --quiet" ]]; then
+# This script will deploy a standalone DSS instance via local processes.  See
+# standalone_instance.md for more information.
+
+if [[ ! -z $(docker container ls --filter name=dss-crdb-for-debugging --quiet) ]]; then
   echo "=== Cleaning up pre-existing CockroachDB container... ==="
   docker stop dss-crdb-for-debugging
 fi
 
+OS=$(uname)
+if [[ $OS == "Darwin" ]]; then
+	# OSX uses BSD readlink
+	BASEDIR="$(dirname $0)/.."
+else
+	BASEDIR=$(readlink -e "$(dirname "$0")/../..")
+fi
+
+cd "${BASEDIR}" || exit 1
+
+pwd
+
 echo "=== Starting CockroachDB with admin port on :8080... ==="
 docker run -d --rm --name dss-crdb-for-debugging -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v19.1.2 start --insecure > /dev/null
-
-BASEDIR=$(readlink -e "$(dirname "$0")/..")
-
-cd "${BASEDIR}"
 
 sleep 5
 echo "=== Starting grpc-backend on :8081 ==="

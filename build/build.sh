@@ -1,18 +1,37 @@
-#!/bin/sh
+#!/bin/bash
+
+# This script builds InterUSS docker images and may be run from any working
+# directory.  If run without a DOCKER_URL environment variable, it will just
+# build images named interuss-local/*.  If DOCKER_URL is present, it will both
+# build the versioned dss image and push it to the DOCKER_URL remote.
+
+set -e
+
+OS=$(uname)
+if [[ $OS == "Darwin" ]]; then
+	# OSX uses BSD readlink
+	BASEDIR="$(dirname $0)/.."
+else
+	BASEDIR=$(readlink -e "$(dirname "$0")/..")
+fi
+cd ${BASEDIR}
+
+VERSION=$(date -u +%Y-%m-%d)-$(git rev-parse --short HEAD)
 
 if [[ -z "${DOCKER_URL}" ]]; then
-  echo "Set the DOCKER_URL environment variable before running this script."
-  exit 1
+  echo "DOCKER_URL environment variable is not set; building image to interuss-local/dss..."
+  docker image build . -t interuss-local/dss
+
+  echo "Building image to interuss-local/dummy-oauth..."
+  docker image build . --file cmds/dummy-oauth/Dockerfile -t interuss-local/dummy-oauth
+
+  echo "DOCKER_URL environment variable was not set; built images to interuss-local/dss and interuss-local/dummy-oauth"
+else
+  echo "Building image $DOCKER_URL/dss:$VERSION"
+  docker image build . -t $DOCKER_URL/dss:$VERSION
+
+  echo "Pushing docker image $DOCKER_URL/dss:$VERSION..."
+  docker image push $DOCKER_URL/dss:$VERSION
+
+  echo "Built and pushed docker image $DOCKER_URL/dss:$VERSION"
 fi
-
-BASEDIR=$(readlink -e "$(dirname "$0")/..")
-
-set -e -x
-
-VERSION="$(date -u +%Y-%m-%d)-$(git rev-parse --short HEAD)"
-
-cd "${BASEDIR}"
-docker build . -t $DOCKER_URL/dss:$VERSION
-
-docker push $DOCKER_URL/dss:$VERSION
-echo pushing docker image $DOCKER_URL/dss:$VERSION

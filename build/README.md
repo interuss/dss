@@ -1,10 +1,15 @@
-# Deploying a DSS
+# Deploying a DSS instance
+
+## Deployment options
+This document describes how to deploy a production DSS instance to interoperate with other DSS instances in a DSS Region.
+
+To run a local DSS instance for testing, evaluation, or development, see [dev/standalone_instance.md](dev/standalone_instance.md).
 
 ## Glossary
 
-- DSS Region - an entire synchronized DSS, typically operated by multiple
-  organizations
-- DSS instance - a single logical replica in a synchronized cluster.
+*   DSS Region - an entire synchronized DSS, typically operated by multiple
+    organizations.
+*   DSS instance - a single logical replica in a DSS Region.
 
 ## Preface
 
@@ -64,10 +69,6 @@ requests. These are both built and pushed to a docker registry of your choice.
 You can easily find out how to push to a docker registry through a quick search.
 All major cloud providers have a docker registry service, or you can set up your
 own.
-
-## Running locally
-
-Simply run the `run-locally.sh` script in this directory.
 
 ## Deploying the DSS on Kubernetes
 
