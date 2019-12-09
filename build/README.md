@@ -88,7 +88,7 @@ which ever provider you choose.
 1.  Create a new Kubernetes cluster as mentioned above. We recommend a new
     cluster for each DSS instance.
 
-1.  Create a namespace for your Kubernetes cluster in which the DSS services will reside. This can be achieved with `kubectl create ns <NAMESPACE>`. Alternatively, you may want deploy in a namespace that already exists, so keep track of the namespace for later steps.
+1.  Create a namespace for your Kubernetes cluster in which the DSS services will reside. This can be achieved with `kubectl create ns <NAMESPACE>`. Alternatively, you may want deploy in a namespace that already exists, so keep track of the namespace for later steps. The namespace name does not matter, though it will affect the DNS addresses associated with the certificates generated. One convention might be to reference a namespace named `production` to differentiate another cluster namespace called `development`. Another might be to name it `dss` to differentiate these services from the other namespaces within the cluster.
 
 1.  Create your static IP addresses. How you do this depends on your cloud
     provider:
