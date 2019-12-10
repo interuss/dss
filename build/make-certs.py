@@ -10,22 +10,22 @@ import subprocess
 
 class CockroachCluster(object):
 
-    def __init__(self, cluster, ca_cert_to_join=None):
+    def __init__(self, cluster_context, namespace, ca_cert_to_join=None):
         self._ca_cert_to_join = ca_cert_to_join
-        self._cluster = cluster
+        self._cluster_context = cluster_context
+        self._namespace = namespace
 
     @property
     def ca_cert_to_join(self):
         return self._ca_cert_to_join
-    
+
     @property
     def namespace(self):
-        return 'dss-main'
-    
+        return self._namespace
 
     @property
     def directory(self):
-        return os.path.join('workspace', self._cluster)
+        return os.path.join('workspace', self._cluster_context)
 
     @property
     def ca_certs_file(self):
@@ -55,18 +55,21 @@ class CockroachCluster(object):
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Creates certificates for a new Cockroachdb cluster')
-    parser.add_argument('--cluster', metavar='CLUSTER',
-        help='kubernetes cluster context name')
+    parser.add_argument('--cluster-context', metavar='CLUSTER_CONTEXT', required=True,
+                        help='kubernetes cluster context name')
+    parser.add_argument('--namespace', metavar='NAMESPACE', required=True,
+                        help='kubernetes cluster namespace you are deploying to.')
     parser.add_argument('--node-address', metavar='ADDRESS', nargs='*',
-        default=[], help='extra addresses to add to the node certificate')
+                        default=[], help='extra addresses to add to the node certificate')
     parser.add_argument('--ca-cert-to-join', metavar='FILENAME',
-        help='file containing an existing CA cert of a cluster to join.')
+                        help='file containing an existing CA cert of a cluster to join.')
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    cr = CockroachCluster(args.cluster, args.ca_cert_to_join)
+    cr = CockroachCluster(args.cluster_context,
+                          args.namespace, args.ca_cert_to_join)
 
     # Create the generated directories.
     try:
