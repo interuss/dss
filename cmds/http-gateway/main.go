@@ -25,7 +25,7 @@ import (
 
 var (
 	address       = flag.String("addr", ":8080", "Local address that the gateway binds to and listens on for incoming connections")
-	traceRequests = flag.Bool("trace-requests", false, "Logs HTTP request/response pairs to stderr if true")
+	traceRequests = flag.Bool("trace-requests", true, "Logs HTTP request/response pairs to stderr if true")
 	grpcBackend   = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
 )
 
