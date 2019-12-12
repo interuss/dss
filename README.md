@@ -10,6 +10,10 @@ privacy. The system is focused on facilitating communication amongst
 actively operating USSs without details about UAS operations stored or
 processed in the DSS.
 
+## Concepts
+
+Conceptual background on the DSS and services it supports may be found [here](concepts.md).
+
 ## Simplified architecture
 
 ### Overview

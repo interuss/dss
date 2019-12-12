@@ -1,0 +1,25 @@
+'To render with PlantUML:
+'  java -jar plantuml.jar -o generated subscriptions.puml
+@startuml
+participant "Entity consumer" as EC
+participant "Discovery and\nSynchronization Service" as DSS
+participant "Entity producer\n(USS 1)" as EP1
+participant "Entity producer\n(USS 2)" as EP2
+EP1 -> DSS : PUT /dss/<entities>
+note right: USS 1 creates\nnew Entity
+DSS -> EP1 : Success, no subscribers
+EC -> DSS : PUT /dss/subscriptions
+note left: Consumer indicates\ninterest in area
+DSS -> EC : Existing Entity for USS 1
+note left: Consumer discovers\npre-existing Entity
+EC -> EP1 : GET /uss/<entities>
+EP1 -> EC : Entity details
+note left: Consumer retrieves Entity\ndetails from USS 1
+EP2 -> DSS : PUT /dss/<entities>
+note right: USS 2 creates\nnew Entity
+DSS -> EP2 : Success, notify subscriber
+note right: DSS instructs USS 2 to notify\nconsumer of new Entity because\nof consumer's Subscription in the\nDSS
+EP2 -> EC : POST /uss/<entities> with Entity details
+note left: Consumer receives Entity\ndetails via push from USS 2
+EC -> EP2 : Acknowledged
+@enduml
