@@ -7,6 +7,7 @@ local util = import 'util.libsonnet';
     metadata: {
       name: name,
       namespace: metadata.namespace,
+      clusterName: metadata.clusterName,
       labels: { name: std.join('-', std.split(name, ':')) },
     },
   },
