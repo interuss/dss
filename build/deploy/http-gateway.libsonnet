@@ -1,11 +1,7 @@
 local base = import 'base.libsonnet';
 
-local ingress(metadata) = {
-  apiVersion: 'extensions/v1beta1',
-  kind: 'Ingress',
+local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
   metadata+: {
-    name: 'https-ingress',
-    namespace: metadata.namespace,
     annotations: {
       'kubernetes.io/ingress.global-static-ip-name': metadata.gateway.ipName,
       'kubernetes.io/ingress.allow-http': 'false',
@@ -28,13 +24,7 @@ local ingress(metadata) = {
         },
       },
     },
-    managedCert: {
-      apiVersion: 'networking.gke.io/v1beta1',
-      kind: 'ManagedCertificate',
-      metadata: {
-        name: 'https-certificate',
-        namespace: metadata.namespace,
-      },
+    managedCert: base.ManagedCert(metadata, 'https-certificate') {
       spec: {
         domains: [
           metadata.gateway.hostname,
