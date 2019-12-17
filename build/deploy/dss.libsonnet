@@ -5,13 +5,7 @@ local gateway = import 'http-gateway.libsonnet';
 local base = import 'base.libsonnet';
 
 
-local RoleBinding(metadata) = {
-  apiVersion: 'rbac.authorization.k8s.io/v1',
-  kind: 'RoleBinding',
-  metadata: {
-    name: 'default:privileged',
-    namespace: metadata.namespace,
-  },
+local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
   roleRef: {
     apiGroup: 'rbac.authorization.k8s.io',
     kind: 'ClusterRole',

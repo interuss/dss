@@ -1,17 +1,74 @@
 local util = import 'util.libsonnet';
 
 {
-  _Object(apiVersion, kind, name, metadata):: {
+  _Object(apiVersion, kind, metadata, name):: {
     apiVersion: apiVersion,
     kind: kind,
     metadata: {
       name: name,
       namespace: metadata.namespace,
+      clusterName: metadata.clusterName,
       labels: { name: std.join('-', std.split(name, ':')) },
     },
   },
 
-  Deployment(metadata, name): $._Object('apps/v1beta1', 'Deployment', name, metadata) {
+  _RoleRelated(kind, metadata, name): $._Object('rbac.authorization.k8s.io/v1beta1', kind, metadata, name) {
+    local rr = self,
+    app:: "",
+    metadata+: {
+      labels+: if rr.app != "" then {
+        app: rr.app,
+      } else {},
+    },
+  },
+
+  RoleBinding(metadata, name): $._RoleRelated('RoleBinding', metadata, name) {
+
+  },
+
+  ClusterRole(metadata, name): $._RoleRelated('ClusterRole', metadata, name) {
+
+  },  
+
+  ClusterRoleBinding(metadata, name): $._RoleRelated('ClusterRoleBinding', metadata, name) {
+
+  },  
+
+  Role(metadata, name): $._RoleRelated('Role', metadata, name) {
+
+  },  
+
+  ServiceAccount(metadata, name): $._Object('v1', 'ServiceAccount', metadata, name) {
+
+  },  
+
+  PodDisruptionBudget(metadata, name): $._Object('policy/v1beta1', 'PodDisruptionBudget', metadata, name) {
+    local pdb = self,
+    app:: error "must specify app",
+    metadata+: {
+      labels: {
+        app: pdb.app,
+      },
+    },
+    spec: {
+      selector: {
+        matchLabels: {
+          app: pdb.app,
+        },
+      },
+      maxUnavailable: 1,
+    },
+  },
+
+  ManagedCert(metadata, name): $._Object('networking.gke.io/v1beta1', 'ManagedCertificate', metadata, name) {
+
+  },
+
+  Ingress(metadata, name): $._Object('extensions/v1beta1', 'Ingress', metadata, name) {
+
+  },
+
+  Deployment(metadata, name): $._Object('apps/v1beta1', 'Deployment', metadata, name) {
     local deployment = self,
     app:: error "must specify app",
 
@@ -40,9 +97,9 @@ local util = import 'util.libsonnet';
     },
   },
 
-  ConfigMap(metadata, name): $._Object('v1', 'ConfigMap', name, metadata),
+  ConfigMap(metadata, name): $._Object('v1', 'ConfigMap', metadata, name),
 
-  Service(metadata, name): $._Object('v1', 'Service', name, metadata) {
+  Service(metadata, name): $._Object('v1', 'Service', metadata, name) {
     local service = self,
     app:: error "must specify app",
     # Helper when a service has only 1 port
@@ -74,7 +131,7 @@ local util = import 'util.libsonnet';
     },
   },
 
-  StatefulSet(metadata, name): $._Object('apps/v1', 'StatefulSet', name, metadata) {
+  StatefulSet(metadata, name): $._Object('apps/v1', 'StatefulSet', metadata, name) {
     local sset = self,
 
     spec: {
@@ -114,7 +171,7 @@ local util = import 'util.libsonnet';
     },
   },
 
-  Job(metadata, name): $._Object('batch/v1', 'Job', name, metadata) {
+  Job(metadata, name): $._Object('batch/v1', 'Job', metadata, name) {
     local job = self,
 
     spec: {

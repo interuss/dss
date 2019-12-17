@@ -15,6 +15,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.12.1
 	github.com/jonboulle/clockwork v0.1.0
 	github.com/lib/pq v1.2.0
+	github.com/stretchr/testify v1.4.0
 	go.uber.org/multierr v1.4.0
 	go.uber.org/zap v1.13.0
 	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11
