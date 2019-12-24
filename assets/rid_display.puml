@@ -1,0 +1,38 @@
+'To render with PlantUML:
+'  java -jar plantuml.jar -o generated rid_display.puml
+@startuml
+actor User
+participant "Display\nApplication" as DA
+participant "Display\nProvider" as DP
+participant "Discovery and\nSynchronization Service" as DSS
+participant "Service Provider\n(USS 1)" as SP1
+participant "Service Provider\n(USS 2)" as SP2
+User -> DA : View flights\nin lat,lng box
+DA -> DP : Poll flights in lat,lng box
+DP -> DSS : PUT /dss/subscriptions
+DSS -> DP : Existing Identification\nService Areas for\nUSS 1 and USS 2
+DP -> SP1 : t1 Poll /uss/flights for lat,lng box
+DP -> SP2 : t1 Poll /uss/flights for lat,lng box
+SP1 -> DP : t1 Flights and recent positions for each
+SP2 -> DP : t1 Flights and recent positions for each
+DP -> SP1 : t2 Poll /uss/flights for lat,lng box
+DP -> SP2 : t2 Poll /uss/flights for lat,lng box
+DP -> DA : t1 Current flight telemetry
+DA -> User : Update display
+SP1 -> DP : t2 Flights and recent positions for each
+SP2 -> DP : t2 Flights and recent positions for each
+DA -> DA : Delay to 1s
+DA -> DP : Poll flights in lat,lng box
+DP -> SP1 : t3 Poll /uss/flights for lat,lng box
+DP -> SP2 : t3 Poll /uss/flights for lat,lng box
+DP -> DA : t2 Current flight telemetry
+DA -> User : Update display
+SP1 -> DP : t3 Flights and recent positions for each
+SP2 -> DP : t3 Flights and recent positions for each
+DA -> DA : Delay to 1s
+DA -> DP : Poll flights in lat,lng box
+DP -> SP1 : t4 Poll /uss/flights for lat,lng box
+DP -> SP2 : t4 Poll /uss/flights for lat,lng box
+DP -> DA : t3 Current flight telemetry
+DA -> User : Update display
+@enduml

@@ -1,0 +1,41 @@
+'To render with PlantUML:
+'  java -jar plantuml.jar -o generated rid_service.puml
+@startuml
+participant "Display\nProvider" as DP
+participant "Discovery and\nSynchronization Service" as DSS
+participant "Service Provider" as SP
+participant "Unmanned\nAerial\nSystem A" as UASA
+participant "Unmanned\nAerial\nSystem B" as UASB
+UASA -> SP : Announce flight intention
+SP -> DSS : PUT /dss/identification_service_areas
+DSS -> SP : Success; notify subscriber
+SP -> DP : POST /dss/identification_service_areas
+DP -> SP : Acknowledged
+UASA -> SP : Telemetry A1
+UASA -> SP : Telemetry A2
+DP -> SP : Poll /uss/flights for lat,lng box
+UASA -> SP : Telemetry A3
+SP -> DP : Telemetry A2
+UASA -> SP : Telemetry A4
+UASB -> SP : Announce flight intention
+UASA -> SP : Telemetry A5
+UASB -> SP : Telemetry B1
+DP -> SP : Poll /uss/flights for lat,lng box
+SP -> DP : Telemetry A5, B1
+UASB -> SP : Telemetry B2
+UASA -> SP : Telemetry A5
+UASB -> SP : Telemetry B3
+UASA -> SP : Close flight
+DP -> SP : Poll /uss/flights for lat,lng box
+SP -> DP : Telemetry A5, B3
+UASB -> SP : Telemetry B4
+UASB -> SP : Close flight
+SP -> SP : Near real time period\nfor A5 elapses
+DP -> SP : Poll /uss/flights for lat,lng box
+SP -> DP : Telemetry B4
+SP -> SP : Near real time period\nfor B4 elapses
+SP -> DSS : DELETE /dss/identification_service_areas
+DSS -> SP : Success; notify subscriber
+SP -> DP : POST /dss/identification_service_areas
+DP -> SP : Acknowledged
+@enduml
