@@ -10,7 +10,6 @@ local metadata = prod.metadata {
     hostnameSuffix: 'db.your_hostname_suffix.com',
     locality: 'your_unique_locality',
     nodeIPs: ['0.0.0.0', '1.1.1.1', '2.2.2.2'],
-    balancedIP: '3.3.3.3',
   },
   gateway+: {
     ipName: 'your-ingress-name',
