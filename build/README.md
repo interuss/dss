@@ -97,8 +97,6 @@ which ever provider you choose.
       the HTTPS Gateway Ingress needs to be created as a "Global" IP address.
     - If you want to be able to join other clusters, you'll need static IP's
       for each of your CockroachDB nodes (min of 3).
-    - [OPTIONAL] 1 for a loadbalancer across your CockroachDB nodes to provide
-      a single join target for other users.
 
 1.  Use the `make-certs.py` script in this directory to create certificates for
     the new CockroachDB cluster:
@@ -159,9 +157,9 @@ following differences:
     JoinExisting array. You should supply a minimum of 3 seed nodes to every
     CockroachDB node. These 3 nodes should be the same for every node (ie: every
     node points to node 0, 1, and 2). For external clusters you should point to
-    a minimum of 3, or you can use the loadbalanced hostnames or IP addresses
-    of other clusters (the DBBalanced hostname/IP). You should do this for every
-    cluster, including newly joined clusters. See CockroachDB's note on the
+    a minimum of 3, or you can use a loadbalanced hostname or IP address
+    of other clusters. You should do this for every cluster, including newly
+    joined clusters. See CockroachDB's note on the
     [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
 
 1.  You must run ./make-certs.py with the `--ca-cert-to-join` flag as described

@@ -35,8 +35,6 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
       },
     } else null,
 
-    Balanced: cockroachLB(metadata, 'cockroach-db-external-balanced', metadata.cockroach.balancedIP),
-
     NodeGateways: [
       cockroachLB(metadata, 'cockroach-db-external-node-' + i, metadata.cockroach.nodeIPs[i]) {
         spec+: {
