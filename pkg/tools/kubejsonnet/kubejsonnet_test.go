@@ -1,9 +1,6 @@
 package kubejsonnet
 
 import (
-	"fmt"
-	"path/filepath"
-	"runtime"
 	"testing"
 )
 
@@ -42,16 +39,23 @@ func TestIsMutatingCommand(t *testing.T) {
 	}
 }
 
-func TestParseClusterContextFromFile(t *testing.T) {
+func TestNew(t *testing.T) {
 	tests := []struct {
 		name        string
 		filename    string
 		expectError bool
 	}{
 		{
+			name: "test examples/minimum.jsonnet converted to json file",
+
+			filename: "testfiles/good.json",
+
+			expectError: false,
+		},
+		{
 			name: "test examples/minimum.jsonnet",
 
-			filename: "../../../build/deploy/examples/prod_leaf.jsonnet",
+			filename: "../../../build/deploy/examples/minimum.jsonnet",
 
 			expectError: false,
 		},
@@ -67,12 +71,9 @@ func TestParseClusterContextFromFile(t *testing.T) {
 			expectError: true,
 		},
 	}
-	_, relpath, _, _ := runtime.Caller(0)
-	fmt.Println(relpath)
-	fmt.Println(filepath.Dir(relpath))
 	for _, test := range tests {
-		cmd := Command{filename: test.filename, metaname: "cluster-metadata"}
-		if err := cmd.parseClusterContextFromFile(); (err == nil) == test.expectError {
+		_, err := New(test.filename, []string{"", ""})
+		if (err == nil) == test.expectError {
 			t.Errorf("test %s: received unexpected error: \"%+v\"", test.name, err)
 		}
 	}

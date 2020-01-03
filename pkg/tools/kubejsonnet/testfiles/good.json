@@ -1,0 +1,870 @@
+[{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "name": "cockroachdb"
+    },
+    "name": "cockroachdb",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "podManagementPolicy": "Parallel",
+    "replicas": 3,
+    "selector": {
+      "matchLabels": {
+        "app": "cockroachdb"
+      }
+    },
+    "serviceName": "cockroachdb",
+    "template": {
+      "metadata": {
+        "annotations": {},
+        "labels": {
+          "app": "cockroachdb"
+        }
+      },
+      "spec": {
+        "affinity": {
+          "podAntiAffinity": {
+            "preferredDuringSchedulingIgnoredDuringExecution": [
+              {
+                "podAffinityTerm": {
+                  "labelSelector": {
+                    "matchExpressions": [
+                      {
+                        "key": "app",
+                        "operator": "In",
+                        "values": [
+                          "cockroachdb"
+                        ]
+                      }
+                    ]
+                  },
+                  "topologyKey": "kubernetes.io/hostname"
+                },
+                "weight": 100
+              }
+            ]
+          }
+        },
+        "containers": [
+          {
+            "args": [],
+            "command": [
+              "/bin/bash",
+              "-ecx",
+              "exec /cockroach/cockroach start --advertise-addr=${HOSTNAME##*-}.db.your_hostname_suffix.com --cache=25% --certs-dir=/cockroach/cockroach-certs --http-addr=0.0.0.0 --join=cockroachdb-0.cockroachdb.your_namespace.svc.cluster.local,0.db.westus.example.com,1.db.westus.example.com,2.db.westus.example.com --locality=zone=your_unique_locality --locality-advertise-addr=zone=your_unique_locality@$(hostname -f) --logtostderr=true --max-sql-memory=25%"
+            ],
+            "env": [
+              {
+                "name": "COCKROACH_CHANNEL",
+                "value": "kubernetes-multiregion"
+              }
+            ],
+            "image": "cockroachdb/cockroach:v19.1.5",
+            "imagePullPolicy": "IfNotPresent",
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/health",
+                "port": "http",
+                "scheme": "HTTPS"
+              },
+              "initialDelaySeconds": 30,
+              "periodSeconds": 5
+            },
+            "name": "cockroachdb",
+            "ports": [
+              {
+                "containerPort": 26257,
+                "name": "cockroach"
+              },
+              {
+                "containerPort": 8080,
+                "name": "http"
+              }
+            ],
+            "readinessProbe": {
+              "failureThreshold": 2,
+              "httpGet": {
+                "path": "/health?ready=1",
+                "port": "http",
+                "scheme": "HTTPS"
+              },
+              "initialDelaySeconds": 10,
+              "periodSeconds": 5
+            },
+            "stdin": false,
+            "tty": false,
+            "volumeMounts": [
+              {
+                "mountPath": "/cockroach/cockroach-certs/ca.crt",
+                "name": "ca-certs",
+                "subPath": "ca.crt"
+              },
+              {
+                "mountPath": "/cockroach/cockroach-certs/client.root.crt",
+                "name": "client-certs",
+                "subPath": "client.root.crt"
+              },
+              {
+                "mountPath": "/cockroach/cockroach-certs/client.root.key",
+                "name": "client-certs",
+                "subPath": "client.root.key"
+              },
+              {
+                "mountPath": "/cockroach/cockroach-data",
+                "name": "datadir"
+              },
+              {
+                "mountPath": "/cockroach/cockroach-certs/node.crt",
+                "name": "node-certs",
+                "subPath": "node.crt"
+              },
+              {
+                "mountPath": "/cockroach/cockroach-certs/node.key",
+                "name": "node-certs",
+                "subPath": "node.key"
+              }
+            ]
+          }
+        ],
+        "serviceAccountName": "cockroachdb",
+        "terminationGracePeriodSeconds": 60,
+        "volumes": [
+          {
+            "name": "ca-certs",
+            "secret": {
+              "defaultMode": 256,
+              "secretName": "cockroachdb.ca.crt"
+            }
+          },
+          {
+            "name": "client-certs",
+            "secret": {
+              "defaultMode": 256,
+              "secretName": "cockroachdb.client.root"
+            }
+          },
+          {
+            "name": "datadir",
+            "persistentVolumeClaim": {
+              "claimName": "datadir"
+            }
+          },
+          {
+            "name": "node-certs",
+            "secret": {
+              "defaultMode": 256,
+              "secretName": "cockroachdb.node"
+            }
+          }
+        ]
+      }
+    },
+    "updateStrategy": {
+      "type": "RollingUpdate"
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "datadir"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "100Gi"
+            }
+          },
+          "storageClassName": "standard"
+        }
+      }
+    ]
+  }
+},
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "name": "init"
+    },
+    "name": "init",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "completions": 1,
+    "parallelism": 1,
+    "template": {
+      "metadata": {
+        "labels": {
+          "name": "init"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "--certs-dir=/cockroach/cockroach-certs",
+              "--host=cockroachdb-0.cockroachdb.your_namespace.svc.cluster.local:26257"
+            ],
+            "command": [
+              "/cockroach/cockroach",
+              "init"
+            ],
+            "image": "cockroachdb/cockroach:v19.1.5",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "cluster-init",
+            "stdin": false,
+            "tty": false,
+            "volumeMounts": [
+              {
+                "mountPath": "/cockroach/cockroach-certs/ca.crt",
+                "name": "ca-certs",
+                "subPath": "ca.crt"
+              },
+              {
+                "mountPath": "/cockroach/cockroach-certs/client.root.crt",
+                "name": "client-certs",
+                "subPath": "client.root.crt"
+              },
+              {
+                "mountPath": "/cockroach/cockroach-certs/client.root.key",
+                "name": "client-certs",
+                "subPath": "client.root.key"
+              }
+            ]
+          }
+        ],
+        "restartPolicy": "OnFailure",
+        "serviceAccountName": "cockroachdb",
+        "terminationGracePeriodSeconds": 30,
+        "volumes": [
+          {
+            "name": "ca-certs",
+            "secret": {
+              "defaultMode": 256,
+              "secretName": "cockroachdb.ca.crt"
+            }
+          },
+          {
+            "name": "client-certs",
+            "secret": {
+              "defaultMode": 256,
+              "secretName": "cockroachdb.client.root"
+            }
+          }
+        ]
+      }
+    }
+  }
+},
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1beta1",
+  "kind": "ClusterRoleBinding",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroachdb"
+    },
+    "name": "cockroachdb",
+    "namespace": "your_namespace"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "ClusterRole",
+    "name": "cockroachdb"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "cockroachdb",
+      "namespace": "default"
+    }
+  ]
+},
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1beta1",
+  "kind": "Role",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroachdb"
+    },
+    "name": "cockroachdb",
+    "namespace": "your_namespace"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "secrets"
+      ],
+      "verbs": [
+        "create",
+        "get"
+      ]
+    }
+  ]
+},
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {
+      "prometheus.io/path": "_status/vars",
+      "prometheus.io/port": "8080",
+      "prometheus.io/scrape": "true",
+      "service.alpha.kubernetes.io/tolerate-unready-endpoints": "true"
+    },
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroachdb"
+    },
+    "name": "cockroachdb",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "clusterIP": "None",
+    "ports": [
+      {
+        "name": "cockroach",
+        "port": 26257,
+        "targetPort": 26257
+      },
+      {
+        "name": "http",
+        "port": 8080,
+        "targetPort": 8080
+      }
+    ],
+    "publishNotReadyAddresses": true,
+    "selector": {
+      "app": "cockroachdb"
+    },
+    "type": "ClusterIP"
+  }
+},
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {},
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroach-db-external-balanced"
+    },
+    "name": "cockroach-db-external-balanced",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "loadBalancerIP": "3.3.3.3",
+    "ports": [
+      {
+        "name": "cockroach-db-external-balanced",
+        "port": 26257,
+        "targetPort": 26257
+      }
+    ],
+    "selector": {
+      "app": "cockroachdb"
+    },
+    "type": "LoadBalancer"
+  }
+},
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {},
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroach-db-external-node-0"
+    },
+    "name": "cockroach-db-external-node-0",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "loadBalancerIP": "0.0.0.0",
+    "ports": [
+      {
+        "name": "cockroach-db-external-node-0",
+        "port": 26257,
+        "targetPort": 26257
+      }
+    ],
+    "selector": {
+      "statefulset.kubernetes.io/pod-name": "cockroachdb-0"
+    },
+    "type": "LoadBalancer"
+  }
+},
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {},
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroach-db-external-node-1"
+    },
+    "name": "cockroach-db-external-node-1",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "loadBalancerIP": "1.1.1.1",
+    "ports": [
+      {
+        "name": "cockroach-db-external-node-1",
+        "port": 26257,
+        "targetPort": 26257
+      }
+    ],
+    "selector": {
+      "statefulset.kubernetes.io/pod-name": "cockroachdb-1"
+    },
+    "type": "LoadBalancer"
+  }
+},
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {},
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroach-db-external-node-2"
+    },
+    "name": "cockroach-db-external-node-2",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "loadBalancerIP": "2.2.2.2",
+    "ports": [
+      {
+        "name": "cockroach-db-external-node-2",
+        "port": 26257,
+        "targetPort": 26257
+      }
+    ],
+    "selector": {
+      "statefulset.kubernetes.io/pod-name": "cockroachdb-2"
+    },
+    "type": "LoadBalancer"
+  }
+},
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1beta1",
+  "kind": "ClusterRole",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroachdb"
+    },
+    "name": "cockroachdb",
+    "namespace": "your_namespace"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        "certificates.k8s.io"
+      ],
+      "resources": [
+        "certificatesigningrequests"
+      ],
+      "verbs": [
+        "create",
+        "get",
+        "watch"
+      ]
+    }
+  ]
+},
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {},
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroachdb-balanced"
+    },
+    "name": "cockroachdb-balanced",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "ports": [
+      {
+        "name": "cockroach",
+        "port": 26257,
+        "targetPort": 26257
+      },
+      {
+        "name": "http",
+        "port": 8080,
+        "targetPort": 8080
+      }
+    ],
+    "selector": {
+      "app": "cockroachdb"
+    },
+    "sessionAffinity": "ClientIP",
+    "type": "ClusterIP"
+  }
+},
+{
+  "apiVersion": "policy/v1beta1",
+  "kind": "PodDisruptionBudget",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb"
+    },
+    "name": "cockroachdb-budget",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "maxUnavailable": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "cockroachdb"
+      }
+    }
+  }
+},
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1beta1",
+  "kind": "RoleBinding",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb",
+      "name": "cockroachdb"
+    },
+    "name": "cockroachdb",
+    "namespace": "your_namespace"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "Role",
+    "name": "cockroachdb"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "cockroachdb",
+      "namespace": "your_namespace"
+    }
+  ]
+},
+{
+  "apiVersion": "v1",
+  "kind": "ServiceAccount",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "cockroachdb"
+    },
+    "name": "cockroachdb",
+    "namespace": "your_namespace"
+  }
+},
+{
+  "apiVersion": "apps/v1beta1",
+  "kind": "Deployment",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "name": "grpc-backend"
+    },
+    "name": "grpc-backend",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "minReadySeconds": 30,
+    "replicas": 1,
+    "strategy": {
+      "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+      },
+      "type": "RollingUpdate"
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "grpc-backend"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "--addr=:8081",
+              "--cockroach_host=cockroachdb-balanced.your_namespace",
+              "--cockroach_port=26257",
+              "--cockroach_ssl_dir=/cockroach/cockroach-certs",
+              "--cockroach_ssl_mode=verify-full",
+              "--cockroach_user=root",
+              "--dump_requests=true",
+              "--jwt_audience=yourhostname.com",
+              "--public_key_file=/public-certs/us-demo.pem"
+            ],
+            "command": [
+              "grpc-backend"
+            ],
+            "image": "your_image_name",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "grpc-backend",
+            "ports": [
+              {
+                "containerPort": 8081,
+                "name": "grpc"
+              }
+            ],
+            "stdin": false,
+            "tty": false,
+            "volumeMounts": [
+              {
+                "mountPath": "/cockroach/cockroach-certs/ca.crt",
+                "name": "ca-certs",
+                "subPath": "ca.crt"
+              },
+              {
+                "mountPath": "/cockroach/cockroach-certs/client.root.crt",
+                "name": "client-certs",
+                "subPath": "client.root.crt"
+              },
+              {
+                "mountPath": "/cockroach/cockroach-certs/client.root.key",
+                "name": "client-certs",
+                "subPath": "client.root.key"
+              },
+              {
+                "mountPath": "/public-certs",
+                "name": "public-certs"
+              }
+            ]
+          }
+        ],
+        "terminationGracePeriodSeconds": 30,
+        "volumes": [
+          {
+            "name": "ca-certs",
+            "secret": {
+              "defaultMode": 256,
+              "secretName": "cockroachdb.ca.crt"
+            }
+          },
+          {
+            "name": "client-certs",
+            "secret": {
+              "defaultMode": 256,
+              "secretName": "cockroachdb.client.root"
+            }
+          },
+          {
+            "name": "public-certs",
+            "secret": {
+              "defaultMode": 256,
+              "secretName": "dss.public.certs"
+            }
+          }
+        ]
+      }
+    }
+  }
+},
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {
+      "prometheus.io/path": "_status/vars",
+      "prometheus.io/port": "8081",
+      "prometheus.io/scrape": "true"
+    },
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "grpc-backend",
+      "name": "grpc-backend"
+    },
+    "name": "grpc-backend",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "ports": [
+      {
+        "name": "grpc-backend",
+        "port": 8081,
+        "targetPort": 8081
+      }
+    ],
+    "selector": {
+      "app": "grpc-backend"
+    },
+    "type": "ClusterIP"
+  }
+},
+{
+  "apiVersion": "v1",
+  "data": {
+    "clusterName": "your_cluster_context"
+  },
+  "kind": "ConfigMap",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "name": "cluster-metadata"
+    },
+    "name": "cluster-metadata",
+    "namespace": "your_namespace"
+  }
+},
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "Ingress",
+  "metadata": {
+    "annotations": {
+      "kubernetes.io/ingress.allow-http": "false",
+      "kubernetes.io/ingress.global-static-ip-name": "your-ingress-name",
+      "networking.gke.io/managed-certificates": "https-certificate"
+    },
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "name": "https-ingress"
+    },
+    "name": "https-ingress",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "backend": {
+      "serviceName": "http-gateway",
+      "servicePort": 8080
+    }
+  }
+},
+{
+  "apiVersion": "networking.gke.io/v1beta1",
+  "kind": "ManagedCertificate",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "name": "https-certificate"
+    },
+    "name": "https-certificate",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "domains": [
+      "yourhostname.com"
+    ]
+  }
+},
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {
+      "prometheus.io/path": "_status/vars",
+      "prometheus.io/port": "8080",
+      "prometheus.io/scrape": "true"
+    },
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "app": "http-gateway",
+      "name": "http-gateway"
+    },
+    "name": "http-gateway",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "ports": [
+      {
+        "name": "http-gateway",
+        "port": 8080,
+        "targetPort": 8080
+      }
+    ],
+    "selector": {
+      "app": "http-gateway"
+    },
+    "type": "NodePort"
+  }
+},
+{
+  "apiVersion": "apps/v1beta1",
+  "kind": "Deployment",
+  "metadata": {
+    "clusterName": "your_cluster_context",
+    "labels": {
+      "name": "http-gateway"
+    },
+    "name": "http-gateway",
+    "namespace": "your_namespace"
+  },
+  "spec": {
+    "minReadySeconds": 30,
+    "replicas": 1,
+    "strategy": {
+      "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+      },
+      "type": "RollingUpdate"
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "http-gateway"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "http-gateway",
+              "-grpc-backend=grpc-backend.your_namespace:8081",
+              "-addr=:8080"
+            ],
+            "image": "your_image_name",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "http-gateway",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "name": "http"
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/healthy",
+                "port": 8080
+              }
+            },
+            "stdin": false,
+            "tty": false
+          }
+        ],
+        "terminationGracePeriodSeconds": 30,
+        "volumes": []
+      }
+    }
+  }
+}]

@@ -3,34 +3,79 @@ package kubejsonnet
 import (
 	"bytes"
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 
-	"gopkg.in/yaml.v2"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"github.com/interuss/dss/pkg/tools/kubejsonnet/parser"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
+	kubectl "k8s.io/kubernetes/pkg/kubectl/cmd"
 )
 
 type Command struct {
-	metaname string
 	filename string
 	command  string
+	args     []string
 	cluster  string
-	tempFile string
+	tempfile string
+	data     string
 }
 
-func New(command, filename, metaname string) (*Command, error) {
-	cmd := &Command{
-		command:  command,
-		filename: filename,
-		metaname: metaname,
+func checkArgs(args []string) error {
+	// Don't supply file via -f, don't supply context
+	probhibited := []string{"-f", "--context"}
+	for _, arg := range args {
+		for _, p := range probhibited {
+			if arg == p {
+				return fmt.Errorf("cannot provide arg: %s", arg)
+			}
+		}
 	}
-	return cmd, cmd.parseClusterContextFromFile()
+	return nil
+}
+
+func New(filename string, args []string) (*Command, error) {
+	var data []byte
+	var err error
+
+	if err := checkArgs(args); err != nil {
+		return nil, err
+	}
+
+	// At this point data is an unstructured s
+	metadata, uList, err := parser.Parse(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, obj := range uList {
+		objData, err := json.MarshalIndent(obj, "", " ")
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, []byte("---\n")...)
+		data = append(data, objData...)
+		data = append(data, '\n')
+	}
+
+	tempfile, err := storeJson(data)
+	if err != nil {
+		return nil, err
+	}
+
+	/// todo store the output so we can call apply
+	cmd := &Command{
+		command:  args[0],
+		args:     args[1:],
+		filename: filename,
+		cluster:  metadata["clusterName"],
+		data:     string(data),
+		tempfile: tempfile,
+	}
+	return cmd, err
 }
 
 func (c *Command) IsMutatingCommand() bool {
@@ -44,33 +89,45 @@ func (c *Command) IsMutatingCommand() bool {
 }
 
 func (c *Command) Diff() (string, error) {
-	out, err := exec.Command("kubectl", "diff", "-f", c.tempFile, "--context", c.cluster).Output()
+	out := new(bytes.Buffer)
+	cmd := kubectl.NewKubectlCommand(os.Stdin, out, os.Stderr)
+	cmd.SetArgs([]string{"diff", "-f", c.tempfile, "--context", c.cluster})
 	// The exit error will have a status code of 1 when there is a diff and when
 	// there is an actual error :/
 	// https://github.com/kubernetes/kubectl/issues/765
-	if exitError, ok := err.(*exec.ExitError); ok {
-		errorStr := string(exitError.Stderr)
-		if strings.HasPrefix(strings.ToLower(errorStr), "error") {
-			return "", errors.New(errorStr)
+	cmdutil.BehaviorOnFatal(func(s string, code int) {
+		if code > 1 {
+			c.Cleanup()
+			os.Exit(code)
 		}
-	}
-	return "will apply the following diff:\n\n" + string(out), nil
+	})
+	defer cmdutil.DefaultBehaviorOnFatal()
+	err := cmd.Execute()
+	return out.String(), err
 }
 
 func (c *Command) Run(ctx context.Context) (string, error) {
-	out, err := exec.CommandContext(ctx, "kubectl", c.command, "--context", c.cluster, "-f", c.tempFile).Output()
-	if exitError, ok := err.(*exec.ExitError); ok {
-		err = errors.New(string(exitError.Stderr))
+	// Run diff separately which requires special casing for the bad exit code
+	// handling
+	if c.command == "diff" {
+		return c.Diff()
 	}
-	return string(out), err
+	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
+	cmd := kubectl.NewKubectlCommand(os.Stdin, out, errOut)
+	// Ignore errors on diff, which returns a bad exit code.
+	args := append([]string{c.command, "-f", c.tempfile, "--context", c.cluster},
+		c.args...)
+	cmd.SetArgs(args)
+	err := cmd.Execute()
+	return out.String(), err
 }
 
 func (c *Command) Cleanup() error {
-	return os.Remove(c.tempFile)
+	return os.Remove(c.tempfile)
 }
 
-func (c *Command) storeYaml(buf []byte) (string, error) {
-	file, err := ioutil.TempFile(os.TempDir(), filepath.Base(c.filename)+"-*.yaml")
+func storeJson(buf []byte) (string, error) {
+	file, err := ioutil.TempFile(os.TempDir(), "parsed_json-*.json")
 	if err != nil {
 		return "", err
 	}
@@ -78,57 +135,4 @@ func (c *Command) storeYaml(buf []byte) (string, error) {
 		return "", err
 	}
 	return file.Name(), nil
-}
-
-func (c *Command) parseClusterContextFromFile() error {
-	b, err := getYaml(c.filename)
-	if err != nil {
-		return fmt.Errorf("error parsing jsonnet file with kubecfg show: %v", err)
-	}
-	c.tempFile, err = c.storeYaml(b)
-	if err != nil {
-		return err
-	}
-	decoder := yaml.NewDecoder(bytes.NewBuffer(b))
-	var o map[string]interface{}
-	for {
-		err := decoder.Decode(&o)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("error parsing yaml %v", err)
-		}
-		u := &unstructured.Unstructured{Object: o}
-		if u.IsList() {
-			return fmt.Errorf("unsupported UnstructuredList for %s/%s/%s",
-				u.GetKind(), u.GetNamespace(), u.GetName())
-		}
-		if isMetaMap(u, c.metaname) {
-			c.parseMetaMap(u)
-		}
-	}
-	if c.cluster == "" {
-		return errors.New("could not find metamap with cluster name")
-	}
-	return nil
-}
-
-func (c *Command) parseMetaMap(u *unstructured.Unstructured) {
-	data := u.Object["data"].(map[interface{}]interface{})
-	c.cluster = data["clusterName"].(string)
-}
-
-func isMetaMap(u *unstructured.Unstructured, metaname string) bool {
-	metadata := u.Object["metadata"].(map[interface{}]interface{})
-	// TODO(steeling) why is u.GetName() and u.GetNamespace not working??
-	return u.GetKind() == "ConfigMap" && metadata["name"] == metaname
-}
-
-func getYaml(filename string) ([]byte, error) {
-	out, err := exec.Command("kubecfg", "show", filename).Output()
-	if exitError, ok := err.(*exec.ExitError); ok {
-		err = errors.New(string(exitError.Stderr))
-	}
-	return out, err
 }
