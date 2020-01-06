@@ -11,18 +11,16 @@ import (
 	"strings"
 
 	"github.com/interuss/dss/pkg/tools/kubejsonnet"
+	cliflag "k8s.io/component-base/cli/flag"
 )
 
 var (
-	metaname = flag.String("metaname", "cluster-metadata", `metaname is the name 
-		of the config map holding the cluster context name. It must be in the meta
-		namespace.`)
 	confirm = flag.Bool("confirm", true, `whether to prompt for confirmation on
 		mutating commands`)
 )
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "usage: %s <command> <input.jsonnet>]\n", os.Args[0])
+	fmt.Fprint(os.Stderr, "usage: kubejsonnet <command> <input.jsonnet|input.json>]\n")
 	flag.PrintDefaults()
 	os.Exit(2)
 }
@@ -59,16 +57,18 @@ func waitForConfirm() error {
 
 func main() {
 	flag.Parse()
+	// Setup kubectl flags
+	cliflag.InitFlags()
+
 	// TODO(steeling): consider leveraging a CLI framework like cobra.
-	// If these features ever make it into kubecfg, we can ditch this tool
-	// completely.
-	// https://github.com/bitnami/kubecfg/issues/273 and
-	// https://github.com/bitnami/kubecfg/issues/274
-	if len(os.Args) != 3 {
+	if len(os.Args) < 3 {
 		usage()
 	}
+	// Remove kubejsonnet and input file.
+	input, args := os.Args[len(os.Args)-1], os.Args[1:len(os.Args)-1]
+
 	ctx := context.Background()
-	command, err := kubejsonnet.New(os.Args[1], os.Args[2], *metaname)
+	command, err := kubejsonnet.New(input, args)
 	defer command.Cleanup()
 
 	if err != nil {
@@ -83,6 +83,6 @@ func main() {
 
 	fmt.Println(out)
 	if err != nil {
-		log.Fatalf("error running command %s: %v", os.Args[1], err)
+		log.Fatalf("error running command %v: %v", os.Args, err)
 	}
 }

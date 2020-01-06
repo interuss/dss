@@ -48,20 +48,18 @@ Download & install the following tools to your workstation:
 
 - Install the custom kubejsonnet binary for better config management. Run:
   `go install ./cmds/kubejsonnet` from the root directory of this project.
-- The [kubecfg client](https://github.com/bitnami/kubecfg#install)
-  - Required if deploying using the defined Kubernetes templates.
-- kubectl
-  - Required if deploying with Kubernetes.
 - docker
   - Required if building new images of the DSS.
 - Cockroachdb
   - Required to generate new CockroachDB certificates.
 - Google Cloud SDK (if deploying on GCP)
   - Required if deploying to Google Cloud.
-- Golang.
+- Golang
   - Required if developing the DSS codebase.
 - Optional - [Jsonnet](https://github.com/google/jsonnet)
   - Recommended if editing the jsonnet templates.
+- Optional - kubectl
+  - Recommended for some interactions with the Kubernetes Cluster.
 
 ## Docker images
 
