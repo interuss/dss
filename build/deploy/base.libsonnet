@@ -93,7 +93,7 @@ local util = import 'util.libsonnet';
 
       minReadySeconds: 30,
 
-      replicas: 1,
+      replicas: 3,
     },
   },
 
@@ -166,7 +166,7 @@ local util = import 'util.libsonnet';
         for kv in util.objectItems(self.volumeClaimTemplates_)
       ],
 
-      replicas: 1,
+      replicas: 3,
       assert self.replicas >= 1,
     },
   },
