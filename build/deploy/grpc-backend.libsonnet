@@ -17,7 +17,6 @@ local volumes = import 'volumes.libsonnet';
         namespace: metadata.namespace,
       },
       spec+: {
-        replicas: 1,
         template+: {
           spec+: {
             volumes: volumes.backendVolumes,

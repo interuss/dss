@@ -9,7 +9,6 @@ local volumes = import 'volumes.libsonnet';
     },
     spec+: {
       serviceName: 'cockroachdb',
-      replicas: 3,  // default number of replicas.
       template+: {
         metadata+: {
           labels: {
