@@ -1,0 +1,11 @@
+{
+  "apiVersion": "tanka.dev/v1alpha1",
+  "kind": "Environment",
+  "metadata": {
+    "name": "prod"
+  },
+  "spec": {
+    "apiServer": "<populate_this>",
+    "namespace": "dss-main"
+  }
+}

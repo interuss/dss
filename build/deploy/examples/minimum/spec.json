@@ -1,0 +1,11 @@
+{
+  "apiVersion": "tanka.dev/v1alpha1",
+  "kind": "Environment",
+  "metadata": {
+    "name": "minimum_example"
+  },
+  "spec": {
+    "apiServer": "<populate_this>",
+    "namespace": "your_namespace"
+  }
+}

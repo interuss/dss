@@ -35,8 +35,8 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
       },
     } else null,
 
-    NodeGateways: [
-      cockroachLB(metadata, 'cockroach-db-external-node-' + i, metadata.cockroach.nodeIPs[i]) {
+    NodeGateways: {
+      ["gateway-" + i]: cockroachLB(metadata, 'cockroach-db-external-node-' + i, metadata.cockroach.nodeIPs[i]) {
         spec+: {
           selector: {
             'statefulset.kubernetes.io/pod-name': 'cockroachdb-' + i,
@@ -44,7 +44,7 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
         },
       }
       for i in std.range(0, std.length(metadata.cockroach.nodeIPs) - 1)
-    ],
+    },
 
     svcAccount: base.ServiceAccount(metadata, 'cockroachdb') {
       metadata+: {
