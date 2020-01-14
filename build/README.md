@@ -46,8 +46,11 @@ of this operational overhead.
 
 Download & install the following tools to your workstation:
 
-- Install the custom kubejsonnet binary for better config management. Run:
-  `go install ./cmds/kubejsonnet` from the root directory of this project.
+- Install tanka: https://tanka.dev/install. Until
+  https://github.com/grafana/tanka/pull/162 makes it into a release, run:
+  `go get -u github.com/grafana/tanka/cmd/tk@master`
+- Install kubectl
+  - Required to interact with kubernetes.
 - docker
   - Required if building new images of the DSS.
 - Cockroachdb
@@ -58,8 +61,6 @@ Download & install the following tools to your workstation:
   - Required if developing the DSS codebase.
 - Optional - [Jsonnet](https://github.com/google/jsonnet)
   - Recommended if editing the jsonnet templates.
-- Optional - kubectl
-  - Recommended for some interactions with the Kubernetes Cluster.
 
 ## Docker images
 
@@ -109,7 +110,7 @@ which ever provider you choose.
         CockroachDB clusters will use to connect to your cluster. Wildcard
         notation is supported, so you can use `*.<subdomain>.<domain>.com>`.
         The entries should be separated by spaces. These entries should
-        correspond to the entries in dss.jsonnet cockroach.nodeIPs.
+        correspond to the entries in main.jsonnet cockroach.nodeIPs.
     1.  If you are joining existing clusters you need their CA public cert,
         which is concatenated with yours. Set `--ca-cert-to-join` to a `ca.crt`
         file. Reach out to existing operators to request their public cert and
@@ -120,8 +121,12 @@ which ever provider you choose.
 
 1.  Build the docker file as described in the section below.
 
-1.  Copy `deploy/examples/minimum.jsonnet` to
-    `workspace/<CLUSTER_CONTEXT>/dss.jsonnet` and fill in with your fields.
+1.  Copy `cp -r deploy/examples/minimum` to
+    `workspace/<CLUSTER_CONTEXT>` and fill in with your fields.
+
+1.  You can find the APIServer for spec.json by running: 
+
+    `kubectl config view -o jsonpath="{.clusters[?(@.name==\"<CLUSTER_CONTEXT>\")].cluster.server}"`
 
 1.  Use the `apply-certs.sh` script in this directory to create secrets on the
     Kubernetes cluster containing the certificates and keys generated in the
@@ -132,7 +137,7 @@ which ever provider you choose.
 1.  Follow the steps below before running the final command if you are joining
     existing clusters.
 
-1.  Run `kubejsonnet apply workspace/<CLUSTER_CONTEXT>/dss.jsonnet>` to apply it to the
+1.  Run `tk apply workspace/<CLUSTER_CONTEXT>` to apply it to the
     cluster.
 
 ### Building Docker images
@@ -147,11 +152,11 @@ with the current date and git commit hash.
 Follow the steps above for creating a new CockroachDB cluster, but with the
 following differences:
 
-1.  In dss.jsonnet, make sure you don't set shouldInit to true. This can
+1.  In main.jsonnet, make sure you don't set shouldInit to true. This can
     initialize the data directories on you cluster, and prevent you from joining
     an existing cluster.
 
-1.  In dss.jsonnet, add the host:ports of existing CockroachDB nodes to the
+1.  In main.jsonnet, add the host:ports of existing CockroachDB nodes to the
     JoinExisting array. You should supply a minimum of 3 seed nodes to every
     CockroachDB node. These 3 nodes should be the same for every node (ie: every
     node points to node 0, 1, and 2). For external clusters you should point to

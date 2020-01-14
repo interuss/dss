@@ -1,4 +1,3 @@
-// This file shows the mimimum information required to get a DSS instance running in Kubernetes.
 local dss = import '../../deploy/dss.libsonnet';
 local metadataBase = import '../../deploy/metadata_base.libsonnet';
 
