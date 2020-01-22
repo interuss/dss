@@ -112,6 +112,10 @@ local util = import 'util.libsonnet';
       },
       annotations: if service.enable_monitoring then {
         'prometheus.io/scrape': 'true',
+<<<<<<< HEAD
+=======
+        'prometheus.io/path': '/_status/vars',
+>>>>>>> fix scrape path &  scheme for crdb & jsonnet
         'prometheus.io/port': std.toString(service.port),
       } else {},
     },
