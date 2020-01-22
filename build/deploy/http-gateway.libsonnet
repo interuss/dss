@@ -49,7 +49,7 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
       app:: 'http-gateway',
       port:: metadata.gateway.port,
       type:: 'NodePort',
-      enable_monitoring:: true,
+      enable_monitoring:: false,
     },
 
     deployment: base.Deployment(metadata, 'http-gateway') {

@@ -132,6 +132,7 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
           'service.alpha.kubernetes.io/tolerate-unready-endpoints': 'true',
           'prometheus.io/port': std.toString(metadata.cockroach.http_port),
           'prometheus.io/scheme': 'https',
+          'prometheus.io/path': '/_status/vars',
         },
       },
       spec+: {
