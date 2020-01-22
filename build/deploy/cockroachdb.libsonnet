@@ -64,7 +64,7 @@ local volumes = import 'volumes.libsonnet';
               httpGet: {
                 path: '/health',
                 port: 'http',
-                scheme: 'HTTPS',
+                scheme: 'HTTP',
               },
               initialDelaySeconds: 30,
               periodSeconds: 5,
@@ -73,7 +73,7 @@ local volumes = import 'volumes.libsonnet';
               httpGet: {
                 path: '/health?ready=1',
                 port: 'http',
-                scheme: 'HTTPS',
+                scheme: 'HTTP',
               },
               initialDelaySeconds: 10,
               periodSeconds: 5,
@@ -85,13 +85,14 @@ local volumes = import 'volumes.libsonnet';
               'exec /cockroach/cockroach start ' + std.join(' ', util.makeArgs(self.command_args_)),
             ],
             command_args_:: {
-              'certs-dir': '/cockroach/cockroach-certs',
-              'advertise-addr': '${HOSTNAME##*-}.' + metadata.cockroach.hostnameSuffix,
+              'insecure': true,
+              # 'advertise-addr': '${HOSTNAME##*-}.' + metadata.cockroach.hostnameSuffix,
+              'advertise-addr': '$(hostname -f)',
               join: std.join(',', ['cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local']
                              + metadata.cockroach.JoinExisting),
               logtostderr: true,
               locality: 'zone=' + metadata.cockroach.locality,
-              'locality-advertise-addr': 'zone=' + metadata.cockroach.locality + '@$(hostname -f)',
+              # 'locality-advertise-addr': 'zone=' + metadata.cockroach.locality + '@$(hostname -f)',
               'http-addr': '0.0.0.0',
               cache: '25%',
               'max-sql-memory': '25%',

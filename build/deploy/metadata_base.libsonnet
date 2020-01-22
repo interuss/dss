@@ -1,6 +1,7 @@
 {
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
+  enable_istio: true,
   cockroach: {
     locality: error 'must supply crdb locality',
     hostnameSuffix: error 'must supply a hostnameSuffix, or override in statefulset',

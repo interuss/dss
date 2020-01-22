@@ -1,50 +1,25 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
-local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
-  port:: metadata.cockroach.grpc_port,
-  app:: 'cockroachdb',
-  spec+: {
-    type: 'LoadBalancer',
-    loadBalancerIP: ip,
-  },
-};
-
 {
   all(metadata): {
     CockroachInit: if metadata.cockroach.shouldInit then base.Job(metadata, 'init') {
       spec+: {
         template+: {
           spec+: {
-            volumes_: {
-              client_certs: volumes.volumes.client_certs,
-              ca_certs: volumes.volumes.ca_certs,
-            },
             serviceAccountName: 'cockroachdb',
             soloContainer:: base.Container('cluster-init') {
               image: metadata.cockroach.image,
               command: ['/cockroach/cockroach', 'init'],
               args_:: {
-                'certs-dir': '/cockroach/cockroach-certs',
+                insecure: true,
                 host: 'cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local:' + metadata.cockroach.grpc_port,
               },
-              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
             },
           },
         },
       },
     } else null,
-
-    NodeGateways: {
-      ["gateway-" + i]: cockroachLB(metadata, 'cockroach-db-external-node-' + i, metadata.cockroach.nodeIPs[i]) {
-        spec+: {
-          selector: {
-            'statefulset.kubernetes.io/pod-name': 'cockroachdb-' + i,
-          },
-        },
-      }
-      for i in std.range(0, std.length(metadata.cockroach.nodeIPs) - 1)
-    },
 
     svcAccount: base.ServiceAccount(metadata, 'cockroachdb') {
       metadata+: {
