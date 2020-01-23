@@ -217,7 +217,7 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 
 	if err != nil {
 		a.logger.Error("token validation failed", zap.Error(err))
-		return nil, dsserr.Unauthenticated("invalid token")
+		return nil, dsserr.Unauthenticated(err.Error())
 	}
 
 	if claims.Audience != a.requiredAudience {
