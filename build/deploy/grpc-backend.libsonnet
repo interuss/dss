@@ -6,7 +6,7 @@ local volumes = import 'volumes.libsonnet';
     service: base.Service(metadata, 'grpc-backend') {
       app:: 'grpc-backend',
       port:: metadata.backend.port,
-      enable_monitoring:: true,
+      enable_monitoring:: false,
     },
 
     deployment: base.Deployment(metadata, 'grpc-backend') {
