@@ -1,10 +1,10 @@
 """Test Authentication validation
   - Try to read DSS without Token
   - Try to read DSS with Token that cannot be decoded
-  - Try to read and write DSS with Token missing and wrong Scope 
+  - Try to read and write DSS with Token missing and wrong Scope
 
   ASTM Compliance Test: DSS0010_USS_AUTH
-  This entire file is used to demonstrate that the DSS requires proper 
+  This entire file is used to demonstrate that the DSS requires proper
   authentication tokens to perform actions on the DSS
 """
 
@@ -72,7 +72,7 @@ def test_get_isa_with_fake_token(rogue_session, isa1_uuid):
   rogue_session.headers['Authorization'] = 'Bearer fake_token'
   resp = rogue_session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 401
-  assert resp.json()['message'] == 'invalid token'
+  assert resp.json()['message'] == 'token contains an invalid number of segments'
 
 
 def test_get_isa_without_scope(rogue_session, session, isa1_uuid):
