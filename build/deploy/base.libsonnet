@@ -112,13 +112,6 @@ local util = import 'util.libsonnet';
       },
       annotations: if service.enable_monitoring then {
         'prometheus.io/scrape': 'true',
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        'prometheus.io/path': '/_status/vars',
->>>>>>> fix scrape path &  scheme for crdb & jsonnet
-=======
->>>>>>> rm gcloud build file, disable wrong monitoring
         'prometheus.io/port': std.toString(service.port),
       } else {},
     },

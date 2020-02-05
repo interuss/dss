@@ -132,14 +132,7 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
           'service.alpha.kubernetes.io/tolerate-unready-endpoints': 'true',
           'prometheus.io/port': std.toString(metadata.cockroach.http_port),
           'prometheus.io/scheme': 'https',
-<<<<<<< HEAD
-<<<<<<< HEAD
           'prometheus.io/path': '/_status/vars',
-=======
->>>>>>> fix scrape path &  scheme for crdb & jsonnet
-=======
-          'prometheus.io/path': '/_status/vars',
->>>>>>> rm gcloud build file, disable wrong monitoring
         },
       },
       spec+: {
