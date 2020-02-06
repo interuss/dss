@@ -30,11 +30,11 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
   // With metadata we can wrap kubectl/kubecfg commands such that they always
   // apply the values in metadata.
   all(metadata): {
-    # certs: certificates.all(metadata),
-    # # certmanager: {
-    # #   ["istio-obj-" + i]: certmanager[i],
-    # #   for i in std.range(0, std.length(certmanager) - 1)
-    # # },
+    certs: certificates.all(metadata),
+    # certmanager: {
+    #   ["istio-obj-" + i]: certmanager[i],
+    #   for i in std.range(0, std.length(certmanager) - 1)
+    # },
     # external_routing_rule: {
     #   apiVersion: 'networking.istio.io/v1alpha3',
     #   kind: 'DestinationRule',

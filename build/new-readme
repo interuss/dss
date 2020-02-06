@@ -11,6 +11,8 @@ istioctl manifest generate \
 
 
 
+need to change some values
+
 2. apply the above config
 
 manifest apply
@@ -33,11 +35,14 @@ more todo:
       - we set a virtual host with a suffix match, then we add a request_headers_to_add
         https://github.com/envoyproxy/envoy/blob/master/api/envoy/api/v2/route/route_components.proto
       - then we have no way to get the prefix.... :/
+      - or check into lua scripts....
 - test to see if messing with dns fucks up istio routing...
   - https://istio.io/docs/setup/install/multicluster/gateways/
 
 
-
+---- shit.... how to validate each client cert differently....
+(maybe just roll my own binary....)
+... could have an ingress gateway per customer, and locality_advertise_ different addr's...
 
 notes
 ================================================================================
