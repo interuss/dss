@@ -62,6 +62,7 @@ local base = import 'base.libsonnet';
     },
     configMap: base.ConfigMap(metadata, 'prometheus-server-conf') {
       metadata: {
+        name: 'prometheus-server-conf',
         namespace: metadata.namespace,
       },
       data: {
@@ -70,6 +71,7 @@ local base = import 'base.libsonnet';
     },
     deployment: base.Deployment(metadata, 'prometheus-deployment') {
       metadata: {
+        name: 'prometheus-deployment',
         namespace: metadata.namespace,
       },
       spec: {
@@ -84,7 +86,7 @@ local base = import 'base.libsonnet';
             containers: [
               {
                 name: 'prometheus',
-                image: 'prom/prometheus:v2.2.1',
+                image: 'prom/prometheus',
                 args: [
                   '--config.file=/etc/prometheus/prometheus.yml',
                   '--storage.tsdb.path=/prometheus/',
@@ -125,6 +127,7 @@ local base = import 'base.libsonnet';
     },
     service: base.Service(metadata, 'prometheus-service') {
       metadata: {
+        name: 'prometheus-service',
         namespace: metadata.namespace,
         annotations: {
           'prometheus.io/scrape': 'true',

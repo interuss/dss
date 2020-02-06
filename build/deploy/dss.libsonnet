@@ -4,6 +4,7 @@ local backend = import 'grpc-backend.libsonnet';
 local gateway = import 'http-gateway.libsonnet';
 local base = import 'base.libsonnet';
 local prometheus = import 'prometheus.libsonnet';
+local grafana = import 'grafana.libsonnet';
 
 
 local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
@@ -36,6 +37,7 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     auxilliary: cockroachAuxilliary.all(metadata),
     gateway: gateway.all(metadata),
     backend: backend.all(metadata),
-    prometheus: prometheus.all(metadata)
+    prometheus: prometheus.all(metadata),
+    grafana: grafana.all(metadata)
   },
 }
