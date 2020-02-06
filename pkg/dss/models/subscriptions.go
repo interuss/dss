@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/interuss/dss/pkg/dss/geo"
-	"github.com/interuss/dss/pkg/dssproto"
 	dspb "github.com/interuss/dss/pkg/dssproto"
 	dsserr "github.com/interuss/dss/pkg/errors"
 
@@ -53,7 +52,7 @@ func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 	result := &dspb.Subscription{
 		Id:                s.ID.String(),
 		Owner:             s.Owner.String(),
-		Callbacks:         &dssproto.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.Url},
+		Callbacks:         &dspb.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.Url},
 		NotificationIndex: int32(s.NotificationIndex),
 		Version:           s.Version.String(),
 	}
