@@ -6,15 +6,18 @@ replace github.com/NYTimes/openapi2proto => github.com/davidsansome/openapi2prot
 go 1.13
 
 require (
+	github.com/NYTimes/openapi2proto v0.0.0-00010101000000-000000000000 // indirect
+	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec
-	github.com/golang/protobuf v1.3.2
+	github.com/golang/protobuf v1.3.3
 	github.com/google/uuid v1.1.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0
-	github.com/grpc-ecosystem/grpc-gateway v1.12.1
+	github.com/grpc-ecosystem/grpc-gateway v1.9.6
 	github.com/jonboulle/clockwork v0.1.0
 	github.com/lib/pq v1.2.0
+	github.com/rogpeppe/fastuuid v1.2.0 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.4.0
 	go.uber.org/multierr v1.4.0
