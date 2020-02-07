@@ -5,7 +5,6 @@ import (
   "crypto/rand"
   "crypto/rsa"
   "io/ioutil"
-  "net/url"
   "os"
   "strings"
   "testing"
@@ -53,43 +52,6 @@ func rsaTokenCtxWithMissingIssuer(ctx context.Context, key *rsa.PrivateKey, exp,
   return metadata.NewIncomingContext(ctx, metadata.New(map[string]string{
     "Authorization": "Bearer " + tokenString,
   }))
-}
-
-func TestJWKSResolver(t *testing.T) {
-  for _, row := range []struct {
-    endpoint string
-    keyID    string
-  }{
-    {
-      endpoint: "https://oauth.interussplatform.com/jwks.json",
-      keyID:    "1",
-    },
-    {
-      endpoint: "https://che.auth.airmap.com/realms/airmap/protocol/openid-connect/certs",
-      keyID:    "_3Zih37PTxv30PMQ3rT7lCyllGWsKFnceP_pCz1Yejs",
-    },
-  } {
-
-    t.Run(row.endpoint, func(t *testing.T) {
-      ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-      defer cancel()
-
-      u, err := url.Parse(row.endpoint)
-      require.NoError(t, err)
-
-      kr := &JWKSResolver{
-        Endpoint: u,
-        KeyID:    row.keyID,
-      }
-
-      var typ *rsa.PublicKey
-
-      key, err := kr.ResolveKey(ctx)
-      require.NoError(t, err)
-      require.NotNil(t, key)
-      require.IsType(t, typ, key)
-    })
-  }
 }
 
 func TestNewRSAAuthClient(t *testing.T) {
