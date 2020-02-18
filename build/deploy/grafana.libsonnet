@@ -75,18 +75,11 @@ local base = import 'base.libsonnet';
 		},
 		service: base.Service(metadata, 'grafana') {
 			app:: 'grafana',
-			metadata+: {
-				annotations: {
-					'prometheus.io/scrape': 'true',
-					'prometheus.io/port': '3000',
-				},
-			},
-			spec: {
-				selector: {
-					app: 'grafana',
-				},
+			port:: 3000,
+			enable_monitoring:: true,
+			spec+: {
 				type: 'NodePort',
-				ports: [
+				ports+: [
 					{
 						port: 3000,
 						targetPort: 3000,
