@@ -126,10 +126,8 @@ local base = import 'base.libsonnet';
       },
     },
     service: base.Service(metadata, 'prometheus-service') {
-      app:: 'prometheus-service',
+      app:: 'prometheus-server',
       metadata+: {
-        name: 'prometheus-service',
-        namespace: metadata.namespace,
         annotations: {
           'prometheus.io/scrape': 'true',
           'prometheus.io/port': '9090',

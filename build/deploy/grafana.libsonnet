@@ -3,19 +3,11 @@ local base = import 'base.libsonnet';
 {
 	all(metadata) : {
 		configMap: base.ConfigMap(metadata, 'grafana-datasources') {
-			metadata+: {
-				name: 'grafana-datasources',
-				namespace: metadata.namespace,
-			},
 			data: {
 				'prometheus.yaml': '{\n    "apiVersion": 1,\n    "datasources": [\n        {\n           "access":"proxy",\n            "editable": true,\n            "name": "prometheus",\n            "orgId": 1,\n            "type": "prometheus",\n            "url": "http://prometheus-service.' + metadata.namespace + '.svc:8080",\n            "version": 1\n        }\n    ]\n}',
 			},
 		},
 		deployment: base.Deployment(metadata, 'grafana') {
-			metadata+: {
-				name: 'grafana',
-				namespace: metadata.namespace,
-			},
 			spec: {
 				replicas: 1,
 				selector: {
@@ -84,8 +76,6 @@ local base = import 'base.libsonnet';
 		service: base.Service(metadata, 'grafana') {
 			app:: 'grafana',
 			metadata+: {
-				name: 'grafana',
-				namespace: metadata.namespace,
 				annotations: {
 					'prometheus.io/scrape': 'true',
 					'prometheus.io/port': '3000',
