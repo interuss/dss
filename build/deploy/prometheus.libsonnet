@@ -61,7 +61,7 @@ local base = import 'base.libsonnet';
       ],
     },
     configMap: base.ConfigMap(metadata, 'prometheus-server-conf') {
-      metadata: {
+      metadata+: {
         name: 'prometheus-server-conf',
         namespace: metadata.namespace,
       },
@@ -70,7 +70,7 @@ local base = import 'base.libsonnet';
       },
     },
     deployment: base.Deployment(metadata, 'prometheus-deployment') {
-      metadata: {
+      metadata+: {
         name: 'prometheus-deployment',
         namespace: metadata.namespace,
       },
@@ -126,7 +126,8 @@ local base = import 'base.libsonnet';
       },
     },
     service: base.Service(metadata, 'prometheus-service') {
-      metadata: {
+      app:: 'prometheus-service',
+      metadata+: {
         name: 'prometheus-service',
         namespace: metadata.namespace,
         annotations: {

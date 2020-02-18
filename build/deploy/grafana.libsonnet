@@ -3,7 +3,7 @@ local base = import 'base.libsonnet';
 {
 	all(metadata) : {
 		configMap: base.ConfigMap(metadata, 'grafana-datasources') {
-			metadata: {
+			metadata+: {
 				name: 'grafana-datasources',
 				namespace: metadata.namespace,
 			},
@@ -12,7 +12,7 @@ local base = import 'base.libsonnet';
 			},
 		},
 		deployment: base.Deployment(metadata, 'grafana') {
-			metadata: {
+			metadata+: {
 				name: 'grafana',
 				namespace: metadata.namespace,
 			},
@@ -82,7 +82,8 @@ local base = import 'base.libsonnet';
 			},
 		},
 		service: base.Service(metadata, 'grafana') {
-			metadata: {
+			app:: 'grafana',
+			metadata+: {
 				name: 'grafana',
 				namespace: metadata.namespace,
 				annotations: {
