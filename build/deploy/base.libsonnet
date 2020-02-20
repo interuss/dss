@@ -27,20 +27,30 @@ local util = import 'util.libsonnet';
   },
 
   ClusterRole(metadata, name): $._RoleRelated('ClusterRole', metadata, name) {
-
-  },  
+    metadata+: {
+      namespace: null,
+    },
+  },
 
   ClusterRoleBinding(metadata, name): $._RoleRelated('ClusterRoleBinding', metadata, name) {
-
-  },  
+    metadata+: {
+      namespace: null,
+    },
+  }, 
 
   Role(metadata, name): $._RoleRelated('Role', metadata, name) {
 
-  },  
+  },
+
+  Namespace(metadata, name): $._Object('v1', 'Namespace', metadata, name) {
+    metadata+: {
+      namespace: null,
+    },
+  },
 
   ServiceAccount(metadata, name): $._Object('v1', 'ServiceAccount', metadata, name) {
 
-  },  
+  },
 
   PodDisruptionBudget(metadata, name): $._Object('policy/v1beta1', 'PodDisruptionBudget', metadata, name) {
     local pdb = self,
