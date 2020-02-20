@@ -1,5 +1,5 @@
-local dss = import '../../deploy/dss.libsonnet';
-local metadataBase = import '../../deploy/metadata_base.libsonnet';
+local dss = import '../../../deploy/dss.libsonnet';
+local metadataBase = import '../../../deploy/metadata_base.libsonnet';
 
 local metadata = metadataBase {
   namespace: 'your_namespace', //Same <NAMESPACE> used in the make-certs.py and apply-certs.sh scripts.
