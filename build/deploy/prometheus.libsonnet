@@ -66,9 +66,6 @@ local base = import 'base.libsonnet';
       },
     },
     statefulset: base.StatefulSet(metadata, 'prometheus-server') {
-      metadata+: {
-        namespace: metadata.namespace,
-      },
       spec+: {
         serviceName: 'prometheus-service',
         replicas: 1,
