@@ -77,16 +77,6 @@ local base = import 'base.libsonnet';
 			app:: 'grafana',
 			port:: 3000,
 			enable_monitoring:: true,
-			spec+: {
-				type: 'NodePort',
-				ports+: [
-					{
-						port: 3000,
-						targetPort: 3000,
-						nodePort: 32000,
-					},
-				],
-			},
 		},
 	},
 }
