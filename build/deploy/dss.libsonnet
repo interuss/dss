@@ -7,8 +7,6 @@ local prometheus = import 'prometheus.libsonnet';
 local grafana = import 'grafana.libsonnet';
 local alertmanager = import 'alertmanager.libsonnet';
 local istio = import 'istio.yaml';
-local certmanager = import 'certmanager/default.yaml';
-local certificates = import 'certmanager/config.libsonnet';
 
 
 local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
@@ -27,30 +25,7 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
 };
 
 {
-  // With metadata we can wrap kubectl/kubecfg commands such that they always
-  // apply the values in metadata.
   all(metadata): {
-    # certs: certificates.all(metadata),
-    # certmanager: {
-    #   ["istio-obj-" + i]: certmanager[i],
-    #   for i in std.range(0, std.length(certmanager) - 1)
-    # },
-    certmanager: certmanager,
-    # external_routing_rule: {
-    #   apiVersion: 'networking.istio.io/v1alpha3',
-    #   kind: 'DestinationRule',
-    #   metadata: {
-    #     name: 'tls-foo',
-    #   },
-    #   spec: {
-    #     host: '*.db.mtls-test1.interussplatform.dev',
-    #     trafficPolicy: {
-    #       tls: {
-    #         mode: 'MUTUAL',
-    #       },
-    #     },
-    #   },
-    # },
     default_namespace: {
       apiVersion: 'v1',
       kind: 'Namespace',
