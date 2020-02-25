@@ -68,8 +68,8 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
                   name: 'http',
                 },
               ],
-              args: [
-                'http-gateway',
+              command: ['http-gateway'],
+              args_:: {
                 '-grpc-backend=grpc-backend.' + metadata.namespace + ':' + metadata.backend.port,
                 '-addr=:' + metadata.gateway.port,
               ],
