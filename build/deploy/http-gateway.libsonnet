@@ -70,9 +70,9 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
               ],
               command: ['http-gateway'],
               args_:: {
-                '-grpc-backend=grpc-backend.' + metadata.namespace + ':' + metadata.backend.port,
-                '-addr=:' + metadata.gateway.port,
-              ],
+                'grpc-backend': 'grpc-backend.' + metadata.namespace + ':' + metadata.backend.port,
+                addr: ':' + metadata.gateway.port,
+              },
               readinessProbe: {
                 httpGet: {
                   path: '/healthy',
