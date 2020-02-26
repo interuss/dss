@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"cloud.google.com/go/profiler"
 	"github.com/interuss/dss/pkg/dss"
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/build"
@@ -34,6 +35,7 @@ var (
 	logFormat         = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
 	logLevel          = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
 	dumpRequests      = flag.Bool("dump_requests", false, "Log request and response protos")
+	profServiceName   = flag.String("prof_service_name", "", "Service name for the Go profiler")
 
 	cockroachParams = struct {
 		host            *string
@@ -173,6 +175,13 @@ func main() {
 		ctx    = context.Background()
 		logger = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
+	if *profServiceName != "" {
+		if err := profiler.Start(profiler.Config{
+			Service:        *profServiceName,
+			ServiceVersion: "v1"}); err != nil {
+			logger.Error("Failed to start the profiler ", zap.Error(err))
+		}
+	}
 
 	if err := RunGRPCServer(ctx, *address); err != nil {
 		logger.Panic("Failed to execute service", zap.Error(err))

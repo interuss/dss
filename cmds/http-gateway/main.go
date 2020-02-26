@@ -9,6 +9,7 @@ import (
 	"net/textproto"
 	"time"
 
+	"cloud.google.com/go/profiler"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/dssproto"
@@ -24,9 +25,10 @@ import (
 )
 
 var (
-	address       = flag.String("addr", ":8080", "Local address that the gateway binds to and listens on for incoming connections")
-	traceRequests = flag.Bool("trace-requests", false, "Logs HTTP request/response pairs to stderr if true")
-	grpcBackend   = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
+	address         = flag.String("addr", ":8080", "Local address that the gateway binds to and listens on for incoming connections")
+	traceRequests   = flag.Bool("trace-requests", false, "Logs HTTP request/response pairs to stderr if true")
+	grpcBackend     = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
+	profServiceName = flag.String("prof_service_name", "", "Service name for the Go profiler")
 )
 
 // RunHTTPProxy starts the HTTP proxy for the DSS gRPC service on ctx, listening
@@ -224,8 +226,17 @@ func main() {
 		logger = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
 
+	if *profServiceName != "" {
+		if err := profiler.Start(profiler.Config{
+			Service:        *profServiceName,
+			ServiceVersion: "v1"}); err != nil {
+			logger.Error("Failed to start the profiler ", zap.Error(err))
+		}
+	}
+
 	if err := RunHTTPProxy(ctx, *address, *grpcBackend); err != nil {
 		logger.Panic("Failed to execute service", zap.Error(err))
 	}
+
 	logger.Info("Shutting down gracefully")
 }

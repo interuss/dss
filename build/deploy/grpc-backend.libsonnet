@@ -22,7 +22,7 @@ local volumes = import 'volumes.libsonnet';
             volumes: volumes.backendVolumes,
             soloContainer:: base.Container('grpc-backend') {
               image: metadata.backend.image,
-              imagePullPolicy: 'IfNotPresent',
+              imagePullPolicy: 'Always',
               ports: [
                 {
                   containerPort: metadata.backend.port,
@@ -33,6 +33,7 @@ local volumes = import 'volumes.libsonnet';
               command: ['grpc-backend'],
               args_:: {
                 addr: ':' + metadata.backend.port,
+                prof_service_name: metadata.backend.prof_grpc_name,
                 cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
                 cockroach_port: metadata.cockroach.grpc_port,
                 cockroach_ssl_mode: 'verify-full',

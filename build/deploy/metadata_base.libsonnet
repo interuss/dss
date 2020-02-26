@@ -19,11 +19,13 @@
     port: 8080,
     ipName: error 'must supply ip name',
     image: error 'must specify image',
+    prof_http_name: '',
     hostname: error 'must specify hostname',
   },
   backend: {
     port: 8081,
     image: error 'must specify image',
+    prof_grpc_name: '',
     pubKey: 'us-demo.pem',
   },
 }
