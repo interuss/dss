@@ -35,7 +35,7 @@ var (
 	logFormat         = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
 	logLevel          = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
 	dumpRequests      = flag.Bool("dump_requests", false, "Log request and response protos")
-	profServiceName   = flag.String("prof_service_name", "", "Service name for the Go profiler")
+	profServiceName   = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
 
 	cockroachParams = struct {
 		host            *string
@@ -176,9 +176,10 @@ func main() {
 		logger = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
 	if *profServiceName != "" {
-		if err := profiler.Start(profiler.Config{
-			Service:        *profServiceName,
-			ServiceVersion: "v1"}); err != nil {
+		if err := profiler.Start(
+			profiler.Config{
+				Service:        *profServiceName,
+				ServiceVersion: "v1"}); err != nil {
 			logger.Error("Failed to start the profiler ", zap.Error(err))
 		}
 	}
