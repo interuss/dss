@@ -229,9 +229,8 @@ func main() {
 	if *profServiceName != "" {
 		if err := profiler.Start(
 			profiler.Config{
-				Service:        *profServiceName,
-				ServiceVersion: "v1"}); err != nil {
-			logger.Error("Failed to start the profiler ", zap.Error(err))
+				Service: *profServiceName}); err != nil {
+			logger.Panic("Failed to start the profiler ", zap.Error(err))
 		}
 	}
 
