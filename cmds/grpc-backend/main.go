@@ -176,9 +176,9 @@ func main() {
 		logger = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
 	if *profServiceName != "" {
-		if err := profiler.Start(
-			profiler.Config{
-				Service: *profServiceName}); err != nil {
+		err := profiler.Start(profiler.Config{
+			Service: *profServiceName})
+		if err != nil {
 			logger.Panic("Failed to start the profiler ", zap.Error(err))
 		}
 	}
