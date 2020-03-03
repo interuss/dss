@@ -31,7 +31,7 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     default_namespace: base.Namespace(metadata, metadata.namespace) {
       metadata+: {
         labels+: if metadata.enable_istio then {
-          'istio-injection': 'enabled',
+          # 'istio-injection': 'enabled',
         } else {},
       },
     },

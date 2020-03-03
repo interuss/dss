@@ -88,3 +88,4 @@ local util = import 'util.libsonnet';
   cockroachMounts: std.flattenArrays(util.mapToList(util.exclude(self.mounts, std.set(['publicCert'])))),
   backendMounts: std.flattenArrays(util.mapToList(util.exclude(self.mounts, std.set(['datadir', 'nodeCert'])))),
 }
+
