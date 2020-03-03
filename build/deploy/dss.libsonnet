@@ -53,6 +53,7 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
       definitions: istio_definitions,
       base: istio,
       rules: istio_rules.all(metadata),
+      # cert_manager: cert_manager,
     },
   },
 }

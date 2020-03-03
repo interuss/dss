@@ -90,6 +90,7 @@ local volumes = import 'volumes.libsonnet';
               join: std.join(',', ['cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local']
                              + metadata.cockroach.JoinExisting),
               logtostderr: true,
+              locality: 'zone=' + metadata.cockroach.locality,
               'locality-advertise-addr': 'zone=' + metadata.cockroach.locality + '@$(hostname -f)',
               'http-addr': '0.0.0.0',
               cache: '25%',

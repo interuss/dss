@@ -1,12 +1,25 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
+local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
+  port:: metadata.cockroach.grpc_port,
+  app:: 'cockroachdb',
+  spec+: {
+    type: 'LoadBalancer',
+    loadBalancerIP: ip,
+  },
+};
+
 {
   all(metadata): {
     CockroachInit: if metadata.cockroach.shouldInit then base.Job(metadata, 'init') {
       spec+: {
         template+: {
           spec+: {
+            volumes_: {
+              client_certs: volumes.volumes.client_certs,
+              ca_certs: volumes.volumes.ca_certs,
+            },
             serviceAccountName: 'cockroachdb',
             soloContainer:: base.Container('cluster-init') {
               image: metadata.cockroach.image,
