@@ -125,6 +125,8 @@ def main():
     node_addresses = ['localhost']
     node_addresses.extend(args.node_address)
     node_addresses.extend([
+        'cockroachdb-balanced.%s' % cr.namespace,
+        'cockroachdb-balanced.%s.svc.cluster.local' % cr.namespace,
         '*.cockroachdb',
         '*.cockroachdb.%s' % cr.namespace,
         'cockroachdb.%s' % cr.namespace,
