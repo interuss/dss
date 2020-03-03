@@ -43,35 +43,35 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
 
 
   all(metadata): {
-    # ingress: if metadata.enable_istio then {
-    #   apiVersion: 'networking.istio.io/v1alpha3',
-    #   kind: 'Gateway',
-    #   metadata: {
-    #     name: 'http-gateway',
-    #   },
-    #   spec: {
-    #     selector: {
-    #       istio: 'ingressgateway',
-    #     },
-    #     servers: [
-    #       {
-    #         port: {
-    #           number: metadata.gateway.port,
-    #           name: 'https',
-    #           protocol: 'HTTPS',
-    #         },
-    #         hosts: [
-    #           metadata.gateway.hostname,
-    #         ],
-    #         tls: {
-    #           mode: 'SIMPLE',
-    #           serverCertificate: '/etc/certs/servercert.pem',
-    #           privateKey: '/etc/certs/privatekey.pem',
-    #         },
-    #       },
-    #     ],
-    #   },
-    # } else $.ManagedCertIngress(metadata),
+    ingress: if metadata.enable_istio then {
+      apiVersion: 'networking.istio.io/v1alpha3',
+      kind: 'Gateway',
+      metadata: {
+        name: 'http-gateway',
+      },
+      spec: {
+        selector: {
+          istio: 'ingressgateway',
+        },
+        servers: [
+          {
+            port: {
+              number: metadata.gateway.port,
+              name: 'https',
+              protocol: 'HTTPS',
+            },
+            hosts: [
+              metadata.gateway.hostname,
+            ],
+            tls: {
+              mode: 'SIMPLE',
+              serverCertificate: '/etc/certs/servercert.pem',
+              privateKey: '/etc/certs/privatekey.pem',
+            },
+          },
+        ],
+      },
+    } else $.ManagedCertIngress(metadata),
 
     virtual_service: if metadata.enable_istio then {
       apiVersion: 'networking.istio.io/v1alpha3',

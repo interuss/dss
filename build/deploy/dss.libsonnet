@@ -6,8 +6,10 @@ local base = import 'base.libsonnet';
 local prometheus = import 'prometheus.libsonnet';
 local grafana = import 'grafana.libsonnet';
 local alertmanager = import 'alertmanager.libsonnet';
-local istio = import 'istio.yaml';
-
+local istio = import 'istio/base.libsonnet';
+local istio_definitions = import 'istio/custom_resources.libsonnet';
+local istio_rules = import 'istio/rules.libsonnet';
+local base = import 'base.libsonnet';
 
 local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
   roleRef: {
@@ -26,15 +28,11 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
 
 {
   all(metadata): {
-    default_namespace: {
-      apiVersion: 'v1',
-      kind: 'Namespace',
-      metadata: {
-        name: metadata.namespace,
-        clusterName: metadata.clusterName,
-        labels: {
+    default_namespace: base.Namespace(metadata, metadata.namespace) {
+      metadata+: {
+        labels+: if metadata.enable_istio then {
           'istio-injection': 'enabled',
-        },
+        } else {},
       },
     },
     cluster_metadata: base.ConfigMap(metadata, 'cluster-metadata') {
@@ -51,9 +49,10 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     prometheus: prometheus.all(metadata),
     grafana: grafana.all(metadata),
     alertmanager: if metadata.alert.enable == true then alertmanager.all(metadata),
-    istio: {
-      ["istio-obj-" + i]: istio[i],
-      for i in std.range(0, std.length(istio) - 1)
+    istio: if metadata.enable_istio then {
+      definitions: istio_definitions,
+      base: istio,
+      rules: istio_rules.all(metadata),
     },
   },
 }

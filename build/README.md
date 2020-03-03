@@ -143,6 +143,8 @@ which ever provider you choose.
 1.  Run `tk apply workspace/<CLUSTER_CONTEXT>` to apply it to the
     cluster.
 
+1.  You may have to run `tk apply ...` multiple times, as 
+
 ### Building Docker images
 
 Set the environment variable `DOCKER_URL` to your docker registry url endpoint.
@@ -179,6 +181,15 @@ following differences:
 1.  All of the original clusters must then perform a rolling restart of their
     cockroachdb pods to pick up the new certificates.
     `kubectl rollout restart statefulset/cockroachdb --namespace <NAMESPACE>`
+
+## Enabling Istio
+
+Istio provides better observability by using a sidecar proxy on every binary
+that exports some default metrics, as well as enabling Istio tracing. Istio
+also provides mTLS between all binaries. Enabling Istio is completely optional.
+To enable Istio, simply change the `enable_istio` field in your metadata tuple
+to `true`.
+
 
 ## Using the CockroachDB web UI
 

@@ -1,7 +1,7 @@
 {
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
-  enable_istio: true,
+  enable_istio: false,
   release: 'config',
   cockroach: {
     locality: error 'must supply crdb locality',
