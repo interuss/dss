@@ -12,14 +12,26 @@ local volumes = import 'volumes.libsonnet';
               image: metadata.cockroach.image,
               command: ['/cockroach/cockroach', 'init'],
               args_:: {
-                insecure: true,
+                'certs-dir': '/cockroach/cockroach-certs',
                 host: 'cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local:' + metadata.cockroach.grpc_port,
               },
+              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
             },
           },
         },
       },
     } else null,
+
+    NodeGateways: {
+      ["gateway-" + i]: cockroachLB(metadata, 'cockroach-db-external-node-' + i, metadata.cockroach.nodeIPs[i]) {
+        spec+: {
+          selector: {
+            'statefulset.kubernetes.io/pod-name': 'cockroachdb-' + i,
+          },
+        },
+      }
+      for i in std.range(0, std.length(metadata.cockroach.nodeIPs) - 1)
+    },
 
     svcAccount: base.ServiceAccount(metadata, 'cockroachdb') {
       metadata+: {

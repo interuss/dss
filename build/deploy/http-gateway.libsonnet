@@ -86,27 +86,6 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
         gateways: [
           'ingressgateway',
         ],
-        tls: [
-          {
-            match: [
-              {
-                sniHosts: [
-                  'spiffe-big-1.interussplatform.dev',
-                ],
-              },
-            ],
-            route: [
-              {
-                destination: {
-                  port: {
-                    number: metadata.gateway.port,
-                  },
-                  host: 'http-gateway',
-                },
-              },
-            ],
-          },
-        ],
       },
     },
     service: base.Service(metadata, 'http-gateway') {
