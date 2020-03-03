@@ -46,19 +46,23 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress-istio-test') {
     ingress: if metadata.enable_istio then {
       managed_ingress: $.ManagedCertIngress(metadata) {
         ingress+: {
+          metadata+: {
+            namespace: 'istio-system',
+          },
           spec+: {
             backend: {
               serviceName: 'istio-ingressgateway',
               servicePort: 80,
             },
           },
-          },
+        },
       },
-      ingress: {
+      gateway: {
         apiVersion: 'networking.istio.io/v1alpha3',
         kind: 'Gateway',
         metadata: {
           name: 'http-gateway',
+          namespace: 'istio-system',
         },
         spec: {
           selector: {
@@ -68,15 +72,12 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress-istio-test') {
             {
               port: {
                 number: metadata.gateway.port,
-                name: 'https',
-                protocol: 'HTTPS',
+                name: 'http',
+                protocol: 'HTTP',
               },
               hosts: [
                 metadata.gateway.hostname,
               ],
-              tls: {
-                mode: 'ISTIO_MUTUAL',
-              },
             },
           ],
         },
@@ -86,13 +87,14 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress-istio-test') {
         kind: 'VirtualService',
         metadata: {
           name: 'http-gateway',
+          namespace: metadata.namespace,
         },
         spec: {
           hosts: [
             metadata.gateway.hostname,
           ],
           gateways: [
-            'ingressgateway',
+            'istio-system/http-gateway',
           ],
           http: [
             {
@@ -108,6 +110,9 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress-istio-test') {
                 {
                   destination: {
                     host: 'http-gateway',
+                    port: {
+                      number: metadata.gateway.port,
+                    }
                   },
                 },
               ],
