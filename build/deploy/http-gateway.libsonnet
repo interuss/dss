@@ -1,6 +1,6 @@
 local base = import 'base.libsonnet';
 
-local ingress(metadata) = base.Ingress(metadata, 'https-ingress-istio-test') {
+local ingress(metadata) = base.Ingress(metadata, 'gateway-ingress-istio-test') {
   metadata+: {
     annotations: {
       'kubernetes.io/ingress.global-static-ip-name': metadata.gateway.ipName,
@@ -20,11 +20,11 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress-istio-test') {
     ingress: ingress(metadata) {
       metadata+: {
         annotations+: {
-          'networking.gke.io/managed-certificates': 'https-certificate',
+          'networking.gke.io/managed-certificates': 'istio-working-certificate',
         },
       },
     },
-    managedCert: base.ManagedCert(metadata, 'https-certificate') {
+    managedCert: base.ManagedCert(metadata, 'istio-working-certificate') {
       spec: {
         domains: [
           metadata.gateway.hostname,
@@ -43,84 +43,7 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress-istio-test') {
 
 
   all(metadata): {
-    ingress: if metadata.enable_istio then {
-      managed_ingress: $.ManagedCertIngress(metadata) {
-        ingress+: {
-          metadata+: {
-            namespace: 'istio-system',
-          },
-          spec+: {
-            backend: {
-              serviceName: 'istio-ingressgateway',
-              servicePort: 80,
-            },
-          },
-        },
-      },
-      gateway: {
-        apiVersion: 'networking.istio.io/v1alpha3',
-        kind: 'Gateway',
-        metadata: {
-          name: 'http-gateway',
-          namespace: 'istio-system',
-        },
-        spec: {
-          selector: {
-            istio: 'ingressgateway',
-          },
-          servers: [
-            {
-              port: {
-                number: metadata.gateway.port,
-                name: 'http',
-                protocol: 'HTTP',
-              },
-              hosts: [
-                metadata.gateway.hostname,
-              ],
-            },
-          ],
-        },
-      },
-      virtual_service: {
-        apiVersion: 'networking.istio.io/v1alpha3',
-        kind: 'VirtualService',
-        metadata: {
-          name: 'http-gateway',
-          namespace: metadata.namespace,
-        },
-        spec: {
-          hosts: [
-            metadata.gateway.hostname,
-          ],
-          gateways: [
-            'istio-system/http-gateway',
-          ],
-          http: [
-            {
-              name: 'http-gateway-routes',
-              match: [
-                {
-                  uri: {
-                    prefix: "/",
-                  },
-                },
-              ],
-              route: [
-                {
-                  destination: {
-                    host: 'http-gateway',
-                    port: {
-                      number: metadata.gateway.port,
-                    }
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      },
-    } else $.ManagedCertIngress(metadata),
+    ingress: $.ManagedCertIngress(metadata),
     service: base.Service(metadata, 'http-gateway') {
       app:: 'http-gateway',
       port:: metadata.gateway.port,
