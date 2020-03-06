@@ -26,4 +26,13 @@
     image: error 'must specify image',
     pubKey: 'us-demo.pem',
   },
+  alert: {
+    enable: false,
+    smtp: {
+      host: error 'must specify smtp hostname',
+      email: error 'must specify source email',
+      password: error 'must specify source email password',
+      dest: error 'must specify destination email',
+    },
+  },
 }
