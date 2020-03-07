@@ -128,6 +128,23 @@ local base = import 'base.libsonnet';
                     mountPath: '/data/prometheus/',
                   },
                 ],
+                livenessProbe: {
+                  httpGet: {
+                    path: '/-/healthy',
+                    port: 9090
+                  },
+                  initialDelaySeconds: 50,
+                  periodSeconds: 5,
+                },
+                readinessProbe: {
+                  httpGet: {
+                    path: '/-/ready',
+                    port: 9090
+                  },
+                  initialDelaySeconds: 30,
+                  periodSeconds: 5,
+                  failureThreshold: 5,
+                },
               },
             ],
           },
