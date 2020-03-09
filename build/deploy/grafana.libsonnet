@@ -7,6 +7,11 @@ local base = import 'base.libsonnet';
         'prometheus.yaml': '{\n    "apiVersion": 1,\n    "datasources": [\n        {\n           "access":"proxy",\n            "editable": true,\n            "name": "prometheus",\n            "orgId": 1,\n            "type": "prometheus",\n            "url": "http://prometheus-service.' + metadata.namespace + '.svc:8080",\n            "version": 1\n        }\n    ]\n}',
       },
     },
+    configMap2: base.ConfigMap(metadata, 'grafana-dash-provisioning') {
+      data: {
+        'dashboards.yaml': "apiVersion: 1\n\nproviders:\n - name: 'default'\n   orgId: 1\n   folder: ''\n   folderUid: ''\n   type: file\n   options:\n     path: /var/lib/grafana/dashboards\n",
+      },
+    },
     deployment: base.Deployment(metadata, 'grafana') {
       spec: {
         replicas: 1,
@@ -53,6 +58,16 @@ local base = import 'base.libsonnet';
                     name: 'grafana-datasources',
                     readOnly: false,
                   },
+                  {
+                    mountPath: '/etc/grafana/provisioning/dashboards',
+                    name: 'grafana-dash-provisioning',
+                    readOnly: false,
+                  },
+                  {
+                    mountPath: '/var/lib/grafana/dashboards',
+                    name: 'grafana-dashboards-json',
+                    readOnly: false,
+                  },
                 ],
               },
             ],
@@ -66,6 +81,20 @@ local base = import 'base.libsonnet';
                 configMap: {
                   defaultMode: 420,
                   name: 'grafana-datasources',
+                },
+              },
+              {
+                name: 'grafana-dash-provisioning',
+                configMap: {
+                  defaultMode: 420,
+                  name: 'grafana-dash-provisioning',
+                },
+              },
+              {
+                name: 'grafana-dashboards-json',
+                configMap: {
+                  defaultMode: 420,
+                  name: 'grafana.dashboards',
                 },
               },
             ],
