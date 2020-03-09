@@ -5,6 +5,7 @@ local gateway = import 'http-gateway.libsonnet';
 local base = import 'base.libsonnet';
 local prometheus = import 'prometheus.libsonnet';
 local grafana = import 'grafana.libsonnet';
+local alertmanager = import 'alertmanager.libsonnet';
 
 
 local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
@@ -38,6 +39,7 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     gateway: gateway.all(metadata),
     backend: backend.all(metadata),
     prometheus: prometheus.all(metadata),
-    grafana: grafana.all(metadata)
+    grafana: grafana.all(metadata),
+    alertmanager: if metadata.alert.enable == true then alertmanager.all(metadata),
   },
 }
