@@ -124,7 +124,7 @@ which ever provider you choose.
 1.  Copy `cp -r deploy/examples/minimum` to
     `workspace/<CLUSTER_CONTEXT>` and fill in with your fields.
 
-1.  You can find the APIServer for spec.json by running: 
+1.  You can find the APIServer for spec.json by running:
 
     `kubectl config view -o jsonpath="{.clusters[?(@.name==\"<CLUSTER_CONTEXT>\")].cluster.server}"`
 
@@ -136,6 +136,9 @@ which ever provider you choose.
 
 1.  Follow the steps below before running the final command if you are joining
     existing clusters.
+
+1. To start the profiling service for the grpc-backend and/or http-gateway then enter the service
+   name for the profiler at `metadata_base.libsonnet`. The name should be based on your cloud provider acceptable values. For Google cloud the name should meet the regex `^[a-z]([-a-z0-9_.]{0,253}[a-z0-9])?$`
 
 1.  Run `tk apply workspace/<CLUSTER_CONTEXT>` to apply it to the
     cluster.
