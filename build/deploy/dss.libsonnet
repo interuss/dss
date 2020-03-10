@@ -27,7 +27,9 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
 };
 
 {
-  all(metadata): {
+  all(metadata): if metadata.enable_istio && !metadata.applied_istio_definitions
+  then istio_definitions
+  else {
     default_namespace: base.Namespace(metadata, metadata.namespace) {
       metadata+: {
         labels+: if metadata.enable_istio then {
@@ -40,7 +42,7 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
         clusterName: metadata.clusterName,
       },
     },
-    pspRB: if metadata.PSP.roleBinding then RoleBinding(metadata) else null,
+    pspRB: if metadata.PSP.roleBinding then RoleBinding(metadata),
 
     sset: cockroachdb.StatefulSet(metadata),
     auxilliary: cockroachAuxilliary.all(metadata),

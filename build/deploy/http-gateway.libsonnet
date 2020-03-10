@@ -1,6 +1,6 @@
 local base = import 'base.libsonnet';
 
-local ingress(metadata) = base.Ingress(metadata, 'gateway-ingress-istio-test') {
+local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
   metadata+: {
     annotations: {
       'kubernetes.io/ingress.global-static-ip-name': metadata.gateway.ipName,
@@ -20,11 +20,11 @@ local ingress(metadata) = base.Ingress(metadata, 'gateway-ingress-istio-test') {
     ingress: ingress(metadata) {
       metadata+: {
         annotations+: {
-          'networking.gke.io/managed-certificates': 'istio-working-certificate',
+          'networking.gke.io/managed-certificates': 'https-certificate',
         },
       },
     },
-    managedCert: base.ManagedCert(metadata, 'istio-working-certificate') {
+    managedCert: base.ManagedCert(metadata, 'https-certificate') {
       spec: {
         domains: [
           metadata.gateway.hostname,
