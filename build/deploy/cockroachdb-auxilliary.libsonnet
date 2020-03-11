@@ -26,7 +26,7 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
               command: ['/cockroach/cockroach', 'init'],
               args_:: {
                 'certs-dir': '/cockroach/cockroach-certs',
-                host: 'cockroachdb-0.cockroachdb.' + metadata.namespace + '.svc.cluster.local:' + metadata.cockroach.grpc_port,
+                host: 'cockroachdb-0.cockroachdb.' + metadata.namespace,
               },
               volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
             },
@@ -140,12 +140,12 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
           {
             port: metadata.cockroach.grpc_port,
             targetPort: metadata.cockroach.grpc_port,
-            name: 'cockroach',
+            name: 'tcp-crdbheadless1',
           },
           {
             port: metadata.cockroach.http_port,
             targetPort: metadata.cockroach.http_port,
-            name: 'http',
+            name: 'crdbheadless2',
           },
         ],
         publishNotReadyAddresses: true,
@@ -164,12 +164,12 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
           {
             port: metadata.cockroach.grpc_port,
             targetPort: metadata.cockroach.grpc_port,
-            name: 'cockroach',
+            name: 'tcp-crdbpublic1',
           },
           {
             port: metadata.cockroach.http_port,
             targetPort: metadata.cockroach.http_port,
-            name: 'http',
+            name: 'crdbpublic2',
           },
         ],
         sessionAffinity: 'ClientIP',
