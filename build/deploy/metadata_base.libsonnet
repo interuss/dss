@@ -1,6 +1,9 @@
 {
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
+  enable_istio: false,
+  applied_istio_definitions: false,
+  release: 'config',
   cockroach: {
     locality: error 'must supply crdb locality',
     hostnameSuffix: error 'must supply a hostnameSuffix, or override in statefulset',
@@ -27,5 +30,14 @@
     image: error 'must specify image',
     prof_grpc_name: '',
     pubKey: 'us-demo.pem',
+  },
+  alert: {
+    enable: false,
+    smtp: {
+      host: error 'must specify smtp hostname',
+      email: error 'must specify source email',
+      password: error 'must specify source email password',
+      dest: error 'must specify destination email',
+    },
   },
 }

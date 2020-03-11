@@ -44,7 +44,6 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
 
   all(metadata): {
     ingress: $.ManagedCertIngress(metadata),
-
     service: base.Service(metadata, 'http-gateway') {
       app:: 'http-gateway',
       port:: metadata.gateway.port,
