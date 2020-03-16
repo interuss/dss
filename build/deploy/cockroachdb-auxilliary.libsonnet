@@ -37,6 +37,11 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
 
     NodeGateways: {
       ["gateway-" + i]: cockroachLB(metadata, 'cockroach-db-external-node-' + i, metadata.cockroach.nodeIPs[i]) {
+        metadata+: {
+          annotations+: {
+            'service.alpha.kubernetes.io/tolerate-unready-endpoints': 'true',
+          },
+        },
         spec+: {
           selector: {
             'statefulset.kubernetes.io/pod-name': 'cockroachdb-' + i,
