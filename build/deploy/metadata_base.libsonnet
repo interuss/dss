@@ -4,6 +4,9 @@
   enable_istio: false,
   applied_istio_definitions: false,
   release: 'config',
+  // Set this field if you don't intend to ever join this instance with others.
+  // This disables inter cluster crdb<->crdb access when set to true.
+  single_cluster: false,
   cockroach: {
     locality: error 'must supply crdb locality',
     hostnameSuffix: error 'must supply a hostnameSuffix, or override in statefulset',
