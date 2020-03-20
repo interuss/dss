@@ -70,7 +70,7 @@ enum VerticalAccuracy {
 // Parameters for a request to create an Identification Service Area in the DSS.
 message CreateIdentificationServiceAreaParameters {
   // The bounding spacetime extents of this Identification Service Area.  End time must be specified.  If start time is not specified, it will be set to the current time.  Start times in the past should be rejected by the DSS, except that it may adjust very recent start times to the current time.
-  // 
+  //
   // These extents should not reveal any sensitive information about the flight or flights within them.  This means, for instance, that extents should not tightly-wrap a flight path, nor should they generally be centered around the takeoff point of a single flight.
   Volume4D extents = 1;
   string flights_url = 2;
@@ -89,9 +89,9 @@ message CreateSubscriptionParameters {
   SubscriptionCallbacks callbacks = 1;
 
   // The spacetime extents of the volume to subscribe to.
-  // 
+  //
   // This subscription will automatically be deleted after its end time if it has not been refreshed by then.  If end time is not specified, the value will be chosen automatically by the DSS.
-  // 
+  //
   // Note that some Entities triggering notifications may lie entirely outside the requested area.
   Volume4D extents = 2;
 }
@@ -212,12 +212,12 @@ message LatLngPoint {
 // Parameters of a message informing of new full information for an Identification Service Area.  Pushed (by a client, not the DSS) directly to clients with subscriptions when another client makes a change to airspace within a cell with a subscription.
 message PutIdentificationServiceAreaNotificationParameters {
   // The new or updated extents of the Identification Service Area.
-  // 
+  //
   // Omitted if Identification Service Area was deleted.
   Volume4D extents = 1;
 
   // Identification Service Area that the notifying client changed or created.
-  // 
+  //
   // If this field is populated, the Identification Service Area was created or updated.  If this field is not populated, the Identification Service Area was deleted.
   IdentificationServiceArea service_area = 2;
 
@@ -320,15 +320,15 @@ message RIDFlight {
   RIDAircraftType aircraft_type = 1;
 
   // The most up-to-date state of the aircraft.  Required when the aircraft is currently in the requested area unless `volumes` is specified.
-  // 
+  //
   // If current data is not being received from the UAS by the Service Provider, the lack of change in this field is sufficient to indicate that current data is not being received.
   RIDAircraftState current_state = 2;
   string id = 3;
 
   // A short collection of recent aircraft movement, specified only when `include_recent_positions` is true.  If `volumes` is not specified and `include_recent_positions` is true, then this field is required.
-  // 
+  //
   // Recent positions provided in this field must conform to requirements in the standard which generally prohibit including positions outside the requested area except transitionally when the aircraft enters or exits the requested area, and which prohibit including positions that not sufficiently recent.
-  // 
+  //
   // Note that a UI should not draw a connective line between two consecutive position reports that both lie outside the requested area.
   repeated RIDRecentAircraftPosition recent_positions = 4;
 
@@ -349,7 +349,7 @@ message RIDFlightDetails {
   // Free-text field that enables the operator to describe the purpose of a flight, if so desired.
   string operation_description = 3;
 
-  // CAA-issued registration/license ID for the remote pilot or operator. 
+  // CAA-issued registration/license ID for the remote pilot or operator.
   string operator_id = 4;
 
   // Location of party controlling the aircraft.
@@ -454,7 +454,7 @@ message SubscriptionState {
 // Parameters for a request to update an Identification Service Area in the DSS.
 message UpdateIdentificationServiceAreaParameters {
   // The bounding spacetime extents of this Identification Service Area.  End time must be specified.  If start time is not specified, it will remain unchanged.  Start times in the past should be rejected by the DSS unless they are unchanged from the Identification Service Area's current start time.
-  // 
+  //
   // These extents should not reveal any sensitive information about the flight or flights within them.  This means, for instance, that extents should not tightly-wrap a flight path, nor should they generally be centered around the takeoff point of a single flight.
   Volume4D extents = 1;
   string flights_url = 2;
@@ -476,9 +476,9 @@ message UpdateSubscriptionParameters {
   SubscriptionCallbacks callbacks = 1;
 
   // The spacetime extents of the volume to subscribe to.
-  // 
+  //
   // This subscription will automatically be deleted after its end time if it has not been refreshed by then.  If end time is not specified, the value will be chosen automatically by the DSS.
-  // 
+  //
   // Note that some Entities triggering notifications may lie entirely outside the requested area.
   Volume4D extents = 2;
 }
@@ -518,11 +518,173 @@ message Volume4D {
   google.protobuf.Timestamp time_start = 3;
 }
 
+// An OperationalIntentReference (area in which an Operation is being conducted, along with other high-level information, but no details).  The DSS reports only these references and clients must exchange details and additional information peer-to-peer.
+message OperationalIntentReference {
+  string details_url = 1;
+
+  // If specified as true by the DSS, this OperationalIntent has been disabled and will not be permitted to transition to Activated.  This means aircraft for this OperationalIntent will not be permitted to fly pursuant to this OperationalIntent, so this OperationalIntent may be ignored when planning and its OVN does not need to be provided to prove relevant airspace knowledge.
+  bool disabled = 2;
+  string error_reports_url = 3;
+
+  // Unique identifier for this OperationalIntentReference.
+  string id = 4;
+
+  // Opaque version number of this OperationalIntentReference, used for updating or deleting the OperationalIntentReference.  Only populated by the DSS for OperationalIntentReferences owned by the requesting client.  Must be populated by a USS when notifying a subscriber of an altered OperationalIntent or providing full OperationalIntent information.
+  EntityOVN ovn = 5;
+
+  // Assigned by the DSS based on creating client’s ID (via access token).  Used for restricting mutation and deletion operations to owner.
+  string owner = 6;
+  int32 priority = 7;
+
+  // End time of Operation.  RFC 3339 format, per OpenAPI specification.
+  string time_end = 8;
+
+  // Beginning time of Operation.  RFC 3339 format, per OpenAPI specification.
+  string time_start = 9;
+
+  // If specified as true by the DSS, the details for this OperationalIntent may not be accessible.  The OVN for this OperationalIntentReference may be omitted when deconflicting an OperationalIntent, at which point this OperationalIntent will be disabled.
+  bool uss_may_be_down = 10;
+}
+
+// A shortcut (optimization) data structure that may be provided instead of a large set of individually-listed EntityOVNs.
+message DeconflictionKeyHash {
+  // Hash of an ordered list of other clients’ EntityUUIDs in the airspace (obtained from DSS via GET /v1/dss/<entity type>s) excluding the EntityUUIDs explicitly specified in DeconflictionKey's `ovns` property.
+  string entity_ids = 1;
+
+  // Hash of an ordered list of EntityOVNs that correspond with the list of EntityUUIDs used to generate the `entity_ids` property value.
+  string entity_ovns = 2;
+}
+
+// A token associated with a particular UTM Entity+version created by the DSS upon creation or modification of an Entity reference and provided to the client creating or modifying the Entity reference.  The EntityOVN is stored privately by the DSS and then compared against entries in a Key provided to mutate the airspace.  The EntityOVN is also provided by the client whenever that client transmits the full information of the Entity (either via GET, or via a subscription notification).
+message EntityOVN {
+  // Unique value associated with a specific version of a specific Entity.  Token value may not be reused for any other Entity versions; it must change each time the Entity changes.
+  string token = 1;
+
+  // This version increases each time an Entity is modified.  If a client ever receives a subscription update with an EntityOVN for a particular EntityUUID that is smaller than the cached EntityOVN for that EntityUUID, that subscription update should be ignored.
+  int32 version = 2;
+}
+
+
+// Mapping between an EntityUUID and an EntityOVN.
+message OVNEntry {
+  string id = 1;
+  EntityOVN sig = 2;
+}
+
+
+// Proof that a client has obtained the latest airspace content, used to ensure that write operations to the DSS occur only when the latest content is known (i.e. has been read). The client is required to pass a current DeconflictionKey constructed from information obtained with previous read operations and subsequent requests for full information, and optionally, subscription updates for deconflicted write operations to the DSS.  The contents of this data structure are generated by the client.
+message DeconflictionKey {
+  // Optional (optimization).  May be provided for a set of Entities so that each of the included EntityOVNs does not need to be included in the `ovns` property.
+  DeconflictionKeyHash hashes = 1;
+
+  // For each of a subset of Entities declared by the DSS in the area of interest, the OVN of the current version of the full information of that Entity.  This EntityOVN is provided by the client who defined the Entity, accompanying the full Entity definition data when that data is received.
+  OVNEntry ovns = 2;
+
+  // If the client obtained the information in this DeconflictionKey via a subscription, this field is set to the ID of that subscription so the usage of subscriptions can be tracked and unused subscriptions can be removed.
+  string subscription = 3;
+}
+
+// Parameters for a request to create an OperationalIntentReference in the DSS.
+message CreateOperationalIntentReferenceParameters {
+  string details_url = 1;
+  string error_reports_url = 2;
+
+  // The bounding spacetime extents of this OperationalIntentReference.  End time must be specified.  If start time is not specified, it will be set to the current time.  Start times in the past should be rejected by the DSS, except that it may adjust very recent start times to the current time.
+  Volume4D extents = 3;
+
+  // Proof that the client is aware of all relevant Entities with the requirement that the client has deconflicted with all these Entities.  Relevant Entities for OperationalIntents consist of all Constraints, and OperationalIntents with equal or higher priority.
+  DeconflictionKey key = 4;
+  int32 priority = 5;
+}
+
+// Parameters for a request to update an OperationalIntentReference in the DSS.
+message UpdateOperationalIntentReferenceParameters {
+  string details_url = 1;
+  string error_reports_url = 2;
+
+  // The bounding spacetime extents of this OperationalIntentReference.  End time must be specified.  If start time is not specified, it will be set to the current time.  Start times in the past should be rejected by the DSS, except that it may adjust very recent start times to the current time.
+  Volume4D extents = 3;
+
+  // Proof that the client is aware of all relevant Entities with the requirement that the client has deconflicted with all these Entities.  Relevant Entities for OperationalIntents consist of all Constraints, and OperationalIntents with equal or higher priority.
+  DeconflictionKey key = 4;
+  int32 priority = 5;
+}
+
+message CreateOperationalIntentReferenceRequest {
+  message IdMessage {}
+
+  CreateOperationalIntentReferenceParameters body = 1;
+
+  // EntityUUID of the OperationalIntentReference.
+  IdMessage id = 2;
+}
+
+message DeleteOperationalIntentReferenceRequest {
+  message IdMessage {}
+
+  // EntityUUID of the OperationalIntentReference.
+  IdMessage id = 1;
+
+  // Version string used to reference an OperationalIntentReference at a particular point in time.  Matches the `token` field in the OVN of the OperationalIntentReference.  Any updates to an existing OperationalIntentReference must contain the corresponding version to maintain idempotent updates.
+  string version = 2;
+}
+
+message GetOperationalIntentReferenceRequest {
+  message IdMessage {}
+
+  // EntityUUID of the OperationalIntentReference.
+  IdMessage id = 1;
+}
+
+message SearchOperationalIntentReferencesRequest {
+  // The area in which to search for OperationalIntentReferences.  References for some OperationalIntents near this area but wholly outside it may also be returned.
+  string area = 1;
+
+  // If specified, indicates non-interest in any OperationalIntents that end before this time.  RFC 3339 format, per OpenAPI specification.
+  string earliest_time = 2;
+
+  // If specified, indicates non-interest in any OperationalIntents that start after this time.  RFC 3339 format, per OpenAPI specification.
+  string latest_time = 3;
+}
+
+message UpdateOperationalIntentReferenceRequest {
+  message IdMessage {}
+
+  UpdateOperationalIntentReferenceParameters body = 1;
+
+  // EntityUUID of the OperationalIntentReference.
+  IdMessage id = 2;
+
+  // Version string used to reference an OperationalIntentReference at a particular point in time.  Matches the `token` field in the OVN of the OperationalIntentReference.  Any updates to an existing OperationalIntentReference must contain the corresponding version to maintain idempotent updates.
+  string version = 3;
+}
+
+// Response to DSS request for the OperationalIntentReference with the given ID.
+message GetOperationalIntentReferenceResponse {
+  OperationalIntentReference operational_intent_reference = 1;
+}
+
+// Response to DSS query for OperationalIntentReferences in an area of interest.
+message SearchOperationalIntentReferencesResponse {
+  // OperationalIntentReferences in the area of interest.
+  repeated OperationalIntentReference operational_intent_references = 1;
+}
+
+// Response to a request to create, update, or delete an OperationalIntentReference in the DSS.
+message ChangeOperationalIntentReferenceResponse {
+  // Resulting OperationalIntentReference stored in DSS.  Omitted if and only if OperationalIntentReference was deleted.
+  OperationalIntentReference operational_intent_reference = 1;
+
+  // DSS subscribers that this client now has the obligation to notify of the Operation changes just made.  This client must call POST for each provided URL according to the `/uss/ops/{id}` path API.
+  repeated SubscriberToNotify subscribers = 2;
+}
+
+
 service DiscoveryAndSynchronizationService {
   // /dss/identification_service_areas/{id}
-  // 
+  //
   // Create a new Identification Service Area.  This call will fail if an Identification Service Area with the same ID already exists.
-  // 
+  //
   // The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.
   rpc CreateIdentificationServiceArea(CreateIdentificationServiceAreaRequest) returns (PutIdentificationServiceAreaResponse) {
     option (google.api.http) = {
@@ -532,9 +694,9 @@ service DiscoveryAndSynchronizationService {
   }
 
   // /dss/subscriptions/{id}
-  // 
+  //
   // Create a subscription.  This call will fail if a Subscription with the same ID already exists.
-  // 
+  //
   // Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
   rpc CreateSubscription(CreateSubscriptionRequest) returns (PutSubscriptionResponse) {
     option (google.api.http) = {
@@ -544,7 +706,7 @@ service DiscoveryAndSynchronizationService {
   }
 
   // /dss/identification_service_areas/{id}/{version}
-  // 
+  //
   // Delete an Identification Service Area.  USSs should not delete Identification Service Areas before the end of the last managed flight plus the retention period.
   rpc DeleteIdentificationServiceArea(DeleteIdentificationServiceAreaRequest) returns (DeleteIdentificationServiceAreaResponse) {
     option (google.api.http) = {
@@ -553,7 +715,7 @@ service DiscoveryAndSynchronizationService {
   }
 
   // /dss/subscriptions/{id}/{version}
-  // 
+  //
   // Delete a subscription.
   rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse) {
     option (google.api.http) = {
@@ -562,7 +724,7 @@ service DiscoveryAndSynchronizationService {
   }
 
   // /dss/identification_service_areas/{id}
-  // 
+  //
   // Retrieve full information of an Identification Service Area owned by the client.
   rpc GetIdentificationServiceArea(GetIdentificationServiceAreaRequest) returns (GetIdentificationServiceAreaResponse) {
     option (google.api.http) = {
@@ -571,7 +733,7 @@ service DiscoveryAndSynchronizationService {
   }
 
   // /dss/subscriptions/{id}
-  // 
+  //
   // Verify the existence/valdity and state of a particular subscription.
   rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
     option (google.api.http) = {
@@ -580,7 +742,7 @@ service DiscoveryAndSynchronizationService {
   }
 
   // /dss/identification_service_areas
-  // 
+  //
   // Retrieve all Identification Service Areas in the DAR for a given area during the given time.  Note that some Identification Service Areas returned may lie entirely outside the requested area.
   rpc SearchIdentificationServiceAreas(SearchIdentificationServiceAreasRequest) returns (SearchIdentificationServiceAreasResponse) {
     option (google.api.http) = {
@@ -589,9 +751,9 @@ service DiscoveryAndSynchronizationService {
   }
 
   // /dss/subscriptions
-  // 
+  //
   // Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-  // 
+  //
   // Only Subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of Subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing Subscriptions in an area.
   rpc SearchSubscriptions(SearchSubscriptionsRequest) returns (SearchSubscriptionsResponse) {
     option (google.api.http) = {
@@ -600,9 +762,9 @@ service DiscoveryAndSynchronizationService {
   }
 
   // /dss/identification_service_areas/{id}/{version}
-  // 
+  //
   // Update an Identification Service Area.  The full content of the existing Identification Service Area will be replaced with the provided information as only the most recent version is retained.
-  // 
+  //
   // The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
   rpc UpdateIdentificationServiceArea(UpdateIdentificationServiceAreaRequest) returns (PutIdentificationServiceAreaResponse) {
     option (google.api.http) = {
@@ -612,9 +774,9 @@ service DiscoveryAndSynchronizationService {
   }
 
   // /dss/subscriptions/{id}/{version}
-  // 
+  //
   // Update a Subscription.  The full content of the existing Subscription will be replaced with the provided information as only the most recent version is retained.
-  // 
+  //
   // Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
   rpc UpdateSubscription(UpdateSubscriptionRequest) returns (PutSubscriptionResponse) {
     option (google.api.http) = {
@@ -622,4 +784,29 @@ service DiscoveryAndSynchronizationService {
       body: "params"
     };
   }
+
+  // /dss/op_refs/{id}
+  //
+  // Create a new OperationalIntentReference.  This call will fail if an OperationalIntentReference with the same ID already exists.
+  rpc CreateOperationalIntentReference(CreateOperationalIntentReferenceRequest) returns (ChangeOperationalIntentReferenceResponse) {}
+
+  // /dss/op_refs/{id}/{version}
+  //
+  // Delete an OperationalIntentReference.
+  rpc DeleteOperationalIntentReference(DeleteOperationalIntentReferenceRequest) returns (ChangeOperationalIntentReferenceResponse) {}
+
+  // /dss/op_refs/{id}
+  //
+  // Retrieve OperationalIntentReference information from the DSS.
+  rpc GetOperationalIntentReference(GetOperationalIntentReferenceRequest) returns (GetOperationalIntentReferenceResponse) {}
+
+  // /dss/op_refs
+  //
+  // Retrieve all OperationalIntentReferences in the DAR for a given area during the given time.  Note that references to some OperationalIntents lying entirely outside the requested area may be returned as well.
+  rpc SearchOperationalIntentReferences(SearchOperationalIntentReferencesRequest) returns (SearchOperationalIntentReferencesResponse) {}
+
+  // /dss/op_refs/{id}/{version}
+  //
+  // Update an OperationalIntentReference.  The full content of the existing OperationalIntentReference will be replaced with the provided information as only the most recent version is retained.
+  rpc UpdateOperationalIntentReference(UpdateOperationalIntentReferenceRequest) returns (ChangeOperationalIntentReferenceResponse) {}
 }
