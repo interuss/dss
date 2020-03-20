@@ -1,6 +1,38 @@
 local base = import 'base.libsonnet'; 
 
+local ingress(metadata) = base.Ingress(metadata, 'prom-ingress') {
+  metadata+: {
+    annotations: {
+      'kubernetes.io/ingress.global-static-ip-name': metadata.prometheus.ipName,
+      'kubernetes.io/ingress.allow-http': 'false',
+    },
+  },
+  spec: {
+    backend: {
+      serviceName: 'prometheus-service',
+      servicePort: 8080,
+    },
+  },
+};
+
 {
+  ManagedCertIngress(metadata): {
+    ingress: ingress(metadata) {
+      metadata+: {
+        annotations+: {
+          'networking.gke.io/managed-certificates': 'prom-https-certificate',
+        },
+      },
+    },
+    managedCert: base.ManagedCert(metadata, 'prom-https-certificate') {
+      spec: {
+        domains: [
+          metadata.prometheus.hostname,
+        ],
+      },
+    },
+  },
+
   all(metadata) : {
     clusterRole: base.ClusterRole(metadata, 'prometheus') {
       rules: [
@@ -169,6 +201,7 @@ local base = import 'base.libsonnet';
         ],
       },
     },
+    ingress: if metadata.prometheus.external == true then $.ManagedCertIngress(metadata),
     service: base.Service(metadata, 'prometheus-service') {
       app:: 'prometheus-server',
       port:: 9090,

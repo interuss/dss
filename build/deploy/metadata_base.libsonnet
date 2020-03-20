@@ -43,4 +43,9 @@
       dest: error 'must specify destination email',
     },
   },
+  prometheus: {
+    external: false,
+    ipName: error 'must supply ip name',
+    hostname: error 'must specify hostname',
+  },
 }
