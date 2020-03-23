@@ -788,25 +788,47 @@ service DiscoveryAndSynchronizationService {
   // /dss/op_refs/{id}
   //
   // Create a new OperationalIntentReference.  This call will fail if an OperationalIntentReference with the same ID already exists.
-  rpc CreateOperationalIntentReference(CreateOperationalIntentReferenceRequest) returns (ChangeOperationalIntentReferenceResponse) {}
+  rpc CreateOperationalIntentReference(CreateOperationalIntentReferenceRequest) returns (ChangeOperationalIntentReferenceResponse) {
+    option (google.api.http) = {
+      put: "/v1/dss/op_refs/{id}"
+      body: "body"
+    };
+  }
 
   // /dss/op_refs/{id}/{version}
   //
   // Delete an OperationalIntentReference.
-  rpc DeleteOperationalIntentReference(DeleteOperationalIntentReferenceRequest) returns (ChangeOperationalIntentReferenceResponse) {}
+  rpc DeleteOperationalIntentReference(DeleteOperationalIntentReferenceRequest) returns (ChangeOperationalIntentReferenceResponse) {
+    option (google.api.http) = {
+      delete: "/v1/dss/op_refs/{id}/{version}"
+    };
+  }
 
   // /dss/op_refs/{id}
   //
   // Retrieve OperationalIntentReference information from the DSS.
-  rpc GetOperationalIntentReference(GetOperationalIntentReferenceRequest) returns (GetOperationalIntentReferenceResponse) {}
+  rpc GetOperationalIntentReference(GetOperationalIntentReferenceRequest) returns (GetOperationalIntentReferenceResponse) {
+    option (google.api.http) = {
+      get: "/v1/dss/op_refs/{id}"
+    };
+  }
 
   // /dss/op_refs
   //
   // Retrieve all OperationalIntentReferences in the DAR for a given area during the given time.  Note that references to some OperationalIntents lying entirely outside the requested area may be returned as well.
-  rpc SearchOperationalIntentReferences(SearchOperationalIntentReferencesRequest) returns (SearchOperationalIntentReferencesResponse) {}
+  rpc SearchOperationalIntentReferences(SearchOperationalIntentReferencesRequest) returns (SearchOperationalIntentReferencesResponse) {
+    option (google.api.http) = {
+      get: "/v1/dss/op_refs"
+    };
+  }
 
   // /dss/op_refs/{id}/{version}
   //
   // Update an OperationalIntentReference.  The full content of the existing OperationalIntentReference will be replaced with the provided information as only the most recent version is retained.
-  rpc UpdateOperationalIntentReference(UpdateOperationalIntentReferenceRequest) returns (ChangeOperationalIntentReferenceResponse) {}
+  rpc UpdateOperationalIntentReference(UpdateOperationalIntentReferenceRequest) returns (ChangeOperationalIntentReferenceResponse) {
+    option (google.api.http) = {
+      put: "/v1/dss/op_refs/{id}/{version}"
+      body: "body"
+    };
+  }
 }
