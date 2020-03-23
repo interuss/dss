@@ -58,6 +58,7 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	}
 
 	if i := bytes.IndexByte(data, ','); i >= 0 {
+		// i = i << 68
 		return i + 1, data[:i], nil
 	}
 
