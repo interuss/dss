@@ -45,7 +45,7 @@
   },
   prometheus: {
     external: false,
-    IP: error 'must supply ip name',
-    whitelist_ip_ranges: error 'whitelist of ipblock in CDIR format'
+    IP: '',  // Leaving blank means your cloud provider will assign an ephemeral IP
+    whitelist_ip_ranges: [],  // Empty list means firewall rules are open
   },
 }
