@@ -1,41 +1,16 @@
 steps:
-- id: 'Setup: Pull Dependencies'
-  name: golang
-  env: ['GO111MODULE=on', 'CGO_ENABLED=0']
-  args: ['go', 'mod', 'tidy']
-  volumes:
-  - name: 'go-vol'
-    path: '/go'
-# - id: 'Lint: Formatting'
-#   name: golang
-#   env: ['GO111MODULE=on', 'CGO_ENABLED=0']
-#   args: ['test', '-z', '$(gofmt -l .)']
-# TODO(steeling) add golint once we fix the lint issues.
-# - id: 'Lint: Golint'
-#   name: golang
-#   env: ['GO111MODULE=on', 'CGO_ENABLED=0']
-#   args: ['test', '-z', '$(golint ./...)']
-- id: 'Lint: Vetting'
-  name: golang
-  env: ['GO111MODULE=on', 'CGO_ENABLED=0']
-  args: ['go', 'vet', './...']
-  volumes:
-  - name: 'go-vol'
-    path: '/go'
-- id: 'Build: Application'
-  name: golang
-  env: ['GO111MODULE=on', 'CGO_ENABLED=0']
-  args: ['go', 'build', './...']
-  volumes:
-  - name: 'go-vol'
-    path: '/go'
+- id: 'Lint: Formatting'
+  name: golangci/golangci-lint
+  # Disable staticcheck since grpc-gateway doesn't use DialContext
+  args: ['golangci-lint', 'run', '-v', '-E', 'gofmt,bodyclose,rowserrcheck,misspell', '-D', 'staticcheck']
+- id: 'Lint: Formatting staticcheck'
+  name: golangci/golangci-lint
+  # Run staticcheck everywhere but the http-gateway
+  args: ['golangci-lint', 'run', '-v', '--disable-all',  '-E', 'staticcheck', '--skip-dirs', '^cmds/http-gateway']
 - id: 'Test: 10x with Race Detection and Coverage'
   name: golang
   env: ['GO111MODULE=on']
   args: ['go', 'test', './...', '-race', '-test.count', '10', '-cover']
-  volumes:
-  - name: 'go-vol'
-    path: '/go'
 - id: 'Evaluate examples/minimum'
   name: 'grafana/tanka'
   args:

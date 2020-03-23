@@ -86,7 +86,3 @@ func (v *Version) String() string {
 func (v *Version) ToTimestamp() time.Time {
 	return v.t
 }
-
-func ptrToFloat32(f float32) *float32 {
-	return &f
-}

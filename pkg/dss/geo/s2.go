@@ -16,15 +16,15 @@ import (
 const (
 	// DefaultMinimumCellLevel is the default minimum cell level, chosen such
 	// that the minimum cell size is ~1km^2.
-	DefaultMinimumCellLevel int = 13
+	DefaultMinimumCellLevel = 13
 	// DefaultMaximumCellLevel is the default minimum cell level, chosen such
 	// that the maximum cell size is ~1km^2.
-	DefaultMaximumCellLevel int = 13
-	maxAllowedAreaKm2           = 2500.0
-	minLat                      = -90.0
-	maxLat                      = 90.0
-	minLng                      = -180.0
-	maxLng                      = 180.0
+	DefaultMaximumCellLevel = 13
+	maxAllowedAreaKm2       = 2500.0
+	minLat                  = -90.0
+	maxLat                  = 90.0
+	minLng                  = -180.0
+	maxLng                  = 180.0
 )
 
 var (
@@ -58,7 +58,6 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	}
 
 	if i := bytes.IndexByte(data, ','); i >= 0 {
-		// i = i << 68
 		return i + 1, data[:i], nil
 	}
 
@@ -137,7 +136,7 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 //   * Agree and implement a maximum number of points in area
 func AreaToCellIDs(area string) (s2.CellUnion, error) {
 	var (
-		lat, lng = float64(0), float64(0)
+		lat, lng float64
 		points   = []s2.Point{}
 		counter  = 0
 		scanner  = bufio.NewScanner(strings.NewReader(area))

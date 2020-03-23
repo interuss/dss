@@ -14,7 +14,7 @@ require (
 	github.com/google/pprof v0.0.0-20200229191704-1ebb73c60ed3 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0
-	github.com/grpc-ecosystem/grpc-gateway v1.9.6
+	github.com/grpc-ecosystem/grpc-gateway v1.14.3
 	github.com/jonboulle/clockwork v0.1.0
 	github.com/lib/pq v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
@@ -29,6 +29,7 @@ require (
 	google.golang.org/api v0.20.0 // indirect
 	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11
 	google.golang.org/grpc v1.27.0
+	gopkg.in/resty.v1 v1.12.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.4.0
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

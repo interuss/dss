@@ -2895,11 +2895,11 @@ var fileDescriptor_e6b4bd547de77484 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // DiscoveryAndSynchronizationServiceClient is the client API for DiscoveryAndSynchronizationService service.
 //
@@ -2958,10 +2958,10 @@ type DiscoveryAndSynchronizationServiceClient interface {
 }
 
 type discoveryAndSynchronizationServiceClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewDiscoveryAndSynchronizationServiceClient(cc *grpc.ClientConn) DiscoveryAndSynchronizationServiceClient {
+func NewDiscoveryAndSynchronizationServiceClient(cc grpc.ClientConnInterface) DiscoveryAndSynchronizationServiceClient {
 	return &discoveryAndSynchronizationServiceClient{cc}
 }
 

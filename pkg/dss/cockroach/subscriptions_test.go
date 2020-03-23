@@ -167,7 +167,7 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 			wantErr:   "rpc error: code = InvalidArgument desc = subscription time_start must not be in the past",
 		},
 		{
-			name:          "start-time-slighty-in-the-past",
+			name:          "start-time-slightly-in-the-past",
 			startTime:     fakeClock.Now().Add(-4 * time.Minute),
 			endTime:       fakeClock.Now().Add(time.Hour),
 			wantStartTime: fakeClock.Now().Add(-4 * time.Minute),
@@ -361,7 +361,6 @@ func TestStoreSearchSubscription(t *testing.T) {
 
 	var (
 		overflow = -1
-		inserted = []*models.Subscription{}
 		cells    = s2.CellUnion{
 			s2.CellID(42),
 			s2.CellID(84),
@@ -386,7 +385,6 @@ func TestStoreSearchSubscription(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, sub1)
 
-		inserted = append(inserted, sub1)
 	}
 
 	for _, owner := range owners {

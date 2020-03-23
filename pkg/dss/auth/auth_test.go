@@ -20,8 +20,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var hmacSampleSecret = []byte("secret_key")
-
 func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey, exp, nbf int64) context.Context {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"foo": "bar",
@@ -59,6 +57,7 @@ func TestNewRSAAuthClient(t *testing.T) {
 	defer cancel()
 
 	tmpfile, err := ioutil.TempFile("/tmp", "bad.pem")
+	require.NoError(t, err)
 	require.NoError(t, tmpfile.Close())
 	// Test catches previous segfault.
 	_, err = NewRSAAuthorizer(ctx, Configuration{
@@ -128,7 +127,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 func TestMissingScopes(t *testing.T) {
 	ac := &Authorizer{requiredScopes: map[string][]string{
-		"PutFoo": []string{"required1", "required2"},
+		"PutFoo": {"required1", "required2"},
 	}}
 
 	var tests = []struct {
@@ -139,22 +138,22 @@ func TestMissingScopes(t *testing.T) {
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
 			map[string]struct{}{
-				"required1": struct{}{},
-				"required2": struct{}{},
+				"required1": {},
+				"required2": {},
 			},
 			nil,
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
 			map[string]struct{}{
-				"required2": struct{}{},
+				"required2": {},
 			},
 			&missingScopesError{[]string{"required1"}},
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
 			map[string]struct{}{
-				"required1": struct{}{},
+				"required1": {},
 			},
 			&missingScopesError{[]string{"required2"}},
 		},
@@ -214,12 +213,12 @@ func TestClaimsValidation(t *testing.T) {
 }
 
 func TestContextWithOwner(t *testing.T) {
-	expected := models.Owner("real_owner")
 	ctx := context.Background()
-	owner, ok := OwnerFromContext(ctx)
+	_, ok := OwnerFromContext(ctx)
 	require.False(t, ok)
-	ctx = ContextWithOwner(ctx, expected)
-	owner, ok = OwnerFromContext(ctx)
+
+	ctx = ContextWithOwner(ctx, "real_owner")
+	owner, ok := OwnerFromContext(ctx)
 	require.True(t, ok)
-	require.Equal(t, expected, owner)
+	require.Equal(t, models.Owner("real_owner"), owner)
 }
