@@ -6,7 +6,7 @@ steps:
 - id: 'Lint: Formatting staticcheck'
   name: golangci/golangci-lint
   # Run staticcheck everywhere but the http-gateway
-  args: ['golangci-lint', 'run', '-v', '--disable-all',  '-E', 'staticcheck', '--skip-dirs', '^cmds/http-gateway']
+  args: ['golangci-lint', 'run', '-v', '--disable-all',  '-E', 'staticcheck', '--skip-dirs', '^cmds/http-gateway', '--timeout', '5m']
 - id: 'Test: 10x with Race Detection and Coverage'
   name: golang
   env: ['GO111MODULE=on']
