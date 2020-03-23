@@ -1,38 +1,19 @@
 local base = import 'base.libsonnet'; 
 
-local ingress(metadata) = base.Ingress(metadata, 'prom-ingress') {
-  metadata+: {
-    annotations: {
-      'kubernetes.io/ingress.global-static-ip-name': metadata.prometheus.ipName,
-      'kubernetes.io/ingress.allow-http': 'false',
+local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-external') {
+  app:: 'prometheus-server',
+  port:: 9090,
+  spec+: {
+    selector: {
+      name: 'prometheus-server',
     },
-  },
-  spec: {
-    backend: {
-      serviceName: 'prometheus-service',
-      servicePort: 8080,
-    },
-  },
+    type: 'LoadBalancer',
+    loadBalancerIP: metadata.prometheus.IP,
+    loadBalancerSourceRanges: metadata.prometheus.whitelist_ip_ranges
+  }
 };
 
 {
-  ManagedCertIngress(metadata): {
-    ingress: ingress(metadata) {
-      metadata+: {
-        annotations+: {
-          'networking.gke.io/managed-certificates': 'prom-https-certificate',
-        },
-      },
-    },
-    managedCert: base.ManagedCert(metadata, 'prom-https-certificate') {
-      spec: {
-        domains: [
-          metadata.prometheus.hostname,
-        ],
-      },
-    },
-  },
-
   all(metadata) : {
     clusterRole: base.ClusterRole(metadata, 'prometheus') {
       rules: [
@@ -201,8 +182,8 @@ local ingress(metadata) = base.Ingress(metadata, 'prom-ingress') {
         ],
       },
     },
-    ingress: if metadata.prometheus.external == true then $.ManagedCertIngress(metadata),
-    service: base.Service(metadata, 'prometheus-service') {
+    externalService: if metadata.prometheus.external == true then PrometheusExternalService(metadata),
+    internalService: base.Service(metadata, 'prometheus-service') {
       app:: 'prometheus-server',
       port:: 9090,
       enable_monitoring:: true,
@@ -210,14 +191,7 @@ local ingress(metadata) = base.Ingress(metadata, 'prom-ingress') {
         selector: {
           name: 'prometheus-server',
         },
-        type: 'NodePort',
-        ports: [
-          {
-            port: 8080,
-            targetPort: 9090,
-            nodePort: 30000,
-          },
-        ],
+        type: 'ClusterIP',
       },
     },
   },

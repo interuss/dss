@@ -45,7 +45,7 @@
   },
   prometheus: {
     external: false,
-    ipName: error 'must supply ip name',
-    hostname: error 'must specify hostname',
+    IP: error 'must supply ip name',
+    whitelist_ip_ranges: error 'whitelist of ipblock in CDIR format'
   },
 }
