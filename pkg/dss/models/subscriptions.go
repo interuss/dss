@@ -40,7 +40,7 @@ func (s *Subscription) ToNotifyProto() *dspb.SubscriberToNotify {
 	return &dspb.SubscriberToNotify{
 		Url: s.Url,
 		Subscriptions: []*dspb.SubscriptionState{
-			&dspb.SubscriptionState{
+			{
 				NotificationIndex: int32(s.NotificationIndex),
 				SubscriptionId:    s.ID.String(),
 			},

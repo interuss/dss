@@ -77,6 +77,9 @@ func (c *Store) fetchSubscriptionsForNotification(
 		}
 		subscriptionIDs = append(subscriptionIDs, id)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	// Next: update the notification_index of each one and return the rest of the
 	// data.

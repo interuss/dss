@@ -194,11 +194,11 @@ func TestStoreDeleteISAs(t *testing.T) {
 	copy := *serviceArea
 	tx, _ := store.Begin()
 	isa, subscriptionsOut, err := store.pushISA(ctx, tx, &copy)
-	tx.Commit()
 	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 	require.NotNil(t, isa)
 
-	for i, _ := range insertedSubscriptions {
+	for i := range insertedSubscriptions {
 		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
 	}
 
@@ -212,7 +212,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 		require.Equal(t, s.input.Url, subscriptionsOut[i].Url)
 	}
 
-	for i, _ := range insertedSubscriptions {
+	for i := range insertedSubscriptions {
 		require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
 	}
 }
@@ -250,7 +250,7 @@ func TestInsertISA(t *testing.T) {
 			wantErr:   "rpc error: code = InvalidArgument desc = IdentificationServiceArea time_start must not be in the past",
 		},
 		{
-			name:          "start-time-slighty-in-the-past",
+			name:          "start-time-slightly-in-the-past",
 			startTime:     fakeClock.Now().Add(-4 * time.Minute),
 			endTime:       fakeClock.Now().Add(time.Hour),
 			wantStartTime: fakeClock.Now().Add(-4 * time.Minute),

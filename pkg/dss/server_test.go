@@ -234,7 +234,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	ctx := auth.ContextWithOwner(context.Background(), "foo")
 
 	isas := []*models.IdentificationServiceArea{
-		&models.IdentificationServiceArea{
+		{
 			ID:    models.ID("8265221b-9528-4d45-900d-59a148e13850"),
 			Owner: models.Owner("me-myself-and-i"),
 			Url:   "https://no/place/like/home",
@@ -273,7 +273,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	require.True(t, store.AssertExpectations(t))
 
 	require.Equal(t, []*dspb.IdentificationServiceArea{
-		&dspb.IdentificationServiceArea{
+		{
 			FlightsUrl: "https://no/place/like/home",
 			Id:         "8265221b-9528-4d45-900d-59a148e13850",
 			Owner:      "me-myself-and-i",
@@ -490,12 +490,12 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 
 func TestDeleteIdentificationServiceArea(t *testing.T) {
 	var (
-		owner        = models.Owner("foo")
-		id           = models.ID(uuid.New().String())
-		version, err = models.VersionFromString("bar", models.EmptyVersionPolicyRequireNonEmpty)
-		ctx          = auth.ContextWithOwner(context.Background(), owner)
-		ms           = &mockStore{}
-		s            = &Server{
+		owner      = models.Owner("foo")
+		id         = models.ID(uuid.New().String())
+		version, _ = models.VersionFromString("bar", models.EmptyVersionPolicyRequireNonEmpty)
+		ctx        = auth.ContextWithOwner(context.Background(), owner)
+		ms         = &mockStore{}
+		s          = &Server{
 			Store: ms,
 		}
 	)

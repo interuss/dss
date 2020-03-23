@@ -28,16 +28,16 @@ type Server struct {
 
 func (s *Server) AuthScopes() map[string][]string {
 	return map[string][]string{
-		"CreateIdentificationServiceArea":  []string{WriteISAScope},
-		"DeleteIdentificationServiceArea":  []string{WriteISAScope},
-		"GetIdentificationServiceArea":     []string{ReadISAScope},
-		"SearchIdentificationServiceAreas": []string{ReadISAScope},
-		"UpdateIdentificationServiceArea":  []string{WriteISAScope},
-		"CreateSubscription":               []string{WriteISAScope},
-		"DeleteSubscription":               []string{WriteISAScope},
-		"GetSubscription":                  []string{ReadISAScope},
-		"SearchSubscriptions":              []string{ReadISAScope},
-		"UpdateSubscription":               []string{WriteISAScope},
+		"CreateIdentificationServiceArea":  {WriteISAScope},
+		"DeleteIdentificationServiceArea":  {WriteISAScope},
+		"GetIdentificationServiceArea":     {ReadISAScope},
+		"SearchIdentificationServiceAreas": {ReadISAScope},
+		"UpdateIdentificationServiceArea":  {WriteISAScope},
+		"CreateSubscription":               {WriteISAScope},
+		"DeleteSubscription":               {WriteISAScope},
+		"GetSubscription":                  {ReadISAScope},
+		"SearchSubscriptions":              {ReadISAScope},
+		"UpdateSubscription":               {WriteISAScope},
 	}
 }
 
@@ -152,7 +152,7 @@ func (s *Server) DeleteIdentificationServiceArea(
 		return nil, dsserr.Internal(err.Error())
 	}
 	sp := make([]*dspb.SubscriberToNotify, len(subscribers))
-	for i, _ := range subscribers {
+	for i := range subscribers {
 		sp[i] = subscribers[i].ToNotifyProto()
 	}
 

@@ -89,6 +89,9 @@ func (r *FromFileKeyResolver) ResolveKey(context.Context) (interface{}, error) {
 		return nil, errors.New("failed to decode keyFile")
 	}
 	parsedKey, err := x509.ParsePKIXPublicKey(pub.Bytes)
+	if err != nil {
+		return nil, err
+	}
 	key, ok := parsedKey.(*rsa.PublicKey)
 	if !ok {
 		return nil, fmt.Errorf("could not create rsa public key from %s", r.KeyFile)
