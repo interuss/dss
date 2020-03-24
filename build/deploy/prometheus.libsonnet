@@ -182,7 +182,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
         ],
       },
     },
-    externalService: if metadata.prometheus.external == true then PrometheusExternalService(metadata),
+    externalService: if metadata.prometheus.expose_external == true then PrometheusExternalService(metadata),
     internalService: base.Service(metadata, 'prometheus-service') {
       app:: 'prometheus-server',
       port:: 9090,
