@@ -1,0 +1,25 @@
+steps:
+- id: 'Lint: Formatting'
+  name: golangci/golangci-lint
+  # Disable staticcheck since grpc-gateway doesn't use DialContext
+  args: ['golangci-lint', 'run', '-v', '-E', 'gofmt,bodyclose,rowserrcheck,misspell', '-D', 'staticcheck']
+- id: 'Lint: Formatting staticcheck'
+  name: golangci/golangci-lint
+  # Run staticcheck everywhere but the http-gateway
+  args: ['golangci-lint', 'run', '-v', '--disable-all',  '-E', 'staticcheck', '--skip-dirs', '^cmds/http-gateway', '--timeout', '5m']
+- id: 'Test: 10x with Race Detection and Coverage'
+  name: golang
+  env: ['GO111MODULE=on']
+  args: ['go', 'test', './...', '-race', '-test.count', '10', '-cover']
+- id: 'Evaluate examples/minimum'
+  name: 'grafana/tanka'
+  args:
+  - 'show'
+  - '--dangerous-allow-redirect'
+  - 'build/deploy/examples/minimum'
+- id: 'Evaluate examples/prod'
+  name: 'grafana/tanka'
+  args:
+  - 'show'
+  - '--dangerous-allow-redirect'
+  - 'build/deploy/examples/prod'

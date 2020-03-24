@@ -43,10 +43,10 @@ lint: install
 	golint ./...
 
 pkg/dssproto/dss.pb.go: pkg/dssproto/dss.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssproto/dss.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssproto/dss.proto
 
 pkg/dssproto/dss.pb.gw.go: pkg/dssproto/dss.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.9.6/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssproto/dss.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssproto/dss.proto
 
 pkg/dssproto/dss.proto: install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
@@ -58,8 +58,8 @@ pkg/dssproto/dss.proto: install-proto-generation
 
 .PHONY: install-proto-generation
 install-proto-generation:
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.9.6
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.9.6
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
 	go get github.com/golang/protobuf/protoc-gen-go
 
 

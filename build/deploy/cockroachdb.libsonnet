@@ -86,8 +86,11 @@ local volumes = import 'volumes.libsonnet';
             ],
             command_args_:: {
               'certs-dir': '/cockroach/cockroach-certs',
-              'advertise-addr': '${HOSTNAME##*-}.' + metadata.cockroach.hostnameSuffix,
-              join: std.join(',', ['cockroachdb-0.cockroachdb'] + metadata.cockroach.JoinExisting),
+              'advertise-addr': if metadata.single_cluster
+                  then '$(hostname -f)'
+                  else '${HOSTNAME##*-}.' + metadata.cockroach.hostnameSuffix,
+              join: std.join(',', ['cockroachdb-0.cockroachdb'] + 
+                if metadata.single_cluster then [] else metadata.cockroach.JoinExisting),
               logtostderr: true,
               locality: 'zone=' + metadata.cockroach.locality,
               'locality-advertise-addr': 'zone=' + metadata.cockroach.locality + '@$(hostname -f)',

@@ -59,6 +59,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create certificate: %s", err)
 	}
-	pem.Encode(os.Stdout, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	pem.Encode(os.Stdout, pemBlockForKey(priv))
+	err = pem.Encode(os.Stdout, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = pem.Encode(os.Stdout, pemBlockForKey(priv))
+	if err != nil {
+		log.Fatal(err)
+	}
 }

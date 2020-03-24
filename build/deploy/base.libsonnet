@@ -10,7 +10,6 @@ local util = import 'util.libsonnet';
       clusterName: metadata.clusterName,
       labels: { 
         name: std.join('-', std.split(name, ':')),
-        release: metadata.release,
       },
     },
   },

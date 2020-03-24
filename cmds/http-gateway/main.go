@@ -66,7 +66,9 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/healthy" {
-			w.Write([]byte("ok"))
+			if _, err := w.Write([]byte("ok")); err != nil {
+				logger.Error("error writing to /healthy")
+			}
 		} else {
 			grpcMux.ServeHTTP(w, r)
 		}
@@ -151,7 +153,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 	w.Header().Del("Trailer")
 
 	contentType := marshaler.ContentType()
-	// Check marshaler on run time in order to keep backwards compatability
+	// Check marshaler on run time in order to keep backwards compatibility
 	// An interface param needs to be added to the ContentType() function on
 	// the Marshal interface to be able to remove this check
 	if httpBodyMarshaler, ok := marshaler.(*runtime.HTTPBodyMarshaler); ok {

@@ -95,7 +95,8 @@ which ever provider you choose.
     - 1 for the HTTPS Gateway's Ingress. Note: if you're using Google Cloud
       the HTTPS Gateway Ingress needs to be created as a "Global" IP address.
     - If you want to be able to join other clusters, you'll need static IP's
-      for each of your CockroachDB nodes (min of 3).
+      for each of your CockroachDB nodes (min of 3), and you'll need to create
+      DNS entries with a common hostname suffix, ie: `*.db.interuss.com`
 
 1.  Use the `make-certs.py` script in this directory to create certificates for
     the new CockroachDB cluster:
@@ -123,6 +124,9 @@ which ever provider you choose.
 
 1.  Copy `cp -r deploy/examples/minimum` to
     `workspace/<CLUSTER_CONTEXT>` and fill in with your fields.
+
+1.  If you are only turning up a single cluster for development, set
+    metadata.single_cluster to true in metadata_base.libsonnet.
 
 1.  You can find the APIServer for spec.json by running:
 
