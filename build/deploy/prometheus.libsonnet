@@ -12,7 +12,7 @@ local prometheusConfig = {
   rule_files: [
     'aggregation.rules.yml',
   ],
-  scrape_configs: [k8sEndpoints] + istioScrape.scrape_configs
+  scrape_configs: k8sEndpoints.scrape_configs + istioScrape.scrape_configs,
 };
 
 {
