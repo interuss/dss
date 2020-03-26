@@ -15,6 +15,19 @@ local prometheusConfig = {
   scrape_configs: k8sEndpoints.scrape_configs + istioScrape.scrape_configs,
 };
 
+local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-external') {
+  app:: 'prometheus-server',
+  port:: 9090,
+  spec+: {
+    selector: {
+      name: 'prometheus-server',
+    },
+    type: 'LoadBalancer',
+    loadBalancerIP: metadata.prometheus.IP,
+    loadBalancerSourceRanges: metadata.prometheus.whitelist_ip_ranges
+  }
+};
+
 {
   all(metadata) : {
     clusterRole: base.ClusterRole(metadata, 'prometheus') {
@@ -143,6 +156,23 @@ local prometheusConfig = {
                     mountPath: '/data/prometheus/',
                   },
                 ],
+                livenessProbe: {
+                  httpGet: {
+                    path: '/-/healthy',
+                    port: 9090
+                  },
+                  initialDelaySeconds: 50,
+                  periodSeconds: 5,
+                },
+                readinessProbe: {
+                  httpGet: {
+                    path: '/-/ready',
+                    port: 9090
+                  },
+                  initialDelaySeconds: 30,
+                  periodSeconds: 5,
+                  failureThreshold: 5,
+                },
               },
             ],
           },
@@ -167,7 +197,8 @@ local prometheusConfig = {
         ],
       },
     },
-    service: base.Service(metadata, 'prometheus-service') {
+    externalService: if metadata.prometheus.expose_external == true then PrometheusExternalService(metadata),
+    internalService: base.Service(metadata, 'prometheus-service') {
       app:: 'prometheus-server',
       port:: 9090,
       enable_monitoring:: true,
@@ -175,14 +206,7 @@ local prometheusConfig = {
         selector: {
           name: 'prometheus-server',
         },
-        type: 'NodePort',
-        ports: [
-          {
-            port: 8080,
-            targetPort: 9090,
-            nodePort: 30000,
-          },
-        ],
+        type: 'ClusterIP',
       },
     },
   },
