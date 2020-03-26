@@ -1,17 +1,61 @@
 local base = import 'base.libsonnet';
+local crdbReplicaDash = import '../grafana-dashboards/crdb-replica-grafana.json';
+local crdbRuntimeDash = import '../grafana-dashboards/crdb-runtime-grafana.json';
+local crdbSqlDash = import '../grafana-dashboards/crdb-sql-grafana.json';
+local crdbStorageDash = import '../grafana-dashboards/crdb-storage-grafana.json';
+
+local dashboardConfig = {
+  apiVersion: 1,
+  providers: [
+    {
+      name: 'default',
+      orgId: 1,
+      folder: '',
+      folderUid: '',
+      type: 'file',
+      options: {
+        path: '/var/lib/grafana/dashboards',
+      },
+    },
+  ],
+};
+
+local datasourcePrometheus(metadata) = {
+  apiVersion: 1,
+  datasources: [
+    {
+      access: 'proxy',
+      editable: true,
+      name: 'prometheus',
+      orgId: 1,
+      type: 'prometheus',
+      url: 'http://prometheus-service.' + metadata.namespace + '.svc:8080',
+      version: 1,
+    },
+  ],
+};
 
 {
   all(metadata) : {
     configMap: base.ConfigMap(metadata, 'grafana-datasources') {
       data: {
-        'prometheus.yaml': '{\n    "apiVersion": 1,\n    "datasources": [\n        {\n           "access":"proxy",\n            "editable": true,\n            "name": "prometheus",\n            "orgId": 1,\n            "type": "prometheus",\n            "url": "http://prometheus-service.' + metadata.namespace + '.svc:9090",\n            "version": 1\n        }\n    ]\n}',
+        'prometheus.yaml': std.manifestYamlDoc(datasourcePrometheus(metadata)),
       },
     },
     configMap2: base.ConfigMap(metadata, 'grafana-dash-provisioning') {
       data: {
-        'dashboards.yaml': "apiVersion: 1\n\nproviders:\n - name: 'default'\n   orgId: 1\n   folder: ''\n   folderUid: ''\n   type: file\n   options:\n     path: /var/lib/grafana/dashboards\n",
+        'dashboards.yaml': std.manifestYamlDoc(dashboardConfig)
       },
     },
+    grafDashConfigMap: base.ConfigMap(metadata, 'grafana.dashboards') {
+      data: {
+        'crdb-replica-grafana.json': std.toString(crdbReplicaDash),
+        'crdb-runtime-grafana.json': std.toString(crdbRuntimeDash),
+        'crdb-sql-grafana.json': std.toString(crdbSqlDash),
+        'crdb-storage-grafana.json': std.toString(crdbStorageDash),
+      },
+    },
+
     deployment: base.Deployment(metadata, 'grafana') {
       spec: {
         replicas: 1,
