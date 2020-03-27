@@ -160,15 +160,3 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 	_, err := s.ExecContext(ctx, query)
 	return err
 }
-
-// cleanUp drops all required tables from the store, useful for testing.
-func (s *Store) cleanUp(ctx context.Context) error {
-	const query = `
-	DROP TABLE IF EXISTS cells_subscriptions;
-	DROP TABLE IF EXISTS subscriptions;
-	DROP TABLE IF EXISTS cells_identification_service_areas;
-	DROP TABLE IF EXISTS identification_service_areas;`
-
-	_, err := s.ExecContext(ctx, query)
-	return err
-}

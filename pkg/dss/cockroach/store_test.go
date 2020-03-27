@@ -37,7 +37,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func() error) {
 	}
 	require.NoError(t, store.Bootstrap(ctx))
 	return store, func() error {
-		return store.cleanUp(ctx)
+		return cleanUp(ctx, store)
 	}
 }
 
@@ -56,6 +56,18 @@ func newStore() (*Store, error) {
 		logger: zap.L(),
 		clock:  fakeClock,
 	}, nil
+}
+
+// cleanUp drops all required tables from the store, useful for testing.
+func cleanUp(ctx context.Context, s *Store) error {
+	const query = `
+	DROP TABLE IF EXISTS cells_subscriptions;
+	DROP TABLE IF EXISTS subscriptions;
+	DROP TABLE IF EXISTS cells_identification_service_areas;
+	DROP TABLE IF EXISTS identification_service_areas;`
+
+	_, err := s.ExecContext(ctx, query)
+	return err
 }
 
 func TestStoreBootstrap(t *testing.T) {
