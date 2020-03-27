@@ -1,8 +1,8 @@
 local base = import 'base.libsonnet';
-local crdbReplicaDash = import 'grafana-dashboards/crdb-replica-grafana.json';
-local crdbRuntimeDash = import 'grafana-dashboards/crdb-runtime-grafana.json';
-local crdbSqlDash = import 'grafana-dashboards/crdb-sql-grafana.json';
-local crdbStorageDash = import 'grafana-dashboards/crdb-storage-grafana.json';
+local crdbReplicaDash = import 'grafana_dashboards/crdb-replica-grafana.json';
+local crdbRuntimeDash = import 'grafana_dashboards/crdb-runtime-grafana.json';
+local crdbSqlDash = import 'grafana_dashboards/crdb-sql-grafana.json';
+local crdbStorageDash = import 'grafana_dashboards/crdb-storage-grafana.json';
 
 local dashboardConfig = {
   apiVersion: 1,

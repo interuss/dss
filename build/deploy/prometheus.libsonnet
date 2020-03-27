@@ -1,7 +1,7 @@
 local base = import 'base.libsonnet'; 
-local k8sEndpoints = import 'prometheus-configs/k8s-endpoints.libsonnet';
-local istioScrape = import 'prometheus-configs/istio.libsonnet';
-local crdbAggregation = import 'prometheus-configs/crdb-aggregation.libsonnet';
+local k8sEndpoints = import 'prometheus_configs/k8s-endpoints.libsonnet';
+local istioScrape = import 'prometheus_configs/istio.libsonnet';
+local crdbAggregation = import 'prometheus_configs/crdb-aggregation.libsonnet';
 
 
 local prometheusConfig = {
