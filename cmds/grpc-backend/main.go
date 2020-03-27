@@ -18,7 +18,6 @@ import (
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
-	"github.com/dpjacques/clockwork"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -91,7 +90,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		logger.Panic("Failed to build URI", zap.Error(err))
 	}
 
-	store, err := cockroach.Dial(uri, logger, clockwork.NewRealClock())
+	store, err := cockroach.Dial(uri, logger)
 	if err != nil {
 		logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
 	}

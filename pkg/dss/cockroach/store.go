@@ -10,6 +10,11 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	// DefaultClock is what is used as the Store's clock, returned from Dial.
+	DefaultClock = clockwork.NewRealClock()
+)
+
 // Store is an implementation of dss.Store using
 // Cockroach DB as its backend store.
 type Store struct {
@@ -21,7 +26,7 @@ type Store struct {
 // Dial returns a Store instance connected to a cockroach instance available at
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html
-func Dial(uri string, logger *zap.Logger, clock clockwork.Clock) (*Store, error) {
+func Dial(uri string, logger *zap.Logger) (*Store, error) {
 	db, err := sql.Open("postgres", uri)
 	if err != nil {
 		return nil, err
@@ -30,7 +35,7 @@ func Dial(uri string, logger *zap.Logger, clock clockwork.Clock) (*Store, error)
 	return &Store{
 		DB:     db,
 		logger: logger,
-		clock:  clock,
+		clock:  DefaultClock,
 	}, nil
 }
 
