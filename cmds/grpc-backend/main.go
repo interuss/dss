@@ -18,8 +18,8 @@ import (
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
+	"github.com/dpjacques/clockwork"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -31,6 +31,7 @@ var (
 	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
 	jwksKeyID         = flag.String("jwks_key_id", "", "ID of a specific key in a JWKS")
 	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
+	timeout           = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
 	reflectAPI        = flag.Bool("reflect_api", false, "Whether to reflect the API.")
 	logFormat         = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
 	logLevel          = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
@@ -100,7 +101,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 
 	dssServer := &dss.Server{
-		Store: store,
+		Store:   store,
+		Timeout: *timeout,
 	}
 
 	var keyResolver auth.KeyResolver

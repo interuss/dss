@@ -23,7 +23,8 @@ var (
 
 // Server implements dssproto.DiscoveryAndSynchronizationService.
 type Server struct {
-	Store Store
+	Store   Store
+	Timeout time.Duration
 }
 
 func (s *Server) AuthScopes() map[string][]string {
@@ -45,6 +46,7 @@ func (s *Server) GetIdentificationServiceArea(
 	ctx context.Context, req *dspb.GetIdentificationServiceAreaRequest) (
 	*dspb.GetIdentificationServiceAreaResponse, error) {
 
+	ctx = context.WithTimeout(ctx, s.Timeout)
 	isa, err := s.Store.GetISA(ctx, models.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
@@ -113,6 +115,7 @@ func (s *Server) CreateIdentificationServiceArea(
 	*dspb.PutIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
+	ctx = context.WithTimeout(ctx, s.Timeout)
 	return s.createOrUpdateISA(ctx, req.GetId(), nil, params.Extents, params.GetFlightsUrl())
 }
 
@@ -126,6 +129,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
+	ctx = context.WithTimeout(ctx, s.Timeout)
 
 	return s.createOrUpdateISA(ctx, req.GetId(), version, params.Extents, params.GetFlightsUrl())
 }
@@ -142,6 +146,7 @@ func (s *Server) DeleteIdentificationServiceArea(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
+	ctx = context.WithTimeout(ctx, s.Timeout)
 	isa, subscribers, err := s.Store.DeleteISA(ctx, models.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
@@ -174,6 +179,7 @@ func (s *Server) DeleteSubscription(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
+	ctx = context.WithTimeout(ctx, s.Timeout)
 	subscription, err := s.Store.DeleteSubscription(ctx, models.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
@@ -222,6 +228,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 		}
 	}
 
+	ctx = context.WithTimeout(ctx, s.Timeout)
 	isas, err := s.Store.SearchISAs(ctx, cu, earliest, latest)
 	if err != nil {
 		return nil, err
@@ -260,6 +267,7 @@ func (s *Server) SearchSubscriptions(
 		return nil, dsserr.BadRequest(errMsg)
 	}
 
+	ctx = context.WithTimeout(ctx, s.Timeout)
 	subscriptions, err := s.Store.SearchSubscriptions(ctx, cu, owner)
 	if err != nil {
 		return nil, err
@@ -281,6 +289,7 @@ func (s *Server) GetSubscription(
 	ctx context.Context, req *dspb.GetSubscriptionRequest) (
 	*dspb.GetSubscriptionResponse, error) {
 
+	ctx = context.WithTimeout(ctx, s.Timeout)
 	subscription, err := s.Store.GetSubscription(ctx, models.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
@@ -359,6 +368,7 @@ func (s *Server) CreateSubscription(
 	*dspb.PutSubscriptionResponse, error) {
 
 	params := req.GetParams()
+	ctx = context.WithTimeout(ctx, s.Timeout)
 	return s.createOrUpdateSubscription(ctx, req.GetId(), nil, params.Callbacks, params.Extents)
 }
 
@@ -373,5 +383,6 @@ func (s *Server) UpdateSubscription(
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 
+	ctx = context.WithTimeout(ctx, s.Timeout)
 	return s.createOrUpdateSubscription(ctx, req.GetId(), version, params.Callbacks, params.Extents)
 }

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jonboulle/clockwork"
+	"github.com/dpjacques/clockwork"
 	"go.uber.org/zap"
 )
 

@@ -12,7 +12,7 @@ import (
 	"github.com/interuss/dss/pkg/dss"
 	"github.com/interuss/dss/pkg/dss/models"
 
-	"github.com/jonboulle/clockwork"
+	"github.com/dpjacques/clockwork"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
