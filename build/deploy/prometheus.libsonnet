@@ -140,6 +140,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                 args: [
                   '--config.file=/etc/prometheus/prometheus.yml',
                   '--storage.tsdb.path=/data/prometheus/',
+                  '--storage.tsdb.retention.time=' + metadata.prometheus.retention,
                 ],
                 ports: [
                   {
