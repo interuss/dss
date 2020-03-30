@@ -3,8 +3,12 @@ steps:
   name: golangci/golangci-lint
   # Disable staticcheck since grpc-gateway doesn't use DialContext
   args: ['golangci-lint', 'run', '--timeout', '5m', '-v', '-E', 'gofmt,bodyclose,rowserrcheck,misspell', '-D', 'staticcheck']
+  env:
+    GOROOT: ""
 - id: 'Lint: Formatting staticcheck'
   name: golangci/golangci-lint
+  env:
+    GOROOT: ""
   # Run staticcheck everywhere but the http-gateway
   args: ['golangci-lint', 'run', '-v', '--disable-all',  '-E', 'staticcheck', '--skip-dirs', '^cmds/http-gateway', '--timeout', '5m']
 - id: 'Test: 10x with Race Detection and Coverage'
