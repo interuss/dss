@@ -441,4 +441,5 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 	ret, err = store.GetSubscription(ctx, sub.ID)
 	require.Nil(t, ret)
+	require.Error(t, err)
 }
