@@ -89,7 +89,7 @@ func (ms *mockStore) DeleteISA(ctx context.Context, id models.ID, owner models.O
 	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
 
-func (ms *mockStore) InsertISA(ctx context.Context, isa models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (ms *mockStore) InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
 	args := ms.Called(ctx, isa)
 	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
@@ -151,7 +151,7 @@ func TestCreateSubscription(t *testing.T) {
 		id               models.ID
 		callbacks        *dspb.SubscriptionCallbacks
 		extents          *dspb.Volume4D
-		wantSubscription models.Subscription
+		wantSubscription *models.Subscription
 		wantErr          error
 	}{
 		{
@@ -161,7 +161,7 @@ func TestCreateSubscription(t *testing.T) {
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
 			extents: testdata.LoopVolume4D,
-			wantSubscription: models.Subscription{
+			wantSubscription: &models.Subscription{
 				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 				Owner:      "foo",
 				Url:        "https://example.com",
@@ -226,7 +226,7 @@ func TestCreateSubscription(t *testing.T) {
 				store.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 					[]*models.IdentificationServiceArea(nil), nil)
 				store.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
-					&r.wantSubscription, nil,
+					r.wantSubscription, nil,
 				)
 			}
 			s := &Server{
@@ -258,7 +258,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	}
 
 	cells := mustGeoPolygonToCellIDs(testdata.LoopPolygon)
-	sub := models.Subscription{
+	sub := &models.Subscription{
 		ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 		Owner:      "foo",
 		Url:        "https://example.com",
@@ -271,7 +271,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 
 	store := &mockStore{}
 	store.On("SearchISAs", mock.Anything, cells, mock.Anything, mock.Anything).Return(isas, nil)
-	store.On("InsertSubscription", mock.Anything, sub).Return(&sub, nil)
+	store.On("InsertSubscription", mock.Anything, sub).Return(sub, nil)
 	s := &Server{
 		Store: store,
 	}
@@ -469,7 +469,7 @@ func TestCreateISA(t *testing.T) {
 		t.Run(r.name, func(t *testing.T) {
 			store := &mockStore{}
 			if r.wantISA != nil {
-				store.On("InsertISA", mock.Anything, *r.wantISA).Return(
+				store.On("InsertISA", mock.Anything, r.wantISA).Return(
 					r.wantISA, []*models.Subscription(nil), nil)
 			}
 			s := &Server{

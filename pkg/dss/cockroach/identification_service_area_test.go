@@ -44,7 +44,7 @@ func TestStoreSearchISAs(t *testing.T) {
 
 	isa := *serviceArea
 	isa.Cells = cells
-	saOut, _, err := store.InsertISA(ctx, isa)
+	saOut, _, err := store.InsertISA(ctx, &isa)
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 	require.Equal(t, isa.ID, saOut.ID)
@@ -141,7 +141,7 @@ func TestStoreExpiredISA(t *testing.T) {
 		require.NoError(t, tearDownStore())
 	}()
 
-	saOut, _, err := store.InsertISA(ctx, *serviceArea)
+	saOut, _, err := store.InsertISA(ctx, serviceArea)
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 
@@ -183,7 +183,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 	for _, r := range subscriptionsPool {
 		copy := *r.input
 		copy.Cells = s2.CellUnion{s2.CellID(42)}
-		s1, err := store.InsertSubscription(ctx, copy)
+		s1, err := store.InsertSubscription(ctx, &copy)
 		require.NoError(t, err)
 		require.NotNil(t, s1)
 		require.Equal(t, 42, s1.NotificationIndex)
@@ -312,7 +312,7 @@ func TestInsertISA(t *testing.T) {
 				version = existing.Version
 			}
 
-			sa := models.IdentificationServiceArea{
+			sa := &models.IdentificationServiceArea{
 				ID:      id,
 				Owner:   owner,
 				Version: version,

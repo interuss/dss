@@ -85,19 +85,6 @@ func (c *Store) fetchISAByID(ctx context.Context, q queryable, id models.ID) (*m
 	return c.fetchISA(ctx, q, query, id, c.clock.Now())
 }
 
-func (c *Store) fetchISAByIDAndOwner(ctx context.Context, q queryable, id models.ID, owner models.Owner) (*models.IdentificationServiceArea, error) {
-	var query = fmt.Sprintf(`
-		SELECT %s FROM
-			identification_service_areas
-		WHERE
-			id = $1
-		AND
-			owner = $2
-		AND
-			ends_at >= $3`, isaFields)
-	return c.fetchISA(ctx, q, query, id, owner, c.clock.Now())
-}
-
 func (c *Store) populateISACells(ctx context.Context, q queryable, i *models.IdentificationServiceArea) error {
 	const query = `
 	SELECT
@@ -201,14 +188,14 @@ func (c *Store) GetISA(ctx context.Context, id models.ID) (*models.Identificatio
 //
 // Returns the created IdentificationServiceArea and all Subscriptions affected
 // by it.
-func (c *Store) InsertISA(ctx context.Context, isa models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (c *Store) InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
 	tx, err := c.Begin()
 	if err != nil {
 		return nil, nil, err
 	}
 	defer recoverRollbackRepanic(ctx, tx)
 
-	old, err := c.fetchISAByIDAndOwner(ctx, tx, isa.ID, isa.Owner)
+	old, err := c.fetchISAByID(ctx, tx, isa.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -226,6 +213,8 @@ func (c *Store) InsertISA(ctx context.Context, isa models.IdentificationServiceA
 	case old != nil && !isa.Version.Matches(old.Version):
 		// The user wants to update an ISA but the version doesn't match.
 		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
+	case old != nil && old.Owner != isa.Owner:
+		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
@@ -233,7 +222,7 @@ func (c *Store) InsertISA(ctx context.Context, isa models.IdentificationServiceA
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
 
-	area, subscribers, err := c.pushISA(ctx, tx, &isa)
+	area, subscribers, err := c.pushISA(ctx, tx, isa)
 	if err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
@@ -268,7 +257,7 @@ func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner,
 	defer recoverRollbackRepanic(ctx, tx)
 
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := c.fetchISAByIDAndOwner(ctx, tx, id, owner)
+	old, err := c.fetchISAByID(ctx, tx, id)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
 		return nil, nil, multierr.Combine(dsserr.NotFound(id.String()), tx.Rollback())
@@ -276,6 +265,8 @@ func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner,
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	case !version.Empty() && !version.Matches(old.Version):
 		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
+	case old != nil && old.Owner != owner:
+		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
 	}
 	if err := c.populateISACells(ctx, tx, old); err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())

@@ -79,7 +79,7 @@ func (s *Server) createOrUpdateISA(
 		return nil, dsserr.BadRequest("missing required extents")
 	}
 
-	isa := models.IdentificationServiceArea{
+	isa := &models.IdentificationServiceArea{
 		ID:      models.ID(id),
 		Url:     flights_url,
 		Owner:   owner,
@@ -329,7 +329,7 @@ func (s *Server) createOrUpdateSubscription(
 		return nil, dsserr.BadRequest("missing required extents")
 	}
 
-	sub := models.Subscription{
+	sub := &models.Subscription{
 		ID:      models.ID(id),
 		Owner:   owner,
 		Url:     callbacks.IdentificationServiceAreaUrl,

@@ -93,7 +93,7 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		begins  = time.Now()
 		expires = begins.Add(-5 * time.Minute)
 	)
-	_, err := store.InsertSubscription(ctx, models.Subscription{
+	_, err := store.InsertSubscription(ctx, &models.Subscription{
 		ID:                models.ID(uuid.New().String()),
 		Owner:             "me-myself-and-i",
 		Url:               "https://no/place/like/home",
