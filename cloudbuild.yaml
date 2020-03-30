@@ -6,7 +6,6 @@ steps:
   volumes:
   - name: 'go-vol'
     path: '/go'
-  waitFor: ['Setup: go mod']
 - id: 'Lint: Formatting'
   name: golangci/golangci-lint
   # Disable staticcheck since grpc-gateway doesn't use DialContext
