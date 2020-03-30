@@ -201,6 +201,9 @@ func TestStoreDeleteISAs(t *testing.T) {
 	for i := range insertedSubscriptions {
 		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
 	}
+	// Can't delete with different owner.
+	_, _, err = store.DeleteISA(ctx, isa.ID, "bad-owner", isa.Version)
+	require.Error(t, err)
 
 	// Delete the ISA.
 	serviceAreaOut, subscriptionsOut, err := store.DeleteISA(ctx, isa.ID, isa.Owner, isa.Version)
@@ -310,6 +313,12 @@ func TestInsertISA(t *testing.T) {
 				require.NoError(t, err)
 				require.NoError(t, tx.Commit())
 				version = existing.Version
+
+				// Can't update if it has a different owner
+				isa := *existing
+				isa.Owner = "bad-owner"
+				_, _, err = store.InsertISA(ctx, &isa)
+				require.Error(t, err)
 			}
 
 			sa := &models.IdentificationServiceArea{
