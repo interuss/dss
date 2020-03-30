@@ -1,12 +1,26 @@
 steps:
+- id: 'Setup: Pull Dependencies'
+  name: golang
+  env: ['GO111MODULE=on', 'CGO_ENABLED=0']
+  args: ['go', 'mod', 'tidy']
+  volumes:
+  - name: 'go-vol'
+    path: '/go'
+  waitFor: ['Setup: go mod']
 - id: 'Lint: Formatting'
   name: golangci/golangci-lint
   # Disable staticcheck since grpc-gateway doesn't use DialContext
   args: ['golangci-lint', 'run', '--timeout', '5m', '-v', '-E', 'gofmt,bodyclose,rowserrcheck,misspell', '-D', 'staticcheck']
+  volumes:
+  - name: 'go-vol'
+    path: '/go'
 - id: 'Lint: Formatting staticcheck'
   name: golangci/golangci-lint
   # Run staticcheck everywhere but the http-gateway
   args: ['golangci-lint', 'run', '-v', '--disable-all',  '-E', 'staticcheck', '--skip-dirs', '^cmds/http-gateway', '--timeout', '5m']
+  volumes:
+  - name: 'go-vol'
+    path: '/go'
 - id: 'Test: 10x with Race Detection and Coverage'
   name: golang
   env: ['GO111MODULE=on']
