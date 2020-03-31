@@ -2,6 +2,7 @@ package cockroach
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -70,7 +71,7 @@ func TestStoreGetSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.InsertSubscription(ctx, *r.input)
+			sub1, err := store.InsertSubscription(ctx, r.input)
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
@@ -94,14 +95,14 @@ func TestStoreInsertSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.InsertSubscription(ctx, *r.input)
+			sub1, err := store.InsertSubscription(ctx, r.input)
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
 			// Test changes without the version differing.
 			r2 := *sub1
 			r2.Url = "new url"
-			sub2, err := store.InsertSubscription(ctx, r2)
+			sub2, err := store.InsertSubscription(ctx, &r2)
 			require.NoError(t, err)
 			require.NotNil(t, sub2)
 			require.Equal(t, "new url", sub2.Url)
@@ -110,7 +111,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 			r3 := *sub2
 			r3.Url = "new url 2"
 			r3.Version = nil
-			sub3, err := store.InsertSubscription(ctx, r3)
+			sub3, err := store.InsertSubscription(ctx, &r3)
 			require.Error(t, err)
 			require.Nil(t, sub3)
 
@@ -118,7 +119,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 			r4 := *sub2
 			r4.Url = "new url 3"
 			r4.Version = models.VersionFromTime(time.Now())
-			sub4, err := store.InsertSubscription(ctx, r4)
+			sub4, err := store.InsertSubscription(ctx, &r4)
 			require.Error(t, err)
 			require.Nil(t, sub4)
 
@@ -127,6 +128,11 @@ func TestStoreInsertSubscription(t *testing.T) {
 			require.NotNil(t, sub5)
 
 			require.Equal(t, *sub2, *sub5)
+
+			// Test changing owner fails
+			sub5.Owner = "new bad owner"
+			_, err = store.InsertSubscription(ctx, sub5)
+			require.Error(t, err)
 		})
 	}
 }
@@ -236,7 +242,7 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 				version = existing.Version
 			}
 
-			s := models.Subscription{
+			s := &models.Subscription{
 				ID:      id,
 				Owner:   owner,
 				Version: version,
@@ -279,7 +285,7 @@ func TestStoreInsertTooManySubscription(t *testing.T) {
 
 	// Helper function that makes a subscription with a random ID, fixed owner,
 	// and provided cellIDs.
-	makeSubscription := func(cellIDs []uint64) models.Subscription {
+	makeSubscription := func(cellIDs []uint64) *models.Subscription {
 		s := *subscriptionsPool[0].input
 		s.Owner = models.Owner("bob")
 		s.ID = models.ID(uuid.New().String())
@@ -288,14 +294,14 @@ func TestStoreInsertTooManySubscription(t *testing.T) {
 		for i, id := range cellIDs {
 			s.Cells[i] = s2.CellID(id)
 		}
-		return s
+		return &s
 	}
 
 	// We should be able to insert 10 subscriptions without error.
 	for i := 0; i < 10; i++ {
 		ret, err := store.InsertSubscription(ctx, makeSubscription([]uint64{42, 43}))
 		require.NoError(t, err)
-		require.NotNil(t, ret)
+		require.NotNil(t, &ret)
 	}
 
 	// Inserting the 11th subscription will fail.
@@ -306,7 +312,7 @@ func TestStoreInsertTooManySubscription(t *testing.T) {
 	// Inserting a subscription in a different cell will succeed.
 	ret, err = store.InsertSubscription(ctx, makeSubscription([]uint64{45}))
 	require.NoError(t, err)
-	require.NotNil(t, ret)
+	require.NotNil(t, &ret)
 
 	// Inserting a subscription that overlaps with 42 or 43 will fail.
 	ret, err = store.InsertSubscription(ctx, makeSubscription([]uint64{7, 43}))
@@ -325,7 +331,7 @@ func TestStoreDeleteSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.InsertSubscription(ctx, *r.input)
+			sub1, err := store.InsertSubscription(ctx, r.input)
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
@@ -381,7 +387,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 		subscription := *r.input
 		subscription.Owner = owners[i]
 		subscription.Cells = cells[:i]
-		sub1, err := store.InsertSubscription(ctx, subscription)
+		sub1, err := store.InsertSubscription(ctx, &subscription)
 		require.NoError(t, err)
 		require.NotNil(t, sub1)
 
@@ -404,7 +410,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 		require.NoError(t, tearDownStore())
 	}()
 
-	sub := models.Subscription{
+	sub := &models.Subscription{
 		ID:    models.ID(uuid.New().String()),
 		Owner: models.Owner(uuid.New().String()),
 		Cells: s2.CellUnion{s2.CellID(42)},
@@ -423,7 +429,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 	ret, err := store.GetSubscription(ctx, sub.ID)
 	require.NoError(t, err)
-	require.NotNil(t, ret)
+	require.NotNil(t, &ret)
 
 	// But now the subscription has expired.
 	fakeClock.Advance(2 * time.Hour)
@@ -431,8 +437,9 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	subs, err = store.SearchSubscriptions(ctx, sub.Cells, sub.Owner)
 	require.NoError(t, err)
 	require.Len(t, subs, 0)
+	fmt.Println("starting")
 
 	ret, err = store.GetSubscription(ctx, sub.ID)
-	require.Error(t, err)
 	require.Nil(t, ret)
+	require.Error(t, err)
 }

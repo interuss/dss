@@ -115,16 +115,6 @@ func (c *Store) fetchSubscriptionByID(ctx context.Context, q queryable, id model
 	return c.fetchSubscription(ctx, q, query, id, c.clock.Now())
 }
 
-func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, id models.ID, owner models.Owner) (*models.Subscription, error) {
-	var query = fmt.Sprintf(`
-		SELECT %s FROM
-			subscriptions
-		WHERE id = $1
-		AND owner = $2
-		AND ends_at >= $3`, subscriptionFields)
-	return c.fetchSubscription(ctx, q, query, id, owner, c.clock.Now())
-}
-
 // fetchMaxSubscriptionCountByCellAndOwner counts how many subscriptions the
 // owner has in each one of these cells, and returns the number of subscriptions
 // in the cell with the highest number of subscriptions.
@@ -225,7 +215,7 @@ func (c *Store) GetSubscription(ctx context.Context, id models.ID) (*models.Subs
 
 // InsertSubscription inserts subscription into the store and returns
 // the resulting subscription including its ID.
-func (c *Store) InsertSubscription(ctx context.Context, s models.Subscription) (*models.Subscription, error) {
+func (c *Store) InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
 
 	tx, err := c.Begin()
 	if err != nil {
@@ -249,6 +239,8 @@ func (c *Store) InsertSubscription(ctx context.Context, s models.Subscription) (
 	case old != nil && !s.Version.Matches(old.Version):
 		// The user wants to update a subscription but the version doesn't match.
 		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
+	case old != nil && old.Owner != s.Owner:
+		return nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
@@ -270,7 +262,7 @@ func (c *Store) InsertSubscription(ctx context.Context, s models.Subscription) (
 		return nil, multierr.Combine(dsserr.Exhausted(errMsg), tx.Rollback())
 	}
 
-	newSubscription, err := c.pushSubscription(ctx, tx, &s)
+	newSubscription, err := c.pushSubscription(ctx, tx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +290,7 @@ func (c *Store) DeleteSubscription(ctx context.Context, id models.ID, owner mode
 	}
 
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := c.fetchSubscriptionByIDAndOwner(ctx, tx, id, owner)
+	old, err := c.fetchSubscriptionByID(ctx, tx, id)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
 		return nil, multierr.Combine(dsserr.NotFound(id.String()), tx.Rollback())
@@ -306,6 +298,8 @@ func (c *Store) DeleteSubscription(ctx context.Context, id models.ID, owner mode
 		return nil, multierr.Combine(err, tx.Rollback())
 	case !version.Empty() && !version.Matches(old.Version):
 		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
+	case old != nil && old.Owner != owner:
+		return nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
 	}
 
 	if _, err := tx.ExecContext(ctx, query, id, owner); err != nil {
