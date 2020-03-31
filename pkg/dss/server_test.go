@@ -21,6 +21,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var timeout = time.Second * 10
+
 func mustTimestamp(ts *tspb.Timestamp) *time.Time {
 	t, err := ptypes.Timestamp(ts)
 	if err != nil {
@@ -46,31 +48,43 @@ func (ms *mockStore) Close() error {
 }
 
 func (ms *mockStore) InsertSubscription(ctx context.Context, s models.Subscription) (*models.Subscription, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	args := ms.Called(ctx, s)
 	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
 func (ms *mockStore) GetSubscription(ctx context.Context, id models.ID) (*models.Subscription, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	args := ms.Called(ctx, id)
 	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
 func (ms *mockStore) DeleteSubscription(ctx context.Context, id models.ID, owner models.Owner, version *models.Version) (*models.Subscription, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	args := ms.Called(ctx, id, owner, version)
 	return args.Get(0).(*models.Subscription), args.Error(1)
 }
 
 func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner models.Owner) ([]*models.Subscription, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	args := ms.Called(ctx, cells, owner)
 	return args.Get(0).([]*models.Subscription), args.Error(1)
 }
 
 func (ms *mockStore) GetISA(ctx context.Context, id models.ID) (*models.IdentificationServiceArea, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	args := ms.Called(ctx, id)
 	return args.Get(0).(*models.IdentificationServiceArea), args.Error(1)
 }
 
 func (ms *mockStore) DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version *models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	args := ms.Called(ctx, id, owner, version)
 	return args.Get(0).(*models.IdentificationServiceArea), args.Get(1).([]*models.Subscription), args.Error(2)
 }
@@ -81,6 +95,8 @@ func (ms *mockStore) InsertISA(ctx context.Context, isa models.IdentificationSer
 }
 
 func (ms *mockStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*models.IdentificationServiceArea, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	args := ms.Called(ctx, cells, earliest, latest)
 	return args.Get(0).([]*models.IdentificationServiceArea), args.Error(1)
 }
@@ -361,6 +377,8 @@ func TestSearchSubscriptions(t *testing.T) {
 		}
 	)
 
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	ms.On("SearchSubscriptions", mock.Anything, mock.Anything, owner).Return(
 		[]*models.Subscription{
 			{
@@ -500,7 +518,9 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 		}
 	)
 
-	ms.On("DeleteISA", ctx, id, owner, mock.Anything).Return(
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	ms.On("DeleteISA", mock.Anything, id, owner, mock.Anything).Return(
 		&models.IdentificationServiceArea{
 			ID:      models.ID(id),
 			Owner:   models.Owner("me-myself-and-i"),
@@ -533,7 +553,9 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 		}
 	)
 
-	ms.On("SearchISAs", ctx, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	ms.On("SearchISAs", mock.Anything, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
 		[]*models.IdentificationServiceArea{
 			{
 				ID:    models.ID(uuid.New().String()),

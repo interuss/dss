@@ -6,8 +6,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jonboulle/clockwork"
+	"github.com/dpjacques/clockwork"
 	"go.uber.org/zap"
+)
+
+var (
+	// DefaultClock is what is used as the Store's clock, returned from Dial.
+	DefaultClock = clockwork.NewRealClock()
 )
 
 // Store is an implementation of dss.Store using
@@ -21,7 +26,7 @@ type Store struct {
 // Dial returns a Store instance connected to a cockroach instance available at
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html
-func Dial(uri string, logger *zap.Logger, clock clockwork.Clock) (*Store, error) {
+func Dial(uri string, logger *zap.Logger) (*Store, error) {
 	db, err := sql.Open("postgres", uri)
 	if err != nil {
 		return nil, err
@@ -30,7 +35,7 @@ func Dial(uri string, logger *zap.Logger, clock clockwork.Clock) (*Store, error)
 	return &Store{
 		DB:     db,
 		logger: logger,
-		clock:  clock,
+		clock:  DefaultClock,
 	}, nil
 }
 
@@ -152,18 +157,6 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		INDEX identification_service_area_id_idx (identification_service_area_id)
 	);
 	`
-	_, err := s.ExecContext(ctx, query)
-	return err
-}
-
-// cleanUp drops all required tables from the store, useful for testing.
-func (s *Store) cleanUp(ctx context.Context) error {
-	const query = `
-	DROP TABLE IF EXISTS cells_subscriptions;
-	DROP TABLE IF EXISTS subscriptions;
-	DROP TABLE IF EXISTS cells_identification_service_areas;
-	DROP TABLE IF EXISTS identification_service_areas;`
-
 	_, err := s.ExecContext(ctx, query)
 	return err
 }

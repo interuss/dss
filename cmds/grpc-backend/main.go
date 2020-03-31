@@ -19,7 +19,6 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -31,6 +30,7 @@ var (
 	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
 	jwksKeyID         = flag.String("jwks_key_id", "", "ID of a specific key in a JWKS")
 	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
+	timeout           = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
 	reflectAPI        = flag.Bool("reflect_api", false, "Whether to reflect the API.")
 	logFormat         = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
 	logLevel          = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
@@ -90,7 +90,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		logger.Panic("Failed to build URI", zap.Error(err))
 	}
 
-	store, err := cockroach.Dial(uri, logger, clockwork.NewRealClock())
+	store, err := cockroach.Dial(uri, logger)
 	if err != nil {
 		logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
 	}
@@ -100,7 +100,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 
 	dssServer := &dss.Server{
-		Store: store,
+		Store:   store,
+		Timeout: *timeout,
 	}
 
 	var keyResolver auth.KeyResolver
