@@ -47,7 +47,7 @@ func (ms *mockStore) Close() error {
 	return ms.Called().Error(0)
 }
 
-func (ms *mockStore) InsertSubscription(ctx context.Context, s models.Subscription) (*models.Subscription, error) {
+func (ms *mockStore) InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	args := ms.Called(ctx, s)
