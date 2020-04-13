@@ -84,7 +84,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\"}) / sum (kube_node_status_allocatable_memory_bytes{node=~\"^$Node.*$\"}) * 100",
+          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\"}) / sum (machine_memory_bytes{node=~\"^$Node.*$\"}) * 100",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -1342,7 +1342,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "1. Kubernetes Deployment Statefulset Daemonset metrics",
+  "title": "Kubernetes Deployment Statefulset Daemonset metrics",
   "uid": "oWe9aYxmk",
   "version": 7
 }
