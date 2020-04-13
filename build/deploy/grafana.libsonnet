@@ -32,7 +32,7 @@ local datasourcePrometheus(metadata) = {
       name: 'prometheus',
       orgId: 1,
       type: 'prometheus',
-      url: 'http://prometheus-service.' + metadata.namespace + '.svc:8080',
+      url: 'http://prometheus-service.' + metadata.namespace + '.svc:9090',
       version: 1,
     },
   ],
