@@ -424,7 +424,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (kube_node_status_allocatable_memory_bytes{node=~\"^$Node.*$\"})",
+          "expr": "sum (machine_memory_bytes{node=~\"^$Node.*$\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
