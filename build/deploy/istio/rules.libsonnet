@@ -6,6 +6,7 @@
       metadata: {
         name: 'crdb-stateful-service-entry',
         namespace: metadata.namespace,
+        release: 'istio',
       },
       spec: {
         hosts: [
