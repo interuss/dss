@@ -32,7 +32,7 @@ go.mod:
 
 .PHONY: format
 format:
-	clang-format -style=file -i pkg/dssproto/dss.proto
+	clang-format -style=file -i pkg/dssproto/rid.proto
 
 .PHONY: install
 install:
@@ -42,16 +42,16 @@ install:
 lint: install
 	golint ./...
 
-pkg/dssproto/dss.pb.go: pkg/dssproto/dss.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssproto/dss.proto
+pkg/dssproto/rid.pb.go: pkg/dssproto/rid.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssproto/rid.proto
 
-pkg/dssproto/dss.pb.gw.go: pkg/dssproto/dss.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssproto/dss.proto
+pkg/dssproto/rid.pb.gw.go: pkg/dssproto/rid.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssproto/rid.proto
 
-pkg/dssproto/dss.proto: install-proto-generation
+pkg/dssproto/rid.proto: install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
 		-spec interfaces/uastech/standards/remoteid/augmented.yaml -annotate \
-		-out pkg/dssproto/dss.proto \
+		-out pkg/dssproto/rid.proto \
 		-tag dss \
 		-indent 2 \
 		-package dssproto
