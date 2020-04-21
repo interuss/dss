@@ -9,6 +9,7 @@ import (
 	"github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/geo"
@@ -39,7 +40,13 @@ func (s *Server) AuthScopes() map[string][]string {
 		"GetSubscription":                  {ReadISAScope},
 		"SearchSubscriptions":              {ReadISAScope},
 		"UpdateSubscription":               {WriteISAScope},
+		"ValidateOauth":                    {WriteISAScope},
 	}
+}
+
+// Validate will exercise validating the Oauth token
+func (s *Server) ValidateOauth(ctx context.Context, req *empty.Empty) (*dspb.ValidateOauthResponse, error) {
+	return &dspb.ValidateOauthResponse{}, nil
 }
 
 func (s *Server) GetIdentificationServiceArea(
