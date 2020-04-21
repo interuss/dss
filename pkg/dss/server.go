@@ -11,6 +11,7 @@ import (
 	"github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/geo"
@@ -57,6 +58,11 @@ func (a *AuxServer) ValidateOauth(ctx context.Context, req *auxpb.ValidateOauthR
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("owner mismatch, required: %s, but oauth token has %s", req.Owner, owner))
 	}
 	return &auxpb.ValidateOauthResponse{}, nil
+}
+
+// Validate will exercise validating the Oauth token
+func (s *Server) ValidateOauth(ctx context.Context, req *empty.Empty) (*dspb.ValidateOauthResponse, error) {
+	return &dspb.ValidateOauthResponse{}, nil
 }
 
 func (s *Server) GetIdentificationServiceArea(
