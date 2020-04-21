@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/profiler"
@@ -54,7 +55,7 @@ var (
 		applicationName: flag.String("cockroach_application_name", "dss", "application name for tagging the connection to cockroach"),
 	}
 
-	jwtAudience = flag.String("jwt_audience", "", "Require that JWTs contain this `aud` claim")
+	jwtAudiences = flag.String("acceptable_jwt_audiences", "", "commad separated acceptable JWT `aud` claims")
 )
 
 // RunGRPCServer starts the example gRPC service.
@@ -62,7 +63,7 @@ var (
 func RunGRPCServer(ctx context.Context, address string) error {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
-	if *jwtAudience == "" {
+	if len(*jwtAudiences) == 0 {
 		// TODO: Make this flag required once all parties can set audiences
 		// correctly.
 		logger.Warn("missing required --jwt_audience")
@@ -131,7 +132,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 			KeyResolver:       keyResolver,
 			KeyRefreshTimeout: *keyRefreshTimeout,
 			RequiredScopes:    dssServer.AuthScopes(),
-			RequiredAudience:  *jwtAudience,
+			RequiredAudiences: strings.Split(*jwtAudiences, ","),
 		},
 	)
 	if err != nil {

@@ -109,18 +109,19 @@ func TestRSAAuthInterceptor(t *testing.T) {
 			Key: &key.PublicKey,
 		},
 		KeyRefreshTimeout: 1 * time.Millisecond,
+		RequiredAudiences: []string{""},
 	})
 
 	require.NoError(t, err)
 
-	for _, test := range authTests {
+	for i, test := range authTests {
 		_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},
 			func(ctx context.Context, req interface{}) (interface{}, error) { return nil, nil })
 		if status.Code(err) != test.code {
-			t.Errorf("expected: %v, got: %v", test.code, status.Code(err))
+			t.Errorf("failed test %d, expected: %v, got: %v, with message %s", i, test.code, status.Code(err), err.Error())
 		}
 		if err != nil && !strings.Contains(err.Error(), test.errorMessage) {
-			t.Errorf("expected: %v, got: %v", test.errorMessage, err.Error())
+			t.Errorf("failed test %d, expected: %v, got: %v", i, test.errorMessage, err.Error())
 		}
 	}
 }
