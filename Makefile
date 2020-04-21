@@ -58,7 +58,7 @@ pkg/dssproto/rid.proto: install-proto-generation
 
 pkg/dssproto/utm.proto: install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
-		-spec interfaces/astm-utm/Protocol/utm.yaml \
+		-spec interfaces/astm-utm/Protocol/utm.yaml -annotate \
 		-out pkg/dssproto/utm.proto \
 		-tag dss \
 		-indent 2 \
@@ -68,7 +68,7 @@ pkg/dssproto/utm.proto: install-proto-generation
 install-proto-generation:
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
-	go get github.com/golang/protobuf/protoc-gen-go
+	go get github.com/golang/protobuf/protoc-gen-go@v1.3.3
 
 .PHONY: kubecfg
 kubecfg:
