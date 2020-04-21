@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+package dssproto;
+
+import "google/protobuf/timestamp.proto";
