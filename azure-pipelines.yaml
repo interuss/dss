@@ -37,7 +37,7 @@ jobs:
       - bash: |
           set -exo pipefail
           export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
-          make && make staticcheck && make test && make test-cockroach && make test-e2e
+          make && make test && make test-cockroach && make test-e2e
         name: "build_and_test"
         displayName: "build_and_test"
         

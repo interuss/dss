@@ -23,7 +23,7 @@ steps:
 - id: 'Lint: Formatting staticcheck'
   name: golangci/golangci-lint:v1.24.0
   # Run staticcheck everywhere but the http-gateway
-  args: ['golangci-lint', 'run', '-v', '--disable-all',  '-E', 'staticcheck', '--skip-dirs', '^cmds/http-gateway', '--timeout', '5m']
+  args: ['golangci-lint', 'run', '-v', '--disable-all',  '-E', 'staticcheck', '--skip-dirs', '^cmds/http-gateway', '^pkg/logging', '--timeout', '5m']
   volumes:
   - name: 'go-vol'
     path: '/go'
