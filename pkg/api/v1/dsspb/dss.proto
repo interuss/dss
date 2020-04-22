@@ -6,8 +6,6 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "pkg/dssproto";
-
 enum HorizontalAccuracy {
   HA_UNKNOWN = 0;
   H_A10_NM_PLUS = 1;

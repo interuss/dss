@@ -15,7 +15,7 @@ require (
 	github.com/google/pprof v0.0.0-20200229191704-1ebb73c60ed3 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0
-	github.com/grpc-ecosystem/grpc-gateway v1.14.4
+	github.com/grpc-ecosystem/grpc-gateway v1.14.3
 	github.com/lib/pq v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
