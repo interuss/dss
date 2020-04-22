@@ -3,7 +3,6 @@ syntax = "proto3";
 package dsspb;
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 enum HorizontalAccuracy {
@@ -495,9 +494,6 @@ message UpdateSubscriptionRequest {
   string version = 3;
 }
 
-// Validate Oauth token response
-message ValidateOauthResponse {}
-
 // A three-dimensional geographic volume consisting of a vertically-extruded polygon.
 message Volume3D {
   // Maximum bounding altitude of this volume.
@@ -624,15 +620,6 @@ service DiscoveryAndSynchronizationService {
     option (google.api.http) = {
       put: "/v1/dss/subscriptions/{id}/{version}"
       body: "params"
-    };
-  }
-
-  // /dss/validate_oauth
-  // 
-  // Validate Oauth token against the DSS.
-  rpc ValidateOauth(google.protobuf.Empty) returns (ValidateOauthResponse) {
-    option (google.api.http) = {
-      get: "/v1/dss/validate_oauth"
     };
   }
 }
