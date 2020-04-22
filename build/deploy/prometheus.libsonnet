@@ -4,10 +4,13 @@ local istioScrape = import 'prometheus_configs/istio.libsonnet';
 local crdbAggregation = import 'prometheus_configs/crdb-aggregation.libsonnet';
 
 
-local prometheusConfig = {
+local PrometheusConfig(metadata) = {
   global: {
     scrape_interval: '5s',
     evaluation_interval: '5s',
+    external_label:{
+      cluster_name: metadata.clusterName
+    },
   },
   rule_files: [
     'aggregation.rules.yml',
@@ -90,7 +93,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
     },
     configMap: base.ConfigMap(metadata, 'prometheus-server-conf') {
       data: {
-        'prometheus.yml': std.manifestYamlDoc(prometheusConfig),
+        'prometheus.yml': std.manifestYamlDoc(PrometheusConfig(metadata)),
         'aggregation.rules.yml': std.manifestYamlDoc(crdbAggregation),
       },
     },
