@@ -4,10 +4,11 @@ import (
 	"context"
 	"os"
 
-	"github.com/golang/protobuf/proto"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -105,16 +106,25 @@ func WithValuesFromContext(ctx context.Context, logger *zap.Logger) *zap.Logger 
 // logs incoming requests and corresponding responses to 'logger'.
 func DumpRequestResponseInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		logger.Sugar().Infof("Request (%s):\n%s",
-			info.FullMethod,
-			proto.MarshalTextString(req.(proto.Message)))
+
+		if reqText, err := prototext.Marshal(req.(proto.Message)); err == nil {
+			logger.Sugar().Infof("Request (%s):\n%s", info.FullMethod,
+				string(reqText))
+		} else {
+			logger.Sugar().Warnf("Could not marshal text for request (%s):\n%+v",
+				info.FullMethod, req)
+		}
 
 		resp, err = handler(ctx, req)
 
 		if resp != nil && err == nil {
-			logger.Sugar().Infof("Response (%s):\n%s",
-				info.FullMethod,
-				proto.MarshalTextString(resp.(proto.Message)))
+			if respText, err := prototext.Marshal(resp.(proto.Message)); err == nil {
+				logger.Sugar().Infof("Response (%s):\n%s",
+					info.FullMethod, string(respText))
+			} else {
+				logger.Sugar().Warnf("Could not marshal text for resposne (%s):\n%+v",
+					info.FullMethod, resp)
+			}
 		}
 		return
 	}
