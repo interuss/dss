@@ -14,7 +14,16 @@ import re
 import common
 
 def test_validate(session):
-  pass
+  resp = session.get('/validate_oauth')
+  assert resp.status_code == 200
+
+def test_validate_token_good_user(session):
+  resp = session.get('/validate_oauth?owner=fake-user')
+  assert resp.status_code == 200
+
+def test_validate_token_bad_user(session):
+  resp = session.get('/validate_oauth?owner=bad_user')
+  assert resp.status_code == 403
 
 def test_put_isa_with_read_only_scope_token(rogue_session, session, isa2_uuid):
   read_only_token = session.issue_token(['dss.read.identification_service_areas'])
