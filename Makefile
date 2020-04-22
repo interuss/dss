@@ -62,12 +62,19 @@ install-proto-generation:
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
 	go get github.com/golang/protobuf/protoc-gen-go
 
+.PHONY: install-staticcheck
+install-staticcheck:
+	go get honnef.co/go/tools/cmd/staticcheck
 
 .PHONY: kubecfg
 kubecfg:
 	mkdir -p temp
 	wget $(kubecfg_download) -O ./temp/$(kubecfg_file)
 	install ./temp/$(kubecfg_file) $(GOBIN)/kubecfg
+
+.PHONY: staticcheck
+staticcheck: install-staticcheck
+	staticcheck -go 1.12 ./...
 
 .PHONY: test
 test: kubecfg
