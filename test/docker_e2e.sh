@@ -8,7 +8,7 @@ touch $RESULTFILE
 cat /dev/null > $RESULTFILE
 
 OS=$(uname)
-if [[ $OS == "Darwin" ]]; then 
+if [[ $OS == "Darwin" ]]; then
 	# OSX uses BSD readlink
 	BASEDIR="$(dirname $0)/.."
 else
@@ -62,8 +62,8 @@ docker run -d --rm --name dss-crdb-for-debugging \
 
 sleep 5
 echo " -------------- BOOTSTRAP ----------------- "
-echo "Building local container for testing"
-docker build -q --rm . -t local-interuss-dss-image
+echo "Building local container for testing (see grpc-backend-build.log for details)"
+docker build --rm . -t local-interuss-dss-image > grpc-backend-build.log
 
 echo " ------------ GRPC BACKEND ---------------- "
 echo "Cleaning up any pre-existing grpc-backend container"
