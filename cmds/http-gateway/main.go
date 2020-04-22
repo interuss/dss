@@ -11,8 +11,8 @@ import (
 
 	"cloud.google.com/go/profiler"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/build"
-	"github.com/interuss/dss/pkg/dssproto"
 	"github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
@@ -60,7 +60,7 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 		grpc.WithTimeout(10 * time.Second),
 	}
 
-	err := dssproto.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts)
+	err := dsspb.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts)
 	if err != nil {
 		return err
 	}

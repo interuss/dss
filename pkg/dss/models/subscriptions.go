@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	dsspb "github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/geo"
-	dspb "github.com/interuss/dss/pkg/dssproto"
 	dsserr "github.com/interuss/dss/pkg/errors"
 
 	"github.com/golang/geo/s2"
@@ -36,10 +36,10 @@ type Subscription struct {
 	AltitudeLo        *float32
 }
 
-func (s *Subscription) ToNotifyProto() *dspb.SubscriberToNotify {
-	return &dspb.SubscriberToNotify{
+func (s *Subscription) ToNotifyProto() *dsspb.SubscriberToNotify {
+	return &dsspb.SubscriberToNotify{
 		Url: s.Url,
-		Subscriptions: []*dspb.SubscriptionState{
+		Subscriptions: []*dsspb.SubscriptionState{
 			{
 				NotificationIndex: int32(s.NotificationIndex),
 				SubscriptionId:    s.ID.String(),
@@ -48,11 +48,11 @@ func (s *Subscription) ToNotifyProto() *dspb.SubscriberToNotify {
 	}
 }
 
-func (s *Subscription) ToProto() (*dspb.Subscription, error) {
-	result := &dspb.Subscription{
+func (s *Subscription) ToProto() (*dsspb.Subscription, error) {
+	result := &dsspb.Subscription{
 		Id:                s.ID.String(),
 		Owner:             s.Owner.String(),
-		Callbacks:         &dspb.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.Url},
+		Callbacks:         &dsspb.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.Url},
 		NotificationIndex: int32(s.NotificationIndex),
 		Version:           s.Version.String(),
 	}
@@ -75,7 +75,7 @@ func (s *Subscription) ToProto() (*dspb.Subscription, error) {
 	return result, nil
 }
 
-func (s *Subscription) SetExtents(extents *dspb.Volume4D) error {
+func (s *Subscription) SetExtents(extents *dsspb.Volume4D) error {
 	var err error
 	if extents == nil {
 		return nil

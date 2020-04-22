@@ -6,16 +6,15 @@ import (
 	"net"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/profiler"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss"
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/dss/cockroach"
 	"github.com/interuss/dss/pkg/dss/validations"
-	"github.com/interuss/dss/pkg/dssproto"
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
@@ -54,7 +53,7 @@ var (
 		applicationName: flag.String("cockroach_application_name", "dss", "application name for tagging the connection to cockroach"),
 	}
 
-	jwtAudiences = flag.String("acceptable_jwt_audiences", "", "commad separated acceptable JWT `aud` claims")
+	jwtAudience = flag.String("jwt_audience", "", "Require that JWTs contain this `aud` claim")
 )
 
 // RunGRPCServer starts the example gRPC service.
@@ -62,7 +61,7 @@ var (
 func RunGRPCServer(ctx context.Context, address string) error {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
-	if len(*jwtAudiences) == 0 {
+	if *jwtAudience == "" {
 		// TODO: Make this flag required once all parties can set audiences
 		// correctly.
 		logger.Warn("missing required --jwt_audience")
@@ -130,7 +129,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 			KeyResolver:       keyResolver,
 			KeyRefreshTimeout: *keyRefreshTimeout,
 			RequiredScopes:    dssServer.AuthScopes(),
-			RequiredAudiences: strings.Split(*jwtAudiences, ","),
+			RequiredAudience:  *jwtAudience,
 		},
 	)
 	if err != nil {
@@ -155,7 +154,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		reflection.Register(s)
 	}
 
-	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
+	dsspb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 
 	logger.Info("build", zap.Any("description", build.Describe()))
 

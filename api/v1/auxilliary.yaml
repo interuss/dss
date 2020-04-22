@@ -1,0 +1,60 @@
+---
+openapi: 3.0.2
+info:
+  title: Discovery and Synchronization Service Auxilliary API's
+  version: 0.8.0
+  description: |-
+    Auxilliary API's to the DSS
+paths:
+  /v1/dss/validate_oauth:
+    summary: Validate Oauth token against the DSS.
+    description: ""
+    get:
+      tags:
+      - dss
+      operationId: validateOauth
+      parameters:
+      - name: owner
+        description: Validate the owner claim matches the provided owner.
+        schema:
+          type: string
+        in: query
+        required: false
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateOauthResponse'
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bearer access token was not provided in Authorization header,
+            token could not be decoded, or token was invalid.
+        403:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: The access token was decoded successfully but did not include
+            a scope appropriate to this endpoint.
+      security:
+      - AuthFromAuthorizationAuthority:
+      summary: /dss/validate_oauth
+      description: Validate Oauth token against the DSS.
+components:
+  schemas:
+    ValidateOauthResponse:
+      description: Validate Oauth token response
+      type: object
+security:
+- AuthFromAuthorizationAuthority:
+  - dss.read.position_reporting_entities
+  - dss.write.position_reporting_entities
+tags:
+- name: dss
+  description: Auxilliary endpoints exposed by the DSS server.
+x-global-options:
+  go_package: pkg/dss/auxpb
