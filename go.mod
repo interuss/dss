@@ -31,6 +31,7 @@ require (
 	google.golang.org/grpc v1.27.0
 	gopkg.in/square/go-jose.v2 v2.4.0
 	gopkg.in/yaml.v2 v2.2.8 // indirect
+	honnef.co/go/tools v0.0.1-2020.1.3 // indirect
 )
 
 replace k8s.io/api => k8s.io/api v0.17.0

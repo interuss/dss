@@ -99,7 +99,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		{metadata.NewIncomingContext(ctx, metadata.New(nil)), codes.Unauthenticated, "missing token"},
 		{rsaTokenCtx(ctx, badKey, 100, 20), codes.Unauthenticated, "crypto/rsa: verification error"},
 		{rsaTokenCtx(ctx, key, 100, 20), codes.OK, ""},
-		{rsaTokenCtxWithMissingIssuer(ctx, key, 100, 20), codes.Unauthenticated, "Missing Issuer"},
+		{rsaTokenCtxWithMissingIssuer(ctx, key, 100, 20), codes.Unauthenticated, "missing Issuer"},
 		{rsaTokenCtx(ctx, key, 30, 20), codes.Unauthenticated, "token is expired"},
 		{rsaTokenCtx(ctx, key, 100, 50), codes.Unauthenticated, "token is not valid yet"},
 	}

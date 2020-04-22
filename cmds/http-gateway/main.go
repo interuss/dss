@@ -56,6 +56,7 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
+		//lint:ignore SA1019 This is required as an argument to a generated function.
 		grpc.WithTimeout(10 * time.Second),
 	}
 
