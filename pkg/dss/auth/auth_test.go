@@ -110,7 +110,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 			Key: &key.PublicKey,
 		},
 		KeyRefreshTimeout: 1 * time.Millisecond,
-		RequiredAudiences: []string{""},
+		AcceptedAudiences: []string{""},
 	})
 
 	require.NoError(t, err)
