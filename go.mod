@@ -7,7 +7,6 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.38.0
-	github.com/NYTimes/openapi2proto v0.0.0-00010101000000-000000000000 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dpjacques/clockwork v0.1.0
 	github.com/gogo/protobuf v1.3.1
