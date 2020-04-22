@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
-	dsspb "github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/geo"
 	dsserr "github.com/interuss/dss/pkg/errors"
 )

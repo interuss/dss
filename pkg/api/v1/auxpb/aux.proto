@@ -4,7 +4,7 @@ package auxpb;
 
 import "google/api/annotations.proto";
 
-option go_package = "pkg/dss/auxpb";
+option go_package = "pkg/api/v1//auxpb";
 
 message ValidateOauthRequest {
   // Validate the owner claim matches the provided owner.
@@ -14,7 +14,7 @@ message ValidateOauthRequest {
 // Validate Oauth token response
 message ValidateOauthResponse {}
 
-service DiscoveryAndSynchronizationServiceAuxilliaryAPISService {
+service DSSAuxService {
   // /dss/validate_oauth
   // 
   // Validate Oauth token against the DSS.

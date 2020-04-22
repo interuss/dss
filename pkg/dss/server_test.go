@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	dsspb "github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/geo"
 	"github.com/interuss/dss/pkg/dss/geo/testdata"

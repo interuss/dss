@@ -13,6 +13,9 @@ import re
 
 import common
 
+def test_validate(session):
+  pass
+
 def test_put_isa_with_read_only_scope_token(rogue_session, session, isa2_uuid):
   read_only_token = session.issue_token(['dss.read.identification_service_areas'])
   rogue_session.headers['Authorization'] = f'Bearer {read_only_token}'

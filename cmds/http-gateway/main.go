@@ -11,6 +11,7 @@ import (
 
 	"cloud.google.com/go/profiler"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/errors"
@@ -60,8 +61,11 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 		grpc.WithTimeout(10 * time.Second),
 	}
 
-	err := dsspb.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts)
-	if err != nil {
+	if err := dsspb.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
+		return err
+	}
+
+	if err := auxpb.RegisterDSSAuxServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
 		return err
 	}
 

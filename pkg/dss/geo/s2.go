@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/golang/geo/s2"
-	dsspb "github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 )
 
 const (

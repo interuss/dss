@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	dsspb "github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/auxpb"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/golang/protobuf/ptypes"
@@ -27,6 +28,9 @@ type Server struct {
 	Timeout time.Duration
 }
 
+// AuxServer implements auxpb.DSSAuxService.
+type AuxServer struct{}
+
 func (s *Server) AuthScopes() map[string][]string {
 	return map[string][]string{
 		"CreateIdentificationServiceArea":  {WriteISAScope},
@@ -44,15 +48,15 @@ func (s *Server) AuthScopes() map[string][]string {
 }
 
 // Validate will exercise validating the Oauth token
-func (s *Server) ValidateOauth(ctx context.Context, req *dsspb.ValidateOauthRequest) (*dsspb.ValidateOauthResponse, error) {
+func (a *AuxServer) ValidateOauth(ctx context.Context, req *auxpb.ValidateOauthRequest) (*auxpb.ValidateOauthResponse, error) {
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	if req.Owner != "" && req.Owner != owner {
-		return nil, dsserr.PermissionDenied("owner mismatch, required: %s, but oauth token has %s", req.Owner, owner)
+	if req.Owner != "" && req.Owner != owner.String() {
+		return nil, dsserr.PermissionDenied(fmt.Sprintf("owner mismatch, required: %s, but oauth token has %s", req.Owner, owner))
 	}
-	return &dsspb.ValidateOauthResponse{}, nil
+	return &auxpb.ValidateOauthResponse{}, nil
 }
 
 func (s *Server) GetIdentificationServiceArea(

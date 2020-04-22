@@ -3,7 +3,7 @@ package geo
 import (
 	"testing"
 
-	dsspb "github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/geo/testdata"
 
 	"github.com/golang/geo/s2"
