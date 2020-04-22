@@ -1824,3 +1824,5 @@ tags:
   description: Endpoints exposed by the DSS server.
 - name: p2p_rid
   description: Endpoints exposed by remote ID service providers for peer-peer communication.
+x-global-options:
+  go_package: pkg/dssproto

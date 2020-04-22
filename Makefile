@@ -58,8 +58,8 @@ pkg/dssproto/dss.proto: install-proto-generation
 
 .PHONY: install-proto-generation
 install-proto-generation:
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
 	go get github.com/golang/protobuf/protoc-gen-go
 
 .PHONY: install-staticcheck
