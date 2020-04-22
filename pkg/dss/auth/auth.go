@@ -142,7 +142,7 @@ type Authorizer struct {
 	logger            *zap.Logger
 	key               interface{}
 	requiredScopes    map[string][]string
-	requiredAudiences map[string]bool
+	acceptedAudiences map[string]bool
 }
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
@@ -150,7 +150,7 @@ type Configuration struct {
 	KeyResolver       KeyResolver         // Used to initialize and periodically refresh keys.
 	KeyRefreshTimeout time.Duration       // Keys are refreshed on this cadence.
 	RequiredScopes    map[string][]string // RequiredScopes are enforced if not nil.
-	RequiredAudiences []string            // RequiredAudiences is enforced if not empty.
+	AcceptedAudiences []string            // AcceptedAudiences enforces the aud claim on the jwt. An empty string allows no aud claim.
 }
 
 // NewRSAAuthorizer returns an Authorizer instance using values from configuration.
@@ -163,13 +163,13 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 	}
 
 	auds := make(map[string]bool)
-	for _, s := range configuration.RequiredAudiences {
+	for _, s := range configuration.AcceptedAudiences {
 		auds[s] = true
 	}
 
 	authorizer := &Authorizer{
 		requiredScopes:    configuration.RequiredScopes,
-		requiredAudiences: auds,
+		acceptedAudiences: auds,
 		logger:            logger,
 		key:               key,
 	}
@@ -221,7 +221,7 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return nil, dsserr.Unauthenticated(err.Error())
 	}
 
-	if !a.requiredAudiences[claims.Audience] {
+	if !a.acceptedAudiences[claims.Audience] {
 		return nil, dsserr.Unauthenticated(
 			fmt.Sprintf("invalid token audience: %v", claims.Audience))
 	}

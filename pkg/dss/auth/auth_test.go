@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -115,14 +116,16 @@ func TestRSAAuthInterceptor(t *testing.T) {
 	require.NoError(t, err)
 
 	for i, test := range authTests {
-		_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},
-			func(ctx context.Context, req interface{}) (interface{}, error) { return nil, nil })
-		if status.Code(err) != test.code {
-			t.Errorf("failed test %d, expected: %v, got: %v, with message %s", i, test.code, status.Code(err), err.Error())
-		}
-		if err != nil && !strings.Contains(err.Error(), test.errorMessage) {
-			t.Errorf("failed test %d, expected: %v, got: %v", i, test.errorMessage, err.Error())
-		}
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},
+				func(ctx context.Context, req interface{}) (interface{}, error) { return nil, nil })
+			if status.Code(err) != test.code {
+				t.Errorf("failed test %d, expected: %v, got: %v, with message %s", i, test.code, status.Code(err), err.Error())
+			}
+			if err != nil && !strings.Contains(err.Error(), test.errorMessage) {
+				t.Errorf("failed test %d, expected: %v, got: %v", i, test.errorMessage, err.Error())
+			}
+		})
 	}
 }
 
