@@ -71,14 +71,22 @@ pkg/api/v1/auxpb/aux.proto: install-proto-generation
 		-indent 2 \
 		-package auxpb
 
+pkg/api/v1/utmpb/utm.proto: install-proto-generation
+	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
+		-spec interfaces/astm-utm/Protocol/utm.yaml -annotate \
+		-out pkg/api/v1/utmpb/utm.proto \
+		-tag dss \
+		-indent 2 \
+		-package utmpb
+
 .PHONY: install-proto-generation
 install-proto-generation:
 ifeq ($(shell which protoc),)
 	$(error Proto generation requires that protoc be installed; please install protoc.  On a Mac: brew install protobuf  On Linux: See http://google.github.io/proto-lens/installing-protoc.html)
 endif
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
-	go get github.com/golang/protobuf/protoc-gen-go
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+	go get github.com/golang/protobuf/protoc-gen-go@1.4.0
 ifeq ($(shell which protoc-gen-go),)
 	$(error protoc-gen-go is not accessible after installation; GOPATH must be set and PATH must contain GOPATH/bin)
 	# Example:
@@ -87,7 +95,7 @@ ifeq ($(shell which protoc-gen-go),)
 endif
 
 .PHONY: protos
-protos: pkg/api/v1/auxpb/aux.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go;
+protos: pkg/api/v1/auxpb/aux.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go pkg/api/v1/utmpb/utm.proto;
 
 .PHONY: install-staticcheck
 install-staticcheck:
