@@ -78,7 +78,7 @@ install-proto-generation:
 	go get github.com/golang/protobuf/protoc-gen-go
 
 .PHONY: protos
-protos: pkg/api/v1/auxpb/aux.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go
+protos: pkg/api/v1/auxpb/aux.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go;
 
 .PHONY: install-staticcheck
 install-staticcheck:
