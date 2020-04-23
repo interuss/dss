@@ -52,7 +52,7 @@ pkg/api/v1/dsspb/dss.pb.gw.go: pkg/api/v1/dsspb/dss.pb.go
 pkg/api/v1/dsspb/dss.proto: install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
 		-spec interfaces/uastech/standards/remoteid/augmented.yaml -annotate \
-		-out pkg/dssproto/dss.proto \
+		-out pkg/api/v1/dsspb/dss.proto \
 		-tag dss \
 		-indent 2 \
 		-package dsspb
