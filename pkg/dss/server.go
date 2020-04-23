@@ -43,6 +43,7 @@ func (s *Server) AuthScopes() map[string][]string {
 		"GetSubscription":                  {ReadISAScope},
 		"SearchSubscriptions":              {ReadISAScope},
 		"UpdateSubscription":               {WriteISAScope},
+		"ValidateOauth":                    {WriteISAScope},
 	}
 }
 
