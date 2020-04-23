@@ -3,15 +3,15 @@ package geo
 import (
 	"testing"
 
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/geo/testdata"
-	dspb "github.com/interuss/dss/pkg/dssproto"
 
 	"github.com/golang/geo/s2"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGeoPolygonToCellIDs(t *testing.T) {
-	got, err := GeoPolygonToCellIDs(&dspb.GeoPolygon{Vertices: []*dspb.LatLngPoint{
+	got, err := GeoPolygonToCellIDs(&dsspb.GeoPolygon{Vertices: []*dsspb.LatLngPoint{
 		// Stanford
 		{
 			Lat: 37.427636,

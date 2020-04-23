@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/golang/geo/s2"
-	dspb "github.com/interuss/dss/pkg/dssproto"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 )
 
 const (
@@ -68,21 +68,21 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	return 0, nil, nil
 }
 
-func Volume4DToCellIDs(v4 *dspb.Volume4D) (s2.CellUnion, error) {
+func Volume4DToCellIDs(v4 *dsspb.Volume4D) (s2.CellUnion, error) {
 	if v4 == nil {
 		return nil, errBadCoordSet
 	}
 	return Volume3DToCellIDs(v4.SpatialVolume)
 }
 
-func Volume3DToCellIDs(v3 *dspb.Volume3D) (s2.CellUnion, error) {
+func Volume3DToCellIDs(v3 *dsspb.Volume3D) (s2.CellUnion, error) {
 	if v3 == nil {
 		return nil, errBadCoordSet
 	}
 	return GeoPolygonToCellIDs(v3.Footprint)
 }
 
-func GeoPolygonToCellIDs(geopolygon *dspb.GeoPolygon) (s2.CellUnion, error) {
+func GeoPolygonToCellIDs(geopolygon *dsspb.GeoPolygon) (s2.CellUnion, error) {
 	var points []s2.Point
 	if geopolygon == nil {
 		return nil, errBadCoordSet

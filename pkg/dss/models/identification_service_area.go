@@ -7,8 +7,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/geo"
-	dspb "github.com/interuss/dss/pkg/dssproto"
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
@@ -24,8 +24,8 @@ type IdentificationServiceArea struct {
 	AltitudeLo *float32
 }
 
-func (i *IdentificationServiceArea) ToProto() (*dspb.IdentificationServiceArea, error) {
-	result := &dspb.IdentificationServiceArea{
+func (i *IdentificationServiceArea) ToProto() (*dsspb.IdentificationServiceArea, error) {
+	result := &dsspb.IdentificationServiceArea{
 		Id:         i.ID.String(),
 		Owner:      i.Owner.String(),
 		FlightsUrl: i.Url,
@@ -50,7 +50,7 @@ func (i *IdentificationServiceArea) ToProto() (*dspb.IdentificationServiceArea, 
 	return result, nil
 }
 
-func (i *IdentificationServiceArea) SetExtents(extents *dspb.Volume4D) error {
+func (i *IdentificationServiceArea) SetExtents(extents *dsspb.Volume4D) error {
 	var err error
 	if extents == nil {
 		return nil

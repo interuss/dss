@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/profiler"
+	"github.com/interuss/dss/pkg/api/v1/auxpb"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss"
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/dss/cockroach"
 	"github.com/interuss/dss/pkg/dss/validations"
-	"github.com/interuss/dss/pkg/dssproto"
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
@@ -103,6 +104,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		Store:   store,
 		Timeout: *timeout,
 	}
+	auxServer := &dss.AuxServer{}
 
 	var keyResolver auth.KeyResolver
 	switch {
@@ -154,7 +156,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		reflection.Register(s)
 	}
 
-	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
+	dsspb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
+	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
 
 	logger.Info("build", zap.Any("description", build.Describe()))
 

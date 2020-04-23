@@ -32,7 +32,8 @@ go.mod:
 
 .PHONY: format
 format:
-	clang-format -style=file -i pkg/dssproto/dss.proto
+	clang-format -style=file -i pkg/api/v1/dsspb/dss.proto
+	clang-format -style=file -i pkg/api/v1/auxpb/aux.proto
 
 .PHONY: install
 install:
@@ -42,25 +43,42 @@ install:
 lint: install
 	golint ./...
 
-pkg/dssproto/dss.pb.go: pkg/dssproto/dss.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssproto/dss.proto
+pkg/api/v1/dsspb/dss.pb.go: pkg/api/v1/dsspb/dss.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/api/v1/dsspb/dss.proto
 
-pkg/dssproto/dss.pb.gw.go: pkg/dssproto/dss.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssproto/dss.proto
+pkg/api/v1/dsspb/dss.pb.gw.go: pkg/api/v1/dsspb/dss.pb.go
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/api/v1/dsspb/dss.proto
 
-pkg/dssproto/dss.proto: install-proto-generation
+pkg/api/v1/dsspb/dss.proto: install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
 		-spec interfaces/uastech/standards/remoteid/augmented.yaml -annotate \
-		-out pkg/dssproto/dss.proto \
+		-out pkg/api/v1/dsspb/dss.proto \
 		-tag dss \
 		-indent 2 \
-		-package dssproto
+		-package dsspb
+
+pkg/api/v1/auxpb/aux.pb.go: pkg/api/v1/auxpb/aux.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/api/v1/auxpb/aux.proto
+
+pkg/api/v1/auxpb/aux.pb.gw.go: pkg/api/v1/auxpb/aux.pb.go
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/api/v1/auxpb/aux.proto
+
+pkg/api/v1/auxpb/aux.proto: install-proto-generation
+	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
+		-spec interfaces/v1/auxiliary.yaml -annotate \
+		-out pkg/api/v1/auxpb/aux.proto \
+		-tag dss \
+		-indent 2 \
+		-package auxpb
 
 .PHONY: install-proto-generation
 install-proto-generation:
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
 	go get github.com/golang/protobuf/protoc-gen-go
+
+.PHONY: protos
+protos: pkg/api/v1/auxpb/aux.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go;
 
 .PHONY: install-staticcheck
 install-staticcheck:
