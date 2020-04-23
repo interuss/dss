@@ -1,4 +1,4 @@
-local cockroachAuxilliary = import 'cockroachdb-auxilliary.libsonnet';
+local cockroachAuxiliary = import 'cockroachdb-auxiliary.libsonnet';
 local cockroachdb = import 'cockroachdb.libsonnet';
 local backend = import 'grpc-backend.libsonnet';
 local gateway = import 'http-gateway.libsonnet';
@@ -45,7 +45,7 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     pspRB: if metadata.PSP.roleBinding then RoleBinding(metadata),
 
     sset: cockroachdb.StatefulSet(metadata),
-    auxilliary: cockroachAuxilliary.all(metadata),
+    auxiliary: cockroachAuxiliary.all(metadata),
     gateway: gateway.all(metadata),
     backend: backend.all(metadata),
     prometheus: prometheus.all(metadata),

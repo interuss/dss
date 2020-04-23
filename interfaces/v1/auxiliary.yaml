@@ -2,8 +2,8 @@
 openapi: 3.0.2
 info:
   title: DSSAuxService
-  version: 0.8.0
-  description: Discovery and Synchronization Service Auxilliary API's
+  version: 0.1.0
+  description: Discovery and Synchronization Service Auxiliary API's
 paths:
   /v1/dss/validate_oauth:
     summary: Validate Oauth token against the DSS.
@@ -54,6 +54,6 @@ security:
   - dss.write.position_reporting_entities
 tags:
 - name: dss
-  description: Auxilliary endpoints exposed by the DSS server.
+  description: Auxiliary endpoints exposed by the DSS server.
 x-global-options:
-  go_package: pkg/api/v1//auxpb
+  go_package: pkg/api/v1/auxpb
