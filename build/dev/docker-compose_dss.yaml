@@ -21,7 +21,7 @@ services:
     image: interuss-local/dss
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
-    command: /usr/bin/grpc-backend -cockroach_host dss-crdb-for-debugging -public_key_file /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -jwt_audience localhost
+    command: /usr/bin/grpc-backend -cockroach_host dss-crdb-for-debugging -public_key_file /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -accepted_jwt_audiences localhost
     expose:
       - 8081
     depends_on:

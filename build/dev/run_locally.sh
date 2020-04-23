@@ -31,7 +31,7 @@ go run cmds/grpc-backend/main.go \
     -reflect_api \
     -log_format console \
     -dump_requests \
-    -jwt_audience localhost &
+    -accepted_jwt_audiences localhost &
 pid_grpc=$!
 
 sleep 5

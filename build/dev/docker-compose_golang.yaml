@@ -21,7 +21,7 @@ services:
     volumes:
       - ../..:/usr/src/dss:ro
     working_dir: /usr/src/dss
-    command: go run cmds/grpc-backend/main.go -cockroach_host dss-crdb-for-debugging -public_key_file build/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -jwt_audience localhost
+    command: go run cmds/grpc-backend/main.go -cockroach_host dss-crdb-for-debugging -public_key_file build/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -accepted_jwt_audiences localhost
     expose:
       - 8081
     depends_on:

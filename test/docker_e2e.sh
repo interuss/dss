@@ -80,7 +80,7 @@ docker run -d --name grpc-backend-for-testing \
 	-reflect_api \
 	-log_format console \
 	-dump_requests \
-	-jwt_audience local-gateway
+	-accepted_jwt_audiences local-gateway
 
 sleep 5
 echo " ------------- HTTP GATEWAY -------------- "
