@@ -12,6 +12,7 @@ import (
 	"cloud.google.com/go/profiler"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/utmpb"
 	"github.com/interuss/dss/pkg/dss"
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/build"
@@ -106,6 +107,10 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		Timeout: *timeout,
 	}
 	auxServer := &dss.AuxServer{}
+	utmServer := &dss.UtmServer{
+		Store:   store,
+		Timeout: *timeout,
+	}
 
 	var keyResolver auth.KeyResolver
 	switch {
@@ -159,6 +164,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 
 	dsspb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
+	utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, utmServer)
 
 	logger.Info("build", zap.Any("description", build.Describe()))
 

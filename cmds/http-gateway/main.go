@@ -13,6 +13,7 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/utmpb"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
@@ -66,6 +67,10 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 	}
 
 	if err := auxpb.RegisterDSSAuxServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
+		return err
+	}
+
+	if err := utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
 		return err
 	}
 
