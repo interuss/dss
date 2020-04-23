@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/interuss/dss/pkg/dss/models"
@@ -141,6 +142,7 @@ func (r *JWKSResolver) ResolveKey(ctx context.Context) (interface{}, error) {
 type Authorizer struct {
 	logger            *zap.Logger
 	key               interface{}
+	keyGuard          sync.RWMutex
 	requiredScopes    map[string][]string
 	acceptedAudiences map[string]bool
 }
@@ -198,7 +200,9 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 }
 
 func (a *Authorizer) setKey(key interface{}) {
+	a.keyGuard.Lock()
 	a.key = key
+	a.keyGuard.Unlock()
 }
 
 // AuthInterceptor intercepts incoming gRPC requests and extracts and verifies
@@ -213,6 +217,8 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 	claims := claims{}
 
 	_, err := jwt.ParseWithClaims(tknStr, &claims, func(token *jwt.Token) (interface{}, error) {
+		a.keyGuard.RLock()
+		defer a.keyGuard.RUnlock()
 		return a.key, nil
 	})
 
