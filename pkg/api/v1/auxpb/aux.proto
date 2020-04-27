@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package auxpb;
+
+import "google/api/annotations.proto";
+
+option go_package = "pkg/api/v1/auxpb";
+
+message ValidateOauthRequest {
+  // Validate the owner claim matches the provided owner.
+  string owner = 1;
+}
+
+// Validate Oauth token response
+message ValidateOauthResponse {}
+
+service DSSAuxService {
+  // /dss/validate_oauth
+  // 
+  // Validate Oauth token against the DSS.
+  rpc ValidateOauth(ValidateOauthRequest) returns (ValidateOauthResponse) {
+    option (google.api.http) = {
+      get: "/v1/dss/validate_oauth"
+    };
+  }
+}

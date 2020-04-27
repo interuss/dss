@@ -140,11 +140,11 @@ func (r *JWKSResolver) ResolveKey(ctx context.Context) (interface{}, error) {
 
 // Authorizer authorizes incoming requests.
 type Authorizer struct {
-	logger           *zap.Logger
-	keyGuard         sync.RWMutex
-	key              interface{}
-	requiredScopes   map[string][]string
-	requiredAudience string
+	logger            *zap.Logger
+	key               interface{}
+	keyGuard          sync.RWMutex
+	requiredScopes    map[string][]string
+	acceptedAudiences map[string]bool
 }
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
@@ -152,7 +152,7 @@ type Configuration struct {
 	KeyResolver       KeyResolver         // Used to initialize and periodically refresh keys.
 	KeyRefreshTimeout time.Duration       // Keys are refreshed on this cadence.
 	RequiredScopes    map[string][]string // RequiredScopes are enforced if not nil.
-	RequiredAudience  string              // RequiredAudience is enforced if not empty.
+	AcceptedAudiences []string            // AcceptedAudiences enforces the aud claim on the jwt. An empty string allows no aud claim.
 }
 
 // NewRSAAuthorizer returns an Authorizer instance using values from configuration.
@@ -164,11 +164,16 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 		return nil, err
 	}
 
+	auds := make(map[string]bool)
+	for _, s := range configuration.AcceptedAudiences {
+		auds[s] = true
+	}
+
 	authorizer := &Authorizer{
-		requiredScopes:   configuration.RequiredScopes,
-		requiredAudience: configuration.RequiredAudience,
-		logger:           logger,
-		key:              key,
+		requiredScopes:    configuration.RequiredScopes,
+		acceptedAudiences: auds,
+		logger:            logger,
+		key:               key,
 	}
 
 	go func() {
@@ -196,9 +201,8 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 
 func (a *Authorizer) setKey(key interface{}) {
 	a.keyGuard.Lock()
-	defer a.keyGuard.Unlock()
-
 	a.key = key
+	a.keyGuard.Unlock()
 }
 
 // AuthInterceptor intercepts incoming gRPC requests and extracts and verifies
@@ -212,20 +216,20 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 
 	claims := claims{}
 
-	a.keyGuard.RLock()
 	_, err := jwt.ParseWithClaims(tknStr, &claims, func(token *jwt.Token) (interface{}, error) {
+		a.keyGuard.RLock()
+		defer a.keyGuard.RUnlock()
 		return a.key, nil
 	})
-	a.keyGuard.RUnlock()
 
 	if err != nil {
 		a.logger.Error("token validation failed", zap.Error(err))
 		return nil, dsserr.Unauthenticated(err.Error())
 	}
 
-	if claims.Audience != a.requiredAudience {
+	if !a.acceptedAudiences[claims.Audience] {
 		return nil, dsserr.Unauthenticated(
-			fmt.Sprintf("invalid token audience, expected %v, got %v", a.requiredAudience, claims.Audience))
+			fmt.Sprintf("invalid token audience: %v", claims.Audience))
 	}
 
 	if err := a.missingScopes(info, claims.Scopes); err != nil {

@@ -11,8 +11,10 @@ import (
 
 	"cloud.google.com/go/profiler"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/interuss/dss/pkg/api/v1/auxpb"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/utmpb"
 	"github.com/interuss/dss/pkg/dss/build"
-	"github.com/interuss/dss/pkg/dssproto"
 	"github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
@@ -56,11 +58,19 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
+		//lint:ignore SA1019 This is required as an argument to a generated function.
 		grpc.WithTimeout(10 * time.Second),
 	}
 
-	err := dssproto.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts)
-	if err != nil {
+	if err := dsspb.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
+		return err
+	}
+
+	if err := auxpb.RegisterDSSAuxServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
+		return err
+	}
+
+	if err := utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
 		return err
 	}
 

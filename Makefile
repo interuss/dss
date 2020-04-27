@@ -32,7 +32,8 @@ go.mod:
 
 .PHONY: format
 format:
-	clang-format -style=file -i pkg/dssproto/rid.proto
+	clang-format -style=file -i pkg/api/v1/dsspb/dss.proto
+	clang-format -style=file -i pkg/api/v1/auxpb/aux.proto
 
 .PHONY: install
 install:
@@ -42,39 +43,79 @@ install:
 lint: install
 	golint ./...
 
-pkg/dssproto/rid.pb.go: pkg/dssproto/rid.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/dssproto/rid.proto
+pkg/api/v1/dsspb/dss.pb.go: pkg/api/v1/dsspb/dss.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
 
-pkg/dssproto/rid.pb.gw.go: pkg/dssproto/rid.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/dssproto/rid.proto
+pkg/api/v1/dsspb/dss.pb.gw.go: pkg/api/v1/dsspb/dss.proto pkg/api/v1/dsspb/dss.pb.go
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
 
-pkg/dssproto/rid.proto: install-proto-generation
+pkg/api/v1/dsspb/dss.proto: install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
 		-spec interfaces/uastech/standards/remoteid/augmented.yaml -annotate \
-		-out pkg/dssproto/rid.proto \
+		-out $@ \
 		-tag dss \
 		-indent 2 \
-		-package dssproto
+		-package dsspb
 
-pkg/dssproto/utm.proto: install-proto-generation
+pkg/api/v1/auxpb/aux.pb.go: pkg/api/v1/auxpb/aux.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
+
+pkg/api/v1/auxpb/aux.pb.gw.go: pkg/api/v1/auxpb/aux.proto pkg/api/v1/auxpb/aux.pb.go
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
+
+pkg/api/v1/auxpb/aux.proto: install-proto-generation
+	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
+		-spec interfaces/v1/auxiliary.yaml -annotate \
+		-out $@ \
+		-tag dss \
+		-indent 2 \
+		-package auxpb
+
+pkg/api/v1/utmpb/utm.pb.go: pkg/api/v1/utmpb/utm.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
+
+pkg/api/v1/utmpb/utm.pb.gw.go: pkg/api/v1/utmpb/utm.proto pkg/api/v1/utmpb/utm.pb.go
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
+
+pkg/api/v1/utmpb/utm.proto: install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
 		-spec interfaces/astm-utm/Protocol/utm.yaml -annotate \
-		-out pkg/dssproto/utm.proto \
+		-out $@ \
 		-tag dss \
 		-indent 2 \
-		-package dssproto
+		-package utmpb
 
 .PHONY: install-proto-generation
 install-proto-generation:
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
-	go get github.com/golang/protobuf/protoc-gen-go@v1.3.3
+ifeq ($(shell which protoc),)
+	$(error Proto generation requires that protoc be installed; please install protoc.  On a Mac: brew install protobuf  On Linux: See http://google.github.io/proto-lens/installing-protoc.html)
+endif
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+	go get github.com/golang/protobuf/protoc-gen-go@1.4.0
+ifeq ($(shell which protoc-gen-go),)
+	$(error protoc-gen-go is not accessible after installation; GOPATH must be set and PATH must contain GOPATH/bin)
+	# Example:
+	# export GOPATH=/home/$USER/go
+	# export PATH=$PATH:$GOPATH/bin
+endif
+
+.PHONY: protos
+protos: pkg/api/v1/auxpb/aux.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go pkg/api/v1/utmpb/utm.pb.gw.go;
+
+.PHONY: install-staticcheck
+install-staticcheck:
+	go get honnef.co/go/tools/cmd/staticcheck
 
 .PHONY: kubecfg
 kubecfg:
 	mkdir -p temp
 	wget $(kubecfg_download) -O ./temp/$(kubecfg_file)
 	install ./temp/$(kubecfg_file) $(GOBIN)/kubecfg
+
+.PHONY: staticcheck
+staticcheck: install-staticcheck
+	staticcheck -go 1.12 ./...
 
 .PHONY: test
 test: kubecfg

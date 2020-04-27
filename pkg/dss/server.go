@@ -6,23 +6,37 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/interuss/dss/pkg/api/v1/auxpb"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/utmpb"
 	"github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/golang/protobuf/ptypes"
 
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/geo"
-	dspb "github.com/interuss/dss/pkg/dssproto"
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
 var (
 	WriteISAScope = "dss.write.identification_service_areas"
 	ReadISAScope  = "dss.read.identification_service_areas"
+	StrategicCoordinationScope = "utm.strategic_coordination"
+	ConstraintManagementScope = "utm.constraint_management"
+	ConstraintConsumptionScope = "utm.constraint_consumption"
 )
 
-// Server implements dssproto.DiscoveryAndSynchronizationService.
+// Server implements dsspb.DiscoveryAndSynchronizationService.
 type Server struct {
+	Store   Store
+	Timeout time.Duration
+}
+
+// AuxServer implements auxpb.DSSAuxService.
+type AuxServer struct{}
+
+// UtmServer implements utmpb.DiscoveryAndSynchronizationService.
+type UtmServer struct {
 	Store   Store
 	Timeout time.Duration
 }
@@ -39,12 +53,45 @@ func (s *Server) AuthScopes() map[string][]string {
 		"GetSubscription":                  {ReadISAScope},
 		"SearchSubscriptions":              {ReadISAScope},
 		"UpdateSubscription":               {WriteISAScope},
+		"ValidateOauth":                    {WriteISAScope},
+
+		// TODO: replace with correct scopes
+		"DeleteConstraintReference":        {ReadISAScope}, //{ConstraintManagementScope},
+		"DeleteOperationReference":         {ReadISAScope}, //{StrategicCoordinationScope},
+		// TODO: De-duplicate operation names
+		//"DeleteSubscription":               {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
+		"GetConstraintReference":           {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
+		"GetOperationReference":            {ReadISAScope}, //{StrategicCoordinationScope},
+		//"GetSubscription":                  {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
+		"MakeDssReport":                    {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
+		"PutConstraintReference":           {ReadISAScope}, //{ConstraintManagementScope},
+		"PutOperationReference":            {ReadISAScope}, //{StrategicCoordinationScope},
+		//"PutSubscription":                  {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
+		"QueryConstraintReferences":        {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
+		"QuerySubscriptions":               {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
+		"SearchOperationReferences":        {ReadISAScope}, //{StrategicCoordinationScope},
 	}
 }
 
+// ===== AuxServer =====
+
+// Validate will exercise validating the Oauth token
+func (a *AuxServer) ValidateOauth(ctx context.Context, req *auxpb.ValidateOauthRequest) (*auxpb.ValidateOauthResponse, error) {
+	owner, ok := auth.OwnerFromContext(ctx)
+	if !ok {
+		return nil, dsserr.PermissionDenied("missing owner from context")
+	}
+	if req.Owner != "" && req.Owner != owner.String() {
+		return nil, dsserr.PermissionDenied(fmt.Sprintf("owner mismatch, required: %s, but oauth token has %s", req.Owner, owner))
+	}
+	return &auxpb.ValidateOauthResponse{}, nil
+}
+
+// ===== Server =====
+
 func (s *Server) GetIdentificationServiceArea(
-	ctx context.Context, req *dspb.GetIdentificationServiceAreaRequest) (
-	*dspb.GetIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *dsspb.GetIdentificationServiceAreaRequest) (
+	*dsspb.GetIdentificationServiceAreaResponse, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
@@ -59,14 +106,14 @@ func (s *Server) GetIdentificationServiceArea(
 	if err != nil {
 		return nil, err
 	}
-	return &dspb.GetIdentificationServiceAreaResponse{
+	return &dsspb.GetIdentificationServiceAreaResponse{
 		ServiceArea: p,
 	}, nil
 }
 
 func (s *Server) createOrUpdateISA(
-	ctx context.Context, id string, version *models.Version, extents *dspb.Volume4D, flights_url string) (
-	*dspb.PutIdentificationServiceAreaResponse, error) {
+	ctx context.Context, id string, version *models.Version, extents *dsspb.Volume4D, flights_url string) (
+	*dsspb.PutIdentificationServiceAreaResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -100,20 +147,20 @@ func (s *Server) createOrUpdateISA(
 		return nil, dsserr.Internal(err.Error())
 	}
 
-	pbSubscribers := []*dspb.SubscriberToNotify{}
+	pbSubscribers := []*dsspb.SubscriberToNotify{}
 	for _, subscriber := range subscribers {
 		pbSubscribers = append(pbSubscribers, subscriber.ToNotifyProto())
 	}
 
-	return &dspb.PutIdentificationServiceAreaResponse{
+	return &dsspb.PutIdentificationServiceAreaResponse{
 		ServiceArea: pbISA,
 		Subscribers: pbSubscribers,
 	}, nil
 }
 
 func (s *Server) CreateIdentificationServiceArea(
-	ctx context.Context, req *dspb.CreateIdentificationServiceAreaRequest) (
-	*dspb.PutIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *dsspb.CreateIdentificationServiceAreaRequest) (
+	*dsspb.PutIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -122,8 +169,8 @@ func (s *Server) CreateIdentificationServiceArea(
 }
 
 func (s *Server) UpdateIdentificationServiceArea(
-	ctx context.Context, req *dspb.UpdateIdentificationServiceAreaRequest) (
-	*dspb.PutIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *dsspb.UpdateIdentificationServiceAreaRequest) (
+	*dsspb.PutIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
 
@@ -138,8 +185,8 @@ func (s *Server) UpdateIdentificationServiceArea(
 }
 
 func (s *Server) DeleteIdentificationServiceArea(
-	ctx context.Context, req *dspb.DeleteIdentificationServiceAreaRequest) (
-	*dspb.DeleteIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *dsspb.DeleteIdentificationServiceAreaRequest) (
+	*dsspb.DeleteIdentificationServiceAreaResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -160,20 +207,20 @@ func (s *Server) DeleteIdentificationServiceArea(
 	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
-	sp := make([]*dspb.SubscriberToNotify, len(subscribers))
+	sp := make([]*dsspb.SubscriberToNotify, len(subscribers))
 	for i := range subscribers {
 		sp[i] = subscribers[i].ToNotifyProto()
 	}
 
-	return &dspb.DeleteIdentificationServiceAreaResponse{
+	return &dsspb.DeleteIdentificationServiceAreaResponse{
 		ServiceArea: p,
 		Subscribers: sp,
 	}, nil
 }
 
 func (s *Server) DeleteSubscription(
-	ctx context.Context, req *dspb.DeleteSubscriptionRequest) (
-	*dspb.DeleteSubscriptionResponse, error) {
+	ctx context.Context, req *dsspb.DeleteSubscriptionRequest) (
+	*dsspb.DeleteSubscriptionResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -193,14 +240,14 @@ func (s *Server) DeleteSubscription(
 	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
-	return &dspb.DeleteSubscriptionResponse{
+	return &dsspb.DeleteSubscriptionResponse{
 		Subscription: p,
 	}, nil
 }
 
 func (s *Server) SearchIdentificationServiceAreas(
-	ctx context.Context, req *dspb.SearchIdentificationServiceAreasRequest) (
-	*dspb.SearchIdentificationServiceAreasResponse, error) {
+	ctx context.Context, req *dsspb.SearchIdentificationServiceAreasRequest) (
+	*dsspb.SearchIdentificationServiceAreasResponse, error) {
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
@@ -240,7 +287,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 		return nil, err
 	}
 
-	areas := make([]*dspb.IdentificationServiceArea, len(isas))
+	areas := make([]*dsspb.IdentificationServiceArea, len(isas))
 	for i := range isas {
 		a, err := isas[i].ToProto()
 		if err != nil {
@@ -249,14 +296,14 @@ func (s *Server) SearchIdentificationServiceAreas(
 		areas[i] = a
 	}
 
-	return &dspb.SearchIdentificationServiceAreasResponse{
+	return &dsspb.SearchIdentificationServiceAreasResponse{
 		ServiceAreas: areas,
 	}, nil
 }
 
 func (s *Server) SearchSubscriptions(
-	ctx context.Context, req *dspb.SearchSubscriptionsRequest) (
-	*dspb.SearchSubscriptionsResponse, error) {
+	ctx context.Context, req *dsspb.SearchSubscriptionsRequest) (
+	*dsspb.SearchSubscriptionsResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -279,7 +326,7 @@ func (s *Server) SearchSubscriptions(
 	if err != nil {
 		return nil, err
 	}
-	sp := make([]*dspb.Subscription, len(subscriptions))
+	sp := make([]*dsspb.Subscription, len(subscriptions))
 	for i := range subscriptions {
 		sp[i], err = subscriptions[i].ToProto()
 		if err != nil {
@@ -287,14 +334,14 @@ func (s *Server) SearchSubscriptions(
 		}
 	}
 
-	return &dspb.SearchSubscriptionsResponse{
+	return &dsspb.SearchSubscriptionsResponse{
 		Subscriptions: sp,
 	}, nil
 }
 
 func (s *Server) GetSubscription(
-	ctx context.Context, req *dspb.GetSubscriptionRequest) (
-	*dspb.GetSubscriptionResponse, error) {
+	ctx context.Context, req *dsspb.GetSubscriptionRequest) (
+	*dsspb.GetSubscriptionResponse, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
@@ -309,14 +356,14 @@ func (s *Server) GetSubscription(
 	if err != nil {
 		return nil, err
 	}
-	return &dspb.GetSubscriptionResponse{
+	return &dsspb.GetSubscriptionResponse{
 		Subscription: p,
 	}, nil
 }
 
 func (s *Server) createOrUpdateSubscription(
-	ctx context.Context, id string, version *models.Version, callbacks *dspb.SubscriptionCallbacks, extents *dspb.Volume4D) (
-	*dspb.PutSubscriptionResponse, error) {
+	ctx context.Context, id string, version *models.Version, callbacks *dsspb.SubscriptionCallbacks, extents *dsspb.Volume4D) (
+	*dsspb.PutSubscriptionResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -357,7 +404,7 @@ func (s *Server) createOrUpdateSubscription(
 	}
 
 	// Convert the ISAs to protos.
-	isaProtos := make([]*dspb.IdentificationServiceArea, len(isas))
+	isaProtos := make([]*dsspb.IdentificationServiceArea, len(isas))
 	for i, isa := range isas {
 		isaProtos[i], err = isa.ToProto()
 		if err != nil {
@@ -365,15 +412,15 @@ func (s *Server) createOrUpdateSubscription(
 		}
 	}
 
-	return &dspb.PutSubscriptionResponse{
+	return &dsspb.PutSubscriptionResponse{
 		Subscription: p,
 		ServiceAreas: isaProtos,
 	}, nil
 }
 
 func (s *Server) CreateSubscription(
-	ctx context.Context, req *dspb.CreateSubscriptionRequest) (
-	*dspb.PutSubscriptionResponse, error) {
+	ctx context.Context, req *dsspb.CreateSubscriptionRequest) (
+	*dsspb.PutSubscriptionResponse, error) {
 
 	params := req.GetParams()
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -382,8 +429,8 @@ func (s *Server) CreateSubscription(
 }
 
 func (s *Server) UpdateSubscription(
-	ctx context.Context, req *dspb.UpdateSubscriptionRequest) (
-	*dspb.PutSubscriptionResponse, error) {
+	ctx context.Context, req *dsspb.UpdateSubscriptionRequest) (
+	*dsspb.PutSubscriptionResponse, error) {
 
 	params := req.GetParams()
 
@@ -395,4 +442,58 @@ func (s *Server) UpdateSubscription(
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	return s.createOrUpdateSubscription(ctx, req.GetId(), version, params.Callbacks, params.Extents)
+}
+
+// ===== UtmServer =====
+
+func (a *UtmServer) DeleteConstraintReference(ctx context.Context, req *utmpb.DeleteConstraintReferenceRequest) (*utmpb.ChangeConstraintReferenceResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) DeleteOperationReference(ctx context.Context, req *utmpb.DeleteOperationReferenceRequest) (*utmpb.ChangeOperationReferenceResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) DeleteSubscription(ctx context.Context, req *utmpb.DeleteSubscriptionRequest) (*utmpb.DeleteSubscriptionResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) GetConstraintReference(ctx context.Context, req *utmpb.GetConstraintReferenceRequest) (*utmpb.GetConstraintReferenceResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) GetOperationReference(ctx context.Context, req *utmpb.GetOperationReferenceRequest) (*utmpb.GetOperationReferenceResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) GetSubscription(ctx context.Context, req *utmpb.GetSubscriptionRequest) (*utmpb.GetSubscriptionResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) MakeDssReport(ctx context.Context, req *utmpb.MakeDssReportRequest) (*utmpb.ErrorReport, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) PutConstraintReference(ctx context.Context, req *utmpb.PutConstraintReferenceRequest) (*utmpb.ChangeConstraintReferenceResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) PutOperationReference(ctx context.Context, req *utmpb.PutOperationReferenceRequest) (*utmpb.ChangeOperationReferenceResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) PutSubscription(ctx context.Context, req *utmpb.PutSubscriptionRequest) (*utmpb.PutSubscriptionResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) QueryConstraintReferences(ctx context.Context, req *utmpb.QueryConstraintReferencesRequest) (*utmpb.SearchConstraintReferencesResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) QuerySubscriptions(ctx context.Context, req *utmpb.QuerySubscriptionsRequest) (*utmpb.SearchSubscriptionsResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
+}
+
+func (a *UtmServer) SearchOperationReferences(ctx context.Context, req *utmpb.SearchOperationReferencesRequest) (*utmpb.SearchOperationReferenceResponse, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
 }

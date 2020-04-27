@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	errMissingOrEmptySubject = errors.New("Missing or empty subject")
-	errTokenExpireTooFar     = errors.New("Token expiration time is too far in the furture, Max token duration is 1 Hour")
-	errMissingIssuer         = errors.New("Missing Issuer URI")
+	errMissingOrEmptySubject = errors.New("missing or empty subject")
+	errTokenExpireTooFar     = errors.New("token expiration time is too far in the furture, Max token duration is 1 Hour")
+	errMissingIssuer         = errors.New("missing Issuer URI")
 	// Now allows test to override with specific time values
 	Now = time.Now
 )

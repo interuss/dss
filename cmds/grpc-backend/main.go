@@ -6,15 +6,18 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/profiler"
+	"github.com/interuss/dss/pkg/api/v1/auxpb"
+	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/utmpb"
 	"github.com/interuss/dss/pkg/dss"
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/dss/cockroach"
 	"github.com/interuss/dss/pkg/dss/validations"
-	"github.com/interuss/dss/pkg/dssproto"
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
@@ -53,7 +56,7 @@ var (
 		applicationName: flag.String("cockroach_application_name", "dss", "application name for tagging the connection to cockroach"),
 	}
 
-	jwtAudience = flag.String("jwt_audience", "", "Require that JWTs contain this `aud` claim")
+	jwtAudiences = flag.String("accepted_jwt_audiences", "", "commad separated acceptable JWT `aud` claims")
 )
 
 // RunGRPCServer starts the example gRPC service.
@@ -61,10 +64,10 @@ var (
 func RunGRPCServer(ctx context.Context, address string) error {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
-	if *jwtAudience == "" {
+	if len(*jwtAudiences) == 0 {
 		// TODO: Make this flag required once all parties can set audiences
 		// correctly.
-		logger.Warn("missing required --jwt_audience")
+		logger.Warn("missing required --accepted_jwt_audiences")
 	}
 
 	l, err := net.Listen("tcp", address)
@@ -103,6 +106,11 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		Store:   store,
 		Timeout: *timeout,
 	}
+	auxServer := &dss.AuxServer{}
+	utmServer := &dss.UtmServer{
+		Store:   store,
+		Timeout: *timeout,
+	}
 
 	var keyResolver auth.KeyResolver
 	switch {
@@ -129,7 +137,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 			KeyResolver:       keyResolver,
 			KeyRefreshTimeout: *keyRefreshTimeout,
 			RequiredScopes:    dssServer.AuthScopes(),
-			RequiredAudience:  *jwtAudience,
+			AcceptedAudiences: strings.Split(*jwtAudiences, ","),
 		},
 	)
 	if err != nil {
@@ -154,7 +162,9 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		reflection.Register(s)
 	}
 
-	dssproto.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
+	dsspb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
+	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
+	utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, utmServer)
 
 	logger.Info("build", zap.Any("description", build.Describe()))
 

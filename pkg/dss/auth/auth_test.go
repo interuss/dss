@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -99,7 +100,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		{metadata.NewIncomingContext(ctx, metadata.New(nil)), codes.Unauthenticated, "missing token"},
 		{rsaTokenCtx(ctx, badKey, 100, 20), codes.Unauthenticated, "crypto/rsa: verification error"},
 		{rsaTokenCtx(ctx, key, 100, 20), codes.OK, ""},
-		{rsaTokenCtxWithMissingIssuer(ctx, key, 100, 20), codes.Unauthenticated, "Missing Issuer"},
+		{rsaTokenCtxWithMissingIssuer(ctx, key, 100, 20), codes.Unauthenticated, "missing Issuer"},
 		{rsaTokenCtx(ctx, key, 30, 20), codes.Unauthenticated, "token is expired"},
 		{rsaTokenCtx(ctx, key, 100, 50), codes.Unauthenticated, "token is not valid yet"},
 	}
@@ -109,19 +110,22 @@ func TestRSAAuthInterceptor(t *testing.T) {
 			Key: &key.PublicKey,
 		},
 		KeyRefreshTimeout: 1 * time.Millisecond,
+		AcceptedAudiences: []string{""},
 	})
 
 	require.NoError(t, err)
 
-	for _, test := range authTests {
-		_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},
-			func(ctx context.Context, req interface{}) (interface{}, error) { return nil, nil })
-		if status.Code(err) != test.code {
-			t.Errorf("expected: %v, got: %v", test.code, status.Code(err))
-		}
-		if err != nil && !strings.Contains(err.Error(), test.errorMessage) {
-			t.Errorf("expected: %v, got: %v", test.errorMessage, err.Error())
-		}
+	for i, test := range authTests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},
+				func(ctx context.Context, req interface{}) (interface{}, error) { return nil, nil })
+			if status.Code(err) != test.code {
+				t.Errorf("expected: %v, got: %v, with message %s", test.code, status.Code(err), err.Error())
+			}
+			if err != nil && !strings.Contains(err.Error(), test.errorMessage) {
+				t.Errorf("expected: %v, got: %v", test.errorMessage, err.Error())
+			}
+		})
 	}
 }
 

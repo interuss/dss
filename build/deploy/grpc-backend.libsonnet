@@ -41,7 +41,7 @@ local volumes = import 'volumes.libsonnet';
                 cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 public_key_file: '/public-certs/' + metadata.backend.pubKey,
                 dump_requests: true,
-                jwt_audience: metadata.gateway.hostname,
+                accepted_jwt_audiences: metadata.gateway.hostname,
               },
             },
           },
