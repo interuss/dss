@@ -8,6 +8,8 @@ jq --version > /dev/null
 if [ $? -ne 0 ]; then
   echo "This script requires the jq utility.  On Debian Linux, install with"
   echo "  sudo apt-get install jq"
+  echo "With homebrew, install with"
+  echo "  brew install jq"
   exit 1
 fi
 

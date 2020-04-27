@@ -73,9 +73,18 @@ pkg/api/v1/auxpb/aux.proto: install-proto-generation
 
 .PHONY: install-proto-generation
 install-proto-generation:
+ifeq ($(shell which protoc),)
+	$(error Proto generation requires that protoc be installed; please install protoc.  On a Mac: brew install protobuf  On Linux: See http://google.github.io/proto-lens/installing-protoc.html)
+endif
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
 	go get github.com/golang/protobuf/protoc-gen-go
+ifeq ($(shell which protoc-gen-go),)
+	$(error protoc-gen-go is not accessible after installation; GOPATH must be set and PATH must contain GOPATH/bin)
+	# Example:
+	# export GOPATH=/home/$USER/go
+	# export PATH=$PATH:$GOPATH/bin
+endif
 
 .PHONY: protos
 protos: pkg/api/v1/auxpb/aux.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go;
