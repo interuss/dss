@@ -90,8 +90,8 @@ install-proto-generation:
 ifeq ($(shell which protoc),)
 	$(error Proto generation requires that protoc be installed; please install protoc.  On a Mac: brew install protobuf  On Linux: See http://google.github.io/proto-lens/installing-protoc.html)
 endif
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
 	go get github.com/golang/protobuf/protoc-gen-go@1.4.0
 ifeq ($(shell which protoc-gen-go),)
 	$(error protoc-gen-go is not accessible after installation; GOPATH must be set and PATH must contain GOPATH/bin)
