@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
-	"github.com/interuss/dss/pkg/api/v1/utmpb"
 	"github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/golang/protobuf/ptypes"
@@ -19,24 +17,15 @@ import (
 )
 
 var (
-	WriteISAScope = "dss.write.identification_service_areas"
-	ReadISAScope  = "dss.read.identification_service_areas"
+	WriteISAScope              = "dss.write.identification_service_areas"
+	ReadISAScope               = "dss.read.identification_service_areas"
 	StrategicCoordinationScope = "utm.strategic_coordination"
-	ConstraintManagementScope = "utm.constraint_management"
+	ConstraintManagementScope  = "utm.constraint_management"
 	ConstraintConsumptionScope = "utm.constraint_consumption"
 )
 
 // Server implements dsspb.DiscoveryAndSynchronizationService.
 type Server struct {
-	Store   Store
-	Timeout time.Duration
-}
-
-// AuxServer implements auxpb.DSSAuxService.
-type AuxServer struct{}
-
-// UtmServer implements utmpb.DiscoveryAndSynchronizationService.
-type UtmServer struct {
 	Store   Store
 	Timeout time.Duration
 }
@@ -56,35 +45,21 @@ func (s *Server) AuthScopes() map[string][]string {
 		"ValidateOauth":                    {WriteISAScope},
 
 		// TODO: replace with correct scopes
-		"DeleteConstraintReference":        {ReadISAScope}, //{ConstraintManagementScope},
-		"DeleteOperationReference":         {ReadISAScope}, //{StrategicCoordinationScope},
+		"DeleteConstraintReference": {ReadISAScope}, //{ConstraintManagementScope},
+		"DeleteOperationReference":  {ReadISAScope}, //{StrategicCoordinationScope},
 		// TODO: De-duplicate operation names
 		//"DeleteSubscription":               {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
-		"GetConstraintReference":           {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
-		"GetOperationReference":            {ReadISAScope}, //{StrategicCoordinationScope},
+		"GetConstraintReference": {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
+		"GetOperationReference":  {ReadISAScope}, //{StrategicCoordinationScope},
 		//"GetSubscription":                  {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
-		"MakeDssReport":                    {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
-		"PutConstraintReference":           {ReadISAScope}, //{ConstraintManagementScope},
-		"PutOperationReference":            {ReadISAScope}, //{StrategicCoordinationScope},
+		"MakeDssReport":          {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
+		"PutConstraintReference": {ReadISAScope}, //{ConstraintManagementScope},
+		"PutOperationReference":  {ReadISAScope}, //{StrategicCoordinationScope},
 		//"PutSubscription":                  {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
-		"QueryConstraintReferences":        {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
-		"QuerySubscriptions":               {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
-		"SearchOperationReferences":        {ReadISAScope}, //{StrategicCoordinationScope},
+		"QueryConstraintReferences": {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
+		"QuerySubscriptions":        {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
+		"SearchOperationReferences": {ReadISAScope}, //{StrategicCoordinationScope},
 	}
-}
-
-// ===== AuxServer =====
-
-// Validate will exercise validating the Oauth token
-func (a *AuxServer) ValidateOauth(ctx context.Context, req *auxpb.ValidateOauthRequest) (*auxpb.ValidateOauthResponse, error) {
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
-	}
-	if req.Owner != "" && req.Owner != owner.String() {
-		return nil, dsserr.PermissionDenied(fmt.Sprintf("owner mismatch, required: %s, but oauth token has %s", req.Owner, owner))
-	}
-	return &auxpb.ValidateOauthResponse{}, nil
 }
 
 // ===== Server =====
@@ -442,58 +417,4 @@ func (s *Server) UpdateSubscription(
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	return s.createOrUpdateSubscription(ctx, req.GetId(), version, params.Callbacks, params.Extents)
-}
-
-// ===== UtmServer =====
-
-func (a *UtmServer) DeleteConstraintReference(ctx context.Context, req *utmpb.DeleteConstraintReferenceRequest) (*utmpb.ChangeConstraintReferenceResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) DeleteOperationReference(ctx context.Context, req *utmpb.DeleteOperationReferenceRequest) (*utmpb.ChangeOperationReferenceResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) DeleteSubscription(ctx context.Context, req *utmpb.DeleteSubscriptionRequest) (*utmpb.DeleteSubscriptionResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) GetConstraintReference(ctx context.Context, req *utmpb.GetConstraintReferenceRequest) (*utmpb.GetConstraintReferenceResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) GetOperationReference(ctx context.Context, req *utmpb.GetOperationReferenceRequest) (*utmpb.GetOperationReferenceResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) GetSubscription(ctx context.Context, req *utmpb.GetSubscriptionRequest) (*utmpb.GetSubscriptionResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) MakeDssReport(ctx context.Context, req *utmpb.MakeDssReportRequest) (*utmpb.ErrorReport, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) PutConstraintReference(ctx context.Context, req *utmpb.PutConstraintReferenceRequest) (*utmpb.ChangeConstraintReferenceResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) PutOperationReference(ctx context.Context, req *utmpb.PutOperationReferenceRequest) (*utmpb.ChangeOperationReferenceResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) PutSubscription(ctx context.Context, req *utmpb.PutSubscriptionRequest) (*utmpb.PutSubscriptionResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) QueryConstraintReferences(ctx context.Context, req *utmpb.QueryConstraintReferencesRequest) (*utmpb.SearchConstraintReferencesResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) QuerySubscriptions(ctx context.Context, req *utmpb.QuerySubscriptionsRequest) (*utmpb.SearchSubscriptionsResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
-}
-
-func (a *UtmServer) SearchOperationReferences(ctx context.Context, req *utmpb.SearchOperationReferencesRequest) (*utmpb.SearchOperationReferenceResponse, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
 }
