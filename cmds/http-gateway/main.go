@@ -31,6 +31,7 @@ var (
 	traceRequests   = flag.Bool("trace-requests", false, "Logs HTTP request/response pairs to stderr if true")
 	grpcBackend     = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
 	profServiceName = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
+	enableUTM       = flag.Bool("enable_utm", false, "Enables the UTM API")
 )
 
 // RunHTTPProxy starts the HTTP proxy for the DSS gRPC service on ctx, listening
@@ -70,8 +71,10 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 		return err
 	}
 
-	if err := utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
-		return err
+	if *enableUTM {
+		if err := utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
+			return err
+		}
 	}
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

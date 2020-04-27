@@ -39,6 +39,7 @@ var (
 	logLevel          = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
 	dumpRequests      = flag.Bool("dump_requests", false, "Log request and response protos")
 	profServiceName   = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
+	enableUTM         = flag.Bool("enable_utm", false, "Enables the UTM API")
 
 	cockroachParams = struct {
 		host            *string
@@ -164,8 +165,9 @@ func RunGRPCServer(ctx context.Context, address string) error {
 
 	dsspb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
-	utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, utmServer)
-
+	if *enableUTM {
+		utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, utmServer)
+	}
 	logger.Info("build", zap.Any("description", build.Describe()))
 
 	go func() {
