@@ -44,15 +44,15 @@ lint: install
 	golint ./...
 
 pkg/api/v1/dsspb/dss.pb.go: pkg/api/v1/dsspb/dss.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/api/v1/dsspb/dss.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
 
-pkg/api/v1/dsspb/dss.pb.gw.go: pkg/api/v1/dsspb/dss.pb.go
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/api/v1/dsspb/dss.proto
+pkg/api/v1/dsspb/dss.pb.gw.go: pkg/api/v1/dsspb/dss.proto pkg/api/v1/dsspb/dss.pb.go
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
 
 pkg/api/v1/dsspb/dss.proto: install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
 		-spec interfaces/uastech/standards/remoteid/augmented.yaml -annotate \
-		-out pkg/api/v1/dsspb/dss.proto \
+		-out $@ \
 		-tag dss \
 		-indent 2 \
 		-package dsspb
@@ -63,6 +63,20 @@ pkg/api/v1/auxpb/aux_service.pb.go:
 pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.pb.go
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/api/v1/auxpb/aux_service.proto
 
+pkg/api/v1/utmpb/utm.pb.go: pkg/api/v1/utmpb/utm.proto
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
+
+pkg/api/v1/utmpb/utm.pb.gw.go: pkg/api/v1/utmpb/utm.proto pkg/api/v1/utmpb/utm.pb.go
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
+
+pkg/api/v1/utmpb/utm.proto: install-proto-generation
+	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
+		-spec interfaces/astm-utm/Protocol/utm.yaml -annotate \
+		-out $@ \
+		-tag dss \
+		-indent 2 \
+		-package utmpb
+
 .PHONY: install-proto-generation
 install-proto-generation:
 ifeq ($(shell which protoc),)
@@ -70,7 +84,7 @@ ifeq ($(shell which protoc),)
 endif
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
-	go get github.com/golang/protobuf/protoc-gen-go
+	go get github.com/golang/protobuf/protoc-gen-go@1.4.0
 ifeq ($(shell which protoc-gen-go),)
 	$(error protoc-gen-go is not accessible after installation; GOPATH must be set and PATH must contain GOPATH/bin)
 	# Example:
@@ -79,7 +93,7 @@ ifeq ($(shell which protoc-gen-go),)
 endif
 
 .PHONY: protos
-protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go;
+protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go pkg/api/v1/utmpb/utm.pb.gw.go;
 
 .PHONY: install-staticcheck
 install-staticcheck:

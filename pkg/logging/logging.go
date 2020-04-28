@@ -108,7 +108,6 @@ func DumpRequestResponseInterceptor(logger *zap.Logger) grpc.UnaryServerIntercep
 		logger.Sugar().Infof("Request (%s):\n%s",
 			info.FullMethod,
 			proto.MarshalTextString(req.(proto.Message)))
-
 		resp, err = handler(ctx, req)
 
 		if resp != nil && err == nil {

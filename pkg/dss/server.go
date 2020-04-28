@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/models"
 
@@ -18,8 +17,11 @@ import (
 )
 
 var (
-	WriteISAScope = "dss.write.identification_service_areas"
-	ReadISAScope  = "dss.read.identification_service_areas"
+	WriteISAScope              = "dss.write.identification_service_areas"
+	ReadISAScope               = "dss.read.identification_service_areas"
+	StrategicCoordinationScope = "utm.strategic_coordination"
+	ConstraintManagementScope  = "utm.constraint_management"
+	ConstraintConsumptionScope = "utm.constraint_consumption"
 )
 
 // Server implements dsspb.DiscoveryAndSynchronizationService.
@@ -27,9 +29,6 @@ type Server struct {
 	Store   Store
 	Timeout time.Duration
 }
-
-// AuxServer implements auxpb.DSSAuxService.
-type AuxServer struct{}
 
 func (s *Server) AuthScopes() map[string][]string {
 	return map[string][]string{
@@ -44,20 +43,26 @@ func (s *Server) AuthScopes() map[string][]string {
 		"SearchSubscriptions":              {ReadISAScope},
 		"UpdateSubscription":               {WriteISAScope},
 		"ValidateOauth":                    {WriteISAScope},
+
+		// TODO: replace with correct scopes
+		"DeleteConstraintReference": {ReadISAScope}, //{ConstraintManagementScope},
+		"DeleteOperationReference":  {ReadISAScope}, //{StrategicCoordinationScope},
+		// TODO: De-duplicate operation names
+		//"DeleteSubscription":               {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
+		"GetConstraintReference": {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
+		"GetOperationReference":  {ReadISAScope}, //{StrategicCoordinationScope},
+		//"GetSubscription":                  {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
+		"MakeDssReport":          {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
+		"PutConstraintReference": {ReadISAScope}, //{ConstraintManagementScope},
+		"PutOperationReference":  {ReadISAScope}, //{StrategicCoordinationScope},
+		//"PutSubscription":                  {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
+		"QueryConstraintReferences": {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
+		"QuerySubscriptions":        {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
+		"SearchOperationReferences": {ReadISAScope}, //{StrategicCoordinationScope},
 	}
 }
 
-// Validate will exercise validating the Oauth token
-func (a *AuxServer) ValidateOauth(ctx context.Context, req *auxpb.ValidateOauthRequest) (*auxpb.ValidateOauthResponse, error) {
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
-	}
-	if req.Owner != "" && req.Owner != owner.String() {
-		return nil, dsserr.PermissionDenied(fmt.Sprintf("owner mismatch, required: %s, but oauth token has %s", req.Owner, owner))
-	}
-	return &auxpb.ValidateOauthResponse{}, nil
-}
+// ===== Server =====
 
 func (s *Server) GetIdentificationServiceArea(
 	ctx context.Context, req *dsspb.GetIdentificationServiceAreaRequest) (
