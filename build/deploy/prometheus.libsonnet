@@ -9,7 +9,7 @@ local PrometheusConfig(metadata) = {
     scrape_interval: '5s',
     evaluation_interval: '5s',
     // label for federated Prometheus.
-    external_label:{
+    external_labels:{
       cluster_name: metadata.clusterName
     },
   },

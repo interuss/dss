@@ -33,7 +33,7 @@ go.mod:
 .PHONY: format
 format:
 	clang-format -style=file -i pkg/api/v1/dsspb/dss.proto
-	clang-format -style=file -i pkg/api/v1/auxpb/aux.proto
+	clang-format -style=file -i pkg/api/v1/auxpb/aux_service.proto
 
 .PHONY: install
 install:
@@ -57,19 +57,11 @@ pkg/api/v1/dsspb/dss.proto: install-proto-generation
 		-indent 2 \
 		-package dsspb
 
-pkg/api/v1/auxpb/aux.pb.go: pkg/api/v1/auxpb/aux.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
+pkg/api/v1/auxpb/aux_service.pb.go:
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/api/v1/auxpb/aux_service.proto
 
-pkg/api/v1/auxpb/aux.pb.gw.go: pkg/api/v1/auxpb/aux.proto pkg/api/v1/auxpb/aux.pb.go
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
-
-pkg/api/v1/auxpb/aux.proto: install-proto-generation
-	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
-		-spec interfaces/v1/auxiliary.yaml -annotate \
-		-out $@ \
-		-tag dss \
-		-indent 2 \
-		-package auxpb
+pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.pb.go
+	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/api/v1/auxpb/aux_service.proto
 
 pkg/api/v1/utmpb/utm.pb.go: pkg/api/v1/utmpb/utm.proto
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
@@ -101,7 +93,7 @@ ifeq ($(shell which protoc-gen-go),)
 endif
 
 .PHONY: protos
-protos: pkg/api/v1/auxpb/aux.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go pkg/api/v1/utmpb/utm.pb.gw.go;
+protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go pkg/api/v1/utmpb/utm.pb.gw.go;
 
 .PHONY: install-staticcheck
 install-staticcheck:
