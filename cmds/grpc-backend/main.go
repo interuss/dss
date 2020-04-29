@@ -17,6 +17,7 @@ import (
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/dss/cockroach"
+	"github.com/interuss/dss/pkg/dss/utm"
 	"github.com/interuss/dss/pkg/dss/validations"
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
@@ -103,15 +104,17 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
 	}
 
-	dssServer := &dss.Server{
-		Store:   store,
-		Timeout: *timeout,
-	}
-	auxServer := &dss.AuxServer{}
-	utmServer := &dss.UtmServer{
-		Store:   store,
-		Timeout: *timeout,
-	}
+	var (
+		dssServer = &dss.Server{
+			Store:   store,
+			Timeout: *timeout,
+		}
+		auxServer = &dss.AuxServer{}
+		utmServer = &utm.Server{
+			Store:   nil,
+			Timeout: *timeout,
+		}
+	)
 
 	var keyResolver auth.KeyResolver
 	switch {
