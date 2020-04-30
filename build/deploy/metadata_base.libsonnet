@@ -2,7 +2,6 @@
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
   enable_istio: false,
-  applied_istio_definitions: false,
   release: 'config',
   // Set this field if you don't intend to ever join this instance with others.
   // This disables inter cluster crdb<->crdb access when set to true.

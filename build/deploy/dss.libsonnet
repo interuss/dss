@@ -8,7 +8,6 @@ local grafana = import 'grafana.libsonnet';
 local alertmanager = import 'alertmanager.libsonnet';
 local istio = import 'istio/base.libsonnet';
 local istio_definitions = import 'istio/custom_resources.libsonnet';
-local istio_rules = import 'istio/rules.libsonnet';
 local base = import 'base.libsonnet';
 
 local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
@@ -27,9 +26,7 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
 };
 
 {
-  all(metadata): if metadata.enable_istio && !metadata.applied_istio_definitions
-  then istio_definitions
-  else {
+  all(metadata): {
     default_namespace: base.Namespace(metadata, metadata.namespace) {
       metadata+: {
         labels+: if metadata.enable_istio then {
@@ -54,7 +51,6 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     istio: if metadata.enable_istio then {
       definitions: istio_definitions,
       base: istio,
-      rules: istio_rules.all(metadata),
     },
   },
 }

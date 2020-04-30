@@ -190,11 +190,7 @@ Istio provides better observability by using a sidecar proxy on every binary
 that exports some default metrics, as well as enabling Istio tracing. Istio
 also provides mTLS between all binaries. Enabling Istio is completely optional.
 To enable Istio, simply change the `enable_istio` field in your metadata tuple
-to `true`, then run `tk apply ...` as you would normally. This will create the
-custom resource definitions for Istio. Once these are created, set
-`applied_istio_definitions` to `true`, and run `tk apply ...` once more. This
-will enable Istio within your cluster. See
-https://github.com/grafana/tanka/issues/226 on why this is necessary.
+to `true`, then run `tk apply ...` as you would normally. 
 
 
 ## Enabling Prometheus Federation (Multi Cluster Monitoring)
