@@ -262,10 +262,10 @@ local util = import 'util.libsonnet';
         subpath: 'mixer-dashbaord.json',
       },
       grafIstioOverview: {
-        name: 'istio-grafana-configuration-dashboards-pilot-dashboard',
+        name: 'istio-grafana-configuration-dashboards-overview-dashboard',
         readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio/pilot-dashboard.json',
-        subpath: 'pilot-dashbaord.json',
+        mountPath: '/var/lib/grafana/dashboards/istio/overview-dashboard.json',
+        subpath: 'overview-dashbaord.json',
       },
       grafIstioPerformance: {
         name: 'istio-grafana-configuration-dashboards-performance-dashboard',
