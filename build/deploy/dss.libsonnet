@@ -8,6 +8,8 @@ local grafana = import 'grafana.libsonnet';
 local alertmanager = import 'alertmanager.libsonnet';
 local istio = import 'istio/base.libsonnet';
 local istio_definitions = import 'istio/custom_resources.libsonnet';
+local kiali = import 'istio/kiali.libsonnet';
+local jaeger = import 'istio/jaeger.libsonnet';
 local base = import 'base.libsonnet';
 
 local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
@@ -51,6 +53,8 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     istio: if metadata.enable_istio then {
       definitions: istio_definitions,
       base: istio,
+      kiali: kiali.all(metadata),
+      jaeger: jaeger.all(metadata),
     },
   },
 }

@@ -4,6 +4,7 @@ local metadataBase = import '../../../deploy/metadata_base.libsonnet';
 local metadata = metadataBase {
   namespace: 'your_namespace', //Same <NAMESPACE> used in the make-certs.py and apply-certs.sh scripts.
   clusterName: 'your_cluster_context', //Same <CLUSTER_CONTEXT> used in the make-certs.py, and apply-certs.sh scripts.
+  enable_istio: true,
   cockroach+: {
     hostnameSuffix: 'db.your_hostname_suffix.com',
     locality: 'your_unique_locality',

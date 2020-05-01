@@ -72,7 +72,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(capacity{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name)) - sum(sum(capacity_available{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(capacity{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name)) - sum(sum(capacity_available{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -81,7 +81,7 @@
           "step": 2
         },
         {
-          "expr": "sum(sum(capacity{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(capacity{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -183,11 +183,11 @@
       ],
       "targets": [
         {
-          "expr": "(sum(capacity{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name) - sum(capacity_available{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name)) / sum(capacity{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "(sum(capacity{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name) - sum(capacity_available{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name)) / sum(capacity{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "refId": "A",
           "step": 4
         }
@@ -236,11 +236,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "1 - sum(capacity_available{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name) / sum(capacity{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name) ",
+          "expr": "1 - sum(capacity_available{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name) / sum(capacity{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name) ",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "refId": "A",
           "step": 2
         }
@@ -337,11 +337,11 @@
       ],
       "targets": [
         {
-          "expr": "1 - sum(capacity_available{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name) / sum(capacity{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name) ",
+          "expr": "1 - sum(capacity_available{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name) / sum(capacity{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name) ",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "refId": "A",
           "step": 4
         }
@@ -391,7 +391,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(livebytes{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(livebytes{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -402,7 +402,7 @@
           "step": 2
         },
         {
-          "expr": "sum(sum(sysbytes{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(sysbytes{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -504,11 +504,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(livebytes{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(livebytes{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 4
@@ -555,10 +555,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "raft_process_logcommit_latency:rate1m:quantile_99{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}",
+          "expr": "raft_process_logcommit_latency:rate1m:quantile_99{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "refId": "A",
           "step": 2
         }
@@ -659,11 +659,11 @@
       ],
       "targets": [
         {
-          "expr": "avg(rocksdb_read_amplification{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "avg(rocksdb_read_amplification{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 4
@@ -710,10 +710,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "raft_process_commandcommit_latency:rate1m:quantile_99{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}",
+          "expr": "raft_process_commandcommit_latency:rate1m:quantile_99{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "refId": "A",
           "step": 2
         }
@@ -814,11 +814,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(rocksdb_num_sstables{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(rocksdb_num_sstables{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 4
@@ -868,7 +868,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(avg(rocksdb_read_amplification{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "avg(avg(rocksdb_read_amplification{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -970,11 +970,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(sys_fd_open{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name) / sum(sys_fd_softlimit{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(sys_fd_open{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name) / sum(sys_fd_softlimit{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "refId": "A",
           "step": 4
         }
@@ -1023,7 +1023,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(avg(raft_rocksdb_read_amplification{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "avg(avg(raft_rocksdb_read_amplification{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1110,7 +1110,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(rocksdb_num_sstables{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(rocksdb_num_sstables{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1196,7 +1196,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(raft_rocksdb_num_sstables{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(raft_rocksdb_num_sstables{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1279,11 +1279,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rocksdb_block_cache_hits{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"} / (rocksdb_block_cache_hits{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"} + rocksdb_block_cache_misses{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"})",
+          "expr": "rocksdb_block_cache_hits{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"} / (rocksdb_block_cache_hits{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"} + rocksdb_block_cache_misses{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}:{{store}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}:{{store}}",
           "refId": "A",
           "step": 2
         }
@@ -1361,11 +1361,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "raft_rocksdb_block_cache_hits{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"} / (raft_rocksdb_block_cache_hits{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"} + raft_rocksdb_block_cache_misses{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"})",
+          "expr": "raft_rocksdb_block_cache_hits{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"} / (raft_rocksdb_block_cache_hits{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"} + raft_rocksdb_block_cache_misses{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}:{{store}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}:{{store}}",
           "refId": "A",
           "step": 2
         }
@@ -1446,7 +1446,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(sys_fd_open{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(sys_fd_open{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1455,7 +1455,7 @@
           "step": 2
         },
         {
-          "expr": "sum(sum(sys_fd_softlimit{app=\"cockroachdb\",cluster_name=\"$cluster_name\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(sys_fd_softlimit{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Limit",
@@ -1517,11 +1517,11 @@
         "includeAll": false,
         "label": "Cluster name",
         "multi": false,
-        "name": "cluster_name",
+        "name": "k8s_cluster",
         "options": [],
         "query": "sys_uptime{app=\"cockroachdb\"}",
         "refresh": 1,
-        "regex": "/cluster_name=\"([^\"]+)\"/",
+        "regex": "/k8s_cluster=\"([^\"]+)\"/",
         "sort": 1,
         "tagValuesQuery": "",
         "tags": [],
@@ -1539,7 +1539,7 @@
         "multi": false,
         "name": "node",
         "options": [],
-        "query": "label_values(sys_uptime{app=\"cockroachdb\",cluster_name=\"$cluster_name\"},pod_name)",
+        "query": "label_values(sys_uptime{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\"},pod_name)",
         "refresh": 1,
         "regex": "",
         "sort": 3,
