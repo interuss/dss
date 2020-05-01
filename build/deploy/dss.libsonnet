@@ -53,8 +53,8 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     istio: if metadata.enable_istio then {
       definitions: istio_definitions,
       base: istio,
-      kiali: kiali,
-      jaeger: jaeger,
+      kiali: kiali.all(metadata),
+      jaeger: jaeger.all(metadata),
     },
   },
 }
