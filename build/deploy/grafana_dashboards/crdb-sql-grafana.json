@@ -73,7 +73,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sql_conns{k8s_cluster=~\"^$k8s_cluster.*$\",app=\"cockroachdb\",pod_name=~\"$node\"})",
+          "expr": "sum(sql_conns{cluster_name=~\"^$cluster_name.*$\",app=\"cockroachdb\",pod_name=~\"$node\"})",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -181,7 +181,7 @@
       ],
       "targets": [
         {
-          "expr": "sql_conns{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
+          "expr": "sql_conns{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -234,7 +234,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(sql_bytesin{app=\"cockroachdb\", k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_bytesin{app=\"cockroachdb\", cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -244,7 +244,7 @@
           "step": 240
         },
         {
-          "expr": "sum(rate(sql_bytesout{app=\"cockroachdb\", k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_bytesout{app=\"cockroachdb\", cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -348,7 +348,7 @@
       ],
       "targets": [
         {
-          "expr": "rate(sql_bytesin{app=\"cockroachdb\", k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval])",
+          "expr": "rate(sql_bytesin{app=\"cockroachdb\", cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -357,7 +357,7 @@
           "step": 240
         },
         {
-          "expr": "rate(sql_bytesout{app=\"cockroachdb\", k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval])",
+          "expr": "rate(sql_bytesout{app=\"cockroachdb\", cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -413,7 +413,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(sql_select_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_select_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -423,7 +423,7 @@
           "step": 240
         },
         {
-          "expr": "sum(rate(sql_insert_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_insert_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -433,7 +433,7 @@
           "step": 240
         },
         {
-          "expr": "sum(rate(sql_update_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_update_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -443,7 +443,7 @@
           "step": 240
         },
         {
-          "expr": "sum(rate(sql_delete_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_delete_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -550,7 +550,7 @@
       ],
       "targets": [
         {
-          "expr": "rate(sql_select_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_insert_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_update_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_delete_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval])",
+          "expr": "rate(sql_select_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_insert_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_update_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_delete_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -604,7 +604,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sql_exec_latency:rate1m:quantile_99{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
+          "expr": "sql_exec_latency:rate1m:quantile_99{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -711,7 +711,7 @@
       ],
       "targets": [
         {
-          "expr": "rate(sql_txn_begin_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_txn_commit_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_txn_abort_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_txn_rollback_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval])",
+          "expr": "rate(sql_txn_begin_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_txn_commit_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_txn_abort_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sql_txn_rollback_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -764,7 +764,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sql_exec_latency:rate1m:quantile_95{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
+          "expr": "sql_exec_latency:rate1m:quantile_95{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -871,7 +871,7 @@
       ],
       "targets": [
         {
-          "expr": "rate(sql_ddl_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval])",
+          "expr": "rate(sql_ddl_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -925,7 +925,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(sql_txn_begin_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_txn_begin_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -935,7 +935,7 @@
           "step": 240
         },
         {
-          "expr": "sum(rate(sql_txn_commit_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_txn_commit_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -944,7 +944,7 @@
           "step": 240
         },
         {
-          "expr": "sum(rate(sql_txn_abort_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_txn_abort_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -953,7 +953,7 @@
           "step": 240
         },
         {
-          "expr": "sum(rate(sql_txn_rollback_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_txn_rollback_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1039,7 +1039,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(sql_ddl_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sql_ddl_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1097,13 +1097,17 @@
     "list": [
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "tags": [],
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": "prometheus",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "Cluster name",
-        "multi": false,
-        "name": "k8s_cluster",
+        "multi": true,
+        "name": "cluster_name",
         "options": [],
         "query": "sys_uptime{app=\"cockroachdb\"}",
         "refresh": 1,
@@ -1125,7 +1129,7 @@
         "multi": false,
         "name": "node",
         "options": [],
-        "query": "label_values(sys_uptime{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\"},pod_name)",
+        "query": "label_values(sys_uptime{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\"},pod_name)",
         "refresh": 1,
         "regex": "",
         "sort": 3,
