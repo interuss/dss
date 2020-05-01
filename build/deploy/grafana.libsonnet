@@ -45,7 +45,7 @@ local datasourcePrometheus(metadata) = {
         'dashboards.yaml': std.manifestYamlDoc(dashboardConfig)
       },
     },
-    grafDashboards: dashboard.config(metadata),
+    grafDashboards: dashboard.all(metadata).config,
 
     deployment: base.Deployment(metadata, 'grafana') {
       spec: {
@@ -98,7 +98,7 @@ local datasourcePrometheus(metadata) = {
                     name: 'grafana-dash-provisioning',
                     readOnly: false,
                   },
-                ] + dashboard.mount,
+                ] + dashboard.all(metadata).mount,
               },
             ],
             volumes: [
@@ -121,7 +121,7 @@ local datasourcePrometheus(metadata) = {
                 },
               },
               
-            ] + dashboard.volumes,
+            ] + dashboard.all(metadata).volumes,
           },
         },
       },
