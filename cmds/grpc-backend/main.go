@@ -111,7 +111,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		}
 		auxServer = &dss.AuxServer{}
 		utmServer = &utm.Server{
-			Store:   nil,
+			Store:   &utm.DummyStore{},
 			Timeout: *timeout,
 		}
 	)
@@ -169,6 +169,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	dsspb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
 	if *enableUTM {
+	  logger.Info("config", zap.Any("utm", "enabled"))
 		utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, utmServer)
 	}
 	logger.Info("build", zap.Any("description", build.Describe()))

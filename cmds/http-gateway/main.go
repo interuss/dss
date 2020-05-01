@@ -75,6 +75,7 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 		if err := utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
 			return err
 		}
+		logger.Info("config", zap.Any("utm", "enabled"))
 	}
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -61,14 +61,20 @@ go run cmds/grpc-backend/main.go \
     -reflect_api \
     -log_format console \
     -dump_requests \
+    -enable_utm \
     -accepted_jwt_audiences localhost &
 pid_grpc=$!
 sleep 5
 $(ps -p ${pid_grpc} > /dev/null)
 grpc_ok=$?
+if [ ${grpc_ok} -ne 0 ]
+then
+    echo "Aborting because grpc-backend failed to start."
+    exit 1
+fi
 
 echo "=== Starting http-gateway on :8082 ==="
-go run cmds/http-gateway/main.go -grpc-backend localhost:8081 -addr :8082 &
+go run cmds/http-gateway/main.go -grpc-backend localhost:8081 -addr :8082 -enable_utm &
 pid_http=$!
 sleep 5
 $(ps -p ${pid_http} > /dev/null)
