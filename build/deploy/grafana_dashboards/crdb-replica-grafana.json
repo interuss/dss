@@ -89,7 +89,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(ranges{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(ranges{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "ranges",
@@ -97,7 +97,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(replicas_leaders{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(replicas_leaders{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -107,7 +107,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(replicas_leaders_not_leaseholders{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(replicas_leaders_not_leaseholders{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -117,7 +117,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(ranges_unavailable{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(ranges_unavailable{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -127,7 +127,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(ranges_underreplicated{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(ranges_underreplicated{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "under-replicated",
@@ -227,21 +227,21 @@
       ],
       "targets": [
         {
-          "expr": "sum(ranges{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(ranges{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}} - ranges",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}} - ranges",
           "metric": "",
           "refId": "A",
           "step": 20
         },
         {
-          "expr": "sum(ranges_unavailable{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(ranges_unavailable{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}} - unavailable",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}} - unavailable",
           "metric": "",
           "refId": "B",
           "step": 20
@@ -312,7 +312,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(raftlog_behind{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(raftlog_behind{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -322,7 +322,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(rate(raftlog_truncated{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
+          "expr": "sum(sum(rate(raftlog_truncated{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -332,7 +332,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(raftlog_selfbehind{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(raftlog_selfbehind{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -434,11 +434,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(raftlog_behind{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(raftlog_behind{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 20
@@ -488,7 +488,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(replicas{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(replicas{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -497,7 +497,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(replicas_quiescent{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(replicas_quiescent{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -506,7 +506,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(replicas{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name) - sum(replicas_quiescent{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
+          "expr": "sum(sum(replicas{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name) - sum(replicas_quiescent{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Active",
@@ -611,11 +611,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(replicas_quiescent{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(replicas_quiescent{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "refId": "A",
           "step": 20
         }
@@ -664,11 +664,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(replicas_leaseholders{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(replicas_leaseholders{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 10
@@ -766,11 +766,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(replicas_leaseholders{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(replicas_leaseholders{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 20
@@ -820,11 +820,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(replicas{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(replicas{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 10
@@ -922,11 +922,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(replicas{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(replicas{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 20
@@ -976,11 +976,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(keybytes{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name) + sum(valbytes{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(keybytes{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name) + sum(valbytes{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 10
@@ -1078,11 +1078,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(livebytes{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(livebytes{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 20
@@ -1132,11 +1132,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rebalancing_writespersecond{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(rebalancing_writespersecond{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 10
@@ -1234,11 +1234,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(rebalancing_writespersecond{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
+          "expr": "sum(rebalancing_writespersecond{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 20
@@ -1288,7 +1288,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(rate(range_splits{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
+          "expr": "sum(sum(rate(range_splits{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1298,7 +1298,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(rate(range_adds{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
+          "expr": "sum(sum(rate(range_adds{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1308,7 +1308,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(rate(range_removes{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
+          "expr": "sum(sum(rate(range_removes{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1415,11 +1415,11 @@
       ],
       "targets": [
         {
-          "expr": "sum(rate(range_splits{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name) + sum(rate(range_adds{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name) + sum(rate(range_removes{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name)",
+          "expr": "sum(rate(range_splits{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name) + sum(rate(range_adds{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name) + sum(rate(range_removes{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}}",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
           "metric": "",
           "refId": "A",
           "step": 20
@@ -1486,7 +1486,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sum(rate(range_snapshots_generated{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
+          "expr": "sum(sum(rate(range_snapshots_generated{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1496,7 +1496,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(rate(range_snapshots_normal_applied{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
+          "expr": "sum(sum(rate(range_snapshots_normal_applied{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1506,7 +1506,7 @@
           "step": 10
         },
         {
-          "expr": "sum(sum(rate(range_snapshots_preemptive_applied{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
+          "expr": "sum(sum(rate(range_snapshots_preemptive_applied{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1515,7 +1515,7 @@
           "step": 10
         },
         {
-          "expr": "sum(capacity_reserved{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"})",
+          "expr": "sum(capacity_reserved{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"})",
           "format": "time_series",
           "hide": true,
           "interval": "",
@@ -1525,7 +1525,7 @@
           "step": 4
         },
         {
-          "expr": "sum(replicas_reserved{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"})",
+          "expr": "sum(replicas_reserved{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"})",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -1628,20 +1628,20 @@
       ],
       "targets": [
         {
-          "expr": "sum(rate(range_snapshots_generated{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name)",
+          "expr": "sum(rate(range_snapshots_generated{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}} - generated",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}} - generated",
           "refId": "A",
           "step": 20
         },
         {
-          "expr": "sum(rate(range_snapshots_normal_applied{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name) + sum(rate(range_snapshots_preemptive_applied{cluster_name=\"$cluster_name\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name)",
+          "expr": "sum(rate(range_snapshots_normal_applied{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name) + sum(rate(range_snapshots_preemptive_applied{k8s_cluster=\"$k8s_cluster\",app=\"cockroachdb\",pod_name=~\"$node\"}[$rate_interval])) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod_name}}-{{cluster_name}} - applied",
+          "legendFormat": "{{pod_name}}-{{k8s_cluster}} - applied",
           "metric": "",
           "refId": "B",
           "step": 20
@@ -1670,11 +1670,11 @@
         "includeAll": false,
         "label": "Cluster name",
         "multi": false,
-        "name": "cluster_name",
+        "name": "k8s_cluster",
         "options": [],
         "query": "sys_uptime{app=\"cockroachdb\"}",
         "refresh": 2,
-        "regex": "/cluster_name=\"([^\"]+)\"/",
+        "regex": "/k8s_cluster=\"([^\"]+)\"/",
         "sort": 1,
         "tagValuesQuery": "",
         "tags": [],
@@ -1692,7 +1692,7 @@
         "multi": false,
         "name": "node",
         "options": [],
-        "query": "label_values(sys_uptime{app=\"cockroachdb\",cluster_name=\"$cluster_name\"},pod_name)",
+        "query": "label_values(sys_uptime{app=\"cockroachdb\",k8s_cluster=\"$k8s_cluster\"},pod_name)",
         "refresh": 1,
         "regex": "",
         "sort": 3,

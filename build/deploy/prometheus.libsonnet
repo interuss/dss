@@ -10,7 +10,7 @@ local PrometheusConfig(metadata) = {
     evaluation_interval: '5s',
     // label for federated Prometheus.
     external_labels:{
-      cluster_name: metadata.clusterName
+      k8s_cluster: metadata.clusterName
     },
   },
   rule_files: [

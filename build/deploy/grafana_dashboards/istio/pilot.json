@@ -68,7 +68,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(istio_build{component=\"pilot\"}) by (tag)",
+          "expr": "sum(istio_build{k8s_cluster=\"$k8s_cluster\",component=\"pilot\"}) by (tag)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ tag }}",
@@ -166,7 +166,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "process_virtual_memory_bytes{job=\"pilot\"}",
+          "expr": "process_virtual_memory_bytes{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -175,7 +175,7 @@
           "step": 2
         },
         {
-          "expr": "process_resident_memory_bytes{job=\"pilot\"}",
+          "expr": "process_resident_memory_bytes{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Resident Memory",
@@ -183,7 +183,7 @@
           "step": 2
         },
         {
-          "expr": "go_memstats_heap_sys_bytes{job=\"pilot\"}",
+          "expr": "go_memstats_heap_sys_bytes{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -191,7 +191,7 @@
           "refId": "A"
         },
         {
-          "expr": "go_memstats_heap_alloc_bytes{job=\"pilot\"}",
+          "expr": "go_memstats_heap_alloc_bytes{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -199,7 +199,7 @@
           "refId": "D"
         },
         {
-          "expr": "go_memstats_alloc_bytes{job=\"pilot\"}",
+          "expr": "go_memstats_alloc_bytes{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Alloc",
@@ -207,7 +207,7 @@
           "step": 2
         },
         {
-          "expr": "go_memstats_heap_inuse_bytes{job=\"pilot\"}",
+          "expr": "go_memstats_heap_inuse_bytes{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -216,7 +216,7 @@
           "step": 2
         },
         {
-          "expr": "go_memstats_stack_inuse_bytes{job=\"pilot\"}",
+          "expr": "go_memstats_stack_inuse_bytes{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Stack in-use",
@@ -224,7 +224,7 @@
           "step": 2
         },
         {
-          "expr": "container_memory_usage_bytes{job=\"kubernetes-cadvisor\", container_name=~\"discovery\", pod_name=~\"istio-pilot-.*\"}",
+          "expr": "container_memory_usage_bytes{k8s_cluster=\"$k8s_cluster\",job=\"kubernetes-cadvisor\", container_name=~\"discovery\", pod_name=~\"istio-pilot-.*\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -233,7 +233,7 @@
           "step": 2
         },
         {
-          "expr": "container_memory_usage_bytes{job=\"kubernetes-cadvisor\", container_name=~\"istio-proxy\", pod_name=~\"istio-pilot-.*\"}",
+          "expr": "container_memory_usage_bytes{k8s_cluster=\"$k8s_cluster\",job=\"kubernetes-cadvisor\", container_name=~\"istio-proxy\", pod_name=~\"istio-pilot-.*\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Sidecar (container)",
@@ -318,14 +318,14 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(container_cpu_usage_seconds_total{job=\"kubernetes-cadvisor\",container_name=\"discovery\", pod_name=~\"istio-pilot-.*\"}[1m]))",
+          "expr": "sum(irate(container_cpu_usage_seconds_total{k8s_cluster=\"$k8s_cluster\",job=\"kubernetes-cadvisor\",container_name=\"discovery\", pod_name=~\"istio-pilot-.*\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Discovery (container)",
           "refId": "A"
         },
         {
-          "expr": "irate(process_cpu_seconds_total{job=\"pilot\"}[1m])",
+          "expr": "irate(process_cpu_seconds_total{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}[1m])",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -334,7 +334,7 @@
           "step": 2
         },
         {
-          "expr": "sum(irate(container_cpu_usage_seconds_total{job=\"kubernetes-cadvisor\",container_name=\"istio-proxy\", pod_name=~\"istio-pilot-.*\"}[1m]))",
+          "expr": "sum(irate(container_cpu_usage_seconds_total{k8s_cluster=\"$k8s_cluster\",job=\"kubernetes-cadvisor\",container_name=\"istio-proxy\", pod_name=~\"istio-pilot-.*\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -421,7 +421,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "container_fs_usage_bytes{job=\"kubernetes-cadvisor\", container_name=\"discovery\", pod_name=~\"istio-pilot-.*\"}",
+          "expr": "container_fs_usage_bytes{k8s_cluster=\"$k8s_cluster\",job=\"kubernetes-cadvisor\", container_name=\"discovery\", pod_name=~\"istio-pilot-.*\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Discovery",
@@ -429,7 +429,7 @@
           "step": 2
         },
         {
-          "expr": "container_fs_usage_bytes{job=\"kubernetes-cadvisor\", container_name=\"istio-proxy\", pod_name=~\"istio-pilot-.*\"}",
+          "expr": "container_fs_usage_bytes{k8s_cluster=\"$k8s_cluster\",job=\"kubernetes-cadvisor\", container_name=\"istio-proxy\", pod_name=~\"istio-pilot-.*\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Sidecar",
@@ -515,7 +515,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "go_goroutines{job=\"pilot\"}",
+          "expr": "go_goroutines{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Number of Goroutines",
@@ -615,28 +615,28 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(pilot_xds_pushes{type=\"cds\"}[1m]))",
+          "expr": "sum(irate(pilot_xds_pushes{k8s_cluster=\"$k8s_cluster\",type=\"cds\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Cluster",
           "refId": "C"
         },
         {
-          "expr": "sum(irate(pilot_xds_pushes{type=\"eds\"}[1m]))",
+          "expr": "sum(irate(pilot_xds_pushes{k8s_cluster=\"$k8s_cluster\",type=\"eds\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Endpoints",
           "refId": "D"
         },
         {
-          "expr": "sum(irate(pilot_xds_pushes{type=\"lds\"}[1m]))",
+          "expr": "sum(irate(pilot_xds_pushes{k8s_cluster=\"$k8s_cluster\",type=\"lds\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Listeners",
           "refId": "A"
         },
         {
-          "expr": "sum(irate(pilot_xds_pushes{type=\"rds\"}[1m]))",
+          "expr": "sum(irate(pilot_xds_pushes{k8s_cluster=\"$k8s_cluster\",type=\"rds\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Routes",
@@ -726,7 +726,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(pilot_xds_cds_reject{job=\"pilot\"}) or (absent(pilot_xds_cds_reject{job=\"pilot\"}) - 1)",
+          "expr": "sum(pilot_xds_cds_reject{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}) or (absent(pilot_xds_cds_reject{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}) - 1)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -734,7 +734,7 @@
           "refId": "C"
         },
         {
-          "expr": "sum(pilot_xds_eds_reject{job=\"pilot\"}) or (absent(pilot_xds_eds_reject{job=\"pilot\"}) - 1)",
+          "expr": "sum(pilot_xds_eds_reject{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}) or (absent(pilot_xds_eds_reject{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}) - 1)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -742,7 +742,7 @@
           "refId": "D"
         },
         {
-          "expr": "sum(pilot_xds_rds_reject{job=\"pilot\"}) or (absent(pilot_xds_rds_reject{job=\"pilot\"}) - 1)",
+          "expr": "sum(pilot_xds_rds_reject{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}) or (absent(pilot_xds_rds_reject{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}) - 1)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -750,7 +750,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum(pilot_xds_lds_reject{job=\"pilot\"}) or (absent(pilot_xds_lds_reject{job=\"pilot\"}) - 1)",
+          "expr": "sum(pilot_xds_lds_reject{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}) or (absent(pilot_xds_lds_reject{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}) - 1)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -758,14 +758,14 @@
           "refId": "B"
         },
         {
-          "expr": "sum(rate(pilot_xds_write_timeout{job=\"pilot\"}[1m]))",
+          "expr": "sum(rate(pilot_xds_write_timeout{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Write Timeouts",
           "refId": "F"
         },
         {
-          "expr": "sum(rate(pilot_total_xds_internal_errors{job=\"pilot\"}[1m]))",
+          "expr": "sum(rate(pilot_total_xds_internal_errors{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -773,7 +773,7 @@
           "refId": "H"
         },
         {
-          "expr": "sum(rate(pilot_total_xds_rejects{job=\"pilot\"}[1m]))",
+          "expr": "sum(rate(pilot_total_xds_rejects{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -781,7 +781,7 @@
           "refId": "E"
         },
         {
-          "expr": "sum(rate(pilot_xds_push_context_errors{job=\"pilot\"}[1m]))",
+          "expr": "sum(rate(pilot_xds_push_context_errors{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -789,14 +789,14 @@
           "refId": "K"
         },
         {
-          "expr": "sum(rate(pilot_xds_pushes{type!~\"lds|cds|rds|eds\"}[1m])) by (type)",
+          "expr": "sum(rate(pilot_xds_pushes{k8s_cluster=\"$k8s_cluster\",type!~\"lds|cds|rds|eds\"}[1m])) by (type)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Push Errors ({{ type }})",
           "refId": "L"
         },
         {
-          "expr": "sum(rate(pilot_xds_push_errors{job=\"pilot\"}[1m])) by (type)",
+          "expr": "sum(rate(pilot_xds_push_errors{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}[1m])) by (type)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -804,14 +804,14 @@
           "refId": "I"
         },
         {
-          "expr": "sum(rate(pilot_xds_push_timeout{job=\"pilot\"}[1m]))",
+          "expr": "sum(rate(pilot_xds_push_timeout{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Push Timeouts",
           "refId": "G"
         },
         {
-          "expr": "sum(rate(pilot_xds_push_timeout_failures{job=\"pilot\"}[1m]))",
+          "expr": "sum(rate(pilot_xds_push_timeout_failures{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Push Timeouts Failures",
@@ -1004,7 +1004,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pilot_conflict_inbound_listener{job=\"pilot\"}",
+          "expr": "pilot_conflict_inbound_listener{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1012,7 +1012,7 @@
           "refId": "B"
         },
         {
-          "expr": "pilot_conflict_outbound_listener_http_over_current_tcp{job=\"pilot\"}",
+          "expr": "pilot_conflict_outbound_listener_http_over_current_tcp{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1020,7 +1020,7 @@
           "refId": "A"
         },
         {
-          "expr": "pilot_conflict_outbound_listener_tcp_over_current_tcp{job=\"pilot\"}",
+          "expr": "pilot_conflict_outbound_listener_tcp_over_current_tcp{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1028,7 +1028,7 @@
           "refId": "C"
         },
         {
-          "expr": "pilot_conflict_outbound_listener_tcp_over_current_http{job=\"pilot\"}",
+          "expr": "pilot_conflict_outbound_listener_tcp_over_current_http{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1114,21 +1114,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pilot_virt_services{job=\"pilot\"}",
+          "expr": "pilot_virt_services{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Virtual Services",
           "refId": "A"
         },
         {
-          "expr": "pilot_services{job=\"pilot\"}",
+          "expr": "pilot_services{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Services",
           "refId": "B"
         },
         {
-          "expr": "pilot_xds{job=\"pilot\"}",
+          "expr": "pilot_xds{k8s_cluster=\"$k8s_cluster\",job=\"pilot\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Connected Endpoints",
@@ -1220,7 +1220,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(pilot_xds_eds_instances{job=\"pilot\", cluster=~\".+\\\\|.+\"}) by (cluster) < 1",
+          "expr": "sum(pilot_xds_eds_instances{k8s_cluster=\"$k8s_cluster\",job=\"pilot\", cluster=~\".+\\\\|.+\"}) by (cluster) < 1",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -1286,7 +1286,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(envoy_cluster_upstream_cx_total{cluster_name=\"xds-grpc\"}[1m]))",
+          "expr": "sum(irate(envoy_cluster_upstream_cx_total{k8s_cluster=\"$k8s_cluster\",cluster_name=\"xds-grpc\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1294,7 +1294,7 @@
           "refId": "C"
         },
         {
-          "expr": "sum(irate(envoy_cluster_upstream_cx_connect_fail{cluster_name=\"xds-grpc\"}[1m]))",
+          "expr": "sum(irate(envoy_cluster_upstream_cx_connect_fail{k8s_cluster=\"$k8s_cluster\",cluster_name=\"xds-grpc\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1387,7 +1387,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(envoy_cluster_upstream_cx_active{cluster_name=\"xds-grpc\"})",
+          "expr": "sum(envoy_cluster_upstream_cx_active{k8s_cluster=\"$k8s_cluster\",cluster_name=\"xds-grpc\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "XDS Active Connections",
@@ -1476,7 +1476,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(rate(envoy_cluster_upstream_cx_rx_bytes_total{cluster_name=\"xds-grpc\"}[1m]))",
+          "expr": "max(rate(envoy_cluster_upstream_cx_rx_bytes_total{k8s_cluster=\"$k8s_cluster\",cluster_name=\"xds-grpc\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1484,7 +1484,7 @@
           "refId": "D"
         },
         {
-          "expr": "quantile(0.5, rate(envoy_cluster_upstream_cx_rx_bytes_total{cluster_name=\"xds-grpc\"}[1m]))",
+          "expr": "quantile(0.5, rate(envoy_cluster_upstream_cx_rx_bytes_total{k8s_cluster=\"$k8s_cluster\",cluster_name=\"xds-grpc\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1492,14 +1492,14 @@
           "refId": "B"
         },
         {
-          "expr": "max(rate(envoy_cluster_upstream_cx_tx_bytes_total{cluster_name=\"xds-grpc\"}[1m]))",
+          "expr": "max(rate(envoy_cluster_upstream_cx_tx_bytes_total{k8s_cluster=\"$k8s_cluster\",cluster_name=\"xds-grpc\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "XDS Request Bytes Max",
           "refId": "A"
         },
         {
-          "expr": "quantile(.5, rate(envoy_cluster_upstream_cx_tx_bytes_total{cluster_name=\"xds-grpc\"}[1m]))",
+          "expr": "quantile(.5, rate(envoy_cluster_upstream_cx_tx_bytes_total{k8s_cluster=\"$k8s_cluster\",cluster_name=\"xds-grpc\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "XDS Request Bytes Average",

@@ -70,14 +70,14 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{job=\"kubernetes-cadvisor\",container_name=~\"citadel\", pod_name=~\"istio-citadel-.*\"}[1m]))",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{k8s_cluster=\"$k8s_cluster\",job=\"kubernetes-cadvisor\",container_name=~\"citadel\", pod_name=~\"istio-citadel-.*\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Citadel CPU usage rate",
           "refId": "A"
         },
         {
-          "expr": "irate(process_cpu_seconds_total{job=\"citadel\"}[1m])",
+          "expr": "irate(process_cpu_seconds_total{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}[1m])",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Citadel CPU usage irate",
@@ -162,35 +162,35 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "process_virtual_memory_bytes{job=\"citadel\"}",
+          "expr": "process_virtual_memory_bytes{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Virtual Memory",
           "refId": "A"
         },
         {
-          "expr": "process_resident_memory_bytes{job=\"citadel\"}",
+          "expr": "process_resident_memory_bytes{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Resident Memory",
           "refId": "B"
         },
         {
-          "expr": "go_memstats_heap_sys_bytes{job=\"citadel\"}",
+          "expr": "go_memstats_heap_sys_bytes{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Heap Memory Total",
           "refId": "C"
         },
         {
-          "expr": "go_memstats_alloc_bytes{job=\"citadel\"}",
+          "expr": "go_memstats_alloc_bytes{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Heap Memory Allocated",
           "refId": "E"
         },
         {
-          "expr": "go_memstats_heap_inuse_bytes{job=\"citadel\"}",
+          "expr": "go_memstats_heap_inuse_bytes{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Heap Inuse",
@@ -274,7 +274,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "go_goroutines{job=\"citadel\"}",
+          "expr": "go_goroutines{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Goroutines",
@@ -372,7 +372,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "citadel_server_csr_count{job=\"citadel\"}",
+          "expr": "citadel_server_csr_count{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "CSR Request Count",
@@ -457,7 +457,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "citadel_server_success_cert_issuance_count{job=\"citadel\"}",
+          "expr": "citadel_server_success_cert_issuance_count{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Certificates Issued",
@@ -557,7 +557,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "citadel_secret_controller_csr_err_count{job=\"citadel\"}",
+          "expr": "citadel_secret_controller_csr_err_count{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "CSR Creation Error Count",
@@ -641,7 +641,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "citadel_server_csr_parsing_err_count{job=\"citadel\"}",
+          "expr": "citadel_server_csr_parsing_err_count{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "CSR Parse Error Count",
@@ -726,7 +726,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "citadel_server_authentication_failure_count{job=\"citadel\"}\t",
+          "expr": "citadel_server_authentication_failure_count{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}\t",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Authentication Failure Count",
@@ -824,7 +824,7 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "citadel_secret_controller_svc_acc_created_cert_count{job=\"citadel\"}",
+          "expr": "citadel_secret_controller_svc_acc_created_cert_count{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "SA Secrets Created",
@@ -910,7 +910,7 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "citadel_secret_controller_svc_acc_deleted_cert_count{job=\"citadel\"}",
+          "expr": "citadel_secret_controller_svc_acc_deleted_cert_count{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "SA Secrets Deleted",
@@ -996,7 +996,7 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "citadel_secret_controller_secret_deleted_cert_count{job=\"citadel\"}",
+          "expr": "citadel_secret_controller_secret_deleted_cert_count{k8s_cluster=\"$k8s_cluster\",job=\"citadel\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "SA Secrets Recreated",
