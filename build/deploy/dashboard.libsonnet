@@ -169,10 +169,10 @@ local util = import 'util.libsonnet';
         },
       },
       grafIstioOverview: {
-        name: 'istio-grafana-configuration-dashboards-pilot-dashboard',
+        name: 'istio-grafana-configuration-dashboards-overview-dashboard',
         configMap: {
           defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-pilot-dashboard',
+          name: 'istio-grafana-configuration-dashboards-overview-dashboard',
         },
       },
       grafIstioPerformance: {
