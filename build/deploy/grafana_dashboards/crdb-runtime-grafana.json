@@ -81,7 +81,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count(up{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"})",
+          "expr": "count(up{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"})",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -92,7 +92,7 @@
           "step": 120
         },
         {
-          "expr": "count(up{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"} == 1)",
+          "expr": "count(up{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"} == 1)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -102,7 +102,7 @@
           "step": 120
         },
         {
-          "expr": "min(liveness_livenodes{cluster_name=~\"^$cluster_name.*$\",app=\"cockroachdb\",pod_name=~\"$node\"})",
+          "expr": "min(liveness_livenodes{k8s_cluster=~\"^$k8s_cluster.*$\",app=\"cockroachdb\",pod_name=~\"$node\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Live nodes (node liveness heartbeats)",
@@ -202,7 +202,7 @@
       ],
       "targets": [
         {
-          "expr": "build_timestamp{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "build_timestamp{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "table",
           "interval": "",
           "intervalFactor": 2,
@@ -256,7 +256,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sys_uptime{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "sys_uptime{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -338,7 +338,7 @@
       ],
       "targets": [
         {
-          "expr": "sys_uptime{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "sys_uptime{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -392,7 +392,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sys_rss{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"})",
+          "expr": "sum(sys_rss{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -402,7 +402,7 @@
           "step": 120
         },
         {
-          "expr": "sum(sys_go_allocbytes{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"})",
+          "expr": "sum(sys_go_allocbytes{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -412,7 +412,7 @@
           "step": 120
         },
         {
-          "expr": "sum(sys_go_totalbytes{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"})",
+          "expr": "sum(sys_go_totalbytes{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -422,7 +422,7 @@
           "step": 120
         },
         {
-          "expr": "sum(sys_cgo_allocbytes{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"})",
+          "expr": "sum(sys_cgo_allocbytes{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -432,7 +432,7 @@
           "step": 120
         },
         {
-          "expr": "sum(sys_cgo_totalbytes{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"})",
+          "expr": "sum(sys_cgo_totalbytes{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -531,7 +531,7 @@
       ],
       "targets": [
         {
-          "expr": "sys_rss{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "sys_rss{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -584,7 +584,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(sys_goroutines{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"})",
+          "expr": "sum(sys_goroutines{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -683,7 +683,7 @@
       ],
       "targets": [
         {
-          "expr": "sys_goroutines{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "sys_goroutines{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -741,7 +741,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(sys_gc_count{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sys_gc_count{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -750,7 +750,7 @@
           "step": 120
         },
         {
-          "expr": "sum(rate(sys_gc_pause_ns{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sys_gc_pause_ns{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -853,7 +853,7 @@
       ],
       "targets": [
         {
-          "expr": "rate(sys_gc_pause_ns{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval])",
+          "expr": "rate(sys_gc_pause_ns{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -906,7 +906,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(sys_cpu_user_ns{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sys_cpu_user_ns{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -915,7 +915,7 @@
           "step": 120
         },
         {
-          "expr": "sum(rate(sys_cpu_sys_ns{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sys_cpu_sys_ns{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "System",
@@ -1016,7 +1016,7 @@
       ],
       "targets": [
         {
-          "expr": "rate(sys_cpu_user_ns{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sys_cpu_sys_ns{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval])",
+          "expr": "rate(sys_cpu_user_ns{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]) + rate(sys_cpu_sys_ns{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1070,7 +1070,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(sys_cgocalls{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval]))",
+          "expr": "sum(rate(sys_cgocalls{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1171,7 +1171,7 @@
       ],
       "targets": [
         {
-          "expr": "rate(sys_cgocalls{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}[$rate_interval])",
+          "expr": "rate(sys_cgocalls{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}[$rate_interval])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1223,7 +1223,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "clock_offset_meannanos{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\", pod_name=~\"$node\"}",
+          "expr": "clock_offset_meannanos{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\", pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1326,7 +1326,7 @@
       ],
       "targets": [
         {
-          "expr": "clock_offset_meannanos{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\", pod_name=~\"$node\"}",
+          "expr": "clock_offset_meannanos{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\", pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1377,7 +1377,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "round_trip_latency:rate1m:quantile_50{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "round_trip_latency:rate1m:quantile_50{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
@@ -1480,7 +1480,7 @@
       ],
       "targets": [
         {
-          "expr": "round_trip_latency:rate1m:quantile_50{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "round_trip_latency:rate1m:quantile_50{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1531,7 +1531,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "round_trip_latency:rate1m:quantile_95{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "round_trip_latency:rate1m:quantile_95{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
@@ -1634,7 +1634,7 @@
       ],
       "targets": [
         {
-          "expr": "round_trip_latency:rate1m:quantile_95{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "round_trip_latency:rate1m:quantile_95{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1685,7 +1685,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "round_trip_latency:rate1m:quantile_99{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "round_trip_latency:rate1m:quantile_99{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{pod_name}}-{{k8s_cluster}}",
@@ -1788,7 +1788,7 @@
       ],
       "targets": [
         {
-          "expr": "round_trip_latency:rate1m:quantile_99{app=\"cockroachdb\",cluster_name=~\"^$cluster_name.*$\",pod_name=~\"$node\"}",
+          "expr": "round_trip_latency:rate1m:quantile_99{app=\"cockroachdb\",k8s_cluster=~\"^$k8s_cluster.*$\",pod_name=~\"$node\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1823,7 +1823,7 @@
         "includeAll": true,
         "label": "Cluster name",
         "multi": true,
-        "name": "cluster_name",
+        "name": "k8s_cluster",
         "options": [],
         "query": "sys_uptime{app=\"cockroachdb\"}",
         "refresh": 1,

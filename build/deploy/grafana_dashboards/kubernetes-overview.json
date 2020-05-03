@@ -84,7 +84,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\", cluster_name=~\"^$ClusterName.*$\"}) / sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node.*$\", cluster_name=~\"^$ClusterName.*$\"}) * 100",
+          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\", k8s_cluster=~\"^$ClusterName.*$\"}) / sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node.*$\", k8s_cluster=~\"^$ClusterName.*$\"}) * 100",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -171,7 +171,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"}[2m])) / sum (machine_cpu_cores{kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"}) * 100",
+          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"}[2m])) / sum (machine_cpu_cores{kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"}) * 100",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -256,7 +256,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "(((sum(kube_deployment_status_replicas{deployment=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_desired_number_scheduled{daemonset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0))) - ((sum(kube_deployment_status_replicas_available{deployment=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_status_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_number_ready{daemonset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)))) / ((sum(kube_deployment_status_replicas{deployment=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_desired_number_scheduled{daemonset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0))) * 100",
+          "expr": "(((sum(kube_deployment_status_replicas{deployment=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_desired_number_scheduled{daemonset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0))) - ((sum(kube_deployment_status_replicas_available{deployment=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_status_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_number_ready{daemonset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)))) / ((sum(kube_deployment_status_replicas{deployment=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_desired_number_scheduled{daemonset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0))) * 100",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -340,7 +340,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\", cluster_name=~\"^$ClusterName.*$\"})",
+          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\", k8s_cluster=~\"^$ClusterName.*$\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -424,7 +424,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node.*$\", cluster_name=~\"^$ClusterName.*$\"})",
+          "expr": "sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node.*$\", k8s_cluster=~\"^$ClusterName.*$\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -508,7 +508,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"}[1m]))",
+          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -592,7 +592,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (machine_cpu_cores{kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"})",
+          "expr": "sum (machine_cpu_cores{kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"})",
           "intervalFactor": 2,
           "refId": "A",
           "step": 1800
@@ -675,7 +675,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "(sum(kube_deployment_status_replicas_available{deployment=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_status_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_number_ready{daemonset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0))",
+          "expr": "(sum(kube_deployment_status_replicas_available{deployment=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_status_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_number_ready{daemonset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0))",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -759,7 +759,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "(sum(kube_deployment_status_replicas{deployment=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_desired_number_scheduled{daemonset=~\".*$Deployment$Statefulset$Daemonset\", cluster_name=~\"^$ClusterName.*$\"}) or vector(0))",
+          "expr": "(sum(kube_deployment_status_replicas{deployment=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_statefulset_replicas{statefulset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0)) + (sum(kube_daemonset_status_desired_number_scheduled{daemonset=~\".*$Deployment$Statefulset$Daemonset\", k8s_cluster=~\"^$ClusterName.*$\"}) or vector(0))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ $Daemonset }}",
@@ -834,7 +834,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{image!=\"\",name=~\"^k8s_.*\",io_kubernetes_container_name!=\"POD\",pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"}[1m])) by (pod_name,kubernetes_io_hostname,cluster_name)",
+          "expr": "sum (rate (container_cpu_usage_seconds_total{image!=\"\",name=~\"^k8s_.*\",io_kubernetes_container_name!=\"POD\",pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"}[1m])) by (pod_name,kubernetes_io_hostname,k8s_cluster)",
           "format": "time_series",
           "hide": false,
           "interval": "10s",
@@ -845,7 +845,7 @@
           "step": 60
         },
         {
-          "expr": "sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"}) by (pod,kubernetes_io_hostname,cluster_name)",
+          "expr": "sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"}) by (pod,kubernetes_io_hostname,k8s_cluster)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -854,7 +854,7 @@
           "step": 120
         },
         {
-          "expr": "sum ((kube_node_status_allocatable_cpu_cores{kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"})) by (kubernetes_io_hostname,cluster_name)",
+          "expr": "sum ((kube_node_status_allocatable_cpu_cores{kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"})) by (kubernetes_io_hostname,k8s_cluster)",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -955,7 +955,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{id!=\"/\",pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"}) by (pod_name,kubernetes_io_hostname,cluster_name)",
+          "expr": "sum (container_memory_working_set_bytes{id!=\"/\",pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"}) by (pod_name,kubernetes_io_hostname,k8s_cluster)",
           "format": "time_series",
           "hide": false,
           "interval": "10s",
@@ -966,7 +966,7 @@
           "step": 60
         },
         {
-          "expr": "sum ((kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"})) by (pod,kubernetes_io_hostname,cluster_name)",
+          "expr": "sum ((kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"})) by (pod,kubernetes_io_hostname,k8s_cluster)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "rqst: {{ kubernetes_io_hostname }} | {{ pod }}",
@@ -974,7 +974,7 @@
           "step": 120
         },
         {
-          "expr": "sum ((kube_node_status_allocatable_memory_bytes{kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"})) by (kubernetes_io_hostname,cluster_name)",
+          "expr": "sum ((kube_node_status_allocatable_memory_bytes{kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"})) by (kubernetes_io_hostname,k8s_cluster)",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -1065,7 +1065,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "100 * (kubelet_volume_stats_used_bytes{kubernetes_io_hostname=~\"^$Node$\", persistentvolumeclaim=~\".*$Deployment$Statefulset$Daemonset.*$\", cluster_name=~\"^$ClusterName.*$\"} / kubelet_volume_stats_capacity_bytes{kubernetes_io_hostname=~\"^$Node$\", persistentvolumeclaim=~\".*$Deployment$Statefulset$Daemonset.*$\", cluster_name=~\"^$ClusterName.*$\"})",
+          "expr": "100 * (kubelet_volume_stats_used_bytes{kubernetes_io_hostname=~\"^$Node$\", persistentvolumeclaim=~\".*$Deployment$Statefulset$Daemonset.*$\", k8s_cluster=~\"^$ClusterName.*$\"} / kubelet_volume_stats_capacity_bytes{kubernetes_io_hostname=~\"^$Node$\", persistentvolumeclaim=~\".*$Deployment$Statefulset$Daemonset.*$\", k8s_cluster=~\"^$ClusterName.*$\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ persistentvolumeclaim }} | {{ kubernetes_io_hostname }}",
@@ -1159,7 +1159,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (rate (container_network_receive_bytes_total{id!=\"/\",pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"}[1m])) by (pod_name, kubernetes_io_hostname, cluster_name)",
+          "expr": "sum (rate (container_network_receive_bytes_total{id!=\"/\",pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"}[1m])) by (pod_name, kubernetes_io_hostname, k8s_cluster)",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -1169,7 +1169,7 @@
           "step": 60
         },
         {
-          "expr": "- sum( rate (container_network_transmit_bytes_total{id!=\"/\",pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", cluster_name=~\"^$ClusterName.*$\"}[1m])) by (pod_name, kubernetes_io_hostname, cluster_name)",
+          "expr": "- sum( rate (container_network_transmit_bytes_total{id!=\"/\",pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\",kubernetes_io_hostname=~\"^$Node$\", k8s_cluster=~\"^$ClusterName.*$\"}[1m])) by (pod_name, kubernetes_io_hostname, k8s_cluster)",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -1328,7 +1328,7 @@
         "multi": true,
         "name": "ClusterName",
         "options": [],
-        "query": "label_values(cluster_name)",
+        "query": "label_values(k8s_cluster)",
         "refresh": 1,
         "regex": "",
         "sort": 0,
