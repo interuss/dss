@@ -194,7 +194,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
               ],
               resources: {
                 requests: {
-                  storage: '100Gi',
+                  storage: metadata.prometheus.storage_size,
                 },
               },
             },
