@@ -169,7 +169,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	dsspb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
 	if *enableSCD {
-	  logger.Info("config", zap.Any("scd", "enabled"))
+		logger.Info("config", zap.Any("scd", "enabled"))
 		utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, utmServer)
 	}
 	logger.Info("build", zap.Any("description", build.Describe()))

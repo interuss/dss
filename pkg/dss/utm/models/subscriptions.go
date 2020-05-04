@@ -37,9 +37,9 @@ func (s *Subscription) ToProto() (*utmpb.Subscription, error) {
 		ImplicitSubscription: s.ImplicitSubscription,
 	}
 
-  for i := 0; i < len(s.DependentOperations); i++ {
-    result.DependentOperations = append(result.DependentOperations, s.DependentOperations[i].String())
-  }
+	for i := 0; i < len(s.DependentOperations); i++ {
+		result.DependentOperations = append(result.DependentOperations, s.DependentOperations[i].String())
+	}
 
 	if s.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*s.StartTime)
