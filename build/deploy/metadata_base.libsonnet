@@ -3,6 +3,7 @@
   clusterName: error 'must supply cluster name',
   enable_istio: false,
   release: 'config',
+  environment: 'dev',
   // Set this field if you don't intend to ever join this instance with others.
   // This disables inter cluster crdb<->crdb access when set to true.
   single_cluster: false,
@@ -47,5 +48,6 @@
     IP: '',  // This is the static external ip address for promethus ingress, leaving blank means your cloud provider will assign an ephemeral IP
     whitelist_ip_ranges: error 'must specify whitelisted CIDR IP Blocks, or empty list for fully public access',
     retention: '15d',
+    storage_size: '100Gi',
   },
 }

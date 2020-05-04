@@ -10,7 +10,8 @@ local PrometheusConfig(metadata) = {
     evaluation_interval: '5s',
     // label for federated Prometheus.
     external_labels:{
-      k8s_cluster: metadata.clusterName
+      k8s_cluster: metadata.clusterName,
+      environment: metadata.environment,
     },
   },
   rule_files: [
@@ -194,7 +195,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
               ],
               resources: {
                 requests: {
-                  storage: '100Gi',
+                  storage: metadata.prometheus.storage_size,
                 },
               },
             },
