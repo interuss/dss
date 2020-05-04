@@ -3,6 +3,7 @@
   clusterName: error 'must supply cluster name',
   enable_istio: false,
   release: 'config',
+  environment: 'dev',
   // Set this field if you don't intend to ever join this instance with others.
   // This disables inter cluster crdb<->crdb access when set to true.
   single_cluster: false,
