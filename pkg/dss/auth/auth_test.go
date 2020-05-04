@@ -63,7 +63,7 @@ func TestNewRSAAuthClient(t *testing.T) {
 	// Test catches previous segfault.
 	_, err = NewRSAAuthorizer(ctx, Configuration{
 		KeyResolver: &FromFileKeyResolver{
-			KeyFile: tmpfile.Name(),
+			KeyFiles: []string{tmpfile.Name()},
 		},
 		KeyRefreshTimeout: 1 * time.Millisecond,
 	})
@@ -107,7 +107,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 	a, err := NewRSAAuthorizer(ctx, Configuration{
 		KeyResolver: &fromMemoryKeyResolver{
-			Key: &key.PublicKey,
+			Keys: []interface{}{&key.PublicKey},
 		},
 		KeyRefreshTimeout: 1 * time.Millisecond,
 		AcceptedAudiences: []string{""},

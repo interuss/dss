@@ -57,58 +57,61 @@ func OwnerFromContext(ctx context.Context) (models.Owner, bool) {
 // KeyResolver abstracts resolving keys.
 type KeyResolver interface {
 	// ResolveKey returns a public or private key, most commonly an rsa.PublicKey.
-	ResolveKey(context.Context) (interface{}, error)
+	ResolveKeys(context.Context) ([]interface{}, error)
 }
 
 type fromMemoryKeyResolver struct {
-	Key interface{}
+	Keys []interface{}
 }
 
-func (r *fromMemoryKeyResolver) ResolveKey(context.Context) (interface{}, error) {
-	return r.Key, nil
+func (r *fromMemoryKeyResolver) ResolveKeys(context.Context) ([]interface{}, error) {
+	return r.Keys, nil
 }
 
 // FromFileKeyResolver resolves keys from 'KeyFile'.
 type FromFileKeyResolver struct {
-	KeyFile string
-	key     interface{}
+	KeyFiles []string
+	keys     []interface{}
 }
 
-// ResolveKey resolves an RSA public key from file for verifying JWTs.
-func (r *FromFileKeyResolver) ResolveKey(context.Context) (interface{}, error) {
-	if r.key != nil {
-		return r.key, nil
+// ResolveKeys resolves an RSA public key from file for verifying JWTs.
+func (r *FromFileKeyResolver) ResolveKeys(context.Context) ([]interface{}, error) {
+	if r.keys != nil {
+		return r.keys, nil
 	}
 
-	bytes, err := ioutil.ReadFile(r.KeyFile)
-	if err != nil {
-		return nil, err
+	for _, f := range r.KeyFiles {
+		bytes, err := ioutil.ReadFile(f)
+		if err != nil {
+			return nil, err
+		}
+		pub, _ := pem.Decode(bytes)
+		if pub == nil {
+			return nil, errors.New("failed to decode keyFile")
+		}
+		parsedKey, err := x509.ParsePKIXPublicKey(pub.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		key, ok := parsedKey.(*rsa.PublicKey)
+		if !ok {
+			return nil, fmt.Errorf("could not create rsa public key from %s", f)
+		}
+		r.keys = append(r.keys, key)
 	}
-	pub, _ := pem.Decode(bytes)
-	if pub == nil {
-		return nil, errors.New("failed to decode keyFile")
-	}
-	parsedKey, err := x509.ParsePKIXPublicKey(pub.Bytes)
-	if err != nil {
-		return nil, err
-	}
-	key, ok := parsedKey.(*rsa.PublicKey)
-	if !ok {
-		return nil, fmt.Errorf("could not create rsa public key from %s", r.KeyFile)
-	}
-
-	r.key = key
-	return r.key, nil
+	return r.keys, nil
 }
 
-// JWKSResolver resolves the key with ID 'KeyID' from 'Endpoint' serving JWK sets.
+// JWKSResolver resolves the key(s) with ID 'KeyID' from 'Endpoint' serving
+// JWK sets.
 type JWKSResolver struct {
 	Endpoint *url.URL
-	KeyID    string
+	// If empty, will use all the keys provided by the jwks Endpoint.
+	KeyIDs []string
 }
 
 // ResolveKey resolves an RSA public key from file for verifying JWTs.
-func (r *JWKSResolver) ResolveKey(ctx context.Context) (interface{}, error) {
+func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 	req := http.Request{
 		Method: http.MethodGet,
 		URL:    r.Endpoint,
@@ -125,23 +128,29 @@ func (r *JWKSResolver) ResolveKey(ctx context.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	keys := jwks.Key(r.KeyID)
-	if len(keys) == 0 {
-		return nil, fmt.Errorf("failed to resolve key for ID: %s", r.KeyID)
+	var keys []interface{}
+	var webKeys []jose.JSONWebKey
+	if len(r.KeyIDs) == 0 {
+		webKeys = jwks.Keys
 	}
-
-	key := keys[0].Key.(*rsa.PublicKey)
-	if key == nil {
-		return nil, fmt.Errorf("failed to resolve key for ID: %s", r.KeyID)
+	for _, kid := range r.KeyIDs {
+		// jwks.Key returns a slice of keys.
+		jkeys := jwks.Key(kid)
+		if len(jkeys) == 0 {
+			return nil, fmt.Errorf("failed to resolve key(s) for ID: %s", kid)
+		}
+		webKeys = append(webKeys, jkeys...)
 	}
-
-	return key, nil
+	for _, w := range webKeys {
+		keys = append(keys, w.Key)
+	}
+	return keys, nil
 }
 
 // Authorizer authorizes incoming requests.
 type Authorizer struct {
 	logger            *zap.Logger
-	key               interface{}
+	keys              []interface{}
 	keyGuard          sync.RWMutex
 	requiredScopes    map[string][]string
 	acceptedAudiences map[string]bool
@@ -152,14 +161,14 @@ type Configuration struct {
 	KeyResolver       KeyResolver         // Used to initialize and periodically refresh keys.
 	KeyRefreshTimeout time.Duration       // Keys are refreshed on this cadence.
 	RequiredScopes    map[string][]string // RequiredScopes are enforced if not nil.
-	AcceptedAudiences []string            // AcceptedAudiences enforces the aud claim on the jwt. An empty string allows no aud claim.
+	AcceptedAudiences []string            // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
 }
 
 // NewRSAAuthorizer returns an Authorizer instance using values from configuration.
 func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Authorizer, error) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
-	key, err := configuration.KeyResolver.ResolveKey(ctx)
+	keys, err := configuration.KeyResolver.ResolveKeys(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +182,7 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 		requiredScopes:    configuration.RequiredScopes,
 		acceptedAudiences: auds,
 		logger:            logger,
-		key:               key,
+		keys:              keys,
 	}
 
 	go func() {
@@ -183,12 +192,12 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 		for {
 			select {
 			case <-ticker.C:
-				key, err := configuration.KeyResolver.ResolveKey(ctx)
+				keys, err := configuration.KeyResolver.ResolveKeys(ctx)
 				if err != nil {
 					logger.Panic("failed to refresh key", zap.Error(err))
 				}
 
-				authorizer.setKey(key)
+				authorizer.setKeys(keys)
 			case <-ctx.Done():
 				logger.Warn("finalizing key refresh worker", zap.Error(ctx.Err()))
 				return
@@ -199,9 +208,9 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 	return authorizer, nil
 }
 
-func (a *Authorizer) setKey(key interface{}) {
+func (a *Authorizer) setKeys(keys []interface{}) {
 	a.keyGuard.Lock()
-	a.key = key
+	a.keys = keys
 	a.keyGuard.Unlock()
 }
 
@@ -214,33 +223,43 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 		return nil, dsserr.Unauthenticated("missing token")
 	}
 
-	claims := claims{}
+	a.keyGuard.RLock()
+	keys := a.keys
+	a.keyGuard.RUnlock()
+	validated := false
+	var err error
+	var keyClaims claims
 
-	_, err := jwt.ParseWithClaims(tknStr, &claims, func(token *jwt.Token) (interface{}, error) {
-		a.keyGuard.RLock()
-		defer a.keyGuard.RUnlock()
-		return a.key, nil
-	})
-
-	if err != nil {
+	for _, key := range keys {
+		keyClaims = claims{}
+		key := key
+		_, err = jwt.ParseWithClaims(tknStr, &keyClaims, func(token *jwt.Token) (interface{}, error) {
+			return key, nil
+		})
+		if err == nil {
+			validated = true
+			break
+		}
+	}
+	if !validated {
 		a.logger.Error("token validation failed", zap.Error(err))
 		return nil, dsserr.Unauthenticated(err.Error())
 	}
 
-	if !a.acceptedAudiences[claims.Audience] {
+	if !a.acceptedAudiences[keyClaims.Audience] {
 		return nil, dsserr.Unauthenticated(
-			fmt.Sprintf("invalid token audience: %v", claims.Audience))
+			fmt.Sprintf("invalid token audience: %v", keyClaims.Audience))
 	}
 
-	if err := a.missingScopes(info, claims.Scopes); err != nil {
+	if err := a.missingScopes(info, keyClaims.Scopes); err != nil {
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("missing scopes: %v", err))
 	}
 
-	return handler(ContextWithOwner(ctx, models.Owner(claims.Subject)), req)
+	return handler(ContextWithOwner(ctx, models.Owner(keyClaims.Subject)), req)
 }
 
 // Returns all of the required scopes that are missing.
-func (a *Authorizer) missingScopes(info *grpc.UnaryServerInfo, claimedScopes scopes) error {
+func (a *Authorizer) missingScopes(info *grpc.UnaryServerInfo, keyClaimedScopes scopes) error {
 	var (
 		parts         = strings.Split(info.FullMethod, "/")
 		method        = parts[len(parts)-1]
@@ -249,7 +268,7 @@ func (a *Authorizer) missingScopes(info *grpc.UnaryServerInfo, claimedScopes sco
 
 	if a.requiredScopes != nil {
 		for _, required := range a.requiredScopes[method] {
-			if _, ok := claimedScopes[required]; !ok {
+			if _, ok := keyClaimedScopes[required]; !ok {
 				missingScopes = append(missingScopes, required)
 			}
 		}
