@@ -57,7 +57,7 @@ sleep 5
 echo "=== Starting grpc-backend on :8081 ==="
 go run cmds/grpc-backend/main.go \
     -cockroach_host localhost \
-    -public_key_file build/test-certs/auth2.pem \
+    -public_key_files build/test-certs/auth2.pem \
     -reflect_api \
     -log_format console \
     -dump_requests \

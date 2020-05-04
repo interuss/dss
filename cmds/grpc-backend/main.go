@@ -30,9 +30,9 @@ import (
 
 var (
 	address           = flag.String("addr", ":8081", "address")
-	pkFile            = flag.String("public_key_file", "", "Path to public Key to use for JWT decoding.")
+	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
 	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
-	jwksKeyID         = flag.String("jwks_key_id", "", "ID of a specific key in a JWKS")
+	jwksKeyIDs        = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
 	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
 	timeout           = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
 	reflectAPI        = flag.Bool("reflect_api", false, "Whether to reflect the API.")
@@ -120,9 +120,9 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	switch {
 	case *pkFile != "":
 		keyResolver = &auth.FromFileKeyResolver{
-			KeyFile: *pkFile,
+			KeyFiles: strings.Split(*pkFile, ","),
 		}
-	case *jwksEndpoint != "" && *jwksKeyID != "":
+	case *jwksEndpoint != "" && *jwksKeyIDs != "":
 		u, err := url.Parse(*jwksEndpoint)
 		if err != nil {
 			return err
@@ -130,7 +130,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 
 		keyResolver = &auth.JWKSResolver{
 			Endpoint: u,
-			KeyID:    *jwksKeyID,
+			KeyIDs:   strings.Split(*jwksKeyIDs, ","),
 		}
 	default:
 		logger.Warn("operating without authorizing interceptor")

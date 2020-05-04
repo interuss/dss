@@ -76,7 +76,7 @@ docker run -d --name grpc-backend-for-testing \
 	local-interuss-dss-image \
 	grpc-backend \
 	--cockroach_host crdb \
-	-public_key_file /app/test.crt \
+	-public_key_files /app/test.crt \
 	-reflect_api \
 	-log_format console \
 	-dump_requests \
