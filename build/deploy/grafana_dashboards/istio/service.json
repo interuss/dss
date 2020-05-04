@@ -42,7 +42,7 @@
         "rgba(237, 129, 40, 0.89)",
         "rgba(50, 172, 45, 0.97)"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "format": "ops",
       "gauge": {
         "maxValue": 100,
@@ -124,7 +124,7 @@
         "rgba(237, 129, 40, 0.89)",
         "rgba(245, 54, 54, 0.9)"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "decimals": null,
       "format": "percentunit",
       "gauge": {
@@ -202,7 +202,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 4,
@@ -311,7 +311,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "format": "Bps",
       "gauge": {
         "maxValue": 100,
@@ -394,7 +394,7 @@
         "rgba(237, 129, 40, 0.89)",
         "rgba(50, 172, 45, 0.97)"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "format": "ops",
       "gauge": {
         "maxValue": 100,
@@ -476,7 +476,7 @@
         "rgba(237, 129, 40, 0.89)",
         "rgba(245, 54, 54, 0.9)"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "decimals": null,
       "format": "percentunit",
       "gauge": {
@@ -554,7 +554,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 4,
@@ -663,7 +663,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "format": "Bps",
       "gauge": {
         "maxValue": 100,
@@ -757,7 +757,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 0,
       "gridPos": {
         "h": 6,
@@ -854,7 +854,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -951,7 +951,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "description": "",
       "fill": 1,
       "gridPos": {
@@ -1105,7 +1105,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -1257,7 +1257,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -1409,7 +1409,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -1503,7 +1503,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -1611,7 +1611,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 0,
       "gridPos": {
         "h": 6,
@@ -1708,7 +1708,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -1805,7 +1805,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "description": "",
       "fill": 1,
       "gridPos": {
@@ -1959,7 +1959,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -2111,7 +2111,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -2263,7 +2263,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -2357,7 +2357,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -2454,7 +2454,7 @@
     "list": [
       {
         "allValue": null,
-        "datasource": "Prometheus",
+        "datasource": "prometheus",
         "hide": 0,
         "includeAll": false,
         "label": "Service",
@@ -2477,7 +2477,7 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "Prometheus",
+        "datasource": "prometheus",
         "hide": 0,
         "includeAll": true,
         "label": "Client Workload Namespace",
@@ -2500,7 +2500,7 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "Prometheus",
+        "datasource": "prometheus",
         "hide": 0,
         "includeAll": true,
         "label": "Client Workload",
@@ -2523,7 +2523,7 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "Prometheus",
+        "datasource": "prometheus",
         "hide": 0,
         "includeAll": true,
         "label": "Service Workload Namespace",
@@ -2546,7 +2546,7 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "Prometheus",
+        "datasource": "prometheus",
         "hide": 0,
         "includeAll": true,
         "label": "Service Workload",
