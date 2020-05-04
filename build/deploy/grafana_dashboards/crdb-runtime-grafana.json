@@ -1813,10 +1813,14 @@
     "list": [
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "tags": [],
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": "prometheus",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "Cluster name",
         "multi": true,
         "name": "k8s_cluster",
