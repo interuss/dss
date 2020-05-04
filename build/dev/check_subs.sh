@@ -30,7 +30,45 @@ curl --silent -X PUT \
   -H "Content-Type: application/json" \
   -d '{
   "extents": {
-
+    "volume": {
+      "outline_circle": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": {
+            "type": "Point",
+            "coordinates": [
+              -122.106325,
+              47.660898
+            ]
+          }
+        },
+        "properties": {
+          "radius": {
+            "value": 300.183,
+            "units": "M"
+          }
+        }
+      },
+      "altitude_lower": {
+        "value": 0,
+        "reference": "W84",
+        "units": "M"
+      },
+      "altitude_upper": {
+        "value": 3000,
+        "reference": "W84",
+        "units": "M"
+      }
+    },
+    "time_start": {
+      "value": "1985-04-12T23:20:50.52Z",
+      "format": "RFC3339"
+    },
+    "time_end": {
+      "value": "2100-04-12T23:20:50.52Z",
+      "format": "RFC3339"
+    }
   },
   "old_version": 0,
   "uss_base_url": "https://exampleuss.com/utm",
@@ -40,6 +78,8 @@ curl --silent -X PUT \
 echo
 echo "============="
 echo
+
+exit 0
 
 echo "DSS response to GET Subscription query:"
 echo "============="

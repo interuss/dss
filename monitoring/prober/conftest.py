@@ -97,15 +97,14 @@ class UsernamePasswordAuthAdapter(AuthAdapter):
 class PrefixURLSession(requests.Session):
   """Requests session that adds a prefix to URLs that start with a '/'."""
 
-  def __init__(self, prefix_url, version_role_prefix):
+  def __init__(self, prefix_url):
     super().__init__()
 
     self._prefix_url = prefix_url
-    self._version_role_prefix = version_role_prefix
 
   def prepare_request(self, request, **kwargs):
     if request.url.startswith('/'):
-      request.url = self._prefix_url + self._version_role_prefix + request.url
+      request.url = self._prefix_url + request.url
     return super().prepare_request(request, **kwargs)
 
   def issue_token(self, scopes):
@@ -116,6 +115,7 @@ class PrefixURLSession(requests.Session):
 def pytest_addoption(parser):
   parser.addoption('--api-version-role')
   parser.addoption('--dss-endpoint')
+  parser.addoption('--scd-dss-endpoint')
   parser.addoption('--oauth-token-endpoint')
 
   parser.addoption('--oauth-service-account-json')
@@ -153,10 +153,44 @@ def session(pytestconfig):
     raise ValueError('Missing required --dss-endpoint')
   api_version_role = pytestconfig.getoption('api_version_role', '')
 
-  s = PrefixURLSession(dss_endpoint, api_version_role)
+  s = PrefixURLSession(dss_endpoint + api_version_role)
   s.mount('http://', auth_adapter)
   s.mount('https://', auth_adapter)
   return s
+
+
+@pytest.fixture(scope='session')
+def scd_session(pytestconfig):
+  scd_dss_endpoint = pytestconfig.getoption('scd_dss_endpoint')
+  if scd_dss_endpoint is None:
+    return None
+
+  oauth_token_endpoint = pytestconfig.getoption('oauth_token_endpoint')
+
+  # Create an auth adapter to get JWTs using the given credentials.  We can use
+  # either a service account, a username/password/client_id or a dummy oauth server.
+  if pytestconfig.getoption('oauth_service_account_json') is not None:
+    auth_adapter = ServiceAccountAuthAdapter(oauth_token_endpoint,
+        pytestconfig.getoption('oauth_service_account_json'))
+  elif pytestconfig.getoption('oauth_username') is not None:
+    auth_adapter = UsernamePasswordAuthAdapter(oauth_token_endpoint,
+        pytestconfig.getoption('oauth_username'),
+        pytestconfig.getoption('oauth_password'),
+        pytestconfig.getoption('oauth_client_id'))
+  elif pytestconfig.getoption('use_dummy_oauth') is not None:
+    auth_adapter = DummyOAuthServerAdapter(oauth_token_endpoint)
+  else:
+    raise ValueError(
+        'You must provide either an OAuth service account, or a username, '
+        'password and client ID')
+
+  scd_dss_endpoint = pytestconfig.getoption('scd_dss_endpoint')
+
+  s = PrefixURLSession(scd_dss_endpoint)
+  s.mount('http://', auth_adapter)
+  s.mount('https://', auth_adapter)
+  return s
+
 
 @pytest.fixture(scope='function')
 def rogue_session(pytestconfig):
@@ -166,7 +200,7 @@ def rogue_session(pytestconfig):
   if dss_endpoint is None:
     raise ValueError('Missing required --dss-endpoint')
 
-  s = PrefixURLSession(dss_endpoint, api_version_role)
+  s = PrefixURLSession(dss_endpoint + api_version_role)
   s.mount('http://', auth_adapter)
   s.mount('https://', auth_adapter)
   return s

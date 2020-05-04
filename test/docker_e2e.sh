@@ -80,7 +80,8 @@ docker run -d --name grpc-backend-for-testing \
 	-reflect_api \
 	-log_format console \
 	-dump_requests \
-	-accepted_jwt_audiences local-gateway
+	-accepted_jwt_audiences local-gateway \
+	-enable_scd
 
 sleep 5
 echo " ------------- HTTP GATEWAY -------------- "
@@ -94,7 +95,8 @@ docker run -d --name http-gateway-for-testing -p 8082:8082 \
 	http-gateway \
 	-grpc-backend grpc:8081 \
 	-addr :8082 \
-	-trace-requests
+	-trace-requests \
+	-enable_scd
 
 sleep 5
 echo " -------------- DUMMY OAUTH -------------- "
@@ -125,4 +127,5 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--dss-endpoint http://local-gateway:8082 \
 	--use-dummy-oauth 1 \
 	--api-version-role '/v1/dss' \
+	--scd-dss-endpoint http://local-gateway:8082/dss/v1 \
 	-vv

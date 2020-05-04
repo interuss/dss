@@ -40,7 +40,7 @@ var (
 	logLevel          = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
 	dumpRequests      = flag.Bool("dump_requests", false, "Log request and response protos")
 	profServiceName   = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
-	enableUTM         = flag.Bool("enable_utm", false, "Enables the UTM API")
+	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
 
 	cockroachParams = struct {
 		host            *string
@@ -168,8 +168,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 
 	dsspb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
-	if *enableUTM {
-	  logger.Info("config", zap.Any("utm", "enabled"))
+	if *enableSCD {
+	  logger.Info("config", zap.Any("scd", "enabled"))
 		utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, utmServer)
 	}
 	logger.Info("build", zap.Any("description", build.Describe()))

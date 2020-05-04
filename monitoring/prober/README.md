@@ -23,6 +23,7 @@ pytest \
     --oauth-token-endpoint <URL> \
     --oauth-service-account-json <FILENAME> \
     --dss-endpoint <URL> \
+    [--scd-dss-endpoint <URL>] \
     -vv .
 ```
 
@@ -35,4 +36,5 @@ docker run --rm $(docker build -q -f monitoring/prober/Dockerfile monitoring/pro
     --oauth-password <PASSWORD> \
     --oauth-client_id <CLIENT_ID> \
     --dss-endpoint <URL> \
+    [--scd-dss-endpoint <URL>]
 ```
