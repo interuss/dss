@@ -248,7 +248,7 @@
         },
       },
       data: {
-        'config.yaml': "istio_component_namespaces:\n  grafana: istio-system\n  tracing: istio-system\n  pilot: istio-system\n  prometheus: istio-system\nistio_namespace: istio-system\ndeployment:\n  accessible_namespaces: ['**']\nserver:\n  port: 20001\n  web_root: /kiali\nexternal_services:\n  istio:\n    url_service_version: http://istio-pilot.istio-system:8080/version\n  tracing:\n    url: \n  grafana:\n    url: \n  prometheus:\n    url: http://prometheus.istio-system:9090\n",
+        'config.yaml': "istio_component_namespaces:\n  grafana: dss-main\n  tracing: istio-system\n  pilot: istio-system\n  prometheus: dss-main\nistio_namespace: istio-system\ndeployment:\n  accessible_namespaces: ['**']\nserver:\n  port: 20001\n  web_root: /kiali\nexternal_services:\n  istio:\n    url_service_version: http://istio-pilot.istio-system:8080/version\n  tracing:\n    url: \n  grafana:\n    url: \n  prometheus:\n    url: http://prometheus.dss-main:9090\n",
       },
     },
     credentials: {
