@@ -39,7 +39,7 @@ local volumes = import 'volumes.libsonnet';
                 cockroach_ssl_mode: 'verify-full',
                 cockroach_user: 'root',
                 cockroach_ssl_dir: '/cockroach/cockroach-certs',
-                public_key_files: std.join(metadata.backend.pubKeys, ","),
+                public_key_files: std.join(",", metadata.backend.pubKeys),
                 dump_requests: true,
                 accepted_jwt_audiences: metadata.gateway.hostname,
               },
