@@ -16,7 +16,7 @@ var (
 	serviceArea = &models.IdentificationServiceArea{
 		ID:        models.ID(uuid.New().String()),
 		Owner:     models.Owner(uuid.New().String()),
-		Url:       "https://no/place/like/home/for/flights",
+		URL:       "https://no/place/like/home/for/flights",
 		StartTime: &startTime,
 		EndTime:   &endTime,
 		Cells: s2.CellUnion{
@@ -212,7 +212,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 	require.NotNil(t, subscriptionsOut)
 	require.Len(t, subscriptionsOut, len(subscriptionsPool))
 	for i, s := range subscriptionsPool {
-		require.Equal(t, s.input.Url, subscriptionsOut[i].Url)
+		require.Equal(t, s.input.URL, subscriptionsOut[i].URL)
 	}
 
 	for i := range insertedSubscriptions {

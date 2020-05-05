@@ -23,9 +23,10 @@ var (
 	maxClockSkew = time.Minute * 5
 )
 
+// Subscription represents a USS subscription over a given 4D volume.
 type Subscription struct {
 	ID                ID
-	Url               string
+	URL               string
 	NotificationIndex int
 	Owner             Owner
 	Cells             s2.CellUnion
@@ -36,9 +37,11 @@ type Subscription struct {
 	AltitudeLo        *float32
 }
 
+// ToNotifyProto converts a subscription to a SubscriberToNotify proto for
+// API consumption.
 func (s *Subscription) ToNotifyProto() *dsspb.SubscriberToNotify {
 	return &dsspb.SubscriberToNotify{
-		Url: s.Url,
+		Url: s.URL,
 		Subscriptions: []*dsspb.SubscriptionState{
 			{
 				NotificationIndex: int32(s.NotificationIndex),
@@ -48,11 +51,13 @@ func (s *Subscription) ToNotifyProto() *dsspb.SubscriberToNotify {
 	}
 }
 
+// ToProto converts a subscription struct to a Subscription proto for
+// API consumption.
 func (s *Subscription) ToProto() (*dsspb.Subscription, error) {
 	result := &dsspb.Subscription{
 		Id:                s.ID.String(),
 		Owner:             s.Owner.String(),
-		Callbacks:         &dsspb.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.Url},
+		Callbacks:         &dsspb.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.URL},
 		NotificationIndex: int32(s.NotificationIndex),
 		Version:           s.Version.String(),
 	}
@@ -75,6 +80,8 @@ func (s *Subscription) ToProto() (*dsspb.Subscription, error) {
 	return result, nil
 }
 
+// SetExtents performs some data validation and sets the 4D volume on the
+// Subscription.
 func (s *Subscription) SetExtents(extents *dsspb.Volume4D) error {
 	var err error
 	if extents == nil {
@@ -106,10 +113,12 @@ func (s *Subscription) SetExtents(extents *dsspb.Volume4D) error {
 	if footprint == nil {
 		return errors.New("spatial_volume missing required footprint")
 	}
-	s.Cells, err = geo.GeoPolygonToCellIDs(footprint)
+	s.Cells, err = geo.PolygonToCellIDs(footprint)
 	return err
 }
 
+// AdjustTimeRange adjusts the time range to the max allowed ranges on a
+// subscription.
 func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 	if s.StartTime == nil {
 		// If StartTime was omitted, default to Now() for new subscriptions or re-

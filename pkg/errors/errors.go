@@ -44,43 +44,54 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
+// AlreadyExists returns an error used when creating a resource that already
+// exists.
 func AlreadyExists(id string) error {
 	return status.Error(codes.AlreadyExists, "resource already exists: "+id)
 }
 
+// VersionMismatch returns an error used when updating a resource with an old
+// version.
 func VersionMismatch(msg string) error {
 	return status.Error(codes.Aborted, msg)
 }
 
-func Conflict(msg string) error {
-	return status.Error(codes.Aborted, msg)
-}
-
+// NotFound returns an error used when looking up a resource that doesn't exist.
 func NotFound(id string) error {
 	return status.Error(codes.NotFound, "resource not found: "+id)
 }
 
+// BadRequest returns an error that is used when a user supplies bad request
+// parameters.
 func BadRequest(msg string) error {
 	return status.Error(codes.InvalidArgument, msg)
 }
 
+// Internal returns an error that represents an internal DSS error.
 func Internal(msg string) error {
 	// Log and obfuscate any errors.
 	return errInternal
 }
 
+// Exhausted is used when a USS creates too many resources in a given area.
 func Exhausted(msg string) error {
 	return status.Error(codes.ResourceExhausted, msg)
 }
 
+// PermissionDenied returns an error representing a bad Oauth token. It can
+// occur when a user attempts to modify a resource "owned" by a different USS.
 func PermissionDenied(msg string) error {
 	return status.Error(codes.PermissionDenied, msg)
 }
 
+// Unauthenticated returns an error that is used when an Oauth token is invalid
+// or not supplied.
 func Unauthenticated(msg string) error {
 	return status.Error(codes.Unauthenticated, msg)
 }
 
+// AreaTooLarge is used when a user tries to create a resource in an area larger
+// than the max area allowed. See geo/s2.go.
 func AreaTooLarge(msg string) error {
 	return status.Error(AreaTooLargeErr, msg)
 }
