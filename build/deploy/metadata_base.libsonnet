@@ -32,7 +32,7 @@
     port: 8081,
     image: error 'must specify image',
     prof_grpc_name: '',
-    pubKey: ['/public-certs/us-demo.pem'],
+    pubKeys: ['/public-certs/us-demo.pem'],
   },
   alert: {
     enable: false,
