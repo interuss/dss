@@ -17,11 +17,8 @@ import (
 )
 
 var (
-	writeISAScope              = "dss.write.identification_service_areas"
-	readISAScope               = "dss.read.identification_service_areas"
-	strategicCoordinationScope = "utm.strategic_coordination"
-	constraintManagementScope  = "utm.constraint_management"
-	constraintConsumptionScope = "utm.constraint_consumption"
+	writeISAScope = "dss.write.identification_service_areas"
+	readISAScope  = "dss.read.identification_service_areas"
 )
 
 // Server implements dsspb.DiscoveryAndSynchronizationService.
