@@ -64,6 +64,7 @@ type fromMemoryKeyResolver struct {
 	Keys []interface{}
 }
 
+// ResolveKeys returns the set of keys provided to the fromMemoryKeyResolver.
 func (r *fromMemoryKeyResolver) ResolveKeys(context.Context) ([]interface{}, error) {
 	return r.Keys, nil
 }
@@ -110,7 +111,7 @@ type JWKSResolver struct {
 	KeyIDs []string
 }
 
-// ResolveKey resolves an RSA public key from file for verifying JWTs.
+// ResolveKeys resolves an RSA public key from file for verifying JWTs.
 func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 	req := http.Request{
 		Method: http.MethodGet,

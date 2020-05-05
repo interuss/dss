@@ -8,6 +8,7 @@ import (
 	"github.com/interuss/dss/pkg/dss/models"
 )
 
+// Store provides an interface for storing DSS data.
 type Store interface {
 	// Close closes the store and should release all resources.
 	Close() error
@@ -18,6 +19,7 @@ type Store interface {
 	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
 	DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version *models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error)
 
+	// InsertISA inserts or updates an ISA.
 	InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error)
 
 	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
@@ -30,6 +32,7 @@ type Store interface {
 	// returns the deleted subscription.
 	DeleteSubscription(ctx context.Context, id models.ID, owner models.Owner, version *models.Version) (*models.Subscription, error)
 
+	// InsertSubscription inserts or updates a subscription.
 	InsertSubscription(ctx context.Context, s *models.Subscription) (*models.Subscription, error)
 
 	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
