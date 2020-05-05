@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/interuss/dss/pkg/api/v1/utmpb"
+	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	commonmodels "github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/golang/protobuf/ptypes"
@@ -26,8 +26,8 @@ type Subscription struct {
 	DependentOperations  []ID
 }
 
-func (s *Subscription) ToProto() (*utmpb.Subscription, error) {
-	result := &utmpb.Subscription{
+func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
+	result := &scdpb.Subscription{
 		Id:                   s.ID.String(),
 		Version:              int32(s.Version),
 		NotificationIndex:    int32(s.NotificationIndex),
@@ -47,7 +47,7 @@ func (s *Subscription) ToProto() (*utmpb.Subscription, error) {
 			return nil, err
 		}
 		result.TimeStart.Value = ts
-		result.TimeStart.Format = utmpb.Time_TIME_FORMAT_RF_C3339
+		result.TimeStart.Format = scdpb.Time_TIME_FORMAT_RF_C3339
 	}
 
 	if s.EndTime != nil {
@@ -56,7 +56,7 @@ func (s *Subscription) ToProto() (*utmpb.Subscription, error) {
 			return nil, err
 		}
 		result.TimeEnd.Value = ts
-		result.TimeStart.Format = utmpb.Time_TIME_FORMAT_RF_C3339
+		result.TimeStart.Format = scdpb.Time_TIME_FORMAT_RF_C3339
 	}
 	return result, nil
 }

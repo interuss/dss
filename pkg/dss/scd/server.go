@@ -1,22 +1,22 @@
-package utm
+package scd
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/interuss/dss/pkg/api/v1/utmpb"
+	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/dss/auth"
 
 	//"github.com/interuss/dss/pkg/dss/geo"
-	"github.com/interuss/dss/pkg/dss/utm/models"
+	"github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 
 	"github.com/golang/geo/s2"
 	//"github.com/golang/protobuf/ptypes"
 )
 
-// Server implements utmpb.DiscoveryAndSynchronizationService.
+// Server implements scdpb.DiscoveryAndSynchronizationService.
 type Server struct {
 	Store   Store
 	Timeout time.Duration
@@ -24,19 +24,19 @@ type Server struct {
 
 // DeleteConstraintReference deletes a single constraint ref for a given ID at
 // the specified version.
-func (a *Server) DeleteConstraintReference(ctx context.Context, req *utmpb.DeleteConstraintReferenceRequest) (*utmpb.ChangeConstraintReferenceResponse, error) {
+func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.DeleteConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
 	return nil, dsserr.BadRequest("not yet implemented")
 }
 
 // DeleteOperationReference deletes a single operation ref for a given ID at
 // the specified version.
-func (a *Server) DeleteOperationReference(ctx context.Context, req *utmpb.DeleteOperationReferenceRequest) (*utmpb.ChangeOperationReferenceResponse, error) {
+func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.DeleteOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
 	return nil, dsserr.BadRequest("not yet implemented")
 }
 
 // DeleteSubscription deletes a single subscription for a given ID at the
 // specified version.
-func (a *Server) DeleteSubscription(ctx context.Context, req *utmpb.DeleteSubscriptionRequest) (*utmpb.DeleteSubscriptionResponse, error) {
+func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscriptionRequest) (*scdpb.DeleteSubscriptionResponse, error) {
 	// Retrieve Subscription ID
 	idString := req.GetSubscriptionid()
 	if idString == "" {
@@ -66,23 +66,23 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *utmpb.DeleteSubscr
 	}
 
 	// Return response to client
-	return &utmpb.DeleteSubscriptionResponse{
+	return &scdpb.DeleteSubscriptionResponse{
 		Subscription: p,
 	}, nil
 }
 
 // GetConstraintReference returns a single constraint ref for the given ID.
-func (a *Server) GetConstraintReference(ctx context.Context, req *utmpb.GetConstraintReferenceRequest) (*utmpb.GetConstraintReferenceResponse, error) {
+func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConstraintReferenceRequest) (*scdpb.GetConstraintReferenceResponse, error) {
 	return nil, dsserr.BadRequest("not yet implemented")
 }
 
 // GetOperationReference returns a single operation ref for the given ID.
-func (a *Server) GetOperationReference(ctx context.Context, req *utmpb.GetOperationReferenceRequest) (*utmpb.GetOperationReferenceResponse, error) {
+func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperationReferenceRequest) (*scdpb.GetOperationReferenceResponse, error) {
 	return nil, dsserr.BadRequest("not yet implemented")
 }
 
 // GetSubscription returns a single subscription for the given ID.
-func (a *Server) GetSubscription(ctx context.Context, req *utmpb.GetSubscriptionRequest) (*utmpb.GetSubscriptionResponse, error) {
+func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscriptionRequest) (*scdpb.GetSubscriptionResponse, error) {
 	// Retrieve Subscription ID
 	idString := req.GetSubscriptionid()
 	if idString == "" {
@@ -112,28 +112,28 @@ func (a *Server) GetSubscription(ctx context.Context, req *utmpb.GetSubscription
 	}
 
 	// Return response to client
-	return &utmpb.GetSubscriptionResponse{
+	return &scdpb.GetSubscriptionResponse{
 		Subscription: p,
 	}, nil
 }
 
 // MakeDssReport creates an error report about a DSS.
-func (a *Server) MakeDssReport(ctx context.Context, req *utmpb.MakeDssReportRequest) (*utmpb.ErrorReport, error) {
+func (a *Server) MakeDssReport(ctx context.Context, req *scdpb.MakeDssReportRequest) (*scdpb.ErrorReport, error) {
 	return nil, dsserr.BadRequest("not yet implemented")
 }
 
 // PutConstraintReference creates a single contraint ref.
-func (a *Server) PutConstraintReference(ctx context.Context, req *utmpb.PutConstraintReferenceRequest) (*utmpb.ChangeConstraintReferenceResponse, error) {
+func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
 	return nil, dsserr.BadRequest("not yet implemented")
 }
 
 // PutOperationReference creates a single operation ref.
-func (a *Server) PutOperationReference(ctx context.Context, req *utmpb.PutOperationReferenceRequest) (*utmpb.ChangeOperationReferenceResponse, error) {
+func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
 	return nil, dsserr.BadRequest("not yet implemented")
 }
 
 // PutSubscription creates a single subscription.
-func (a *Server) PutSubscription(ctx context.Context, req *utmpb.PutSubscriptionRequest) (*utmpb.PutSubscriptionResponse, error) {
+func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
 	idString := req.GetSubscriptionid()
 	if idString == "" {
@@ -200,19 +200,19 @@ func (a *Server) PutSubscription(ctx context.Context, req *utmpb.PutSubscription
 	}
 
 	// Return response to client
-	return &utmpb.PutSubscriptionResponse{
+	return &scdpb.PutSubscriptionResponse{
 		Subscription: p,
 	}, nil
 }
 
 // QueryConstraintReferences queries existing contraint refs in the given
 // bounds.
-func (a *Server) QueryConstraintReferences(ctx context.Context, req *utmpb.QueryConstraintReferencesRequest) (*utmpb.SearchConstraintReferencesResponse, error) {
+func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.QueryConstraintReferencesRequest) (*scdpb.SearchConstraintReferencesResponse, error) {
 	return nil, dsserr.BadRequest("not yet implemented")
 }
 
 // QuerySubscriptions queries existing subscriptions in the given bounds.
-func (a *Server) QuerySubscriptions(ctx context.Context, req *utmpb.QuerySubscriptionsRequest) (*utmpb.SearchSubscriptionsResponse, error) {
+func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscriptionsRequest) (*scdpb.SearchSubscriptionsResponse, error) {
 	//Retrieve the area of interest parameter
 	aoi := req.GetParams().AreaOfInterest
 	if aoi == nil {
@@ -247,7 +247,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *utmpb.QuerySubscri
 	}
 
 	// Return response to client
-	response := &utmpb.SearchSubscriptionsResponse{}
+	response := &scdpb.SearchSubscriptionsResponse{}
 	for _, sub := range subs {
 		p, err := sub.ToProto()
 		if err != nil {
@@ -260,6 +260,6 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *utmpb.QuerySubscri
 
 // SearchOperationReferences queries existing operation refs in the given
 // bounds.
-func (a *Server) SearchOperationReferences(ctx context.Context, req *utmpb.SearchOperationReferencesRequest) (*utmpb.SearchOperationReferenceResponse, error) {
+func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.SearchOperationReferencesRequest) (*scdpb.SearchOperationReferenceResponse, error) {
 	return nil, dsserr.BadRequest("not yet implemented")
 }

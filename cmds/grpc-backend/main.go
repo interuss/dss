@@ -12,12 +12,12 @@ import (
 	"cloud.google.com/go/profiler"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
-	"github.com/interuss/dss/pkg/api/v1/utmpb"
+	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/dss"
 	"github.com/interuss/dss/pkg/dss/auth"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/dss/cockroach"
-	"github.com/interuss/dss/pkg/dss/utm"
+	"github.com/interuss/dss/pkg/dss/scd"
 	"github.com/interuss/dss/pkg/dss/validations"
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
@@ -110,8 +110,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 			Timeout: *timeout,
 		}
 		auxServer = &dss.AuxServer{}
-		utmServer = &utm.Server{
-			Store:   &utm.DummyStore{},
+		scdServer = &scd.Server{
+			Store:   &scd.DummyStore{},
 			Timeout: *timeout,
 		}
 	)
@@ -170,7 +170,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
 	if *enableSCD {
 		logger.Info("config", zap.Any("scd", "enabled"))
-		utmpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, utmServer)
+		scdpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, scdServer)
 	}
 	logger.Info("build", zap.Any("description", build.Describe()))
 

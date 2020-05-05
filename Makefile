@@ -63,19 +63,19 @@ pkg/api/v1/auxpb/aux_service.pb.go:
 pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.pb.go
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/api/v1/auxpb/aux_service.proto
 
-pkg/api/v1/utmpb/utm.pb.go: pkg/api/v1/utmpb/utm.proto
+pkg/api/v1/scdpb/scd.pb.go: pkg/api/v1/scdpb/scd.proto
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
 
-pkg/api/v1/utmpb/utm.pb.gw.go: pkg/api/v1/utmpb/utm.proto pkg/api/v1/utmpb/utm.pb.go
+pkg/api/v1/scdpb/scd.pb.gw.go: pkg/api/v1/scdpb/scd.proto pkg/api/v1/scdpb/scd.pb.go
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
 
-pkg/api/v1/utmpb/utm.proto: install-proto-generation
+pkg/api/v1/scdpb/scd.proto: install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
 		-spec interfaces/astm-utm/Protocol/utm.yaml -annotate \
 		-out $@ \
 		-tag dss \
 		-indent 2 \
-		-package utmpb
+		-package scdpb
 
 .PHONY: install-proto-generation
 install-proto-generation:
@@ -93,7 +93,7 @@ ifeq ($(shell which protoc-gen-go),)
 endif
 
 .PHONY: protos
-protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go pkg/api/v1/utmpb/utm.pb.gw.go;
+protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/dsspb/dss.pb.gw.go pkg/api/v1/scdpb/scd.pb.gw.go;
 
 .PHONY: install-staticcheck
 install-staticcheck:
