@@ -31,16 +31,17 @@ type Store interface {
 type DummyStore struct {
 }
 
+// MakeDummySubscription returns a dummy subscription instance with ID id.
 func MakeDummySubscription(id models.ID) *models.Subscription {
-	alt_lo := float32(11235)
-	alt_hi := float32(81321)
+	altLo := float32(11235)
+	altHi := float32(81321)
 	result := &models.Subscription{
 		ID:                   id,
 		Version:              314,
 		NotificationIndex:    123,
 		BaseURL:              "https://exampleuss.com/utm",
-		AltitudeLo:           &alt_lo,
-		AltitudeHi:           &alt_hi,
+		AltitudeLo:           &altLo,
+		AltitudeHi:           &altHi,
 		NotifyForOperations:  true,
 		NotifyForConstraints: false,
 		ImplicitSubscription: true,

@@ -38,11 +38,11 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *utmpb.Delete
 // specified version.
 func (a *Server) DeleteSubscription(ctx context.Context, req *utmpb.DeleteSubscriptionRequest) (*utmpb.DeleteSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id_string := req.GetSubscriptionid()
-	if id_string == "" {
+	idString := req.GetSubscriptionid()
+	if idString == "" {
 		return nil, dsserr.BadRequest("missing Subscription ID")
 	}
-	id := models.ID(id_string)
+	id := models.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -84,11 +84,11 @@ func (a *Server) GetOperationReference(ctx context.Context, req *utmpb.GetOperat
 // GetSubscription returns a single subscription for the given ID.
 func (a *Server) GetSubscription(ctx context.Context, req *utmpb.GetSubscriptionRequest) (*utmpb.GetSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id_string := req.GetSubscriptionid()
-	if id_string == "" {
+	idString := req.GetSubscriptionid()
+	if idString == "" {
 		return nil, dsserr.BadRequest("missing Subscription ID")
 	}
-	id := models.ID(id_string)
+	id := models.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -135,11 +135,11 @@ func (a *Server) PutOperationReference(ctx context.Context, req *utmpb.PutOperat
 // PutSubscription creates a single subscription.
 func (a *Server) PutSubscription(ctx context.Context, req *utmpb.PutSubscriptionRequest) (*utmpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id_string := req.GetSubscriptionid()
-	if id_string == "" {
+	idString := req.GetSubscriptionid()
+	if idString == "" {
 		return nil, dsserr.BadRequest("missing Subscription ID")
 	}
-	id := models.ID(id_string)
+	id := models.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -148,35 +148,37 @@ func (a *Server) PutSubscription(ctx context.Context, req *utmpb.PutSubscription
 	}
 
 	// If this is an update, get the old version
-	params := req.GetParams()
-	var notification_index = 0
-	var implicit_subscription = false
-	var old_version = 0
+	var (
+		params               = req.GetParams()
+		notificationIndex    = 0
+		implicitSubscription = false
+		oldVersion           = 0
+	)
 	if params.OldVersion > 0 {
 		//TODO: This needs to happen in a single transaction
-		old_sub, err := a.Store.GetSubscription(ctx, id, owner)
+		oldSub, err := a.Store.GetSubscription(ctx, id, owner)
 		if err != nil {
 			return nil, err //TODO: Change to 409 if Subscription didn't already exist
 		}
-		if old_sub.Version != int(params.OldVersion) {
+		if oldSub.Version != int(params.OldVersion) {
 			return nil, dsserr.VersionMismatch("old_version does not match current version")
 		}
-		notification_index = old_sub.NotificationIndex
-		implicit_subscription = old_sub.ImplicitSubscription
-		old_version = old_sub.Version
+		notificationIndex = oldSub.NotificationIndex
+		implicitSubscription = oldSub.ImplicitSubscription
+		oldVersion = oldSub.Version
 	}
 
 	// Construct Subscription model
 	sub := &models.Subscription{
 		ID:                id,
-		Version:           old_version + 1,
-		NotificationIndex: notification_index,
+		Version:           oldVersion + 1,
+		NotificationIndex: notificationIndex,
 		Owner:             owner,
 
 		BaseURL:              params.UssBaseUrl,
 		NotifyForOperations:  params.NotifyForOperations,
 		NotifyForConstraints: params.NotifyForConstraints,
-		ImplicitSubscription: implicit_subscription,
+		ImplicitSubscription: implicitSubscription,
 	}
 	//TODO: Set StartTime, EndTime, AltitudeHi, AltitudeLo, DependentOperations
 
