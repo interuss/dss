@@ -47,3 +47,5 @@ HUGE_VERTICES = [
 
 HUGE_GEO_POLYGON_STRING = ','.join(
     '{},{}'.format(x['lat'], x['lng']) for x in HUGE_VERTICES)
+
+TIME_FORMAT_CODE = 'RFC3339'
