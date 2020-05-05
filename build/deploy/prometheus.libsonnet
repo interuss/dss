@@ -21,11 +21,11 @@ local PrometheusConfig(metadata) = {
 };
 
 local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-external') {
-  app:: 'prometheus-server',
+  app:: 'prometheus',
   port:: 9090,
   spec+: {
     selector: {
-      name: 'prometheus-server',
+      name: 'prometheus',
     },
     type: 'LoadBalancer',
     loadBalancerIP: metadata.prometheus.IP,
@@ -205,12 +205,12 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
     },
     externalService: if metadata.prometheus.expose_external == true then PrometheusExternalService(metadata),
     internalService: base.Service(metadata, 'prometheus-service') {
-      app:: 'prometheus-server',
+      app:: 'prometheus',
       port:: 9090,
       enable_monitoring:: true,
       spec+: {
         selector: {
-          name: 'prometheus-server',
+          name: 'prometheus',
         },
         type: 'ClusterIP',
       },
