@@ -1,11 +1,11 @@
-package utm
+package scd
 
 import (
 	"context"
 
 	"github.com/golang/geo/s2"
 	commonmodels "github.com/interuss/dss/pkg/dss/models"
-	"github.com/interuss/dss/pkg/dss/utm/models"
+	"github.com/interuss/dss/pkg/dss/scd/models"
 )
 
 // Store abstracts interactions with a backing data store.
