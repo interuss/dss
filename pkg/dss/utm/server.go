@@ -7,6 +7,7 @@ import (
 
 	"github.com/interuss/dss/pkg/api/v1/utmpb"
 	"github.com/interuss/dss/pkg/dss/auth"
+
 	//"github.com/interuss/dss/pkg/dss/geo"
 	"github.com/interuss/dss/pkg/dss/utm/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -158,7 +159,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *utmpb.PutSubscription
 			return nil, err //TODO: Change to 409 if Subscription didn't already exist
 		}
 		if old_sub.Version != int(params.OldVersion) {
-			return nil, dsserr.Conflict("old_version does not match current version")
+			return nil, dsserr.VersionMismatch("old_version does not match current version")
 		}
 		notification_index = old_sub.NotificationIndex
 		implicit_subscription = old_sub.ImplicitSubscription
