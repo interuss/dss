@@ -13,7 +13,7 @@ local dashboardConfig = {
       options: {
         path: '/var/lib/grafana/dashboards',
       },
-      allowUiUpdates: true,
+      allowUiUpdates: false,
     },
   ],
 };
