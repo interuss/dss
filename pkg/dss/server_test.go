@@ -164,7 +164,7 @@ func TestCreateSubscription(t *testing.T) {
 			wantSubscription: &models.Subscription{
 				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 				Owner:      "foo",
-				Url:        "https://example.com",
+				URL:        "https://example.com",
 				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
 				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
 				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
@@ -253,7 +253,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 		{
 			ID:    models.ID("8265221b-9528-4d45-900d-59a148e13850"),
 			Owner: models.Owner("me-myself-and-i"),
-			Url:   "https://no/place/like/home",
+			URL:   "https://no/place/like/home",
 		},
 	}
 
@@ -261,7 +261,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	sub := &models.Subscription{
 		ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 		Owner:      "foo",
-		Url:        "https://example.com",
+		URL:        "https://example.com",
 		StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
 		EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
 		AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
@@ -280,7 +280,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 		Id: sub.ID.String(),
 		Params: &dsspb.CreateSubscriptionParameters{
 			Callbacks: &dsspb.SubscriptionCallbacks{
-				IdentificationServiceAreaUrl: sub.Url,
+				IdentificationServiceAreaUrl: sub.URL,
 			},
 			Extents: testdata.LoopVolume4D,
 		},
@@ -290,7 +290,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 
 	require.Equal(t, []*dsspb.IdentificationServiceArea{
 		{
-			FlightsURL: "https://no/place/like/home",
+			FlightsUrl: "https://no/place/like/home",
 			Id:         "8265221b-9528-4d45-900d-59a148e13850",
 			Owner:      "me-myself-and-i",
 		},
@@ -384,7 +384,7 @@ func TestSearchSubscriptions(t *testing.T) {
 			{
 				ID:                models.ID(uuid.New().String()),
 				Owner:             owner,
-				Url:               "https://no/place/like/home",
+				URL:               "https://no/place/like/home",
 				NotificationIndex: 42,
 			},
 		}, error(nil),
@@ -417,7 +417,7 @@ func TestCreateISA(t *testing.T) {
 			flightsURL: "https://example.com",
 			wantISA: &models.IdentificationServiceArea{
 				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-				Url:        "https://example.com",
+				URL:        "https://example.com",
 				Owner:      "foo",
 				Cells:      mustPolygonToCellIDs(testdata.LoopPolygon),
 				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
@@ -463,7 +463,7 @@ func TestCreateISA(t *testing.T) {
 			name:    "missing-flights-url",
 			id:      models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
-			wantErr: dsserr.BadRequest("missing required flights_url"),
+			wantErr: dsserr.BadRequest("missing required flightsURL"),
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -480,7 +480,7 @@ func TestCreateISA(t *testing.T) {
 				Id: r.id.String(),
 				Params: &dsspb.CreateIdentificationServiceAreaParameters{
 					Extents:    r.extents,
-					FlightsURL: r.flightsURL,
+					FlightsUrl: r.flightsURL,
 				},
 			})
 			require.Equal(t, r.wantErr, err)
@@ -524,13 +524,13 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 		&models.IdentificationServiceArea{
 			ID:      models.ID(id),
 			Owner:   models.Owner("me-myself-and-i"),
-			Url:     "https://no/place/like/home",
+			URL:     "https://no/place/like/home",
 			Version: version,
 		},
 		[]*models.Subscription{
 			{
 				NotificationIndex: 42,
-				Url:               "https://no/place/like/home",
+				URL:               "https://no/place/like/home",
 			},
 		}, error(nil),
 	)
@@ -560,7 +560,7 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 			{
 				ID:    models.ID(uuid.New().String()),
 				Owner: models.Owner("me-myself-and-i"),
-				Url:   "https://no/place/like/home",
+				URL:   "https://no/place/like/home",
 			},
 		}, error(nil),
 	)
