@@ -93,13 +93,13 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
         },
       ],
     },
-    configMap: base.ConfigMap(metadata, 'prometheus-server-conf') {
+    configMap: base.ConfigMap(metadata, 'prometheus-conf') {
       data: {
         'prometheus.yml': std.manifestYamlDoc(PrometheusConfig(metadata)),
         'aggregation.rules.yml': std.manifestYamlDoc(crdbAggregation),
       },
     },
-    statefulset: base.StatefulSet(metadata, 'prometheus-server') {
+    statefulset: base.StatefulSet(metadata, 'prometheus') {
       spec+: {
         serviceName: 'prometheus-service',
         replicas: 1,
@@ -110,7 +110,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                 name: 'prometheus-config-volume',
                 configMap: {
                   defaultMode: 420,
-                  name: 'prometheus-server-conf',
+                  name: 'prometheus-conf',
                 },
               },
               {
