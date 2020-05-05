@@ -48,6 +48,7 @@ type ErrAreaTooLarge struct {
 	msg string
 }
 
+// Error returns the error message for ErrAreaTooLarge.
 func (e *ErrAreaTooLarge) Error() string {
 	return e.msg
 }
@@ -68,6 +69,8 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	return 0, nil, nil
 }
 
+// Volume4DToCellIDs converts a 4d volume to S2 cells, ignoring the time and
+// altitude bounds.
 func Volume4DToCellIDs(v4 *dsspb.Volume4D) (s2.CellUnion, error) {
 	if v4 == nil {
 		return nil, errBadCoordSet
@@ -75,14 +78,17 @@ func Volume4DToCellIDs(v4 *dsspb.Volume4D) (s2.CellUnion, error) {
 	return Volume3DToCellIDs(v4.SpatialVolume)
 }
 
+// Volume3DToCellIDs converts a 4d volume to S2 cells, ignoring the  altitude
+// bounds.
 func Volume3DToCellIDs(v3 *dsspb.Volume3D) (s2.CellUnion, error) {
 	if v3 == nil {
 		return nil, errBadCoordSet
 	}
-	return GeoPolygonToCellIDs(v3.Footprint)
+	return PolygonToCellIDs(v3.Footprint)
 }
 
-func GeoPolygonToCellIDs(geopolygon *dsspb.GeoPolygon) (s2.CellUnion, error) {
+// PolygonToCellIDs converts a geopolygon to S2 cells.
+func PolygonToCellIDs(geopolygon *dsspb.GeoPolygon) (s2.CellUnion, error) {
 	var points []s2.Point
 	if geopolygon == nil {
 		return nil, errBadCoordSet
@@ -108,6 +114,8 @@ func loopAreaKm2(loop *s2.Loop) float64 {
 	return (loop.Area() * earthAreaKm2) / 4.0 * math.Pi
 }
 
+// Covering calculates the S2 covering of a set of S2 points. Will try the loop
+// in both clockwise and counter clockwise.
 func Covering(points []s2.Point) (s2.CellUnion, error) {
 	loop := s2.LoopFromPoints(points)
 	if loopAreaKm2(loop) <= maxAllowedAreaKm2 {

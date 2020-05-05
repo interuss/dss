@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGeoPolygonToCellIDs(t *testing.T) {
-	got, err := GeoPolygonToCellIDs(&dsspb.GeoPolygon{Vertices: []*dsspb.LatLngPoint{
+func TestPolygonToCellIDs(t *testing.T) {
+	got, err := PolygonToCellIDs(&dsspb.GeoPolygon{Vertices: []*dsspb.LatLngPoint{
 		// Stanford
 		{
 			Lat: 37.427636,

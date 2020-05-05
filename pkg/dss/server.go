@@ -17,11 +17,11 @@ import (
 )
 
 var (
-	WriteISAScope              = "dss.write.identification_service_areas"
-	ReadISAScope               = "dss.read.identification_service_areas"
-	StrategicCoordinationScope = "utm.strategic_coordination"
-	ConstraintManagementScope  = "utm.constraint_management"
-	ConstraintConsumptionScope = "utm.constraint_consumption"
+	writeISAScope              = "dss.write.identification_service_areas"
+	readISAScope               = "dss.read.identification_service_areas"
+	strategicCoordinationScope = "utm.strategic_coordination"
+	constraintManagementScope  = "utm.constraint_management"
+	constraintConsumptionScope = "utm.constraint_consumption"
 )
 
 // Server implements dsspb.DiscoveryAndSynchronizationService.
@@ -30,40 +30,42 @@ type Server struct {
 	Timeout time.Duration
 }
 
+// AuthScopes returns a map of endpoint to required Oauth scope.
 func (s *Server) AuthScopes() map[string][]string {
 	return map[string][]string{
-		"CreateIdentificationServiceArea":  {WriteISAScope},
-		"DeleteIdentificationServiceArea":  {WriteISAScope},
-		"GetIdentificationServiceArea":     {ReadISAScope},
-		"SearchIdentificationServiceAreas": {ReadISAScope},
-		"UpdateIdentificationServiceArea":  {WriteISAScope},
-		"CreateSubscription":               {WriteISAScope},
-		"DeleteSubscription":               {WriteISAScope},
-		"GetSubscription":                  {ReadISAScope},
-		"SearchSubscriptions":              {ReadISAScope},
-		"UpdateSubscription":               {WriteISAScope},
-		"ValidateOauth":                    {WriteISAScope},
+		"CreateIdentificationServiceArea":  {writeISAScope},
+		"DeleteIdentificationServiceArea":  {writeISAScope},
+		"GetIdentificationServiceArea":     {readISAScope},
+		"SearchIdentificationServiceAreas": {readISAScope},
+		"UpdateIdentificationServiceArea":  {writeISAScope},
+		"CreateSubscription":               {writeISAScope},
+		"DeleteSubscription":               {writeISAScope},
+		"GetSubscription":                  {readISAScope},
+		"SearchSubscriptions":              {readISAScope},
+		"UpdateSubscription":               {writeISAScope},
+		"ValidateOauth":                    {writeISAScope},
 
 		// TODO: replace with correct scopes
-		"DeleteConstraintReference": {ReadISAScope}, //{ConstraintManagementScope},
-		"DeleteOperationReference":  {ReadISAScope}, //{StrategicCoordinationScope},
+		"DeleteConstraintReference": {readISAScope}, //{constraintManagementScope},
+		"DeleteOperationReference":  {readISAScope}, //{strategicCoordinationScope},
 		// TODO: De-duplicate operation names
-		//"DeleteSubscription":               {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
-		"GetConstraintReference": {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
-		"GetOperationReference":  {ReadISAScope}, //{StrategicCoordinationScope},
-		//"GetSubscription":                  {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
-		"MakeDssReport":          {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
-		"PutConstraintReference": {ReadISAScope}, //{ConstraintManagementScope},
-		"PutOperationReference":  {ReadISAScope}, //{StrategicCoordinationScope},
-		//"PutSubscription":                  {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
-		"QueryConstraintReferences": {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope, ConstraintManagementScope},
-		"QuerySubscriptions":        {ReadISAScope}, //{StrategicCoordinationScope, ConstraintConsumptionScope},
-		"SearchOperationReferences": {ReadISAScope}, //{StrategicCoordinationScope},
+		//"DeleteSubscription":               {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+		"GetConstraintReference": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+		"GetOperationReference":  {readISAScope}, //{strategicCoordinationScope},
+		//"GetSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+		"MakeDssReport":          {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+		"PutConstraintReference": {readISAScope}, //{constraintManagementScope},
+		"PutOperationReference":  {readISAScope}, //{strategicCoordinationScope},
+		//"PutSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+		"QueryConstraintReferences": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+		"QuerySubscriptions":        {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+		"SearchOperationReferences": {readISAScope}, //{strategicCoordinationScope},
 	}
 }
 
 // ===== Server =====
 
+// GetIdentificationServiceArea returns a single ISA for a given ID.
 func (s *Server) GetIdentificationServiceArea(
 	ctx context.Context, req *dsspb.GetIdentificationServiceAreaRequest) (
 	*dsspb.GetIdentificationServiceAreaResponse, error) {
@@ -87,15 +89,15 @@ func (s *Server) GetIdentificationServiceArea(
 }
 
 func (s *Server) createOrUpdateISA(
-	ctx context.Context, id string, version *models.Version, extents *dsspb.Volume4D, flights_url string) (
+	ctx context.Context, id string, version *models.Version, extents *dsspb.Volume4D, flightsURL string) (
 	*dsspb.PutIdentificationServiceAreaResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	if flights_url == "" {
-		return nil, dsserr.BadRequest("missing required flights_url")
+	if flightsURL == "" {
+		return nil, dsserr.BadRequest("missing required flightsURL")
 	}
 	if extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
@@ -103,7 +105,7 @@ func (s *Server) createOrUpdateISA(
 
 	isa := &models.IdentificationServiceArea{
 		ID:      models.ID(id),
-		Url:     flights_url,
+		URL:     flightsURL,
 		Owner:   owner,
 		Version: version,
 	}
@@ -133,6 +135,7 @@ func (s *Server) createOrUpdateISA(
 	}, nil
 }
 
+// CreateIdentificationServiceArea creates an ISA
 func (s *Server) CreateIdentificationServiceArea(
 	ctx context.Context, req *dsspb.CreateIdentificationServiceAreaRequest) (
 	*dsspb.PutIdentificationServiceAreaResponse, error) {
@@ -143,13 +146,14 @@ func (s *Server) CreateIdentificationServiceArea(
 	return s.createOrUpdateISA(ctx, req.GetId(), nil, params.Extents, params.GetFlightsUrl())
 }
 
+// UpdateIdentificationServiceArea updates an existing ISA.
 func (s *Server) UpdateIdentificationServiceArea(
 	ctx context.Context, req *dsspb.UpdateIdentificationServiceAreaRequest) (
 	*dsspb.PutIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
 
-	version, err := models.VersionFromString(req.GetVersion(), models.EmptyVersionPolicyRequireNonEmpty)
+	version, err := models.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
@@ -159,6 +163,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 	return s.createOrUpdateISA(ctx, req.GetId(), version, params.Extents, params.GetFlightsUrl())
 }
 
+// DeleteIdentificationServiceArea deletes an existing ISA.
 func (s *Server) DeleteIdentificationServiceArea(
 	ctx context.Context, req *dsspb.DeleteIdentificationServiceAreaRequest) (
 	*dsspb.DeleteIdentificationServiceAreaResponse, error) {
@@ -167,7 +172,7 @@ func (s *Server) DeleteIdentificationServiceArea(
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	version, err := models.VersionFromString(req.GetVersion(), models.EmptyVersionPolicyRequireNonEmpty)
+	version, err := models.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
@@ -193,6 +198,7 @@ func (s *Server) DeleteIdentificationServiceArea(
 	}, nil
 }
 
+// DeleteSubscription deletes an existing subscription.
 func (s *Server) DeleteSubscription(
 	ctx context.Context, req *dsspb.DeleteSubscriptionRequest) (
 	*dsspb.DeleteSubscriptionResponse, error) {
@@ -201,7 +207,7 @@ func (s *Server) DeleteSubscription(
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	version, err := models.VersionFromString(req.GetVersion(), models.EmptyVersionPolicyRequireNonEmpty)
+	version, err := models.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
@@ -220,6 +226,7 @@ func (s *Server) DeleteSubscription(
 	}, nil
 }
 
+// SearchIdentificationServiceAreas queries for all ISAs in the bounds.
 func (s *Server) SearchIdentificationServiceAreas(
 	ctx context.Context, req *dsspb.SearchIdentificationServiceAreasRequest) (
 	*dsspb.SearchIdentificationServiceAreasResponse, error) {
@@ -276,6 +283,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 	}, nil
 }
 
+// SearchSubscriptions queries for existing subscriptions in the given bounds.
 func (s *Server) SearchSubscriptions(
 	ctx context.Context, req *dsspb.SearchSubscriptionsRequest) (
 	*dsspb.SearchSubscriptionsResponse, error) {
@@ -314,6 +322,7 @@ func (s *Server) SearchSubscriptions(
 	}, nil
 }
 
+// GetSubscription gets a single subscription based on ID.
 func (s *Server) GetSubscription(
 	ctx context.Context, req *dsspb.GetSubscriptionRequest) (
 	*dsspb.GetSubscriptionResponse, error) {
@@ -354,7 +363,7 @@ func (s *Server) createOrUpdateSubscription(
 	sub := &models.Subscription{
 		ID:      models.ID(id),
 		Owner:   owner,
-		Url:     callbacks.IdentificationServiceAreaUrl,
+		URL:     callbacks.IdentificationServiceAreaUrl,
 		Version: version,
 	}
 
@@ -393,6 +402,7 @@ func (s *Server) createOrUpdateSubscription(
 	}, nil
 }
 
+// CreateSubscription creates a single subscription.
 func (s *Server) CreateSubscription(
 	ctx context.Context, req *dsspb.CreateSubscriptionRequest) (
 	*dsspb.PutSubscriptionResponse, error) {
@@ -403,13 +413,14 @@ func (s *Server) CreateSubscription(
 	return s.createOrUpdateSubscription(ctx, req.GetId(), nil, params.Callbacks, params.Extents)
 }
 
+// UpdateSubscription updates a single subscription.
 func (s *Server) UpdateSubscription(
 	ctx context.Context, req *dsspb.UpdateSubscriptionRequest) (
 	*dsspb.PutSubscriptionResponse, error) {
 
 	params := req.GetParams()
 
-	version, err := models.VersionFromString(req.GetVersion(), models.EmptyVersionPolicyRequireNonEmpty)
+	version, err := models.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}

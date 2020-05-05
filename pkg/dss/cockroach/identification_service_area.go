@@ -43,7 +43,7 @@ func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args .
 		err := rows.Scan(
 			&i.ID,
 			&i.Owner,
-			&i.Url,
+			&i.URL,
 			&i.StartTime,
 			&i.EndTime,
 			&i.Version,
@@ -154,7 +154,7 @@ func (c *Store) pushISA(ctx context.Context, q queryable, isa *models.Identifica
 	}
 
 	cells := isa.Cells
-	isa, err := c.fetchISA(ctx, q, upsertAreasQuery, isa.ID, isa.Owner, isa.Url, isa.StartTime, isa.EndTime)
+	isa, err := c.fetchISA(ctx, q, upsertAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -178,7 +178,7 @@ func (c *Store) pushISA(ctx context.Context, q queryable, isa *models.Identifica
 	return isa, subscriptions, nil
 }
 
-// Get returns the isa identified by "id".
+// GetISA returns the isa identified by "id".
 func (c *Store) GetISA(ctx context.Context, id models.ID) (*models.IdentificationServiceArea, error) {
 	return c.fetchISAByID(ctx, c.DB, id)
 }

@@ -7,22 +7,24 @@ import (
 )
 
 type (
-	ID      string
-	Owner   string
+	// ID represents a UUID string.
+	ID string
+	// Owner is the owner taken from the oauth token.
+	Owner string
+	// Version represents a version, which can be supplied as a commit timestamp
+	// or a string.
 	Version struct {
 		t time.Time
 		s string
 	}
-	EmptyVersionPolicy int
 )
 
 const (
 	// Convert updatedAt to a string, why not make it smaller
 	// WARNING: Changing this will cause RMW errors
-	// 32 is the highest value allowed by strconv
-	versionBase                                          = 32
-	EmptyVersionPolicyRequireNonEmpty EmptyVersionPolicy = 0
-	EmptyVersionPolicyRelaxed         EmptyVersionPolicy = 1
+	// 32 used to be the highest value allowed by strconv. The new value is 36,
+	// although changes to this will result in RMW errors.
+	versionBase = 32
 )
 
 func (id ID) String() string {
@@ -33,14 +35,14 @@ func (owner Owner) String() string {
 	return string(owner)
 }
 
-func VersionFromString(s string, evp EmptyVersionPolicy) (*Version, error) {
-	v := &Version{s: s}
+// VersionFromString converts a version, typically provided from a user, to
+// a Version struct.
+func VersionFromString(s string) (*Version, error) {
 	if s == "" {
-		if evp == EmptyVersionPolicyRequireNonEmpty {
-			return nil, errors.New("requires version string")
-		}
-		return nil, nil
+		return nil, errors.New("requires version string")
 	}
+	v := &Version{s: s}
+
 	nanos, err := strconv.ParseUint(string(s), versionBase, 64)
 	if err != nil {
 		return nil, err
@@ -49,6 +51,8 @@ func VersionFromString(s string, evp EmptyVersionPolicy) (*Version, error) {
 	return v, nil
 }
 
+// VersionFromTime converts a timestamp, typically from the database, to a
+// Version struct.
 func VersionFromTime(t time.Time) *Version {
 	return &Version{
 		t: t,
@@ -56,6 +60,7 @@ func VersionFromTime(t time.Time) *Version {
 	}
 }
 
+// Scan implements database/sql's scan interface.
 func (v *Version) Scan(src interface{}) error {
 	if src == nil {
 		return nil
@@ -65,10 +70,12 @@ func (v *Version) Scan(src interface{}) error {
 	return nil
 }
 
+// Empty checks if the version is nil.
 func (v *Version) Empty() bool {
 	return v == nil
 }
 
+// Matches returns true if 2 versions are equal.
 func (v *Version) Matches(v2 *Version) bool {
 	if v == nil || v2 == nil {
 		return false
@@ -76,6 +83,7 @@ func (v *Version) Matches(v2 *Version) bool {
 	return v.s == v2.s
 }
 
+// String returns the string representation of a version.
 func (v *Version) String() string {
 	if v == nil {
 		return ""
@@ -83,6 +91,7 @@ func (v *Version) String() string {
 	return v.s
 }
 
+// ToTimestamp converts the version back its commit timestamp.
 func (v *Version) ToTimestamp() time.Time {
 	return v.t
 }

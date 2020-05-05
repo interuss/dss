@@ -39,6 +39,7 @@ func Dial(uri string, logger *zap.Logger) (*Store, error) {
 	}, nil
 }
 
+// BuildURI returns a cockroachdb connection string from a params map.
 func BuildURI(params map[string]string) (string, error) {
 	an := params["application_name"]
 	if an == "" {

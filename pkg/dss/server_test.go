@@ -31,8 +31,8 @@ func mustTimestamp(ts *tspb.Timestamp) *time.Time {
 	return &t
 }
 
-func mustGeoPolygonToCellIDs(p *dsspb.GeoPolygon) s2.CellUnion {
-	cells, err := geo.GeoPolygonToCellIDs(p)
+func mustPolygonToCellIDs(p *dsspb.GeoPolygon) s2.CellUnion {
+	cells, err := geo.PolygonToCellIDs(p)
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +103,7 @@ func (ms *mockStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earlies
 
 func TestDeleteSubscription(t *testing.T) {
 	ctx := auth.ContextWithOwner(context.Background(), "foo")
-	version, _ := models.VersionFromString("bar", models.EmptyVersionPolicyRequireNonEmpty)
+	version, _ := models.VersionFromString("bar")
 
 	for _, r := range []struct {
 		name         string
@@ -169,7 +169,7 @@ func TestCreateSubscription(t *testing.T) {
 				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
 				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
 				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
-				Cells:      mustGeoPolygonToCellIDs(testdata.LoopPolygon),
+				Cells:      mustPolygonToCellIDs(testdata.LoopPolygon),
 			},
 		},
 		{
@@ -257,7 +257,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 		},
 	}
 
-	cells := mustGeoPolygonToCellIDs(testdata.LoopPolygon)
+	cells := mustPolygonToCellIDs(testdata.LoopPolygon)
 	sub := &models.Subscription{
 		ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 		Owner:      "foo",
@@ -290,7 +290,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 
 	require.Equal(t, []*dsspb.IdentificationServiceArea{
 		{
-			FlightsUrl: "https://no/place/like/home",
+			FlightsURL: "https://no/place/like/home",
 			Id:         "8265221b-9528-4d45-900d-59a148e13850",
 			Owner:      "me-myself-and-i",
 		},
@@ -406,7 +406,7 @@ func TestCreateISA(t *testing.T) {
 		name       string
 		id         models.ID
 		extents    *dsspb.Volume4D
-		flightsUrl string
+		flightsURL string
 		wantISA    *models.IdentificationServiceArea
 		wantErr    error
 	}{
@@ -414,12 +414,12 @@ func TestCreateISA(t *testing.T) {
 			name:       "success",
 			id:         models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents:    testdata.LoopVolume4D,
-			flightsUrl: "https://example.com",
+			flightsURL: "https://example.com",
 			wantISA: &models.IdentificationServiceArea{
 				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 				Url:        "https://example.com",
 				Owner:      "foo",
-				Cells:      mustGeoPolygonToCellIDs(testdata.LoopPolygon),
+				Cells:      mustPolygonToCellIDs(testdata.LoopPolygon),
 				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
 				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
 				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
@@ -429,14 +429,14 @@ func TestCreateISA(t *testing.T) {
 		{
 			name:       "missing-extents",
 			id:         models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			flightsUrl: "https://example.com",
+			flightsURL: "https://example.com",
 			wantErr:    dsserr.BadRequest("missing required extents"),
 		},
 		{
 			name:       "missing-extents-spatial-volume",
 			id:         models.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents:    &dsspb.Volume4D{},
-			flightsUrl: "https://example.com",
+			flightsURL: "https://example.com",
 			wantErr:    dsserr.BadRequest("bad extents: missing required spatial_volume"),
 		},
 		{
@@ -445,7 +445,7 @@ func TestCreateISA(t *testing.T) {
 			extents: &dsspb.Volume4D{
 				SpatialVolume: &dsspb.Volume3D{},
 			},
-			flightsUrl: "https://example.com",
+			flightsURL: "https://example.com",
 			wantErr:    dsserr.BadRequest("bad extents: spatial_volume missing required footprint"),
 		},
 		{
@@ -456,7 +456,7 @@ func TestCreateISA(t *testing.T) {
 					Footprint: &dsspb.GeoPolygon{},
 				},
 			},
-			flightsUrl: "https://example.com",
+			flightsURL: "https://example.com",
 			wantErr:    dsserr.BadRequest("bad extents: not enough points in polygon"),
 		},
 		{
@@ -480,7 +480,7 @@ func TestCreateISA(t *testing.T) {
 				Id: r.id.String(),
 				Params: &dsspb.CreateIdentificationServiceAreaParameters{
 					Extents:    r.extents,
-					FlightsUrl: r.flightsUrl,
+					FlightsURL: r.flightsURL,
 				},
 			})
 			require.Equal(t, r.wantErr, err)
@@ -510,7 +510,7 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 	var (
 		owner      = models.Owner("foo")
 		id         = models.ID(uuid.New().String())
-		version, _ = models.VersionFromString("bar", models.EmptyVersionPolicyRequireNonEmpty)
+		version, _ = models.VersionFromString("bar")
 		ctx        = auth.ContextWithOwner(context.Background(), owner)
 		ms         = &mockStore{}
 		s          = &Server{

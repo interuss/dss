@@ -36,7 +36,7 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query strin
 		err := rows.Scan(
 			&s.ID,
 			&s.Owner,
-			&s.Url,
+			&s.URL,
 			&s.NotificationIndex,
 			&s.StartTime,
 			&s.EndTime,
@@ -186,7 +186,7 @@ func (c *Store) pushSubscription(ctx context.Context, q queryable, s *models.Sub
 	s, err := c.fetchSubscription(ctx, q, upsertQuery,
 		s.ID,
 		s.Owner,
-		s.Url,
+		s.URL,
 		s.NotificationIndex,
 		s.StartTime,
 		s.EndTime)
@@ -208,7 +208,7 @@ func (c *Store) pushSubscription(ctx context.Context, q queryable, s *models.Sub
 	return s, nil
 }
 
-// Get returns the subscription identified by "id".
+// GetSubscription returns the subscription identified by "id".
 func (c *Store) GetSubscription(ctx context.Context, id models.ID) (*models.Subscription, error) {
 	return c.fetchSubscriptionByID(ctx, c.DB, id)
 }

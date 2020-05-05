@@ -12,9 +12,10 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
+// IdentificationServiceArea represents a USS ISA over a given 4D volume.
 type IdentificationServiceArea struct {
 	ID         ID
-	Url        string
+	URL        string
 	Owner      Owner
 	Cells      s2.CellUnion
 	StartTime  *time.Time
@@ -24,11 +25,13 @@ type IdentificationServiceArea struct {
 	AltitudeLo *float32
 }
 
+// ToProto converts an IdentificationServiceArea struct to an
+// IdentificationServiceArea proto for API consumption.
 func (i *IdentificationServiceArea) ToProto() (*dsspb.IdentificationServiceArea, error) {
 	result := &dsspb.IdentificationServiceArea{
 		Id:         i.ID.String(),
 		Owner:      i.Owner.String(),
-		FlightsUrl: i.Url,
+		FlightsUrl: i.URL,
 		Version:    i.Version.String(),
 	}
 
@@ -50,6 +53,8 @@ func (i *IdentificationServiceArea) ToProto() (*dsspb.IdentificationServiceArea,
 	return result, nil
 }
 
+// SetExtents performs some data validation and sets the 4D volume on the
+// IdentificationServiceArea.
 func (i *IdentificationServiceArea) SetExtents(extents *dsspb.Volume4D) error {
 	var err error
 	if extents == nil {
@@ -81,38 +86,40 @@ func (i *IdentificationServiceArea) SetExtents(extents *dsspb.Volume4D) error {
 	if footprint == nil {
 		return errors.New("spatial_volume missing required footprint")
 	}
-	i.Cells, err = geo.GeoPolygonToCellIDs(footprint)
+	i.Cells, err = geo.PolygonToCellIDs(footprint)
 	return err
 }
 
-func (s *IdentificationServiceArea) AdjustTimeRange(now time.Time, old *IdentificationServiceArea) error {
-	if s.StartTime == nil {
+// AdjustTimeRange adjusts the time range to the max allowed ranges on a
+// IdentificationServiceArea.
+func (i *IdentificationServiceArea) AdjustTimeRange(now time.Time, old *IdentificationServiceArea) error {
+	if i.StartTime == nil {
 		// If StartTime was omitted, default to Now() for new ISAs or re-
 		// use the existing time of existing ISAs.
 		if old == nil {
-			s.StartTime = &now
+			i.StartTime = &now
 		} else {
-			s.StartTime = old.StartTime
+			i.StartTime = old.StartTime
 		}
 	} else {
 		// If setting the StartTime explicitly ensure it is not too far in the past.
-		if now.Sub(*s.StartTime) > maxClockSkew {
+		if now.Sub(*i.StartTime) > maxClockSkew {
 			return dsserr.BadRequest("IdentificationServiceArea time_start must not be in the past")
 		}
 	}
 
 	// If EndTime was omitted default to the existing ISA's EndTime.
-	if s.EndTime == nil && old != nil {
-		s.EndTime = old.EndTime
+	if i.EndTime == nil && old != nil {
+		i.EndTime = old.EndTime
 	}
 
 	// EndTime cannot be omitted for new ISAs.
-	if s.EndTime == nil {
+	if i.EndTime == nil {
 		return dsserr.BadRequest("IdentificationServiceArea must have an time_end")
 	}
 
 	// EndTime cannot be before StartTime.
-	if s.EndTime.Sub(*s.StartTime) < 0 {
+	if i.EndTime.Sub(*i.StartTime) < 0 {
 		return dsserr.BadRequest("IdentificationServiceArea time_end must be after time_start")
 	}
 

@@ -22,7 +22,7 @@ var (
 			input: &models.Subscription{
 				ID:                models.ID(uuid.New().String()),
 				Owner:             models.Owner(uuid.New().String()),
-				Url:               "https://no/place/like/home",
+				URL:               "https://no/place/like/home",
 				NotificationIndex: 42,
 			},
 		},
@@ -31,7 +31,7 @@ var (
 			input: &models.Subscription{
 				ID:                models.ID(uuid.New().String()),
 				Owner:             models.Owner(uuid.New().String()),
-				Url:               "https://no/place/like/home",
+				URL:               "https://no/place/like/home",
 				StartTime:         &startTime,
 				EndTime:           &endTime,
 				NotificationIndex: 42,
@@ -42,7 +42,7 @@ var (
 			input: &models.Subscription{
 				ID:                models.ID(uuid.New().String()),
 				Owner:             models.Owner(uuid.New().String()),
-				Url:               "https://no/place/like/home",
+				URL:               "https://no/place/like/home",
 				StartTime:         &startTime,
 				NotificationIndex: 42,
 			},
@@ -52,7 +52,7 @@ var (
 			input: &models.Subscription{
 				ID:                models.ID(uuid.New().String()),
 				Owner:             models.Owner(uuid.New().String()),
-				Url:               "https://no/place/like/home",
+				URL:               "https://no/place/like/home",
 				EndTime:           &endTime,
 				NotificationIndex: 42,
 			},
@@ -101,15 +101,15 @@ func TestStoreInsertSubscription(t *testing.T) {
 
 			// Test changes without the version differing.
 			r2 := *sub1
-			r2.Url = "new url"
+			r2.URL = "new url"
 			sub2, err := store.InsertSubscription(ctx, &r2)
 			require.NoError(t, err)
 			require.NotNil(t, sub2)
-			require.Equal(t, "new url", sub2.Url)
+			require.Equal(t, "new url", sub2.URL)
 
 			// Test it doesn't work when Version is nil.
 			r3 := *sub2
-			r3.Url = "new url 2"
+			r3.URL = "new url 2"
 			r3.Version = nil
 			sub3, err := store.InsertSubscription(ctx, &r3)
 			require.Error(t, err)
@@ -117,7 +117,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 
 			// Bad version doesn't work.
 			r4 := *sub2
-			r4.Url = "new url 3"
+			r4.URL = "new url 3"
 			r4.Version = models.VersionFromTime(time.Now())
 			sub4, err := store.InsertSubscription(ctx, &r4)
 			require.Error(t, err)
@@ -336,7 +336,7 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			require.NotNil(t, sub1)
 
 			// Ensure mismatched versions return an error
-			v, err := models.VersionFromString("a3cg3tcuhk000", models.EmptyVersionPolicyRequireNonEmpty)
+			v, err := models.VersionFromString("a3cg3tcuhk000")
 			require.NoError(t, err)
 			sub2, err := store.DeleteSubscription(ctx, sub1.ID, sub1.Owner, v)
 			require.Error(t, err)
