@@ -47,7 +47,7 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 			return nil, err
 		}
 		result.TimeStart.Value = ts
-		result.TimeStart.Format = TIME_FORMAT_RFC3339
+		result.TimeStart.Format = TimeFormatRfc3339
 	}
 
 	if s.EndTime != nil {
@@ -56,7 +56,7 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 			return nil, err
 		}
 		result.TimeEnd.Value = ts
-		result.TimeStart.Format = TIME_FORMAT_RFC3339
+		result.TimeStart.Format = TimeFormatRfc3339
 	}
 	return result, nil
 }
