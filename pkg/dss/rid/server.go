@@ -18,8 +18,21 @@ import (
 )
 
 var (
-	writeISAScope auth.Scope = "dss.write.identification_service_areas"
-	readISAScope  auth.Scope = "dss.read.identification_service_areas"
+	// Scopes bundles up auth scopes for the remote-id server.
+	Scopes = struct {
+		ISA struct {
+			Write auth.Scope
+			Read  auth.Scope
+		}
+	}{
+		ISA: struct {
+			Write auth.Scope
+			Read  auth.Scope
+		}{
+			Write: "dss.write.identification_service_areas",
+			Read:  "dss.read.identification_service_areas",
+		},
+	}
 )
 
 // Server implements dsspb.DiscoveryAndSynchronizationService.
@@ -31,17 +44,16 @@ type Server struct {
 // AuthScopes returns a map of endpoint to required Oauth scope.
 func (s *Server) AuthScopes() map[auth.Operation][]auth.Scope {
 	return map[auth.Operation][]auth.Scope{
-		"/dsspb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea":  {writeISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea":  {writeISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/GetIdentificationServiceArea":     {readISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas": {readISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea":  {writeISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/CreateSubscription":               {writeISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/DeleteSubscription":               {writeISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/GetSubscription":                  {readISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/SearchSubscriptions":              {readISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/UpdateSubscription":               {writeISAScope},
-		"/dsspb.DiscoveryAndSynchronizationService/ValidateOauth":                    {writeISAScope},
+		"/dsspb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea":  {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea":  {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/GetIdentificationServiceArea":     {Scopes.ISA.Read},
+		"/dsspb.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas": {Scopes.ISA.Read},
+		"/dsspb.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea":  {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/CreateSubscription":               {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/DeleteSubscription":               {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/GetSubscription":                  {Scopes.ISA.Read},
+		"/dsspb.DiscoveryAndSynchronizationService/SearchSubscriptions":              {Scopes.ISA.Read},
+		"/dsspb.DiscoveryAndSynchronizationService/UpdateSubscription":               {Scopes.ISA.Write},
 	}
 }
 

@@ -24,7 +24,21 @@ type Server struct {
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
 func (a *Server) AuthScopes() map[auth.Operation][]auth.Scope {
-	// TODO: Fill in details here.
+	// TODO: replace with correct scopes
+	//"DeleteConstraintReference": {readISAScope}, //{constraintManagementScope},
+	//"DeleteOperationReference":  {readISAScope}, //{strategicCoordinationScope},
+	// TODO: De-duplicate operation names
+	//"DeleteSubscription":               {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+	//"GetConstraintReference": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+	//"GetOperationReference":  {readISAScope}, //{strategicCoordinationScope},
+	//"GetSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+	//"MakeDssReport":          {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+	//"PutConstraintReference": {readISAScope}, //{constraintManagementScope},
+	//"PutOperationReference":  {readISAScope}, //{strategicCoordinationScope},
+	//"PutSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+	//"QueryConstraintReferences": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+	//"QuerySubscriptions":        {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+	//"SearchOperationReferences": {readISAScope}, //{strategicCoordinationScope},
 	return nil
 }
 

@@ -131,7 +131,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 func TestMissingScopes(t *testing.T) {
 	ac := &Authorizer{requiredScopes: map[Operation][]Scope{
-		"/dss/syncservice/PutFoo": {Scope("required1"), Scope("required2")},
+		"/dss.SyncService/PutFoo": {Scope("required1"), Scope("required2")},
 	}}
 
 	var tests = []struct {
@@ -140,7 +140,7 @@ func TestMissingScopes(t *testing.T) {
 		want   error
 	}{
 		{
-			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
+			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
 			map[Scope]struct{}{
 				"required1": {},
 				"required2": {},
@@ -148,21 +148,21 @@ func TestMissingScopes(t *testing.T) {
 			nil,
 		},
 		{
-			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
+			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
 			map[Scope]struct{}{
 				"required2": {},
 			},
 			&missingScopesError{[]string{"required1"}},
 		},
 		{
-			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
+			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
 			map[Scope]struct{}{
 				"required1": {},
 			},
 			&missingScopesError{[]string{"required2"}},
 		},
 		{
-			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
+			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
 			map[Scope]struct{}{},
 			&missingScopesError{[]string{"required1", "required2"}},
 		},
