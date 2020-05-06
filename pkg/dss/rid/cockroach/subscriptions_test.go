@@ -8,29 +8,30 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/dss/models"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
+	ridmodels "github.com/interuss/dss/pkg/dss/rid/models"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	subscriptionsPool = []struct {
 		name  string
-		input *models.Subscription
+		input *ridmodels.Subscription
 	}{
 		{
 			name: "a subscription without startTime and endTime",
-			input: &models.Subscription{
-				ID:                models.ID(uuid.New().String()),
-				Owner:             models.Owner(uuid.New().String()),
+			input: &ridmodels.Subscription{
+				ID:                dssmodels.ID(uuid.New().String()),
+				Owner:             dssmodels.Owner(uuid.New().String()),
 				URL:               "https://no/place/like/home",
 				NotificationIndex: 42,
 			},
 		},
 		{
 			name: "a subscription with startTime and endTime",
-			input: &models.Subscription{
-				ID:                models.ID(uuid.New().String()),
-				Owner:             models.Owner(uuid.New().String()),
+			input: &ridmodels.Subscription{
+				ID:                dssmodels.ID(uuid.New().String()),
+				Owner:             dssmodels.Owner(uuid.New().String()),
 				URL:               "https://no/place/like/home",
 				StartTime:         &startTime,
 				EndTime:           &endTime,
@@ -39,9 +40,9 @@ var (
 		},
 		{
 			name: "a subscription with startTime and without endTime",
-			input: &models.Subscription{
-				ID:                models.ID(uuid.New().String()),
-				Owner:             models.Owner(uuid.New().String()),
+			input: &ridmodels.Subscription{
+				ID:                dssmodels.ID(uuid.New().String()),
+				Owner:             dssmodels.Owner(uuid.New().String()),
 				URL:               "https://no/place/like/home",
 				StartTime:         &startTime,
 				NotificationIndex: 42,
@@ -49,9 +50,9 @@ var (
 		},
 		{
 			name: "a subscription without startTime and with endTime",
-			input: &models.Subscription{
-				ID:                models.ID(uuid.New().String()),
-				Owner:             models.Owner(uuid.New().String()),
+			input: &ridmodels.Subscription{
+				ID:                dssmodels.ID(uuid.New().String()),
+				Owner:             dssmodels.Owner(uuid.New().String()),
 				URL:               "https://no/place/like/home",
 				EndTime:           &endTime,
 				NotificationIndex: 42,
@@ -118,7 +119,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 			// Bad version doesn't work.
 			r4 := *sub2
 			r4.URL = "new url 3"
-			r4.Version = models.VersionFromTime(time.Now())
+			r4.Version = dssmodels.VersionFromTime(time.Now())
 			sub4, err := store.InsertSubscription(ctx, &r4)
 			require.Error(t, err)
 			require.Nil(t, sub4)
@@ -223,15 +224,15 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			id := models.ID(uuid.New().String())
-			owner := models.Owner(uuid.New().String())
-			var version *models.Version
+			id := dssmodels.ID(uuid.New().String())
+			owner := dssmodels.Owner(uuid.New().String())
+			var version *dssmodels.Version
 
 			// Insert a pre-existing subscription to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
 				tx, err := store.Begin()
 				require.NoError(t, err)
-				existing, err := store.pushSubscription(ctx, tx, &models.Subscription{
+				existing, err := store.pushSubscription(ctx, tx, &ridmodels.Subscription{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
@@ -242,7 +243,7 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 				version = existing.Version
 			}
 
-			s := &models.Subscription{
+			s := &ridmodels.Subscription{
 				ID:      id,
 				Owner:   owner,
 				Version: version,
@@ -285,10 +286,10 @@ func TestStoreInsertTooManySubscription(t *testing.T) {
 
 	// Helper function that makes a subscription with a random ID, fixed owner,
 	// and provided cellIDs.
-	makeSubscription := func(cellIDs []uint64) *models.Subscription {
+	makeSubscription := func(cellIDs []uint64) *ridmodels.Subscription {
 		s := *subscriptionsPool[0].input
-		s.Owner = models.Owner("bob")
-		s.ID = models.ID(uuid.New().String())
+		s.Owner = dssmodels.Owner("bob")
+		s.ID = dssmodels.ID(uuid.New().String())
 
 		s.Cells = make(s2.CellUnion, len(cellIDs))
 		for i, id := range cellIDs {
@@ -336,7 +337,7 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			require.NotNil(t, sub1)
 
 			// Ensure mismatched versions return an error
-			v, err := models.VersionFromString("a3cg3tcuhk000")
+			v, err := dssmodels.VersionFromString("a3cg3tcuhk000")
 			require.NoError(t, err)
 			sub2, err := store.DeleteSubscription(ctx, sub1.ID, sub1.Owner, v)
 			require.Error(t, err)
@@ -375,7 +376,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 			s2.CellID(200),
 			s2.CellID(overflow),
 		}
-		owners = []models.Owner{
+		owners = []dssmodels.Owner{
 			"me",
 			"my",
 			"self",
@@ -410,9 +411,9 @@ func TestStoreExpiredSubscription(t *testing.T) {
 		require.NoError(t, tearDownStore())
 	}()
 
-	sub := &models.Subscription{
-		ID:    models.ID(uuid.New().String()),
-		Owner: models.Owner(uuid.New().String()),
+	sub := &ridmodels.Subscription{
+		ID:    dssmodels.ID(uuid.New().String()),
+		Owner: dssmodels.Owner(uuid.New().String()),
 		Cells: s2.CellUnion{s2.CellID(42)},
 	}
 

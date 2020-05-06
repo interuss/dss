@@ -7,15 +7,16 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/dss/models"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
+	ridmodels "github.com/interuss/dss/pkg/dss/rid/models"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	overflow    = -1
-	serviceArea = &models.IdentificationServiceArea{
-		ID:        models.ID(uuid.New().String()),
-		Owner:     models.Owner(uuid.New().String()),
+	serviceArea = &ridmodels.IdentificationServiceArea{
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     dssmodels.Owner(uuid.New().String()),
 		URL:       "https://no/place/like/home/for/flights",
 		StartTime: &startTime,
 		EndTime:   &endTime,
@@ -178,7 +179,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 		require.NoError(t, tearDownStore())
 	}()
 
-	insertedSubscriptions := []*models.Subscription{}
+	insertedSubscriptions := []*ridmodels.Subscription{}
 
 	for _, r := range subscriptionsPool {
 		copy := *r.input
@@ -296,15 +297,15 @@ func TestInsertISA(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			id := models.ID(uuid.New().String())
-			owner := models.Owner(uuid.New().String())
-			var version *models.Version
+			id := dssmodels.ID(uuid.New().String())
+			owner := dssmodels.Owner(uuid.New().String())
+			var version *dssmodels.Version
 
 			// Insert a pre-existing ISA to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
 				tx, err := store.Begin()
 				require.NoError(t, err)
-				existing, _, err := store.pushISA(ctx, tx, &models.IdentificationServiceArea{
+				existing, _, err := store.pushISA(ctx, tx, &ridmodels.IdentificationServiceArea{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
@@ -321,7 +322,7 @@ func TestInsertISA(t *testing.T) {
 				require.Error(t, err)
 			}
 
-			sa := &models.IdentificationServiceArea{
+			sa := &ridmodels.IdentificationServiceArea{
 				ID:      id,
 				Owner:   owner,
 				Version: version,

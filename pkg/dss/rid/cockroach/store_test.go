@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/dss"
-	"github.com/interuss/dss/pkg/dss/models"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
+	"github.com/interuss/dss/pkg/dss/rid"
+	ridmodels "github.com/interuss/dss/pkg/dss/rid/models"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/stretchr/testify/require"
@@ -18,8 +19,8 @@ import (
 )
 
 var (
-	// Make sure that Store implements dss.Store.
-	_ dss.Store = &Store{}
+	// Make sure that Store implements rid.Store.
+	_ rid.Store = &Store{}
 
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	fakeClock = clockwork.NewFakeClock()
@@ -93,8 +94,8 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		begins  = time.Now()
 		expires = begins.Add(-5 * time.Minute)
 	)
-	_, err := store.InsertSubscription(ctx, &models.Subscription{
-		ID:                models.ID(uuid.New().String()),
+	_, err := store.InsertSubscription(ctx, &ridmodels.Subscription{
+		ID:                dssmodels.ID(uuid.New().String()),
 		Owner:             "me-myself-and-i",
 		URL:               "https://no/place/like/home",
 		NotificationIndex: 42,

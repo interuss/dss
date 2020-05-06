@@ -9,18 +9,19 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/geo"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
 // IdentificationServiceArea represents a USS ISA over a given 4D volume.
 type IdentificationServiceArea struct {
-	ID         ID
+	ID         dssmodels.ID
 	URL        string
-	Owner      Owner
+	Owner      dssmodels.Owner
 	Cells      s2.CellUnion
 	StartTime  *time.Time
 	EndTime    *time.Time
-	Version    *Version
+	Version    *dssmodels.Version
 	AltitudeHi *float32
 	AltitudeLo *float32
 }

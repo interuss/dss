@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/dss/geo"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 
 	"github.com/golang/geo/s2"
@@ -25,14 +26,14 @@ var (
 
 // Subscription represents a USS subscription over a given 4D volume.
 type Subscription struct {
-	ID                ID
+	ID                dssmodels.ID
 	URL               string
 	NotificationIndex int
-	Owner             Owner
+	Owner             dssmodels.Owner
 	Cells             s2.CellUnion
 	StartTime         *time.Time
 	EndTime           *time.Time
-	Version           *Version
+	Version           *dssmodels.Version
 	AltitudeHi        *float32
 	AltitudeLo        *float32
 }
