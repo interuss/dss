@@ -36,7 +36,10 @@ func fixStringEnums(node *map[interface{}]interface{}) error {
 					m["example"] = enumList[0]
 				}
 			}
-			fixStringEnums(&m)
+			err := fixStringEnums(&m)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
