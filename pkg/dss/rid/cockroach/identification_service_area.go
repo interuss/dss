@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/interuss/dss/pkg/dss/models"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
+	ridmodels "github.com/interuss/dss/pkg/dss/rid/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
@@ -29,16 +30,16 @@ func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 	}
 }
 
-func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args ...interface{}) ([]*models.IdentificationServiceArea, error) {
+func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var payload []*models.IdentificationServiceArea
+	var payload []*ridmodels.IdentificationServiceArea
 	for rows.Next() {
-		i := new(models.IdentificationServiceArea)
+		i := new(ridmodels.IdentificationServiceArea)
 
 		err := rows.Scan(
 			&i.ID,
@@ -60,7 +61,7 @@ func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args .
 	return payload, nil
 }
 
-func (c *Store) fetchISA(ctx context.Context, q queryable, query string, args ...interface{}) (*models.IdentificationServiceArea, error) {
+func (c *Store) fetchISA(ctx context.Context, q queryable, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
 	isas, err := c.fetchISAs(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
@@ -74,7 +75,7 @@ func (c *Store) fetchISA(ctx context.Context, q queryable, query string, args ..
 	return isas[0], nil
 }
 
-func (c *Store) fetchISAByID(ctx context.Context, q queryable, id models.ID) (*models.IdentificationServiceArea, error) {
+func (c *Store) fetchISAByID(ctx context.Context, q queryable, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
 			identification_service_areas
@@ -85,7 +86,7 @@ func (c *Store) fetchISAByID(ctx context.Context, q queryable, id models.ID) (*m
 	return c.fetchISA(ctx, q, query, id, c.clock.Now())
 }
 
-func (c *Store) populateISACells(ctx context.Context, q queryable, i *models.IdentificationServiceArea) error {
+func (c *Store) populateISACells(ctx context.Context, q queryable, i *ridmodels.IdentificationServiceArea) error {
 	const query = `
 	SELECT
 		cell_id
@@ -119,8 +120,8 @@ func (c *Store) populateISACells(ctx context.Context, q queryable, i *models.Ide
 //
 // Returns the created/updated IdentificationServiceArea and all Subscriptions
 // affected by the operation.
-func (c *Store) pushISA(ctx context.Context, q queryable, isa *models.IdentificationServiceArea) (
-	*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (c *Store) pushISA(ctx context.Context, q queryable, isa *ridmodels.IdentificationServiceArea) (
+	*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
 		upsertAreasQuery = fmt.Sprintf(`
 			UPSERT INTO
@@ -179,7 +180,7 @@ func (c *Store) pushISA(ctx context.Context, q queryable, isa *models.Identifica
 }
 
 // GetISA returns the isa identified by "id".
-func (c *Store) GetISA(ctx context.Context, id models.ID) (*models.IdentificationServiceArea, error) {
+func (c *Store) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	return c.fetchISAByID(ctx, c.DB, id)
 }
 
@@ -188,7 +189,7 @@ func (c *Store) GetISA(ctx context.Context, id models.ID) (*models.Identificatio
 //
 // Returns the created IdentificationServiceArea and all Subscriptions affected
 // by it.
-func (c *Store) InsertISA(ctx context.Context, isa *models.IdentificationServiceArea) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (c *Store) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	tx, err := c.Begin()
 	if err != nil {
 		return nil, nil, err
@@ -236,7 +237,7 @@ func (c *Store) InsertISA(ctx context.Context, isa *models.IdentificationService
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner, version *models.Version) (*models.IdentificationServiceArea, []*models.Subscription, error) {
+func (c *Store) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
 		deleteQuery = `
 			DELETE FROM
@@ -295,7 +296,7 @@ func (c *Store) DeleteISA(ctx context.Context, id models.ID, owner models.Owner,
 // SearchISAs searches IdentificationServiceArea
 // instances that intersect with "cells" and, if set, the temporal volume
 // defined by "earliest" and "latest".
-func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*models.IdentificationServiceArea, error) {
+func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var (
 		serviceAreasInCellsQuery = fmt.Sprintf(`
 			SELECT

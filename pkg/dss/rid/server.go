@@ -1,4 +1,4 @@
-package dss
+package rid
 
 import (
 	"context"
@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
-	"github.com/interuss/dss/pkg/dss/models"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
+	ridmodels "github.com/interuss/dss/pkg/dss/rid/models"
 
 	"github.com/golang/protobuf/ptypes"
 
@@ -69,7 +70,7 @@ func (s *Server) GetIdentificationServiceArea(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isa, err := s.Store.GetISA(ctx, models.ID(req.GetId()))
+	isa, err := s.Store.GetISA(ctx, dssmodels.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
 	}
@@ -86,7 +87,7 @@ func (s *Server) GetIdentificationServiceArea(
 }
 
 func (s *Server) createOrUpdateISA(
-	ctx context.Context, id string, version *models.Version, extents *dsspb.Volume4D, flightsURL string) (
+	ctx context.Context, id string, version *dssmodels.Version, extents *dsspb.Volume4D, flightsURL string) (
 	*dsspb.PutIdentificationServiceAreaResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -100,8 +101,8 @@ func (s *Server) createOrUpdateISA(
 		return nil, dsserr.BadRequest("missing required extents")
 	}
 
-	isa := &models.IdentificationServiceArea{
-		ID:      models.ID(id),
+	isa := &ridmodels.IdentificationServiceArea{
+		ID:      dssmodels.ID(id),
 		URL:     flightsURL,
 		Owner:   owner,
 		Version: version,
@@ -150,7 +151,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 	params := req.GetParams()
 
-	version, err := models.VersionFromString(req.GetVersion())
+	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
@@ -169,13 +170,13 @@ func (s *Server) DeleteIdentificationServiceArea(
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	version, err := models.VersionFromString(req.GetVersion())
+	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isa, subscribers, err := s.Store.DeleteISA(ctx, models.ID(req.GetId()), owner, version)
+	isa, subscribers, err := s.Store.DeleteISA(ctx, dssmodels.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
 	}
@@ -204,13 +205,13 @@ func (s *Server) DeleteSubscription(
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	version, err := models.VersionFromString(req.GetVersion())
+	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.Store.DeleteSubscription(ctx, models.ID(req.GetId()), owner, version)
+	subscription, err := s.Store.DeleteSubscription(ctx, dssmodels.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +327,7 @@ func (s *Server) GetSubscription(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.Store.GetSubscription(ctx, models.ID(req.GetId()))
+	subscription, err := s.Store.GetSubscription(ctx, dssmodels.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
 	}
@@ -343,7 +344,7 @@ func (s *Server) GetSubscription(
 }
 
 func (s *Server) createOrUpdateSubscription(
-	ctx context.Context, id string, version *models.Version, callbacks *dsspb.SubscriptionCallbacks, extents *dsspb.Volume4D) (
+	ctx context.Context, id string, version *dssmodels.Version, callbacks *dsspb.SubscriptionCallbacks, extents *dsspb.Volume4D) (
 	*dsspb.PutSubscriptionResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -357,8 +358,8 @@ func (s *Server) createOrUpdateSubscription(
 		return nil, dsserr.BadRequest("missing required extents")
 	}
 
-	sub := &models.Subscription{
-		ID:      models.ID(id),
+	sub := &ridmodels.Subscription{
+		ID:      dssmodels.ID(id),
 		Owner:   owner,
 		URL:     callbacks.IdentificationServiceAreaUrl,
 		Version: version,
@@ -417,7 +418,7 @@ func (s *Server) UpdateSubscription(
 
 	params := req.GetParams()
 
-	version, err := models.VersionFromString(req.GetVersion())
+	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}

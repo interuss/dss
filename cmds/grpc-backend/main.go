@@ -13,10 +13,11 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/dsspb"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
-	"github.com/interuss/dss/pkg/dss"
 	"github.com/interuss/dss/pkg/dss/auth"
+	aux "github.com/interuss/dss/pkg/dss/aux_"
 	"github.com/interuss/dss/pkg/dss/build"
-	"github.com/interuss/dss/pkg/dss/cockroach"
+	"github.com/interuss/dss/pkg/dss/rid"
+	"github.com/interuss/dss/pkg/dss/rid/cockroach"
 	"github.com/interuss/dss/pkg/dss/scd"
 	"github.com/interuss/dss/pkg/dss/validations"
 	uss_errors "github.com/interuss/dss/pkg/errors"
@@ -105,11 +106,11 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 
 	var (
-		dssServer = &dss.Server{
+		dssServer = &rid.Server{
 			Store:   store,
 			Timeout: *timeout,
 		}
-		auxServer = &dss.AuxServer{}
+		auxServer = &aux.Server{}
 		scdServer = &scd.Server{
 			Store:   &scd.DummyStore{},
 			Timeout: *timeout,

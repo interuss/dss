@@ -1,4 +1,4 @@
-package dss
+package aux
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
-// AuxServer implements auxpb.DSSAuxService.
-type AuxServer struct{}
+// Server implements auxpb.DSSAuxService.
+type Server struct{}
 
 // ValidateOauth will exercise validating the Oauth token
-func (a *AuxServer) ValidateOauth(ctx context.Context, req *auxpb.ValidateOauthRequest) (*auxpb.ValidateOauthResponse, error) {
+func (a *Server) ValidateOauth(ctx context.Context, req *auxpb.ValidateOauthRequest) (*auxpb.ValidateOauthResponse, error) {
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
