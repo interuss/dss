@@ -21,11 +21,11 @@ local PrometheusConfig(metadata) = {
 };
 
 local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-external') {
-  app:: 'prometheus-server',
+  app:: 'prometheus',
   port:: 9090,
   spec+: {
     selector: {
-      name: 'prometheus-server',
+      name: 'prometheus',
     },
     type: 'LoadBalancer',
     loadBalancerIP: metadata.prometheus.IP,
@@ -93,13 +93,13 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
         },
       ],
     },
-    configMap: base.ConfigMap(metadata, 'prometheus-server-conf') {
+    configMap: base.ConfigMap(metadata, 'prometheus-conf') {
       data: {
         'prometheus.yml': std.manifestYamlDoc(PrometheusConfig(metadata)),
         'aggregation.rules.yml': std.manifestYamlDoc(crdbAggregation),
       },
     },
-    statefulset: base.StatefulSet(metadata, 'prometheus-server') {
+    statefulset: base.StatefulSet(metadata, 'prometheus') {
       spec+: {
         serviceName: 'prometheus-service',
         replicas: 1,
@@ -110,7 +110,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                 name: 'prometheus-config-volume',
                 configMap: {
                   defaultMode: 420,
-                  name: 'prometheus-server-conf',
+                  name: 'prometheus-conf',
                 },
               },
               {
@@ -205,12 +205,12 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
     },
     externalService: if metadata.prometheus.expose_external == true then PrometheusExternalService(metadata),
     internalService: base.Service(metadata, 'prometheus-service') {
-      app:: 'prometheus-server',
+      app:: 'prometheus',
       port:: 9090,
       enable_monitoring:: true,
       spec+: {
         selector: {
-          name: 'prometheus-server',
+          name: 'prometheus',
         },
         type: 'ClusterIP',
       },
