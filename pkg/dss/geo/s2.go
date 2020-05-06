@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/golang/geo/s2"
-	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/ridpb" //TODO: Use common objects, not ones specific to remote ID
 )
 
 const (
@@ -71,7 +71,7 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 
 // Volume4DToCellIDs converts a 4d volume to S2 cells, ignoring the time and
 // altitude bounds.
-func Volume4DToCellIDs(v4 *dsspb.Volume4D) (s2.CellUnion, error) {
+func Volume4DToCellIDs(v4 *ridpb.Volume4D) (s2.CellUnion, error) {
 	if v4 == nil {
 		return nil, errBadCoordSet
 	}
@@ -80,7 +80,7 @@ func Volume4DToCellIDs(v4 *dsspb.Volume4D) (s2.CellUnion, error) {
 
 // Volume3DToCellIDs converts a 4d volume to S2 cells, ignoring the  altitude
 // bounds.
-func Volume3DToCellIDs(v3 *dsspb.Volume3D) (s2.CellUnion, error) {
+func Volume3DToCellIDs(v3 *ridpb.Volume3D) (s2.CellUnion, error) {
 	if v3 == nil {
 		return nil, errBadCoordSet
 	}
@@ -88,7 +88,7 @@ func Volume3DToCellIDs(v3 *dsspb.Volume3D) (s2.CellUnion, error) {
 }
 
 // PolygonToCellIDs converts a geopolygon to S2 cells.
-func PolygonToCellIDs(geopolygon *dsspb.GeoPolygon) (s2.CellUnion, error) {
+func PolygonToCellIDs(geopolygon *ridpb.GeoPolygon) (s2.CellUnion, error) {
 	var points []s2.Point
 	if geopolygon == nil {
 		return nil, errBadCoordSet

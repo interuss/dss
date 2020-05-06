@@ -5,7 +5,7 @@ package auth
 // In the case of gRPC, the operation should be fully scoped, i.e.:
 //   /{package-qualified service name}/{handler name}
 // For example:
-//   /dsspb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea
+//   /ridpb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea
 type Operation string
 
 // String returns the string representation of o.

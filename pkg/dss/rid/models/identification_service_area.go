@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/dss/geo"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -28,8 +28,8 @@ type IdentificationServiceArea struct {
 
 // ToProto converts an IdentificationServiceArea struct to an
 // IdentificationServiceArea proto for API consumption.
-func (i *IdentificationServiceArea) ToProto() (*dsspb.IdentificationServiceArea, error) {
-	result := &dsspb.IdentificationServiceArea{
+func (i *IdentificationServiceArea) ToProto() (*ridpb.IdentificationServiceArea, error) {
+	result := &ridpb.IdentificationServiceArea{
 		Id:         i.ID.String(),
 		Owner:      i.Owner.String(),
 		FlightsUrl: i.URL,
@@ -56,7 +56,7 @@ func (i *IdentificationServiceArea) ToProto() (*dsspb.IdentificationServiceArea,
 
 // SetExtents performs some data validation and sets the 4D volume on the
 // IdentificationServiceArea.
-func (i *IdentificationServiceArea) SetExtents(extents *dsspb.Volume4D) error {
+func (i *IdentificationServiceArea) SetExtents(extents *ridpb.Volume4D) error {
 	var err error
 	if extents == nil {
 		return nil

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/dss/geo"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -40,10 +40,10 @@ type Subscription struct {
 
 // ToNotifyProto converts a subscription to a SubscriberToNotify proto for
 // API consumption.
-func (s *Subscription) ToNotifyProto() *dsspb.SubscriberToNotify {
-	return &dsspb.SubscriberToNotify{
+func (s *Subscription) ToNotifyProto() *ridpb.SubscriberToNotify {
+	return &ridpb.SubscriberToNotify{
 		Url: s.URL,
-		Subscriptions: []*dsspb.SubscriptionState{
+		Subscriptions: []*ridpb.SubscriptionState{
 			{
 				NotificationIndex: int32(s.NotificationIndex),
 				SubscriptionId:    s.ID.String(),
@@ -54,11 +54,11 @@ func (s *Subscription) ToNotifyProto() *dsspb.SubscriberToNotify {
 
 // ToProto converts a subscription struct to a Subscription proto for
 // API consumption.
-func (s *Subscription) ToProto() (*dsspb.Subscription, error) {
-	result := &dsspb.Subscription{
+func (s *Subscription) ToProto() (*ridpb.Subscription, error) {
+	result := &ridpb.Subscription{
 		Id:                s.ID.String(),
 		Owner:             s.Owner.String(),
-		Callbacks:         &dsspb.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.URL},
+		Callbacks:         &ridpb.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.URL},
 		NotificationIndex: int32(s.NotificationIndex),
 		Version:           s.Version.String(),
 	}
@@ -83,7 +83,7 @@ func (s *Subscription) ToProto() (*dsspb.Subscription, error) {
 
 // SetExtents performs some data validation and sets the 4D volume on the
 // Subscription.
-func (s *Subscription) SetExtents(extents *dsspb.Volume4D) error {
+func (s *Subscription) SetExtents(extents *ridpb.Volume4D) error {
 	var err error
 	if extents == nil {
 		return nil
