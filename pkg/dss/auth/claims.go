@@ -18,7 +18,7 @@ var (
 )
 
 // scopes models a set of scopes.
-type scopes map[string]struct{}
+type scopes map[Scope]struct{}
 
 func (s *scopes) UnmarshalJSON(data []byte) error {
 	var str string
@@ -26,10 +26,10 @@ func (s *scopes) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	*s = map[string]struct{}{}
+	*s = map[Scope]struct{}{}
 
 	for _, scope := range strings.Split(str, " ") {
-		(*s)[scope] = struct{}{}
+		(*s)[Scope(scope)] = struct{}{}
 	}
 
 	return nil

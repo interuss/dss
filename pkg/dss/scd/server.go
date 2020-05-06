@@ -22,6 +22,12 @@ type Server struct {
 	Timeout time.Duration
 }
 
+// AuthScopes returns a map of endpoint to required Oauth scope.
+func (a *Server) AuthScopes() map[auth.Operation][]auth.Scope {
+	// TODO: Fill in details here.
+	return nil
+}
+
 // DeleteConstraintReference deletes a single constraint ref for a given ID at
 // the specified version.
 func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.DeleteConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {

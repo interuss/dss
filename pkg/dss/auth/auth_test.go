@@ -130,18 +130,18 @@ func TestRSAAuthInterceptor(t *testing.T) {
 }
 
 func TestMissingScopes(t *testing.T) {
-	ac := &Authorizer{requiredScopes: map[string][]string{
-		"PutFoo": {"required1", "required2"},
+	ac := &Authorizer{requiredScopes: map[Operation][]Scope{
+		"/dss/syncservice/PutFoo": {Scope("required1"), Scope("required2")},
 	}}
 
 	var tests = []struct {
 		info   *grpc.UnaryServerInfo
-		scopes map[string]struct{}
+		scopes map[Scope]struct{}
 		want   error
 	}{
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			map[string]struct{}{
+			map[Scope]struct{}{
 				"required1": {},
 				"required2": {},
 			},
@@ -149,21 +149,21 @@ func TestMissingScopes(t *testing.T) {
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			map[string]struct{}{
+			map[Scope]struct{}{
 				"required2": {},
 			},
 			&missingScopesError{[]string{"required1"}},
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			map[string]struct{}{
+			map[Scope]struct{}{
 				"required1": {},
 			},
 			&missingScopesError{[]string{"required2"}},
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss/syncservice/PutFoo"},
-			map[string]struct{}{},
+			map[Scope]struct{}{},
 			&missingScopesError{[]string{"required1", "required2"}},
 		},
 	}

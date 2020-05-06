@@ -12,6 +12,12 @@ import (
 // Server implements auxpb.DSSAuxService.
 type Server struct{}
 
+// AuthScopes returns a map of endpoint to required Oauth scope.
+func (a *Server) AuthScopes() map[auth.Operation][]auth.Scope {
+	// TODO: Fill in details here.
+	return nil
+}
+
 // ValidateOauth will exercise validating the Oauth token
 func (a *Server) ValidateOauth(ctx context.Context, req *auxpb.ValidateOauthRequest) (*auxpb.ValidateOauthResponse, error) {
 	owner, ok := auth.OwnerFromContext(ctx)

@@ -153,16 +153,16 @@ type Authorizer struct {
 	logger            *zap.Logger
 	keys              []interface{}
 	keyGuard          sync.RWMutex
-	requiredScopes    map[string][]string
+	requiredScopes    map[Operation][]Scope
 	acceptedAudiences map[string]bool
 }
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
 type Configuration struct {
-	KeyResolver       KeyResolver         // Used to initialize and periodically refresh keys.
-	KeyRefreshTimeout time.Duration       // Keys are refreshed on this cadence.
-	RequiredScopes    map[string][]string // RequiredScopes are enforced if not nil.
-	AcceptedAudiences []string            // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
+	KeyResolver       KeyResolver           // Used to initialize and periodically refresh keys.
+	KeyRefreshTimeout time.Duration         // Keys are refreshed on this cadence.
+	RequiredScopes    map[Operation][]Scope // RequiredScopes are enforced if not nil.
+	AcceptedAudiences []string              // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
 }
 
 // NewRSAAuthorizer returns an Authorizer instance using values from configuration.
@@ -262,15 +262,14 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 // Returns all of the required scopes that are missing.
 func (a *Authorizer) missingScopes(info *grpc.UnaryServerInfo, keyClaimedScopes scopes) error {
 	var (
-		parts         = strings.Split(info.FullMethod, "/")
-		method        = parts[len(parts)-1]
+		operation     = Operation(info.FullMethod)
 		missingScopes []string
 	)
 
 	if a.requiredScopes != nil {
-		for _, required := range a.requiredScopes[method] {
+		for _, required := range a.requiredScopes[operation] {
 			if _, ok := keyClaimedScopes[required]; !ok {
-				missingScopes = append(missingScopes, required)
+				missingScopes = append(missingScopes, required.String())
 			}
 		}
 	}
