@@ -10,15 +10,15 @@ import (
 func TestScopesJSONUnmarshaling(t *testing.T) {
 	claims := &claims{}
 	require.NoError(t, json.Unmarshal([]byte(`{"scope": "one two three"}`), claims))
-	require.Contains(t, claims.Scopes, "one")
-	require.Contains(t, claims.Scopes, "two")
-	require.Contains(t, claims.Scopes, "three")
+	require.Contains(t, claims.Scopes, Scope("one"))
+	require.Contains(t, claims.Scopes, Scope("two"))
+	require.Contains(t, claims.Scopes, Scope("three"))
 
 	require.NoError(t, json.Unmarshal([]byte(`{"scope": "onetwothree"}`), claims))
-	require.Contains(t, claims.Scopes, "onetwothree")
-	require.NotContains(t, claims.Scopes, "one")
-	require.NotContains(t, claims.Scopes, "two")
-	require.NotContains(t, claims.Scopes, "three")
+	require.Contains(t, claims.Scopes, Scope("onetwothree"))
+	require.NotContains(t, claims.Scopes, Scope("one"))
+	require.NotContains(t, claims.Scopes, Scope("two"))
+	require.NotContains(t, claims.Scopes, Scope("three"))
 
 	require.Error(t, json.Unmarshal([]byte(`{"scope": 42}`), claims))
 	require.Error(t, json.Unmarshal([]byte(`{"scope": true}`), claims))

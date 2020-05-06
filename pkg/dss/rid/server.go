@@ -18,8 +18,21 @@ import (
 )
 
 var (
-	writeISAScope = "dss.write.identification_service_areas"
-	readISAScope  = "dss.read.identification_service_areas"
+	// Scopes bundles up auth scopes for the remote-id server.
+	Scopes = struct {
+		ISA struct {
+			Write auth.Scope
+			Read  auth.Scope
+		}
+	}{
+		ISA: struct {
+			Write auth.Scope
+			Read  auth.Scope
+		}{
+			Write: "dss.write.identification_service_areas",
+			Read:  "dss.read.identification_service_areas",
+		},
+	}
 )
 
 // Server implements dsspb.DiscoveryAndSynchronizationService.
@@ -29,35 +42,18 @@ type Server struct {
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
-func (s *Server) AuthScopes() map[string][]string {
-	return map[string][]string{
-		"CreateIdentificationServiceArea":  {writeISAScope},
-		"DeleteIdentificationServiceArea":  {writeISAScope},
-		"GetIdentificationServiceArea":     {readISAScope},
-		"SearchIdentificationServiceAreas": {readISAScope},
-		"UpdateIdentificationServiceArea":  {writeISAScope},
-		"CreateSubscription":               {writeISAScope},
-		"DeleteSubscription":               {writeISAScope},
-		"GetSubscription":                  {readISAScope},
-		"SearchSubscriptions":              {readISAScope},
-		"UpdateSubscription":               {writeISAScope},
-		"ValidateOauth":                    {writeISAScope},
-
-		// TODO: replace with correct scopes
-		"DeleteConstraintReference": {readISAScope}, //{constraintManagementScope},
-		"DeleteOperationReference":  {readISAScope}, //{strategicCoordinationScope},
-		// TODO: De-duplicate operation names
-		//"DeleteSubscription":               {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-		"GetConstraintReference": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-		"GetOperationReference":  {readISAScope}, //{strategicCoordinationScope},
-		//"GetSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-		"MakeDssReport":          {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-		"PutConstraintReference": {readISAScope}, //{constraintManagementScope},
-		"PutOperationReference":  {readISAScope}, //{strategicCoordinationScope},
-		//"PutSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-		"QueryConstraintReferences": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-		"QuerySubscriptions":        {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-		"SearchOperationReferences": {readISAScope}, //{strategicCoordinationScope},
+func (s *Server) AuthScopes() map[auth.Operation][]auth.Scope {
+	return map[auth.Operation][]auth.Scope{
+		"/dsspb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea":  {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea":  {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/GetIdentificationServiceArea":     {Scopes.ISA.Read},
+		"/dsspb.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas": {Scopes.ISA.Read},
+		"/dsspb.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea":  {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/CreateSubscription":               {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/DeleteSubscription":               {Scopes.ISA.Write},
+		"/dsspb.DiscoveryAndSynchronizationService/GetSubscription":                  {Scopes.ISA.Read},
+		"/dsspb.DiscoveryAndSynchronizationService/SearchSubscriptions":              {Scopes.ISA.Read},
+		"/dsspb.DiscoveryAndSynchronizationService/UpdateSubscription":               {Scopes.ISA.Write},
 	}
 }
 

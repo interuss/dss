@@ -6,11 +6,19 @@ import (
 
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/dss/auth"
+	"github.com/interuss/dss/pkg/dss/rid"
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
 // Server implements auxpb.DSSAuxService.
 type Server struct{}
+
+// AuthScopes returns a map of endpoint to required Oauth scope.
+func (a *Server) AuthScopes() map[auth.Operation][]auth.Scope {
+	return map[auth.Operation][]auth.Scope{
+		"/auxpb.DSSAuxService/ValidateOauth": {rid.Scopes.ISA.Write},
+	}
+}
 
 // ValidateOauth will exercise validating the Oauth token
 func (a *Server) ValidateOauth(ctx context.Context, req *auxpb.ValidateOauthRequest) (*auxpb.ValidateOauthResponse, error) {

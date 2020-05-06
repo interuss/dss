@@ -115,6 +115,9 @@ func RunGRPCServer(ctx context.Context, address string) error {
 			Store:   &scd.DummyStore{},
 			Timeout: *timeout,
 		}
+		requiredScopes = auth.MergeOperationsAndScopes(
+			dssServer.AuthScopes(), scdServer.AuthScopes(), auxServer.AuthScopes(),
+		)
 	)
 
 	var keyResolver auth.KeyResolver
@@ -141,7 +144,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		ctx, auth.Configuration{
 			KeyResolver:       keyResolver,
 			KeyRefreshTimeout: *keyRefreshTimeout,
-			RequiredScopes:    dssServer.AuthScopes(),
+			RequiredScopes:    requiredScopes,
 			AcceptedAudiences: strings.Split(*jwtAudiences, ","),
 		},
 	)
