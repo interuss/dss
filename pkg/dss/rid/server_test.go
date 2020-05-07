@@ -33,7 +33,7 @@ func mustTimestamp(ts *tspb.Timestamp) *time.Time {
 }
 
 func mustPolygonToCellIDs(p *ridpb.GeoPolygon) s2.CellUnion {
-	cells, err := geo.PolygonToCellIDs(p)
+	cells, err := geo.PolygonToCellIDs(p.ToCommon())
 	if err != nil {
 		panic(err)
 	}
