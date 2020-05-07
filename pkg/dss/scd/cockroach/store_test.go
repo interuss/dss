@@ -91,7 +91,7 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		begins  = time.Now()
 		expires = begins.Add(-5 * time.Minute)
 	)
-	_, err := store.InsertSubscription(ctx, &scdmodels.Subscription{
+	_, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
 		ID:                   scdmodels.ID(uuid.New().String()),
 		Owner:                "me-myself-and-i",
 		BaseURL:              "https://no/place/like/home",
@@ -117,7 +117,7 @@ func TestDatabaseEnsuresOneNotifyFlagTrue(t *testing.T) {
 		begins  = time.Now()
 		expires = begins.Add(5 * time.Minute)
 	)
-	_, err := store.InsertSubscription(ctx, &scdmodels.Subscription{
+	_, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
 		ID:                scdmodels.ID(uuid.New().String()),
 		Owner:             "me-myself-and-i",
 		BaseURL:           "https://no/place/like/home",

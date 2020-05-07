@@ -87,7 +87,7 @@ func (i *IdentificationServiceArea) SetExtents(extents *ridpb.Volume4D) error {
 	if footprint == nil {
 		return errors.New("spatial_volume missing required footprint")
 	}
-	i.Cells, err = geo.PolygonToCellIDs(footprint)
+	i.Cells, err = geo.PolygonToCellIDs(footprint.ToCommon())
 	return err
 }
 
