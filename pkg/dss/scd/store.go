@@ -64,11 +64,11 @@ func (s *DummyStore) GetSubscription(ctx context.Context, id scdmodels.ID, owner
 	return MakeDummySubscription(id), nil
 }
 
-func (s *DummyStore) InsertSubscription(ctx context.Context, sub *scdmodels.Subscription, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
+func (s *DummyStore) InsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error) {
 	return sub, nil
 }
 
-func (s *DummyStore) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version *scdmodels.Version) (*scdmodels.Subscription, error) {
+func (s *DummyStore) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error) {
 	sub := MakeDummySubscription(id)
 	sub.ID = id
 	return sub, nil
