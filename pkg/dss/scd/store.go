@@ -17,9 +17,9 @@ type Store interface {
 	// Subscription doesn't exist
 	GetSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error)
 
-	// InsertSubscription inserts sub into the store and returns the result
+	// UpsertSubscription upserts sub into the store and returns the result
 	// subscription.
-	InsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error)
+	UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error)
 
 	// DeleteSubscription deletes a Subscription from the store and returns the
 	// deleted subscription.  Returns nil and an error if the Subscription does
@@ -64,7 +64,7 @@ func (s *DummyStore) GetSubscription(ctx context.Context, id scdmodels.ID, owner
 	return MakeDummySubscription(id), nil
 }
 
-func (s *DummyStore) InsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+func (s *DummyStore) UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error) {
 	return sub, nil
 }
 

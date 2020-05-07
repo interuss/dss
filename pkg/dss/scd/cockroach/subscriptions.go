@@ -290,9 +290,9 @@ func (c *Store) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssm
 	return c.fetchSubscriptionByIDAndOwner(ctx, c.DB, id, owner)
 }
 
-// InsertSubscription inserts subscription into the store and returns
+// UpsertSubscription upserts subscription into the store and returns
 // the resulting subscription including its ID.
-func (c *Store) InsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
 
 	tx, err := c.Begin()
 	if err != nil {

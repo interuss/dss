@@ -186,12 +186,12 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	//TODO: Set StartTime, EndTime, AltitudeHi, AltitudeLo, DependentOperations
 
 	// Store Subscription model
-	sub, err := a.Store.InsertSubscription(ctx, sub) //TODO: This should be UpsertSubscription
+	sub, err := a.Store.UpsertSubscription(ctx, sub) //TODO: This should be UpsertSubscription
 	if err != nil {
 		return nil, err
 	}
 	if sub == nil {
-		return nil, dsserr.Internal(fmt.Sprintf("InsertSubscription returned no Subscription for ID: %s", id))
+		return nil, dsserr.Internal(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
 	}
 
 	//TODO: Search relevant Operations and Constraints
