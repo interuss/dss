@@ -84,7 +84,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\", k8s_cluster=~\"^$ClusterName.*$\"}) / sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node.*$\", k8s_cluster=~\"^$ClusterName.*$\"}) * 100",
+          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\", k8s_cluster=~\"^$ClusterName.*$\", container!=\"\"}) / sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node.*$\", k8s_cluster=~\"^$ClusterName.*$\"}) * 100",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -340,7 +340,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\", k8s_cluster=~\"^$ClusterName.*$\"})",
+          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Deployment$Statefulset$Daemonset.*$\", kubernetes_io_hostname=~\"^$Node$\", pod_name!=\"\", k8s_cluster=~\"^$ClusterName.*$\", container!=\"\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",

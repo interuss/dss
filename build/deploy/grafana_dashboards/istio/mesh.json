@@ -603,7 +603,7 @@
       ],
       "targets": [
         {
-          "expr": "label_join(sum(rate(istio_requests_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\", response_code=\"200\"}[1m])) by (destination_workload, destination_workload_namespace, destination_service), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
+          "expr": "label_join(sum(rate(istio_requests_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\", response_code=\"200\"}[1m])) by (destination_workload, destination_workload_namespace, destination_service, k8s_cluster), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -612,7 +612,7 @@
           "refId": "A"
         },
         {
-          "expr": "label_join((histogram_quantile(0.50, sum(rate(istio_request_duration_milliseconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace)) / 1000) or histogram_quantile(0.50, sum(rate(istio_request_duration_seconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace)), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
+          "expr": "label_join((histogram_quantile(0.50, sum(rate(istio_request_duration_milliseconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace, k8s_cluster)) / 1000) or histogram_quantile(0.50, sum(rate(istio_request_duration_seconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace, k8s_cluster)), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -621,7 +621,7 @@
           "refId": "B"
         },
         {
-          "expr": "label_join((histogram_quantile(0.90, sum(rate(istio_request_duration_milliseconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace)) / 1000) or histogram_quantile(0.90, sum(rate(istio_request_duration_seconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace)), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
+          "expr": "label_join((histogram_quantile(0.90, sum(rate(istio_request_duration_milliseconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace, k8s_cluster)) / 1000) or histogram_quantile(0.90, sum(rate(istio_request_duration_seconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace, k8s_cluster)), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -630,7 +630,7 @@
           "refId": "D"
         },
         {
-          "expr": "label_join((histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace)) / 1000) or histogram_quantile(0.99, sum(rate(istio_request_duration_seconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace)), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
+          "expr": "label_join((histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace, k8s_cluster)) / 1000) or histogram_quantile(0.99, sum(rate(istio_request_duration_seconds_bucket{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (le, destination_workload, destination_workload_namespace, k8s_cluster)), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -639,7 +639,7 @@
           "refId": "E"
         },
         {
-          "expr": "label_join((sum(rate(istio_requests_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\", response_code!~\"5.*\"}[1m])) by (destination_workload, destination_workload_namespace) / sum(rate(istio_requests_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (destination_workload, destination_workload_namespace)), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
+          "expr": "label_join((sum(rate(istio_requests_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\", response_code!~\"5.*\"}[1m])) by (destination_workload, destination_workload_namespace, k8s_cluster) / sum(rate(istio_requests_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"destination\"}[1m])) by (destination_workload, destination_workload_namespace, k8s_cluster)), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -799,7 +799,7 @@
       ],
       "targets": [
         {
-          "expr": "label_join(sum(rate(istio_tcp_received_bytes_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"source\"}[1m])) by (destination_workload, destination_workload_namespace, destination_service), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
+          "expr": "label_join(sum(rate(istio_tcp_received_bytes_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"source\"}[1m])) by (destination_workload, destination_workload_namespace, destination_service, k8s_cluster), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -808,7 +808,7 @@
           "refId": "C"
         },
         {
-          "expr": "label_join(sum(rate(istio_tcp_sent_bytes_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"source\"}[1m])) by (destination_workload, destination_workload_namespace, destination_service), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
+          "expr": "label_join(sum(rate(istio_tcp_sent_bytes_total{k8s_cluster=~\"^$k8s_cluster.*$\",reporter=\"source\"}[1m])) by (destination_workload, destination_workload_namespace, destination_service, k8s_cluster), \"destination_workload_var\", \".\", \"destination_workload\", \"destination_workload_namespace\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -862,10 +862,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(istio_build{k8s_cluster=~\"^$k8s_cluster.*$\"}) by (component, tag)",
+          "expr": "sum(istio_build{k8s_cluster=~\"^$k8s_cluster.*$\"}) by (component, tag, k8s_cluster)",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "{{ component }}: {{ tag }}",
+          "legendFormat": "{{ k8s_cluster }}: {{ component }}: {{ tag }}",
           "refId": "A"
         }
       ],
@@ -916,7 +916,35 @@
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "prometheus",
+        "definition": "label_values(k8s_cluster)",
+        "hide": 0,
+        "includeAll": true,
+        "index": -1,
+        "label": null,
+        "multi": false,
+        "name": "k8s_cluster",
+        "options": [],
+        "query": "label_values(k8s_cluster)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "time": {
     "from": "now-5m",
