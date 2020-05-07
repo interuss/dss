@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/dss"
-	"github.com/interuss/dss/pkg/dss/models"
+	"github.com/interuss/dss/pkg/dss/scd"
+	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/stretchr/testify/require"
@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	// Make sure that Store implements dss.Store.
-	_ dss.Store = &Store{}
+	// Make sure that Store implements rid.Store.
+	_ scd.Store = &Store{}
 
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	fakeClock = clockwork.NewFakeClock()
@@ -61,10 +61,8 @@ func newStore() (*Store, error) {
 // cleanUp drops all required tables from the store, useful for testing.
 func cleanUp(ctx context.Context, s *Store) error {
 	const query = `
-	DROP TABLE IF EXISTS cells_subscriptions;
-	DROP TABLE IF EXISTS subscriptions;
-	DROP TABLE IF EXISTS cells_identification_service_areas;
-	DROP TABLE IF EXISTS identification_service_areas;`
+	DROP TABLE IF EXISTS scd_cells_subscriptions;
+	DROP TABLE IF EXISTS scd_subscriptions;`
 
 	_, err := s.ExecContext(ctx, query)
 	return err
@@ -93,10 +91,36 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		begins  = time.Now()
 		expires = begins.Add(-5 * time.Minute)
 	)
-	_, err := store.InsertSubscription(ctx, &models.Subscription{
-		ID:                models.ID(uuid.New().String()),
+	_, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
+		ID:                   scdmodels.ID(uuid.New().String()),
+		Owner:                "me-myself-and-i",
+		BaseURL:              "https://no/place/like/home",
+		NotificationIndex:    42,
+		NotifyForConstraints: true,
+		StartTime:            &begins,
+		EndTime:              &expires,
+	})
+	require.Error(t, err)
+}
+
+func TestDatabaseEnsuresOneNotifyFlagTrue(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	require.NotNil(t, store)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	var (
+		begins  = time.Now()
+		expires = begins.Add(5 * time.Minute)
+	)
+	_, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
+		ID:                scdmodels.ID(uuid.New().String()),
 		Owner:             "me-myself-and-i",
-		URL:               "https://no/place/like/home",
+		BaseURL:           "https://no/place/like/home",
 		NotificationIndex: 42,
 		StartTime:         &begins,
 		EndTime:           &expires,

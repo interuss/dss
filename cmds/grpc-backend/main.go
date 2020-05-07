@@ -11,12 +11,13 @@ import (
 
 	"cloud.google.com/go/profiler"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
-	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
-	"github.com/interuss/dss/pkg/dss"
 	"github.com/interuss/dss/pkg/dss/auth"
+	aux "github.com/interuss/dss/pkg/dss/aux_"
 	"github.com/interuss/dss/pkg/dss/build"
-	"github.com/interuss/dss/pkg/dss/cockroach"
+	"github.com/interuss/dss/pkg/dss/rid"
+	"github.com/interuss/dss/pkg/dss/rid/cockroach"
 	"github.com/interuss/dss/pkg/dss/scd"
 	"github.com/interuss/dss/pkg/dss/validations"
 	uss_errors "github.com/interuss/dss/pkg/errors"
@@ -105,15 +106,18 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 
 	var (
-		dssServer = &dss.Server{
+		dssServer = &rid.Server{
 			Store:   store,
 			Timeout: *timeout,
 		}
-		auxServer = &dss.AuxServer{}
+		auxServer = &aux.Server{}
 		scdServer = &scd.Server{
 			Store:   &scd.DummyStore{},
 			Timeout: *timeout,
 		}
+		requiredScopes = auth.MergeOperationsAndScopes(
+			dssServer.AuthScopes(), scdServer.AuthScopes(), auxServer.AuthScopes(),
+		)
 	)
 
 	var keyResolver auth.KeyResolver
@@ -140,7 +144,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		ctx, auth.Configuration{
 			KeyResolver:       keyResolver,
 			KeyRefreshTimeout: *keyRefreshTimeout,
-			RequiredScopes:    dssServer.AuthScopes(),
+			RequiredScopes:    requiredScopes,
 			AcceptedAudiences: strings.Split(*jwtAudiences, ","),
 		},
 	)
@@ -166,7 +170,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		reflection.Register(s)
 	}
 
-	dsspb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
+	ridpb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
 	if *enableSCD {
 		logger.Info("config", zap.Any("scd", "enabled"))

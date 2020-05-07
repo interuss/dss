@@ -1,4 +1,4 @@
-package dss
+package rid
 
 import (
 	"context"
@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/interuss/dss/pkg/api/v1/dsspb"
-	"github.com/interuss/dss/pkg/dss/models"
+	"github.com/interuss/dss/pkg/api/v1/ridpb"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
+	ridmodels "github.com/interuss/dss/pkg/dss/rid/models"
 
 	"github.com/golang/protobuf/ptypes"
 
@@ -17,46 +18,42 @@ import (
 )
 
 var (
-	writeISAScope = "dss.write.identification_service_areas"
-	readISAScope  = "dss.read.identification_service_areas"
+	// Scopes bundles up auth scopes for the remote-id server.
+	Scopes = struct {
+		ISA struct {
+			Write auth.Scope
+			Read  auth.Scope
+		}
+	}{
+		ISA: struct {
+			Write auth.Scope
+			Read  auth.Scope
+		}{
+			Write: "dss.write.identification_service_areas",
+			Read:  "dss.read.identification_service_areas",
+		},
+	}
 )
 
-// Server implements dsspb.DiscoveryAndSynchronizationService.
+// Server implements ridpb.DiscoveryAndSynchronizationService.
 type Server struct {
 	Store   Store
 	Timeout time.Duration
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
-func (s *Server) AuthScopes() map[string][]string {
-	return map[string][]string{
-		"CreateIdentificationServiceArea":  {writeISAScope},
-		"DeleteIdentificationServiceArea":  {writeISAScope},
-		"GetIdentificationServiceArea":     {readISAScope},
-		"SearchIdentificationServiceAreas": {readISAScope},
-		"UpdateIdentificationServiceArea":  {writeISAScope},
-		"CreateSubscription":               {writeISAScope},
-		"DeleteSubscription":               {writeISAScope},
-		"GetSubscription":                  {readISAScope},
-		"SearchSubscriptions":              {readISAScope},
-		"UpdateSubscription":               {writeISAScope},
-		"ValidateOauth":                    {writeISAScope},
-
-		// TODO: replace with correct scopes
-		"DeleteConstraintReference": {readISAScope}, //{constraintManagementScope},
-		"DeleteOperationReference":  {readISAScope}, //{strategicCoordinationScope},
-		// TODO: De-duplicate operation names
-		//"DeleteSubscription":               {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-		"GetConstraintReference": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-		"GetOperationReference":  {readISAScope}, //{strategicCoordinationScope},
-		//"GetSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-		"MakeDssReport":          {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-		"PutConstraintReference": {readISAScope}, //{constraintManagementScope},
-		"PutOperationReference":  {readISAScope}, //{strategicCoordinationScope},
-		//"PutSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-		"QueryConstraintReferences": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-		"QuerySubscriptions":        {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-		"SearchOperationReferences": {readISAScope}, //{strategicCoordinationScope},
+func (s *Server) AuthScopes() map[auth.Operation][]auth.Scope {
+	return map[auth.Operation][]auth.Scope{
+		"/ridpb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea":  {Scopes.ISA.Write},
+		"/ridpb.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea":  {Scopes.ISA.Write},
+		"/ridpb.DiscoveryAndSynchronizationService/GetIdentificationServiceArea":     {Scopes.ISA.Read},
+		"/ridpb.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas": {Scopes.ISA.Read},
+		"/ridpb.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea":  {Scopes.ISA.Write},
+		"/ridpb.DiscoveryAndSynchronizationService/CreateSubscription":               {Scopes.ISA.Write},
+		"/ridpb.DiscoveryAndSynchronizationService/DeleteSubscription":               {Scopes.ISA.Write},
+		"/ridpb.DiscoveryAndSynchronizationService/GetSubscription":                  {Scopes.ISA.Read},
+		"/ridpb.DiscoveryAndSynchronizationService/SearchSubscriptions":              {Scopes.ISA.Read},
+		"/ridpb.DiscoveryAndSynchronizationService/UpdateSubscription":               {Scopes.ISA.Write},
 	}
 }
 
@@ -64,12 +61,12 @@ func (s *Server) AuthScopes() map[string][]string {
 
 // GetIdentificationServiceArea returns a single ISA for a given ID.
 func (s *Server) GetIdentificationServiceArea(
-	ctx context.Context, req *dsspb.GetIdentificationServiceAreaRequest) (
-	*dsspb.GetIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *ridpb.GetIdentificationServiceAreaRequest) (
+	*ridpb.GetIdentificationServiceAreaResponse, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isa, err := s.Store.GetISA(ctx, models.ID(req.GetId()))
+	isa, err := s.Store.GetISA(ctx, dssmodels.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
 	}
@@ -80,14 +77,14 @@ func (s *Server) GetIdentificationServiceArea(
 	if err != nil {
 		return nil, err
 	}
-	return &dsspb.GetIdentificationServiceAreaResponse{
+	return &ridpb.GetIdentificationServiceAreaResponse{
 		ServiceArea: p,
 	}, nil
 }
 
 func (s *Server) createOrUpdateISA(
-	ctx context.Context, id string, version *models.Version, extents *dsspb.Volume4D, flightsURL string) (
-	*dsspb.PutIdentificationServiceAreaResponse, error) {
+	ctx context.Context, id string, version *dssmodels.Version, extents *ridpb.Volume4D, flightsURL string) (
+	*ridpb.PutIdentificationServiceAreaResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -100,8 +97,8 @@ func (s *Server) createOrUpdateISA(
 		return nil, dsserr.BadRequest("missing required extents")
 	}
 
-	isa := &models.IdentificationServiceArea{
-		ID:      models.ID(id),
+	isa := &ridmodels.IdentificationServiceArea{
+		ID:      dssmodels.ID(id),
 		URL:     flightsURL,
 		Owner:   owner,
 		Version: version,
@@ -121,12 +118,12 @@ func (s *Server) createOrUpdateISA(
 		return nil, dsserr.Internal(err.Error())
 	}
 
-	pbSubscribers := []*dsspb.SubscriberToNotify{}
+	pbSubscribers := []*ridpb.SubscriberToNotify{}
 	for _, subscriber := range subscribers {
 		pbSubscribers = append(pbSubscribers, subscriber.ToNotifyProto())
 	}
 
-	return &dsspb.PutIdentificationServiceAreaResponse{
+	return &ridpb.PutIdentificationServiceAreaResponse{
 		ServiceArea: pbISA,
 		Subscribers: pbSubscribers,
 	}, nil
@@ -134,8 +131,8 @@ func (s *Server) createOrUpdateISA(
 
 // CreateIdentificationServiceArea creates an ISA
 func (s *Server) CreateIdentificationServiceArea(
-	ctx context.Context, req *dsspb.CreateIdentificationServiceAreaRequest) (
-	*dsspb.PutIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *ridpb.CreateIdentificationServiceAreaRequest) (
+	*ridpb.PutIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -145,12 +142,12 @@ func (s *Server) CreateIdentificationServiceArea(
 
 // UpdateIdentificationServiceArea updates an existing ISA.
 func (s *Server) UpdateIdentificationServiceArea(
-	ctx context.Context, req *dsspb.UpdateIdentificationServiceAreaRequest) (
-	*dsspb.PutIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *ridpb.UpdateIdentificationServiceAreaRequest) (
+	*ridpb.PutIdentificationServiceAreaResponse, error) {
 
 	params := req.GetParams()
 
-	version, err := models.VersionFromString(req.GetVersion())
+	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
@@ -162,20 +159,20 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 // DeleteIdentificationServiceArea deletes an existing ISA.
 func (s *Server) DeleteIdentificationServiceArea(
-	ctx context.Context, req *dsspb.DeleteIdentificationServiceAreaRequest) (
-	*dsspb.DeleteIdentificationServiceAreaResponse, error) {
+	ctx context.Context, req *ridpb.DeleteIdentificationServiceAreaRequest) (
+	*ridpb.DeleteIdentificationServiceAreaResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	version, err := models.VersionFromString(req.GetVersion())
+	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isa, subscribers, err := s.Store.DeleteISA(ctx, models.ID(req.GetId()), owner, version)
+	isa, subscribers, err := s.Store.DeleteISA(ctx, dssmodels.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
 	}
@@ -184,12 +181,12 @@ func (s *Server) DeleteIdentificationServiceArea(
 	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
-	sp := make([]*dsspb.SubscriberToNotify, len(subscribers))
+	sp := make([]*ridpb.SubscriberToNotify, len(subscribers))
 	for i := range subscribers {
 		sp[i] = subscribers[i].ToNotifyProto()
 	}
 
-	return &dsspb.DeleteIdentificationServiceAreaResponse{
+	return &ridpb.DeleteIdentificationServiceAreaResponse{
 		ServiceArea: p,
 		Subscribers: sp,
 	}, nil
@@ -197,20 +194,20 @@ func (s *Server) DeleteIdentificationServiceArea(
 
 // DeleteSubscription deletes an existing subscription.
 func (s *Server) DeleteSubscription(
-	ctx context.Context, req *dsspb.DeleteSubscriptionRequest) (
-	*dsspb.DeleteSubscriptionResponse, error) {
+	ctx context.Context, req *ridpb.DeleteSubscriptionRequest) (
+	*ridpb.DeleteSubscriptionResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	version, err := models.VersionFromString(req.GetVersion())
+	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.Store.DeleteSubscription(ctx, models.ID(req.GetId()), owner, version)
+	subscription, err := s.Store.DeleteSubscription(ctx, dssmodels.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
 	}
@@ -218,15 +215,15 @@ func (s *Server) DeleteSubscription(
 	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
-	return &dsspb.DeleteSubscriptionResponse{
+	return &ridpb.DeleteSubscriptionResponse{
 		Subscription: p,
 	}, nil
 }
 
 // SearchIdentificationServiceAreas queries for all ISAs in the bounds.
 func (s *Server) SearchIdentificationServiceAreas(
-	ctx context.Context, req *dsspb.SearchIdentificationServiceAreasRequest) (
-	*dsspb.SearchIdentificationServiceAreasResponse, error) {
+	ctx context.Context, req *ridpb.SearchIdentificationServiceAreasRequest) (
+	*ridpb.SearchIdentificationServiceAreasResponse, error) {
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
@@ -266,7 +263,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 		return nil, err
 	}
 
-	areas := make([]*dsspb.IdentificationServiceArea, len(isas))
+	areas := make([]*ridpb.IdentificationServiceArea, len(isas))
 	for i := range isas {
 		a, err := isas[i].ToProto()
 		if err != nil {
@@ -275,15 +272,15 @@ func (s *Server) SearchIdentificationServiceAreas(
 		areas[i] = a
 	}
 
-	return &dsspb.SearchIdentificationServiceAreasResponse{
+	return &ridpb.SearchIdentificationServiceAreasResponse{
 		ServiceAreas: areas,
 	}, nil
 }
 
 // SearchSubscriptions queries for existing subscriptions in the given bounds.
 func (s *Server) SearchSubscriptions(
-	ctx context.Context, req *dsspb.SearchSubscriptionsRequest) (
-	*dsspb.SearchSubscriptionsResponse, error) {
+	ctx context.Context, req *ridpb.SearchSubscriptionsRequest) (
+	*ridpb.SearchSubscriptionsResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -306,7 +303,7 @@ func (s *Server) SearchSubscriptions(
 	if err != nil {
 		return nil, err
 	}
-	sp := make([]*dsspb.Subscription, len(subscriptions))
+	sp := make([]*ridpb.Subscription, len(subscriptions))
 	for i := range subscriptions {
 		sp[i], err = subscriptions[i].ToProto()
 		if err != nil {
@@ -314,19 +311,19 @@ func (s *Server) SearchSubscriptions(
 		}
 	}
 
-	return &dsspb.SearchSubscriptionsResponse{
+	return &ridpb.SearchSubscriptionsResponse{
 		Subscriptions: sp,
 	}, nil
 }
 
 // GetSubscription gets a single subscription based on ID.
 func (s *Server) GetSubscription(
-	ctx context.Context, req *dsspb.GetSubscriptionRequest) (
-	*dsspb.GetSubscriptionResponse, error) {
+	ctx context.Context, req *ridpb.GetSubscriptionRequest) (
+	*ridpb.GetSubscriptionResponse, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.Store.GetSubscription(ctx, models.ID(req.GetId()))
+	subscription, err := s.Store.GetSubscription(ctx, dssmodels.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
 	}
@@ -337,14 +334,14 @@ func (s *Server) GetSubscription(
 	if err != nil {
 		return nil, err
 	}
-	return &dsspb.GetSubscriptionResponse{
+	return &ridpb.GetSubscriptionResponse{
 		Subscription: p,
 	}, nil
 }
 
 func (s *Server) createOrUpdateSubscription(
-	ctx context.Context, id string, version *models.Version, callbacks *dsspb.SubscriptionCallbacks, extents *dsspb.Volume4D) (
-	*dsspb.PutSubscriptionResponse, error) {
+	ctx context.Context, id string, version *dssmodels.Version, callbacks *ridpb.SubscriptionCallbacks, extents *ridpb.Volume4D) (
+	*ridpb.PutSubscriptionResponse, error) {
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -357,8 +354,8 @@ func (s *Server) createOrUpdateSubscription(
 		return nil, dsserr.BadRequest("missing required extents")
 	}
 
-	sub := &models.Subscription{
-		ID:      models.ID(id),
+	sub := &ridmodels.Subscription{
+		ID:      dssmodels.ID(id),
 		Owner:   owner,
 		URL:     callbacks.IdentificationServiceAreaUrl,
 		Version: version,
@@ -385,7 +382,7 @@ func (s *Server) createOrUpdateSubscription(
 	}
 
 	// Convert the ISAs to protos.
-	isaProtos := make([]*dsspb.IdentificationServiceArea, len(isas))
+	isaProtos := make([]*ridpb.IdentificationServiceArea, len(isas))
 	for i, isa := range isas {
 		isaProtos[i], err = isa.ToProto()
 		if err != nil {
@@ -393,7 +390,7 @@ func (s *Server) createOrUpdateSubscription(
 		}
 	}
 
-	return &dsspb.PutSubscriptionResponse{
+	return &ridpb.PutSubscriptionResponse{
 		Subscription: p,
 		ServiceAreas: isaProtos,
 	}, nil
@@ -401,8 +398,8 @@ func (s *Server) createOrUpdateSubscription(
 
 // CreateSubscription creates a single subscription.
 func (s *Server) CreateSubscription(
-	ctx context.Context, req *dsspb.CreateSubscriptionRequest) (
-	*dsspb.PutSubscriptionResponse, error) {
+	ctx context.Context, req *ridpb.CreateSubscriptionRequest) (
+	*ridpb.PutSubscriptionResponse, error) {
 
 	params := req.GetParams()
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -412,12 +409,12 @@ func (s *Server) CreateSubscription(
 
 // UpdateSubscription updates a single subscription.
 func (s *Server) UpdateSubscription(
-	ctx context.Context, req *dsspb.UpdateSubscriptionRequest) (
-	*dsspb.PutSubscriptionResponse, error) {
+	ctx context.Context, req *ridpb.UpdateSubscriptionRequest) (
+	*ridpb.PutSubscriptionResponse, error) {
 
 	params := req.GetParams()
 
-	version, err := models.VersionFromString(req.GetVersion())
+	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}

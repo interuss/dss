@@ -50,6 +50,12 @@ function on_sigint() {
 trap on_exit   EXIT
 trap on_sigint SIGINT
 
+
+echo " -------------- BOOTSTRAP ----------------- "
+echo "Building local container for testing (see grpc-backend-build.log for details)"
+docker build --rm . -t local-interuss-dss-image > grpc-backend-build.log
+
+echo " ---------------- CRDB -------------------- "
 echo "cleaning up any crdb pre-existing containers"
 docker rm -f dss-crdb-for-debugging &> /dev/null || echo "No CRDB to clean up"
 
@@ -61,10 +67,6 @@ docker run -d --rm --name dss-crdb-for-debugging \
 	--insecure > /dev/null
 
 sleep 5
-echo " -------------- BOOTSTRAP ----------------- "
-echo "Building local container for testing (see grpc-backend-build.log for details)"
-docker build --rm . -t local-interuss-dss-image > grpc-backend-build.log
-
 echo " ------------ GRPC BACKEND ---------------- "
 echo "Cleaning up any pre-existing grpc-backend container"
 docker rm -f grpc-backend-for-testing &> /dev/null || echo "No grpc backend to clean up"

@@ -1,45 +1,9 @@
 syntax = "proto3";
 
-package utmpb;
+package scdpb;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
-
-enum OperationState {
-  ACCEPTED = 0;
-  ACTIVATED = 1;
-  NON_CONFORMING = 2;
-  CONTINGENT = 3;
-  ENDED = 4;
-}
-
-enum PositionAccuracyHorizontal {
-  HA_UNKNOWN = 0;
-  H_A10_NM_PLUS = 1;
-  H_A10_NM = 2;
-  H_A4_NM = 3;
-  H_A2_NM = 4;
-  H_A1_NM = 5;
-  H_A05_NM = 6;
-  H_A03_NM = 7;
-  H_A01_NM = 8;
-  H_A005_NM = 9;
-  H_A30M = 10;
-  H_A10M = 11;
-  H_A3M = 12;
-  H_A1M = 13;
-}
-
-enum PositionAccuracyVertical {
-  VA_UNKNOWN = 0;
-  V_A150M_PLUS = 1;
-  V_A150M = 2;
-  V_A45M = 3;
-  V_A25M = 4;
-  V_A10M = 5;
-  V_A3M = 6;
-  V_A1M = 7;
-}
 
 // Data provided when an airspace conflict was encountered.
 message AirspaceConflictResponse {
@@ -51,24 +15,16 @@ message AirspaceConflictResponse {
 }
 
 message Altitude {
-  enum AltitudeReference {
-    ALTITUDE_REFERENCE_W84 = 0;
-  }
-
-  enum AltitudeUnits {
-    ALTITUDE_UNITS_M = 0;
-  }
-
   // A code indicating the reference for a vertical distance. See AIXM 5.1
   // and FIXM 4.2.0. Currently, UTM only allows WGS84 with no immediate
   // plans to allow other options. FIXM and AIXM allow for 'SFC' which is
   // equivalent to AGL.
-  AltitudeReference reference = 1;
+  string reference = 1;
 
   // The reference quantities used to express the value of altitude. See
   // FIXM 4.2. Currently, UTM only allows meters with no immediate plans
   // to allow other options.
-  AltitudeUnits units = 2;
+  string units = 2;
 
   // The numeric value of the altitude. Note that min and max values are
   // added as a sanity check. As use cases evolve and more options are
@@ -101,26 +57,18 @@ message ChangeOperationReferenceResponse {
 // Point/Radius pair. We extend the Properties object to include a 'radius' value (see
 // CircleProperties for details).
 message Circle {
-  enum CircleType {
-    CIRCLE_TYPE_FEATURE = 0;
-  }
-
   message GeometryMessage {
-    enum GeometryMessageType {
-      GEOMETRY_MESSAGE_TYPE_POINT = 0;
-    }
-
     Point coordinates = 1;
 
     // The type of Geometry. Must be Point.
-    GeometryMessageType type = 2;
+    string type = 2;
   }
 
   GeometryMessage geometry = 1;
   CircleProperties properties = 2;
 
   // The type of Geometry. In this case, must be 'Feature' per GeoJSON spec.
-  CircleType type = 3;
+  string type = 3;
 }
 
 message CircleProperties {
@@ -299,7 +247,7 @@ message Operation {
 
 // Details of a UTM Operation. Note that this data is not stored in the DSS; only with the clients.
 message OperationDetails {
-  OperationState state = 1;
+  string state = 1;
 
   // If true, this Operation is ensuring deconfliction visually and volumes of other Operations may overlap the volumes of this Operation.
   bool vlos = 2;
@@ -345,22 +293,14 @@ message OperationReference {
 
 // GeoJSon Point, limited to 2D.
 message Point {
-  enum PointType {
-    POINT_TYPE_POINT = 0;
-  }
-
   double coordinates = 1;
 
   // The type of Geometry. In this case, must be 'Point' per GeoJSON spec.
-  PointType type = 2;
+  string type = 2;
 }
 
 // GeoJSon Polygon. Positions all 2D.
 message Polygon {
-  enum PolygonType {
-    POLYGON_TYPE_POLYGON = 0;
-  }
-
   // The number of polygons allowed.  Currently 1, implying no interior rings.  If this number is changes, the maxItems should be considered. From RFC7946: o  For type "Polygon", the "coordinates" member MUST be an array of linear ring coordinate arrays. o  For Polygons with more than one of these rings, the first MUST be the exterior ring, and any others MUST be interior rings.  The exterior ring bounds the surface, and the interior rings (if present) bound holes within the surface. Again, note we only allow a single set of coordinates, implying no interior rings.
   repeated Point coordinates = 1;
 
@@ -368,15 +308,15 @@ message Polygon {
   // spec.  Note that the "coordinates" member is validated to be be an
   // array of size one. This implies there are no interior rings allowed
   // currently.
-  PolygonType type = 2;
+  string type = 2;
 }
 
 // Location of the vehicle (UAS) as reported for UTM.
 // Note: 'accuracy' values are required when extrapolated field is true
 // and always in the entry for the current state.
 message Position {
-  PositionAccuracyHorizontal accuracy_h = 1;
-  PositionAccuracyVertical accuracy_v = 2;
+  string accuracy_h = 1;
+  string accuracy_v = 2;
   Altitude altitude = 3;
 
   // True if this position was generated primarily by computation
@@ -464,7 +404,7 @@ message PutOperationReferenceParameters {
   // specify the version of this Operation in the DSS that it is attempting to modify.  If a new
   // Operation is being created, this version should be set to 0.
   int32 old_version = 4;
-  OperationState state = 5;
+  string state = 5;
 
   // The ID of an existing Subscription that the USS will use to keep the operator informed about
   // updates to relevant airspace information.  If this field is not provided, then the
@@ -532,12 +472,8 @@ message QuerySubscriptionsRequest {
 }
 
 message Radius {
-  enum RadiusUnits {
-    RADIUS_UNITS_M = 0;
-  }
-
   // FIXM-compatible units.  Only meters ("M") are acceptable for UTM.
-  RadiusUnits units = 1;
+  string units = 1;
 
   // Distance from the centerpoint of a circular area, along the WGS84 ellipsoid.
   float value = 2;
@@ -631,11 +567,7 @@ message SubscriptionState {
 }
 
 message Time {
-  enum TimeFormat {
-    TIME_FORMAT_RF_C3339 = 0;
-  }
-
-  TimeFormat format = 1;
+  string format = 1;
 
   // RFC3339-formatted time/date string.  The time zone must be 'Z'.
   google.protobuf.Timestamp value = 2;
@@ -650,17 +582,13 @@ message VehicleTelemetry {
 }
 
 message Velocity {
-  enum VelocityUnitsSpeed {
-    VELOCITY_UNITS_SPEED_METERS_SECOND = 0;
-  }
-
   // Ground speed in meters/second.
   float speed = 1;
 
   // Direction of flight expressed as a "True North-based" ground track angle.
   // This value is provided in degrees East of North with a minimum resolution of 1 degree.
   float track = 2;
-  VelocityUnitsSpeed units_speed = 3;
+  string units_speed = 3;
 }
 
 // A three-dimensional geographic volume consisting of a vertically-extruded shape.  Exactly one of
