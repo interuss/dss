@@ -92,53 +92,53 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query strin
 	return payload, nil
 }
 
-func (c *Store) fetchSubscriptionsForNotification(
-	ctx context.Context, q queryable, cells []int64) ([]*scdmodels.Subscription, error) {
-	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
-	// UPDATE FROM query.
-
-	// First: get unique subscription IDs.
-	var query = `
-			SELECT DISTINCT
-				subscription_id
-			FROM
-				scd_cells_subscriptions
-			WHERE
-				cell_id = ANY($1)`
-	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var subscriptionIDs []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		subscriptionIDs = append(subscriptionIDs, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	// Next: update the notification_index of each one and return the rest of the
-	// data.
-	var updateQuery = fmt.Sprintf(`
-			UPDATE
-				scd_subscriptions
-			SET
-				notification_index = notification_index + 1
-			WHERE
-				id = ANY($1)
-			AND
-				ends_at >= $2
-			RETURNING
-				%s`, subscriptionFieldsWithoutPrefix)
-	return c.fetchSubscriptions(
-		ctx, q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
-}
+// func (c *Store) fetchSubscriptionsForNotification(
+// 	ctx context.Context, q queryable, cells []int64) ([]*scdmodels.Subscription, error) {
+// 	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
+// 	// UPDATE FROM query.
+//
+// 	// First: get unique subscription IDs.
+// 	var query = `
+// 			SELECT DISTINCT
+// 				subscription_id
+// 			FROM
+// 				scd_cells_subscriptions
+// 			WHERE
+// 				cell_id = ANY($1)`
+// 	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+//
+// 	var subscriptionIDs []string
+// 	for rows.Next() {
+// 		var id string
+// 		if err := rows.Scan(&id); err != nil {
+// 			return nil, err
+// 		}
+// 		subscriptionIDs = append(subscriptionIDs, id)
+// 	}
+// 	if err := rows.Err(); err != nil {
+// 		return nil, err
+// 	}
+//
+// 	// Next: update the notification_index of each one and return the rest of the
+// 	// data.
+// 	var updateQuery = fmt.Sprintf(`
+// 			UPDATE
+// 				scd_subscriptions
+// 			SET
+// 				notification_index = notification_index + 1
+// 			WHERE
+// 				id = ANY($1)
+// 			AND
+// 				ends_at >= $2
+// 			RETURNING
+// 				%s`, subscriptionFieldsWithoutPrefix)
+// 	return c.fetchSubscriptions(
+// 		ctx, q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
+// }
 
 func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string, args ...interface{}) (*scdmodels.Subscription, error) {
 	subs, err := c.fetchSubscriptions(ctx, q, query, args...)
@@ -400,7 +400,7 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 			FROM
 				scd_subscriptions
 			LEFT JOIN
-				(SELECT DISTINCT 
+				(SELECT DISTINCT
 					scd_cells_subscriptions.subscription_id
 				FROM
 					scd_cells_subscriptions
