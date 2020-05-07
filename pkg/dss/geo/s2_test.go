@@ -3,15 +3,15 @@ package geo
 import (
 	"testing"
 
-	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/dss/geo/testdata"
+	"github.com/interuss/dss/pkg/dss/models"
 
 	"github.com/golang/geo/s2"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPolygonToCellIDs(t *testing.T) {
-	got, err := PolygonToCellIDs(&ridpb.GeoPolygon{Vertices: []*ridpb.LatLngPoint{
+	got, err := PolygonToCellIDs(&models.GeoPolygon{Vertices: []*models.LatLngPoint{
 		// Stanford
 		{
 			Lat: 37.427636,
