@@ -9,7 +9,8 @@ import (
 	"github.com/interuss/dss/pkg/dss/auth"
 
 	//"github.com/interuss/dss/pkg/dss/geo"
-	"github.com/interuss/dss/pkg/dss/scd/models"
+
+	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 
 	"github.com/golang/geo/s2"
@@ -20,6 +21,26 @@ import (
 type Server struct {
 	Store   Store
 	Timeout time.Duration
+}
+
+// AuthScopes returns a map of endpoint to required Oauth scope.
+func (a *Server) AuthScopes() map[auth.Operation][]auth.Scope {
+	// TODO: replace with correct scopes
+	//"DeleteConstraintReference": {readISAScope}, //{constraintManagementScope},
+	//"DeleteOperationReference":  {readISAScope}, //{strategicCoordinationScope},
+	// TODO: De-duplicate operation names
+	//"DeleteSubscription":               {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+	//"GetConstraintReference": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+	//"GetOperationReference":  {readISAScope}, //{strategicCoordinationScope},
+	//"GetSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+	//"MakeDssReport":          {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+	//"PutConstraintReference": {readISAScope}, //{constraintManagementScope},
+	//"PutOperationReference":  {readISAScope}, //{strategicCoordinationScope},
+	//"PutSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+	//"QueryConstraintReferences": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+	//"QuerySubscriptions":        {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
+	//"SearchOperationReferences": {readISAScope}, //{strategicCoordinationScope},
+	return nil
 }
 
 // DeleteConstraintReference deletes a single constraint ref for a given ID at
@@ -42,7 +63,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	if idString == "" {
 		return nil, dsserr.BadRequest("missing Subscription ID")
 	}
-	id := models.ID(idString)
+	id := scdmodels.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -51,7 +72,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	}
 
 	// Delete Subscription in Store
-	sub, err := a.Store.DeleteSubscription(ctx, id, owner)
+	sub, err := a.Store.DeleteSubscription(ctx, id, owner, scdmodels.Version(0))
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +109,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	if idString == "" {
 		return nil, dsserr.BadRequest("missing Subscription ID")
 	}
-	id := models.ID(idString)
+	id := scdmodels.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -139,7 +160,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	if idString == "" {
 		return nil, dsserr.BadRequest("missing Subscription ID")
 	}
-	id := models.ID(idString)
+	id := scdmodels.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -149,46 +170,28 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 
 	// If this is an update, get the old version
 	var (
-		params               = req.GetParams()
-		notificationIndex    = 0
-		implicitSubscription = false
-		oldVersion           = 0
+		params = req.GetParams()
 	)
-	if params.OldVersion > 0 {
-		//TODO: This needs to happen in a single transaction
-		oldSub, err := a.Store.GetSubscription(ctx, id, owner)
-		if err != nil {
-			return nil, err //TODO: Change to 409 if Subscription didn't already exist
-		}
-		if oldSub.Version != int(params.OldVersion) {
-			return nil, dsserr.VersionMismatch("old_version does not match current version")
-		}
-		notificationIndex = oldSub.NotificationIndex
-		implicitSubscription = oldSub.ImplicitSubscription
-		oldVersion = oldSub.Version
-	}
 
 	// Construct Subscription model
-	sub := &models.Subscription{
-		ID:                id,
-		Version:           oldVersion + 1,
-		NotificationIndex: notificationIndex,
-		Owner:             owner,
+	sub := &scdmodels.Subscription{
+		ID:      id,
+		Owner:   owner,
+		Version: scdmodels.Version(params.OldVersion),
 
 		BaseURL:              params.UssBaseUrl,
 		NotifyForOperations:  params.NotifyForOperations,
 		NotifyForConstraints: params.NotifyForConstraints,
-		ImplicitSubscription: implicitSubscription,
 	}
 	//TODO: Set StartTime, EndTime, AltitudeHi, AltitudeLo, DependentOperations
 
 	// Store Subscription model
-	sub, err := a.Store.InsertSubscription(ctx, sub, owner) //TODO: This should be UpsertSubscription
+	sub, err := a.Store.UpsertSubscription(ctx, sub) //TODO: This should be UpsertSubscription
 	if err != nil {
 		return nil, err
 	}
 	if sub == nil {
-		return nil, dsserr.Internal(fmt.Sprintf("InsertSubscription returned no Subscription for ID: %s", id))
+		return nil, dsserr.Internal(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
 	}
 
 	//TODO: Search relevant Operations and Constraints

@@ -1,7 +1,7 @@
 package testdata
 
 import (
-	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/ridpb"
 
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 )
@@ -11,8 +11,8 @@ var (
 	LoopWithOddNumberOfCoordinates = `37.427636,-122.170502,37.408799`
 	LoopWithOnlyTwoPoints          = `37.427636,-122.170502,37.408799,-122.064069`
 
-	LoopPolygon = &dsspb.GeoPolygon{
-		Vertices: []*dsspb.LatLngPoint{
+	LoopPolygon = &ridpb.GeoPolygon{
+		Vertices: []*ridpb.LatLngPoint{
 			{
 				Lat: 37.427636,
 				Lng: -122.170502,
@@ -28,13 +28,13 @@ var (
 		},
 	}
 
-	LoopVolume3D = &dsspb.Volume3D{
+	LoopVolume3D = &ridpb.Volume3D{
 		AltitudeHi: 456,
 		AltitudeLo: 123,
 		Footprint:  LoopPolygon,
 	}
 
-	LoopVolume4D = &dsspb.Volume4D{
+	LoopVolume4D = &ridpb.Volume4D{
 		SpatialVolume: LoopVolume3D,
 		TimeStart: &tspb.Timestamp{
 			Seconds: 10000,

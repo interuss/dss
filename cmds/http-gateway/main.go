@@ -12,7 +12,7 @@ import (
 	"cloud.google.com/go/profiler"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
-	"github.com/interuss/dss/pkg/api/v1/dsspb"
+	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/errors"
@@ -63,7 +63,7 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 		grpc.WithTimeout(10 * time.Second),
 	}
 
-	if err := dsspb.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
+	if err := ridpb.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
 		return err
 	}
 
