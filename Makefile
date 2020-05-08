@@ -7,19 +7,6 @@ else
   detected_OS := $(shell uname -s)
 endif
 
-ifeq ($(detected_OS),Windows)
-	kubecfg_download := "unsupported"
-endif
-ifeq ($(detected_OS),Darwin)  # Mac OS X
-	kubecfg_download := "https://github.com/bitnami/kubecfg/releases/download/v0.13.1/kubecfg-darwin-amd64"
-endif
-ifeq ($(detected_OS),Linux)
-	kubecfg_download := "https://github.com/bitnami/kubecfg/releases/download/v0.13.1/kubecfg-linux-amd64"
-endif
-
-kubecfg_file := $(shell basename $(kubecfg_download))
-
-
 .PHONY: interuss
 interuss:
 	go install -ldflags "-X github.com/interuss/dss/pkg/dss/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/dss/build.commit=$(shell git rev-parse --short HEAD) -X github.com/interuss/dss/pkg/dss/build.host=$(shell hostname)" ./...
@@ -107,18 +94,12 @@ protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpb/rid.pb.gw.go pkg/
 install-staticcheck:
 	go get honnef.co/go/tools/cmd/staticcheck
 
-.PHONY: kubecfg
-kubecfg:
-	mkdir -p temp
-	wget $(kubecfg_download) -O ./temp/$(kubecfg_file)
-	install ./temp/$(kubecfg_file) $(GOBIN)/kubecfg
-
 .PHONY: staticcheck
 staticcheck: install-staticcheck
 	staticcheck -go 1.12 ./...
 
 .PHONY: test
-test: kubecfg
+test:
 	go test -count=1 -v ./...
 
 .PHONY: test-cockroach
