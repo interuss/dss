@@ -54,11 +54,11 @@ Individual CockroachDB nodes hosting sharded data of the DAR. More information a
     README in that directory for more information.
 *   [`cmds/`](cmds) contains entry points and docker files for the
     actual binaries (the `http-gateway` and `grpc-backend`)
+*   [`test/`](test) contains some tests; see [the README](test/README.md)
+    for more information about testing.
 
 ## Notes
 
-*   Currently this branch only supports remote ID APIs and
-    functionality.
 *   The current implementation relies on CockroachDB for data storage
     and synchronization between DSS participants.  See [implementation
     details](implementation_details.md) for more information.
