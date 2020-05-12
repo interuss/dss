@@ -19,25 +19,18 @@ var (
 	}
 
 	altitudeReferenceWGS84 altitudeReference = "W84"
-	geometryTypePoint      geometryType      = "Point"
-	geometryTypePolygon    geometryType      = "Polygon"
 	timeFormatRFC3339      timeFormat        = "RFC3339"
 	unitMeter              unit              = "M"
 )
 
 type (
 	altitudeReference string
-	geometryType      string
 	timeFormat        string
 	unit              string
 )
 
 func (ar altitudeReference) String() string {
 	return string(ar)
-}
-
-func (gt geometryType) String() string {
-	return string(gt)
 }
 
 func (tf timeFormat) String() string {
@@ -125,27 +118,24 @@ func (vol3 *Volume3D) ToCommon() (*dssmodels.Volume3D, error) {
 
 func (c *Circle) ToCommon() *dssmodels.GeoCircle {
 	return &dssmodels.GeoCircle{
-		Center: dssmodels.LatLngPoint{
-			Lat: 0., // FIXME(tvoss): Replace with c.GetGeometry().GetCoordinates().GetCoordinates()[1]
-			Lng: 0., // FIXME(tvoss): Replace with c.GetGeometry().GetCoordinates().GetCoordinates()[0]
-		},
-		RadiusMeter: unitToMeterMultiplicativeFactors[unit(c.GetProperties().GetRadius().GetUnits())] * c.GetProperties().GetRadius().GetValue(),
+		Center:      *c.GetCenter().ToCommon(),
+		RadiusMeter: unitToMeterMultiplicativeFactors[unit(c.GetRadius().GetUnits())] * c.GetRadius().GetValue(),
 	}
 }
 
 func (p *Polygon) ToCommon() *dssmodels.GeoPolygon {
 	result := &dssmodels.GeoPolygon{}
-	for _, ltlng := range p.GetCoordinates() {
+	for _, ltlng := range p.GetVertices() {
 		result.Vertices = append(result.Vertices, ltlng.ToCommon())
 	}
 
 	return result
 }
 
-func (p *Point) ToCommon() *dssmodels.LatLngPoint {
+func (p *LatLngPoint) ToCommon() *dssmodels.LatLngPoint {
 	return &dssmodels.LatLngPoint{
-		Lat: 0, // FIXME(tvoss): p.GetCoordinates()[1]
-		Lng: 0, // FIXME(tvoss): p.GetCoordinates()[0]
+		Lat: p.GetLat(),
+		Lng: p.GetLng(),
 	}
 }
 
@@ -225,15 +215,10 @@ func FromGeoCircle(circle *dssmodels.GeoCircle) *Circle {
 	}
 
 	return &Circle{
-		Geometry: &Circle_GeometryMessage{
-			Coordinates: FromLatLngPoint(&circle.Center),
-			Type:        geometryTypePoint.String(),
-		},
-		Properties: &CircleProperties{
-			Radius: &Radius{
-				Units: unitMeter.String(),
-				Value: circle.RadiusMeter,
-			},
+		Center: FromLatLngPoint(&circle.Center),
+		Radius: &Radius{
+			Units: unitMeter.String(),
+			Value: circle.RadiusMeter,
 		},
 	}
 }
@@ -242,21 +227,19 @@ func FromGeoPolygon(polygon *dssmodels.GeoPolygon) *Polygon {
 		return nil
 	}
 
-	result := &Polygon{
-		Type: geometryTypePolygon.String(),
-	}
+	result := &Polygon{}
 
 	for _, pt := range polygon.Vertices {
-		result.Coordinates = append(result.Coordinates, FromLatLngPoint(pt))
+		result.Vertices = append(result.Vertices, FromLatLngPoint(pt))
 	}
 
 	return result
 }
 
-func FromLatLngPoint(pt *dssmodels.LatLngPoint) *Point {
-	result := &Point{
-		Type:        geometryTypePoint.String(),
-		Coordinates: 0., // FIXME(tvoss): Replace with []float64{pt.Lng, pt.Lat}
+func FromLatLngPoint(pt *dssmodels.LatLngPoint) *LatLngPoint {
+	result := &LatLngPoint{
+		Lat: pt.Lat,
+		Lng: pt.Lng,
 	}
 
 	return result
