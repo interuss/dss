@@ -53,26 +53,10 @@ message ChangeOperationReferenceResponse {
   repeated SubscriberToNotify subscribers = 2;
 }
 
-// Local extension of the GeoJSON specification to add a circular area defined by a
-// Point/Radius pair. We extend the Properties object to include a 'radius' value (see
-// CircleProperties for details).
+// A circular area on the surface of the earth.
 message Circle {
-  message GeometryMessage {
-    Point coordinates = 1;
-
-    // The type of Geometry. Must be Point.
-    string type = 2;
-  }
-
-  GeometryMessage geometry = 1;
-  CircleProperties properties = 2;
-
-  // The type of Geometry. In this case, must be 'Feature' per GeoJSON spec.
-  string type = 3;
-}
-
-message CircleProperties {
-  Radius radius = 1;
+  LatLngPoint center = 1;
+  Radius radius = 2;
 }
 
 // Full specification of a UTM Constraint.
@@ -234,6 +218,12 @@ message ImplicitSubscriptionParameters {
   string uss_base_url = 2;
 }
 
+// Point on the earth's surface.
+message LatLngPoint {
+  double lat = 1;
+  double lng = 2;
+}
+
 message MakeDssReportRequest {
   // Request body.
   ErrorReport params = 1;
@@ -291,24 +281,14 @@ message OperationReference {
   int32 version = 8;
 }
 
-// GeoJSon Point, limited to 2D.
-message Point {
-  double coordinates = 1;
-
-  // The type of Geometry. In this case, must be 'Point' per GeoJSON spec.
-  string type = 2;
-}
-
-// GeoJSon Polygon. Positions all 2D.
+// An enclosed area on the earth.
+// The bounding edges of this polygon shall be the shortest paths between connected vertices.  This means, for instance, that the edge between two points both defined at a particular latitude is not generally contained at that latitude.
+// The winding order shall be interpreted as the order which produces the smaller area.
+// The path between two vertices shall be the shortest possible path between those vertices.
+// Edges may not cross.
+// Vertices may not be duplicated.  In particular, the final polygon vertex shall not be identical to the first vertex.
 message Polygon {
-  // The number of polygons allowed.  Currently 1, implying no interior rings.  If this number is changes, the maxItems should be considered. From RFC7946: o  For type "Polygon", the "coordinates" member MUST be an array of linear ring coordinate arrays. o  For Polygons with more than one of these rings, the first MUST be the exterior ring, and any others MUST be interior rings.  The exterior ring bounds the surface, and the interior rings (if present) bound holes within the surface. Again, note we only allow a single set of coordinates, implying no interior rings.
-  repeated Point coordinates = 1;
-
-  // The type of Geometry. In this case, must be 'Polygon' per GeoJSON
-  // spec.  Note that the "coordinates" member is validated to be be an
-  // array of size one. This implies there are no interior rings allowed
-  // currently.
-  string type = 2;
+  repeated LatLngPoint vertices = 1;
 }
 
 // Location of the vehicle (UAS) as reported for UTM.
@@ -703,7 +683,7 @@ service UTMAPIUSSDSSAndUSSUSSService {
   // Retrieve all Constraints references in the specified area/volume from the DSS.
   rpc QueryConstraintReferences(QueryConstraintReferencesRequest) returns (SearchConstraintReferencesResponse) {
     option (google.api.http) = {
-      post: "/dss/v1/constraints/query"
+      post: "/dss/v1/constraint_references/query"
       body: "params"
     };
   }
