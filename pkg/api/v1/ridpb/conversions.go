@@ -4,6 +4,7 @@ package ridpb
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -50,9 +51,9 @@ func (vol3 *Volume3D) ToCommon() (*models.Volume3D, error) {
 	polygonFootprint := footprint.ToCommon()
 
 	result := &models.Volume3D{
-		PolygonFootprint: polygonFootprint,
-		AltitudeLo:       proto.Float32(vol3.GetAltitudeLo()),
-		AltitudeHi:       proto.Float32(vol3.GetAltitudeHi()),
+		Footprint:  polygonFootprint,
+		AltitudeLo: proto.Float32(vol3.GetAltitudeLo()),
+		AltitudeHi: proto.Float32(vol3.GetAltitudeHi()),
 	}
 
 	return result, nil
@@ -121,8 +122,13 @@ func MakeRidVolume3D(vol3 *models.Volume3D) (*Volume3D, error) {
 		result.AltitudeHi = *vol3.AltitudeHi
 	}
 
-	if vol3.PolygonFootprint != nil {
-		result.Footprint = MakeRidGeoPolygon(vol3.PolygonFootprint)
+	switch t := vol3.Footprint.(type) {
+	case nil:
+		// Empty on purpose
+	case *models.GeoPolygon:
+		result.Footprint = MakeRidGeoPolygon(t)
+	default:
+		return nil, fmt.Errorf("unsupported geometry type: %T", vol3.Footprint)
 	}
 
 	return result, nil

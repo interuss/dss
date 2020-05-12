@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/dss/models"
 )
@@ -25,6 +26,7 @@ const (
 	maxLat                  = 90.0
 	minLng                  = -180.0
 	maxLng                  = 180.0
+	radiusEarthMeter        = 6371010.0
 )
 
 var (
@@ -69,6 +71,11 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	return 0, nil, nil
 }
 
+// DistanceMetersToAngle converts distance in [m] to an s1.Angle in radians.
+func DistanceMetersToAngle(distance float64) s1.Angle {
+	return s1.Angle(distance / radiusEarthMeter)
+}
+
 // Volume4DToCellIDs converts a 4d volume to S2 cells, ignoring the time and
 // altitude bounds.
 func Volume4DToCellIDs(v4 *models.Volume4D) (s2.CellUnion, error) {
@@ -84,10 +91,28 @@ func Volume3DToCellIDs(v3 *models.Volume3D) (s2.CellUnion, error) {
 	if v3 == nil {
 		return nil, errBadCoordSet
 	}
-	if v3.PolygonFootprint == nil {
+
+	switch t := v3.Footprint.(type) {
+	case *models.GeoPolygon:
+		return PolygonToCellIDs(t)
+	case *models.GeoCircle:
+		return CircleToCellIDs(t)
+	default:
 		return nil, errBadCoordSet
 	}
-	return PolygonToCellIDs(v3.PolygonFootprint)
+}
+
+// CircleToCellIDs converts a geocircle to S2 cells.
+func CircleToCellIDs(geocircle *models.GeoCircle) (s2.CellUnion, error) {
+	if (geocircle.Center.Lat > maxLat) || (geocircle.Center.Lat < minLat) || (geocircle.Center.Lng > maxLng) || (geocircle.Center.Lng < minLng) {
+		return nil, errBadCoordSet
+	}
+
+	return CoveringForLoop(s2.RegularLoop(
+		s2.PointFromLatLng(s2.LatLngFromDegrees(geocircle.Center.Lat, geocircle.Center.Lng)),
+		DistanceMetersToAngle(float64(geocircle.RadiusMeter)),
+		20,
+	))
 }
 
 // PolygonToCellIDs converts a geopolygon to S2 cells.
@@ -120,9 +145,14 @@ func loopAreaKm2(loop *s2.Loop) float64 {
 // Covering calculates the S2 covering of a set of S2 points. Will try the loop
 // in both clockwise and counter clockwise.
 func Covering(points []s2.Point) (s2.CellUnion, error) {
-	loop := s2.LoopFromPoints(points)
-	if loopAreaKm2(loop) <= maxAllowedAreaKm2 {
-		return RegionCoverer.Covering(loop), nil
+	cu, err := CoveringForLoop(s2.LoopFromPoints(points))
+	switch err.(type) {
+	case nil:
+		return cu, nil
+	case *ErrAreaTooLarge:
+		// Empty on purpose.
+	default:
+		return nil, err
 	}
 
 	// This probably happened because the vertices were not ordered counter-clockwise.
@@ -130,14 +160,19 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 	for i, j := 0, len(points)-1; i < j; i, j = i+1, j-1 {
 		points[i], points[j] = points[j], points[i]
 	}
-	loop = s2.LoopFromPoints(points)
-	if loopAreaKm2(loop) <= maxAllowedAreaKm2 {
-		return RegionCoverer.Covering(loop), nil
-	}
 
-	return nil, &ErrAreaTooLarge{
-		msg: fmt.Sprintf("area is too large (%fkm² > %fkm²)", loopAreaKm2(loop), maxAllowedAreaKm2),
+	return CoveringForLoop(s2.LoopFromPoints(points))
+}
+
+// CoveringForLoop calculates an s2 cell covering for loop or returns an area if
+// the area covered by loop is too large.
+func CoveringForLoop(loop *s2.Loop) (s2.CellUnion, error) {
+	if loopAreaKm2(loop) > maxAllowedAreaKm2 {
+		return nil, &ErrAreaTooLarge{
+			msg: fmt.Sprintf("area is too large (%fkm² > %fkm²)", loopAreaKm2(loop), maxAllowedAreaKm2),
+		}
 	}
+	return RegionCoverer.Covering(loop), nil
 }
 
 // AreaToCellIDs parses "area" in the format 'lat0,lon0,lat1,lon1,...'
