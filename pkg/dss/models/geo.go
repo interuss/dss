@@ -4,11 +4,6 @@ import (
 	"time"
 )
 
-const (
-	maxSegmentsForCircle = 20
-	radiusEarthMeter     = 6371010.0
-)
-
 // Contiguous block of geographic spacetime.
 type Volume4D struct {
 	// Constant spatial extent of this volume.
