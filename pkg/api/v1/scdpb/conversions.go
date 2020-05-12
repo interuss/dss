@@ -12,13 +12,41 @@ import (
 )
 
 var (
-	errEmptyTime              = errors.New("time must not be empty")
-	errPolygonNotSupportedYet = errors.New("polygon is not supported yet")
+	errEmptyTime = errors.New("time must not be empty")
 
-	unitToMeterMultiplicativeFactors = map[string]float32{
-		"M": 1,
+	unitToMeterMultiplicativeFactors = map[unit]float32{
+		unitMeter: 1,
 	}
+
+	altitudeReferenceWGS84 altitudeReference = "W84"
+	geometryTypePoint      geometryType      = "Point"
+	geometryTypePolygon    geometryType      = "Polygon"
+	timeFormatRFC3339      timeFormat        = "RFC3339"
+	unitMeter              unit              = "M"
 )
+
+type (
+	altitudeReference string
+	geometryType      string
+	timeFormat        string
+	unit              string
+)
+
+func (ar altitudeReference) String() string {
+	return string(ar)
+}
+
+func (gt geometryType) String() string {
+	return string(gt)
+}
+
+func (tf timeFormat) String() string {
+	return string(tf)
+}
+
+func (u unit) String() string {
+	return string(u)
+}
 
 func float32p(v float32) *float32 {
 	return &v
@@ -88,15 +116,11 @@ func (vol3 *Volume3D) ToCommon() (*dssmodels.Volume3D, error) {
 	if footprint == nil {
 		return nil, errors.New("spatial_volume missing required footprint")
 	}
-	polygonFootprint := footprint.ToCommon()
-
-	result := &dssmodels.Volume3D{
-		Footprint:  polygonFootprint,
+	return &dssmodels.Volume3D{
+		Footprint:  footprint.ToCommon(),
 		AltitudeLo: float32p(float32(vol3.GetAltitudeLower().GetValue())),
 		AltitudeHi: float32p(float32(vol3.GetAltitudeUpper().GetValue())),
-	}
-
-	return result, nil
+	}, nil
 }
 
 func (c *Circle) ToCommon() *dssmodels.GeoCircle {
@@ -105,7 +129,7 @@ func (c *Circle) ToCommon() *dssmodels.GeoCircle {
 			Lat: 0., // FIXME(tvoss): Replace with c.GetGeometry().GetCoordinates().GetCoordinates()[1]
 			Lng: 0., // FIXME(tvoss): Replace with c.GetGeometry().GetCoordinates().GetCoordinates()[0]
 		},
-		RadiusMeter: unitToMeterMultiplicativeFactors[c.GetProperties().GetRadius().GetUnits()] * c.GetProperties().GetRadius().GetValue(),
+		RadiusMeter: unitToMeterMultiplicativeFactors[unit(c.GetProperties().GetRadius().GetUnits())] * c.GetProperties().GetRadius().GetValue(),
 	}
 }
 
@@ -141,7 +165,7 @@ func FromVolume4D(vol4 *dssmodels.Volume4D) (*Volume4D, error) {
 			return nil, err
 		}
 		result.TimeStart = &Time{
-			Format: "RFC3339",
+			Format: timeFormatRFC3339.String(),
 			Value:  ts,
 		}
 	}
@@ -152,7 +176,7 @@ func FromVolume4D(vol4 *dssmodels.Volume4D) (*Volume4D, error) {
 			return nil, err
 		}
 		result.TimeEnd = &Time{
-			Format: "RFC3339",
+			Format: timeFormatRFC3339.String(),
 			Value:  ts,
 		}
 	}
@@ -169,16 +193,16 @@ func FromVolume3D(vol3 *dssmodels.Volume3D) (*Volume3D, error) {
 
 	if vol3.AltitudeLo != nil {
 		result.AltitudeLower = &Altitude{
-			Reference: "W84",
-			Units:     "M",
+			Reference: altitudeReferenceWGS84.String(),
+			Units:     unitMeter.String(),
 			Value:     float64(*vol3.AltitudeLo),
 		}
 	}
 
 	if vol3.AltitudeHi != nil {
 		result.AltitudeUpper = &Altitude{
-			Reference: "W84",
-			Units:     "M",
+			Reference: altitudeReferenceWGS84.String(),
+			Units:     unitMeter.String(),
 			Value:     float64(*vol3.AltitudeHi),
 		}
 	}
@@ -203,11 +227,11 @@ func FromGeoCircle(circle *dssmodels.GeoCircle) *Circle {
 	return &Circle{
 		Geometry: &Circle_GeometryMessage{
 			Coordinates: FromLatLngPoint(&circle.Center),
-			Type:        "Point",
+			Type:        geometryTypePoint.String(),
 		},
 		Properties: &CircleProperties{
 			Radius: &Radius{
-				Units: "M",
+				Units: unitMeter.String(),
 				Value: circle.RadiusMeter,
 			},
 		},
@@ -219,7 +243,7 @@ func FromGeoPolygon(polygon *dssmodels.GeoPolygon) *Polygon {
 	}
 
 	result := &Polygon{
-		Type: "Polygon",
+		Type: geometryTypePolygon.String(),
 	}
 
 	for _, pt := range polygon.Vertices {
@@ -231,7 +255,7 @@ func FromGeoPolygon(polygon *dssmodels.GeoPolygon) *Polygon {
 
 func FromLatLngPoint(pt *dssmodels.LatLngPoint) *Point {
 	result := &Point{
-		Type:        "Point",
+		Type:        geometryTypePoint.String(),
 		Coordinates: 0., // FIXME(tvoss): Replace with []float64{pt.Lng, pt.Lat}
 	}
 

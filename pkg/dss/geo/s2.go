@@ -102,6 +102,18 @@ func Volume3DToCellIDs(v3 *models.Volume3D) (s2.CellUnion, error) {
 	}
 }
 
+// GeometryToCellIDs returns an s2 cell covering for geometry.
+func GeometryToCellIDs(geometry models.Geometry) (s2.CellUnion, error) {
+	switch t := geometry.(type) {
+	case *models.GeoCircle:
+		return CircleToCellIDs(t)
+	case *models.GeoPolygon:
+		return PolygonToCellIDs(t)
+	default:
+		return nil, fmt.Errorf("unsupported geometry type: %T", t)
+	}
+}
+
 // CircleToCellIDs converts a geocircle to S2 cells.
 func CircleToCellIDs(geocircle *models.GeoCircle) (s2.CellUnion, error) {
 	if (geocircle.Center.Lat > maxLat) || (geocircle.Center.Lat < minLat) || (geocircle.Center.Lng > maxLng) || (geocircle.Center.Lng < minLng) {
