@@ -2,14 +2,31 @@ package scd
 
 import (
 	"context"
+	"time"
 
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 )
 
-// Store abstracts interactions with a backing data store.
-type Store interface {
+// OperationStore abstracts operation-specific interactions with the backing data store.
+type OperationStore interface {
+	// GetOperation returns the operation identified by "id".
+	GetOperation(ctx context.Context, id dssmodels.ID) (*scdmodels.Operation, error)
+
+	// Delete deletes the operation identified by "id" and owned by "owner".
+	// Returns the deleted Operation and all Subscriptions affected by the delete.
+	DeleteOperations(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*scdmodels.Operation, []*scdmodels.Subscription, error)
+
+	// InsertOperation inserts or updates an operation.
+	InsertOperation(ctx context.Context, isa *scdmodels.Operation) (*scdmodels.Operation, []*scdmodels.Subscription, error)
+
+	// SearchOperations returns all operations ownded by "owner" in "cells".
+	SearchOperations(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*scdmodels.Operation, error)
+}
+
+// SubscriptionStore abstracts subscription-specific interactions with the backing data store.
+type SubscriptionStore interface {
 	// SearchSubscriptions returns all Subscriptions owned by "owner" in "cells".
 	SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error)
 
@@ -26,6 +43,16 @@ type Store interface {
 	// not exist, or is owned by someone other than the specified owner.
 	DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error)
 }
+
+// Store abstracts interactions with a backing data store.
+type Store interface {
+	OperationStore
+	SubscriptionStore
+}
+
+var (
+	_ Store = &DummyStore{}
+)
 
 // DummyStore implements Store interface entirely with error-free no-ops
 type DummyStore struct {
