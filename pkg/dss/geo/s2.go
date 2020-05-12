@@ -162,7 +162,7 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 	case nil:
 		return cu, nil
 	case *ErrAreaTooLarge:
-		// Empty on purpose.
+		// Area may be too large because vertices were wound in the opposite direction; check below
 	default:
 		return nil, err
 	}
