@@ -121,7 +121,6 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 	CREATE TABLE IF NOT EXISTS scd_operations (
 		id UUID PRIMARY KEY,
 		owner STRING NOT NULL,
-		state STRING NOT NULL CHECK (state IN ('Accepted', 'Activated', 'NonConforming', 'Contingent', 'Ended')),
 		version INT4 NOT NULL DEFAULT 0,
 		url STRING NOT NULL,
 		altitude_lower REAL,
