@@ -226,6 +226,10 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		return nil, dsserr.Internal("failed to convert to internal geometry model")
 	}
 
+	if caoi.SpatialVolume.Footprint == nil {
+		return nil, dsserr.BadRequest("missing footprint")
+	}
+
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {

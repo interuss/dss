@@ -18,6 +18,7 @@ const (
 var (
 	errNotEnoughPointsInPolygon = errors.New("not enough points in polygon")
 	errBadCoordSet              = errors.New("coordinates did not create a well formed area")
+	errRadiusMustBeLargerThan0  = errors.New("radius must be larger than 0")
 )
 
 // Contiguous block of geographic spacetime.
@@ -55,6 +56,10 @@ type GeoCircle struct {
 func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
 	if (gc.Center.Lat > maxLat) || (gc.Center.Lat < minLat) || (gc.Center.Lng > maxLng) || (gc.Center.Lng < minLng) {
 		return nil, errBadCoordSet
+	}
+
+	if !(gc.RadiusMeter > 0) {
+		return nil, errRadiusMustBeLargerThan0
 	}
 
 	return geo.CoveringForLoop(s2.RegularLoop(
