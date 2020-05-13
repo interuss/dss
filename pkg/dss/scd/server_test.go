@@ -65,6 +65,22 @@ func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion
 	return args.Get(0).([]*scdmodels.Subscription), args.Error(1)
 }
 
+func (s *mockStore) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
+	return nil, dsserr.Internal("not yet implemented")
+}
+
+func (s *mockStore) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+	return nil, nil, dsserr.Internal("not yet implemented")
+}
+
+func (s *mockStore) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN, notifySubscriptionForConstraints bool, subscriptionBaseURL string) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+	return nil, nil, dsserr.Internal("not yet implemented")
+}
+
+func (s *mockStore) SearchOperations(ctx context.Context, cells s2.CellUnion, altitudeLower *float64, altitudeUpper *float64, earliest *time.Time, latest *time.Time) ([]*scdmodels.Operation, error) {
+	return nil, dsserr.Internal("not yet implemented")
+}
+
 var validSubscription = &scdmodels.Subscription{
 	ID:                   "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 	Owner:                "foo",
