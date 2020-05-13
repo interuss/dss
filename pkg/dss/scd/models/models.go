@@ -4,6 +4,9 @@ type (
 	// ID models the id of an entity.
 	ID string
 
+	// OVN models an opaque version number.
+	OVN string
+
 	// Version models the version of an entity.
 	//
 	// Primarily used as a fencing token in data mutations.
@@ -13,6 +16,15 @@ type (
 // String returns the string representation of id.
 func (id ID) String() string {
 	return string(id)
+}
+
+// Empty returns true if ovn indicates an empty opaque version number.
+func (ovn OVN) Empty() bool {
+	return len(ovn) == 0
+}
+
+func (ovn OVN) String() string {
+	return string(ovn)
 }
 
 // Empty returns true if the value of v indicates an empty version.

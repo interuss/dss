@@ -3,12 +3,14 @@ package scd
 import (
 	"context"
 	"errors"
+
 	testdata "github.com/interuss/dss/pkg/dss/geo/testdata/scd"
+
+	"testing"
+	"time"
 
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"testing"
-	"time"
 
 	"github.com/interuss/dss/pkg/dss/auth"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
@@ -63,6 +65,22 @@ func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion
 	defer cancel()
 	args := ms.Called(ctx, cells, owner)
 	return args.Get(0).([]*scdmodels.Subscription), args.Error(1)
+}
+
+func (ms *mockStore) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
+	return nil, dsserr.Internal("not yet implemented")
+}
+
+func (ms *mockStore) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+	return nil, nil, dsserr.Internal("not yet implemented")
+}
+
+func (ms *mockStore) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+	return nil, nil, dsserr.Internal("not yet implemented")
+}
+
+func (ms *mockStore) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
+	return nil, dsserr.Internal("not yet implemented")
 }
 
 var validSubscription = &scdmodels.Subscription{
