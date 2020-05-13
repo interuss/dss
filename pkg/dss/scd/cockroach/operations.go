@@ -110,7 +110,7 @@ func (s *Store) fetchOperationByID(ctx context.Context, q queryable, id scdmodel
 // pushOperation creates/updates the Operation identified by "id" and owned by
 // "owner", affecting "cells" in the time interval ["starts", "ends"].
 //
-// Returns the created/updated IdentificationServiceArea and all Subscriptions
+// Returns the created/updated Operation and all Subscriptions
 // affected by the operation.
 func (s *Store) pushOperation(ctx context.Context, q queryable, operation *scdmodels.Operation) (
 	*scdmodels.Operation, []*scdmodels.Subscription, error) {
@@ -249,7 +249,7 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 	case err != nil:
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	case old != nil && old.Owner != owner:
-		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("Operation is owned by %s", old.Owner)), tx.Rollback())
 	}
 	if err := s.populateOperationCells(ctx, tx, old); err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
@@ -291,13 +291,13 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 
 	switch {
 	case old == nil && !operation.Version.Empty():
-		// The user wants to update an existing ISA, but one wasn't found.
+		// The user wants to update an existing Operation, but one wasn't found.
 		return nil, nil, multierr.Combine(dsserr.NotFound(operation.ID.String()), tx.Rollback())
 	case old != nil && operation.Version.Empty():
-		// The user wants to create a new ISA but it already exists.
+		// The user wants to create a new Operation but it already exists.
 		return nil, nil, multierr.Combine(dsserr.AlreadyExists(operation.ID.String()), tx.Rollback())
 	case old != nil && !operation.Version.Matches(old.Version):
-		// The user wants to update an ISA but the version doesn't match.
+		// The user wants to update an Operation but the version doesn't match.
 		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	case old != nil && old.Owner != operation.Owner:
 		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("Operation is owned by %s", old.Owner)), tx.Rollback())
