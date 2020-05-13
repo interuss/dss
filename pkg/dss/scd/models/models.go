@@ -1,11 +1,15 @@
 package models
 
+import "time"
+
 type (
 	// ID models the id of an entity.
 	ID string
 
 	// OVN models an opaque version number.
-	OVN string
+	OVN struct {
+		time.Time
+	}
 
 	// Version models the version of an entity.
 	//
@@ -20,11 +24,11 @@ func (id ID) String() string {
 
 // Empty returns true if ovn indicates an empty opaque version number.
 func (ovn OVN) Empty() bool {
-	return len(ovn) == 0
+	return ovn.IsZero()
 }
 
 func (ovn OVN) String() string {
-	return string(ovn)
+	return ovn.Format(time.RFC3339)
 }
 
 // Empty returns true if the value of v indicates an empty version.

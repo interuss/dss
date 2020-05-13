@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
+	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
 // Aggregates constants for operations.
@@ -34,4 +35,23 @@ type Operation struct {
 	State          OperationState
 	Cells          s2.CellUnion
 	SubscriptionID ID
+}
+
+// ValidateTimeRange validates the time range of o.
+func (o *Operation) ValidateTimeRange() error {
+	if o.StartTime == nil {
+		return dsserr.BadRequest("Operation must have an time_start")
+	}
+
+	// EndTime cannot be omitted for new Operations.
+	if o.EndTime == nil {
+		return dsserr.BadRequest("Operation must have an time_end")
+	}
+
+	// EndTime cannot be before StartTime.
+	if o.EndTime.Sub(*o.StartTime) < 0 {
+		return dsserr.BadRequest("Operation time_end must be after time_start")
+	}
+
+	return nil
 }

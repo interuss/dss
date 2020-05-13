@@ -47,6 +47,14 @@ type Geometry interface {
 	CalculateCovering() (s2.CellUnion, error)
 }
 
+// GeometryFunc is an implementation of Geometry
+type GeometryFunc func() (s2.CellUnion, error)
+
+// CalculateCovering returns the result of invoking gf.
+func (gf GeometryFunc) CalculateCovering() (s2.CellUnion, error) {
+	return gf()
+}
+
 // GeoCircle models a circular enclosed area on earth's surface.
 type GeoCircle struct {
 	Center      LatLngPoint
