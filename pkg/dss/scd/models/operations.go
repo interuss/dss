@@ -37,30 +37,13 @@ type Operation struct {
 	SubscriptionID ID
 }
 
-// AdjustTimeRange adjusts the time range to the max allowed ranges on an
-// Operation.
-func (o *Operation) AdjustTimeRange(now time.Time, old *Operation) error {
+// ValidateTimeRange validates the time range of o.
+func (o *Operation) ValidateTimeRange() error {
 	if o.StartTime == nil {
-		// If StartTime was omitted, default to Now() for new ISAs or re-
-		// use the existing time of existing ISAs.
-		if old == nil {
-			o.StartTime = &now
-		} else {
-			o.StartTime = old.StartTime
-		}
-	} else {
-		// If setting the StartTime explicitly ensure it is not too far in the past.
-		if now.Sub(*o.StartTime) > maxClockSkew {
-			return dsserr.BadRequest("Operation time_start must not be in the past")
-		}
+		return dsserr.BadRequest("Operation must have an time_start")
 	}
 
-	// If EndTime was omitted default to the existing ISA's EndTime.
-	if o.EndTime == nil && old != nil {
-		o.EndTime = old.EndTime
-	}
-
-	// EndTime cannot be omitted for new ISAs.
+	// EndTime cannot be omitted for new Operations.
 	if o.EndTime == nil {
 		return dsserr.BadRequest("Operation must have an time_end")
 	}

@@ -301,7 +301,7 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
-	if err := operation.AdjustTimeRange(s.clock.Now(), old); err != nil {
+	if err := operation.ValidateTimeRange(); err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
 

@@ -275,19 +275,19 @@ func TestUpsertOperation(t *testing.T) {
 		wantEndTime         time.Time
 	}{
 		{
-			name:    "missing-end-time",
-			wantErr: "rpc error: code = InvalidArgument desc = Operation must have an time_end",
+			name:    "missing-start-time",
+			endTime: fakeClock.Now().Add(-6 * time.Minute),
+			wantErr: "rpc error: code = InvalidArgument desc = Operation must have an time_start",
 		},
 		{
-			name:          "start-time-defaults-to-now",
-			endTime:       fakeClock.Now().Add(time.Hour),
-			wantStartTime: fakeClock.Now(),
+			name:      "missing-end-time",
+			startTime: fakeClock.Now().Add(-6 * time.Minute),
+			wantErr:   "rpc error: code = InvalidArgument desc = Operation must have an time_end",
 		},
 		{
 			name:      "start-time-in-the-past",
 			startTime: fakeClock.Now().Add(-6 * time.Minute),
 			endTime:   fakeClock.Now().Add(time.Hour),
-			wantErr:   "rpc error: code = InvalidArgument desc = Operation time_start must not be in the past",
 		},
 		{
 			name:          "start-time-slightly-in-the-past",
@@ -305,21 +305,17 @@ func TestUpsertOperation(t *testing.T) {
 			name:                "updating-keeps-old-times",
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
 			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
+			startTime:           fakeClock.Now().Add(-6 * time.Hour),
+			endTime:             fakeClock.Now().Add(6 * time.Hour),
 			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
 			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
-		},
-		{
-			name:                "changing-start-time-to-past",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			startTime:           fakeClock.Now().Add(-3 * time.Hour),
-			wantErr:             "rpc error: code = InvalidArgument desc = Operation time_start must not be in the past",
 		},
 		{
 			name:                "changing-start-time-to-future",
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
 			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
 			startTime:           fakeClock.Now().Add(3 * time.Hour),
+			endTime:             fakeClock.Now().Add(6 * time.Hour),
 			wantStartTime:       fakeClock.Now().Add(3 * time.Hour),
 			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
 		},
@@ -327,6 +323,7 @@ func TestUpsertOperation(t *testing.T) {
 			name:                "changing-end-time-to-future",
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
 			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
+			startTime:           fakeClock.Now().Add(-6 * time.Hour),
 			endTime:             fakeClock.Now().Add(3 * time.Hour),
 			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
 			wantEndTime:         fakeClock.Now().Add(3 * time.Hour),
