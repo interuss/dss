@@ -61,6 +61,8 @@ func newStore() (*Store, error) {
 // cleanUp drops all required tables from the store, useful for testing.
 func cleanUp(ctx context.Context, s *Store) error {
 	const query = `
+	DROP TABLE IF EXISTS scd_cells_operations;
+	DROP TABLE IF EXISTS scd_operations;
 	DROP TABLE IF EXISTS scd_cells_subscriptions;
 	DROP TABLE IF EXISTS scd_subscriptions;`
 
