@@ -23,13 +23,9 @@ format:
 	clang-format -style=file -i pkg/api/v1/scdpb/scd.proto
 	clang-format -style=file -i pkg/api/v1/auxpb/aux_service.proto
 
-.PHONY: install
-install:
-	cd $(shell mktemp -d) && go mod init tmp && go install golang.org/x/lint/golint
-
 .PHONY: lint
-lint: install
-	golint ./...
+lint:
+	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
 
 pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
