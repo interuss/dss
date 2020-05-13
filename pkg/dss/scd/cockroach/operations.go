@@ -3,7 +3,6 @@ package cockroach
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -16,8 +15,6 @@ import (
 )
 
 var (
-	errNotImplemented = errors.New("not implemented")
-
 	operationFieldsWithIndices   [10]string
 	operationFieldsWithPrefix    string
 	operationFieldsWithoutPrefix string
