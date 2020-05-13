@@ -3,9 +3,7 @@ package cockroach
 import (
 	"context"
 	"errors"
-	"time"
 
-	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 )
@@ -22,10 +20,10 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 	return nil, nil, errNotImplemented
 }
 
-func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN, notifySubscriptionForConstraints bool, subscriptionBaseURL string) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	return nil, nil, errNotImplemented
 }
 
-func (s *Store) SearchOperations(ctx context.Context, cells s2.CellUnion, altitudeLower *float64, altitudeUpper *float64, earliest *time.Time, latest *time.Time) ([]*scdmodels.Operation, error) {
+func (s *Store) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	return nil, errNotImplemented
 }

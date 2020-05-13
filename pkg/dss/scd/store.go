@@ -22,10 +22,10 @@ type OperationStore interface {
 	// token. If operation does not reference an existing subscription, an
 	// implicit subscription with parameters notifySubscriptionForConstraints
 	// and subscriptionBaseURL is created.
-	UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN, notifySubscriptionForConstraints bool, subscriptionBaseURL string) (*scdmodels.Operation, []*scdmodels.Subscription, error)
+	UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error)
 
-	// SearchOperations returns all operations ownded by "owner" in "cells".
-	SearchOperations(ctx context.Context, cells s2.CellUnion, altitudeLower *float64, altitudeUpper *float64, earliest *time.Time, latest *time.Time) ([]*scdmodels.Operation, error)
+	// SearchOperations returns all operations ownded by "owner" intersecting "v4d".
+	SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error)
 }
 
 // SubscriptionStore abstracts subscription-specific interactions with the backing data store.
@@ -136,13 +136,13 @@ func (s *DummyStore) DeleteOperation(ctx context.Context, id scdmodels.ID, owner
 	}, nil
 }
 
-func (s *DummyStore) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN, notifySubscriptionForConstraints bool, subscriptionBaseURL string) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+func (s *DummyStore) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	return operation, []*scdmodels.Subscription{
 		MakeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
 	}, nil
 }
 
-func (s *DummyStore) SearchOperations(ctx context.Context, cells s2.CellUnion, altitudeLower *float64, altitudeUpper *float64, earliest *time.Time, latest *time.Time) ([]*scdmodels.Operation, error) {
+func (s *DummyStore) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	return []*scdmodels.Operation{
 		MakeDummyOperation("444eab15-8384-4e39-8589-5161689aee56"),
 	}, nil

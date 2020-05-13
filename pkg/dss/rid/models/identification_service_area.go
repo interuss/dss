@@ -8,7 +8,6 @@ import (
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
-	"github.com/interuss/dss/pkg/dss/geo"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
@@ -87,7 +86,7 @@ func (i *IdentificationServiceArea) SetExtents(extents *ridpb.Volume4D) error {
 	if footprint == nil {
 		return errors.New("spatial_volume missing required footprint")
 	}
-	i.Cells, err = geo.PolygonToCellIDs(footprint.ToCommon())
+	i.Cells, err = footprint.ToCommon().CalculateCovering()
 	return err
 }
 

@@ -12,8 +12,6 @@ import (
 
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
-
-	"github.com/golang/geo/s2"
 	//"github.com/golang/protobuf/ptypes"
 )
 
@@ -222,23 +220,21 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		return nil, dsserr.BadRequest("missing area_of_interest")
 	}
 
+	caoi, err := aoi.ToCommon()
+	if err != nil {
+		return nil, dsserr.Internal("failed to convert to internal geometry model")
+	}
+
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-	//   volume = geo.ToVolume4(aoi)
-	// 	cu, err := geo.AreaToCellIDs(volume)
-	// 	if err != nil {
-	// 		errMsg := fmt.Sprintf("bad area: %s", err)
-	// 		switch err.(type) {
-	// 		case *geo.ErrAreaTooLarge:
-	// 			return nil, dsserr.AreaTooLarge(errMsg)
-	// 		}
-	// 		return nil, dsserr.BadRequest(errMsg)
-	// 	}
-	cells := s2.CellUnion{} //TODO: Compute cells correctly
+	cells, err := caoi.SpatialVolume.Footprint.CalculateCovering()
+	if err != nil {
+		return nil, dsserr.Internal("failed to calculate covering for geometry")
+	}
 
 	// Perform search query on Store
 	subs, err := a.Store.SearchSubscriptions(ctx, cells, owner) //TODO: incorporate time bounds into query

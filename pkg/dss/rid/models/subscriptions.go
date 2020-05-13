@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
-	"github.com/interuss/dss/pkg/dss/geo"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 
@@ -114,7 +113,7 @@ func (s *Subscription) SetExtents(extents *ridpb.Volume4D) error {
 	if footprint == nil {
 		return errors.New("spatial_volume missing required footprint")
 	}
-	s.Cells, err = geo.PolygonToCellIDs(footprint.ToCommon())
+	s.Cells, err = footprint.ToCommon().CalculateCovering()
 	return err
 }
 

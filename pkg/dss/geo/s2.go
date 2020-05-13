@@ -11,7 +11,6 @@ import (
 
 	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
-	"github.com/interuss/dss/pkg/dss/models"
 )
 
 const (
@@ -22,10 +21,6 @@ const (
 	// that the maximum cell size is ~1km^2.
 	DefaultMaximumCellLevel = 13
 	maxAllowedAreaKm2       = 2500.0
-	minLat                  = -90.0
-	maxLat                  = 90.0
-	minLng                  = -180.0
-	maxLng                  = 180.0
 	radiusEarthMeter        = 6371010.0
 )
 
@@ -74,76 +69,6 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 // DistanceMetersToAngle converts distance in [m] to an s1.Angle in radians.
 func DistanceMetersToAngle(distance float64) s1.Angle {
 	return s1.Angle(distance / radiusEarthMeter)
-}
-
-// Volume4DToCellIDs converts a 4d volume to S2 cells, ignoring the time and
-// altitude bounds.
-func Volume4DToCellIDs(v4 *models.Volume4D) (s2.CellUnion, error) {
-	if v4 == nil {
-		return nil, errBadCoordSet
-	}
-	return Volume3DToCellIDs(v4.SpatialVolume)
-}
-
-// Volume3DToCellIDs converts a 4d volume to S2 cells, ignoring the  altitude
-// bounds.
-func Volume3DToCellIDs(v3 *models.Volume3D) (s2.CellUnion, error) {
-	if v3 == nil {
-		return nil, errBadCoordSet
-	}
-
-	switch t := v3.Footprint.(type) {
-	case *models.GeoPolygon:
-		return PolygonToCellIDs(t)
-	case *models.GeoCircle:
-		return CircleToCellIDs(t)
-	default:
-		return nil, errBadCoordSet
-	}
-}
-
-// GeometryToCellIDs returns an s2 cell covering for geometry.
-func GeometryToCellIDs(geometry models.Geometry) (s2.CellUnion, error) {
-	switch t := geometry.(type) {
-	case *models.GeoCircle:
-		return CircleToCellIDs(t)
-	case *models.GeoPolygon:
-		return PolygonToCellIDs(t)
-	default:
-		return nil, fmt.Errorf("unsupported geometry type: %T", t)
-	}
-}
-
-// CircleToCellIDs converts a geocircle to S2 cells.
-func CircleToCellIDs(geocircle *models.GeoCircle) (s2.CellUnion, error) {
-	if (geocircle.Center.Lat > maxLat) || (geocircle.Center.Lat < minLat) || (geocircle.Center.Lng > maxLng) || (geocircle.Center.Lng < minLng) {
-		return nil, errBadCoordSet
-	}
-
-	return CoveringForLoop(s2.RegularLoop(
-		s2.PointFromLatLng(s2.LatLngFromDegrees(geocircle.Center.Lat, geocircle.Center.Lng)),
-		DistanceMetersToAngle(float64(geocircle.RadiusMeter)),
-		20,
-	))
-}
-
-// PolygonToCellIDs converts a geopolygon to S2 cells.
-func PolygonToCellIDs(geopolygon *models.GeoPolygon) (s2.CellUnion, error) {
-	var points []s2.Point
-	if geopolygon == nil {
-		return nil, errBadCoordSet
-	}
-	for _, ltlng := range geopolygon.Vertices {
-		// ensure that coordinates passed are actually on earth
-		if (ltlng.Lat > maxLat) || (ltlng.Lat < minLat) || (ltlng.Lng > maxLng) || (ltlng.Lng < minLng) {
-			return nil, errBadCoordSet
-		}
-		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(ltlng.Lat, ltlng.Lng)))
-	}
-	if len(points) < 3 {
-		return nil, errNotEnoughPointsInPolygon
-	}
-	return Covering(points)
 }
 
 func loopAreaKm2(loop *s2.Loop) float64 {
