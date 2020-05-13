@@ -3,12 +3,14 @@ package scd
 import (
 	"context"
 	"errors"
+
 	testdata "github.com/interuss/dss/pkg/dss/geo/testdata/scd"
+
+	"testing"
+	"time"
 
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"testing"
-	"time"
 
 	"github.com/interuss/dss/pkg/dss/auth"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
@@ -73,11 +75,11 @@ func (ms *mockStore) DeleteOperation(ctx context.Context, id scdmodels.ID, owner
 	return nil, nil, dsserr.Internal("not yet implemented")
 }
 
-func (ms *mockStore) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN, notifySubscriptionForConstraints bool, subscriptionBaseURL string) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+func (ms *mockStore) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	return nil, nil, dsserr.Internal("not yet implemented")
 }
 
-func (ms *mockStore) SearchOperations(ctx context.Context, cells s2.CellUnion, altitudeLower *float64, altitudeUpper *float64, earliest *time.Time, latest *time.Time) ([]*scdmodels.Operation, error) {
+func (ms *mockStore) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	return nil, dsserr.Internal("not yet implemented")
 }
 
