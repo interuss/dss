@@ -7,6 +7,7 @@ import (
 
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/dss/auth"
+	"github.com/interuss/dss/pkg/dss/geo"
 
 	//"github.com/interuss/dss/pkg/dss/geo"
 
@@ -232,8 +233,13 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	}
 
 	cells, err := caoi.SpatialVolume.Footprint.CalculateCovering()
-	if err != nil {
-		return nil, dsserr.Internal("failed to calculate covering for geometry")
+	switch err.(type) {
+	case nil:
+		// Empty on purpose
+	case *geo.ErrAreaTooLarge:
+		return nil, dsserr.AreaTooLarge(err.Error())
+	default:
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad area: %s", err))
 	}
 
 	// Perform search query on Store
