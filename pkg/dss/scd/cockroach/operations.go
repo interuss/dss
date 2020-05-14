@@ -233,8 +233,25 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 				id = $1
 			AND
 				owner = $2
-			RETURNING
-				*
+		`
+		deleteImplicitSubscriptionQuery = `
+			DELETE FROM
+				scd_subscriptions
+			WHERE
+				id = $1
+			AND
+				owner = $2
+			AND
+				implicit = true
+			AND
+				1 = ALL (
+					SELECT
+						COUNT(id)
+					FROM
+						scd_operations
+					WHERE
+						subscription_id = $1
+				)
 		`
 	)
 
@@ -267,6 +284,10 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 	}
 
 	if _, err := tx.ExecContext(ctx, deleteQuery, id, owner); err != nil {
+		return nil, nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	if _, err := tx.ExecContext(ctx, deleteImplicitSubscriptionQuery, old.SubscriptionID, owner); err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
 
