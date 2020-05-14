@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
@@ -55,7 +56,10 @@ func (s *Store) fetchOperations(ctx context.Context, q queryable, query string, 
 
 	var payload []*scdmodels.Operation
 	for rows.Next() {
-		o := new(scdmodels.Operation)
+		var (
+			o         = &scdmodels.Operation{}
+			updatedAt time.Time
+		)
 		if err := rows.Scan(
 			&o.ID,
 			&o.Owner,
@@ -66,10 +70,11 @@ func (s *Store) fetchOperations(ctx context.Context, q queryable, query string, 
 			&o.StartTime,
 			&o.EndTime,
 			&o.SubscriptionID,
-			&o.OVN.Time,
+			&updatedAt,
 		); err != nil {
 			return nil, err
 		}
+		o.OVN = scdmodels.NewOVNFromTime(updatedAt)
 		payload = append(payload, o)
 	}
 	if err := rows.Err(); err != nil {

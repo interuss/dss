@@ -371,13 +371,29 @@ func TestPutSubscription(t *testing.T) {
 		  		},*/
 	} {
 		t.Run(r.name, func(t *testing.T) {
+			sub := *r.wantSubscription
+
+			if r.extents != nil {
+				v4d, err := r.extents.ToCommon()
+				require.NoError(t, err)
+
+				cells, err := v4d.CalculateSpatialCovering()
+				require.NoError(t, err)
+
+				sub.StartTime = v4d.StartTime
+				sub.EndTime = v4d.EndTime
+				sub.AltitudeHi = v4d.SpatialVolume.AltitudeHi
+				sub.AltitudeLo = v4d.SpatialVolume.AltitudeLo
+				sub.Cells = cells
+			}
+
 			ctx := context.Background()
 			if r.owner != "" {
 				ctx = auth.ContextWithOwner(ctx, r.owner)
 			}
 			store := &mockStore{}
 			if r.wantErr == nil {
-				store.On("UpsertSubscription", mock.Anything, r.wantSubscription).Return(
+				store.On("UpsertSubscription", mock.Anything, &sub).Return(
 					r.wantSubscription, nil,
 				)
 			}

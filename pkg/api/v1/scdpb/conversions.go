@@ -91,8 +91,6 @@ func (vol4 *Volume4D) ToCommon() (*dssmodels.Volume4D, error) {
 
 func (vol3 *Volume3D) ToCommon() (*dssmodels.Volume3D, error) {
 	switch {
-	case vol3.GetOutlineCircle() == nil && vol3.GetOutlinePolygon() == nil:
-		return nil, errors.New("missing outline geometry")
 	case vol3.GetOutlineCircle() != nil && vol3.GetOutlinePolygon() != nil:
 		return nil, errors.New("both circle and polygon specified in outline geometry")
 	case vol3.GetOutlinePolygon() != nil:
@@ -109,7 +107,10 @@ func (vol3 *Volume3D) ToCommon() (*dssmodels.Volume3D, error) {
 		}, nil
 	}
 
-	return nil, errors.New("unsupported geometry type")
+	return &dssmodels.Volume3D{
+		AltitudeLo: float32p(float32(vol3.GetAltitudeLower().GetValue())),
+		AltitudeHi: float32p(float32(vol3.GetAltitudeUpper().GetValue())),
+	}, nil
 }
 
 func (c *Circle) ToCommon() *dssmodels.GeoCircle {
