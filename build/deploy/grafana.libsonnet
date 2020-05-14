@@ -48,20 +48,14 @@ local datasourcePrometheus(metadata) = {
     grafDashboards: dashboard.all(metadata).config,
 
     deployment: base.Deployment(metadata, 'grafana') {
-      spec: {
+      spec+: {
         replicas: 1,
-        selector: {
-          matchLabels: {
+        selector+: {
+          matchLabels+: {
             app: 'grafana',
           },
         },
-        template: {
-          metadata: {
-            name: 'grafana',
-            labels: {
-              app: 'grafana',
-            },
-          },
+        template+: {
           spec: {
             containers: [
               {

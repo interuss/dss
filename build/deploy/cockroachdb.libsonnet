@@ -10,11 +10,6 @@ local volumes = import 'volumes.libsonnet';
     spec+: {
       serviceName: 'cockroachdb',
       template+: {
-        metadata+: {
-          labels: {
-            app: 'cockroachdb',
-          },
-        },
         spec+: {
           serviceAccountName: 'cockroachdb',
           volumes: volumes.cockroachVolumes,
