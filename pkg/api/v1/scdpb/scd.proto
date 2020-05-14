@@ -372,7 +372,7 @@ message PutOperationReferenceParameters {
   // OVNs for Constraints are required if and only if the USS owning this Operation is considering
   // Constraints, which is determined by whether the Subscription associated with this Operation
   // triggers notifications for Constraints.
-  string key = 2;
+  repeated string key = 2;
 
   // If an existing Subscription is not specified in `subscription_id`, then this field must be
   // populated.  When this field is populated, an implicit Subscription will be created and
