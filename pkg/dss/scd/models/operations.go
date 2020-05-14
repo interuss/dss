@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-  "github.com/golang/protobuf/ptypes"
-  "github.com/interuss/dss/pkg/api/v1/scdpb"
-  dssmodels "github.com/interuss/dss/pkg/dss/models"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
@@ -39,38 +39,38 @@ type Operation struct {
 	SubscriptionID ID
 }
 
-func (op *Operation) ToProto() (*scdpb.OperationReference, error) {
-  result := &scdpb.OperationReference{
-    Id:                   op.ID.String(),
-    Ovn:                  op.OVN.String(),
-    Owner:                op.Owner.String(),
-    Version:              int32(op.Version),
-    UssBaseUrl:           op.USSBaseURL,
-    SubscriptionId:       op.SubscriptionID.String(),
-  }
+func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
+	result := &scdpb.OperationReference{
+		Id:             o.ID.String(),
+		Ovn:            o.OVN.String(),
+		Owner:          o.Owner.String(),
+		Version:        int32(o.Version),
+		UssBaseUrl:     o.USSBaseURL,
+		SubscriptionId: o.SubscriptionID.String(),
+	}
 
-  if op.StartTime != nil {
-    ts, err := ptypes.TimestampProto(*op.StartTime)
-    if err != nil {
-      return nil, err
-    }
-    result.TimeStart = &scdpb.Time{
-      Value:  ts,
-      Format: TimeFormatRfc3339,
-    }
-  }
+	if o.StartTime != nil {
+		ts, err := ptypes.TimestampProto(*o.StartTime)
+		if err != nil {
+			return nil, err
+		}
+		result.TimeStart = &scdpb.Time{
+			Value:  ts,
+			Format: TimeFormatRfc3339,
+		}
+	}
 
-  if op.EndTime != nil {
-    ts, err := ptypes.TimestampProto(*op.EndTime)
-    if err != nil {
-      return nil, err
-    }
-    result.TimeEnd = &scdpb.Time{
-      Value:  ts,
-      Format: TimeFormatRfc3339,
-    }
-  }
-  return result, nil
+	if o.EndTime != nil {
+		ts, err := ptypes.TimestampProto(*o.EndTime)
+		if err != nil {
+			return nil, err
+		}
+		result.TimeEnd = &scdpb.Time{
+			Value:  ts,
+			Format: TimeFormatRfc3339,
+		}
+	}
+	return result, nil
 }
 
 // ValidateTimeRange validates the time range of o.

@@ -59,11 +59,7 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []*scdpb.S
 			SubscriptionId:    sub.ID.String(),
 			NotificationIndex: int32(sub.NotificationIndex),
 		}
-		if states, ok := subscriptionsByURL[sub.BaseURL]; ok {
-			states = append(states, subState)
-		} else {
-			states = []*scdpb.SubscriptionState{subState}
-		}
+		subscriptionsByURL[sub.BaseURL] = append(subscriptionsByURL[sub.BaseURL], subState)
 	}
 	for url, states := range subscriptionsByURL {
 		result = append(result, &scdpb.SubscriberToNotify{
@@ -110,14 +106,14 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 	}
 
 	// Convert deleted Operation to proto
-	op_proto, err := op.ToProto()
+	opProto, err := op.ToProto()
 	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
 
 	// Return response to client
 	return &scdpb.ChangeOperationReferenceResponse{
-		OperationReference: op_proto,
+		OperationReference: opProto,
 		Subscribers:        makeSubscribersToNotify(subs),
 	}, nil
 }
@@ -243,12 +239,10 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 
 // PutOperationReference creates a single operation ref.
 func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
-	// Retrieve Operation ID
-	idString := req.GetEntityuuid()
-	if idString == "" {
+	id := scdmodels.ID(req.GetEntityuuid())
+	if id.Empty() {
 		return nil, dsserr.BadRequest("missing Operation ID")
 	}
-	id := scdmodels.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -260,6 +254,10 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		params  = req.GetParams()
 		extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
 	)
+
+	if len(params.UssBaseUrl) == 0 {
+		return nil, dsserr.BadRequest("missing required UssBaseUrl")
+	}
 
 	for idx, extent := range params.GetExtents() {
 		cExtent, err := extent.ToCommon()
@@ -290,7 +288,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			AltitudeHi: uExtent.SpatialVolume.AltitudeHi,
 			Cells:      cells,
 
-			BaseURL:              params.GetUssBaseUrl(),
+			BaseURL:              params.GetNewSubscription().GetUssBaseUrl(),
 			NotifyForOperations:  true,
 			NotifyForConstraints: params.GetNewSubscription().GetNotifyForConstraints(),
 			ImplicitSubscription: true,
@@ -321,12 +319,12 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		SubscriptionID: subscriptionID,
 	}, key)
 	if err != nil {
-		return nil, err
+		return nil, dsserr.BadRequest(fmt.Sprintf("failed to upsert operation: %s", err))
 	}
 
 	p, err := op.ToProto()
 	if err != nil {
-		return nil, dsserr.Internal("could not convert Operation to proto")
+		return nil, dsserr.BadRequest("could not convert Operation to proto")
 	}
 
 	return &scdpb.ChangeOperationReferenceResponse{
