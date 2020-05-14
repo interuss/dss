@@ -19,6 +19,8 @@ var (
 	errNotEnoughPointsInPolygon = errors.New("not enough points in polygon")
 	errBadCoordSet              = errors.New("coordinates did not create a well formed area")
 	errRadiusMustBeLargerThan0  = errors.New("radius must be larger than 0")
+	errMissingSpatialVolume     = errors.New("missing spatial volume")
+	errMissingFootprint         = errors.New("missing footprint")
 )
 
 // Contiguous block of geographic spacetime.
@@ -49,6 +51,16 @@ type Geometry interface {
 
 // GeometryFunc is an implementation of Geometry
 type GeometryFunc func() (s2.CellUnion, error)
+
+func (vol4 *Volume4D) GetCells() (s2.CellUnion, error) {
+	if vol4.SpatialVolume == nil {
+		return nil, errMissingSpatialVolume
+	}
+	if vol4.SpatialVolume.Footprint == nil {
+		return nil, errMissingFootprint
+	}
+	return vol4.SpatialVolume.Footprint.CalculateCovering()
+}
 
 // CalculateCovering returns the result of invoking gf.
 func (gf GeometryFunc) CalculateCovering() (s2.CellUnion, error) {
