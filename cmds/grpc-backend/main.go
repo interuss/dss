@@ -19,7 +19,7 @@ import (
 	"github.com/interuss/dss/pkg/dss/rid"
 	ridc "github.com/interuss/dss/pkg/dss/rid/cockroach"
 	"github.com/interuss/dss/pkg/dss/scd"
-	scdc "github.com/interuss/dss/pkg/dss/scd/cockroach"
+	scdc "github.com/interuss/dss/pkg/dss/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/dss/validations"
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
