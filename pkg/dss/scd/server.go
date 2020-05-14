@@ -279,6 +279,11 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	subscriptionID := scdmodels.ID(params.GetSubscriptionId())
 
 	if subscriptionID.Empty() {
+		// TODO(tvoss): Creation of the subscription and the operation is not
+		// atomic. That is, if the creation of the operation fails, we need to
+		// rollback this subscription, too. See
+		// https://github.com/interuss/dss/issues/277 for tracking purposes.
+
 		sub, err := a.putSubscription(ctx, &scdmodels.Subscription{
 			ID:         scdmodels.ID(uuid.New().String()),
 			Owner:      owner,
