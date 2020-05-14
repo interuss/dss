@@ -243,6 +243,15 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 				owner = $2
 			AND
 				implicit = true
+			AND
+				1 = ALL (
+					SELECT
+						COUNT(id)
+					FROM
+						scd_operations
+					WHERE
+						subscription_id = $1
+				)
 		`
 	)
 
