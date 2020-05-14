@@ -1,13 +1,18 @@
 package testdata
 
 import (
-	dssmodels "github.com/interuss/dss/pkg/dss/models"
-	"time"
+	"github.com/interuss/dss/pkg/api/v1/scdpb"
+
+	"github.com/golang/protobuf/ptypes"
 )
 
 var (
-	LoopPolygon = &dssmodels.GeoPolygon{
-		Vertices: []*dssmodels.LatLngPoint{
+	Loop                           = `37.427636,-122.170502,37.408799,-122.064069,37.421265,-122.086504`
+	LoopWithOddNumberOfCoordinates = `37.427636,-122.170502,37.408799`
+	LoopWithOnlyTwoPoints          = `37.427636,-122.170502,37.408799,-122.064069`
+
+	LoopPolygon = &scdpb.Polygon{
+		Vertices: []*scdpb.LatLngPoint{
 			{
 				Lat: 37.427636,
 				Lng: -122.170502,
@@ -23,39 +28,27 @@ var (
 		},
 	}
 
-	AltitudeHi = float32(200)
-	AltitudeLo = float32(100)
-
-	LoopVolume3D = &dssmodels.Volume3D{
-		AltitudeHi: &AltitudeHi,
-		AltitudeLo: &AltitudeLo,
-		Footprint:  LoopPolygon,
-	}
-
-	LoopVolume4D = &dssmodels.Volume4D{
-		SpatialVolume: LoopVolume3D,
-		StartTime:     &[]time.Time{time.Unix(10000, 0)}[0],
-		EndTime:       &[]time.Time{time.Unix(10060, 0)}[0],
-	}
-
-	LoopVolume4DWithOnlyTwoPoints = &dssmodels.Volume4D{
-		SpatialVolume: &dssmodels.Volume3D{
-			AltitudeHi: &AltitudeHi,
-			AltitudeLo: &AltitudeLo,
-			Footprint: &dssmodels.GeoPolygon{
-				Vertices: []*dssmodels.LatLngPoint{
-					{
-						Lat: 37.427636,
-						Lng: -122.170502,
-					},
-					{
-						Lat: 37.408799,
-						Lng: -122.064069,
-					},
-				},
-			},
+	LoopVolume3D = &scdpb.Volume3D{
+		AltitudeUpper: &scdpb.Altitude{
+			Value:     456,
+			Reference: "W84",
 		},
-		StartTime: &[]time.Time{time.Unix(10000, 0)}[0],
-		EndTime:   &[]time.Time{time.Unix(10060, 0)}[0],
+		AltitudeLower: &scdpb.Altitude{
+			Value:     123,
+			Reference: "W84",
+		},
+		OutlinePolygon: LoopPolygon,
+	}
+
+	LoopVolume4D = &scdpb.Volume4D{
+		Volume: LoopVolume3D,
+		TimeStart: &scdpb.Time{
+			Value:  ptypes.TimestampNow(),
+			Format: "RFC3339",
+		},
+		TimeEnd: &scdpb.Time{
+			Value:  ptypes.TimestampNow(),
+			Format: "RFC3339",
+		},
 	}
 )

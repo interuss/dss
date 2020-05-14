@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	testdata "github.com/interuss/dss/pkg/dss/geo/testdata/scd"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"testing"
 	"time"
@@ -17,12 +18,33 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 
 	"github.com/golang/geo/s2"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 var timeout = time.Second * 10
+
+func mustTimestamp(ts *tspb.Timestamp) *time.Time {
+	t, err := ptypes.Timestamp(ts)
+	if err != nil {
+		panic(err)
+	}
+	return &t
+}
+
+func mustPolygonToCellIDs(p *scdpb.Polygon) s2.CellUnion {
+	cells, err := p.ToCommon().CalculateCovering()
+	if err != nil {
+		panic(err)
+	}
+	return cells
+}
+
+func float32p(v float32) *float32 {
+	return &v
+}
 
 type mockStore struct {
 	mock.Mock
@@ -68,19 +90,31 @@ func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion
 }
 
 func (ms *mockStore) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
-	return nil, dsserr.Internal("not yet implemented")
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	args := ms.Called(ctx, id)
+	return args.Get(0).(*scdmodels.Operation), args.Error(1)
 }
 
 func (ms *mockStore) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
-	return nil, nil, dsserr.Internal("not yet implemented")
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	args := ms.Called(ctx, id, owner)
+	return args.Get(0).(*scdmodels.Operation), args.Get(1).([]*scdmodels.Subscription), args.Error(2)
 }
 
 func (ms *mockStore) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
-	return nil, nil, dsserr.Internal("not yet implemented")
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	args := ms.Called(ctx, operation, key)
+	return args.Get(0).(*scdmodels.Operation), args.Get(1).([]*scdmodels.Subscription), args.Error(2)
 }
 
 func (ms *mockStore) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
-	return nil, dsserr.Internal("not yet implemented")
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	args := ms.Called(ctx, v4d, owner)
+	return args.Get(0).([]*scdmodels.Operation), args.Error(1)
 }
 
 var validSubscription = &scdmodels.Subscription{
@@ -204,7 +238,7 @@ func TestGetSubscription(t *testing.T) {
 }
 
 func TestQuerySubscriptions(t *testing.T) {
-	validAoi, _ := scdpb.FromVolume4D(testdata.LoopVolume4D)
+	validAoi := testdata.LoopVolume4D
 	//invalidAoiWithOnlyTwoPoints, _ := scdpb.FromVolume4D(testdata.LoopVolume4DWithOnlyTwoPoints)
 	for _, r := range []struct {
 		name              string
@@ -287,7 +321,7 @@ func TestQuerySubscriptions(t *testing.T) {
 }
 
 func TestPutSubscription(t *testing.T) {
-	extentsLoop, _ := scdpb.FromVolume4D(testdata.LoopVolume4D)
+	extentsLoop := testdata.LoopVolume4D
 	for _, r := range []struct {
 		name             string
 		id               dssmodels.ID
@@ -371,13 +405,29 @@ func TestPutSubscription(t *testing.T) {
 		  		},*/
 	} {
 		t.Run(r.name, func(t *testing.T) {
+			sub := *r.wantSubscription
+
+			if r.extents != nil {
+				v4d, err := r.extents.ToCommon()
+				require.NoError(t, err)
+
+				cells, err := v4d.CalculateSpatialCovering()
+				require.NoError(t, err)
+
+				sub.StartTime = v4d.StartTime
+				sub.EndTime = v4d.EndTime
+				sub.AltitudeHi = v4d.SpatialVolume.AltitudeHi
+				sub.AltitudeLo = v4d.SpatialVolume.AltitudeLo
+				sub.Cells = cells
+			}
+
 			ctx := context.Background()
 			if r.owner != "" {
 				ctx = auth.ContextWithOwner(ctx, r.owner)
 			}
 			store := &mockStore{}
 			if r.wantErr == nil {
-				store.On("UpsertSubscription", mock.Anything, r.wantSubscription).Return(
+				store.On("UpsertSubscription", mock.Anything, &sub).Return(
 					r.wantSubscription, nil,
 				)
 			}
@@ -401,4 +451,192 @@ func TestPutSubscription(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCreateOperation(t *testing.T) {
+	ctx := auth.ContextWithOwner(context.Background(), "foo")
+
+	for _, r := range []struct {
+		name          string
+		id            scdmodels.ID
+		extents       *scdpb.Volume4D
+		url           string
+		wantOperation *scdmodels.Operation
+		wantErr       error
+	}{
+		{
+			name:    "success",
+			id:      scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: testdata.LoopVolume4D,
+			url:     "https://example.com",
+			wantOperation: &scdmodels.Operation{
+				ID:            "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				USSBaseURL:    "https://example.com",
+				Owner:         "foo",
+				Cells:         mustPolygonToCellIDs(testdata.LoopPolygon),
+				StartTime:     mustTimestamp(testdata.LoopVolume4D.GetTimeStart().GetValue()),
+				EndTime:       mustTimestamp(testdata.LoopVolume4D.GetTimeEnd().GetValue()),
+				AltitudeUpper: float32p(float32(testdata.LoopVolume3D.AltitudeUpper.Value)),
+				AltitudeLower: float32p(float32(testdata.LoopVolume3D.AltitudeLower.Value)),
+			},
+		},
+		{
+			name:    "missing-extents",
+			id:      scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			url:     "https://example.com",
+			wantErr: dsserr.BadRequest("bad area: missing footprint"),
+		},
+		{
+			name:    "missing-extents-spatial-volume",
+			id:      scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: &scdpb.Volume4D{},
+			url:     "https://example.com",
+			wantErr: dsserr.BadRequest("bad area: missing footprint"),
+		},
+		{
+			name: "missing-spatial-volume-footprint",
+			id:   scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: &scdpb.Volume4D{
+				Volume: &scdpb.Volume3D{},
+			},
+			url:     "https://example.com",
+			wantErr: dsserr.BadRequest("bad area: missing footprint"),
+		},
+		{
+			name: "missing-spatial-volume-footprint",
+			id:   scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: &scdpb.Volume4D{
+				Volume: &scdpb.Volume3D{
+					OutlinePolygon: &scdpb.Polygon{},
+				},
+			},
+			url:     "https://example.com",
+			wantErr: dsserr.BadRequest("failed to union extents: not enough points in polygon"),
+		},
+		{
+			name:    "missing-flights-url",
+			id:      scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: testdata.LoopVolume4D,
+			wantErr: dsserr.BadRequest("missing required UssBaseUrl"),
+		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			store := &mockStore{}
+			store.On("UpsertSubscription", mock.Anything, mock.Anything).Return(
+				&scdmodels.Subscription{
+					ID: scdmodels.ID(uuid.New().String()),
+				}, error(nil),
+			).Maybe()
+
+			if r.wantOperation != nil {
+				store.On("UpsertOperation", mock.Anything, mock.Anything, mock.Anything).Return(
+					r.wantOperation, []*scdmodels.Subscription(nil), nil)
+			}
+			s := &Server{
+				Store: store,
+			}
+
+			_, err := s.PutOperationReference(ctx, &scdpb.PutOperationReferenceRequest{
+				Entityuuid: r.id.String(),
+				Params: &scdpb.PutOperationReferenceParameters{
+					Extents: []*scdpb.Volume4D{
+						r.extents,
+					},
+					UssBaseUrl: r.url,
+					NewSubscription: &scdpb.ImplicitSubscriptionParameters{
+						UssBaseUrl: r.url,
+					},
+				},
+			})
+			require.Equal(t, r.wantErr, err)
+			require.True(t, store.AssertExpectations(t))
+		})
+	}
+}
+
+func TestDeleteOperationRequiresOwnerInContext(t *testing.T) {
+	var (
+		id = uuid.New().String()
+		ms = &mockStore{}
+		s  = &Server{
+			Store: ms,
+		}
+	)
+
+	_, err := s.DeleteOperationReference(context.Background(), &scdpb.DeleteOperationReferenceRequest{
+		Entityuuid: id,
+	})
+
+	require.Error(t, err)
+	require.True(t, ms.AssertExpectations(t))
+}
+
+func TestDeleteOperation(t *testing.T) {
+	var (
+		owner   = dssmodels.Owner("foo")
+		id      = scdmodels.ID(uuid.New().String())
+		version = scdmodels.Version(1)
+		ctx     = auth.ContextWithOwner(context.Background(), owner)
+		ms      = &mockStore{}
+		s       = &Server{
+			Store: ms,
+		}
+	)
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	ms.On("DeleteOperation", mock.Anything, id, owner).Return(
+		&scdmodels.Operation{
+			ID:         scdmodels.ID(id),
+			Owner:      dssmodels.Owner("me-myself-and-i"),
+			USSBaseURL: "https://no/place/like/home",
+			Version:    version,
+		},
+		[]*scdmodels.Subscription{
+			{
+				NotificationIndex: 42,
+				BaseURL:           "https://no/place/like/home",
+			},
+		}, error(nil),
+	)
+	resp, err := s.DeleteOperationReference(ctx, &scdpb.DeleteOperationReferenceRequest{
+		Entityuuid: id.String(),
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Len(t, resp.Subscribers, 1)
+	require.True(t, ms.AssertExpectations(t))
+}
+
+func TestSearchIdentificationServiceAreas(t *testing.T) {
+	var (
+		ctx = auth.ContextWithOwner(context.Background(), dssmodels.Owner("foo"))
+		ms  = &mockStore{}
+		s   = &Server{
+			Store: ms,
+		}
+	)
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	ms.On("SearchOperations", mock.Anything, mock.Anything, mock.Anything).Return(
+		[]*scdmodels.Operation{
+			{
+				ID:         scdmodels.ID(uuid.New().String()),
+				Owner:      dssmodels.Owner("me-myself-and-i"),
+				USSBaseURL: "https://no/place/like/home",
+			},
+		}, error(nil),
+	)
+	resp, err := s.SearchOperationReferences(ctx, &scdpb.SearchOperationReferencesRequest{
+		Params: &scdpb.SearchOperationReferenceParameters{
+			AreaOfInterest: testdata.LoopVolume4D,
+		},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Len(t, resp.OperationReferences, 1)
+	require.True(t, ms.AssertExpectations(t))
 }
