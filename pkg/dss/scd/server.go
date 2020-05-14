@@ -301,7 +301,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 	key := []scdmodels.OVN{}
 	for _, ovn := range params.GetKey() {
-		key = append(key, scdmodels.OVN(ovn)) //TODO: create OVN from string
+		key = append(key, scdmodels.OVN(ovn))
 	}
 
 	op, subs, err := a.Store.UpsertOperation(ctx, &scdmodels.Operation{
@@ -319,12 +319,12 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		SubscriptionID: subscriptionID,
 	}, key)
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("failed to upsert operation: %s", err))
+		return nil, dsserr.Internal(fmt.Sprintf("failed to upsert operation: %s", err))
 	}
 
 	p, err := op.ToProto()
 	if err != nil {
-		return nil, dsserr.BadRequest("could not convert Operation to proto")
+		return nil, dsserr.Internal("could not convert Operation to proto")
 	}
 
 	return &scdpb.ChangeOperationReferenceResponse{
