@@ -146,6 +146,8 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                   '--config.file=/etc/prometheus/prometheus.yml',
                   '--storage.tsdb.path=/data/prometheus/',
                   '--storage.tsdb.retention.time=' + metadata.prometheus.retention,
+                  // following thanos recommendation
+                  '--storage.tsdb.max-block-duration=2h',
                 ],
                 ports: [
                   {
@@ -168,7 +170,8 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                     port: 9090
                   },
                   initialDelaySeconds: 50,
-                  periodSeconds: 5,
+                  periodSeconds: 6,
+                  failureThreshold: 200
                 },
                 readinessProbe: {
                   httpGet: {
@@ -176,8 +179,8 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                     port: 9090
                   },
                   initialDelaySeconds: 30,
-                  periodSeconds: 5,
-                  failureThreshold: 5,
+                  periodSeconds: 6,
+                  failureThreshold: 200,
                 },
               },
             ],

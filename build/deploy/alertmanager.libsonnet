@@ -39,13 +39,17 @@ local alertmanagerConfig(metadata) = {
       },
     },
     deployment: base.Deployment(metadata, 'alertmanager-deployment') {
-      app:: 'alertmanager-deployment',
       metadata+: {
         namespace: metadata.namespace,
       },
       spec+: {
 				replicas: 1,
         template+: {
+          metadata+: {
+            labels+: {
+              app: 'alertmanager',
+            },
+          },
           spec+: {
             containers: [
               {
