@@ -2,6 +2,8 @@ package errors
 
 import (
 	"context"
+	"os"
+	"strconv"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -11,6 +13,8 @@ import (
 
 var (
 	errInternal = status.Error(codes.Internal, "Internal Server Error")
+
+	internalErrorHandler func(msg string) error
 )
 
 const (
@@ -18,6 +22,18 @@ const (
 	// that it should return 413 to client
 	AreaTooLargeErr codes.Code = 18
 )
+
+func init() {
+	if b, _ := strconv.ParseBool(os.Getenv("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS")); b {
+		internalErrorHandler = func(msg string) error {
+			return errInternal
+		}
+	}
+
+	internalErrorHandler = func(msg string) error {
+		return status.Error(codes.Internal, msg)
+	}
+}
 
 // Interceptor returns a grpc.UnaryServerInterceptor that inspects outgoing
 // errors and logs (to "logger") and replaces errors that are not *status.Status
@@ -69,8 +85,7 @@ func BadRequest(msg string) error {
 
 // Internal returns an error that represents an internal DSS error.
 func Internal(msg string) error {
-	// Log and obfuscate any errors.
-	return errInternal
+	return internalErrorHandler(msg)
 }
 
 // Exhausted is used when a USS creates too many resources in a given area.
