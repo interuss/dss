@@ -208,7 +208,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	// Convert deleted Subscription to proto
 	p, err := sub.ToProto()
 	if err != nil {
-		return nil, dsserr.Internal(err.Error())
+		return nil, dsserr.Internal("error converting Subscription model to proto")
 	}
 
 	// Return response to client

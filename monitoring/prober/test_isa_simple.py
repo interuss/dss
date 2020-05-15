@@ -9,7 +9,7 @@
 import datetime
 import re
 
-import common
+from . import common
 
 
 def test_isa_does_not_exist(session, isa1_uuid):

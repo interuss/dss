@@ -7,9 +7,9 @@
   - check we can't create the SUB with a time_start after time_end
 """
 import datetime
-import common
 import uuid
 
+from . import common
 
 def test_create_sub_empty_vertices(session, sub2_uuid):
   time_start = datetime.datetime.utcnow()

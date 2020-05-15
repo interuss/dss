@@ -11,7 +11,7 @@
 import datetime
 import re
 
-import common
+from . import common
 
 def test_validate(session):
   resp = session.get('/validate_oauth')
