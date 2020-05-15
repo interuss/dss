@@ -45,7 +45,7 @@ func TestStoreSearchOperations(t *testing.T) {
 		require.NoError(t, tearDownStore())
 	}()
 
-	sub, err := store.UpsertSubscription(ctx, subscriptionsPool[0].input)
+	sub, _, err := store.UpsertSubscription(ctx, subscriptionsPool[0].input)
 	require.NoError(t, err)
 
 	in := *operation
@@ -156,7 +156,7 @@ func TestStoreExpiredOperation(t *testing.T) {
 		require.NoError(t, tearDownStore())
 	}()
 
-	sub, err := store.UpsertSubscription(ctx, subscriptionsPool[0].input)
+	sub, _, err := store.UpsertSubscription(ctx, subscriptionsPool[0].input)
 	require.NoError(t, err)
 
 	in := *operation
@@ -216,7 +216,7 @@ func TestStoreDeleteOperations(t *testing.T) {
 	for _, r := range subscriptionsPool {
 		copy := *r.input
 		copy.Cells = s2.CellUnion{s2.CellID(42)}
-		s1, err := store.UpsertSubscription(ctx, &copy)
+		s1, _, err := store.UpsertSubscription(ctx, &copy)
 		require.NoError(t, err)
 		require.NotNil(t, s1)
 		require.Equal(t, 42, s1.NotificationIndex)
@@ -261,7 +261,7 @@ func TestUpsertOperation(t *testing.T) {
 		require.NoError(t, tearDownStore())
 	}()
 
-	sub, err := store.UpsertSubscription(ctx, subscriptionsPool[0].input)
+	sub, _, err := store.UpsertSubscription(ctx, subscriptionsPool[0].input)
 	require.NoError(t, err)
 
 	for _, r := range []struct {

@@ -174,7 +174,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		// rollback this subscription, too. See
 		// https://github.com/interuss/dss/issues/277 for tracking purposes.
 
-		sub, err := a.putSubscription(ctx, &scdmodels.Subscription{
+		sub, _, err := a.putSubscription(ctx, &scdmodels.Subscription{
 			ID:         scdmodels.ID(uuid.New().String()),
 			Owner:      owner,
 			StartTime:  uExtent.StartTime,

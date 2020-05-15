@@ -39,7 +39,7 @@ type SubscriptionStore interface {
 
 	// UpsertSubscription upserts sub into the store and returns the result
 	// subscription.
-	UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error)
+	UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error)
 
 	// DeleteSubscription deletes a Subscription from the store and returns the
 	// deleted subscription.  Returns nil and an error if the Subscription does
@@ -116,8 +116,8 @@ func (s *DummyStore) GetSubscription(ctx context.Context, id scdmodels.ID, owner
 	return MakeDummySubscription(id), nil
 }
 
-func (s *DummyStore) UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error) {
-	return sub, nil
+func (s *DummyStore) UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
+	return sub, []*scdmodels.Operation{MakeDummyOperation(sub.ID)}, nil
 }
 
 func (s *DummyStore) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error) {

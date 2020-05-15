@@ -25,6 +25,9 @@ var (
 				BaseURL:              "https://no/place/like/home",
 				NotificationIndex:    42,
 				NotifyForConstraints: true,
+				Cells: s2.CellUnion{
+					s2.CellID(42),
+				},
 			},
 		},
 		{
@@ -37,6 +40,9 @@ var (
 				EndTime:              &endTime,
 				NotificationIndex:    42,
 				NotifyForConstraints: true,
+				Cells: s2.CellUnion{
+					s2.CellID(42),
+				},
 			},
 		},
 		{
@@ -48,6 +54,9 @@ var (
 				StartTime:            &startTime,
 				NotificationIndex:    42,
 				NotifyForConstraints: true,
+				Cells: s2.CellUnion{
+					s2.CellID(42),
+				},
 			},
 		},
 		{
@@ -59,6 +68,9 @@ var (
 				EndTime:              &endTime,
 				NotificationIndex:    42,
 				NotifyForConstraints: true,
+				Cells: s2.CellUnion{
+					s2.CellID(42),
+				},
 			},
 		},
 	}
@@ -75,7 +87,7 @@ func TestStoreGetSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.UpsertSubscription(ctx, r.input)
+			sub1, _, err := store.UpsertSubscription(ctx, r.input)
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
@@ -99,14 +111,14 @@ func TestStoreInsertSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.UpsertSubscription(ctx, r.input)
+			sub1, _, err := store.UpsertSubscription(ctx, r.input)
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
 			// Test changes without the version differing.
 			r2 := *sub1
 			r2.BaseURL = "new url"
-			sub2, err := store.UpsertSubscription(ctx, &r2)
+			sub2, _, err := store.UpsertSubscription(ctx, &r2)
 			require.NoError(t, err)
 			require.NotNil(t, sub2)
 			require.Equal(t, "new url", sub2.BaseURL)
@@ -115,7 +127,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 			r3 := *sub2
 			r3.BaseURL = "new url 2"
 			r3.Version = scdmodels.Version(0)
-			sub3, err := store.UpsertSubscription(ctx, &r3)
+			sub3, _, err := store.UpsertSubscription(ctx, &r3)
 			require.Error(t, err)
 			require.Nil(t, sub3)
 
@@ -123,7 +135,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 			r4 := *sub2
 			r4.BaseURL = "new url 3"
 			r4.Version--
-			sub4, err := store.UpsertSubscription(ctx, &r4)
+			sub4, _, err := store.UpsertSubscription(ctx, &r4)
 			require.Error(t, err)
 			require.Nil(t, sub4)
 
@@ -135,7 +147,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 
 			// Test changing owner fails
 			sub5.Owner = "new bad owner"
-			_, err = store.UpsertSubscription(ctx, sub5)
+			_, _, err = store.UpsertSubscription(ctx, sub5)
 			require.Error(t, err)
 		})
 	}
@@ -255,6 +267,9 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 				Version:              version,
 				NotifyForConstraints: true,
 				NotifyForOperations:  true,
+				Cells: s2.CellUnion{
+					s2.CellID(42),
+				},
 			}
 			if !r.startTime.IsZero() {
 				s.StartTime = &r.startTime
@@ -262,7 +277,7 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 			if !r.endTime.IsZero() {
 				s.EndTime = &r.endTime
 			}
-			sub, err := store.UpsertSubscription(ctx, s)
+			sub, _, err := store.UpsertSubscription(ctx, s)
 
 			if r.wantErr == "" {
 				require.NoError(t, err)
@@ -308,23 +323,23 @@ func TestStoreInsertTooManySubscription(t *testing.T) {
 
 	// We should be able to insert 10 subscriptions without error.
 	for i := 0; i < 10; i++ {
-		ret, err := store.UpsertSubscription(ctx, makeSubscription([]uint64{42, 43}))
+		ret, _, err := store.UpsertSubscription(ctx, makeSubscription([]uint64{42, 43}))
 		require.NoError(t, err)
 		require.NotNil(t, &ret)
 	}
 
 	// Inserting the 11th subscription will fail.
-	ret, err := store.UpsertSubscription(ctx, makeSubscription([]uint64{42, 43}))
+	ret, _, err := store.UpsertSubscription(ctx, makeSubscription([]uint64{42, 43}))
 	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = too many existing subscriptions in this area already")
 	require.Nil(t, ret)
 
 	// Inserting a subscription in a different cell will succeed.
-	ret, err = store.UpsertSubscription(ctx, makeSubscription([]uint64{45}))
+	ret, _, err = store.UpsertSubscription(ctx, makeSubscription([]uint64{45}))
 	require.NoError(t, err)
 	require.NotNil(t, &ret)
 
 	// Inserting a subscription that overlaps with 42 or 43 will fail.
-	ret, err = store.UpsertSubscription(ctx, makeSubscription([]uint64{7, 43}))
+	ret, _, err = store.UpsertSubscription(ctx, makeSubscription([]uint64{7, 43}))
 	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = too many existing subscriptions in this area already")
 	require.Nil(t, ret)
 }
@@ -340,7 +355,7 @@ func TestStoreDeleteSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.UpsertSubscription(ctx, r.input)
+			sub1, _, err := store.UpsertSubscription(ctx, r.input)
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
@@ -394,8 +409,8 @@ func TestStoreSearchSubscription(t *testing.T) {
 	for i, r := range subscriptionsPool {
 		subscription := *r.input
 		subscription.Owner = owners[i]
-		subscription.Cells = cells[:i]
-		sub1, err := store.UpsertSubscription(ctx, &subscription)
+		subscription.Cells = cells[:i+1]
+		sub1, _, err := store.UpsertSubscription(ctx, &subscription)
 		require.NoError(t, err)
 		require.NotNil(t, sub1)
 
@@ -426,7 +441,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 		Cells:                s2.CellUnion{s2.CellID(42)},
 	}
 
-	_, err := store.UpsertSubscription(ctx, sub)
+	_, _, err := store.UpsertSubscription(ctx, sub)
 	require.NoError(t, err)
 
 	// The subscription's endTime is 24 hours from now.
