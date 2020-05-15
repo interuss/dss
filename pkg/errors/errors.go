@@ -56,7 +56,7 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 				zap.String("message", status.Message()),
 				zap.Any("details", status.Details()),
 				zap.Error(err))
-			err = errInternal
+			// err = errInternal
 		}
 		return
 	}

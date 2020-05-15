@@ -37,8 +37,9 @@ def test_scd_sub_does_not_exist(scd_session, sub1_uuid):
   if scd_session is None:
     return
   resp = scd_session.get('/subscriptions/{}'.format(sub1_uuid))
-#   assert resp.status_code == 404
-#   assert resp.json()['message'] == 'resource not found: {}'.format(sub1_uuid)
+  print(resp.content)
+  assert resp.status_code == 404
+  assert resp.json()['message'] == 'resource not found: {}'.format(sub1_uuid)
 
 
 def test_scd_create_sub(scd_session, sub1_uuid):

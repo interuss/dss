@@ -31,7 +31,7 @@ function cleanup() {
 	docker rm -f http-gateway-for-testing &> /dev/null || true
 
 	echo "Stopping grpc-backend container"
-	docker rm -f grpc-backend-for-testing &> /dev/null || true
+	docker kill -f grpc-backend-for-testing &> /dev/null || true
 
 	echo "Stopping crdb docker"
 	docker rm -f dss-crdb-for-debugging &> /dev/null || true

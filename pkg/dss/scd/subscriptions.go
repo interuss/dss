@@ -118,16 +118,16 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	// Get Subscription from Store
 	sub, err := a.Store.GetSubscription(ctx, id, owner)
 	if err != nil {
-		return nil, err
+		return nil, dsserr.Internal(fmt.Sprintf("error in Store.GetSubscription: %s", err.Error()))
 	}
 	if sub == nil {
-		return nil, dsserr.Internal(fmt.Sprintf("GetSubscription returned no Subscription for ID: %s", id))
+		return nil, dsserr.NotFound(fmt.Sprintf("GetSubscription returned no Subscription for ID: %s", idString))
 	}
 
 	// Convert Subscription to proto
 	p, err := sub.ToProto()
 	if err != nil {
-		return nil, dsserr.Internal(err.Error())
+		return nil, dsserr.Internal("unable to convert Subscription to proto")
 	}
 
 	// Return response to client
