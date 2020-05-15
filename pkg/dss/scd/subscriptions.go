@@ -118,10 +118,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	// Get Subscription from Store
 	sub, err := a.Store.GetSubscription(ctx, id, owner)
 	if err != nil {
-		return nil, dsserr.Internal(fmt.Sprintf("error in Store.GetSubscription: %s", err.Error()))
-	}
-	if sub == nil {
-		return nil, dsserr.NotFound(fmt.Sprintf("GetSubscription returned no Subscription for ID: %s", idString))
+		return nil, err
 	}
 
 	// Convert Subscription to proto

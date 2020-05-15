@@ -337,7 +337,15 @@ func (c *Store) pushSubscription(ctx context.Context, q queryable, s *scdmodels.
 
 // GetSubscription returns the subscription identified by "id".
 func (c *Store) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
-	return c.fetchSubscriptionByIDAndOwner(ctx, c.DB, id, owner)
+	sub, err := c.fetchSubscriptionByIDAndOwner(ctx, c.DB, id, owner)
+	switch err {
+	case nil:
+		return sub, nil
+	case sql.ErrNoRows:
+		return nil, dsserr.NotFound(fmt.Sprintf("%s", id))
+	default:
+		return nil, err
+	}
 }
 
 // UpsertSubscription upserts subscription into the store and returns
