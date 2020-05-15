@@ -82,13 +82,12 @@ local util = import 'util.libsonnet';
 
   Deployment(metadata, name): $._Object('apps/v1beta1', 'Deployment', metadata, name) {
     local deployment = self,
-    app:: error "must specify app",
 
     spec: {
       template: {
         metadata+: {
           labels+: {
-            app: deployment.app,
+            app: name,
           },
         },
         spec: $.PodSpec,
@@ -158,7 +157,9 @@ local util = import 'util.libsonnet';
       template: {
         spec: $.PodSpec,
         metadata: {
-          labels: sset.metadata.labels,
+          labels: sset.metadata.labels {
+            app: 'name'
+          },
           annotations: {},
         },
       },

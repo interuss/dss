@@ -52,7 +52,6 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
     },
 
     deployment: base.Deployment(metadata, 'http-gateway') {
-      app:: 'http-gateway',
       metadata+: {
         namespace: metadata.namespace,
       },
