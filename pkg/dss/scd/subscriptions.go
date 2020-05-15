@@ -97,9 +97,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		result.Operations = append(result.Operations, pop)
 	}
 	// Return response to client
-	return &scdpb.PutSubscriptionResponse{
-		Subscription: p,
-	}, nil
+	return result, nil
 }
 
 // GetSubscription returns a single subscription for the given ID.

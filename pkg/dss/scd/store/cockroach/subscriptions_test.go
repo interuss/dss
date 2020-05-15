@@ -409,7 +409,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 	for i, r := range subscriptionsPool {
 		subscription := *r.input
 		subscription.Owner = owners[i]
-		subscription.Cells = cells[:i]
+		subscription.Cells = cells[:i+1]
 		sub1, _, err := store.UpsertSubscription(ctx, &subscription)
 		require.NoError(t, err)
 		require.NotNil(t, sub1)

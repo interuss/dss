@@ -56,6 +56,38 @@ func init() {
 	)
 }
 
+func (c *Store) fetchCellsForSubscription(ctx context.Context, q queryable, id scdmodels.ID) (s2.CellUnion, error) {
+	var (
+		cellsQuery = `
+			SELECT
+				cell_id
+			FROM
+				scd_cells_subscriptions
+			WHERE
+				subscription_id = $1
+		`
+	)
+
+	rows, err := q.QueryContext(ctx, cellsQuery, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var (
+		cu  s2.CellUnion
+		cid s2.CellID
+	)
+	for rows.Next() {
+		if err := rows.Scan(&cid); err != nil {
+			return nil, err
+		}
+		cu = append(cu, cid)
+	}
+
+	return cu, rows.Err()
+}
+
 func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -155,16 +187,26 @@ func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string
 }
 
 func (c *Store) fetchSubscriptionByID(ctx context.Context, q queryable, id scdmodels.ID) (*scdmodels.Subscription, error) {
-	var query = fmt.Sprintf(`
-		SELECT
-			%s
-		FROM
-			scd_subscriptions
-		WHERE
-			id = $1
-		AND
-			ends_at >= $2`, subscriptionFieldsWithPrefix)
-	return c.fetchSubscription(ctx, q, query, id, c.clock.Now())
+	var (
+		query = fmt.Sprintf(`
+			SELECT
+				%s
+			FROM
+				scd_subscriptions
+			WHERE
+				id = $1
+			AND
+				ends_at >= $2`, subscriptionFieldsWithPrefix)
+	)
+	result, err := c.fetchSubscription(ctx, q, query, id, c.clock.Now())
+	if err != nil {
+		return nil, err
+	}
+	result.Cells, err = c.fetchCellsForSubscription(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
@@ -179,7 +221,15 @@ func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, 
 			owner = $2
 		AND
 			ends_at >= $3`, subscriptionFieldsWithPrefix)
-	return c.fetchSubscription(ctx, q, query, id, owner, c.clock.Now())
+	result, err := c.fetchSubscription(ctx, q, query, id, owner, c.clock.Now())
+	if err != nil {
+		return nil, err
+	}
+	result.Cells, err = c.fetchCellsForSubscription(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // fetchMaxSubscriptionCountByCellAndOwner counts how many subscriptions the
@@ -345,19 +395,23 @@ func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscriptio
 	}
 	newSubscription.Cells = s.Cells
 
-	affectedOperations, err := c.searchOperations(ctx, tx, &dssmodels.Volume4D{
-		StartTime: s.StartTime,
-		EndTime:   s.EndTime,
-		SpatialVolume: &dssmodels.Volume3D{
-			AltitudeLo: s.AltitudeLo,
-			AltitudeHi: s.AltitudeHi,
-			Footprint: models.GeometryFunc(func() (s2.CellUnion, error) {
-				return s.Cells, nil
-			}),
-		},
-	}, s.Owner)
-	if err != nil {
-		return nil, nil, multierr.Combine(err, tx.Rollback())
+	var affectedOperations []*scdmodels.Operation
+	if len(s.Cells) > 0 {
+		ops, err := c.searchOperations(ctx, tx, &dssmodels.Volume4D{
+			StartTime: s.StartTime,
+			EndTime:   s.EndTime,
+			SpatialVolume: &dssmodels.Volume3D{
+				AltitudeLo: s.AltitudeLo,
+				AltitudeHi: s.AltitudeHi,
+				Footprint: models.GeometryFunc(func() (s2.CellUnion, error) {
+					return s.Cells, nil
+				}),
+			},
+		}, s.Owner)
+		if err != nil {
+			return nil, nil, multierr.Combine(err, tx.Rollback())
+		}
+		affectedOperations = ops
 	}
 
 	if err := tx.Commit(); err != nil {
