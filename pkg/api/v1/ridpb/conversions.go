@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
 	"github.com/interuss/dss/pkg/dss/models"
@@ -14,6 +14,7 @@ import (
 
 // RID -> business
 
+// ToCommon convert proto to model object
 func (vol4 *Volume4D) ToCommon() (*models.Volume4D, error) {
 	vol3, err := vol4.GetSpatialVolume().ToCommon()
 	if err != nil {
@@ -43,6 +44,7 @@ func (vol4 *Volume4D) ToCommon() (*models.Volume4D, error) {
 	return result, nil
 }
 
+// ToCommon convert proto to model object
 func (vol3 *Volume3D) ToCommon() (*models.Volume3D, error) {
 	footprint := vol3.GetFootprint()
 	if footprint == nil {
@@ -59,6 +61,7 @@ func (vol3 *Volume3D) ToCommon() (*models.Volume3D, error) {
 	return result, nil
 }
 
+// ToCommon convert proto to model object
 func (footprint *GeoPolygon) ToCommon() *models.GeoPolygon {
 	result := &models.GeoPolygon{}
 
@@ -69,6 +72,7 @@ func (footprint *GeoPolygon) ToCommon() *models.GeoPolygon {
 	return result
 }
 
+// ToCommon convert proto to model object
 func (pt *LatLngPoint) ToCommon() *models.LatLngPoint {
 	return &models.LatLngPoint{
 		Lat: pt.Lat,
@@ -78,6 +82,7 @@ func (pt *LatLngPoint) ToCommon() *models.LatLngPoint {
 
 // Business -> RID
 
+// MakeRidVolume4D converts Volume4D model obj to proto
 func MakeRidVolume4D(vol4 *models.Volume4D) (*Volume4D, error) {
 	vol3, err := MakeRidVolume3D(vol4.SpatialVolume)
 	if err != nil {
@@ -107,6 +112,7 @@ func MakeRidVolume4D(vol4 *models.Volume4D) (*Volume4D, error) {
 	return result, nil
 }
 
+// MakeRidVolume3D converts Volume3D model obj to proto
 func MakeRidVolume3D(vol3 *models.Volume3D) (*Volume3D, error) {
 	if vol3 == nil {
 		return nil, nil
@@ -134,6 +140,7 @@ func MakeRidVolume3D(vol3 *models.Volume3D) (*Volume3D, error) {
 	return result, nil
 }
 
+// MakeRidGeoPolygon converts GeoPolygon model obj to proto
 func MakeRidGeoPolygon(polygon *models.GeoPolygon) *GeoPolygon {
 	if polygon == nil {
 		return nil
@@ -148,6 +155,7 @@ func MakeRidGeoPolygon(polygon *models.GeoPolygon) *GeoPolygon {
 	return result
 }
 
+// MakeRidLatLngPoint converts latlngpoint model obj to proto
 func MakeRidLatLngPoint(pt *models.LatLngPoint) *LatLngPoint {
 	result := &LatLngPoint{
 		Lat: pt.Lat,

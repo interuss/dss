@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
