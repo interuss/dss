@@ -24,14 +24,16 @@ const (
 )
 
 func init() {
-	if b, _ := strconv.ParseBool(os.Getenv("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS")); b {
-		internalErrorHandler = func(msg string) error {
-			return errInternal
-		}
+	internalErrorHandler = func(msg string) error {
+		return errInternal
 	}
 
-	internalErrorHandler = func(msg string) error {
-		return status.Error(codes.Internal, msg)
+	if s, ok := os.LookupEnv("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS"); ok {
+		if b, _ := strconv.ParseBool(s); !b {
+			internalErrorHandler = func(msg string) error {
+				return status.Error(codes.Internal, msg)
+			}
+		}
 	}
 }
 
