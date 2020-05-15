@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"google.golang.org/protobuf/proto"
 )
 
 // IdentificationServiceArea represents a USS ISA over a given 4D volume.
