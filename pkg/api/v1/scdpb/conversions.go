@@ -91,26 +91,23 @@ func (vol4 *Volume4D) ToCommon() (*dssmodels.Volume4D, error) {
 
 func (vol3 *Volume3D) ToCommon() (*dssmodels.Volume3D, error) {
 	switch {
-	case vol3.GetOutlineCircle() == nil && vol3.GetOutlinePolygon() == nil:
-		return nil, errors.New("missing outline geometry")
 	case vol3.GetOutlineCircle() != nil && vol3.GetOutlinePolygon() != nil:
 		return nil, errors.New("both circle and polygon specified in outline geometry")
 	case vol3.GetOutlinePolygon() != nil:
 		return &dssmodels.Volume3D{
-			Footprint: vol3.GetOutlinePolygon().ToCommon(),
+			Footprint:  vol3.GetOutlinePolygon().ToCommon(),
+			AltitudeLo: float32p(float32(vol3.GetAltitudeLower().GetValue())),
+			AltitudeHi: float32p(float32(vol3.GetAltitudeUpper().GetValue())),
 		}, nil
 	case vol3.GetOutlineCircle() != nil:
 		return &dssmodels.Volume3D{
-			Footprint: vol3.GetOutlineCircle().ToCommon(),
+			Footprint:  vol3.GetOutlineCircle().ToCommon(),
+			AltitudeLo: float32p(float32(vol3.GetAltitudeLower().GetValue())),
+			AltitudeHi: float32p(float32(vol3.GetAltitudeUpper().GetValue())),
 		}, nil
 	}
 
-	footprint := vol3.GetOutlinePolygon()
-	if footprint == nil {
-		return nil, errors.New("spatial_volume missing required footprint")
-	}
 	return &dssmodels.Volume3D{
-		Footprint:  footprint.ToCommon(),
 		AltitudeLo: float32p(float32(vol3.GetAltitudeLower().GetValue())),
 		AltitudeHi: float32p(float32(vol3.GetAltitudeUpper().GetValue())),
 	}, nil

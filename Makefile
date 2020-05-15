@@ -23,13 +23,9 @@ format:
 	clang-format -style=file -i pkg/api/v1/scdpb/scd.proto
 	clang-format -style=file -i pkg/api/v1/auxpb/aux_service.proto
 
-.PHONY: install
-install:
-	cd $(shell mktemp -d) && go mod init tmp && go install golang.org/x/lint/golint
-
 .PHONY: lint
-lint: install
-	golint ./...
+lint:
+	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
 
 pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
@@ -57,12 +53,8 @@ pkg/api/v1/scdpb/scd.pb.go: pkg/api/v1/scdpb/scd.proto
 pkg/api/v1/scdpb/scd.pb.gw.go: pkg/api/v1/scdpb/scd.proto pkg/api/v1/scdpb/scd.pb.go
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
 
-interfaces/scd_adjusted.yaml: install-openapi-adjustments
-	go run interfaces/adjust_openapi_yaml.go interfaces/astm-utm/Protocol/utm.yaml interfaces/scd_adjusted.yaml
-
-.PHONY: install-openapi-adjustments
-install-openapi-adjustments:
-	go get gopkg.in/yaml.v2
+interfaces/scd_adjusted.yaml:
+	./interfaces/adjuster/adjust_openapi_yaml.sh ./interfaces/astm-utm/Protocol/utm.yaml ./interfaces/scd_adjusted.yaml
 
 pkg/api/v1/scdpb/scd.proto: interfaces/scd_adjusted.yaml install-proto-generation
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
@@ -106,7 +98,7 @@ test:
 test-cockroach: cleanup-test-cockroach
 	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v19.1.2 start --insecure > /dev/null
 	go test -count=1 -v ./pkg/dss/rid/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
-	go test -count=1 -v ./pkg/dss/scd/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
+	go test -count=1 -v ./pkg/dss/scd/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 

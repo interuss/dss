@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/dss/scd"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
+	scdstore "github.com/interuss/dss/pkg/dss/scd/store"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/stretchr/testify/require"
@@ -19,7 +19,7 @@ import (
 
 var (
 	// Make sure that Store implements rid.Store.
-	_ scd.Store = &Store{}
+	_ scdstore.Store = &Store{}
 
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	fakeClock = clockwork.NewFakeClock()
@@ -61,6 +61,8 @@ func newStore() (*Store, error) {
 // cleanUp drops all required tables from the store, useful for testing.
 func cleanUp(ctx context.Context, s *Store) error {
 	const query = `
+	DROP TABLE IF EXISTS scd_cells_operations;
+	DROP TABLE IF EXISTS scd_operations;
 	DROP TABLE IF EXISTS scd_cells_subscriptions;
 	DROP TABLE IF EXISTS scd_subscriptions;`
 

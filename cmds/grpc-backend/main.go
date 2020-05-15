@@ -17,8 +17,9 @@ import (
 	aux "github.com/interuss/dss/pkg/dss/aux_"
 	"github.com/interuss/dss/pkg/dss/build"
 	"github.com/interuss/dss/pkg/dss/rid"
-	"github.com/interuss/dss/pkg/dss/rid/cockroach"
+	ridc "github.com/interuss/dss/pkg/dss/rid/cockroach"
 	"github.com/interuss/dss/pkg/dss/scd"
+	scdc "github.com/interuss/dss/pkg/dss/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/dss/validations"
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
@@ -91,12 +92,12 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		"ssl_dir":          *cockroachParams.sslDir,
 		"application_name": *cockroachParams.applicationName,
 	}
-	uri, err := cockroach.BuildURI(uriParams)
+	uri, err := ridc.BuildURI(uriParams)
 	if err != nil {
 		logger.Panic("Failed to build URI", zap.Error(err))
 	}
 
-	store, err := cockroach.Dial(uri, logger)
+	store, err := ridc.Dial(uri, logger)
 	if err != nil {
 		logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
 	}
@@ -110,15 +111,33 @@ func RunGRPCServer(ctx context.Context, address string) error {
 			Store:   store,
 			Timeout: *timeout,
 		}
-		auxServer = &aux.Server{}
-		scdServer = &scd.Server{
-			Store:   &scd.DummyStore{},
-			Timeout: *timeout,
-		}
+		auxServer      = &aux.Server{}
+		scdServer      *scd.Server
 		requiredScopes = auth.MergeOperationsAndScopes(
-			dssServer.AuthScopes(), scdServer.AuthScopes(), auxServer.AuthScopes(),
+			dssServer.AuthScopes(), auxServer.AuthScopes(),
 		)
 	)
+
+	if *enableSCD {
+		uri, err := scdc.BuildURI(uriParams)
+		if err != nil {
+			logger.Panic("Failed to build URI", zap.Error(err))
+		}
+
+		store, err := scdc.Dial(uri, logger)
+		if err != nil {
+			logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
+		}
+
+		if err := store.Bootstrap(ctx); err != nil {
+			logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
+		}
+		scdServer = &scd.Server{
+			Store:   store,
+			Timeout: *timeout,
+		}
+		requiredScopes = auth.MergeOperationsAndScopes(requiredScopes, scdServer.AuthScopes())
+	}
 
 	var keyResolver auth.KeyResolver
 	switch {
