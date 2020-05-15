@@ -12,7 +12,7 @@ import (
 )
 
 // PutSubscription creates a single subscription.
-func (a *Server) putSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+func (a *Server) putSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
 	// Store Subscription model
 	return a.Store.UpsertSubscription(ctx, sub)
 }
@@ -68,12 +68,17 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	}
 
 	// Store Subscription model
-	sub, err = a.putSubscription(ctx, sub)
+	sub, ops, err := a.putSubscription(ctx, sub)
 	if err != nil {
 		return nil, err
 	}
 	if sub == nil {
 		return nil, dsserr.Internal(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
+	}
+	for _, op := range ops {
+		if op.Owner != owner {
+			op.OVN = scdmodels.OVN("")
+		}
 	}
 
 	// Convert Subscription to proto
@@ -81,7 +86,16 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	if err != nil {
 		return nil, dsserr.Internal(err.Error())
 	}
-
+	result := &scdpb.PutSubscriptionResponse{
+		Subscription: p,
+	}
+	for _, op := range ops {
+		if op.Owner != owner {
+			op.OVN = scdmodels.OVN("")
+		}
+		pop, _ := op.ToProto()
+		result.Operations = append(result.Operations, pop)
+	}
 	// Return response to client
 	return &scdpb.PutSubscriptionResponse{
 		Subscription: p,

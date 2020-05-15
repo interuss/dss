@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/interuss/dss/pkg/dss/models"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -291,61 +292,79 @@ func (c *Store) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssm
 
 // UpsertSubscription upserts subscription into the store and returns
 // the resulting subscription including its ID.
-func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
 
 	tx, err := c.Begin()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	old, err := c.fetchSubscriptionByID(ctx, tx, s.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
 	case err != nil:
-		return nil, multierr.Combine(err, tx.Rollback())
+		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
 
 	switch {
 	case old == nil && !s.Version.Empty():
 		// The user wants to update an existing subscription, but one wasn't found.
-		return nil, multierr.Combine(dsserr.NotFound(s.ID.String()), tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.NotFound(s.ID.String()), tx.Rollback())
 	case old != nil && s.Version.Empty():
 		// The user wants to create a new subscription but it already exists.
-		return nil, multierr.Combine(dsserr.AlreadyExists(s.ID.String()), tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.AlreadyExists(s.ID.String()), tx.Rollback())
 	case old != nil && !s.Version.Matches(old.Version):
 		// The user wants to update a subscription but the version doesn't match.
-		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
 	case old != nil && old.Owner != s.Owner:
-		return nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner)), tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner)), tx.Rollback())
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
 	if err := s.AdjustTimeRange(c.clock.Now(), old); err != nil {
-		return nil, multierr.Combine(err, tx.Rollback())
+		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
 
 	// Check the user hasn't created too many subscriptions in this area.
 	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, tx, s.Cells, s.Owner)
 	if err != nil {
 		c.logger.Warn("Error fetching max subscription count", zap.Error(err))
-		return nil, multierr.Combine(dsserr.Internal(
+		return nil, nil, multierr.Combine(dsserr.Internal(
 			"failed to fetch subscription count, rejecting request"), tx.Rollback())
 	} else if count >= maxSubscriptionsPerArea {
 		errMsg := "too many existing subscriptions in this area already"
 		if old != nil {
 			errMsg = errMsg + ", rejecting update request"
 		}
-		return nil, multierr.Combine(dsserr.Exhausted(errMsg), tx.Rollback())
+		return nil, nil, multierr.Combine(dsserr.Exhausted(errMsg), tx.Rollback())
 	}
 
 	newSubscription, err := c.pushSubscription(ctx, tx, s)
 	if err != nil {
-		return nil, err
+		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
+	newSubscription.Cells = s.Cells
+
+	affectedOperations, err := c.searchOperations(ctx, tx, &dssmodels.Volume4D{
+		StartTime: s.StartTime,
+		EndTime:   s.EndTime,
+		SpatialVolume: &dssmodels.Volume3D{
+			AltitudeLo: s.AltitudeLo,
+			AltitudeHi: s.AltitudeHi,
+			Footprint: models.GeometryFunc(func() (s2.CellUnion, error) {
+				return s.Cells, nil
+			}),
+		},
+	}, s.Owner)
+	if err != nil {
+		return nil, nil, multierr.Combine(err, tx.Rollback())
+	}
+
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return newSubscription, nil
+
+	return newSubscription, affectedOperations, nil
 }
 
 // DeleteSubscription deletes the subscription identified by "id" and

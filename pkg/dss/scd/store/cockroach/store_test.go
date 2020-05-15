@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	scdstore "github.com/interuss/dss/pkg/dss/scd/store"
@@ -93,7 +94,7 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		begins  = time.Now()
 		expires = begins.Add(-5 * time.Minute)
 	)
-	_, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
+	_, _, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
 		ID:                   scdmodels.ID(uuid.New().String()),
 		Owner:                "me-myself-and-i",
 		BaseURL:              "https://no/place/like/home",
@@ -101,6 +102,9 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		NotifyForConstraints: true,
 		StartTime:            &begins,
 		EndTime:              &expires,
+		Cells: s2.CellUnion{
+			s2.CellID(42),
+		},
 	})
 	require.Error(t, err)
 }
@@ -119,13 +123,16 @@ func TestDatabaseEnsuresOneNotifyFlagTrue(t *testing.T) {
 		begins  = time.Now()
 		expires = begins.Add(5 * time.Minute)
 	)
-	_, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
+	_, _, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
 		ID:                scdmodels.ID(uuid.New().String()),
 		Owner:             "me-myself-and-i",
 		BaseURL:           "https://no/place/like/home",
 		NotificationIndex: 42,
 		StartTime:         &begins,
 		EndTime:           &expires,
+		Cells: s2.CellUnion{
+			s2.CellID(42),
+		},
 	})
 	require.Error(t, err)
 }

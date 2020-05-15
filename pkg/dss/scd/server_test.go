@@ -68,18 +68,11 @@ func (ms *mockStore) GetSubscription(ctx context.Context, id scdmodels.ID, owner
 	return args.Get(0).(*scdmodels.Subscription), args.Error(1)
 }
 
-func (ms *mockStore) UpsertSubscription(ctx context.Context, subscription *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+func (ms *mockStore) UpsertSubscription(ctx context.Context, subscription *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	args := ms.Called(ctx, subscription)
-	return args.Get(0).(*scdmodels.Subscription), args.Error(1)
-}
-
-func (ms *mockStore) InsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	args := ms.Called(ctx, s)
-	return args.Get(0).(*scdmodels.Subscription), args.Error(1)
+	return args.Get(0).(*scdmodels.Subscription), args.Get(1).([]*scdmodels.Operation), args.Error(2)
 }
 
 func (ms *mockStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error) {
@@ -428,7 +421,7 @@ func TestPutSubscription(t *testing.T) {
 			store := &mockStore{}
 			if r.wantErr == nil {
 				store.On("UpsertSubscription", mock.Anything, &sub).Return(
-					r.wantSubscription, nil,
+					r.wantSubscription, []*scdmodels.Operation(nil), nil,
 				)
 			}
 			s := &Server{
@@ -525,7 +518,7 @@ func TestCreateOperation(t *testing.T) {
 			store.On("UpsertSubscription", mock.Anything, mock.Anything).Return(
 				&scdmodels.Subscription{
 					ID: scdmodels.ID(uuid.New().String()),
-				}, error(nil),
+				}, []*scdmodels.Operation(nil), error(nil),
 			).Maybe()
 
 			if r.wantOperation != nil {
