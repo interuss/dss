@@ -146,7 +146,8 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                   '--config.file=/etc/prometheus/prometheus.yml',
                   '--storage.tsdb.path=/data/prometheus/',
                   '--storage.tsdb.retention.time=' + metadata.prometheus.retention,
-                  '--stroage.tsdb.max-block-duration=2h',
+                  // following thanos recommendation
+                  '--storage.tsdb.max-block-duration=2h',
                 ],
                 ports: [
                   {
