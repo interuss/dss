@@ -12,7 +12,6 @@ local volumes = import 'volumes.libsonnet';
     deployment: base.Deployment(metadata, 'grpc-backend') {
       apiVersion: 'apps/v1beta1',
       kind: 'Deployment',
-      app:: 'grpc-backend',
       metadata+: {
         namespace: metadata.namespace,
       },
