@@ -10,6 +10,9 @@ import pytest
 SCOPES = [
     'dss.write.identification_service_areas',
     'dss.read.identification_service_areas',
+    'utm.strategic_coordination',
+    'utm.constraint_management',
+    'utm.constraint_consumption'
 ]
 
 
