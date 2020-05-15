@@ -33,6 +33,23 @@ local datasourcePrometheus(metadata) = {
   ],
 };
 
+local notifierConfig(metadata) = {
+  apiVersion: 1,
+  notifiers: [
+    {
+      name: 'auto-alertmanager',
+      type: 'prometheus-alertmanager',
+      uid: 'notifier1',
+      org_name: 'Main Org.',
+      is_default: true,
+      send_image: true,
+      settings: {
+        url: 'http://alertmanager-service.' + metadata.namespace + '.svc:9093',
+      },
+    },
+  ],
+};
+
 {
   all(metadata) : {
     configMap: base.ConfigMap(metadata, 'grafana-datasources') {
@@ -46,6 +63,11 @@ local datasourcePrometheus(metadata) = {
       },
     },
     grafDashboards: dashboard.all(metadata).config,
+    notifierConfig: base.ConfigMap(metadata, 'grafana-notifier-provisioning') {
+      data: {
+        'notifiers.yaml': if metadata.alert.enable == true then std.manifestYamlDoc(notifierConfig(metadata)) else "",
+      },
+    },
 
     deployment: base.Deployment(metadata, 'grafana') {
       spec: {
@@ -98,6 +120,11 @@ local datasourcePrometheus(metadata) = {
                     name: 'grafana-dash-provisioning',
                     readOnly: false,
                   },
+                  {
+                    mountPath: '/etc/grafana/provisioning/notifiers',
+                    name: 'grafana-notifier-provisioning',
+                    readOnly: false,
+                  },
                 ] + dashboard.all(metadata).mount,
               },
             ],
@@ -120,7 +147,13 @@ local datasourcePrometheus(metadata) = {
                   name: 'grafana-dash-provisioning',
                 },
               },
-              
+              {
+                name: 'grafana-notifier-provisioning',
+                configMap: {
+                  defaultMode: 420,
+                  name: 'grafana-notifier-provisioning',
+                },
+              },
             ] + dashboard.all(metadata).volumes,
           },
         },
