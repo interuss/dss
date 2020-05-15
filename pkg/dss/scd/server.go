@@ -13,6 +13,12 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
 
+const (
+	strategicCoordinationScope = "utm.strategic_coordination"
+	constraintManagementScope  = "utm.constraint_management"
+	constraintConsumptionScope = "utm.constraint_consumption"
+)
+
 func dssErrorOfAreaError(err error) error {
 	switch err.(type) {
 	case *geo.ErrAreaTooLarge:
@@ -52,21 +58,21 @@ type Server struct {
 // AuthScopes returns a map of endpoint to required Oauth scope.
 func (a *Server) AuthScopes() map[auth.Operation][]auth.Scope {
 	// TODO: replace with correct scopes
-	//"DeleteConstraintReference": {readISAScope}, //{constraintManagementScope},
-	//"DeleteOperationReference":  {readISAScope}, //{strategicCoordinationScope},
-	// TODO: De-duplicate operation names
-	//"DeleteSubscription":               {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-	//"GetConstraintReference": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-	//"GetOperationReference":  {readISAScope}, //{strategicCoordinationScope},
-	//"GetSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-	//"MakeDssReport":          {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-	//"PutConstraintReference": {readISAScope}, //{constraintManagementScope},
-	//"PutOperationReference":  {readISAScope}, //{strategicCoordinationScope},
-	//"PutSubscription":                  {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-	//"QueryConstraintReferences": {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-	//"QuerySubscriptions":        {readISAScope}, //{strategicCoordinationScope, constraintConsumptionScope},
-	//"SearchOperationReferences": {readISAScope}, //{strategicCoordinationScope},
-	return nil
+	return map[auth.Operation][]auth.Scope{
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteConstraintReference": {constraintManagementScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteOperationReference":  {strategicCoordinationScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteSubscription":        {strategicCoordinationScope, constraintConsumptionScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetConstraintReference":    {strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetOperationReference":     {strategicCoordinationScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetSubscription":           {strategicCoordinationScope, constraintConsumptionScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/MakeDssReport":             {strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/PutConstraintReference":    {constraintManagementScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/PutOperationReference":     {strategicCoordinationScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/PutSubscription":           {strategicCoordinationScope, constraintConsumptionScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QueryConstraintReferences": {strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QuerySubscriptions":        {strategicCoordinationScope, constraintConsumptionScope},
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/SearchOperationReferences": {strategicCoordinationScope},
+	}
 }
 
 // MakeDssReport creates an error report about a DSS.
