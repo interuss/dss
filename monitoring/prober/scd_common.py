@@ -49,16 +49,13 @@ def make_altitude(alt: float) -> Dict:
 
 def make_circle(lat: float, lng: float, radius: float) -> Dict:
   return {
-    "type": "Feature",
-    "geometry": {
-      "type": "Point",
-      "coordinates": [lng, lat]
+    "center": {
+      "lat": lat,
+      "lng": lng,
     },
-    "properties": {
-      "radius": {
-        "value": radius,
-        "units": "M"
-      }
+    "radius": {
+      "value": radius,
+      "units": "M"
     }
   }
 

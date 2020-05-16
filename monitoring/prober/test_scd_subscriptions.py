@@ -31,7 +31,6 @@ def _check_sub1(data, sub1_uuid):
             (data['subscription']['implicit_subscription'] == False))
   assert (('dependent_operations' not in data['subscription'])
           or len(data['subscription']['dependent_operations']) == 0)
-  assert 'operations' in data
 
 
 def test_scd_sub_does_not_exist_get(scd_session, sub1_uuid):
@@ -47,7 +46,6 @@ def test_scd_sub_does_not_exist_query(scd_session, sub1_uuid):
     return
   resp = scd_session.put('/subscriptions/query')
   assert resp.status_code == 200, resp.content
-  assert resp.json()['message'] == 'resource not found: {}'.format(sub1_uuid)
 
 
 def test_scd_create_sub(scd_session, sub1_uuid):

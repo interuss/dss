@@ -164,9 +164,6 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	if err != nil {
 		return nil, err
 	}
-	if subs == nil {
-		return nil, dsserr.Internal("SearchSubscriptions returned nil subscriptions")
-	}
 
 	// Return response to client
 	response := &scdpb.SearchSubscriptionsResponse{}
