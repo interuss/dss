@@ -11,6 +11,7 @@ import uuid
 
 from . import common
 
+
 def test_create_sub_empty_vertices(session, sub2_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=10)

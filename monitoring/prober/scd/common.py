@@ -64,6 +64,5 @@ def make_polygon(coords: List[Tuple[float, float]]) -> Dict:
   full_coords = coords.copy()
   full_coords.append(coords[0])
   return {
-    "type": "Polygon",
-    "coordinates": [ [[lng, lat] for (lat, lng) in full_coords] ]
+    "vertices": [ {'lat': lat, 'lng': lng} for (lat, lng) in full_coords]
   }

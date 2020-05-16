@@ -11,9 +11,8 @@
 """
 
 import datetime
-import re
 
-from . import scd_common
+from . import common
 
 
 def _check_sub1(data, sub1_uuid):
@@ -22,8 +21,8 @@ def _check_sub1(data, sub1_uuid):
           (data['subscription']['notification_index'] == 0))
   assert data['subscription']['version'] == 1
   assert data['subscription']['uss_base_url'] == 'https://example.com/foo'
-  assert data['subscription']['time_start']['format'] == scd_common.TIME_FORMAT_CODE
-  assert data['subscription']['time_end']['format'] == scd_common.TIME_FORMAT_CODE
+  assert data['subscription']['time_start']['format'] == common.TIME_FORMAT_CODE
+  assert data['subscription']['time_end']['format'] == common.TIME_FORMAT_CODE
   assert data['subscription']['notify_for_operations'] == True
   assert (('notify_for_constraints' not in data['subscription']) or
           (data['subscription']['notify_for_constraints'] == False))
@@ -44,7 +43,10 @@ def test_scd_sub_does_not_exist_get(scd_session, sub1_uuid):
 def test_scd_sub_does_not_exist_query(scd_session, sub1_uuid):
   if scd_session is None:
     return
-  resp = scd_session.put('/subscriptions/query')
+  time_now = datetime.datetime.utcnow()
+  resp = scd_session.post('/subscriptions/query', json={
+    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(12, -34, 300))
+  })
   assert resp.status_code == 200, resp.content
 
 
@@ -57,7 +59,7 @@ def test_scd_create_sub(scd_session, sub1_uuid):
   resp = scd_session.put(
       '/subscriptions/{}'.format(sub1_uuid),
       json={
-        "extents": scd_common.make_vol4(time_start, time_end, 0, 1000, scd_common.make_circle(12, -34, 300)),
+        "extents": common.make_vol4(time_start, time_end, 0, 1000, common.make_circle(12, -34, 300)),
         "old_version": 0,
         "uss_base_url": "https://example.com/foo",
         "notify_for_operations": True,
@@ -67,9 +69,9 @@ def test_scd_create_sub(scd_session, sub1_uuid):
 
   data = resp.json()
   assert data['subscription']['time_start']['value'] == time_start.strftime(
-      scd_common.DATE_FORMAT)
+      common.DATE_FORMAT)
   assert data['subscription']['time_end']['value'] == time_end.strftime(
-      scd_common.DATE_FORMAT)
+      common.DATE_FORMAT)
   _check_sub1(data, sub1_uuid)
 
 
@@ -90,8 +92,8 @@ def test_scd_get_sub_by_search(scd_session, sub1_uuid):
   resp = scd_session.post(
       '/subscriptions/query',
       json={
-        "area_of_interest": scd_common.make_vol4(time_now, time_now, 0, 120,
-                                                 scd_common.make_circle(12.00001, -34.00001, 50))
+        "area_of_interest": common.make_vol4(time_now, time_now, 0, 120,
+                                             common.make_circle(12.00001, -34.00001, 50))
       })
   if resp.status_code != 200:
     print(resp.content)
@@ -120,8 +122,8 @@ def test_scd_get_deleted_sub_by_search(scd_session, sub1_uuid):
   resp = scd_session.post(
     '/subscriptions/query',
     json={
-      "area_of_interest": scd_common.make_vol4(time_now, time_now, 0, 120,
-                                               scd_common.make_circle(12.00001, -34.00001, 50))
+      "area_of_interest": common.make_vol4(time_now, time_now, 0, 120,
+                                           common.make_circle(12.00001, -34.00001, 50))
     })
   assert resp.status_code == 200, resp.content
   assert sub1_uuid not in [x['id'] for x in resp.json()['subscriptions']]
