@@ -9,12 +9,12 @@ DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 def make_vol4(
-  t0: Optional[datetime] = None,
-  t1: Optional[datetime] = None,
-  alt0: Optional[float] = None,
-  alt1: Optional[float] = None,
-  circle: Dict = None,
-  polygon: Dict = None) -> Dict:
+    t0: Optional[datetime] = None,
+    t1: Optional[datetime] = None,
+    alt0: Optional[float] = None,
+    alt1: Optional[float] = None,
+    circle: Dict = None,
+    polygon: Dict = None) -> Dict:
   vol3 = dict()
   if circle is not None:
     vol3['outline_circle'] = circle

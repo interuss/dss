@@ -111,9 +111,6 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	if err != nil {
 		return nil, err
 	}
-	if ops == nil {
-		return nil, dsserr.Internal("SearchOperations returned nil operations")
-	}
 
 	// Return response to client
 	response := &scdpb.SearchOperationReferenceResponse{}
