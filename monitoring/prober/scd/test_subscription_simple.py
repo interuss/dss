@@ -32,25 +32,25 @@ def _check_sub1(data, sub1_uuid):
           or len(data['subscription']['dependent_operations']) == 0)
 
 
-def test_scd_sub_does_not_exist_get(scd_session, sub1_uuid):
+def test_sub_does_not_exist_get(scd_session, sub1_uuid):
   if scd_session is None:
     return
   resp = scd_session.get('/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 404, resp.content
-  assert resp.json()['message'] == 'resource not found: {}'.format(sub1_uuid)
 
 
-def test_scd_sub_does_not_exist_query(scd_session, sub1_uuid):
+def test_sub_does_not_exist_query(scd_session, sub1_uuid):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
   resp = scd_session.post('/subscriptions/query', json={
-    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(12, -34, 300))
+    'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(12, -34, 300))
   })
   assert resp.status_code == 200, resp.content
+  assert sub1_uuid not in [sub['id'] for sub in resp.json().get('subscriptions', [])]
 
 
-def test_scd_create_sub(scd_session, sub1_uuid):
+def test_create_sub(scd_session, sub1_uuid):
   if scd_session is None:
     return
   time_start = datetime.datetime.utcnow()
@@ -75,7 +75,7 @@ def test_scd_create_sub(scd_session, sub1_uuid):
   _check_sub1(data, sub1_uuid)
 
 
-def test_scd_get_sub_by_id(scd_session, sub1_uuid):
+def test_get_sub_by_id(scd_session, sub1_uuid):
   if scd_session is None:
     return
   resp = scd_session.get('/subscriptions/{}'.format(sub1_uuid))
@@ -85,7 +85,7 @@ def test_scd_get_sub_by_id(scd_session, sub1_uuid):
   _check_sub1(data, sub1_uuid)
 
 
-def test_scd_get_sub_by_search(scd_session, sub1_uuid):
+def test_get_sub_by_search(scd_session, sub1_uuid):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
@@ -101,21 +101,21 @@ def test_scd_get_sub_by_search(scd_session, sub1_uuid):
   assert sub1_uuid in [x['id'] for x in resp.json()['subscriptions']]
 
 
-def test_scd_delete_sub(scd_session, sub1_uuid):
+def test_delete_sub(scd_session, sub1_uuid):
   if scd_session is None:
     return
   resp = scd_session.delete('/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 200, resp.content
 
 
-def test_scd_get_deleted_sub_by_id(scd_session, sub1_uuid):
+def test_get_deleted_sub_by_id(scd_session, sub1_uuid):
   if scd_session is None:
     return
   resp = scd_session.get('/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 404, resp.content
 
 
-def test_scd_get_deleted_sub_by_search(scd_session, sub1_uuid):
+def test_get_deleted_sub_by_search(scd_session, sub1_uuid):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
