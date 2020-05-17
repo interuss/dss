@@ -158,6 +158,13 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, dsserr.BadRequest(fmt.Sprintf("failed to union extents: %s", err))
 	}
 
+	if uExtent.StartTime == nil {
+	  return nil, dsserr.BadRequest("missing time_start from extents")
+	}
+	if (uExtent.EndTime == nil) {
+	  return nil, dsserr.BadRequest("missing time_end from extents")
+	}
+
 	cells, err := uExtent.CalculateSpatialCovering()
 	if err != nil {
 		return nil, dssErrorOfAreaError(err)

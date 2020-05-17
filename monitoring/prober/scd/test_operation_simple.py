@@ -11,6 +11,21 @@ import datetime
 from . import common
 
 
+def make_op1_request():
+  time_start = datetime.datetime.utcnow()
+  time_end = time_start + datetime.timedelta(minutes=60)
+  return {
+    'extents': [common.make_vol4(time_start, time_end, 0, 120, common.make_circle(-56, 178, 50))],
+    'old_version': 0,
+    'state': 'Accepted',
+    'uss_base_url': 'https://example.com/dss',
+    'new_subscription': {
+      'uss_base_url': 'https://example.com/dss',
+      'notify_for_constraints': False
+    }
+  }
+
+
 def test_op_does_not_exist_get(scd_session, op1_uuid):
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 404, resp.content
@@ -28,49 +43,39 @@ def test_op_does_not_exist_query(scd_session, op1_uuid):
 
 
 def test_create_op_single_extent(scd_session, op1_uuid):
-  time_start = datetime.datetime.utcnow()
-  time_end = time_start + datetime.timedelta(minutes=60)
+  req = make_op1_request()
+  req['extents'] = req['extents'][0]
+  resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
+  assert resp.status_code == 400, resp.content
 
-  resp = scd_session.put(
-    '/operation_references/{}'.format(op1_uuid),
-    json={
-      'extents': common.make_vol4(time_start, time_end, 0, 120, common.make_circle(-56, 178, 50)),
-      'old_version': 0,
-      'state': 'Accepted',
-      'uss_base_url': 'https://example.com/dss',
-      'new_subscription': {
-        'uss_base_url': 'https://example.com/dss',
-        'notify_for_constraints': False
-      }
-    })
+
+def test_create_op_missing_time_start(scd_session, op1_uuid):
+  req = make_op1_request()
+  del req['extents'][0]['time_start']
+  resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
+  assert resp.status_code == 400, resp.content
+
+
+def test_create_op_missing_time_end(scd_session, op1_uuid):
+  req = make_op1_request()
+  del req['extents'][0]['time_end']
+  resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 400, resp.content
 
 
 def test_create_op(scd_session, op1_uuid):
-  time_start = datetime.datetime.utcnow()
-  time_end = time_start + datetime.timedelta(minutes=60)
-
-  resp = scd_session.put(
-      '/operation_references/{}'.format(op1_uuid),
-      json={
-          'extents': [common.make_vol4(time_start, time_end, 0, 120, common.make_circle(-56, 178, 50))],
-          'old_version': 0,
-          'state': 'Accepted',
-          'uss_base_url': 'https://example.com/dss',
-          'new_subscription': {
-              'uss_base_url': 'https://example.com/dss',
-              'notify_for_constraints': False
-          }
-      })
+  req = make_op1_request()
+  resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
   op = data['operation_reference']
   assert op['id'] == op1_uuid
   assert op['uss_base_url'] == 'https://example.com/dss'
-  assert op['time_start']['value'] == time_start.strftime(common.DATE_FORMAT)
-  assert op['time_end']['value'] == time_end.strftime(common.DATE_FORMAT)
+  assert op['time_start']['value'] == req['extents'][0]['time_start']['value']
+  assert op['time_end']['value'] == req['extents'][0]['time_end']['value']
   assert op['version'] == 1
+  assert 'subscription_id' in op
   assert 'state' not in op
 
 
@@ -133,6 +138,34 @@ def test_get_op_by_search_latest_time_excluded(scd_session, op1_uuid):
   })
   assert resp.status_code == 200, resp.content
   assert op1_uuid not in [x['id'] for x in resp.json()['operation_references']]
+
+
+def test_mutate_op(scd_session, op1_uuid):
+  # GET current op
+  resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
+  assert resp.status_code == 200, resp.content
+  existing_op = resp.json().get('operation_reference', None)
+  assert existing_op is not None
+
+  req = make_op1_request()
+  resp = scd_session.put(
+    '/operation_references/{}'.format(op1_uuid),
+    json={
+      'extents': req['extents'],
+      'old_version': existing_op['version'],
+      'state': 'Activated',
+      'uss_base_url': 'https://example.com/dss2',
+      'subscription_id': existing_op['subscription_id']
+    })
+  assert resp.status_code == 200, resp.content
+
+  data = resp.json()
+  op = data['operation_reference']
+  assert op['id'] == op1_uuid
+  assert op['uss_base_url'] == 'https://example.com/dss2'
+  assert op['version'] == 2
+  assert op['subscription_id'] == existing_op['subscription_id']
+  assert 'state' not in op
 
 
 def test_delete_op(scd_session, op1_uuid):
