@@ -255,15 +255,15 @@ def sub1_uuid():
   return str(uuid.uuid4())
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 def sub2_uuid():
-  # short lived as this uuid used to test failure cases
   return str(uuid.uuid4())
 
 
 @pytest.fixture(scope='module')
 def op1_uuid():
   return str(uuid.uuid4())
+
 
 @pytest.fixture(scope='module')
 def op2_uuid():
