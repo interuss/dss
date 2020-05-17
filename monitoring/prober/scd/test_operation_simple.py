@@ -1,8 +1,10 @@
 """Basic Operation tests:
 
+  - make sure the Operation doesn't exist with get or query
   - create the Operation with a 60 minute length
   - get by ID
   - search with earliest_time and latest_time
+  - mutate
   - delete
 """
 

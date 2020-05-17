@@ -44,6 +44,8 @@ func createGetTokenHandler(privateKey *rsa.PrivateKey) http.Handler {
 			issuers     []string = params["issuer"]
 			expireTime  int64    = time.Now().Add(time.Hour).Unix()
 			expireTimes []string = params["expire"]
+			sub         string   = "fake-user"
+			subs        []string = params["sub"]
 		)
 		if len(auds) == 1 {
 			aud = auds[0]
@@ -63,12 +65,17 @@ func createGetTokenHandler(privateKey *rsa.PrivateKey) http.Handler {
 				expireTime = parsedTime
 			}
 		}
+
+		if len(subs) == 1 {
+		  sub = subs[0]
+		}
+
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 			"aud":   aud,
 			"scope": scope,
 			"iss":   issuer,
 			"exp":   expireTime,
-			"sub":   "fake-user",
+			"sub":   sub,
 		})
 
 		// Sign and get the complete encoded token as a string using the secret
