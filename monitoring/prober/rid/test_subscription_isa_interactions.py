@@ -9,7 +9,7 @@
 
 import datetime
 
-import common
+from . import common
 
 
 def test_create_isa(session, isa1_uuid):

@@ -8,7 +8,7 @@
 
 import datetime
 
-import common
+from . import common
 
 
 def test_isa_huge_area(session, isa1_uuid):

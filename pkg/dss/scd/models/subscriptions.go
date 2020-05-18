@@ -75,6 +75,11 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 			Format: TimeFormatRfc3339,
 		}
 	}
+
+	for _, op := range s.DependentOperations {
+		result.DependentOperations = append(result.DependentOperations, op.String())
+	}
+
 	return result, nil
 }
 

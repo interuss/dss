@@ -9,7 +9,7 @@
 import datetime
 import re
 
-import common
+from . import common
 
 
 def test_sub_does_not_exist(session, sub1_uuid):
@@ -79,7 +79,7 @@ def test_get_sub_by_search(session, sub1_uuid):
 
 def test_get_sub_by_searching_huge_area(session, sub1_uuid):
   resp = session.get('/subscriptions?area={}'.format(common.HUGE_GEO_POLYGON_STRING))
-  assert resp.status_code == 413 
+  assert resp.status_code == 413
 
 
 def test_delete_sub_empty_version(session, sub1_uuid):

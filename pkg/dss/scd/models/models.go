@@ -3,6 +3,8 @@ package models
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
+	"net/url"
 	"time"
 )
 
@@ -59,4 +61,22 @@ func (v Version) Empty() bool {
 // Matches returns true if v matches w.
 func (v Version) Matches(w Version) bool {
 	return v == w
+}
+
+func ValidateUSSBaseURL(s string) error {
+	u, err := url.Parse(s)
+	if err != nil {
+		return err
+	}
+
+	switch u.Scheme {
+	case "https":
+		// All good, proceed normally.
+	case "http":
+		return errors.New("uss_base_url in new_subscription must use TLS")
+	default:
+		return errors.New("uss_base_url must support https scheme")
+	}
+
+	return nil
 }

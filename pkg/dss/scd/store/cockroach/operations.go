@@ -221,7 +221,15 @@ func (s *Store) populateOperationCells(ctx context.Context, q queryable, o *scdm
 }
 
 func (s *Store) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
-	return s.fetchOperationByID(ctx, s.DB, id)
+	sub, err := s.fetchOperationByID(ctx, s.DB, id)
+	switch err {
+	case nil:
+		return sub, nil
+	case sql.ErrNoRows:
+		return nil, dsserr.NotFound(id.String())
+	default:
+		return nil, err
+	}
 }
 
 func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
@@ -244,9 +252,9 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 			AND
 				implicit = true
 			AND
-				1 = ALL (
+				0 = ALL (
 					SELECT
-						COUNT(id)
+						COALESCE(COUNT(id),0)
 					FROM
 						scd_operations
 					WHERE
@@ -286,7 +294,6 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 	if _, err := tx.ExecContext(ctx, deleteQuery, id, owner); err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
-
 	if _, err := tx.ExecContext(ctx, deleteImplicitSubscriptionQuery, old.SubscriptionID, owner); err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}

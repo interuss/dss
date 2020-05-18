@@ -111,9 +111,6 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	if err != nil {
 		return nil, err
 	}
-	if ops == nil {
-		return nil, dsserr.Internal("SearchOperations returned nil operations")
-	}
 
 	// Return response to client
 	response := &scdpb.SearchOperationReferenceResponse{}
@@ -161,6 +158,13 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, dsserr.BadRequest(fmt.Sprintf("failed to union extents: %s", err))
 	}
 
+	if uExtent.StartTime == nil {
+		return nil, dsserr.BadRequest("missing time_start from extents")
+	}
+	if uExtent.EndTime == nil {
+		return nil, dsserr.BadRequest("missing time_end from extents")
+	}
+
 	cells, err := uExtent.CalculateSpatialCovering()
 	if err != nil {
 		return nil, dssErrorOfAreaError(err)
@@ -169,11 +173,15 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	subscriptionID := scdmodels.ID(params.GetSubscriptionId())
 
 	if subscriptionID.Empty() {
+		if err := scdmodels.ValidateUSSBaseURL(
+			params.GetNewSubscription().GetUssBaseUrl(),
+		); err != nil {
+			return nil, dsserr.BadRequest(err.Error())
+		}
 		// TODO(tvoss): Creation of the subscription and the operation is not
 		// atomic. That is, if the creation of the operation fails, we need to
 		// rollback this subscription, too. See
 		// https://github.com/interuss/dss/issues/277 for tracking purposes.
-
 		sub, _, err := a.putSubscription(ctx, &scdmodels.Subscription{
 			ID:         scdmodels.ID(uuid.New().String()),
 			Owner:      owner,

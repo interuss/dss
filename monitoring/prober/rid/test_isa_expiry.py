@@ -3,7 +3,7 @@
 import datetime
 import time
 
-import common
+from . import common
 
 
 def test_create(session, isa1_uuid):

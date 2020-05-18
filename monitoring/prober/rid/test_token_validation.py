@@ -9,16 +9,16 @@
 """
 
 import datetime
-import re
 
-import common
+from . import common
+
 
 def test_validate(session):
   resp = session.get('/validate_oauth')
   assert resp.status_code == 200
 
 def test_validate_token_good_user(session):
-  resp = session.get('/validate_oauth?owner=fake-user')
+  resp = session.get('/validate_oauth?owner=fake_uss')
   assert resp.status_code == 200
 
 def test_validate_token_bad_user(session):

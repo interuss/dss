@@ -120,14 +120,11 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	if err != nil {
 		return nil, err
 	}
-	if sub == nil {
-		return nil, dsserr.Internal(fmt.Sprintf("GetSubscription returned no Subscription for ID: %s", id))
-	}
 
 	// Convert Subscription to proto
 	p, err := sub.ToProto()
 	if err != nil {
-		return nil, dsserr.Internal(err.Error())
+		return nil, dsserr.Internal("unable to convert Subscription to proto")
 	}
 
 	// Return response to client
@@ -166,9 +163,6 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	subs, err := a.Store.SearchSubscriptions(ctx, cells, owner) //TODO: incorporate time bounds into query
 	if err != nil {
 		return nil, err
-	}
-	if subs == nil {
-		return nil, dsserr.Internal("SearchSubscriptions returned nil subscriptions")
 	}
 
 	// Return response to client
@@ -211,7 +205,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	// Convert deleted Subscription to proto
 	p, err := sub.ToProto()
 	if err != nil {
-		return nil, dsserr.Internal(err.Error())
+		return nil, dsserr.Internal("error converting Subscription model to proto")
 	}
 
 	// Return response to client

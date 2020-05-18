@@ -474,15 +474,12 @@ func TestCreateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:    "missing-extents",
-			id:      scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			url:     "https://example.com",
-			wantErr: dsserr.BadRequest("bad area: missing footprint"),
-		},
-		{
-			name:    "missing-extents-spatial-volume",
-			id:      scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents: &scdpb.Volume4D{},
+			name: "missing-extents-spatial-volume",
+			id:   scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: &scdpb.Volume4D{
+				TimeStart: testdata.LoopVolume4D.GetTimeStart(),
+				TimeEnd:   testdata.LoopVolume4D.GetTimeEnd(),
+			},
 			url:     "https://example.com",
 			wantErr: dsserr.BadRequest("bad area: missing footprint"),
 		},
@@ -490,7 +487,9 @@ func TestCreateOperation(t *testing.T) {
 			name: "missing-spatial-volume-footprint",
 			id:   scdmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: &scdpb.Volume4D{
-				Volume: &scdpb.Volume3D{},
+				Volume:    &scdpb.Volume3D{},
+				TimeStart: testdata.LoopVolume4D.GetTimeStart(),
+				TimeEnd:   testdata.LoopVolume4D.GetTimeEnd(),
 			},
 			url:     "https://example.com",
 			wantErr: dsserr.BadRequest("bad area: missing footprint"),
@@ -502,6 +501,8 @@ func TestCreateOperation(t *testing.T) {
 				Volume: &scdpb.Volume3D{
 					OutlinePolygon: &scdpb.Polygon{},
 				},
+				TimeStart: testdata.LoopVolume4D.GetTimeStart(),
+				TimeEnd:   testdata.LoopVolume4D.GetTimeEnd(),
 			},
 			url:     "https://example.com",
 			wantErr: dsserr.BadRequest("failed to union extents: not enough points in polygon"),
