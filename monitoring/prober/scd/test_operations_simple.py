@@ -132,7 +132,6 @@ def test_create_op1(scd_session, op1_uuid):
 
 # Try (unsuccessfully) to delete the implicit Subscription
 def test_delete_implicit_sub(scd_session, op1_uuid):
-  return # TODO(tvoss): Delete this line when capability is implemented
   if scd_session is None:
     return
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
@@ -206,7 +205,7 @@ def test_create_op2(scd_session2, op2_uuid, sub2_uuid, op1_uuid):
   implicit_sub_id = resp.json()['operation_reference']['subscription_id']
 
   # USS2 should definitely be instructed to notify USS1's implicit Subscription of the new Operation
-  subscribers = _parse_subscribers(op.get('subscribers', []))
+  subscribers = _parse_subscribers(data.get('subscribers', []))
   assert URL_SUB1 in subscribers, subscribers
   assert implicit_sub_id in subscribers[URL_SUB1], subscribers[URL_SUB1]
 
@@ -279,7 +278,7 @@ def test_mutate_op1(scd_session, op1_uuid, sub2_uuid):
   assert 'state' not in op
 
   # USS1 should definitely be instructed to notify USS2's Subscription of the updated Operation
-  subscribers = _parse_subscribers(op.get('subscribers', []))
+  subscribers = _parse_subscribers(data.get('subscribers', []))
   assert URL_SUB2 in subscribers, subscribers
   assert sub2_uuid in subscribers[URL_SUB2], subscribers[URL_SUB2]
 
@@ -288,7 +287,6 @@ def test_mutate_op1(scd_session, op1_uuid, sub2_uuid):
 
 # Try (unsuccessfully) to delete the stand-alone Subscription that Op2 is relying on
 def test_delete_dependent_sub(scd_session2, sub2_uuid):
-  return # TODO(tvoss): Remove this line when ready to debug
   if scd_session2 is None:
     return
   resp = scd_session2.delete('/subscriptions/{}'.format(sub2_uuid))
@@ -298,12 +296,14 @@ def test_delete_dependent_sub(scd_session2, sub2_uuid):
 # Delete Op1
 def test_delete_op1(scd_session, op1_uuid, sub2_uuid):
   resp = scd_session.delete('/operation_references/{}'.format(op1_uuid))
+  print(resp.content)
   assert resp.status_code == 200, resp.content
 
-  op = resp.json()['operation_reference']
+  data = resp.json()
+  op = data['operation_reference']
 
   # USS1 should be instructed to notify USS2's Subscription of the deleted Operation
-  subscribers = _parse_subscribers(op.get('subscribers', []))
+  subscribers = _parse_subscribers(data.get('subscribers', []))
   assert URL_SUB2 in subscribers, subscribers
   assert sub2_uuid in subscribers[URL_SUB2], subscribers[URL_SUB2]
 
@@ -316,11 +316,12 @@ def test_delete_op2(scd_session2, op2_uuid, sub2_uuid):
   resp = scd_session2.delete('/operation_references/{}'.format(op2_uuid))
   assert resp.status_code == 200, resp.content
 
-  op = resp.json()['operation_reference']
+  data = resp.json()
+  op = data['operation_reference']
   assert op['subscription_id'] == sub2_uuid
 
   # USS2 should be instructed to notify Sub2 of the deleted Operation
-  subscribers = _parse_subscribers(op.get('subscribers', []))
+  subscribers = _parse_subscribers(data.get('subscribers', []))
   assert URL_SUB2 in subscribers, subscribers
   assert sub2_uuid in subscribers[URL_SUB2], subscribers[URL_SUB2]
 

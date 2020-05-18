@@ -67,7 +67,7 @@ func createGetTokenHandler(privateKey *rsa.PrivateKey) http.Handler {
 		}
 
 		if len(subs) == 1 {
-		  sub = subs[0]
+			sub = subs[0]
 		}
 
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{

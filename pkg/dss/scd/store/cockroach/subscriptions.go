@@ -229,6 +229,23 @@ func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, 
 	if err != nil {
 		return nil, err
 	}
+	ops, err := c.searchOperations(ctx, q, &dssmodels.Volume4D{
+		SpatialVolume: &dssmodels.Volume3D{
+			AltitudeLo: result.AltitudeLo,
+			AltitudeHi: result.AltitudeHi,
+			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+				return result.Cells, nil
+			}),
+		},
+		StartTime: result.StartTime,
+		EndTime:   result.EndTime,
+	}, owner)
+	if err != nil {
+		return nil, err
+	}
+	for _, op := range ops {
+		result.DependentOperations = append(result.DependentOperations, op.ID)
+	}
 	return result, nil
 }
 
@@ -280,7 +297,7 @@ func (c *Store) pushSubscription(ctx context.Context, q queryable, s *scdmodels.
 		  scd_subscriptions
 		  (%s)
 		VALUES
-			($1, $2, COALESCE((SELECT version from v), 0) + 1, $3, $4, $5, $6, false, $7, $8, transaction_timestamp())
+			($1, $2, COALESCE((SELECT version from v), 0) + 1, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp())
 		RETURNING
 			%s`, subscriptionFieldsWithoutPrefix, subscriptionFieldsWithPrefix)
 		subscriptionCellQuery = `
@@ -315,6 +332,7 @@ func (c *Store) pushSubscription(ctx context.Context, q queryable, s *scdmodels.
 		s.NotificationIndex,
 		s.NotifyForOperations,
 		s.NotifyForConstraints,
+		s.ImplicitSubscription,
 		s.StartTime,
 		s.EndTime)
 	if err != nil {
@@ -342,7 +360,7 @@ func (c *Store) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssm
 	case nil:
 		return sub, nil
 	case sql.ErrNoRows:
-		return nil, dsserr.NotFound(fmt.Sprintf("%s", id))
+		return nil, dsserr.NotFound(id.String())
 	default:
 		return nil, err
 	}
@@ -439,7 +457,22 @@ func (c *Store) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner d
 		WHERE
 			id = $1
 		AND
-			owner = $2`
+			owner = $2
+		AND
+			0 = ALL (
+				SELECT
+					COALESCE(COUNT(scd_operations.id), 0)
+				AS
+					counter
+				FROM
+					scd_operations
+				JOIN
+					scd_subscriptions
+				ON
+					scd_operations.subscription_id = scd_subscriptions.id
+				WHERE
+					scd_operations.subscription_id = $1
+			)`
 	)
 
 	tx, err := c.Begin()
@@ -460,7 +493,14 @@ func (c *Store) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner d
 		return nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
 	}
 
-	if _, err := tx.ExecContext(ctx, query, id, owner); err != nil {
+	res, err := tx.ExecContext(ctx, query, id, owner)
+	if err != nil {
+		fmt.Println("ARGH:", err)
+		return nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
 	}
 
@@ -468,6 +508,9 @@ func (c *Store) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner d
 		return nil, err
 	}
 
+	if rows == 0 {
+		return nil, dsserr.BadRequest("failed to delete implicit subscription with active operation")
+	}
 	return old, nil
 }
 
