@@ -227,9 +227,8 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	if err != nil {
 		if _, ok := status.FromError(err); ok {
 			return nil, err
-		} else {
-			return nil, dsserr.Internal(fmt.Sprintf("failed to upsert operation: %s", err))
 		}
+		return nil, dsserr.Internal(fmt.Sprintf("failed to upsert operation: %s", err))
 	}
 
 	p, err := op.ToProto()
