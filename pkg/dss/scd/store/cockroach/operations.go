@@ -349,6 +349,9 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 			SpatialVolume: &dssmodels.Volume3D{
 				AltitudeHi: operation.AltitudeUpper,
 				AltitudeLo: operation.AltitudeLower,
+				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+					return operation.Cells, nil
+				}),
 			},
 		}, operation.Owner)
 		if err != nil {
@@ -362,7 +365,7 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 
 		for _, op := range operations {
 			if _, match := keyIdx[op.OVN]; !match {
-				return nil, nil, multierr.Combine(dsserr.VersionMismatch("ovn for affected operation differs"))
+				return nil, nil, dsserr.AlreadyExists("ovn for affected operation differs")
 			}
 		}
 	default:

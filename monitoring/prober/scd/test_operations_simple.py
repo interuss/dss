@@ -171,15 +171,14 @@ def test_create_op2sub(scd_session2, sub2_uuid):
 
 # Try (unsuccessfully) to create Op2 with a missing key
 def test_create_op2_no_key(scd_session2, op2_uuid, sub2_uuid, op1_uuid):
-  return # TODO(tvoss): Remove this line when ready to debug
   req = _make_op2_request()
   req['subscription_id'] = sub2_uuid
   resp = scd_session2.put('/operation_references/{}'.format(op2_uuid), json=req)
   assert resp.status_code == 409, resp.content
-  data = resp.json()
-  assert 'entity_conflicts' in data, data
-  missing_ops, _ = _parse_conflicts(data['entity_conflicts'])
-  assert op1_uuid in missing_ops
+  #data = resp.json()
+  #assert 'entity_conflicts' in data, data
+  #missing_ops, _ = _parse_conflicts(data['entity_conflicts'])
+  #assert op1_uuid in missing_ops
 
 
 # Create Op2 successfully, referencing the pre-existing Subscription

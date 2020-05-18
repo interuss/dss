@@ -153,6 +153,7 @@ def test_mutate_op(scd_session, op1_uuid):
   resp = scd_session.put(
     '/operation_references/{}'.format(op1_uuid),
     json={
+      'key': [existing_op["ovn"]],
       'extents': req['extents'],
       'old_version': existing_op['version'],
       'state': 'Activated',
