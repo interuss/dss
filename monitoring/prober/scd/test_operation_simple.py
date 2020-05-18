@@ -13,7 +13,7 @@ import datetime
 from . import common
 
 
-def make_op1_request():
+def _make_op1_request():
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
   return {
@@ -45,28 +45,28 @@ def test_op_does_not_exist_query(scd_session, op1_uuid):
 
 
 def test_create_op_single_extent(scd_session, op1_uuid):
-  req = make_op1_request()
+  req = _make_op1_request()
   req['extents'] = req['extents'][0]
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 400, resp.content
 
 
 def test_create_op_missing_time_start(scd_session, op1_uuid):
-  req = make_op1_request()
+  req = _make_op1_request()
   del req['extents'][0]['time_start']
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 400, resp.content
 
 
 def test_create_op_missing_time_end(scd_session, op1_uuid):
-  req = make_op1_request()
+  req = _make_op1_request()
   del req['extents'][0]['time_end']
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 400, resp.content
 
 
 def test_create_op(scd_session, op1_uuid):
-  req = make_op1_request()
+  req = _make_op1_request()
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 200, resp.content
 
@@ -149,7 +149,7 @@ def test_mutate_op(scd_session, op1_uuid):
   existing_op = resp.json().get('operation_reference', None)
   assert existing_op is not None
 
-  req = make_op1_request()
+  req = _make_op1_request()
   resp = scd_session.put(
     '/operation_references/{}'.format(op1_uuid),
     json={

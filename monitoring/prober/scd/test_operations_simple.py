@@ -25,7 +25,7 @@ op1_ovn = None
 op2_ovn = None
 
 
-def make_op1_request():
+def _make_op1_request():
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
   return {
@@ -108,7 +108,7 @@ def test_op1_does_not_exist_query_2(scd_session2, op1_uuid):
 
 # Create Op1 normally from USS1 (also creates implicit Subscription)
 def test_create_op1(scd_session, op1_uuid):
-  req = make_op1_request()
+  req = _make_op1_request()
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 200, resp.content
 
@@ -221,7 +221,7 @@ def test_mutate_op1_bad_key(scd_session, op1_uuid, op2_uuid):
   existing_op = resp.json().get('operation_reference', None)
   assert existing_op is not None, resp.content
 
-  old_req = make_op1_request()
+  old_req = _make_op1_request()
   req = {
     'extents': old_req['extents'],
     'old_version': existing_op['version'],
@@ -257,7 +257,7 @@ def test_mutate_op1(scd_session, op1_uuid, sub2_uuid):
 
   global op1_ovn
 
-  old_req = make_op1_request()
+  old_req = _make_op1_request()
   req = {
     'key': [op1_ovn, op2_ovn],
     'extents': old_req['extents'],
