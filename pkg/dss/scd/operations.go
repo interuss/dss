@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gogo/status"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/dss/auth"
@@ -220,8 +221,13 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 		USSBaseURL:     params.UssBaseUrl,
 		SubscriptionID: subscriptionID,
+		State:          scdmodels.OperationState(params.State),
 	}, key)
+
 	if err != nil {
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
 		return nil, dsserr.Internal(fmt.Sprintf("failed to upsert operation: %s", err))
 	}
 
