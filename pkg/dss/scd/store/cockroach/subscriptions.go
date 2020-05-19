@@ -11,6 +11,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	dsssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
@@ -56,7 +57,7 @@ func init() {
 	)
 }
 
-func (c *Store) fetchCellsForSubscription(ctx context.Context, q queryable, id scdmodels.ID) (s2.CellUnion, error) {
+func (c *Store) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (s2.CellUnion, error) {
 	var (
 		cellsQuery = `
 			SELECT
@@ -88,7 +89,7 @@ func (c *Store) fetchCellsForSubscription(ctx context.Context, q queryable, id s
 	return cu, rows.Err()
 }
 
-func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
+func (c *Store) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -126,7 +127,7 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q queryable, query strin
 }
 
 func (c *Store) fetchSubscriptionsForNotification(
-	ctx context.Context, q queryable, cells []int64) ([]*scdmodels.Subscription, error) {
+	ctx context.Context, q dsssql.Queryable, cells []int64) ([]*scdmodels.Subscription, error) {
 	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
 	// UPDATE FROM query.
 	// First: get unique subscription IDs.
@@ -172,7 +173,7 @@ func (c *Store) fetchSubscriptionsForNotification(
 		ctx, q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
 }
 
-func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string, args ...interface{}) (*scdmodels.Subscription, error) {
+func (c *Store) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Subscription, error) {
 	subs, err := c.fetchSubscriptions(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
@@ -186,7 +187,7 @@ func (c *Store) fetchSubscription(ctx context.Context, q queryable, query string
 	return subs[0], nil
 }
 
-func (c *Store) fetchSubscriptionByID(ctx context.Context, q queryable, id scdmodels.ID) (*scdmodels.Subscription, error) {
+func (c *Store) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (*scdmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -209,7 +210,7 @@ func (c *Store) fetchSubscriptionByID(ctx context.Context, q queryable, id scdmo
 	return result, nil
 }
 
-func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
+func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q dsssql.Queryable, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
 	var query = fmt.Sprintf(`
 		SELECT
 			%s
@@ -253,7 +254,7 @@ func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q queryable, 
 // owner has in each one of these cells, and returns the number of subscriptions
 // in the cell with the highest number of subscriptions.
 func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
-	ctx context.Context, q queryable, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+	ctx context.Context, q dsssql.Queryable, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
 	var query = `
     SELECT
       IFNULL(MAX(subscriptions_per_cell_id), 0)
@@ -282,7 +283,7 @@ func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
 	return ret, err
 }
 
-func (c *Store) pushSubscription(ctx context.Context, q queryable, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+func (c *Store) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
 	var (
 		upsertQuery = fmt.Sprintf(`
 		WITH v AS (

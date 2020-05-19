@@ -11,6 +11,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/lib/pq"
 	"go.uber.org/multierr"
 )
@@ -47,7 +48,7 @@ func init() {
 	)
 }
 
-func (s *Store) fetchOperations(ctx context.Context, q queryable, query string, args ...interface{}) ([]*scdmodels.Operation, error) {
+func (s *Store) fetchOperations(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Operation, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func (s *Store) fetchOperations(ctx context.Context, q queryable, query string, 
 	return payload, nil
 }
 
-func (s *Store) fetchOperation(ctx context.Context, q queryable, query string, args ...interface{}) (*scdmodels.Operation, error) {
+func (s *Store) fetchOperation(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Operation, error) {
 	operations, err := s.fetchOperations(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
@@ -98,7 +99,7 @@ func (s *Store) fetchOperation(ctx context.Context, q queryable, query string, a
 	return operations[0], nil
 }
 
-func (s *Store) fetchOperationByID(ctx context.Context, q queryable, id scdmodels.ID) (*scdmodels.Operation, error) {
+func (s *Store) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (*scdmodels.Operation, error) {
 	query := fmt.Sprintf(`
 		SELECT %s FROM
 			scd_operations
@@ -114,7 +115,7 @@ func (s *Store) fetchOperationByID(ctx context.Context, q queryable, id scdmodel
 //
 // Returns the created/updated Operation and all Subscriptions
 // affected by the operation.
-func (s *Store) pushOperation(ctx context.Context, q queryable, operation *scdmodels.Operation) (
+func (s *Store) pushOperation(ctx context.Context, q dsssql.Queryable, operation *scdmodels.Operation) (
 	*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	var (
 		upsertOperationsQuery = fmt.Sprintf(`
@@ -190,7 +191,7 @@ func (s *Store) pushOperation(ctx context.Context, q queryable, operation *scdmo
 	return operation, subscriptions, nil
 }
 
-func (s *Store) populateOperationCells(ctx context.Context, q queryable, o *scdmodels.Operation) error {
+func (s *Store) populateOperationCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.Operation) error {
 	const query = `
 	SELECT
 		cell_id
@@ -384,7 +385,7 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 	return area, subscribers, nil
 }
 
-func (s *Store) searchOperations(ctx context.Context, q queryable, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
+func (s *Store) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	var (
 		operationsIntersectingVolumeQuery = fmt.Sprintf(`
 			SELECT

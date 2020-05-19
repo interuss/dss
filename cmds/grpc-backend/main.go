@@ -13,6 +13,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/dss/auth"
 	aux "github.com/interuss/dss/pkg/dss/aux_"
 	"github.com/interuss/dss/pkg/dss/build"
@@ -92,12 +93,16 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		"ssl_dir":          *cockroachParams.sslDir,
 		"application_name": *cockroachParams.applicationName,
 	}
-	uri, err := ridc.BuildURI(uriParams)
+	uri, err := cockroach.BuildURI(uriParams)
 	if err != nil {
 		logger.Panic("Failed to build URI", zap.Error(err))
 	}
 
-	store, err := ridc.Dial(uri, logger)
+	crdb, err := cockroach.Dial(uri)
+	if err != nil {
+		logger.Panic("Failed to dial CRDB instance", zap.Error(err))
+	}
+	store, err := ridc.NewStore(crdb, logger)
 	if err != nil {
 		logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
 	}
@@ -119,12 +124,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	)
 
 	if *enableSCD {
-		uri, err := scdc.BuildURI(uriParams)
-		if err != nil {
-			logger.Panic("Failed to build URI", zap.Error(err))
-		}
-
-		store, err := scdc.Dial(uri, logger)
+		store, err := scdc.NewStore(crdb, logger)
 		if err != nil {
 			logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
 		}
