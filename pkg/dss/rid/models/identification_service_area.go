@@ -86,7 +86,7 @@ func (i *IdentificationServiceArea) SetExtents(extents *ridpb.Volume4D) error {
 	if footprint == nil {
 		return errors.New("spatial_volume missing required footprint")
 	}
-	i.Cells, err = GeoPolygonFromProto(footprint).CalculateCovering()
+	i.Cells, err = footprint.ToCommon().CalculateCovering()
 	return err
 }
 

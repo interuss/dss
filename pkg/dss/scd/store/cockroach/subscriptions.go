@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/interuss/dss/pkg/dss/models"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -229,11 +230,11 @@ func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q dsssql.Quer
 	if err != nil {
 		return nil, err
 	}
-	ops, err := c.searchOperations(ctx, q, &scdmodels.Volume4D{
-		SpatialVolume: &scdmodels.Volume3D{
+	ops, err := c.searchOperations(ctx, q, &dssmodels.Volume4D{
+		SpatialVolume: &dssmodels.Volume3D{
 			AltitudeLo: result.AltitudeLo,
 			AltitudeHi: result.AltitudeHi,
-			Footprint: scdmodels.GeometryFunc(func() (s2.CellUnion, error) {
+			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
 				return result.Cells, nil
 			}),
 		},
@@ -423,13 +424,13 @@ func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscriptio
 
 	var affectedOperations []*scdmodels.Operation
 	if len(s.Cells) > 0 {
-		ops, err := c.searchOperations(ctx, tx, &scdmodels.Volume4D{
+		ops, err := c.searchOperations(ctx, tx, &dssmodels.Volume4D{
 			StartTime: s.StartTime,
 			EndTime:   s.EndTime,
-			SpatialVolume: &scdmodels.Volume3D{
+			SpatialVolume: &dssmodels.Volume3D{
 				AltitudeLo: s.AltitudeLo,
 				AltitudeHi: s.AltitudeHi,
-				Footprint: scdmodels.GeometryFunc(func() (s2.CellUnion, error) {
+				Footprint: models.GeometryFunc(func() (s2.CellUnion, error) {
 					return s.Cells, nil
 				}),
 			},
