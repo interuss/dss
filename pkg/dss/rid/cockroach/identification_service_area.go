@@ -8,9 +8,9 @@ import (
 
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	ridmodels "github.com/interuss/dss/pkg/dss/rid/models"
-	dsssql "github.com/interuss/dss/pkg/sql"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
+	dsssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
