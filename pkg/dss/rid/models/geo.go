@@ -46,7 +46,7 @@ func float32P(v float32) *float32 {
 	return &v
 }
 
-// Contiguous block of geographic spacetime.
+// Volume4D is a Contiguous block of geographic spacetime.
 type Volume4D struct {
 	// Constant spatial extent of this volume.
 	SpatialVolume *Volume3D
@@ -56,7 +56,7 @@ type Volume4D struct {
 	StartTime *time.Time
 }
 
-// A three-dimensional geographic volume consisting of a vertically-extruded shape.
+// Volume3D is A three-dimensional geographic volume consisting of a vertically-extruded shape.
 type Volume3D struct {
 	// Maximum bounding altitude (meters above the WGS84 ellipsoid) of this volume.
 	AltitudeHi *float32
@@ -166,23 +166,23 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 	return result, nil
 }
 
-// CalculateSpatialCovering returns the spatial covering of v4d.
-func (v4d *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
+// CalculateSpatialCovering returns the spatial covering of vol4.
+func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
 	switch {
-	case v4d.SpatialVolume == nil:
+	case vol4.SpatialVolume == nil:
 		return nil, ErrMissingSpatialVolume
 	default:
-		return v4d.SpatialVolume.CalculateCovering()
+		return vol4.SpatialVolume.CalculateCovering()
 	}
 }
 
-// CalculateCovering returns the spatial covering of v3d.
-func (v3d *Volume3D) CalculateCovering() (s2.CellUnion, error) {
+// CalculateCovering returns the spatial covering of vol3.
+func (vol3 *Volume3D) CalculateCovering() (s2.CellUnion, error) {
 	switch {
-	case v3d.Footprint == nil:
+	case vol3.Footprint == nil:
 		return nil, ErrMissingFootprint
 	default:
-		return v3d.Footprint.CalculateCovering()
+		return vol3.Footprint.CalculateCovering()
 	}
 }
 
@@ -197,6 +197,7 @@ type GeoCircle struct {
 	RadiusMeter float32
 }
 
+// CalculateCovering returns the spatial covering of gc.
 func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
 	if (gc.Center.Lat > maxLat) || (gc.Center.Lat < minLat) || (gc.Center.Lng > maxLng) || (gc.Center.Lng < minLng) {
 		return nil, errBadCoordSet
@@ -223,6 +224,7 @@ type GeoPolygon struct {
 	Vertices []*LatLngPoint
 }
 
+// CalculateCovering returns the spatial covering of gp.
 func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 	var points []s2.Point
 	if gp == nil {
@@ -374,14 +376,14 @@ func (vol3 *Volume3D) ToProto() (*ridpb.Volume3D, error) {
 }
 
 // ToProto converts GeoPolygon model obj to proto
-func (polygon *GeoPolygon) ToProto() *ridpb.GeoPolygon {
-	if polygon == nil {
+func (gp *GeoPolygon) ToProto() *ridpb.GeoPolygon {
+	if gp == nil {
 		return nil
 	}
 
 	result := &ridpb.GeoPolygon{}
 
-	for _, pt := range polygon.Vertices {
+	for _, pt := range gp.Vertices {
 		result.Vertices = append(result.Vertices, pt.ToProto())
 	}
 

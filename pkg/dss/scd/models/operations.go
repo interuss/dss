@@ -39,6 +39,7 @@ type Operation struct {
 	SubscriptionID ID
 }
 
+// ToProto converts the Operation to its proto API format
 func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 	result := &scdpb.OperationReference{
 		Id:             o.ID.String(),

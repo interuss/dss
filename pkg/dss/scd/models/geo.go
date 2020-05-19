@@ -15,6 +15,8 @@ const (
 	maxLat = 90.0
 	minLng = -180.0
 	maxLng = 180.0
+	// TimeFormatRfc3339 is the string used for RFC3339
+	TimeFormatRfc3339 string = "RFC3339"
 )
 
 var (
@@ -28,8 +30,6 @@ var (
 	errNotEnoughPointsInPolygon = errors.New("not enough points in polygon")
 	errBadCoordSet              = errors.New("coordinates did not create a well formed area")
 	errRadiusMustBeLargerThan0  = errors.New("radius must be larger than 0")
-
-	errEmptyTime = errors.New("time must not be empty")
 
 	unitToMeterMultiplicativeFactors = map[unit]float32{
 		unitMeter: 1,
@@ -69,7 +69,7 @@ func timeP(t time.Time) *time.Time {
 	return &t
 }
 
-// Contiguous block of geographic spacetime.
+// Volume4D is a Contiguous block of geographic spacetime.
 type Volume4D struct {
 	// Constant spatial extent of this volume.
 	SpatialVolume *Volume3D
@@ -79,7 +79,7 @@ type Volume4D struct {
 	StartTime *time.Time
 }
 
-// A three-dimensional geographic volume consisting of a vertically-extruded shape.
+// Volume3D is a A three-dimensional geographic volume consisting of a vertically-extruded shape.
 type Volume3D struct {
 	// Maximum bounding altitude (meters above the WGS84 ellipsoid) of this volume.
 	AltitudeHi *float32
@@ -107,6 +107,7 @@ func (pcg precomputedCellGeometry) merge(ids ...s2.CellID) precomputedCellGeomet
 	return pcg
 }
 
+// CalculateCovering returns the s2 cell covering of pcg
 func (pcg precomputedCellGeometry) CalculateCovering() (s2.CellUnion, error) {
 	var (
 		result = make(s2.CellUnion, len(pcg))
@@ -189,23 +190,23 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 	return result, nil
 }
 
-// CalculateSpatialCovering returns the spatial covering of v4d.
-func (v4d *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
+// CalculateSpatialCovering returns the spatial covering of vol4.
+func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
 	switch {
-	case v4d.SpatialVolume == nil:
+	case vol4.SpatialVolume == nil:
 		return nil, ErrMissingSpatialVolume
 	default:
-		return v4d.SpatialVolume.CalculateCovering()
+		return vol4.SpatialVolume.CalculateCovering()
 	}
 }
 
-// CalculateCovering returns the spatial covering of v3d.
-func (v3d *Volume3D) CalculateCovering() (s2.CellUnion, error) {
+// CalculateCovering returns the spatial covering of vol3.
+func (vol3 *Volume3D) CalculateCovering() (s2.CellUnion, error) {
 	switch {
-	case v3d.Footprint == nil:
+	case vol3.Footprint == nil:
 		return nil, ErrMissingFootprint
 	default:
-		return v3d.Footprint.CalculateCovering()
+		return vol3.Footprint.CalculateCovering()
 	}
 }
 
@@ -220,6 +221,7 @@ type GeoCircle struct {
 	RadiusMeter float32
 }
 
+// CalculateCovering returns the s2 cell covering of gc
 func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
 	if (gc.Center.Lat > maxLat) || (gc.Center.Lat < minLat) || (gc.Center.Lng > maxLng) || (gc.Center.Lng < minLng) {
 		return nil, errBadCoordSet
@@ -246,6 +248,7 @@ type GeoPolygon struct {
 	Vertices []*LatLngPoint
 }
 
+// CalculateCovering returns the s2 cell covering of gp
 func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 	var points []s2.Point
 	if gp == nil {
@@ -270,13 +273,7 @@ type LatLngPoint struct {
 	Lng float64
 }
 
-// func TimeToProto(t *scdpb.Time) (*timestamp.Timestamp, error) {
-// 	if t == nil {
-// 		return nil, errEmptyTime
-// 	}
-// 	return t.GetValue(), nil
-// }
-
+// Volume4DFromProto converts vol4 proto to a Volume4D
 func Volume4DFromProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 	vol3, err := Volume3DFromProto(vol4.GetVolume())
 	if err != nil {
@@ -308,6 +305,7 @@ func Volume4DFromProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 	return result, nil
 }
 
+// Volume3DFromProto converts a vol3 proto to a Volume3D
 func Volume3DFromProto(vol3 *scdpb.Volume3D) (*Volume3D, error) {
 	switch {
 	case vol3.GetOutlineCircle() != nil && vol3.GetOutlinePolygon() != nil:
@@ -332,6 +330,7 @@ func Volume3DFromProto(vol3 *scdpb.Volume3D) (*Volume3D, error) {
 	}, nil
 }
 
+// GeoCircleFromProto converts a circle proto to a GeoCircle
 func GeoCircleFromProto(c *scdpb.Circle) *GeoCircle {
 	return &GeoCircle{
 		Center:      *LatLngPointFromProto(c.GetCenter()),
@@ -339,6 +338,7 @@ func GeoCircleFromProto(c *scdpb.Circle) *GeoCircle {
 	}
 }
 
+// GeoPolygonFromProto converts a polygon proto to a GeoPolygon
 func GeoPolygonFromProto(p *scdpb.Polygon) *GeoPolygon {
 	result := &GeoPolygon{}
 	for _, ltlng := range p.GetVertices() {
@@ -348,6 +348,7 @@ func GeoPolygonFromProto(p *scdpb.Polygon) *GeoPolygon {
 	return result
 }
 
+// LatLngPointFromProto converts a point proto to a latlngpoint
 func LatLngPointFromProto(p *scdpb.LatLngPoint) *LatLngPoint {
 	return &LatLngPoint{
 		Lat: p.GetLat(),
@@ -355,6 +356,7 @@ func LatLngPointFromProto(p *scdpb.LatLngPoint) *LatLngPoint {
 	}
 }
 
+// ToProto converts the Volume4D to a proto
 func (vol4 *Volume4D) ToProto() (*scdpb.Volume4D, error) {
 	vol3, err := vol4.SpatialVolume.ToProto()
 	if err != nil {
@@ -390,6 +392,7 @@ func (vol4 *Volume4D) ToProto() (*scdpb.Volume4D, error) {
 	return result, nil
 }
 
+// ToProto converts the Volume3D to a proto
 func (vol3 *Volume3D) ToProto() (*scdpb.Volume3D, error) {
 	if vol3 == nil {
 		return nil, nil
@@ -425,33 +428,37 @@ func (vol3 *Volume3D) ToProto() (*scdpb.Volume3D, error) {
 	return result, nil
 }
 
-func (circle *GeoCircle) ToProto() *scdpb.Circle {
-	if circle == nil {
+// ToProto converts the GeoCircle to a proto
+func (gc *GeoCircle) ToProto() *scdpb.Circle {
+	if gc == nil {
 		return nil
 	}
 
 	return &scdpb.Circle{
-		Center: circle.Center.ToProto(),
+		Center: gc.Center.ToProto(),
 		Radius: &scdpb.Radius{
 			Units: unitMeter.String(),
-			Value: circle.RadiusMeter,
+			Value: gc.RadiusMeter,
 		},
 	}
 }
-func (polygon *GeoPolygon) ToProto() *scdpb.Polygon {
-	if polygon == nil {
+
+// ToProto converts the GeoPolygon to a proto
+func (gp *GeoPolygon) ToProto() *scdpb.Polygon {
+	if gp == nil {
 		return nil
 	}
 
 	result := &scdpb.Polygon{}
 
-	for _, pt := range polygon.Vertices {
+	for _, pt := range gp.Vertices {
 		result.Vertices = append(result.Vertices, pt.ToProto())
 	}
 
 	return result
 }
 
+// ToProto converts the LatLngPoint to a proto
 func (pt *LatLngPoint) ToProto() *scdpb.LatLngPoint {
 	result := &scdpb.LatLngPoint{
 		Lat: pt.Lat,

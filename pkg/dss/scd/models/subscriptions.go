@@ -21,6 +21,7 @@ const (
 	maxClockSkew = time.Minute * 5
 )
 
+// Subscription represents an SCD subscription
 type Subscription struct {
 	ID                ID
 	Version           Version
@@ -39,6 +40,7 @@ type Subscription struct {
 	Cells                s2.CellUnion
 }
 
+// ToProto converts the Subscription to its proto API format
 func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 	result := &scdpb.Subscription{
 		Id:                   s.ID.String(),
