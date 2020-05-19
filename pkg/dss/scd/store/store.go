@@ -25,7 +25,7 @@ type OperationStore interface {
 	UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error)
 
 	// SearchOperations returns all operations ownded by "owner" intersecting "v4d".
-	SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error)
+	SearchOperations(ctx context.Context, v4d *scdmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error)
 }
 
 // SubscriptionStore abstracts subscription-specific interactions with the backing data store.
@@ -142,7 +142,7 @@ func (s *DummyStore) UpsertOperation(ctx context.Context, operation *scdmodels.O
 	}, nil
 }
 
-func (s *DummyStore) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
+func (s *DummyStore) SearchOperations(ctx context.Context, v4d *scdmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	return []*scdmodels.Operation{
 		MakeDummyOperation("444eab15-8384-4e39-8589-5161689aee56"),
 	}, nil

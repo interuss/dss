@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/dss/models"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	"github.com/stretchr/testify/require"
@@ -134,11 +133,11 @@ func TestStoreSearchOperations(t *testing.T) {
 		t.Run(r.name, func(t *testing.T) {
 			earliest, latest := r.timestampMutator(*out.StartTime, *out.EndTime)
 
-			operations, err := store.SearchOperations(ctx, &dssmodels.Volume4D{
+			operations, err := store.SearchOperations(ctx, &scdmodels.Volume4D{
 				StartTime: earliest,
 				EndTime:   latest,
-				SpatialVolume: &dssmodels.Volume3D{
-					Footprint: models.GeometryFunc(func() (s2.CellUnion, error) {
+				SpatialVolume: &scdmodels.Volume3D{
+					Footprint: scdmodels.GeometryFunc(func() (s2.CellUnion, error) {
 						return r.cells, nil
 					}),
 				},
@@ -170,9 +169,9 @@ func TestStoreExpiredOperation(t *testing.T) {
 	fakeClock.Advance(59 * time.Minute)
 
 	// We should still be able to find the ISA by searching and by ID.
-	operations, err := store.SearchOperations(ctx, &dssmodels.Volume4D{
-		SpatialVolume: &dssmodels.Volume3D{
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+	operations, err := store.SearchOperations(ctx, &scdmodels.Volume4D{
+		SpatialVolume: &scdmodels.Volume3D{
+			Footprint: scdmodels.GeometryFunc(func() (s2.CellUnion, error) {
 				return operation.Cells, nil
 			}),
 		},
@@ -187,9 +186,9 @@ func TestStoreExpiredOperation(t *testing.T) {
 	// But now the ISA has expired.
 	fakeClock.Advance(2 * time.Minute)
 
-	operations, err = store.SearchOperations(ctx, &dssmodels.Volume4D{
-		SpatialVolume: &dssmodels.Volume3D{
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+	operations, err = store.SearchOperations(ctx, &scdmodels.Volume4D{
+		SpatialVolume: &scdmodels.Volume3D{
+			Footprint: scdmodels.GeometryFunc(func() (s2.CellUnion, error) {
 				return operation.Cells, nil
 			}),
 		},

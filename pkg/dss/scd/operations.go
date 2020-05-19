@@ -8,8 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/dss/auth"
-	"github.com/interuss/dss/pkg/dss/models"
-	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
@@ -96,7 +94,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := aoi.ToCommon()
+	vol4, err := scdmodels.Volume4DFromProto(aoi)
 	if err != nil {
 		return nil, dsserr.Internal("failed to convert to internal geometry model")
 	}
@@ -140,7 +138,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 	var (
 		params  = req.GetParams()
-		extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
+		extents = make([]*scdmodels.Volume4D, len(params.GetExtents()))
 	)
 
 	if len(params.UssBaseUrl) == 0 {
@@ -148,13 +146,13 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	}
 
 	for idx, extent := range params.GetExtents() {
-		cExtent, err := extent.ToCommon()
+		cExtent, err := scdmodels.Volume4DFromProto(extent)
 		if err != nil {
 			return nil, dsserr.BadRequest(fmt.Sprintf("failed to parse extents: %s", err))
 		}
 		extents[idx] = cExtent
 	}
-	uExtent, err := models.UnionVolumes4D(extents...)
+	uExtent, err := scdmodels.UnionVolumes4D(extents...)
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("failed to union extents: %s", err))
 	}

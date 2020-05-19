@@ -11,6 +11,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dpjacques/clockwork v0.1.0
 	github.com/gogo/protobuf v1.3.1
+	github.com/gogo/status v1.1.0
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec
 	github.com/golang/protobuf v1.4.1
 	github.com/google/pprof v0.0.0-20200229191704-1ebb73c60ed3 // indirect

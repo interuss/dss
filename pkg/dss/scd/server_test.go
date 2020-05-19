@@ -35,7 +35,7 @@ func mustTimestamp(ts *tspb.Timestamp) *time.Time {
 }
 
 func mustPolygonToCellIDs(p *scdpb.Polygon) s2.CellUnion {
-	cells, err := p.ToCommon().CalculateCovering()
+	cells, err := scdmodels.GeoPolygonFromProto(p).CalculateCovering()
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +103,7 @@ func (ms *mockStore) UpsertOperation(ctx context.Context, operation *scdmodels.O
 	return args.Get(0).(*scdmodels.Operation), args.Get(1).([]*scdmodels.Subscription), args.Error(2)
 }
 
-func (ms *mockStore) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
+func (ms *mockStore) SearchOperations(ctx context.Context, v4d *scdmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	args := ms.Called(ctx, v4d, owner)
@@ -401,7 +401,7 @@ func TestPutSubscription(t *testing.T) {
 			sub := *r.wantSubscription
 
 			if r.extents != nil {
-				v4d, err := r.extents.ToCommon()
+				v4d, err := scdmodels.Volume4DFromProto(r.extents)
 				require.NoError(t, err)
 
 				cells, err := v4d.CalculateSpatialCovering()
