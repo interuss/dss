@@ -139,7 +139,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 	var (
 		params  = req.GetParams()
-		extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
+		extents = make([]*scdmodels.Volume4D, len(params.GetExtents()))
 	)
 
 	if len(params.UssBaseUrl) == 0 {

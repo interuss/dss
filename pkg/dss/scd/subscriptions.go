@@ -45,7 +45,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Construct requested Subscription model
 	cells, err := extents.CalculateSpatialCovering()
 	switch err {
-	case nil, dssmodels.ErrMissingSpatialVolume, dssmodels.ErrMissingFootprint:
+	case nil, scdmodels.ErrMissingSpatialVolume, scdmodels.ErrMissingFootprint:
 		// All good, let's go ahead.
 	default:
 		return nil, dssErrorOfAreaError(err)

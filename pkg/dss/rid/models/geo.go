@@ -7,8 +7,9 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/interuss/dss/pkg/dss/geo"
 	"google.golang.org/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/interuss/dss/pkg/dss/geo"
 
 	// TODO: all of the uses of ridpb should use protos that can be used
 	// by both rid and scd.
@@ -617,3 +618,5 @@ func (pt *LatLngPoint) ToSCDProto() *scdpb.LatLngPoint {
 
 	return result
 }
+=======
+>>>>>>> 6cb077d... factor out the conversion files from protos:pkg/dss/rid/models/geo.go

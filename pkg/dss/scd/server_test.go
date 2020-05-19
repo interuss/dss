@@ -103,7 +103,7 @@ func (ms *mockStore) UpsertOperation(ctx context.Context, operation *scdmodels.O
 	return args.Get(0).(*scdmodels.Operation), args.Get(1).([]*scdmodels.Subscription), args.Error(2)
 }
 
-func (ms *mockStore) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
+func (ms *mockStore) SearchOperations(ctx context.Context, v4d *scdmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	args := ms.Called(ctx, v4d, owner)
