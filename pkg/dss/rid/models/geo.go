@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/dss/geo"
+	"google.golang.org/protobuf/proto"
 
 	// TODO: all of the uses of ridpb should use protos that can be used
 	// by both rid and scd.
