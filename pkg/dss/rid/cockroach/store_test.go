@@ -54,7 +54,7 @@ func newStore() (*Store, error) {
 	}
 
 	return &Store{
-		DB:     &cockroach.DB{db},
+		DB:     &cockroach.DB{DB: db},
 		logger: zap.L(),
 		clock:  fakeClock,
 	}, nil
