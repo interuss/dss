@@ -8,6 +8,7 @@ import (
 
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	ridmodels "github.com/interuss/dss/pkg/dss/rid/models"
+	dsssql "github.com/interuss/dss/pkg/sql"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
@@ -30,7 +31,7 @@ func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 	}
 }
 
-func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *Store) fetchISAs(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func (c *Store) fetchISAs(ctx context.Context, q queryable, query string, args .
 	return payload, nil
 }
 
-func (c *Store) fetchISA(ctx context.Context, q queryable, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
+func (c *Store) fetchISA(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
 	isas, err := c.fetchISAs(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
@@ -75,7 +76,7 @@ func (c *Store) fetchISA(ctx context.Context, q queryable, query string, args ..
 	return isas[0], nil
 }
 
-func (c *Store) fetchISAByID(ctx context.Context, q queryable, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+func (c *Store) fetchISAByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
 			identification_service_areas
@@ -86,7 +87,7 @@ func (c *Store) fetchISAByID(ctx context.Context, q queryable, id dssmodels.ID) 
 	return c.fetchISA(ctx, q, query, id, c.clock.Now())
 }
 
-func (c *Store) populateISACells(ctx context.Context, q queryable, i *ridmodels.IdentificationServiceArea) error {
+func (c *Store) populateISACells(ctx context.Context, q dsssql.Queryable, i *ridmodels.IdentificationServiceArea) error {
 	const query = `
 	SELECT
 		cell_id
@@ -120,7 +121,7 @@ func (c *Store) populateISACells(ctx context.Context, q queryable, i *ridmodels.
 //
 // Returns the created/updated IdentificationServiceArea and all Subscriptions
 // affected by the operation.
-func (c *Store) pushISA(ctx context.Context, q queryable, isa *ridmodels.IdentificationServiceArea) (
+func (c *Store) pushISA(ctx context.Context, q dsssql.Queryable, isa *ridmodels.IdentificationServiceArea) (
 	*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
 		upsertAreasQuery = fmt.Sprintf(`
