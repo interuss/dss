@@ -133,7 +133,7 @@ func TestStoreSearchOperations(t *testing.T) {
 		t.Run(r.name, func(t *testing.T) {
 			earliest, latest := r.timestampMutator(*out.StartTime, *out.EndTime)
 
-			operations, err := store.SearchOperations(ctx, &scdmodels.Volume4D{
+			operations, err := store.SearchOperations(ctx, &dssmodels.Volume4D{
 				StartTime: earliest,
 				EndTime:   latest,
 				SpatialVolume: &dssmodels.Volume3D{
@@ -169,9 +169,9 @@ func TestStoreExpiredOperation(t *testing.T) {
 	fakeClock.Advance(59 * time.Minute)
 
 	// We should still be able to find the ISA by searching and by ID.
-	operations, err := store.SearchOperations(ctx, &scdmodels.Volume4D{
-		SpatialVolume: &scdmodels.Volume3D{
-			Footprint: scdmodels.GeometryFunc(func() (s2.CellUnion, error) {
+	operations, err := store.SearchOperations(ctx, &dssmodels.Volume4D{
+		SpatialVolume: &dssmodels.Volume3D{
+			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
 				return operation.Cells, nil
 			}),
 		},
@@ -186,9 +186,9 @@ func TestStoreExpiredOperation(t *testing.T) {
 	// But now the ISA has expired.
 	fakeClock.Advance(2 * time.Minute)
 
-	operations, err = store.SearchOperations(ctx, &scdmodels.Volume4D{
-		SpatialVolume: &scdmodels.Volume3D{
-			Footprint: scdmodels.GeometryFunc(func() (s2.CellUnion, error) {
+	operations, err = store.SearchOperations(ctx, &dssmodels.Volume4D{
+		SpatialVolume: &dssmodels.Volume3D{
+			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
 				return operation.Cells, nil
 			}),
 		},
