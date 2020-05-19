@@ -347,13 +347,13 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 	// whether all affected OVNs are matched.
 	switch operation.State {
 	case scdmodels.OperationStateAccepted, scdmodels.OperationStateActivated:
-		operations, err := s.searchOperations(ctx, tx, &dssmodels.Volume4D{
+		operations, err := s.searchOperations(ctx, tx, &scdmodels.Volume4D{
 			StartTime: operation.StartTime,
 			EndTime:   operation.EndTime,
-			SpatialVolume: &dssmodels.Volume3D{
+			SpatialVolume: &scdmodels.Volume3D{
 				AltitudeHi: operation.AltitudeUpper,
 				AltitudeLo: operation.AltitudeLower,
-				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+				Footprint: scdmodels.GeometryFunc(func() (s2.CellUnion, error) {
 					return operation.Cells, nil
 				}),
 			},
@@ -391,7 +391,7 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 	return area, subscribers, nil
 }
 
-func (s *Store) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
+func (s *Store) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *scdmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	var (
 		operationsIntersectingVolumeQuery = fmt.Sprintf(`
 			SELECT

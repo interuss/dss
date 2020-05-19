@@ -229,11 +229,11 @@ func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q dsssql.Quer
 	if err != nil {
 		return nil, err
 	}
-	ops, err := c.searchOperations(ctx, q, &dssmodels.Volume4D{
-		SpatialVolume: &dssmodels.Volume3D{
+	ops, err := c.searchOperations(ctx, q, &scdmodels.Volume4D{
+		SpatialVolume: &scdmodels.Volume3D{
 			AltitudeLo: result.AltitudeLo,
 			AltitudeHi: result.AltitudeHi,
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+			Footprint: scdmodels.GeometryFunc(func() (s2.CellUnion, error) {
 				return result.Cells, nil
 			}),
 		},
@@ -423,10 +423,10 @@ func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscriptio
 
 	var affectedOperations []*scdmodels.Operation
 	if len(s.Cells) > 0 {
-		ops, err := c.searchOperations(ctx, tx, &dssmodels.Volume4D{
+		ops, err := c.searchOperations(ctx, tx, &scdmodels.Volume4D{
 			StartTime: s.StartTime,
 			EndTime:   s.EndTime,
-			SpatialVolume: &dssmodels.Volume3D{
+			SpatialVolume: &scdmodels.Volume3D{
 				AltitudeLo: s.AltitudeLo,
 				AltitudeHi: s.AltitudeHi,
 				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
