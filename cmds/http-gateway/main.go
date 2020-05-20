@@ -14,7 +14,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
-	"github.com/interuss/dss/pkg/dss/build"
+	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 
