@@ -49,10 +49,10 @@ func newStore() (*Store, error) {
 		return nil, err
 	}
 
-	cdb := &cockroach.DB{db}
+	cdb := &cockroach.DB{DB: db}
 
 	return &Store{
-		ISA:          &ISAStore{cdb, fakeClock, zap.L()},
+		ISA:          &ISAStore{DB: cdb, clock: fakeClock, logger: zap.L()},
 		Subscription: &SubscriptionStore{cdb, fakeClock, zap.L()},
 		DB:           cdb,
 	}, nil

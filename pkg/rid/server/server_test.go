@@ -49,9 +49,6 @@ type mockSubscriptionApp struct {
 	mock.Mock
 }
 
-type mockApplication struct {
-}
-
 func (ma *mockSubscriptionApp) Insert(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()

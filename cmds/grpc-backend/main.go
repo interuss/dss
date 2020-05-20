@@ -204,8 +204,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 
 func makeDSSServer(store *ridc.Store) *rid.Server {
 	app := &application.App{
-		ISA:          &application.ISAApp{store.ISA},
-		Subscription: &application.SubscriptionApp{store.Subscription},
+		ISA:          &application.ISAApp{ISA: store.ISA},
+		Subscription: &application.SubscriptionApp{Subscription: store.Subscription},
 	}
 	return &rid.Server{
 		App:     app,
