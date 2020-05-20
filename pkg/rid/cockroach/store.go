@@ -34,16 +34,6 @@ func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 	}
 }
 
-func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
-	if p := recover(); p != nil {
-		if err := tx.Rollback(); err != nil {
-			logging.WithValuesFromContext(ctx, logging.Logger).Error(
-				"failed to rollback transaction", zap.Error(err),
-			)
-		}
-	}
-}
-
 // NewStore returns a Store instance connected to a cockroach instance via db.
 func NewStore(db *cockroach.DB, logger *zap.Logger) (*Store, error) {
 	return &Store{
