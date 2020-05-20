@@ -22,6 +22,7 @@ import (
 var isaFields = "identification_service_areas.id, identification_service_areas.owner, identification_service_areas.url, identification_service_areas.starts_at, identification_service_areas.ends_at, identification_service_areas.updated_at"
 var isaFieldsWithoutPrefix = "id, owner, url, starts_at, ends_at, updated_at"
 
+// ISAStore is an implementation of the ISARepo for CRDB.
 type ISAStore struct {
 	*cockroach.DB
 
@@ -251,7 +252,7 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 	return isa, subscriptions, nil
 }
 
-// GetISA returns the isa identified by "id".
+// Get returns the isa identified by "id".
 func (c *ISAStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	return c.fetchByID(ctx, c.DB, id)
 }
@@ -319,7 +320,7 @@ func (c *ISAStore) Update(ctx context.Context, isa *ridmodels.IdentificationServ
 	return nil, nil, dsserr.BadRequest("not yet implemented")
 }
 
-// DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
+// Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
 func (c *ISAStore) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
@@ -377,7 +378,7 @@ func (c *ISAStore) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.
 	return old, subscriptions, nil
 }
 
-// SearchISAs searches IdentificationServiceArea
+// Search searches IdentificationServiceArea
 // instances that intersect with "cells" and, if set, the temporal volume
 // defined by "earliest" and "latest".
 func (c *ISAStore) Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {

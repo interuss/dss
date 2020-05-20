@@ -9,6 +9,7 @@ import (
 	"github.com/interuss/dss/pkg/rid/repos"
 )
 
+// SubscriptionAppInterface provides the interface to the application logic for Subscription entities
 type SubscriptionAppInterface interface {
 	Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error)
 
@@ -26,6 +27,7 @@ type SubscriptionAppInterface interface {
 	Search(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
 }
 
+// SubscriptionApp is the main implementation of the SubscriptionApp logic.
 type SubscriptionApp struct {
 	// TODO: don't fully embed the Sub repo once we reduce the complexity in the store.
 	repos.Subscription

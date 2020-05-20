@@ -26,6 +26,7 @@ const (
 var subscriptionFields = "subscriptions.id, subscriptions.owner, subscriptions.url, subscriptions.notification_index, subscriptions.starts_at, subscriptions.ends_at, subscriptions.updated_at"
 var subscriptionFieldsWithoutPrefix = "id, owner, url, notification_index, starts_at, ends_at, updated_at"
 
+// SubscriptionStore is an implementation of the SubscriptionRepo for CRDB.
 type SubscriptionStore struct {
 	*cockroach.DB
 
@@ -179,7 +180,7 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 	return s, nil
 }
 
-// GetSubscription returns the subscription identified by "id".
+// Get returns the subscription identified by "id".
 func (c *SubscriptionStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	return c.fetchSubscriptionByID(ctx, c.DB, id)
 }
@@ -189,7 +190,7 @@ func (c *SubscriptionStore) Update(ctx context.Context, s *ridmodels.Subscriptio
 	return nil, dsserr.BadRequest("not yet implemented")
 }
 
-// InsertSubscription inserts subscription into the store and returns
+// Insert inserts subscription into the store and returns
 // the resulting subscription including its ID.
 func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 
@@ -248,7 +249,7 @@ func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscriptio
 	return newSubscription, nil
 }
 
-// DeleteSubscription deletes the subscription identified by "id" and
+// Delete deletes the subscription identified by "id" and
 // returns the deleted subscription.
 func (c *SubscriptionStore) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
 	const (
@@ -289,7 +290,7 @@ func (c *SubscriptionStore) Delete(ctx context.Context, id dssmodels.ID, owner d
 	return old, nil
 }
 
-// SearchSubscriptions returns all subscriptions in "cells".
+// Search returns all subscriptions in "cells".
 func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`

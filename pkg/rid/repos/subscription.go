@@ -8,6 +8,7 @@ import (
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 )
 
+// Subscription is an interface to a storage layer for the Subscription entity
 type Subscription interface {
 	Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error)
 

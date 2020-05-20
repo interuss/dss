@@ -9,6 +9,7 @@ import (
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 )
 
+// ISA is an interface to a storage layer for the ISA entity
 type ISA interface {
 	Get(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
 
@@ -24,4 +25,6 @@ type ISA interface {
 
 	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
 	Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
+
+	WithTransaction()
 }
