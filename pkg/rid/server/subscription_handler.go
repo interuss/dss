@@ -129,6 +129,8 @@ func (s *Server) createOrUpdateSubscription(
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
 	}
 
+	fmt.Println("hello")
+	fmt.Println(s.App)
 	insertedSub, err := s.App.Subscription.Insert(ctx, sub)
 	if err != nil {
 		return nil, err
@@ -140,6 +142,7 @@ func (s *Server) createOrUpdateSubscription(
 	}
 
 	// Find ISAs that were in this subscription's area.
+	fmt.Println(s.App.ISA)
 	isas, err := s.App.ISA.Search(ctx, sub.Cells, nil, nil)
 	if err != nil {
 		return nil, err
