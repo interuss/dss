@@ -13,7 +13,7 @@
     shouldInit: false,  // Set this to true if you are starting a new cluster.
     grpc_port: 26257,
     http_port: 8080,
-    image: 'cockroachdb/cockroach:v20.1',
+    image: 'cockroachdb/cockroach:v20.1.0',
     nodeIPs: error 'must supply the per-node ip addresses as an array',
     JoinExisting: [],
   },

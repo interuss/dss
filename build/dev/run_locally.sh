@@ -51,7 +51,7 @@ if [ ! -z "${pinfo_8085}" ]; then
 fi
 
 echo "=== Starting CockroachDB with admin port on :8080... ==="
-docker run -d --rm --name dss-crdb-for-debugging -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v19.1.2 start --insecure > /dev/null
+docker run -d --rm --name dss-crdb-for-debugging -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v20.1.0 start --insecure > /dev/null
 
 sleep 5
 echo "=== Starting grpc-backend on :8081 ==="
