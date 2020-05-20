@@ -25,6 +25,4 @@ type ISA interface {
 
 	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
 	Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
-
-	WithTransaction()
 }
