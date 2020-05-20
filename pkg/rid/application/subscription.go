@@ -27,6 +27,6 @@ type SubscriptionAppInterface interface {
 }
 
 type SubscriptionApp struct {
-	ir repos.ISA
-	sr repos.Subscription
+	// TODO: don't fully embed the Sub repo once we reduce the complexity in the store.
+	repos.Subscription
 }

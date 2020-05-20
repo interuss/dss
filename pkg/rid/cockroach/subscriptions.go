@@ -30,7 +30,7 @@ type SubscriptionStore struct {
 	*cockroach.DB
 
 	clock  clockwork.Clock
-	logger logger.Logger
+	logger *zap.Logger
 }
 
 func (c *SubscriptionStore) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
@@ -182,6 +182,11 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 // GetSubscription returns the subscription identified by "id".
 func (c *SubscriptionStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	return c.fetchSubscriptionByID(ctx, c.DB, id)
+}
+
+// Update updates the Subscription.. not yet implemented.
+func (c *SubscriptionStore) Update(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	return nil, dsserr.BadRequest("not yet implemented")
 }
 
 // InsertSubscription inserts subscription into the store and returns

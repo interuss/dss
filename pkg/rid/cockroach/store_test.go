@@ -9,17 +9,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/interuss/dss/pkg/rid/repos"
+	"go.uber.org/zap"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	_ repos.Repositories = &Store{}
-
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	fakeClock = clockwork.NewFakeClock()
 	startTime = fakeClock.Now().Add(-time.Minute)
@@ -50,10 +49,12 @@ func newStore() (*Store, error) {
 		return nil, err
 	}
 
+	cdb := &cockroach.DB{db}
+
 	return &Store{
-		ISA: &ISAStore{db, fakeClock},
-		Sub: &SubStore{db, fakeClock},
-		DB:  db,
+		ISA:          &ISAStore{cdb, fakeClock, zap.L()},
+		Subscription: &SubscriptionStore{cdb, fakeClock, zap.L()},
+		DB:           cdb,
 	}, nil
 }
 
@@ -92,7 +93,7 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		begins  = time.Now()
 		expires = begins.Add(-5 * time.Minute)
 	)
-	_, err := store.InsertSubscription(ctx, &ridmodels.Subscription{
+	_, err := store.Subscription.Insert(ctx, &ridmodels.Subscription{
 		ID:                dssmodels.ID(uuid.New().String()),
 		Owner:             "me-myself-and-i",
 		URL:               "https://no/place/like/home",

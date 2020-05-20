@@ -9,12 +9,15 @@ import (
 	"github.com/google/uuid"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	overflow    = -1
-	serviceArea = &ridmodels.IdentificationServiceArea{
+	// Ensure the struct conforms to the interface
+	_           repos.ISA = &ISAStore{}
+	overflow              = -1
+	serviceArea           = &ridmodels.IdentificationServiceArea{
 		ID:        dssmodels.ID(uuid.New().String()),
 		Owner:     dssmodels.Owner(uuid.New().String()),
 		URL:       "https://no/place/like/home/for/flights",
@@ -27,11 +30,6 @@ var (
 	}
 )
 
-func setUpISAStore(ctx context.Context, t *testing.T) (*ISAStore, func() error) {
-	store, f := setUpStore(ctx, t)
-	return store.ISA, f
-}
-
 func TestStoreSearchISAs(t *testing.T) {
 	var (
 		ctx   = context.Background()
@@ -42,7 +40,7 @@ func TestStoreSearchISAs(t *testing.T) {
 			s2.CellID(168),
 			s2.CellID(uint64(overflow)),
 		}
-		store, tearDownStore = setUpISAStore(ctx, t)
+		store, tearDownStore = setUpStore(ctx, t)
 	)
 	defer func() {
 		require.NoError(t, tearDownStore())
@@ -50,7 +48,7 @@ func TestStoreSearchISAs(t *testing.T) {
 
 	isa := *serviceArea
 	isa.Cells = cells
-	saOut, _, err := store.Insert(ctx, &isa)
+	saOut, _, err := store.ISA.Insert(ctx, &isa)
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 	require.Equal(t, isa.ID, saOut.ID)
@@ -133,7 +131,7 @@ func TestStoreSearchISAs(t *testing.T) {
 		t.Run(r.name, func(t *testing.T) {
 			earliest, latest := r.timestampMutator(*saOut.StartTime, *saOut.EndTime)
 
-			serviceAreas, err := store.Search(ctx, r.cells, earliest, latest)
+			serviceAreas, err := store.ISA.Search(ctx, r.cells, earliest, latest)
 			require.NoError(t, err)
 			require.Len(t, serviceAreas, r.expectedLen)
 		})
@@ -142,12 +140,12 @@ func TestStoreSearchISAs(t *testing.T) {
 
 func TestStoreExpiredISA(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpISAStore(ctx, t)
+	store, tearDownStore := setUpStore(ctx, t)
 	defer func() {
 		require.NoError(t, tearDownStore())
 	}()
 
-	saOut, _, err := store.Insert(ctx, serviceArea)
+	saOut, _, err := store.ISA.Insert(ctx, serviceArea)
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 
@@ -155,22 +153,22 @@ func TestStoreExpiredISA(t *testing.T) {
 	fakeClock.Advance(59 * time.Minute)
 
 	// We should still be able to find the ISA by searching and by ID.
-	serviceAreas, err := store.Search(ctx, serviceArea.Cells, nil, nil)
+	serviceAreas, err := store.ISA.Search(ctx, serviceArea.Cells, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 
-	ret, err := store.Get(ctx, serviceArea.ID)
+	ret, err := store.ISA.Get(ctx, serviceArea.ID)
 	require.NoError(t, err)
 	require.NotNil(t, ret)
 
 	// But now the ISA has expired.
 	fakeClock.Advance(2 * time.Minute)
 
-	serviceAreas, err = store.Search(ctx, serviceArea.Cells, nil, nil)
+	serviceAreas, err = store.ISA.Search(ctx, serviceArea.Cells, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 0)
 
-	ret, err = store.Get(ctx, serviceArea.ID)
+	ret, err = store.ISA.Get(ctx, serviceArea.ID)
 	require.Error(t, err)
 	require.Nil(t, ret)
 }
@@ -178,7 +176,7 @@ func TestStoreExpiredISA(t *testing.T) {
 func TestStoreDeleteISAs(t *testing.T) {
 	var (
 		ctx                  = context.Background()
-		store, tearDownStore = setUpISAStore(ctx, t)
+		store, tearDownStore = setUpStore(ctx, t)
 	)
 	defer func() {
 		require.NoError(t, tearDownStore())
@@ -189,7 +187,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 	for _, r := range subscriptionsPool {
 		copy := *r.input
 		copy.Cells = s2.CellUnion{s2.CellID(42)}
-		s1, err := store.InsertSubscription(ctx, &copy)
+		s1, err := store.Subscription.Insert(ctx, &copy)
 		require.NoError(t, err)
 		require.NotNil(t, s1)
 		require.Equal(t, 42, s1.NotificationIndex)
@@ -198,21 +196,19 @@ func TestStoreDeleteISAs(t *testing.T) {
 
 	// Insert the ISA.
 	copy := *serviceArea
-	tx, _ := store.Begin()
-	isa, subscriptionsOut, err := store.pushISA(ctx, tx, &copy)
+	isa, subscriptionsOut, err := store.ISA.Insert(ctx, &copy)
 	require.NoError(t, err)
-	require.NoError(t, tx.Commit())
 	require.NotNil(t, isa)
 
 	for i := range insertedSubscriptions {
 		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
 	}
 	// Can't delete with different owner.
-	_, _, err = store.Delete(ctx, isa.ID, "bad-owner", isa.Version)
+	_, _, err = store.ISA.Delete(ctx, isa.ID, "bad-owner", isa.Version)
 	require.Error(t, err)
 
 	// Delete the ISA.
-	serviceAreaOut, subscriptionsOut, err := store.Delete(ctx, isa.ID, isa.Owner, isa.Version)
+	serviceAreaOut, subscriptionsOut, err := store.ISA.Delete(ctx, isa.ID, isa.Owner, isa.Version)
 	require.NoError(t, err)
 	require.Equal(t, isa, serviceAreaOut)
 	require.NotNil(t, subscriptionsOut)
@@ -228,7 +224,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 
 func TestInsertISA(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpISAStore(ctx, t)
+	store, tearDownStore := setUpStore(ctx, t)
 	defer func() {
 		require.NoError(t, tearDownStore())
 	}()
@@ -308,22 +304,19 @@ func TestInsertISA(t *testing.T) {
 
 			// Insert a pre-existing ISA to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
-				tx, err := store.Begin()
-				require.NoError(t, err)
-				existing, _, err := store.pushISA(ctx, tx, &ridmodels.IdentificationServiceArea{
+				existing, _, err := store.ISA.Insert(ctx, &ridmodels.IdentificationServiceArea{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
 					EndTime:   &r.updateFromEndTime,
 				})
 				require.NoError(t, err)
-				require.NoError(t, tx.Commit())
 				version = existing.Version
 
 				// Can't update if it has a different owner
 				isa := *existing
 				isa.Owner = "bad-owner"
-				_, _, err = store.Insert(ctx, &isa)
+				_, _, err = store.ISA.Insert(ctx, &isa)
 				require.Error(t, err)
 			}
 
@@ -338,7 +331,7 @@ func TestInsertISA(t *testing.T) {
 			if !r.endTime.IsZero() {
 				sa.EndTime = &r.endTime
 			}
-			isa, _, err := store.Insert(ctx, sa)
+			isa, _, err := store.ISA.Insert(ctx, sa)
 
 			if r.wantErr == "" {
 				require.NoError(t, err)

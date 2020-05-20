@@ -19,6 +19,7 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/rid/application"
 	ridc "github.com/interuss/dss/pkg/rid/cockroach"
 	rid "github.com/interuss/dss/pkg/rid/server"
 	"github.com/interuss/dss/pkg/scd"
@@ -112,14 +113,11 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 
 	var (
-		dssServer = &rid.Server{
-			Store:   store,
-			Timeout: *timeout,
-		}
+		dssServer      = makeDSSServer(store)
 		auxServer      = &aux.Server{}
 		scdServer      *scd.Server
 		requiredScopes = auth.MergeOperationsAndScopes(
-			dssServer.AuthScopes(), auxServer.AuthScopes(),
+			rid.AuthScopes(), auxServer.AuthScopes(),
 		)
 	)
 
@@ -202,6 +200,17 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		<-ctx.Done()
 	}()
 	return s.Serve(l)
+}
+
+func makeDSSServer(store *ridc.Store) *rid.Server {
+	app := &application.App{
+		ISA:          &application.ISAApp{store.ISA},
+		Subscription: &application.SubscriptionApp{store.Subscription},
+	}
+	return &rid.Server{
+		App:     app,
+		Timeout: *timeout,
+	}
 }
 
 func main() {

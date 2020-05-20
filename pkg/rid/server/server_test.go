@@ -120,7 +120,7 @@ func (ma *mockISAApp) Search(ctx context.Context, cells s2.CellUnion, earliest *
 
 func TestDeleteSubscription(t *testing.T) {
 	ctx := auth.ContextWithOwner(context.Background(), "foo")
-	version, _ := dssmodels.VersionFromatring("bar")
+	version, _ := dssmodels.VersionFromString("bar")
 
 	for _, r := range []struct {
 		name         string
@@ -143,8 +143,8 @@ func TestDeleteSubscription(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			ma := mockSubscriptionApp{}
-			ma.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, r.version).Return(
+			ma := &mockSubscriptionApp{}
+			ma.On("Delete", mock.Anything, r.id, mock.Anything, r.version).Return(
 				r.subscription, r.err,
 			)
 			s := &Server{
@@ -357,7 +357,7 @@ func TestSearchSubscriptionsFailsIfOwnerMissingFromContext(t *testing.T) {
 		ctx = context.Background()
 		ma  = &mockSubscriptionApp{}
 		s   = &Server{
-			App: &applicatin.App{Subscription: ma},
+			App: &application.App{Subscription: ma},
 		}
 	)
 
@@ -372,7 +372,7 @@ func TestSearchSubscriptionsFailsIfOwnerMissingFromContext(t *testing.T) {
 func TestSearchSubscriptionsFailsForInvalidArea(t *testing.T) {
 	var (
 		ctx = auth.ContextWithOwner(context.Background(), "foo")
-		ma  = &mockSubscriptionApp()
+		ma  = &mockSubscriptionApp{}
 		s   = &Server{
 			App: &application.App{Subscription: ma},
 		}
@@ -398,7 +398,7 @@ func TestSearchSubscriptions(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	ma.On("SearchSubscriptions", mock.Anything, mock.Anything, owner).Return(
+	ma.On("Search", mock.Anything, mock.Anything, owner).Return(
 		[]*ridmodels.Subscription{
 			{
 				ID:                dssmodels.ID(uuid.New().String()),
@@ -514,7 +514,7 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 		ma = &mockISAApp{}
 
 		s = &Server{
-			App: ma,
+			App: &application.App{ISA: ma},
 		}
 	)
 
@@ -530,7 +530,7 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 	var (
 		owner      = dssmodels.Owner("foo")
 		id         = dssmodels.ID(uuid.New().String())
-		version, _ = dssmodels.VersionFromatring("bar")
+		version, _ = dssmodels.VersionFromString("bar")
 		ctx        = auth.ContextWithOwner(context.Background(), owner)
 		ma         = &mockISAApp{}
 
@@ -577,7 +577,7 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	ma.On("SearchISAs", mock.Anything, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
+	ma.On("Search", mock.Anything, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
 		[]*ridmodels.IdentificationServiceArea{
 			{
 				ID:    dssmodels.ID(uuid.New().String()),

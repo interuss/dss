@@ -19,8 +19,8 @@ var (
 // Store is an implementation of dss.Store using
 // Cockroach DB as its backend store.
 type Store struct {
-	ISA repos.ISA
-	Sub repos.Subscription
+	ISA          repos.ISA
+	Subscription repos.Subscription
 	*cockroach.DB
 }
 
@@ -35,11 +35,11 @@ func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 }
 
 // NewStore returns a Store instance connected to a cockroach instance via db.
-func NewStore(db *cockroach.DB, logger logger.Logger) (*Store, error) {
+func NewStore(db *cockroach.DB, logger *zap.Logger) (*Store, error) {
 	return &Store{
-		ISA: &ISAStore{db, DefaultClock, logger},
-		Sub: &SubscriptionStore{db, DefaultClock, logger},
-		DB:  db,
+		ISA:          &ISAStore{db, DefaultClock, logger},
+		Subscription: &SubscriptionStore{db, DefaultClock, logger},
+		DB:           db,
 	}, nil
 }
 

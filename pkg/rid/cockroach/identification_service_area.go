@@ -16,6 +16,7 @@ import (
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 var isaFields = "identification_service_areas.id, identification_service_areas.owner, identification_service_areas.url, identification_service_areas.starts_at, identification_service_areas.ends_at, identification_service_areas.updated_at"
@@ -25,7 +26,7 @@ type ISAStore struct {
 	*cockroach.DB
 
 	clock  clockwork.Clock
-	logger logger.Logger
+	logger *zap.Logger
 }
 
 // TODO: remove this from this store...

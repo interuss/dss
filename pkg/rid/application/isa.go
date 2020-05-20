@@ -28,6 +28,10 @@ type ISAAppInterface interface {
 }
 
 type ISAApp struct {
-	ir repos.ISA
-	sr repos.Subscription
+	// TODO: don't fully embed the ISA repo once we reduce the complexity in the store.
+	// Right now it's "coincidence" that the repo has the same signatures as the App interface
+	// but we will want to simplify the repos and add the complexity here.
+	repos.ISA
+	// TODO:steeling the ISAApp will need access to the Subscription Repo since it touches
+	// subs on inserts as well.
 }
