@@ -559,8 +559,6 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 	switch {
 	case err != nil:
 		return nil, multierr.Combine(err, tx.Rollback())
-	case len(subscriptions) == 0:
-		return nil, nil
 	}
 
 	if err := tx.Commit(); err != nil {
