@@ -63,15 +63,10 @@ var (
 	}
 )
 
-func setUpSubscriptionStore(ctx context.Context, t *testing.T) (*SubscriptionStore, func() error) {
-	store, f := setUpStore(ctx, t)
-	return store.ISA, f
-}
-
 func TestStoreGetSubscription(t *testing.T) {
 	var (
 		ctx                  = context.Background()
-		store, tearDownStore = setUpSubscriptionStore(ctx, t)
+		store, tearDownStore = setUpStore(ctx, t)
 	)
 	defer func() {
 		require.NoError(t, tearDownStore())
@@ -95,7 +90,7 @@ func TestStoreGetSubscription(t *testing.T) {
 func TestStoreInsertSubscription(t *testing.T) {
 	var (
 		ctx                  = context.Background()
-		store, tearDownStore = setUpSubscriptionStore(ctx, t)
+		store, tearDownStore = setUpStore(ctx, t)
 	)
 	defer func() {
 		require.NoError(t, tearDownStore())
@@ -147,7 +142,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 
 func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpSubscriptionStore(ctx, t)
+	store, tearDownStore := setUpStore(ctx, t)
 
 	defer func() {
 		require.NoError(t, tearDownStore())
@@ -281,7 +276,7 @@ func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
 func TestStoreInsertTooManySubscription(t *testing.T) {
 	var (
 		ctx                  = context.Background()
-		store, tearDownStore = setUpSubscriptionStore(ctx, t)
+		store, tearDownStore = setUpStore(ctx, t)
 	)
 
 	defer func() {
@@ -328,7 +323,7 @@ func TestStoreInsertTooManySubscription(t *testing.T) {
 func TestStoreDeleteSubscription(t *testing.T) {
 	var (
 		ctx                  = context.Background()
-		store, tearDownStore = setUpSubscriptionStore(ctx, t)
+		store, tearDownStore = setUpStore(ctx, t)
 	)
 	defer func() {
 		require.NoError(t, tearDownStore())
@@ -364,7 +359,7 @@ func TestStoreDeleteSubscription(t *testing.T) {
 func TestStoreSearchSubscription(t *testing.T) {
 	var (
 		ctx                  = context.Background()
-		store, tearDownStore = setUpSubscriptionStore(ctx, t)
+		store, tearDownStore = setUpStore(ctx, t)
 	)
 	defer func() {
 		require.NoError(t, tearDownStore())
@@ -410,7 +405,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 
 func TestStoreExpiredSubscription(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpSubscriptionStore(ctx, t)
+	store, tearDownStore := setUpStore(ctx, t)
 	defer func() {
 		require.NoError(t, tearDownStore())
 	}()
