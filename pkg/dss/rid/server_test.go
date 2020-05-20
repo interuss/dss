@@ -33,7 +33,7 @@ func mustTimestamp(ts *tspb.Timestamp) *time.Time {
 }
 
 func mustPolygonToCellIDs(p *ridpb.GeoPolygon) s2.CellUnion {
-	cells, err := p.ToCommon().CalculateCovering()
+	cells, err := dssmodels.GeoPolygonFromRIDProto(p).CalculateCovering()
 	if err != nil {
 		panic(err)
 	}

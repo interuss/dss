@@ -57,6 +57,7 @@ interfaces/scd_adjusted.yaml:
 	./interfaces/adjuster/adjust_openapi_yaml.sh ./interfaces/astm-utm/Protocol/utm.yaml ./interfaces/scd_adjusted.yaml
 
 pkg/api/v1/scdpb/scd.proto: interfaces/scd_adjusted.yaml install-proto-generation
+# 	rm $(dir $@)
 	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
 		-spec interfaces/scd_adjusted.yaml -annotate \
 		-out $@ \

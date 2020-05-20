@@ -63,6 +63,7 @@ func (v Version) Matches(w Version) bool {
 	return v == w
 }
 
+// ValidateUSSBaseURL ensures https
 func ValidateUSSBaseURL(s string) error {
 	u, err := url.Parse(s)
 	if err != nil {

@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -438,7 +437,6 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	subs, err = store.SearchSubscriptions(ctx, sub.Cells, sub.Owner)
 	require.NoError(t, err)
 	require.Len(t, subs, 0)
-	fmt.Println("starting")
 
 	ret, err = store.GetSubscription(ctx, sub.ID)
 	require.Nil(t, ret)

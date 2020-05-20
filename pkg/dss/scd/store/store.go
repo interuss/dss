@@ -61,7 +61,7 @@ var (
 type DummyStore struct {
 }
 
-func MakeDummyOperation(id scdmodels.ID) *scdmodels.Operation {
+func makeDummyOperation(id scdmodels.ID) *scdmodels.Operation {
 	var (
 		altLo = float32(11235)
 		altHi = float32(81321)
@@ -83,8 +83,8 @@ func MakeDummyOperation(id scdmodels.ID) *scdmodels.Operation {
 
 }
 
-// MakeDummySubscription returns a dummy subscription instance with ID id.
-func MakeDummySubscription(id scdmodels.ID) *scdmodels.Subscription {
+// makeDummySubscription returns a dummy subscription instance with ID id.
+func makeDummySubscription(id scdmodels.ID) *scdmodels.Subscription {
 	altLo := float32(11235)
 	altHi := float32(81321)
 	result := &scdmodels.Subscription{
@@ -105,45 +105,53 @@ func MakeDummySubscription(id scdmodels.ID) *scdmodels.Subscription {
 	return result
 }
 
+// SearchSubscriptions is a stubbed implementation of SearchSubscriptions.
 func (s *DummyStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error) {
 	subs := []*scdmodels.Subscription{
-		MakeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
+		makeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
 	}
 	return subs, nil
 }
 
+// GetSubscription is a stubbed implementation of GetSubscription.
 func (s *DummyStore) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
-	return MakeDummySubscription(id), nil
+	return makeDummySubscription(id), nil
 }
 
+// UpsertSubscription is a stubbed implementation of UpsertSubscription.
 func (s *DummyStore) UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
-	return sub, []*scdmodels.Operation{MakeDummyOperation(sub.ID)}, nil
+	return sub, []*scdmodels.Operation{makeDummyOperation(sub.ID)}, nil
 }
 
+// DeleteSubscription is a stubbed implementation of DeleteSubscription.
 func (s *DummyStore) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error) {
-	sub := MakeDummySubscription(id)
+	sub := makeDummySubscription(id)
 	sub.ID = id
 	return sub, nil
 }
 
+// GetOperation is a stubbed implementation of GetOperation.
 func (s *DummyStore) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
-	return MakeDummyOperation(id), nil
+	return makeDummyOperation(id), nil
 }
 
+// DeleteOperation is a stubbed implementation of DeleteOperation.
 func (s *DummyStore) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
-	return MakeDummyOperation(id), []*scdmodels.Subscription{
-		MakeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
+	return makeDummyOperation(id), []*scdmodels.Subscription{
+		makeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
 	}, nil
 }
 
+// UpsertOperation is a stubbed implementation of UpsertOperation.
 func (s *DummyStore) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	return operation, []*scdmodels.Subscription{
-		MakeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
+		makeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
 	}, nil
 }
 
+// SearchOperations is a stubbed implementation of SearchOperations.
 func (s *DummyStore) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	return []*scdmodels.Operation{
-		MakeDummyOperation("444eab15-8384-4e39-8589-5161689aee56"),
+		makeDummyOperation("444eab15-8384-4e39-8589-5161689aee56"),
 	}, nil
 }

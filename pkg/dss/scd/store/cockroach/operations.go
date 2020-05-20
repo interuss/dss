@@ -221,6 +221,7 @@ func (s *Store) populateOperationCells(ctx context.Context, q dsssql.Queryable, 
 	return nil
 }
 
+// GetOperation returns an operation for the given ID from CockroachDB
 func (s *Store) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
 	sub, err := s.fetchOperationByID(ctx, s.DB, id)
 	switch err {
@@ -233,6 +234,7 @@ func (s *Store) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.O
 	}
 }
 
+// DeleteOperation deletes an operation for the given ID from CockroachDB
 func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	var (
 		deleteQuery = `
@@ -306,6 +308,7 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 	return old, subscriptions, nil
 }
 
+// UpsertOperation inserts or updates an operation in CockroachDB
 func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	tx, err := s.Begin()
 	if err != nil {
@@ -448,6 +451,7 @@ func (s *Store) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *d
 	return result, nil
 }
 
+// SearchOperations returns operations within the 4D volume from CockroachDB
 func (s *Store) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	tx, err := s.Begin()
 	if err != nil {

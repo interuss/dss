@@ -37,7 +37,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	)
 
 	// Parse extents
-	extents, err := params.GetExtents().ToCommon()
+	extents, err := dssmodels.Volume4DFromSCDProto(params.GetExtents())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("unable to parse extents: %s", err))
 	}
@@ -142,7 +142,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := aoi.ToCommon()
+	vol4, err := dssmodels.Volume4DFromSCDProto(aoi)
 	if err != nil {
 		return nil, dsserr.Internal("failed to convert to internal geometry model")
 	}

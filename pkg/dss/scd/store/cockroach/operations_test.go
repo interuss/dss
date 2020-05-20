@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/dss/models"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	"github.com/stretchr/testify/require"
@@ -138,7 +137,7 @@ func TestStoreSearchOperations(t *testing.T) {
 				StartTime: earliest,
 				EndTime:   latest,
 				SpatialVolume: &dssmodels.Volume3D{
-					Footprint: models.GeometryFunc(func() (s2.CellUnion, error) {
+					Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
 						return r.cells, nil
 					}),
 				},
