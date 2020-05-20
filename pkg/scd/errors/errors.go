@@ -1,13 +1,13 @@
 package errors
 
 import (
-	proto "github.com/golang/protobuf/proto"
 	any "github.com/golang/protobuf/ptypes/any"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserrors "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/scd/models"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
+	proto "google.golang.org/protobuf/proto"
 )
 
 var (
@@ -41,7 +41,7 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (error, error) 
 		Message: response.Message,
 		Details: []*any.Any{
 			{
-				TypeUrl: "github.com/interuss/dss/" + proto.MessageName(response),
+				TypeUrl: "github.com/interuss/dss/" + string(response.ProtoReflect().Descriptor().FullName()),
 				Value:   serialized,
 			},
 		},
