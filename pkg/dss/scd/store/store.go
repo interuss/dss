@@ -72,7 +72,7 @@ func makeDummyOperation(id scdmodels.ID) *scdmodels.Operation {
 	return &scdmodels.Operation{
 		ID:            id,
 		Version:       314,
-		OVN:           scdmodels.NewOVNFromTime(time.Now()),
+		OVN:           scdmodels.NewOVNFromTime(time.Now(), id.String()),
 		USSBaseURL:    "https://exampleuss.com/utm",
 		AltitudeLower: &altLo,
 		AltitudeUpper: &altHi,

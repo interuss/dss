@@ -75,7 +75,7 @@ func (s *Store) fetchOperations(ctx context.Context, q dsssql.Queryable, query s
 		); err != nil {
 			return nil, err
 		}
-		o.OVN = scdmodels.NewOVNFromTime(updatedAt)
+		o.OVN = scdmodels.NewOVNFromTime(updatedAt, o.ID.String())
 		payload = append(payload, o)
 	}
 	if err := rows.Err(); err != nil {
