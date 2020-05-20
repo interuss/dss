@@ -28,11 +28,15 @@ def _make_op1_request():
   }
 
 
+# Preconditions: None
+# Mutations: None
 def test_op_does_not_exist_get(scd_session, op1_uuid):
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 404, resp.content
 
 
+# Preconditions: None
+# Mutations: None
 def test_op_does_not_exist_query(scd_session, op1_uuid):
   if scd_session is None:
     return
@@ -44,6 +48,8 @@ def test_op_does_not_exist_query(scd_session, op1_uuid):
   assert op1_uuid not in [op['id'] for op in resp.json().get('operation_references', [])]
 
 
+# Preconditions: None
+# Mutations: None
 def test_create_op_single_extent(scd_session, op1_uuid):
   req = _make_op1_request()
   req['extents'] = req['extents'][0]
@@ -51,6 +57,8 @@ def test_create_op_single_extent(scd_session, op1_uuid):
   assert resp.status_code == 400, resp.content
 
 
+# Preconditions: None
+# Mutations: None
 def test_create_op_missing_time_start(scd_session, op1_uuid):
   req = _make_op1_request()
   del req['extents'][0]['time_start']
@@ -58,6 +66,8 @@ def test_create_op_missing_time_start(scd_session, op1_uuid):
   assert resp.status_code == 400, resp.content
 
 
+# Preconditions: None
+# Mutations: None
 def test_create_op_missing_time_end(scd_session, op1_uuid):
   req = _make_op1_request()
   del req['extents'][0]['time_end']
@@ -65,6 +75,8 @@ def test_create_op_missing_time_end(scd_session, op1_uuid):
   assert resp.status_code == 400, resp.content
 
 
+# Preconditions: None
+# Mutations: Operation op1_uuid created by scd_session user
 def test_create_op(scd_session, op1_uuid):
   req = _make_op1_request()
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
@@ -81,6 +93,8 @@ def test_create_op(scd_session, op1_uuid):
   assert 'state' not in op
 
 
+# Preconditions: Operation op1_uuid created by scd_session user
+# Mutations: None
 def test_get_op_by_id(scd_session, op1_uuid):
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 200, resp.content
@@ -93,11 +107,15 @@ def test_get_op_by_id(scd_session, op1_uuid):
   assert 'state' not in op
 
 
+# Preconditions: None, though preferably Operation op1_uuid created by scd_session user
+# Mutations: None
 def test_get_op_by_search_missing_params(scd_session):
   resp = scd_session.post('/operation_references/query')
   assert resp.status_code == 400, resp.content
 
 
+# Preconditions: Operation op1_uuid created by scd_session user
+# Mutations: None
 def test_get_op_by_search(scd_session, op1_uuid):
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(-56, 178, 300))
@@ -106,6 +124,8 @@ def test_get_op_by_search(scd_session, op1_uuid):
   assert op1_uuid in [x['id'] for x in resp.json().get('operation_references', [])]
 
 
+# Preconditions: Operation op1_uuid created by scd_session user
+# Mutations: None
 def test_get_op_by_search_earliest_time_included(scd_session, op1_uuid):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=59)
   resp = scd_session.post('/operation_references/query', json={
@@ -115,6 +135,8 @@ def test_get_op_by_search_earliest_time_included(scd_session, op1_uuid):
   assert op1_uuid in [x['id'] for x in resp.json()['operation_references']]
 
 
+# Preconditions: Operation op1_uuid created by scd_session user
+# Mutations: None
 def test_get_op_by_search_earliest_time_excluded(scd_session, op1_uuid):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=61)
   resp = scd_session.post('/operation_references/query', json={
@@ -124,6 +146,8 @@ def test_get_op_by_search_earliest_time_excluded(scd_session, op1_uuid):
   assert op1_uuid not in [x['id'] for x in resp.json()['operation_references']]
 
 
+# Preconditions: Operation op1_uuid created by scd_session user
+# Mutations: None
 def test_get_op_by_search_latest_time_included(scd_session, op1_uuid):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
   resp = scd_session.post('/operation_references/query', json={
@@ -133,6 +157,8 @@ def test_get_op_by_search_latest_time_included(scd_session, op1_uuid):
   assert op1_uuid in [x['id'] for x in resp.json()['operation_references']]
 
 
+# Preconditions: Operation op1_uuid created by scd_session user
+# Mutations: None
 def test_get_op_by_search_latest_time_excluded(scd_session, op1_uuid):
   latest_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
   resp = scd_session.post('/operation_references/query', json={
@@ -142,6 +168,8 @@ def test_get_op_by_search_latest_time_excluded(scd_session, op1_uuid):
   assert op1_uuid not in [x['id'] for x in resp.json()['operation_references']]
 
 
+# Preconditions: Operation op1_uuid created by scd_session user
+# Mutations: Operation op1_uuid mutated to second version
 def test_mutate_op(scd_session, op1_uuid):
   # GET current op
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
@@ -171,16 +199,22 @@ def test_mutate_op(scd_session, op1_uuid):
   assert 'state' not in op
 
 
+# Preconditions: Operation op1_uuid mutated to second version
+# Mutations: Operation op1_uuid deleted
 def test_delete_op(scd_session, op1_uuid):
   resp = scd_session.delete('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 200, resp.content
 
 
+# Preconditions: Operation op1_uuid deleted
+# Mutations: None
 def test_get_deleted_op_by_id(scd_session, op1_uuid):
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 404, resp.content
 
 
+# Preconditions: Operation op1_uuid deleted
+# Mutations: None
 def test_get_deleted_op_by_search(scd_session, op1_uuid):
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(-56, 178, 300))
