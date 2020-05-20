@@ -9,18 +9,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/interuss/dss/pkg/rid/server"
+	"github.com/interuss/dss/pkg/rid/repos"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 var (
-	_ server.Store = &Store{}
+	_ repos.Repositories = &Store{}
 
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	fakeClock = clockwork.NewFakeClock()
@@ -53,9 +51,9 @@ func newStore() (*Store, error) {
 	}
 
 	return &Store{
-		DB:     &cockroach.DB{DB: db},
-		logger: zap.L(),
-		clock:  fakeClock,
+		ISA: &ISAStore{db, fakeClock},
+		Sub: &SubStore{db, fakeClock},
+		DB:  db,
 	}, nil
 }
 

@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"time"
 
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -23,5 +22,5 @@ type Subscription interface {
 	Update(ctx context.Context, isa *ridmodels.Subscription) (*ridmodels.Subscription, error)
 
 	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
-	Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.Subscription, error)
+	Search(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
 }

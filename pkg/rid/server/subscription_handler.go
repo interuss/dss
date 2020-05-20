@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -13,24 +12,6 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 )
-
-type SubscriptionStore interface {
-	// Close closes the store and should release all resources.
-	Close() error
-
-	// GetSubscription returns the subscription identified by "id".
-	GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error)
-
-	// Delete deletes the subscription identified by "id" and
-	// returns the deleted subscription.
-	DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error)
-
-	// InsertSubscription inserts or updates a subscription.
-	InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
-
-	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
-	SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
-}
 
 // DeleteSubscription deletes an existing subscription.
 func (s *Server) DeleteSubscription(
@@ -47,7 +28,7 @@ func (s *Server) DeleteSubscription(
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.Store.DeleteSubscription(ctx, dssmodels.ID(req.GetId()), owner, version)
+	subscription, err := s.App.Subscription.Delete(ctx, dssmodels.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +63,7 @@ func (s *Server) SearchSubscriptions(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscriptions, err := s.Store.SearchSubscriptions(ctx, cu, owner)
+	subscriptions, err := s.App.Subscription.Search(ctx, cu, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +87,7 @@ func (s *Server) GetSubscription(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.Store.GetSubscription(ctx, dssmodels.ID(req.GetId()))
+	subscription, err := s.App.Subscription.Get(ctx, dssmodels.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
 	}
@@ -148,7 +129,7 @@ func (s *Server) createOrUpdateSubscription(
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
 	}
 
-	insertedSub, err := s.Store.InsertSubscription(ctx, sub)
+	insertedSub, err := s.App.Subscription.Insert(ctx, sub)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +140,7 @@ func (s *Server) createOrUpdateSubscription(
 	}
 
 	// Find ISAs that were in this subscription's area.
-	isas, err := s.Store.SearchISAs(ctx, sub.Cells, nil, nil)
+	isas, err := s.App.ISA.Search(ctx, sub.Cells, nil, nil)
 	if err != nil {
 		return nil, err
 	}

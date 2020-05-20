@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/dpjacques/clockwork"
+	"github.com/interuss/dss/pkg/cockroach"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -24,7 +26,14 @@ const (
 var subscriptionFields = "subscriptions.id, subscriptions.owner, subscriptions.url, subscriptions.notification_index, subscriptions.starts_at, subscriptions.ends_at, subscriptions.updated_at"
 var subscriptionFieldsWithoutPrefix = "id, owner, url, notification_index, starts_at, ends_at, updated_at"
 
-func (c *Store) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
+type SubscriptionStore struct {
+	*cockroach.DB
+
+	clock  clockwork.Clock
+	logger logger.Logger
+}
+
+func (c *SubscriptionStore) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -55,47 +64,7 @@ func (c *Store) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, quer
 	return payload, nil
 }
 
-func (c *Store) fetchSubscriptionsForNotification(
-	ctx context.Context, q dsssql.Queryable, cells []int64) ([]*ridmodels.Subscription, error) {
-	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
-	// UPDATE FROM query.
-
-	// First: get unique subscription IDs.
-	var query = `
-			SELECT DISTINCT subscription_id
-			FROM cells_subscriptions
-			WHERE cell_id = ANY($1)`
-	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var subscriptionIDs []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		subscriptionIDs = append(subscriptionIDs, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	// Next: update the notification_index of each one and return the rest of the
-	// data.
-	var updateQuery = fmt.Sprintf(`
-			UPDATE subscriptions
-			SET notification_index = notification_index + 1
-			WHERE id = ANY($1)
-			AND ends_at >= $2
-			RETURNING %s`, subscriptionFieldsWithoutPrefix)
-	return c.fetchSubscriptions(
-		ctx, q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
-}
-
-func (c *Store) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*ridmodels.Subscription, error) {
 	subs, err := c.fetchSubscriptions(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
@@ -109,7 +78,7 @@ func (c *Store) fetchSubscription(ctx context.Context, q dsssql.Queryable, query
 	return subs[0], nil
 }
 
-func (c *Store) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
 		WHERE id = $1
@@ -120,7 +89,7 @@ func (c *Store) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, i
 // fetchMaxSubscriptionCountByCellAndOwner counts how many subscriptions the
 // owner has in each one of these cells, and returns the number of subscriptions
 // in the cell with the highest number of subscriptions.
-func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
+func (c *SubscriptionStore) fetchMaxSubscriptionCountByCellAndOwner(
 	ctx context.Context, q dsssql.Queryable, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
 	var query = `
     SELECT
@@ -150,7 +119,7 @@ func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
 	return ret, err
 }
 
-func (c *Store) pushSubscription(ctx context.Context, q dsssql.Queryable, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Queryable, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		upsertQuery = fmt.Sprintf(`
 		UPSERT INTO
@@ -211,13 +180,13 @@ func (c *Store) pushSubscription(ctx context.Context, q dsssql.Queryable, s *rid
 }
 
 // GetSubscription returns the subscription identified by "id".
-func (c *Store) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	return c.fetchSubscriptionByID(ctx, c.DB, id)
 }
 
 // InsertSubscription inserts subscription into the store and returns
 // the resulting subscription including its ID.
-func (c *Store) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 
 	tx, err := c.Begin()
 	if err != nil {
@@ -276,7 +245,7 @@ func (c *Store) InsertSubscription(ctx context.Context, s *ridmodels.Subscriptio
 
 // DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
-func (c *Store) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
 	const (
 		query = `
 		DELETE FROM
@@ -316,7 +285,7 @@ func (c *Store) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner d
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
-func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT

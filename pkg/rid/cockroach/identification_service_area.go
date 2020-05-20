@@ -12,6 +12,7 @@ import (
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 
+	"github.com/dpjacques/clockwork"
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
 	"go.uber.org/multierr"
@@ -22,6 +23,82 @@ var isaFieldsWithoutPrefix = "id, owner, url, starts_at, ends_at, updated_at"
 
 type ISAStore struct {
 	*cockroach.DB
+
+	clock  clockwork.Clock
+	logger logger.Logger
+}
+
+// TODO: remove this from this store...
+func (c *ISAStore) fetchSubscriptionsForNotification(
+	ctx context.Context, q dsssql.Queryable, cells []int64) ([]*ridmodels.Subscription, error) {
+	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
+	// UPDATE FROM query.
+
+	// First: get unique subscription IDs.
+	var query = `
+			SELECT DISTINCT subscription_id
+			FROM cells_subscriptions
+			WHERE cell_id = ANY($1)`
+	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var subscriptionIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		subscriptionIDs = append(subscriptionIDs, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Next: update the notification_index of each one and return the rest of the
+	// data.
+	var updateQuery = fmt.Sprintf(`
+			UPDATE subscriptions
+			SET notification_index = notification_index + 1
+			WHERE id = ANY($1)
+			AND ends_at >= $2
+			RETURNING %s`, subscriptionFieldsWithoutPrefix)
+	return c.fetchSubscriptions(
+		ctx, q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
+}
+
+//TODO remove this from this store.. only here to support incrementing sub notification index, but the logic should be placed in application
+func (c *ISAStore) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
+	rows, err := q.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var payload []*ridmodels.Subscription
+	for rows.Next() {
+		s := new(ridmodels.Subscription)
+
+		err := rows.Scan(
+			&s.ID,
+			&s.Owner,
+			&s.URL,
+			&s.NotificationIndex,
+			&s.StartTime,
+			&s.EndTime,
+			&s.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		payload = append(payload, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return payload, nil
 }
 
 func (c *ISAStore) fetch(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
@@ -74,8 +151,10 @@ func (c *ISAStore) fetchByID(ctx context.Context, q dsssql.Queryable, id dssmode
 		SELECT %s FROM
 			identification_service_areas
 		WHERE
-			id = $1`, isaFields)
-	return c.fetchOne(ctx, q, query, id)
+			id = $1
+		AND
+			ends_at > $2`, isaFields)
+	return c.fetchOne(ctx, q, query, id, c.clock.Now())
 }
 
 func (c *ISAStore) populateCells(ctx context.Context, q dsssql.Queryable, i *ridmodels.IdentificationServiceArea) error {
@@ -106,7 +185,7 @@ func (c *ISAStore) populateCells(ctx context.Context, q dsssql.Queryable, i *rid
 	return nil
 }
 
-// pushISA creates/updates the IdentificationServiceArea
+// push creates/updates the IdentificationServiceArea
 // identified by "id" and owned by "owner", affecting "cells" in the time
 // interval ["starts", "ends"].
 //
@@ -147,7 +226,7 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 	}
 
 	cells := isa.Cells
-	isa, err := c.fetch(ctx, q, upsertAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime)
+	isa, err := c.fetchOne(ctx, q, upsertAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -217,7 +296,7 @@ func (c *ISAStore) Insert(ctx context.Context, isa *ridmodels.IdentificationServ
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
 
-	area, subscribers, err := c.pushISA(ctx, tx, isa)
+	area, subscribers, err := c.push(ctx, tx, isa)
 	if err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
@@ -236,46 +315,7 @@ func (c *ISAStore) Insert(ctx context.Context, isa *ridmodels.IdentificationServ
 // by it.
 // TODO: simplify the logic to just update, without the primary query.
 func (c *ISAStore) Update(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	tx, err := c.Begin()
-	if err != nil {
-		return nil, nil, err
-	}
-	defer recoverRollbackRepanic(ctx, tx)
-
-	old, err := c.fetchByID(ctx, tx, isa.ID)
-	if err != nil {
-		return nil, nil, multierr.Combine(err, tx.Rollback())
-	}
-
-	switch {
-	case old == nil && !isa.Version.Empty():
-		// The user wants to update an existing ISA, but one wasn't found.
-		return nil, nil, multierr.Combine(dsserr.NotFound(isa.ID.String()), tx.Rollback())
-	case old != nil && isa.Version.Empty():
-		// The user wants to create a new ISA but it already exists.
-		return nil, nil, multierr.Combine(dsserr.AlreadyExists(isa.ID.String()), tx.Rollback())
-	case old != nil && !isa.Version.Matches(old.Version):
-		// The user wants to update an ISA but the version doesn't match.
-		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
-	case old != nil && old.Owner != isa.Owner:
-		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
-	}
-
-	// Validate and perhaps correct StartTime and EndTime.
-	if err := isa.AdjustTimeRange(c.clock.Now(), old); err != nil {
-		return nil, nil, multierr.Combine(err, tx.Rollback())
-	}
-
-	area, subscribers, err := c.pushISA(ctx, tx, isa)
-	if err != nil {
-		return nil, nil, multierr.Combine(err, tx.Rollback())
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, nil, err
-	}
-
-	return area, subscribers, nil
+	return nil, nil, dsserr.BadRequest("not yet implemented")
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
@@ -312,7 +352,7 @@ func (c *ISAStore) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.
 	case old != nil && old.Owner != owner:
 		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
 	}
-	if err := c.populateISACells(ctx, tx, old); err != nil {
+	if err := c.populateCells(ctx, tx, old); err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
 	}
 
