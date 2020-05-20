@@ -9,7 +9,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/interuss/dss/pkg/dss/models"
+	"github.com/interuss/dss/pkg/models"
 )
 
 // RID -> business

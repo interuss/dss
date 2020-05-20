@@ -7,10 +7,10 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.38.0
-	github.com/NYTimes/openapi2proto v0.0.0-00010101000000-000000000000 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dpjacques/clockwork v0.1.0
-	github.com/gogo/protobuf v1.3.1
+	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/gogo/status v1.1.0
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec
 	github.com/golang/protobuf v1.4.2
 	github.com/google/pprof v0.0.0-20200229191704-1ebb73c60ed3 // indirect
@@ -32,7 +32,7 @@ require (
 	google.golang.org/grpc v1.27.0
 	google.golang.org/protobuf v1.23.0
 	gopkg.in/square/go-jose.v2 v2.4.0
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.2.8 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.3 // indirect
 )
 

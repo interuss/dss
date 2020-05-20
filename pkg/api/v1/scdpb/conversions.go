@@ -8,7 +8,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
-	dssmodels "github.com/interuss/dss/pkg/dss/models"
+	dssmodels "github.com/interuss/dss/pkg/models"
 )
 
 var (
