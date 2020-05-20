@@ -18,11 +18,11 @@ import (
 
 const (
 	// TimeFormatRFC3339 is the string used for RFC3339
-	TimeFormatRFC3339 string = "RFC3339"
-	minLat                   = -90.0
-	maxLat                   = 90.0
-	minLng                   = -180.0
-	maxLng                   = 180.0
+	TimeFormatRFC3339 = "RFC3339"
+	minLat            = -90.0
+	maxLat            = 90.0
+	minLng            = -180.0
+	maxLng            = 180.0
 )
 
 var (
