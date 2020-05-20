@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/auth"
@@ -14,6 +15,23 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 )
+
+type ISAStore interface {
+	// Close closes the store and should release all resources.
+	Close() error
+
+	GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
+
+	// Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
+	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
+	DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
+
+	// InsertISA inserts or updates an ISA.
+	InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
+
+	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
+	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
+}
 
 // GetIdentificationServiceArea returns a single ISA for a given ID.
 func (s *Server) GetIdentificationServiceArea(
