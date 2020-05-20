@@ -369,6 +369,9 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 
 		for _, op := range operations {
 			if _, match := keyIdx[op.OVN]; !match {
+				if err := tx.Rollback(); err != nil {
+					return nil, nil, err
+				}
 				return nil, nil, dsserr.AlreadyExists("ovn for affected operation differs")
 			}
 		}
