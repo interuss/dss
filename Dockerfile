@@ -3,7 +3,7 @@
 # container for this image, the desired binary must be specified (either
 # /usr/bin/grpc-backend or /usr/bin/http-gateway).
 
-FROM golang:1.12-alpine AS build
+FROM golang:1.14.3-alpine AS build
 RUN apk add git bash make
 RUN mkdir /app
 WORKDIR /app
