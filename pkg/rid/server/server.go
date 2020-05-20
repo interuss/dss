@@ -24,19 +24,6 @@ var (
 	}
 )
 
-// Store provides an interface for storing DSS data.
-type Store interface {
-	// Close closes the store and should release all resources.
-	Close() error
-	ISAStore
-	SubscriptionStore
-}
-
-// NewNilStore returns a nil Store instance.
-func NewNilStore() Store {
-	return nil
-}
-
 // Server implements ridpb.DiscoveryAndSynchronizationService.
 type Server struct {
 	Store   Store
@@ -44,7 +31,7 @@ type Server struct {
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
-func (s *Server) AuthScopes() map[auth.Operation][]auth.Scope {
+func AuthScopes() map[auth.Operation][]auth.Scope {
 	return map[auth.Operation][]auth.Scope{
 		"/ridpb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea":  {Scopes.ISA.Write},
 		"/ridpb.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea":  {Scopes.ISA.Write},
