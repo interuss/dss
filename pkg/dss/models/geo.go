@@ -13,13 +13,16 @@ import (
 	// TODO: all of the uses of ridpb should use protos that can be used
 	// by both rid and scd.
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
+	"github.com/interuss/dss/pkg/api/v1/scdpb"
 )
 
 const (
-	minLat = -90.0
-	maxLat = 90.0
-	minLng = -180.0
-	maxLng = 180.0
+	// TimeFormatRFC3339 is the string used for RFC3339
+	TimeFormatRFC3339 string = "RFC3339"
+	minLat                   = -90.0
+	maxLat                   = 90.0
+	minLng                   = -180.0
+	maxLng                   = 180.0
 )
 
 var (
@@ -33,17 +36,37 @@ var (
 	errNotEnoughPointsInPolygon = errors.New("not enough points in polygon")
 	errBadCoordSet              = errors.New("coordinates did not create a well formed area")
 	errRadiusMustBeLargerThan0  = errors.New("radius must be larger than 0")
+
+	unitToMeterMultiplicativeFactors = map[unit]float32{
+		unitMeter: 1,
+	}
+
+	altitudeReferenceWGS84 altitudeReference = "W84"
+	unitMeter              unit              = "M"
 )
+
+type (
+	altitudeReference string
+	unit              string
+)
+
+func (ar altitudeReference) String() string {
+	return string(ar)
+}
+
+func (u unit) String() string {
+	return string(u)
+}
+
+func float32p(v float32) *float32 {
+	return &v
+}
 
 func timeP(t time.Time) *time.Time {
 	if t.IsZero() {
 		return nil
 	}
 	return &t
-}
-
-func float32P(v float32) *float32 {
-	return &v
 }
 
 // Volume4D is a Contiguous block of geographic spacetime.
@@ -135,7 +158,7 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 						*result.SpatialVolume.AltitudeLo = *volume.SpatialVolume.AltitudeLo
 					}
 				} else {
-					result.SpatialVolume.AltitudeLo = float32P(*volume.SpatialVolume.AltitudeLo)
+					result.SpatialVolume.AltitudeLo = float32p(*volume.SpatialVolume.AltitudeLo)
 				}
 			}
 
@@ -145,7 +168,7 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 						*result.SpatialVolume.AltitudeHi = *volume.SpatialVolume.AltitudeHi
 					}
 				} else {
-					result.SpatialVolume.AltitudeHi = float32P(*volume.SpatialVolume.AltitudeHi)
+					result.SpatialVolume.AltitudeHi = float32p(*volume.SpatialVolume.AltitudeHi)
 				}
 			}
 
@@ -249,9 +272,9 @@ type LatLngPoint struct {
 	Lng float64
 }
 
-// Volume4DFromProto convert proto to model object
-func Volume4DFromProto(vol4 *ridpb.Volume4D) (*Volume4D, error) {
-	vol3, err := Volume3DFromProto(vol4.GetSpatialVolume())
+// Volume4DFromRIDProto convert proto to model object
+func Volume4DFromRIDProto(vol4 *ridpb.Volume4D) (*Volume4D, error) {
+	vol3, err := Volume3DFromRIDProto(vol4.GetSpatialVolume())
 	if err != nil {
 		return nil, err
 	}
@@ -279,13 +302,13 @@ func Volume4DFromProto(vol4 *ridpb.Volume4D) (*Volume4D, error) {
 	return result, nil
 }
 
-// Volume3DFromProto convert proto to model object
-func Volume3DFromProto(vol3 *ridpb.Volume3D) (*Volume3D, error) {
+// Volume3DFromRIDProto convert proto to model object
+func Volume3DFromRIDProto(vol3 *ridpb.Volume3D) (*Volume3D, error) {
 	footprint := vol3.GetFootprint()
 	if footprint == nil {
 		return nil, errors.New("spatial_volume missing required footprint")
 	}
-	polygonFootprint := GeoPolygonFromProto(footprint)
+	polygonFootprint := GeoPolygonFromRIDProto(footprint)
 
 	result := &Volume3D{
 		Footprint:  polygonFootprint,
@@ -296,19 +319,19 @@ func Volume3DFromProto(vol3 *ridpb.Volume3D) (*Volume3D, error) {
 	return result, nil
 }
 
-// GeoPolygonFromProto convert proto to model object
-func GeoPolygonFromProto(footprint *ridpb.GeoPolygon) *GeoPolygon {
+// GeoPolygonFromRIDProto convert proto to model object
+func GeoPolygonFromRIDProto(footprint *ridpb.GeoPolygon) *GeoPolygon {
 	result := &GeoPolygon{}
 
 	for _, ltlng := range footprint.Vertices {
-		result.Vertices = append(result.Vertices, PointFromProto(ltlng))
+		result.Vertices = append(result.Vertices, PointFromRIDProto(ltlng))
 	}
 
 	return result
 }
 
-// PointFromProto convert proto to model object
-func PointFromProto(pt *ridpb.LatLngPoint) *LatLngPoint {
+// PointFromRIDProto convert proto to model object
+func PointFromRIDProto(pt *ridpb.LatLngPoint) *LatLngPoint {
 	return &LatLngPoint{
 		Lat: pt.Lat,
 		Lng: pt.Lng,
@@ -317,9 +340,9 @@ func PointFromProto(pt *ridpb.LatLngPoint) *LatLngPoint {
 
 // Business -> RID
 
-// ToProto converts Volume4D model obj to proto
-func (vol4 *Volume4D) ToProto() (*ridpb.Volume4D, error) {
-	vol3, err := vol4.SpatialVolume.ToProto()
+// ToRIDProto converts Volume4D model obj to proto
+func (vol4 *Volume4D) ToRIDProto() (*ridpb.Volume4D, error) {
+	vol3, err := vol4.SpatialVolume.ToRIDProto()
 	if err != nil {
 		return nil, err
 	}
@@ -347,8 +370,8 @@ func (vol4 *Volume4D) ToProto() (*ridpb.Volume4D, error) {
 	return result, nil
 }
 
-// ToProto converts Volume3D model obj to proto
-func (vol3 *Volume3D) ToProto() (*ridpb.Volume3D, error) {
+// ToRIDProto converts Volume3D model obj to proto
+func (vol3 *Volume3D) ToRIDProto() (*ridpb.Volume3D, error) {
 	if vol3 == nil {
 		return nil, nil
 	}
@@ -367,7 +390,7 @@ func (vol3 *Volume3D) ToProto() (*ridpb.Volume3D, error) {
 	case nil:
 		// Empty on purpose
 	case *GeoPolygon:
-		result.Footprint = t.ToProto()
+		result.Footprint = t.ToRIDProto()
 	default:
 		return nil, fmt.Errorf("unsupported geometry type: %T", vol3.Footprint)
 	}
@@ -375,8 +398,8 @@ func (vol3 *Volume3D) ToProto() (*ridpb.Volume3D, error) {
 	return result, nil
 }
 
-// ToProto converts GeoPolygon model obj to proto
-func (gp *GeoPolygon) ToProto() *ridpb.GeoPolygon {
+// ToRIDProto converts GeoPolygon model obj to proto
+func (gp *GeoPolygon) ToRIDProto() *ridpb.GeoPolygon {
 	if gp == nil {
 		return nil
 	}
@@ -384,15 +407,210 @@ func (gp *GeoPolygon) ToProto() *ridpb.GeoPolygon {
 	result := &ridpb.GeoPolygon{}
 
 	for _, pt := range gp.Vertices {
-		result.Vertices = append(result.Vertices, pt.ToProto())
+		result.Vertices = append(result.Vertices, pt.ToRIDProto())
 	}
 
 	return result
 }
 
-// ToProto converts latlngpoint model obj to proto
-func (pt *LatLngPoint) ToProto() *ridpb.LatLngPoint {
+// ToRIDProto converts latlngpoint model obj to proto
+func (pt *LatLngPoint) ToRIDProto() *ridpb.LatLngPoint {
 	result := &ridpb.LatLngPoint{
+		Lat: pt.Lat,
+		Lng: pt.Lng,
+	}
+
+	return result
+}
+
+// Volume4DFromSCDProto converts vol4 proto to a Volume4D
+func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
+	vol3, err := Volume3DFromSCDProto(vol4.GetVolume())
+	if err != nil {
+		return nil, err
+	}
+
+	result := &Volume4D{
+		SpatialVolume: vol3,
+	}
+
+	if startTime := vol4.GetTimeStart(); startTime != nil {
+		st := startTime.GetValue()
+		ts, err := ptypes.Timestamp(st)
+		if err != nil {
+			return nil, err
+		}
+		result.StartTime = &ts
+	}
+
+	if endTime := vol4.GetTimeEnd(); endTime != nil {
+		et := endTime.GetValue()
+		ts, err := ptypes.Timestamp(et)
+		if err != nil {
+			return nil, err
+		}
+		result.EndTime = &ts
+	}
+
+	return result, nil
+}
+
+// Volume3DFromSCDProto converts a vol3 proto to a Volume3D
+func Volume3DFromSCDProto(vol3 *scdpb.Volume3D) (*Volume3D, error) {
+	switch {
+	case vol3.GetOutlineCircle() != nil && vol3.GetOutlinePolygon() != nil:
+		return nil, errors.New("both circle and polygon specified in outline geometry")
+	case vol3.GetOutlinePolygon() != nil:
+		return &Volume3D{
+			Footprint:  GeoPolygonFromSCDProto(vol3.GetOutlinePolygon()),
+			AltitudeLo: float32p(float32(vol3.GetAltitudeLower().GetValue())),
+			AltitudeHi: float32p(float32(vol3.GetAltitudeUpper().GetValue())),
+		}, nil
+	case vol3.GetOutlineCircle() != nil:
+		return &Volume3D{
+			Footprint:  GeoCircleFromSCDProto(vol3.GetOutlineCircle()),
+			AltitudeLo: float32p(float32(vol3.GetAltitudeLower().GetValue())),
+			AltitudeHi: float32p(float32(vol3.GetAltitudeUpper().GetValue())),
+		}, nil
+	}
+
+	return &Volume3D{
+		AltitudeLo: float32p(float32(vol3.GetAltitudeLower().GetValue())),
+		AltitudeHi: float32p(float32(vol3.GetAltitudeUpper().GetValue())),
+	}, nil
+}
+
+// GeoCircleFromSCDProto converts a circle proto to a GeoCircle
+func GeoCircleFromSCDProto(c *scdpb.Circle) *GeoCircle {
+	return &GeoCircle{
+		Center:      *LatLngPointFromSCDProto(c.GetCenter()),
+		RadiusMeter: unitToMeterMultiplicativeFactors[unit(c.GetRadius().GetUnits())] * c.GetRadius().GetValue(),
+	}
+}
+
+// GeoPolygonFromSCDProto converts a polygon proto to a GeoPolygon
+func GeoPolygonFromSCDProto(p *scdpb.Polygon) *GeoPolygon {
+	result := &GeoPolygon{}
+	for _, ltlng := range p.GetVertices() {
+		result.Vertices = append(result.Vertices, LatLngPointFromSCDProto(ltlng))
+	}
+
+	return result
+}
+
+// LatLngPointFromSCDProto converts a point proto to a latlngpoint
+func LatLngPointFromSCDProto(p *scdpb.LatLngPoint) *LatLngPoint {
+	return &LatLngPoint{
+		Lat: p.GetLat(),
+		Lng: p.GetLng(),
+	}
+}
+
+// ToSCDProto converts the Volume4D to a proto
+func (vol4 *Volume4D) ToSCDProto() (*scdpb.Volume4D, error) {
+	vol3, err := vol4.SpatialVolume.ToSCDProto()
+	if err != nil {
+		return nil, err
+	}
+
+	result := &scdpb.Volume4D{
+		Volume: vol3,
+	}
+
+	if vol4.StartTime != nil {
+		ts, err := ptypes.TimestampProto(*vol4.StartTime)
+		if err != nil {
+			return nil, err
+		}
+		result.TimeStart = &scdpb.Time{
+			Format: TimeFormatRFC3339,
+			Value:  ts,
+		}
+	}
+
+	if vol4.EndTime != nil {
+		ts, err := ptypes.TimestampProto(*vol4.EndTime)
+		if err != nil {
+			return nil, err
+		}
+		result.TimeEnd = &scdpb.Time{
+			Format: TimeFormatRFC3339,
+			Value:  ts,
+		}
+	}
+
+	return result, nil
+}
+
+// ToSCDProto converts the Volume3D to a proto
+func (vol3 *Volume3D) ToSCDProto() (*scdpb.Volume3D, error) {
+	if vol3 == nil {
+		return nil, nil
+	}
+
+	result := &scdpb.Volume3D{}
+
+	if vol3.AltitudeLo != nil {
+		result.AltitudeLower = &scdpb.Altitude{
+			Reference: altitudeReferenceWGS84.String(),
+			Units:     unitMeter.String(),
+			Value:     float64(*vol3.AltitudeLo),
+		}
+	}
+
+	if vol3.AltitudeHi != nil {
+		result.AltitudeUpper = &scdpb.Altitude{
+			Reference: altitudeReferenceWGS84.String(),
+			Units:     unitMeter.String(),
+			Value:     float64(*vol3.AltitudeHi),
+		}
+	}
+
+	switch t := vol3.Footprint.(type) {
+	case nil:
+		// Empty on purpose
+	case *GeoPolygon:
+		result.OutlinePolygon = t.ToSCDProto()
+	case *GeoCircle:
+		result.OutlineCircle = t.ToSCDProto()
+	}
+
+	return result, nil
+}
+
+// ToSCDProto converts the GeoCircle to a proto
+func (gc *GeoCircle) ToSCDProto() *scdpb.Circle {
+	if gc == nil {
+		return nil
+	}
+
+	return &scdpb.Circle{
+		Center: gc.Center.ToSCDProto(),
+		Radius: &scdpb.Radius{
+			Units: unitMeter.String(),
+			Value: gc.RadiusMeter,
+		},
+	}
+}
+
+// ToSCDProto converts the GeoPolygon to a proto
+func (gp *GeoPolygon) ToSCDProto() *scdpb.Polygon {
+	if gp == nil {
+		return nil
+	}
+
+	result := &scdpb.Polygon{}
+
+	for _, pt := range gp.Vertices {
+		result.Vertices = append(result.Vertices, pt.ToSCDProto())
+	}
+
+	return result
+}
+
+// ToSCDProto converts the LatLngPoint to a proto
+func (pt *LatLngPoint) ToSCDProto() *scdpb.LatLngPoint {
+	result := &scdpb.LatLngPoint{
 		Lat: pt.Lat,
 		Lng: pt.Lng,
 	}

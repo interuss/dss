@@ -6,6 +6,7 @@ import (
 
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/dss/auth"
+	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
 )
@@ -36,7 +37,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	)
 
 	// Parse extents
-	extents, err := scdmodels.Volume4DFromProto(params.GetExtents())
+	extents, err := dssmodels.Volume4DFromSCDProto(params.GetExtents())
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("unable to parse extents: %s", err))
 	}
@@ -44,7 +45,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Construct requested Subscription model
 	cells, err := extents.CalculateSpatialCovering()
 	switch err {
-	case nil, scdmodels.ErrMissingSpatialVolume, scdmodels.ErrMissingFootprint:
+	case nil, dssmodels.ErrMissingSpatialVolume, dssmodels.ErrMissingFootprint:
 		// All good, let's go ahead.
 	default:
 		return nil, dssErrorOfAreaError(err)
@@ -141,7 +142,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := scdmodels.Volume4DFromProto(aoi)
+	vol4, err := dssmodels.Volume4DFromSCDProto(aoi)
 	if err != nil {
 		return nil, dsserr.Internal("failed to convert to internal geometry model")
 	}

@@ -63,7 +63,7 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 		}
 		result.TimeStart = &scdpb.Time{
 			Value:  ts,
-			Format: TimeFormatRfc3339,
+			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 
@@ -74,7 +74,7 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 		}
 		result.TimeEnd = &scdpb.Time{
 			Value:  ts,
-			Format: TimeFormatRfc3339,
+			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 

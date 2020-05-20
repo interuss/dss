@@ -57,7 +57,7 @@ func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 		}
 		result.TimeStart = &scdpb.Time{
 			Value:  ts,
-			Format: TimeFormatRfc3339,
+			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 
@@ -68,7 +68,7 @@ func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 		}
 		result.TimeEnd = &scdpb.Time{
 			Value:  ts,
-			Format: TimeFormatRfc3339,
+			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 	return result, nil
