@@ -229,21 +229,21 @@ def test_mutate_op1_bad_key(scd_session, op1_uuid, op2_uuid):
   }
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 409, resp.content
-  #missing_ops, _ = _parse_conflicts(resp.json()['entity_conflicts'])
-  #assert op1_uuid in missing_ops
-  #assert op2_uuid in missing_ops
+  missing_ops, _ = _parse_conflicts(resp.json()['entity_conflicts'])
+  assert op1_uuid in missing_ops
+  assert op2_uuid in missing_ops
 
   req['key'] = [op1_ovn]
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 409, resp.content
-  #missing_ops, _ = _parse_conflicts(resp.json()['entity_conflicts'])
-  #assert op2_uuid in missing_ops
+  missing_ops, _ = _parse_conflicts(resp.json()['entity_conflicts'])
+  assert op2_uuid in missing_ops
 
   req['key'] = [op2_ovn]
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 409, resp.content
-  #missing_ops, _ = _parse_conflicts(resp.json()['entity_conflicts'])
-  #assert op1_uuid in missing_ops
+  missing_ops, _ = _parse_conflicts(resp.json()['entity_conflicts'])
+  assert op1_uuid in missing_ops
 
 
 # Successfully mutate Op1

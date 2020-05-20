@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/textproto"
+	"reflect"
 	"time"
 
 	"cloud.google.com/go/profiler"
@@ -137,6 +138,8 @@ func myCodeToHTTPStatus(code codes.Code) int {
 		return http.StatusInternalServerError
 	case errors.AreaTooLargeErr:
 		return http.StatusRequestEntityTooLarge
+	case errors.MissingOVNs:
+		return http.StatusConflict
 	}
 
 	grpclog.Infof("Unknown gRPC error code: %v", code)
@@ -176,16 +179,37 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 	}
 	w.Header().Set("Content-Type", contentType)
 
-	body := &errorBody{
-		Error:   s.Message(),
-		Message: s.Message(),
-		Code:    int32(s.Code()),
-		Details: s.Proto().GetDetails(),
-	}
+	var buf []byte
+	var merr error
+	if s.Code() == errors.MissingOVNs {
+		// Handle special return schema for missing OVNs
+		if len(s.Details()) < 1 {
+			grpclog.Infof("Missing Details from Status")
+			merr = errors.Internal("Missing Details from Status")
+		} else {
+			body, ok := s.Details()[0].(*scdpb.AirspaceConflictResponse)
+			if ok {
+				buf, merr = marshaler.Marshal(body)
+			} else {
+				grpclog.Infof("Cast to *scdpb.AirspaceConflictResponse failed from type %s", reflect.TypeOf(s.Details()[0]))
+				merr = errors.Internal("Unable to cast s.Details()[0] to *scdpb.AirspaceConflictResponse")
+			}
+		}
+	} else {
+		// Default error-handling schema
+		body := &errorBody{
+			Error:   s.Message(),
+			Message: s.Message(),
+			Code:    int32(s.Code()),
+			Details: s.Proto().GetDetails(),
+		}
 
-	buf, merr := marshaler.Marshal(body)
+		buf, merr = marshaler.Marshal(body)
+		if merr != nil {
+			grpclog.Infof("Failed to marshal error message %q: %v", body, merr)
+		}
+	}
 	if merr != nil {
-		grpclog.Infof("Failed to marshal error message %q: %v", body, merr)
 		w.WriteHeader(http.StatusInternalServerError)
 		if _, err := io.WriteString(w, fallback); err != nil {
 			grpclog.Infof("Failed to write response: %v", err)
