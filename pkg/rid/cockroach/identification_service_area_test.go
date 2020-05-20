@@ -30,6 +30,11 @@ var (
 	}
 )
 
+func setUpISAStore(ctx context.Context, t *testing.T) (*ISAStore, func() error) {
+	store, f := setUpStore(ctx, t)
+	return store.ISA, f
+}
+
 func TestStoreSearchISAs(t *testing.T) {
 	var (
 		ctx   = context.Background()
@@ -40,7 +45,7 @@ func TestStoreSearchISAs(t *testing.T) {
 			s2.CellID(168),
 			s2.CellID(uint64(overflow)),
 		}
-		store, tearDownStore = setUpStore(ctx, t)
+		store, tearDownStore = setUpISAStore(ctx, t)
 	)
 	defer func() {
 		require.NoError(t, tearDownStore())
@@ -140,7 +145,7 @@ func TestStoreSearchISAs(t *testing.T) {
 
 func TestStoreExpiredISA(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
+	store, tearDownStore := setUpISAStore(ctx, t)
 	defer func() {
 		require.NoError(t, tearDownStore())
 	}()
@@ -176,7 +181,7 @@ func TestStoreExpiredISA(t *testing.T) {
 func TestStoreDeleteISAs(t *testing.T) {
 	var (
 		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
+		store, tearDownStore = setUpISAStore(ctx, t)
 	)
 	defer func() {
 		require.NoError(t, tearDownStore())
@@ -224,7 +229,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 
 func TestInsertISA(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
+	store, tearDownStore := setUpISAStore(ctx, t)
 	defer func() {
 		require.NoError(t, tearDownStore())
 	}()

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/interuss/dss/pkg/auth"
+	"github.com/interuss/dss/pkg/rid/application"
 )
 
 var (
@@ -26,7 +27,7 @@ var (
 
 // Server implements ridpb.DiscoveryAndSynchronizationService.
 type Server struct {
-	Store   Store
+	App     *application.App
 	Timeout time.Duration
 }
 

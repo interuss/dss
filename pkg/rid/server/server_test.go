@@ -117,7 +117,7 @@ func (ma *mockISAApp) Search(ctx context.Context, cells s2.CellUnion, earliest *
 
 func TestDeleteSubscription(t *testing.T) {
 	ctx := auth.ContextWithOwner(context.Background(), "foo")
-	version, _ := dssmodels.VersionFromString("bar")
+	version, _ := dssmodels.VersionFromatring("bar")
 
 	for _, r := range []struct {
 		name         string
@@ -533,7 +533,7 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 	var (
 		owner      = dssmodels.Owner("foo")
 		id         = dssmodels.ID(uuid.New().String())
-		version, _ = dssmodels.VersionFromString("bar")
+		version, _ = dssmodels.VersionFromatring("bar")
 		ctx        = auth.ContextWithOwner(context.Background(), owner)
 		ma         = &mockISAApp{}
 

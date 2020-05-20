@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -13,24 +12,6 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 )
-
-type SubscriptionStore interface {
-	// Close closes the store and should release all resources.
-	Close() error
-
-	// GetSubscription returns the subscription identified by "id".
-	GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error)
-
-	// Delete deletes the subscription identified by "id" and
-	// returns the deleted subscription.
-	DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error)
-
-	// InsertSubscription inserts or updates a subscription.
-	InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
-
-	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
-	SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
-}
 
 // DeleteSubscription deletes an existing subscription.
 func (s *Server) DeleteSubscription(
