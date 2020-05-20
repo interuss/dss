@@ -2,9 +2,11 @@ package cockroach
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/logging"
 	"go.uber.org/zap"
 )
 
@@ -16,15 +18,28 @@ var (
 // Store is an implementation of dss.Store using
 // Cockroach DB as its backend store.
 type Store struct {
-	*cockroach.DB
+	ISA repos.ISAStore
+	Sub repos.SubscriptionStore
+
 	logger *zap.Logger
 	clock  clockwork.Clock
+}
+
+func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
+	if p := recover(); p != nil {
+		if err := tx.Rollback(); err != nil {
+			logging.WithValuesFromContext(ctx, logging.Logger).Error(
+				"failed to rollback transaction", zap.Error(err),
+			)
+		}
+	}
 }
 
 // NewStore returns a Store instance connected to a cockroach instance via db.
 func NewStore(db *cockroach.DB, logger *zap.Logger) (*Store, error) {
 	return &Store{
-		DB:     db,
+		ISA:    newISAStore(db),
+		Sub:    newSubStore(db),
 		logger: logger,
 		clock:  DefaultClock,
 	}, nil

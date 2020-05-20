@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/interuss/dss/pkg/cockroach"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
@@ -15,23 +15,16 @@ import (
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 var isaFields = "identification_service_areas.id, identification_service_areas.owner, identification_service_areas.url, identification_service_areas.starts_at, identification_service_areas.ends_at, identification_service_areas.updated_at"
 var isaFieldsWithoutPrefix = "id, owner, url, starts_at, ends_at, updated_at"
 
-func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
-	if p := recover(); p != nil {
-		if err := tx.Rollback(); err != nil {
-			logging.WithValuesFromContext(ctx, logging.Logger).Error(
-				"failed to rollback transaction", zap.Error(err),
-			)
-		}
-	}
+type ISAStore struct {
+	*cockroach.DB
 }
 
-func (c *Store) fetchISAs(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *ISAStore) fetch(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -62,8 +55,8 @@ func (c *Store) fetchISAs(ctx context.Context, q dsssql.Queryable, query string,
 	return payload, nil
 }
 
-func (c *Store) fetchISA(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
-	isas, err := c.fetchISAs(ctx, q, query, args...)
+func (c *ISAStore) fetchOne(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
+	isas, err := c.fetch(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,18 +69,16 @@ func (c *Store) fetchISA(ctx context.Context, q dsssql.Queryable, query string, 
 	return isas[0], nil
 }
 
-func (c *Store) fetchISAByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+func (c *ISAStore) fetchByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
 			identification_service_areas
 		WHERE
-			id = $1
-		AND
-			ends_at >= $2`, isaFields)
-	return c.fetchISA(ctx, q, query, id, c.clock.Now())
+			id = $1`, isaFields)
+	return c.fetchOne(ctx, q, query, id)
 }
 
-func (c *Store) populateISACells(ctx context.Context, q dsssql.Queryable, i *ridmodels.IdentificationServiceArea) error {
+func (c *ISAStore) populateCells(ctx context.Context, q dsssql.Queryable, i *ridmodels.IdentificationServiceArea) error {
 	const query = `
 	SELECT
 		cell_id
@@ -121,7 +112,7 @@ func (c *Store) populateISACells(ctx context.Context, q dsssql.Queryable, i *rid
 //
 // Returns the created/updated IdentificationServiceArea and all Subscriptions
 // affected by the operation.
-func (c *Store) pushISA(ctx context.Context, q dsssql.Queryable, isa *ridmodels.IdentificationServiceArea) (
+func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.IdentificationServiceArea) (
 	*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
 		upsertAreasQuery = fmt.Sprintf(`
@@ -156,7 +147,7 @@ func (c *Store) pushISA(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 	}
 
 	cells := isa.Cells
-	isa, err := c.fetchISA(ctx, q, upsertAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime)
+	isa, err := c.fetch(ctx, q, upsertAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -181,23 +172,25 @@ func (c *Store) pushISA(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 }
 
 // GetISA returns the isa identified by "id".
-func (c *Store) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
-	return c.fetchISAByID(ctx, c.DB, id)
+func (c *ISAStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+	return c.fetchByID(ctx, c.DB, id)
 }
 
-// InsertISA inserts the IdentificationServiceArea identified by "id" and owned
+// Insert inserts the IdentificationServiceArea identified by "id" and owned
 // by "owner", affecting "cells" in the time interval ["starts", "ends"].
 //
 // Returns the created IdentificationServiceArea and all Subscriptions affected
 // by it.
-func (c *Store) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+// TODO: Simplify the logic to insert without a query, such that the insert fails
+// if there's an existing entity.
+func (c *ISAStore) Insert(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	tx, err := c.Begin()
 	if err != nil {
 		return nil, nil, err
 	}
 	defer recoverRollbackRepanic(ctx, tx)
 
-	old, err := c.fetchISAByID(ctx, tx, isa.ID)
+	old, err := c.fetchByID(ctx, tx, isa.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -236,9 +229,58 @@ func (c *Store) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServ
 	return area, subscribers, nil
 }
 
+// Update updates the IdentificationServiceArea identified by "id" and owned
+// by "owner", affecting "cells" in the time interval ["starts", "ends"].
+//
+// Returns the created IdentificationServiceArea and all Subscriptions affected
+// by it.
+// TODO: simplify the logic to just update, without the primary query.
+func (c *ISAStore) Update(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+	tx, err := c.Begin()
+	if err != nil {
+		return nil, nil, err
+	}
+	defer recoverRollbackRepanic(ctx, tx)
+
+	old, err := c.fetchByID(ctx, tx, isa.ID)
+	if err != nil {
+		return nil, nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	switch {
+	case old == nil && !isa.Version.Empty():
+		// The user wants to update an existing ISA, but one wasn't found.
+		return nil, nil, multierr.Combine(dsserr.NotFound(isa.ID.String()), tx.Rollback())
+	case old != nil && isa.Version.Empty():
+		// The user wants to create a new ISA but it already exists.
+		return nil, nil, multierr.Combine(dsserr.AlreadyExists(isa.ID.String()), tx.Rollback())
+	case old != nil && !isa.Version.Matches(old.Version):
+		// The user wants to update an ISA but the version doesn't match.
+		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
+	case old != nil && old.Owner != isa.Owner:
+		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
+	}
+
+	// Validate and perhaps correct StartTime and EndTime.
+	if err := isa.AdjustTimeRange(c.clock.Now(), old); err != nil {
+		return nil, nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	area, subscribers, err := c.pushISA(ctx, tx, isa)
+	if err != nil {
+		return nil, nil, multierr.Combine(err, tx.Rollback())
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, nil, err
+	}
+
+	return area, subscribers, nil
+}
+
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-func (c *Store) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+func (c *ISAStore) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
 		deleteQuery = `
 			DELETE FROM
@@ -259,7 +301,7 @@ func (c *Store) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.
 	defer recoverRollbackRepanic(ctx, tx)
 
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := c.fetchISAByID(ctx, tx, id)
+	old, err := c.fetchByID(ctx, tx, id)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
 		return nil, nil, multierr.Combine(dsserr.NotFound(id.String()), tx.Rollback())
@@ -297,7 +339,7 @@ func (c *Store) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.
 // SearchISAs searches IdentificationServiceArea
 // instances that intersect with "cells" and, if set, the temporal volume
 // defined by "earliest" and "latest".
-func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *ISAStore) Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var (
 		serviceAreasInCellsQuery = fmt.Sprintf(`
 			SELECT
@@ -339,7 +381,7 @@ func (c *Store) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *ti
 	}
 	defer recoverRollbackRepanic(ctx, tx)
 
-	result, err := c.fetchISAs(
+	result, err := c.fetch(
 		ctx, tx, serviceAreasInCellsQuery, pq.Array(cids), earliest, latest,
 		c.clock.Now())
 	if err != nil {
