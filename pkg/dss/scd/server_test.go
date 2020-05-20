@@ -35,7 +35,7 @@ func mustTimestamp(ts *tspb.Timestamp) *time.Time {
 }
 
 func mustPolygonToCellIDs(p *scdpb.Polygon) s2.CellUnion {
-	cells, err := p.ToCommon().CalculateCovering()
+	cells, err := dssmodels.GeoPolygonFromSCDProto(p).CalculateCovering()
 	if err != nil {
 		panic(err)
 	}
@@ -401,7 +401,7 @@ func TestPutSubscription(t *testing.T) {
 			sub := *r.wantSubscription
 
 			if r.extents != nil {
-				v4d, err := r.extents.ToCommon()
+				v4d, err := dssmodels.Volume4DFromSCDProto(r.extents)
 				require.NoError(t, err)
 
 				cells, err := v4d.CalculateSpatialCovering()

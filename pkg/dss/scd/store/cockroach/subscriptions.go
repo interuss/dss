@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/interuss/dss/pkg/dss/models"
 	dssmodels "github.com/interuss/dss/pkg/dss/models"
 	scdmodels "github.com/interuss/dss/pkg/dss/scd/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -430,7 +429,7 @@ func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscriptio
 			SpatialVolume: &dssmodels.Volume3D{
 				AltitudeLo: s.AltitudeLo,
 				AltitudeHi: s.AltitudeHi,
-				Footprint: models.GeometryFunc(func() (s2.CellUnion, error) {
+				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
 					return s.Cells, nil
 				}),
 			},
@@ -496,7 +495,6 @@ func (c *Store) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner d
 
 	res, err := tx.ExecContext(ctx, query, id, owner)
 	if err != nil {
-		fmt.Println("ARGH:", err)
 		return nil, multierr.Combine(err, tx.Rollback())
 	}
 
