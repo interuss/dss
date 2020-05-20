@@ -238,16 +238,20 @@ func TestCreateSubscription(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			ma := &mockISAApp{}
+			ms := &mockSubscriptionApp{}
+			mi := &mockISAApp{}
 			if r.wantErr == nil {
-				ma.On("Search", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+				mi.On("Search", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 					[]*ridmodels.IdentificationServiceArea(nil), nil)
-				ma.On("Insert", mock.Anything, r.wantSubscription).Return(
+				ms.On("Insert", mock.Anything, r.wantSubscription).Return(
 					r.wantSubscription, nil,
 				)
 			}
 			s := &Server{
-				App: &application.App{ISA: ma},
+				App: &application.App{
+					Subscription: ms,
+					ISA:          mi,
+				},
 			}
 
 			_, err := s.CreateSubscription(ctx, &ridpb.CreateSubscriptionRequest{
@@ -258,7 +262,8 @@ func TestCreateSubscription(t *testing.T) {
 				},
 			})
 			require.Equal(t, r.wantErr, err)
-			require.True(t, ma.AssertExpectations(t))
+			require.True(t, ms.AssertExpectations(t))
+			require.True(t, mi.AssertExpectations(t))
 		})
 	}
 }
@@ -287,11 +292,12 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	}
 
 	ma := &mockSubscriptionApp{}
+	mi := &mockISAApp{}
 
-	ma.On("Search", mock.Anything, cells, mock.Anything, mock.Anything).Return(isas, nil)
+	mi.On("Search", mock.Anything, cells, mock.Anything, mock.Anything).Return(isas, nil)
 	ma.On("Insert", mock.Anything, sub).Return(sub, nil)
 	s := &Server{
-		App: &application.App{Subscription: ma},
+		App: &application.App{Subscription: ma, ISA: mi},
 	}
 
 	resp, err := s.CreateSubscription(ctx, &ridpb.CreateSubscriptionRequest{
