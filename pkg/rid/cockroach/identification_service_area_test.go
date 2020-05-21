@@ -227,11 +227,13 @@ func TestStoreDeleteISAs(t *testing.T) {
 		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
 	}
 	// Can't delete with different owner.
-	_, _, err = store.ISA.Delete(ctx, isa.ID, "bad-owner", isa.Version)
+	iCopy := *isa
+	iCopy.Owner = "bad-owner"
+	_, _, err = store.ISA.Delete(ctx, &iCopy)
 	require.Error(t, err)
 
 	// Delete the ISA.
-	serviceAreaOut, subscriptionsOut, err := store.ISA.Delete(ctx, isa.ID, isa.Owner, isa.Version)
+	serviceAreaOut, subscriptionsOut, err := store.ISA.Delete(ctx, isa)
 	require.NoError(t, err)
 	require.Equal(t, isa, serviceAreaOut)
 	require.NotNil(t, subscriptionsOut)

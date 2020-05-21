@@ -40,7 +40,7 @@ func (store *isaStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Ide
 
 func (store *isaStore) updateNotificationIdxs(ctx context.Context, isa *ridmodels.IdentificationServiceArea) []*ridmodels.Subscription {
 	var ret []*ridmodels.Subscription
-	subs, _ := store.subscriptionStore.Search(ctx, isa.Cells, "")
+	subs, _ := store.subscriptionStore.Search(ctx, isa.Cells)
 	for _, s := range subs {
 		s.NotificationIndex++
 		s, _ = store.subscriptionStore.Insert(ctx, s)
@@ -51,12 +51,12 @@ func (store *isaStore) updateNotificationIdxs(ctx context.Context, isa *ridmodel
 
 // Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all IdentificationServiceAreas affected by the delete.
-func (store *isaStore) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	isa, ok := store.isas[id]
+func (store *isaStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+	isa, ok := store.isas[isa.ID]
 	if !ok {
 		return nil, nil, sql.ErrNoRows
 	}
-	delete(store.isas, id)
+	delete(store.isas, isa.ID)
 
 	return isa, store.updateNotificationIdxs(ctx, isa), nil
 }

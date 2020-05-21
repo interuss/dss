@@ -32,9 +32,9 @@ func (store *subscriptionStore) Get(ctx context.Context, id dssmodels.ID) (*ridm
 
 // Delete deletes the Subscription identified by "id" and owned by "owner".
 // Returns the delete Subscription and all IdentificationServiceAreas affected by the delete.
-func (store *subscriptionStore) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
-	if sub, ok := store.subs[id]; ok {
-		delete(store.subs, id)
+func (store *subscriptionStore) Delete(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	if sub, ok := store.subs[s.ID]; ok {
+		delete(store.subs, s.ID)
 		return sub, nil
 	}
 	return nil, sql.ErrNoRows
@@ -56,7 +56,20 @@ func (store *subscriptionStore) Update(ctx context.Context, s *ridmodels.Subscri
 }
 
 // SearchIdentificationServiceAreas returns all IdentificationServiceAreas ownded by "owner" in "cells".
-func (store *subscriptionStore) Search(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+func (store *subscriptionStore) SearchByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+	var subs []*ridmodels.Subscription
+
+	res, _ := store.Search(ctx, cells)
+	for _, s := range res {
+		if s.Owner == owner {
+			subs = append(subs, s)
+		}
+	}
+	return subs, nil
+}
+
+// SearchIdentificationServiceAreas returns all IdentificationServiceAreas ownded by "owner" in "cells".
+func (store *subscriptionStore) Search(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var subs []*ridmodels.Subscription
 
 	for _, s := range store.subs {

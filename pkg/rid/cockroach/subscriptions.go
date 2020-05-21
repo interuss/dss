@@ -34,7 +34,8 @@ type SubscriptionStore struct {
 	logger *zap.Logger
 }
 
-func (c *SubscriptionStore) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
+// process a query that should return one or many subscriptions.
+func (c *SubscriptionStore) process(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -65,8 +66,9 @@ func (c *SubscriptionStore) fetchSubscriptions(ctx context.Context, q dsssql.Que
 	return payload, nil
 }
 
-func (c *SubscriptionStore) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*ridmodels.Subscription, error) {
-	subs, err := c.fetchSubscriptions(ctx, q, query, args...)
+// processOne processes a query that should return exactly a single subscription.
+func (c *SubscriptionStore) processOne(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*ridmodels.Subscription, error) {
+	subs, err := c.process(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -79,12 +81,13 @@ func (c *SubscriptionStore) fetchSubscription(ctx context.Context, q dsssql.Quer
 	return subs[0], nil
 }
 
-func (c *SubscriptionStore) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*ridmodels.Subscription, error) {
+// TODO: ƒactor this out
+func (c *SubscriptionStore) getOneByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
 		WHERE id = $1
 		AND ends_at >= $2`, subscriptionFields)
-	return c.fetchSubscription(ctx, q, query, id, c.clock.Now())
+	return c.processOne(ctx, q, query, id, c.clock.Now())
 }
 
 // fetchMaxSubscriptionCountByCellAndOwner counts how many subscriptions the
@@ -164,7 +167,7 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 	cells := s.Cells
 	var err error
 	if s.Version.Empty() {
-		s, err = c.fetchSubscription(ctx, q, insertQuery,
+		s, err = c.processOne(ctx, q, insertQuery,
 			s.ID,
 			s.Owner,
 			s.URL,
@@ -175,7 +178,7 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 			return nil, err
 		}
 	} else {
-		s, err = c.fetchSubscription(ctx, q, udpateQuery,
+		s, err = c.processOne(ctx, q, udpateQuery,
 			s.ID,
 			s.Owner,
 			s.URL,
@@ -204,7 +207,7 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 
 // Get returns the subscription identified by "id".
 func (c *SubscriptionStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
-	return c.fetchSubscriptionByID(ctx, c.DB, id)
+	return c.getOneByID(ctx, c.DB, id)
 }
 
 // Update updates the Subscription.. not yet implemented.
@@ -245,47 +248,58 @@ func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscriptio
 
 // Delete deletes the subscription identified by "id" and
 // returns the deleted subscription.
-func (c *SubscriptionStore) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) Delete(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	const (
 		query = `
 		DELETE FROM
 			subscriptions
 		WHERE
 			id = $1
-			AND owner = $2`
+			AND owner = $2
+			AND updated_at = $3
+		RETURNING *`
+	)
+	return c.processOne(ctx, c.DB, query, s.ID, s.Owner, s.Version.ToTimestamp())
+}
+
+// Search returns all subscriptions in "cells".
+func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+	var (
+		query = fmt.Sprintf(`
+			SELECT
+				%s
+			FROM
+				subscriptions
+			LEFT JOIN
+				(SELECT DISTINCT cells_subscriptions.subscription_id FROM cells_subscriptions WHERE cells_subscriptions.cell_id = ANY($1))
+			AS
+				unique_subscription_ids
+			ON
+				subscriptions.id = unique_subscription_ids.subscription_id
+			AND
+				ends_at >= $2`, subscriptionFields)
 	)
 
-	tx, err := c.Begin()
+	if len(cells) == 0 {
+		return nil, dsserr.BadRequest("no location provided")
+	}
+
+	cids := make([]int64, len(cells))
+	for i, cell := range cells {
+		cids[i] = int64(cell)
+	}
+
+	subscriptions, err := c.process(
+		ctx, c.DB, query, pq.Array(cids), c.clock.Now())
 	if err != nil {
 		return nil, err
 	}
 
-	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := c.fetchSubscriptionByID(ctx, tx, id)
-	switch {
-	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, multierr.Combine(dsserr.NotFound(id.String()), tx.Rollback())
-	case err != nil:
-		return nil, multierr.Combine(err, tx.Rollback())
-	case !version.Empty() && !version.Matches(old.Version):
-		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
-	case old != nil && old.Owner != owner:
-		return nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
-	}
-
-	if _, err := tx.ExecContext(ctx, query, id, owner); err != nil {
-		return nil, multierr.Combine(err, tx.Rollback())
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	return old, nil
+	return subscriptions, nil
 }
 
 // Search returns all subscriptions in "cells".
-func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) SearchByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -313,11 +327,5 @@ func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion, owne
 		cids[i] = int64(cell)
 	}
 
-	subscriptions, err := c.fetchSubscriptions(
-		ctx, c.DB, query, pq.Array(cids), owner, c.clock.Now())
-	if err != nil {
-		return nil, err
-	}
-
-	return subscriptions, nil
+	return c.process(ctx, c.DB, query, pq.Array(cids), owner, c.clock.Now())
 }
