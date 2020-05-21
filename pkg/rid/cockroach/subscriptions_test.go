@@ -200,9 +200,9 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			require.NotNil(t, sub1)
 
 			// Ensure mismatched versions return an error
-			require.NoError(t, err)
 			sub1BadVersion := *sub1
 			sub1BadVersion.Version, err = dssmodels.VersionFromString("a3cg3tcuhk000")
+			require.NoError(t, err)
 			sub2, err := store.Subscription.Delete(ctx, &sub1BadVersion)
 			require.Error(t, err)
 			require.Nil(t, sub2)
