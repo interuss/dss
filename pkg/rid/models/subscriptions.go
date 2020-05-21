@@ -37,6 +37,12 @@ type Subscription struct {
 	AltitudeLo        *float32
 }
 
+func (s *Subscription) SetCells(cids []int64) {
+	for i, cell := range s.Cells {
+		cids[i] = int64(cell)
+	}
+}
+
 // ToNotifyProto converts a subscription to a SubscriberToNotify proto for
 // API consumption.
 func (s *Subscription) ToNotifyProto() *ridpb.SubscriberToNotify {

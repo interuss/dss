@@ -20,11 +20,10 @@ import (
 
 const (
 	// Defined in requirement DSS0030.
-	maxSubscriptionsPerArea = 10
+	maxSubscriptionsPerArea         = 10
+	subscriptionFields              = "subscriptions.id, subscriptions.owner, subscriptions.url, subscriptions.notification_index, subscriptions.cells, subscriptions.starts_at, subscriptions.ends_at, subscriptions.updated_at"
+	subscriptionFieldsWithoutPrefix = "id, owner, url, notification_index, cells, starts_at, ends_at, updated_at"
 )
-
-var subscriptionFields = "subscriptions.id, subscriptions.owner, subscriptions.url, subscriptions.notification_index, subscriptions.starts_at, subscriptions.ends_at, subscriptions.updated_at"
-var subscriptionFieldsWithoutPrefix = "id, owner, url, notification_index, starts_at, ends_at, updated_at"
 
 // SubscriptionStore is an implementation of the SubscriptionRepo for CRDB.
 type SubscriptionStore struct {
@@ -43,6 +42,8 @@ func (c *SubscriptionStore) process(ctx context.Context, q dsssql.Queryable, que
 	defer rows.Close()
 
 	var payload []*ridmodels.Subscription
+	cids := pq.Int64Array{}
+
 	for rows.Next() {
 		s := new(ridmodels.Subscription)
 
@@ -51,6 +52,7 @@ func (c *SubscriptionStore) process(ctx context.Context, q dsssql.Queryable, que
 			&s.Owner,
 			&s.URL,
 			&s.NotificationIndex,
+			&cids,
 			&s.StartTime,
 			&s.EndTime,
 			&s.Version,
@@ -58,6 +60,7 @@ func (c *SubscriptionStore) process(ctx context.Context, q dsssql.Queryable, que
 		if err != nil {
 			return nil, err
 		}
+		s.SetCells(cids)
 		payload = append(payload, s)
 	}
 	if err := rows.Err(); err != nil {
@@ -140,31 +143,14 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 			($1, $2, $3, $4, $5, $6, transaction_timestamp())
 		RETURNING
 			%s`, subscriptionFieldsWithoutPrefix, subscriptionFields)
-		subscriptionCellQuery = `
-		UPSERT INTO
-			cells_subscriptions
-			(cell_id, cell_level, subscription_id)
-		VALUES
-			($1, $2, $3)
-		`
-		deleteLeftOverCellsForSubscriptionQuery = `
-			DELETE FROM
-				cells_subscriptions
-			WHERE
-				cell_id != ALL($1)
-			AND
-				subscription_id = $2`
 	)
 
 	cids := make([]int64, len(s.Cells))
-	clevels := make([]int, len(s.Cells))
 
 	for i, cell := range s.Cells {
 		cids[i] = int64(cell)
-		clevels[i] = cell.Level()
 	}
 
-	cells := s.Cells
 	var err error
 	if s.Version.Empty() {
 		s, err = c.processOne(ctx, q, insertQuery,
@@ -172,6 +158,7 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 			s.Owner,
 			s.URL,
 			s.NotificationIndex,
+			s.Cells,
 			s.StartTime,
 			s.EndTime)
 		if err != nil {
@@ -183,23 +170,13 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 			s.Owner,
 			s.URL,
 			s.NotificationIndex,
+			s.Cells,
 			s.StartTime,
 			s.EndTime,
 			s.Version.ToTimestamp())
 		if err != nil {
 			return nil, err
 		}
-	}
-	s.Cells = cells
-
-	for i := range cids {
-		if _, err := q.ExecContext(ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID); err != nil {
-			return nil, err
-		}
-	}
-
-	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
-		return nil, err
 	}
 
 	return s, nil
@@ -270,14 +247,10 @@ func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion) ([]*
 				%s
 			FROM
 				subscriptions
-			LEFT JOIN
-				(SELECT DISTINCT cells_subscriptions.subscription_id FROM cells_subscriptions WHERE cells_subscriptions.cell_id = ANY($1))
-			AS
-				unique_subscription_ids
-			ON
-				subscriptions.id = unique_subscription_ids.subscription_id
+			WHERE
+				cells && $1
 			AND
-				ends_at >= $2`, subscriptionFields)
+				ends_at >= $3`, subscriptionFields)
 	)
 
 	if len(cells) == 0 {
@@ -289,13 +262,7 @@ func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion) ([]*
 		cids[i] = int64(cell)
 	}
 
-	subscriptions, err := c.process(
-		ctx, c.DB, query, pq.Array(cids), c.clock.Now())
-	if err != nil {
-		return nil, err
-	}
-
-	return subscriptions, nil
+	return c.process(ctx, c.DB, query, pq.Array(cids), c.clock.Now())
 }
 
 // SearchByOwner returns all subscriptions in "cells".
@@ -306,13 +273,9 @@ func (c *SubscriptionStore) SearchByOwner(ctx context.Context, cells s2.CellUnio
 				%s
 			FROM
 				subscriptions
-			LEFT JOIN
-				(SELECT DISTINCT cells_subscriptions.subscription_id FROM cells_subscriptions WHERE cells_subscriptions.cell_id = ANY($1))
-			AS
-				unique_subscription_ids
-			ON
-				subscriptions.id = unique_subscription_ids.subscription_id
 			WHERE
+				cells && $1
+			AND
 				subscriptions.owner = $2
 			AND
 				ends_at >= $3`, subscriptionFields)

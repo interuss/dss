@@ -25,6 +25,12 @@ type IdentificationServiceArea struct {
 	AltitudeLo *float32
 }
 
+func (i *IdentificationServiceArea) SetCells(cids []int64) {
+	for i, cell := range i.Cells {
+		cids[i] = int64(cell)
+	}
+}
+
 // ToProto converts an IdentificationServiceArea struct to an
 // IdentificationServiceArea proto for API consumption.
 func (i *IdentificationServiceArea) ToProto() (*ridpb.IdentificationServiceArea, error) {

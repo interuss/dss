@@ -19,8 +19,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var isaFields = "identification_service_areas.id, identification_service_areas.owner, identification_service_areas.url, identification_service_areas.starts_at, identification_service_areas.ends_at, identification_service_areas.updated_at"
-var isaFieldsWithoutPrefix = "id, owner, url, starts_at, ends_at, updated_at"
+const (
+	isaFields              = "identification_service_areas.id, identification_service_areas.owner, identification_service_areas.url, identification_service_areas.cells, identification_service_areas.starts_at, identification_service_areas.ends_at, identification_service_areas.updated_at"
+	isaFieldsWithoutPrefix = "id, owner, url, cells, starts_at, ends_at, updated_at"
+)
 
 // ISAStore is an implementation of the ISARepo for CRDB.
 type ISAStore struct {
@@ -35,12 +37,9 @@ func (c *ISAStore) fetchSubscriptionsForNotification(
 	var updateQuery = fmt.Sprintf(`
 			UPDATE subscriptions
 			SET notification_index = notification_index + 1
-			WHERE id = ANY(
-				SELECT DISTINCT subscription_id
-				FROM cells_subscriptions
-				WHERE cell_id = ANY($1)
-			)
-			AND ends_at >= $2
+			WHERE
+				cells && $1
+				AND ends_at >= $2
 			RETURNING %s`, subscriptionFieldsWithoutPrefix)
 	return c.processSubscriptions(
 		ctx, q, updateQuery, pq.Array(cells), c.clock.Now())
@@ -63,6 +62,7 @@ func (c *ISAStore) processSubscriptions(ctx context.Context, q dsssql.Queryable,
 			&s.Owner,
 			&s.URL,
 			&s.NotificationIndex,
+			&s.Cells,
 			&s.StartTime,
 			&s.EndTime,
 			&s.Version,
@@ -86,6 +86,8 @@ func (c *ISAStore) process(ctx context.Context, q dsssql.Queryable, query string
 	defer rows.Close()
 
 	var payload []*ridmodels.IdentificationServiceArea
+	cids := pq.Int64Array{}
+
 	for rows.Next() {
 		i := new(ridmodels.IdentificationServiceArea)
 
@@ -93,6 +95,7 @@ func (c *ISAStore) process(ctx context.Context, q dsssql.Queryable, query string
 			&i.ID,
 			&i.Owner,
 			&i.URL,
+			&cids,
 			&i.StartTime,
 			&i.EndTime,
 			&i.Version,
@@ -100,6 +103,7 @@ func (c *ISAStore) process(ctx context.Context, q dsssql.Queryable, query string
 		if err != nil {
 			return nil, err
 		}
+		i.SetCells(cids)
 		payload = append(payload, i)
 	}
 	if err := rows.Err(); err != nil {
@@ -135,7 +139,7 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 		updateAreasQuery = fmt.Sprintf(`
 			UPDATE
 				identification_service_areas
-			SET	(%s) = ($1, $2, $3, $4, $5, transaction_timestamp())
+			SET	(%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
 			WHERE id = $1 AND updated_at = $6 
 			RETURNING
 				%s`, isaFieldsWithoutPrefix, isaFields)
@@ -144,56 +148,28 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 				identification_service_areas
 				(%s)
 			VALUES
-				($1, $2, $3, $4, $5, transaction_timestamp())
+				($1, $2, $3, $4, $5, $6, transaction_timestamp())
 			RETURNING
 				%s`, isaFieldsWithoutPrefix, isaFields)
-		upsertCellsForAreaQuery = `
-			UPSERT INTO
-				cells_identification_service_areas
-				(cell_id, cell_level, identification_service_area_id)
-			VALUES
-				($1, $2, $3)`
-		deleteLeftOverCellsForAreaQuery = `
-			DELETE FROM
-				cells_identification_service_areas
-			WHERE
-				cell_id != ALL($1)
-			AND
-				identification_service_area_id = $2`
 	)
 
 	cids := make([]int64, len(isa.Cells))
-	clevels := make([]int, len(isa.Cells))
 
 	for i, cell := range isa.Cells {
 		cids[i] = int64(cell)
-		clevels[i] = cell.Level()
 	}
 
-	cells := isa.Cells
 	var err error
 	if isa.Version.Empty() {
-		isa, err = c.processOne(ctx, q, insertAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime)
+		isa, err = c.processOne(ctx, q, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Array(cids), isa.StartTime, isa.EndTime)
 		if err != nil {
 			return nil, nil, err
 		}
 	} else {
-		isa, err = c.processOne(ctx, q, updateAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
+		isa, err = c.processOne(ctx, q, updateAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
 		if err != nil {
 			return nil, nil, err
 		}
-	}
-
-	isa.Cells = cells
-
-	for i := range cids {
-		if _, err := q.ExecContext(ctx, upsertCellsForAreaQuery, cids[i], clevels[i], isa.ID); err != nil {
-			return nil, nil, err
-		}
-	}
-
-	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForAreaQuery, pq.Array(cids), isa.ID); err != nil {
-		return nil, nil, err
 	}
 
 	subscriptions, err := c.fetchSubscriptionsForNotification(ctx, q, cids)
@@ -202,34 +178,6 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 	}
 
 	return isa, subscriptions, nil
-}
-
-func (c *ISAStore) getCells(ctx context.Context, id dssmodels.ID) (s2.CellUnion, error) {
-	const query = `
-	SELECT
-		cell_id
-	FROM
-		cells_identification_service_areas
-	WHERE identification_service_area_id = $1`
-
-	rows, err := c.QueryContext(ctx, query, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var cell int64
-	cells := s2.CellUnion{}
-
-	for rows.Next() {
-		if err := rows.Scan(&cell); err != nil {
-			return nil, err
-		}
-		cells = append(cells, s2.CellID(uint64(cell)))
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return cells, nil
 }
 
 // Get returns the isa identified by "id".
@@ -297,12 +245,8 @@ func (c *ISAStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServ
 		`
 	)
 	// Get the cells since the ISA might not have them set.
-	cells, err := c.getCells(ctx, isa.ID)
-	if err != nil {
-		return nil, nil, err
-	}
-	cids := make([]int64, len(cells))
-	for i, cell := range cells {
+	cids := make([]int64, len(isa.Cells))
+	for i, cell := range isa.Cells {
 		cids[i] = int64(cell)
 	}
 
@@ -339,24 +283,12 @@ func (c *ISAStore) Search(ctx context.Context, cells s2.CellUnion, earliest *tim
 				%s
 			FROM
 				identification_service_areas
-			JOIN
-				(SELECT DISTINCT
-					cells_identification_service_areas.identification_service_area_id
-				FROM
-					cells_identification_service_areas
-				WHERE
-					cells_identification_service_areas.cell_id = ANY($1)
-				)
-			AS
-				unique_identification_service_areas
-			ON
-				identification_service_areas.id = unique_identification_service_areas.identification_service_area_id
 			WHERE
-				COALESCE(identification_service_areas.ends_at >= $2, true)
+				ends_at >= $1
 			AND
-				COALESCE(identification_service_areas.starts_at <= $3, true)
+				starts_at <= $2
 			AND
-				identification_service_areas.ends_at >= $4`, isaFields)
+				cells && $3`, isaFields)
 	)
 
 	if len(cells) == 0 {
@@ -368,6 +300,5 @@ func (c *ISAStore) Search(ctx context.Context, cells s2.CellUnion, earliest *tim
 		cids[i] = int64(cid)
 	}
 
-	return c.process(ctx, c.DB, isasInCellsQuery, pq.Array(cids), earliest,
-		latest, c.clock.Now())
+	return c.process(ctx, c.DB, isasInCellsQuery, earliest, latest, pq.Array(cids))
 }

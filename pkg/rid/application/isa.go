@@ -44,6 +44,15 @@ type ISAApp struct {
 	clock clockwork.Clock
 }
 
+func (a *ISAApp) Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	now := a.clock.Now()
+	if earliest == nil || earliest.Before(now) {
+		earliest = &now
+	}
+
+	return a.ISA.Search(ctx, cells, earliest, latest)
+}
+
 // Delete the given ISA
 func (a *ISAApp) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	// We fetch to know whether to return a concurrency error, or a not found error
