@@ -44,6 +44,7 @@ type ISAApp struct {
 	clock clockwork.Clock
 }
 
+// Search for ISA within the volume bounds.
 func (a *ISAApp) Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	now := a.clock.Now()
 	if earliest == nil || earliest.Before(now) {
