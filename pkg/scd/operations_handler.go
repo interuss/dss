@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/grpc/status"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
@@ -12,6 +11,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"google.golang.org/grpc/status"
 )
 
 // DeleteOperationReference deletes a single operation ref for a given ID at
