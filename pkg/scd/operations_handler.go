@@ -10,6 +10,7 @@ import (
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 )
 
@@ -222,6 +223,20 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		SubscriptionID: subscriptionID,
 		State:          scdmodels.OperationState(params.State),
 	}, key)
+
+	if err == scderr.MissingOVNsInternalError() {
+		// The client is missing some OVNs; provide the pointers to the
+		// information they need
+		ops, err := a.Store.SearchOperations(ctx, uExtent, owner)
+		if err != nil {
+			return nil, err
+		}
+		success, err := scderr.MissingOVNsErrorResponse(ops)
+		if !success {
+			return nil, dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", err))
+		}
+		return nil, err
+	}
 
 	if err != nil {
 		if _, ok := status.FromError(err); ok {

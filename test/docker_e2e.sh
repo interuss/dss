@@ -28,7 +28,7 @@ function cleanup() {
 	docker rm -f dummy-oauth-for-testing &> /dev/null || true
 
 	echo "Stopping http gateway container"
-	docker rm -f http-gateway-for-testing &> /dev/null || true
+	docker kill -f http-gateway-for-testing &> /dev/null || true
 
 	echo "Stopping grpc-backend container"
 	docker kill -f grpc-backend-for-testing &> /dev/null || true

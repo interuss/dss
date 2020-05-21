@@ -10,6 +10,7 @@ import (
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/lib/pq"
@@ -372,7 +373,7 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 				if err := tx.Rollback(); err != nil {
 					return nil, nil, err
 				}
-				return nil, nil, dsserr.AlreadyExists("ovn for affected operation differs")
+				return nil, nil, scderr.MissingOVNsInternalError()
 			}
 		}
 	default:

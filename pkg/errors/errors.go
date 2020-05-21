@@ -21,6 +21,10 @@ const (
 	// AreaTooLargeErr is the error that we want to signal to the http gateway
 	// that it should return 413 to client
 	AreaTooLargeErr codes.Code = 18
+
+	// MissingOVNs is the error to signal that an AirspaceConflictResponse should
+	// be returned rather than the standard error response.
+	MissingOVNs codes.Code = 19
 )
 
 func init() {
