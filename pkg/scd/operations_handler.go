@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gogo/status"
+	"google.golang.org/grpc/status"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
