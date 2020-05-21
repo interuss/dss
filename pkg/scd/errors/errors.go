@@ -10,20 +10,22 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
+const ErrMessageMissingOVNs = "at least one current OVN not provided"
+
 var (
 	errMissingOVNs = status.Error(dsserrors.MissingOVNs, "current OVNS not provided for one or more Operations or Constraints")
 )
 
 // Used to return sufficient information for an appropriate client error response when a client is missing one or more
 // OVNs for relevant Operations or Constraints.
-func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (error, error) {
+func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (error, bool) {
 	response := &scdpb.AirspaceConflictResponse{
-		Message: "at least one current OVN not provided",
+		Message: ErrMessageMissingOVNs,
 	}
 	for _, missingOp := range missingOps {
 		opRef, err := missingOp.ToProto()
 		if err != nil {
-			return nil, err
+			return err, false
 		}
 		entityRef := &scdpb.EntityReference{
 			OperationReference: opRef,
@@ -31,14 +33,14 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (error, error) 
 		response.EntityConflicts = append(response.EntityConflicts, entityRef)
 	}
 
-	serialized, err := proto.Marshal(response)
+	serialized, err := proto.MarshalOptions{Deterministic: true}.Marshal(response)
 	if err != nil {
-		return nil, err
+		return err, false
 	}
 
 	p := &spb.Status{
 		Code:    int32(dsserrors.MissingOVNs),
-		Message: response.Message,
+		Message: ErrMessageMissingOVNs,
 		Details: []*any.Any{
 			{
 				TypeUrl: "github.com/interuss/dss/" + string(response.ProtoReflect().Descriptor().FullName()),
@@ -46,7 +48,7 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (error, error) 
 			},
 		},
 	}
-	return status.ErrorProto(p), nil
+	return status.ErrorProto(p), true
 }
 
 // A single, consistent error to use internally when the Storage layer detects missing OVNs

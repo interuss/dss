@@ -157,8 +157,11 @@ type errorBody struct {
 }
 
 // this method was copied directly from github.com/grpc-ecosystem/grpc-gateway/runtime/errors
-// we technically only needed to add 1 extra Code to handle but since they didn't
-// export HTTPStatusFromCode we had to copy the whole thing
+// we initially only needed to add 1 extra Code to handle but since they didn't
+// export HTTPStatusFromCode we had to copy the whole thing.  Since then, we have added
+// custom error handling to return additional content for certain errors.  This handler
+// is invoked whenever the call to the gRPC backend results in an error (thus returning
+// a Status err).  Because an error has occurred, the normal response body is not returned.
 func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, _ *http.Request, err error) {
 	const fallback = `{"error": "failed to marshal error message"}`
 

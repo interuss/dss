@@ -224,20 +224,21 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		State:          scdmodels.OperationState(params.State),
 	}, key)
 
-	if err != nil {
-		if err == scderr.MissingOVNsInternalError() {
-			// The client is missing some OVNs; provide the pointers to the
-			// information they need
-			ops, err := a.Store.SearchOperations(ctx, uExtent, owner)
-			if err != nil {
-				return nil, err
-			}
-			intendedErr, unintentionalErr := scderr.MissingOVNsErrorResponse(ops)
-			if unintentionalErr != nil {
-				return nil, dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", unintentionalErr))
-			}
-			return nil, intendedErr
+	if err == scderr.MissingOVNsInternalError() {
+		// The client is missing some OVNs; provide the pointers to the
+		// information they need
+		ops, err := a.Store.SearchOperations(ctx, uExtent, owner)
+		if err != nil {
+			return nil, err
 		}
+		err, success := scderr.MissingOVNsErrorResponse(ops)
+		if !success {
+			return nil, dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", err))
+		}
+		return nil, err
+	}
+
+	if err != nil {
 		if _, ok := status.FromError(err); ok {
 			return nil, err
 		}
