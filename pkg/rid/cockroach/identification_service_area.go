@@ -30,49 +30,24 @@ type ISAStore struct {
 	logger *zap.Logger
 }
 
-// TODO: remove this from this store...
 func (c *ISAStore) fetchSubscriptionsForNotification(
 	ctx context.Context, q dsssql.Queryable, cells []int64) ([]*ridmodels.Subscription, error) {
-	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
-	// UPDATE FROM query.
-
-	// First: get unique subscription IDs.
-	var query = `
-			SELECT DISTINCT subscription_id
-			FROM cells_subscriptions
-			WHERE cell_id = ANY($1)`
-	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var subscriptionIDs []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		subscriptionIDs = append(subscriptionIDs, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	// Next: update the notification_index of each one and return the rest of the
-	// data.
 	var updateQuery = fmt.Sprintf(`
 			UPDATE subscriptions
 			SET notification_index = notification_index + 1
-			WHERE id = ANY($1)
+			WHERE id = ANY(
+				SELECT DISTINCT subscription_id
+				FROM cells_subscriptions
+				WHERE cell_id = ANY($1)
+			)
 			AND ends_at >= $2
 			RETURNING %s`, subscriptionFieldsWithoutPrefix)
-	return c.fetchSubscriptions(
-		ctx, q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
+	return c.processSubscriptions(
+		ctx, q, updateQuery, pq.Array(cells), c.clock.Now())
 }
 
 //TODO remove this from this store.. only here to support incrementing sub notification index, but the logic should be placed in application
-func (c *ISAStore) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
+func (c *ISAStore) processSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
