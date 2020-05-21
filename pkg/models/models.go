@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"time"
 )
@@ -63,18 +62,15 @@ func VersionFromTime(t time.Time) *Version {
 
 // Scan implements database/sql's scan interface.
 func (v *Version) Scan(src interface{}) error {
-	fmt.Println("ERROR SCANNING")
 	if src == nil {
 		return nil
 	}
-	fmt.Println(src)
 	t, ok := src.(time.Time)
 	if !ok {
-		panic("not ok@")
+		return errors.New("error scanning version")
 	}
 	temp := VersionFromTime(t)
 	*v = *temp
-	fmt.Println("JK no errors scanning")
 	return nil
 }
 

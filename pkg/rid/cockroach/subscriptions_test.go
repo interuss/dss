@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -175,14 +174,9 @@ func TestStoreDeleteSubscription(t *testing.T) {
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			fmt.Println("inserting")
 			sub1, err := store.Subscription.Insert(ctx, r.input)
-			fmt.Println("ISERTING Success", sub1.Version.ToTimestamp())
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
-
-			temp8, err8 := store.Subscription.Get(ctx, sub1.ID)
-			fmt.Println("Got the temp9", temp8, err8)
 
 			// Ensure mismatched versions return an error
 			sub1BadVersion := *sub1
@@ -199,9 +193,6 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			sub3, err := store.Subscription.Delete(ctx, &sub1BadOwner)
 			require.Error(t, err)
 			require.Nil(t, sub3)
-			temp9, err9 := store.Subscription.Get(ctx, sub1.ID)
-			fmt.Println("Got the temp9", temp9, err9)
-			fmt.Println(sub1.Version.ToTimestamp())
 			sub4, err := store.Subscription.Delete(ctx, sub1)
 			require.NoError(t, err)
 			require.NotNil(t, sub4)
@@ -245,7 +236,6 @@ func TestStoreSearchSubscription(t *testing.T) {
 		sub1, err := store.Subscription.Insert(ctx, &subscription)
 		require.NoError(t, err)
 		require.NotNil(t, sub1)
-
 	}
 
 	for _, owner := range owners {

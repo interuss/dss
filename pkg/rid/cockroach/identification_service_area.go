@@ -54,6 +54,8 @@ func (c *ISAStore) processSubscriptions(ctx context.Context, q dsssql.Queryable,
 	defer rows.Close()
 
 	var payload []*ridmodels.Subscription
+	cids := pq.Int64Array{}
+
 	for rows.Next() {
 		s := new(ridmodels.Subscription)
 
@@ -62,7 +64,7 @@ func (c *ISAStore) processSubscriptions(ctx context.Context, q dsssql.Queryable,
 			&s.Owner,
 			&s.URL,
 			&s.NotificationIndex,
-			&s.Cells,
+			&cids,
 			&s.StartTime,
 			&s.EndTime,
 			&s.Version,
@@ -70,6 +72,7 @@ func (c *ISAStore) processSubscriptions(ctx context.Context, q dsssql.Queryable,
 		if err != nil {
 			return nil, err
 		}
+		s.SetCells(cids)
 		payload = append(payload, s)
 	}
 	if err := rows.Err(); err != nil {
@@ -168,12 +171,14 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 	} else {
 		isa, err = c.processOne(ctx, q, updateAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
 		if err != nil {
+
 			return nil, nil, err
 		}
 	}
 
 	subscriptions, err := c.fetchSubscriptionsForNotification(ctx, q, cids)
 	if err != nil {
+
 		return nil, nil, err
 	}
 
@@ -231,7 +236,7 @@ func (c *ISAStore) Update(ctx context.Context, isa *ridmodels.IdentificationServ
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
 func (c *ISAStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
-		deleteQuery = `
+		deleteQuery = fmt.Sprintf(`
 			DELETE FROM
 				identification_service_areas
 			WHERE
@@ -240,9 +245,7 @@ func (c *ISAStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServ
 				owner = $2
 			AND
 				updated_at = $3
-			RETURNING
-				*
-		`
+			RETURNING %s`, isaFieldsWithoutPrefix)
 	)
 	// Get the cells since the ISA might not have them set.
 	cids := make([]int64, len(isa.Cells))

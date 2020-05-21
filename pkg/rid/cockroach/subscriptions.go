@@ -36,7 +36,6 @@ type SubscriptionStore struct {
 // process a query that should return one or many subscriptions.
 func (c *SubscriptionStore) process(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
-	fmt.Println(query)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +145,6 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 	var err error
 	var ret *ridmodels.Subscription
 	if s.Version.Empty() {
-		fmt.Println("INSERTING NEW")
 		ret, err = c.processOne(ctx, q, insertQuery,
 			s.ID,
 			s.Owner,
@@ -178,10 +176,13 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 
 // Get returns the subscription identified by "id".
 func (c *SubscriptionStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
+	// TODO(steeling) we should enforce startTime and endTime to not be null at the DB level.
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
-		WHERE id = $1`, subscriptionFields)
-	return c.processOne(ctx, c.DB, query, id)
+		WHERE id = $1
+		AND
+			ends_at > $2`, subscriptionFields)
+	return c.processOne(ctx, c.DB, query, id, c.clock.Now())
 }
 
 // Update updates the Subscription.. not yet implemented.
@@ -202,7 +203,6 @@ func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscriptio
 	// TODO: bring this logic into the application
 	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, tx, s.Cells, s.Owner)
 	if err != nil {
-		fmt.Println("error fetching")
 		c.logger.Warn("Error fetching max subscription count", zap.Error(err))
 		return nil, multierr.Combine(dsserr.Internal(
 			"failed to fetch subscription count, rejecting request"), tx.Rollback())
@@ -213,7 +213,6 @@ func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscriptio
 	}
 
 	newSubscription, err := c.pushSubscription(ctx, tx, s)
-	fmt.Println("GOT A NEW SUB: ", newSubscription)
 	if err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
 	}
@@ -226,15 +225,15 @@ func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscriptio
 // Delete deletes the subscription identified by "id" and
 // returns the deleted subscription.
 func (c *SubscriptionStore) Delete(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	const (
-		query = `
+	var (
+		query = fmt.Sprintf(`
 		DELETE FROM
 			subscriptions
 		WHERE
 			id = $1
 			AND owner = $2
 			AND updated_at = $3
-		RETURNING *`
+		RETURNING %s`, subscriptionFieldsWithoutPrefix)
 	)
 	return c.processOne(ctx, c.DB, query, s.ID, s.Owner, s.Version.ToTimestamp())
 }

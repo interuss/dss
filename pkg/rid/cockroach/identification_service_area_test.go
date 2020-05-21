@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -50,7 +49,6 @@ func TestStoreSearchISAs(t *testing.T) {
 	isa := *serviceArea
 	isa.Cells = cells
 	saOut, _, err := store.ISA.Insert(ctx, &isa)
-	fmt.Println("CELLS: ", saOut.Cells)
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 	require.Equal(t, isa.ID, saOut.ID)
