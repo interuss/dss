@@ -87,6 +87,7 @@ func TestBadOwner(t *testing.T) {
 	}
 
 	sub, err := app.Insert(ctx, sub)
+	require.NoError(t, err)
 	// Test changing owner fails
 	sub.Owner = "new bad owner"
 	_, err = app.Insert(ctx, sub)
