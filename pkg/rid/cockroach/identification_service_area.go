@@ -143,7 +143,7 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 			UPDATE
 				identification_service_areas
 			SET	(%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
-			WHERE id = $1 AND updated_at = $6 
+			WHERE id = $1 AND updated_at = $7
 			RETURNING
 				%s`, isaFieldsWithoutPrefix, isaFields)
 		insertAreasQuery = fmt.Sprintf(`
@@ -281,6 +281,8 @@ func (c *ISAStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServ
 // defined by "earliest" and "latest".
 func (c *ISAStore) Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var (
+		// TODO: make earliest and latest required (NOT NULL) and remove coalesce.
+		// Make them real values (not pointers), on the model layer.
 		isasInCellsQuery = fmt.Sprintf(`
 			SELECT
 				%s
@@ -289,13 +291,17 @@ func (c *ISAStore) Search(ctx context.Context, cells s2.CellUnion, earliest *tim
 			WHERE
 				ends_at >= $1
 			AND
-				starts_at <= $2
+				COALESCE(starts_at <= $2, true)
 			AND
 				cells && $3`, isaFields)
 	)
 
 	if len(cells) == 0 {
 		return nil, dsserr.BadRequest("missing cell IDs for query")
+	}
+
+	if earliest == nil {
+		return nil, dsserr.Internal("must call with an earliest start time.")
 	}
 
 	cids := make([]int64, len(cells))

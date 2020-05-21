@@ -29,6 +29,10 @@ var (
 				StartTime:         &startTime,
 				EndTime:           &endTime,
 				NotificationIndex: 42,
+				Cells: s2.CellUnion{
+					s2.CellID(uint64(overflow)),
+					s2.CellID(42),
+				},
 			},
 		},
 		{
@@ -39,6 +43,9 @@ var (
 				URL:               "https://no/place/like/home",
 				EndTime:           &endTime,
 				NotificationIndex: 42,
+				Cells: s2.CellUnion{
+					s2.CellID(uint64(overflow)),
+				},
 			},
 		},
 	}
@@ -224,15 +231,13 @@ func TestStoreSearchSubscription(t *testing.T) {
 		owners = []dssmodels.Owner{
 			"me",
 			"my",
-			"self",
-			"and",
 		}
 	)
 
 	for i, r := range subscriptionsPool {
 		subscription := *r.input
 		subscription.Owner = owners[i]
-		subscription.Cells = cells[:i]
+		subscription.Cells = cells[:i+1]
 		sub1, err := store.Subscription.Insert(ctx, &subscription)
 		require.NoError(t, err)
 		require.NotNil(t, sub1)
@@ -285,5 +290,21 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 	ret, err = store.Subscription.Get(ctx, sub.ID)
 	require.Nil(t, ret)
+	require.Error(t, err)
+}
+
+func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+	endTime := fakeClock.Now().Add(24 * time.Hour)
+	sub := &ridmodels.Subscription{
+		ID:      dssmodels.ID(uuid.New().String()),
+		Owner:   dssmodels.Owner("original owner"),
+		EndTime: &endTime,
+	}
+	_, err := store.Subscription.Insert(ctx, sub)
 	require.Error(t, err)
 }
