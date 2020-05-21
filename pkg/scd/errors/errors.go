@@ -18,14 +18,14 @@ var (
 
 // Used to return sufficient information for an appropriate client error response when a client is missing one or more
 // OVNs for relevant Operations or Constraints.
-func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (error, bool) {
+func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (bool, error) {
 	response := &scdpb.AirspaceConflictResponse{
 		Message: ErrMessageMissingOVNs,
 	}
 	for _, missingOp := range missingOps {
 		opRef, err := missingOp.ToProto()
 		if err != nil {
-			return err, false
+			return false, err
 		}
 		entityRef := &scdpb.EntityReference{
 			OperationReference: opRef,
@@ -35,7 +35,7 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (error, bool) {
 
 	serialized, err := proto.MarshalOptions{Deterministic: true}.Marshal(response)
 	if err != nil {
-		return err, false
+		return false, err
 	}
 
 	p := &spb.Status{
@@ -48,7 +48,7 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (error, bool) {
 			},
 		},
 	}
-	return status.ErrorProto(p), true
+	return true, status.ErrorProto(p)
 }
 
 // A single, consistent error to use internally when the Storage layer detects missing OVNs

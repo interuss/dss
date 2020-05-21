@@ -231,7 +231,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		if err != nil {
 			return nil, err
 		}
-		err, success := scderr.MissingOVNsErrorResponse(ops)
+		success, err := scderr.MissingOVNsErrorResponse(ops)
 		if !success {
 			return nil, dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", err))
 		}
