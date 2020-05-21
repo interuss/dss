@@ -44,6 +44,7 @@ type ISAApp struct {
 	clock clockwork.Clock
 }
 
+// Delete the given ISA
 func (a *ISAApp) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	// We fetch to know whether to return a concurrency error, or a not found error
 	old, err := a.ISA.Get(ctx, id)

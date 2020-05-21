@@ -298,7 +298,7 @@ func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion) ([]*
 	return subscriptions, nil
 }
 
-// Search returns all subscriptions in "cells".
+// SearchByOwner returns all subscriptions in "cells".
 func (c *SubscriptionStore) SearchByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`

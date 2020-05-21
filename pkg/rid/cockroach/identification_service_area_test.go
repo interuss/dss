@@ -233,6 +233,10 @@ func TestStoreDeleteISAs(t *testing.T) {
 	require.Error(t, err)
 
 	// Delete the ISA.
+	// Ensure a fresh Get, then delete still updates the sub indexes
+	isa, err = store.ISA.Get(ctx, isa.ID)
+	require.NoError(t, err)
+
 	serviceAreaOut, subscriptionsOut, err := store.ISA.Delete(ctx, isa)
 	require.NoError(t, err)
 	require.Equal(t, isa, serviceAreaOut)
@@ -245,4 +249,55 @@ func TestStoreDeleteISAs(t *testing.T) {
 	for i := range insertedSubscriptions {
 		require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
 	}
+}
+
+func TestInsertISA(t *testing.T) {
+	// ctx := context.Background()
+	// var (
+	// 	ctx                  = context.Background()
+	// 	store, tearDownStore = setUpStore(ctx, t)
+	// )
+	// defer func() {
+	// 	require.NoError(t, tearDownStore())
+	// }()
+
+	// insertedSubscriptions := []*ridmodels.Subscription{}
+	// for _, r := range subscriptionsPool {
+	// 	copy := *r.input
+	// 	copy.Cells = s2.CellUnion{s2.CellID(42)}
+	// 	s1, err := store.Subscription.Insert(ctx, &copy)
+	// 	require.NoError(t, err)
+	// 	require.NotNil(t, s1)
+	// 	require.Equal(t, 42, s1.NotificationIndex)
+	// 	insertedSubscriptions = append(insertedSubscriptions, s1)
+	// }
+
+	// // Insert the ISA.
+	// copy := *serviceArea
+	// isa, subscriptionsOut, err := store.ISA.Insert(ctx, &copy)
+	// require.NoError(t, err)
+	// require.NotNil(t, isa)
+
+	// for i := range insertedSubscriptions {
+	// 	require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
+	// }
+	// // Can't delete with different owner.
+	// iCopy := *isa
+	// iCopy.Owner = "bad-owner"
+	// _, _, err = store.ISA.Delete(ctx, &iCopy)
+	// require.Error(t, err)
+
+	// // Delete the ISA.
+	// serviceAreaOut, subscriptionsOut, err := store.ISA.Delete(ctx, isa)
+	// require.NoError(t, err)
+	// require.Equal(t, isa, serviceAreaOut)
+	// require.NotNil(t, subscriptionsOut)
+	// require.Len(t, subscriptionsOut, len(subscriptionsPool))
+	// for i, s := range subscriptionsPool {
+	// 	require.Equal(t, s.input.URL, subscriptionsOut[i].URL)
+	// }
+
+	// for i := range insertedSubscriptions {
+	// 	require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
+	//	}
 }

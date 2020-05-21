@@ -148,17 +148,6 @@ func (c *ISAStore) processOne(ctx context.Context, q dsssql.Queryable, query str
 	return isas[0], nil
 }
 
-func (c *ISAStore) getByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
-	var query = fmt.Sprintf(`
-		SELECT %s FROM
-			identification_service_areas
-		WHERE
-			id = $1
-		AND
-			ends_at > $2`, isaFields)
-	return c.processOne(ctx, q, query, id, c.clock.Now())
-}
-
 // push creates/updates the IdentificationServiceArea
 // identified by "id" and owned by "owner", affecting "cells" in the time
 // interval ["starts", "ends"].
@@ -240,9 +229,44 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 	return isa, subscriptions, nil
 }
 
+func (c *ISAStore) getCells(ctx context.Context, id dssmodels.ID) (s2.CellUnion, error) {
+	const query = `
+	SELECT
+		cell_id
+	FROM
+		cells_identification_service_areas
+	WHERE identification_service_area_id = $1`
+
+	rows, err := c.QueryContext(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var cell int64
+	cells := s2.CellUnion{}
+
+	for rows.Next() {
+		if err := rows.Scan(&cell); err != nil {
+			return nil, err
+		}
+		cells = append(cells, s2.CellID(uint64(cell)))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return cells, nil
+}
+
 // Get returns the isa identified by "id".
 func (c *ISAStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
-	return c.getByID(ctx, c.DB, id)
+	var query = fmt.Sprintf(`
+		SELECT %s FROM
+			identification_service_areas
+		WHERE
+			id = $1
+		AND
+			ends_at > $2`, isaFields)
+	return c.processOne(ctx, c.DB, query, id, c.clock.Now())
 }
 
 // Insert inserts the IdentificationServiceArea identified by "id" and owned
@@ -297,10 +321,13 @@ func (c *ISAStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServ
 				*
 		`
 	)
-	// Save the cells
-	cells := isa.Cells
-	cids := make([]int64, len(isa.Cells))
-	for i, cell := range isa.Cells {
+	// Get the cells since the ISA might not have them set.
+	cells, err := c.getCells(ctx, isa.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	cids := make([]int64, len(cells))
+	for i, cell := range cells {
 		cids[i] = int64(cell)
 	}
 
@@ -323,8 +350,6 @@ func (c *ISAStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServ
 	if err := tx.Commit(); err != nil {
 		return nil, nil, err
 	}
-
-	isa.Cells = cells
 
 	return isa, subscriptions, nil
 }
