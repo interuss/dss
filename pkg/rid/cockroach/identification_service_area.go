@@ -300,5 +300,5 @@ func (c *ISAStore) Search(ctx context.Context, cells s2.CellUnion, earliest *tim
 		cids[i] = int64(cid)
 	}
 
-	return c.process(ctx, c.DB, isasInCellsQuery, earliest, latest, pq.Array(cids))
+	return c.process(ctx, c.DB, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
 }

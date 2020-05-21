@@ -26,9 +26,11 @@ type IdentificationServiceArea struct {
 }
 
 func (i *IdentificationServiceArea) SetCells(cids []int64) {
-	for i, cell := range i.Cells {
-		cids[i] = int64(cell)
+	cells := s2.CellUnion{}
+	for _, id := range cids {
+		cells = append(cells, s2.CellID(id))
 	}
+	i.Cells = cells
 }
 
 // ToProto converts an IdentificationServiceArea struct to an

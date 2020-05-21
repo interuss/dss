@@ -38,9 +38,11 @@ type Subscription struct {
 }
 
 func (s *Subscription) SetCells(cids []int64) {
-	for i, cell := range s.Cells {
-		cids[i] = int64(cell)
+	cells := s2.CellUnion{}
+	for _, id := range cids {
+		cells = append(cells, s2.CellID(id))
 	}
+	s.Cells = cells
 }
 
 // ToNotifyProto converts a subscription to a SubscriberToNotify proto for

@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -62,17 +63,24 @@ func VersionFromTime(t time.Time) *Version {
 
 // Scan implements database/sql's scan interface.
 func (v *Version) Scan(src interface{}) error {
+	fmt.Println("ERROR SCANNING")
 	if src == nil {
 		return nil
 	}
-	temp := VersionFromTime(src.(time.Time))
+	fmt.Println(src)
+	t, ok := src.(time.Time)
+	if !ok {
+		panic("not ok@")
+	}
+	temp := VersionFromTime(t)
 	*v = *temp
+	fmt.Println("JK no errors scanning")
 	return nil
 }
 
 // Empty checks if the version is nil.
 func (v *Version) Empty() bool {
-	return v == nil
+	return v == nil || v.t.IsZero()
 }
 
 // Matches returns true if 2 versions are equal.
@@ -92,6 +100,6 @@ func (v *Version) String() string {
 }
 
 // ToTimestamp converts the version back its commit timestamp.
-func (v *Version) ToTimestamp() time.Time {
-	return v.t
+func (v *Version) ToTimestamp() *time.Time {
+	return &v.t
 }
