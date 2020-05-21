@@ -138,6 +138,30 @@ func TestStoreSearchISAs(t *testing.T) {
 	}
 }
 
+func TestBadVersion(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+
+	saOut1, _, err := store.ISA.Insert(ctx, serviceArea)
+	require.NoError(t, err)
+	require.NotNil(t, saOut1)
+
+	// Rewriting service area should fail
+	saOut2, _, err := store.ISA.Insert(ctx, serviceArea)
+	require.Error(t, err)
+	require.Nil(t, saOut2)
+
+	// Rewriting, but with the correct version should work.
+	newEndTime := saOut1.EndTime.Add(time.Minute)
+	saOut1.EndTime = &newEndTime
+	saOut3, _, err := store.ISA.Insert(ctx, saOut1)
+	require.NoError(t, err)
+	require.NotNil(t, saOut3)
+}
+
 func TestStoreExpiredISA(t *testing.T) {
 	ctx := context.Background()
 	store, tearDownStore := setUpStore(ctx, t)
@@ -183,7 +207,6 @@ func TestStoreDeleteISAs(t *testing.T) {
 	}()
 
 	insertedSubscriptions := []*ridmodels.Subscription{}
-
 	for _, r := range subscriptionsPool {
 		copy := *r.input
 		copy.Cells = s2.CellUnion{s2.CellID(42)}
@@ -219,134 +242,5 @@ func TestStoreDeleteISAs(t *testing.T) {
 
 	for i := range insertedSubscriptions {
 		require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
-	}
-}
-
-func TestInsertISA(t *testing.T) {
-	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
-
-	for _, r := range []struct {
-		name                string
-		updateFromStartTime time.Time
-		updateFromEndTime   time.Time
-		startTime           time.Time
-		endTime             time.Time
-		wantErr             string
-		wantStartTime       time.Time
-		wantEndTime         time.Time
-	}{
-		{
-			name:    "missing-end-time",
-			wantErr: "rpc error: code = InvalidArgument desc = IdentificationServiceArea must have an time_end",
-		},
-		{
-			name:          "start-time-defaults-to-now",
-			endTime:       fakeClock.Now().Add(time.Hour),
-			wantStartTime: fakeClock.Now(),
-		},
-		{
-			name:      "start-time-in-the-past",
-			startTime: fakeClock.Now().Add(-6 * time.Minute),
-			endTime:   fakeClock.Now().Add(time.Hour),
-			wantErr:   "rpc error: code = InvalidArgument desc = IdentificationServiceArea time_start must not be in the past",
-		},
-		{
-			name:          "start-time-slightly-in-the-past",
-			startTime:     fakeClock.Now().Add(-4 * time.Minute),
-			endTime:       fakeClock.Now().Add(time.Hour),
-			wantStartTime: fakeClock.Now().Add(-4 * time.Minute),
-		},
-		{
-			name:      "end-time-before-start-time",
-			startTime: fakeClock.Now().Add(20 * time.Minute),
-			endTime:   fakeClock.Now().Add(10 * time.Minute),
-			wantErr:   "rpc error: code = InvalidArgument desc = IdentificationServiceArea time_end must be after time_start",
-		},
-		{
-			name:                "updating-keeps-old-times",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
-		},
-		{
-			name:                "changing-start-time-to-past",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			startTime:           fakeClock.Now().Add(-3 * time.Hour),
-			wantErr:             "rpc error: code = InvalidArgument desc = IdentificationServiceArea time_start must not be in the past",
-		},
-		{
-			name:                "changing-start-time-to-future",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			startTime:           fakeClock.Now().Add(3 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(3 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
-		},
-		{
-			name:                "changing-end-time-to-future",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			endTime:             fakeClock.Now().Add(3 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(3 * time.Hour),
-		},
-	} {
-		t.Run(r.name, func(t *testing.T) {
-			id := dssmodels.ID(uuid.New().String())
-			owner := dssmodels.Owner(uuid.New().String())
-			var version *dssmodels.Version
-
-			// Insert a pre-existing ISA to simulate updating from something.
-			if !r.updateFromStartTime.IsZero() {
-				existing, _, err := store.ISA.Insert(ctx, &ridmodels.IdentificationServiceArea{
-					ID:        id,
-					Owner:     owner,
-					StartTime: &r.updateFromStartTime,
-					EndTime:   &r.updateFromEndTime,
-				})
-				require.NoError(t, err)
-				version = existing.Version
-
-				// Can't update if it has a different owner
-				isa := *existing
-				isa.Owner = "bad-owner"
-				_, _, err = store.ISA.Insert(ctx, &isa)
-				require.Error(t, err)
-			}
-
-			sa := &ridmodels.IdentificationServiceArea{
-				ID:      id,
-				Owner:   owner,
-				Version: version,
-			}
-			if !r.startTime.IsZero() {
-				sa.StartTime = &r.startTime
-			}
-			if !r.endTime.IsZero() {
-				sa.EndTime = &r.endTime
-			}
-			isa, _, err := store.ISA.Insert(ctx, sa)
-
-			if r.wantErr == "" {
-				require.NoError(t, err)
-			} else {
-				require.EqualError(t, err, r.wantErr)
-			}
-
-			if !r.wantStartTime.IsZero() {
-				require.NotNil(t, isa.StartTime)
-				require.Equal(t, r.wantStartTime, *isa.StartTime)
-			}
-			if !r.wantEndTime.IsZero() {
-				require.NotNil(t, isa.EndTime)
-				require.Equal(t, r.wantEndTime, *isa.EndTime)
-			}
-		})
 	}
 }

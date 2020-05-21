@@ -27,6 +27,7 @@ var (
 				Owner:             dssmodels.Owner(uuid.New().String()),
 				URL:               "https://no/place/like/home",
 				NotificationIndex: 42,
+				EndTime:           &endTime,
 			},
 		},
 		{
@@ -47,6 +48,7 @@ var (
 				Owner:             dssmodels.Owner(uuid.New().String()),
 				URL:               "https://no/place/like/home",
 				StartTime:         &startTime,
+				EndTime:           &endTime,
 				NotificationIndex: 42,
 			},
 		},
@@ -131,144 +133,6 @@ func TestStoreInsertSubscription(t *testing.T) {
 			require.NotNil(t, sub5)
 
 			require.Equal(t, *sub2, *sub5)
-
-			// Test changing owner fails
-			sub5.Owner = "new bad owner"
-			_, err = store.Subscription.Insert(ctx, sub5)
-			require.Error(t, err)
-		})
-	}
-}
-
-func TestStoreInsertSubscriptionsWithTimes(t *testing.T) {
-	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
-
-	for _, r := range []struct {
-		name                string
-		updateFromStartTime time.Time
-		updateFromEndTime   time.Time
-		startTime           time.Time
-		endTime             time.Time
-		wantErr             string
-		wantStartTime       time.Time
-		wantEndTime         time.Time
-	}{
-		{
-			name:          "start-time-defaults-to-now",
-			endTime:       fakeClock.Now().Add(time.Hour),
-			wantStartTime: fakeClock.Now(),
-			wantEndTime:   fakeClock.Now().Add(time.Hour),
-		},
-		{
-			name:          "end-time-defaults-to-24h",
-			wantStartTime: fakeClock.Now(),
-			wantEndTime:   fakeClock.Now().Add(24 * time.Hour),
-		},
-		{
-			name:      "start-time-in-the-past",
-			startTime: fakeClock.Now().Add(-6 * time.Minute),
-			endTime:   fakeClock.Now().Add(time.Hour),
-			wantErr:   "rpc error: code = InvalidArgument desc = subscription time_start must not be in the past",
-		},
-		{
-			name:          "start-time-slightly-in-the-past",
-			startTime:     fakeClock.Now().Add(-4 * time.Minute),
-			endTime:       fakeClock.Now().Add(time.Hour),
-			wantStartTime: fakeClock.Now().Add(-4 * time.Minute),
-		},
-		{
-			name:      "end-time-before-start-time",
-			startTime: fakeClock.Now().Add(20 * time.Minute),
-			endTime:   fakeClock.Now().Add(10 * time.Minute),
-			wantErr:   "rpc error: code = InvalidArgument desc = subscription time_end must be after time_start",
-		},
-		{
-			name:                "updating-keeps-old-times",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
-		},
-		{
-			name:                "changing-start-time-to-past",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			startTime:           fakeClock.Now().Add(-3 * time.Hour),
-			wantErr:             "rpc error: code = InvalidArgument desc = subscription time_start must not be in the past",
-		},
-		{
-			name:                "changing-start-time-to-future",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			startTime:           fakeClock.Now().Add(3 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(3 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
-		},
-		{
-			name:                "changing-end-time-to-future",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			endTime:             fakeClock.Now().Add(3 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(3 * time.Hour),
-		},
-		{
-			name:                "changing-end-time-more-than-24h",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			endTime:             fakeClock.Now().Add(24 * time.Hour),
-			wantErr:             "rpc error: code = InvalidArgument desc = subscription window exceeds 24 hours",
-		},
-	} {
-		t.Run(r.name, func(t *testing.T) {
-			id := dssmodels.ID(uuid.New().String())
-			owner := dssmodels.Owner(uuid.New().String())
-			var version *dssmodels.Version
-
-			// Insert a pre-existing subscription to simulate updating from something.
-			if !r.updateFromStartTime.IsZero() {
-				existing, err := store.Subscription.Insert(ctx, &ridmodels.Subscription{
-					ID:        id,
-					Owner:     owner,
-					StartTime: &r.updateFromStartTime,
-					EndTime:   &r.updateFromEndTime,
-				})
-				require.NoError(t, err)
-				version = existing.Version
-			}
-
-			s := &ridmodels.Subscription{
-				ID:      id,
-				Owner:   owner,
-				Version: version,
-			}
-			if !r.startTime.IsZero() {
-				s.StartTime = &r.startTime
-			}
-			if !r.endTime.IsZero() {
-				s.EndTime = &r.endTime
-			}
-			sub, err := store.Subscription.Insert(ctx, s)
-
-			if r.wantErr == "" {
-				require.NoError(t, err)
-			} else {
-				require.EqualError(t, err, r.wantErr)
-			}
-
-			if !r.wantStartTime.IsZero() {
-				require.NotNil(t, sub.StartTime)
-				require.Equal(t, r.wantStartTime, *sub.StartTime)
-			}
-			if !r.wantEndTime.IsZero() {
-				require.NotNil(t, sub.EndTime)
-				require.Equal(t, r.wantEndTime, *sub.EndTime)
-			}
 		})
 	}
 }
@@ -409,13 +273,13 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	defer func() {
 		require.NoError(t, tearDownStore())
 	}()
-
+	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
-		ID:    dssmodels.ID(uuid.New().String()),
-		Owner: dssmodels.Owner(uuid.New().String()),
-		Cells: s2.CellUnion{s2.CellID(42)},
+		ID:      dssmodels.ID(uuid.New().String()),
+		Owner:   dssmodels.Owner("original owner"),
+		Cells:   s2.CellUnion{s2.CellID(42)},
+		EndTime: &endTime,
 	}
-
 	_, err := store.Subscription.Insert(ctx, sub)
 	require.NoError(t, err)
 
@@ -423,7 +287,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	fakeClock.Advance(23 * time.Hour)
 
 	// We should still be able to find the subscription by searching and by ID.
-	subs, err := store.Subscription.Search(ctx, sub.Cells, sub.Owner)
+	subs, err := store.Subscription.Search(ctx, sub.Cells, "original owner")
 	require.NoError(t, err)
 	require.Len(t, subs, 1)
 
@@ -434,7 +298,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	// But now the subscription has expired.
 	fakeClock.Advance(2 * time.Hour)
 
-	subs, err = store.Subscription.Search(ctx, sub.Cells, sub.Owner)
+	subs, err = store.Subscription.Search(ctx, sub.Cells, "original owner")
 	require.NoError(t, err)
 	require.Len(t, subs, 0)
 

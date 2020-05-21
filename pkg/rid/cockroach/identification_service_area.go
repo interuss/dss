@@ -196,8 +196,15 @@ func (c *ISAStore) populateCells(ctx context.Context, q dsssql.Queryable, i *rid
 func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.IdentificationServiceArea) (
 	*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
-		upsertAreasQuery = fmt.Sprintf(`
-			UPSERT INTO
+		updateAreasQuery = fmt.Sprintf(`
+			UPDATE
+				identification_service_areas
+			SET	(%s) = ($1, $2, $3, $4, $5, transaction_timestamp())
+			WHERE id = $1 AND updated_at = $6 
+			RETURNING
+				%s`, isaFieldsWithoutPrefix, isaFields)
+		insertAreasQuery = fmt.Sprintf(`
+			INSERT INTO
 				identification_service_areas
 				(%s)
 			VALUES
@@ -228,10 +235,19 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 	}
 
 	cells := isa.Cells
-	isa, err := c.fetchOne(ctx, q, upsertAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime)
-	if err != nil {
-		return nil, nil, err
+	var err error
+	if isa.Version.Empty() {
+		isa, err = c.fetchOne(ctx, q, insertAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		isa, err = c.fetchOne(ctx, q, updateAreasQuery, isa.ID, isa.Owner, isa.URL, isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
+		if err != nil {
+			return nil, nil, err
+		}
 	}
+
 	isa.Cells = cells
 
 	for i := range cids {
@@ -271,33 +287,6 @@ func (c *ISAStore) Insert(ctx context.Context, isa *ridmodels.IdentificationServ
 	}
 	defer recoverRollbackRepanic(ctx, tx)
 
-	old, err := c.fetchByID(ctx, tx, isa.ID)
-	switch {
-	case err == sql.ErrNoRows:
-		break
-	case err != nil:
-		return nil, nil, multierr.Combine(err, tx.Rollback())
-	}
-
-	switch {
-	case old == nil && !isa.Version.Empty():
-		// The user wants to update an existing ISA, but one wasn't found.
-		return nil, nil, multierr.Combine(dsserr.NotFound(isa.ID.String()), tx.Rollback())
-	case old != nil && isa.Version.Empty():
-		// The user wants to create a new ISA but it already exists.
-		return nil, nil, multierr.Combine(dsserr.AlreadyExists(isa.ID.String()), tx.Rollback())
-	case old != nil && !isa.Version.Matches(old.Version):
-		// The user wants to update an ISA but the version doesn't match.
-		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
-	case old != nil && old.Owner != isa.Owner:
-		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
-	}
-
-	// Validate and perhaps correct StartTime and EndTime.
-	if err := isa.AdjustTimeRange(c.clock.Now(), old); err != nil {
-		return nil, nil, multierr.Combine(err, tx.Rollback())
-	}
-
 	area, subscribers, err := c.push(ctx, tx, isa)
 	if err != nil {
 		return nil, nil, multierr.Combine(err, tx.Rollback())
@@ -306,7 +295,6 @@ func (c *ISAStore) Insert(ctx context.Context, isa *ridmodels.IdentificationServ
 	if err := tx.Commit(); err != nil {
 		return nil, nil, err
 	}
-
 	return area, subscribers, nil
 }
 
