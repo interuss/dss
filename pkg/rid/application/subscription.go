@@ -28,7 +28,7 @@ type SubscriptionAppInterface interface {
 	Update(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
 
 	// SearchIdentificationServiceAreas returns all IdentificationServiceAreas ownded by "owner" in "cells".
-	Search(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
+	SearchByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
 }
 
 // SubscriptionApp is the main implementation of the SubscriptionApp logic.
@@ -68,4 +68,23 @@ func (a *SubscriptionApp) Insert(ctx context.Context, s *ridmodels.Subscription)
 		return a.Subscription.Insert(ctx, s)
 	}
 	return a.Subscription.Update(ctx, s)
+}
+
+// Delete deletes the Subscription identified by "id" and owned by "owner".
+func (a *SubscriptionApp) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
+
+	old, err := a.Subscription.Get(ctx, id)
+	switch {
+	case err == sql.ErrNoRows || old == nil:
+		return nil, dsserr.NotFound(id.String())
+	case err != nil:
+		return nil, err
+	case old.Owner != owner:
+		return nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+	}
+	old, err = a.Subscription.Delete(ctx, old)
+	if err == sql.ErrNoRows {
+		return nil, dsserr.VersionMismatch("old version")
+	}
+	return old, err
 }

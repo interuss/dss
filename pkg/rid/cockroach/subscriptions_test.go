@@ -200,18 +200,21 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			require.NotNil(t, sub1)
 
 			// Ensure mismatched versions return an error
-			v, err := dssmodels.VersionFromString("a3cg3tcuhk000")
+			sub1BadVersion := *sub1
+			sub1BadVersion.Version, err = dssmodels.VersionFromString("a3cg3tcuhk000")
 			require.NoError(t, err)
-			sub2, err := store.Subscription.Delete(ctx, sub1.ID, sub1.Owner, v)
+			sub2, err := store.Subscription.Delete(ctx, &sub1BadVersion)
 			require.Error(t, err)
 			require.Nil(t, sub2)
 
 			// Can't delete other users data.
-			sub3, err := store.Subscription.Delete(ctx, sub1.ID, "wrong owner", sub1.Version)
+			sub1BadOwner := *sub1
+			sub1BadOwner.Owner = "wrongOwner"
+			sub3, err := store.Subscription.Delete(ctx, &sub1BadOwner)
 			require.Error(t, err)
 			require.Nil(t, sub3)
 
-			sub4, err := store.Subscription.Delete(ctx, sub1.ID, sub1.Owner, sub1.Version)
+			sub4, err := store.Subscription.Delete(ctx, sub1)
 			require.NoError(t, err)
 			require.NotNil(t, sub4)
 
@@ -258,7 +261,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 	}
 
 	for _, owner := range owners {
-		found, err := store.Subscription.Search(ctx, cells, owner)
+		found, err := store.Subscription.SearchByOwner(ctx, cells, owner)
 		require.NoError(t, err)
 		require.NotNil(t, found)
 		// We insert one subscription per owner. Hence, no matter how many cells are touched by the subscription,
@@ -287,7 +290,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	fakeClock.Advance(23 * time.Hour)
 
 	// We should still be able to find the subscription by searching and by ID.
-	subs, err := store.Subscription.Search(ctx, sub.Cells, "original owner")
+	subs, err := store.Subscription.SearchByOwner(ctx, sub.Cells, "original owner")
 	require.NoError(t, err)
 	require.Len(t, subs, 1)
 
@@ -298,7 +301,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	// But now the subscription has expired.
 	fakeClock.Advance(2 * time.Hour)
 
-	subs, err = store.Subscription.Search(ctx, sub.Cells, "original owner")
+	subs, err = store.Subscription.SearchByOwner(ctx, sub.Cells, "original owner")
 	require.NoError(t, err)
 	require.Len(t, subs, 0)
 

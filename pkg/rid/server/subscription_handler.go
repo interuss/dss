@@ -63,7 +63,7 @@ func (s *Server) SearchSubscriptions(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscriptions, err := s.App.Subscription.Search(ctx, cu, owner)
+	subscriptions, err := s.App.Subscription.SearchByOwner(ctx, cu, owner)
 	if err != nil {
 		return nil, err
 	}

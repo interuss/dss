@@ -44,6 +44,30 @@ type ISAApp struct {
 	clock clockwork.Clock
 }
 
+// Delete the given ISA
+func (a *ISAApp) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+	// We fetch to know whether to return a concurrency error, or a not found error
+	old, err := a.ISA.Get(ctx, id)
+	switch {
+	case err == sql.ErrNoRows || old == nil: // Return a 404 here.
+		return nil, nil, dsserr.NotFound(id.String())
+	case err != nil:
+		return nil, nil, err
+	case !version.Empty() && !version.Matches(old.Version):
+		return nil, nil, dsserr.VersionMismatch("old version")
+	case old.Owner != owner:
+		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+	}
+
+	old, subs, err := a.ISA.Delete(ctx, old)
+	// TODO: change this to return no error, and a nil object and use that
+	// to determine a not found, etc.
+	if err == sql.ErrNoRows {
+		return nil, nil, dsserr.VersionMismatch("old version")
+	}
+	return old, subs, err
+}
+
 // Insert implments the ISAAppInterface Insert method
 func (a *ISAApp) Insert(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	old, err := a.ISA.Get(ctx, isa.ID)

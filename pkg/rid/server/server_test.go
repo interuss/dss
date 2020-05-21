@@ -77,7 +77,7 @@ func (ma *mockSubscriptionApp) Delete(ctx context.Context, id dssmodels.ID, owne
 	return args.Get(0).(*ridmodels.Subscription), args.Error(1)
 }
 
-func (ma *mockSubscriptionApp) Search(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+func (ma *mockSubscriptionApp) SearchByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	args := ma.Called(ctx, cells, owner)
@@ -401,7 +401,7 @@ func TestSearchSubscriptions(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	ma.On("Search", mock.Anything, mock.Anything, owner).Return(
+	ma.On("SearchByOwner", mock.Anything, mock.Anything, owner).Return(
 		[]*ridmodels.Subscription{
 			{
 				ID:                dssmodels.ID(uuid.New().String()),
