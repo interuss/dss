@@ -67,6 +67,12 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		NotifyForConstraints: params.NotifyForConstraints,
 	}
 
+	// Validate requested Subscription
+	if !sub.NotifyForOperations && !sub.NotifyForConstraints {
+		return nil, dsserr.BadRequest("no notification triggers requested for Subscription")
+	}
+	// TODO: validate against DependentOperations when available
+
 	// Store Subscription model
 	sub, ops, err := a.putSubscription(ctx, sub)
 	if err != nil {

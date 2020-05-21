@@ -120,6 +120,9 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 		if err != nil {
 			return nil, dsserr.Internal("error converting Operation model to proto")
 		}
+		if op.Owner != owner {
+			p.Ovn = ""
+		}
 		response.OperationReferences = append(response.OperationReferences, p)
 	}
 	return response, nil
