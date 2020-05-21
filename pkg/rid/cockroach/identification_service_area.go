@@ -20,8 +20,7 @@ import (
 )
 
 const (
-	isaFields              = "identification_service_areas.id, identification_service_areas.owner, identification_service_areas.url, identification_service_areas.cells, identification_service_areas.starts_at, identification_service_areas.ends_at, identification_service_areas.updated_at"
-	isaFieldsWithoutPrefix = "id, owner, url, cells, starts_at, ends_at, updated_at"
+	isaFields = "id, owner, url, cells, starts_at, ends_at, updated_at"
 )
 
 // ISAStore is an implementation of the ISARepo for CRDB.
@@ -40,7 +39,7 @@ func (c *ISAStore) fetchSubscriptionsForNotification(
 			WHERE
 				cells && $1
 				AND ends_at >= $2
-			RETURNING %s`, subscriptionFieldsWithoutPrefix)
+			RETURNING %s`, subscriptionFields)
 	return c.processSubscriptions(
 		ctx, q, updateQuery, pq.Array(cells), c.clock.Now())
 }
@@ -145,7 +144,7 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 			SET	(%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
 			WHERE id = $1 AND updated_at = $7
 			RETURNING
-				%s`, isaFieldsWithoutPrefix, isaFields)
+				%s`, isaFields, isaFields)
 		insertAreasQuery = fmt.Sprintf(`
 			INSERT INTO
 				identification_service_areas
@@ -153,7 +152,7 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 			VALUES
 				($1, $2, $3, $4, $5, $6, transaction_timestamp())
 			RETURNING
-				%s`, isaFieldsWithoutPrefix, isaFields)
+				%s`, isaFields, isaFields)
 	)
 
 	cids := make([]int64, len(isa.Cells))
@@ -245,7 +244,7 @@ func (c *ISAStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServ
 				owner = $2
 			AND
 				updated_at = $3
-			RETURNING %s`, isaFieldsWithoutPrefix)
+			RETURNING %s`, isaFields)
 	)
 	// Get the cells since the ISA might not have them set.
 	cids := make([]int64, len(isa.Cells))

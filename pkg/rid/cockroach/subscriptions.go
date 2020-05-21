@@ -20,9 +20,8 @@ import (
 
 const (
 	// Defined in requirement DSS0030.
-	maxSubscriptionsPerArea         = 10
-	subscriptionFields              = "subscriptions.id, subscriptions.owner, subscriptions.url, subscriptions.notification_index, subscriptions.cells, subscriptions.starts_at, subscriptions.ends_at, subscriptions.updated_at"
-	subscriptionFieldsWithoutPrefix = "id, owner, url, notification_index, cells, starts_at, ends_at, updated_at"
+	maxSubscriptionsPerArea = 10
+	subscriptionFields      = "id, owner, url, notification_index, cells, starts_at, ends_at, updated_at"
 )
 
 // SubscriptionStore is an implementation of the SubscriptionRepo for CRDB.
@@ -125,7 +124,7 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 		SET (%s) = ($1, $2, $3, $4, $5, $6, $7, transaction_timestamp())
 		WHERE id = $1 AND updated_at = $8
 		RETURNING
-			%s`, subscriptionFieldsWithoutPrefix, subscriptionFields)
+			%s`, subscriptionFields, subscriptionFields)
 		insertQuery = fmt.Sprintf(`
 		INSERT INTO
 		  subscriptions
@@ -133,7 +132,7 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, transaction_timestamp())
 		RETURNING
-			%s`, subscriptionFieldsWithoutPrefix, subscriptionFields)
+			%s`, subscriptionFields, subscriptionFields)
 	)
 
 	cids := make([]int64, len(s.Cells))
@@ -233,7 +232,7 @@ func (c *SubscriptionStore) Delete(ctx context.Context, s *ridmodels.Subscriptio
 			id = $1
 			AND owner = $2
 			AND updated_at = $3
-		RETURNING %s`, subscriptionFieldsWithoutPrefix)
+		RETURNING %s`, subscriptionFields)
 	)
 	return c.processOne(ctx, c.DB, query, s.ID, s.Owner, s.Version.ToTimestamp())
 }
