@@ -66,8 +66,6 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 	)
 	// The following will automatically retry TXN retry errors.
 	err = a.Repository.InTxnRetrier(ctx, func(repo repos.Repository) error {
-		fmt.Println("In the custom func!")
-
 		var err error
 		subs, err = repo.UpdateNotificationIdxsInCells(ctx, old.Cells)
 		if err != nil {

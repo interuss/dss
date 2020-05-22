@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 	"time"
 
@@ -20,7 +19,7 @@ var (
 	_ ISAApp = &app{}
 )
 
-func setUpISAApp(ctx context.Context, t *testing.T) (*app, func() error) {
+func setUpISAApp(ctx context.Context, t *testing.T) (*app, func()) {
 	l := zap.L()
 	repo, cleanup := setUpRepo(ctx, t, l)
 	return NewFromRepo(repo, l).(*app), cleanup
@@ -308,11 +307,9 @@ func TestAppDeleteISAs(t *testing.T) {
 	// Delete the ISA.
 	// Ensure a fresh Get, then delete still updates the subscription indexes
 	isa, err = app.GetISA(ctx, isa.ID)
-	fmt.Println("get calls: ", isa)
 	require.NoError(t, err)
 
 	serviceAreaOut, subscriptionsOut, err := app.DeleteISA(ctx, isa.ID, isa.Owner, isa.Version)
-	fmt.Println("SOUT: ", serviceAreaOut)
 	require.NoError(t, err)
 	require.Equal(t, isa, serviceAreaOut)
 	require.NotNil(t, subscriptionsOut)

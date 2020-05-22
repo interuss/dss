@@ -53,7 +53,7 @@ var (
 	}
 )
 
-func setUpSubApp(ctx context.Context, t *testing.T) (*app, func() error) {
+func setUpSubApp(ctx context.Context, t *testing.T) (*app, func()) {
 	l := zap.L()
 	repo, cleanup := setUpRepo(ctx, t, l)
 	return NewFromRepo(repo, l).(*app), cleanup
@@ -309,6 +309,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
 					EndTime:   &r.updateFromEndTime,
+					Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
 				})
 				require.NoError(t, err)
 				version = existing.Version
@@ -318,6 +319,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 				ID:      id,
 				Owner:   owner,
 				Version: version,
+				Cells:   s2.CellUnion{s2.CellID(17106221850767130624)},
 			}
 			if !r.startTime.IsZero() {
 				s.StartTime = &r.startTime
@@ -359,6 +361,7 @@ func TestInsertTooManySubscription(t *testing.T) {
 			Owner:     dssmodels.Owner("bob"),
 			StartTime: &startTime,
 			EndTime:   &endTime,
+			Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
 		}
 
 		s.Cells = make(s2.CellUnion, len(cellIDs))

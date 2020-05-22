@@ -10,4 +10,5 @@ type Repository interface {
 	// in a Txn, and will retry any Txn's that fail due to retry-able errors
 	// (typically contention).
 	InTxnRetrier(ctx context.Context, f func(repo Repository) error) error
+	Close() error
 }

@@ -35,7 +35,11 @@ func (s *mockRepo) InTxnRetrier(ctx context.Context, f func(repo repos.Repositor
 	return f(s)
 }
 
-func setUpRepo(ctx context.Context, t *testing.T, logger *zap.Logger) (repos.Repository, func() error) {
+func (s *mockRepo) Close() error {
+	return nil
+}
+
+func setUpRepo(ctx context.Context, t *testing.T, logger *zap.Logger) (repos.Repository, func()) {
 	DefaultClock = fakeClock
 
 	if len(*storeURI) == 0 {
@@ -47,7 +51,7 @@ func setUpRepo(ctx context.Context, t *testing.T, logger *zap.Logger) (repos.Rep
 			subscriptionStore: &subscriptionStore{
 				subs: make(map[dssmodels.ID]*ridmodels.Subscription),
 			},
-		}, func() error { return nil }
+		}, func() {}
 	}
 	ridcrdb.DefaultClock = fakeClock
 	logger.Info("using cockroachDB.")
@@ -58,5 +62,20 @@ func setUpRepo(ctx context.Context, t *testing.T, logger *zap.Logger) (repos.Rep
 
 	store := ridcrdb.NewStore(cdb, logger)
 	require.NoError(t, store.Bootstrap(ctx))
-	return store, func() error { return cdb.Close() }
+	return store, func() {
+		require.NoError(t, cleanUp(ctx, store))
+		require.NoError(t, store.Close())
+	}
+}
+
+// cleanUp drops all required tables from the store, useful for testing.
+func cleanUp(ctx context.Context, s *ridcrdb.Store) error {
+	const query = `
+	DROP TABLE IF EXISTS cells_subscriptions;
+	DROP TABLE IF EXISTS subscriptions;
+	DROP TABLE IF EXISTS cells_identification_service_areas;
+	DROP TABLE IF EXISTS identification_service_areas;`
+
+	_, err := s.ExecContext(ctx, query)
+	return err
 }

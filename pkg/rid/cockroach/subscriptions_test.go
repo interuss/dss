@@ -188,7 +188,11 @@ func TestStoreSearchSubscription(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, sub1)
 	}
-
+	// Test normal search
+	found, err := store.SearchSubscriptions(ctx, cells)
+	require.NoError(t, err)
+	require.NotNil(t, found)
+	require.Len(t, found, 2)
 	for _, owner := range owners {
 		found, err := store.SearchSubscriptionsByOwner(ctx, cells, owner)
 		require.NoError(t, err)

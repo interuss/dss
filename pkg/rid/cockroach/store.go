@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/dpjacques/clockwork"
@@ -41,20 +40,16 @@ type Store struct {
 // Note: Currently the Newly supplied Repo *does not* support nested calls
 // to InTxnRetrier.
 func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) error) error {
-	fmt.Println("In the retrier!")
-	if s.db == s.Queryable {
+	if s.db != s.Queryable {
 		return errors.New("cannot call InTxnRetrier within an active Txn")
 	}
 
 	// TODO: consider what tx opts we want to support.
 	// TODO: we really need to remove the upper cockroach package, and have one
 	// "store" for everything
-	fmt.Println("CALL OUT TO crdb")
-	fmt.Println(s.db)
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
-		fmt.Println("In the execution!")
 		storeCopy := *s
-
+		storeCopy.Queryable = tx
 		return f(&storeCopy)
 	})
 }

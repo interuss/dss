@@ -29,12 +29,11 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	fakeClock = clockwork.NewFakeClock()
 
 	store, err := newStore()
-	if err != nil {
-		t.Skip(err)
-	}
+	require.NoError(t, err)
 	require.NoError(t, store.Bootstrap(ctx))
 	return store, func() {
 		require.NoError(t, cleanUp(ctx, store))
+		require.NoError(t, store.Close())
 	}
 }
 
@@ -51,6 +50,7 @@ func newStore() (*Store, error) {
 		ISA:          &ISAStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
 		Subscription: &SubscriptionStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
 		db:           cdb,
+		Queryable:    cdb,
 	}, nil
 }
 
