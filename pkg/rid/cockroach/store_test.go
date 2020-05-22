@@ -139,6 +139,7 @@ func TestTxnRetrier(t *testing.T) {
 		// Postgre retryable error
 		return &pq.Error{Code: "40001"}
 	})
+	require.Error(t, err)
 	// Ensure it was retried.
 	require.Greater(t, count, 1)
 }

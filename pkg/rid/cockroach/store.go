@@ -58,6 +58,8 @@ func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) 
 	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
 	defer cancel()
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
+		// Is this recover still necessary?
+		defer recoverRollbackRepanic(ctx, tx)
 		storeCopy := *s
 		storeCopy.Queryable = tx
 		return f(&storeCopy)
@@ -68,12 +70,6 @@ func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) 
 func (s *Store) Close() error {
 	return s.db.Close()
 }
-
-// tx, err := c.Begin()
-// if err != nil {
-// 	return nil, err
-// }
-// defer recoverRollbackRepanic(ctx, tx)
 
 func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 	if p := recover(); p != nil {

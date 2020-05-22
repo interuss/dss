@@ -93,7 +93,8 @@ func TestISAUpdateIdxCells(t *testing.T) {
 		EndTime:   &endTime,
 		Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
 	})
-
+	require.NoError(t, err)
+	require.NotNil(t, isa)
 	// Now insert 2 subs, one overlaps with the original isa, and the second, overlaps
 	// with the soon to be new version of the isa. both should increase their
 	// notification index.
@@ -105,6 +106,8 @@ func TestISAUpdateIdxCells(t *testing.T) {
 		EndTime:   &endTime,
 		Cells:     s2.CellUnion{17106221850767130624, 17106221919486607360},
 	})
+	require.NoError(t, err)
+
 	_, err = app.InsertSubscription(ctx, &ridmodels.Subscription{
 		ID:        dssmodels.ID(uuid.New().String()),
 		Owner:     "owner",
@@ -113,9 +116,6 @@ func TestISAUpdateIdxCells(t *testing.T) {
 		Cells:     s2.CellUnion{17106221953846345728},
 	})
 	require.NoError(t, err)
-
-	require.NoError(t, err)
-	require.NotNil(t, isa)
 
 	isa.Cells = s2.CellUnion{17106221953846345728}
 
