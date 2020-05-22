@@ -28,7 +28,7 @@ func (s *Server) DeleteSubscription(
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.App.Subscription.Delete(ctx, dssmodels.ID(req.GetId()), owner, version)
+	subscription, err := s.App.DeleteSubscription(ctx, dssmodels.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (s *Server) SearchSubscriptions(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscriptions, err := s.App.Subscription.SearchByOwner(ctx, cu, owner)
+	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *Server) GetSubscription(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.App.Subscription.Get(ctx, dssmodels.ID(req.GetId()))
+	subscription, err := s.App.GetSubscription(ctx, dssmodels.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
 	}
@@ -129,7 +129,7 @@ func (s *Server) createOrUpdateSubscription(
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
 	}
 
-	insertedSub, err := s.App.Subscription.Insert(ctx, sub)
+	insertedSub, err := s.App.InsertSubscription(ctx, sub)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (s *Server) createOrUpdateSubscription(
 	}
 
 	// Find ISAs that were in this subscription's area.
-	isas, err := s.App.ISA.Search(ctx, sub.Cells, nil, nil)
+	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
 	if err != nil {
 		return nil, err
 	}

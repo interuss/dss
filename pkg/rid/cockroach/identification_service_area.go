@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 
-	"github.com/dpjacques/clockwork"
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
 	"go.uber.org/multierr"
@@ -121,7 +121,7 @@ func (c *ISAStore) processOne(ctx context.Context, q dsssql.Queryable, query str
 		return nil, err
 	}
 	if len(isas) > 1 {
-		return nil, multierr.Combine(err, fmt.Errorf("query returned %d identification_service_areas", len(isas)))
+		return nil, fmt.Errorf("query returned %d identification_service_areas", len(isas))
 	}
 	if len(isas) == 0 {
 		return nil, sql.ErrNoRows
@@ -184,8 +184,8 @@ func (c *ISAStore) push(ctx context.Context, q dsssql.Queryable, isa *ridmodels.
 	return isa, subscriptions, nil
 }
 
-// Get returns the isa identified by "id".
-func (c *ISAStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+// GetISA returns the isa identified by "id".
+func (c *ISAStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
 			identification_service_areas
@@ -196,14 +196,14 @@ func (c *ISAStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Identif
 	return c.processOne(ctx, c.DB, query, id, c.clock.Now())
 }
 
-// Insert inserts the IdentificationServiceArea identified by "id" and owned
+// InsertISA inserts the IdentificationServiceArea identified by "id" and owned
 // by "owner", affecting "cells" in the time interval ["starts", "ends"].
 //
 // Returns the created IdentificationServiceArea and all Subscriptions affected
 // by it.
 // TODO: Simplify the logic to insert without a query, such that the insert fails
 // if there's an existing entity.
-func (c *ISAStore) Insert(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	tx, err := c.Begin()
 	if err != nil {
 		return nil, nil, err
@@ -221,19 +221,19 @@ func (c *ISAStore) Insert(ctx context.Context, isa *ridmodels.IdentificationServ
 	return area, subscribers, nil
 }
 
-// Update updates the IdentificationServiceArea identified by "id" and owned
+// UpdateISA updates the IdentificationServiceArea identified by "id" and owned
 // by "owner", affecting "cells" in the time interval ["starts", "ends"].
 //
 // Returns the created IdentificationServiceArea and all Subscriptions affected
 // by it.
 // TODO: simplify the logic to just update, without the primary query.
-func (c *ISAStore) Update(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+func (c *ISAStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	return nil, nil, dsserr.BadRequest("not yet implemented")
 }
 
-// Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
+// DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-func (c *ISAStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
 		deleteQuery = fmt.Sprintf(`
 			DELETE FROM
@@ -275,10 +275,10 @@ func (c *ISAStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServ
 	return isa, subscriptions, nil
 }
 
-// Search searches IdentificationServiceArea
+// SearchISAs searches IdentificationServiceArea
 // instances that intersect with "cells" and, if set, the temporal volume
 // defined by "earliest" and "latest".
-func (c *ISAStore) Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *ISAStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var (
 		// TODO: make earliest and latest required (NOT NULL) and remove coalesce.
 		// Make them real values (not pointers), on the model layer.

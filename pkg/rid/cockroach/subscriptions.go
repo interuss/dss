@@ -75,7 +75,7 @@ func (c *SubscriptionStore) processOne(ctx context.Context, q dsssql.Queryable, 
 		return nil, err
 	}
 	if len(subs) > 1 {
-		return nil, multierr.Combine(err, fmt.Errorf("query returned %d subscriptions", len(subs)))
+		return nil, fmt.Errorf("query returned %d subscriptions", len(subs))
 	}
 	if len(subs) == 0 {
 		return nil, sql.ErrNoRows
@@ -116,7 +116,7 @@ func (c *SubscriptionStore) fetchMaxSubscriptionCountByCellAndOwner(
 	return ret, err
 }
 
-func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Queryable, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) push(ctx context.Context, q dsssql.Queryable, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		udpateQuery = fmt.Sprintf(`
 		UPDATE
@@ -173,8 +173,8 @@ func (c *SubscriptionStore) pushSubscription(ctx context.Context, q dsssql.Query
 	return ret, nil
 }
 
-// Get returns the subscription identified by "id".
-func (c *SubscriptionStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
+// GetSubscription returns the subscription identified by "id".
+func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	// TODO(steeling) we should enforce startTime and endTime to not be null at the DB level.
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
@@ -184,14 +184,14 @@ func (c *SubscriptionStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodel
 	return c.processOne(ctx, c.DB, query, id, c.clock.Now())
 }
 
-// Update updates the Subscription.. not yet implemented.
-func (c *SubscriptionStore) Update(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+// UpdateSubscription updates the Subscription.. not yet implemented.
+func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	return nil, dsserr.Internal("not yet implemented")
 }
 
-// Insert inserts subscription into the store and returns
+// InsertSubscription inserts subscription into the store and returns
 // the resulting subscription including its ID.
-func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	tx, err := c.Begin()
 	if err != nil {
 		return nil, err
@@ -211,7 +211,7 @@ func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscriptio
 			"too many existing subscriptions in this area already"), tx.Rollback())
 	}
 
-	newSubscription, err := c.pushSubscription(ctx, tx, s)
+	newSubscription, err := c.push(ctx, tx, s)
 	if err != nil {
 		return nil, multierr.Combine(err, tx.Rollback())
 	}
@@ -221,9 +221,9 @@ func (c *SubscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscriptio
 	return newSubscription, nil
 }
 
-// Delete deletes the subscription identified by "id" and
+// DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
-func (c *SubscriptionStore) Delete(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 		DELETE FROM
@@ -237,8 +237,8 @@ func (c *SubscriptionStore) Delete(ctx context.Context, s *ridmodels.Subscriptio
 	return c.processOne(ctx, c.DB, query, s.ID, s.Owner, s.Version.ToTimestamp())
 }
 
-// Search returns all subscriptions in "cells".
-func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+// SearchSubscriptions returns all subscriptions in "cells".
+func (c *SubscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -263,8 +263,8 @@ func (c *SubscriptionStore) Search(ctx context.Context, cells s2.CellUnion) ([]*
 	return c.process(ctx, c.DB, query, pq.Array(cids), c.clock.Now())
 }
 
-// SearchByOwner returns all subscriptions in "cells".
-func (c *SubscriptionStore) SearchByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+// SearchSubscriptionsByOwner returns all subscriptions in "cells".
+func (c *SubscriptionStore) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT

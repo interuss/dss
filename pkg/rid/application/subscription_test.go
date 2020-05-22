@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -19,20 +20,29 @@ var (
 	fakeClock = clockwork.NewFakeClock()
 )
 
+func setUpSubApp() SubscriptionApp {
+	return &app{
+		Subscription: &subscriptionStore{
+			subs: make(map[dssmodels.ID]*ridmodels.Subscription),
+		},
+		clock: fakeClock,
+	}
+}
+
 type subscriptionStore struct {
 	subs map[dssmodels.ID]*ridmodels.Subscription
 }
 
-func (store *subscriptionStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
+func (store *subscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	if sub, ok := store.subs[id]; ok {
 		return sub, nil
 	}
 	return nil, sql.ErrNoRows
 }
 
-// Delete deletes the Subscription identified by "id" and owned by "owner".
+// DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
 // Returns the delete Subscription and all IdentificationServiceAreas affected by the delete.
-func (store *subscriptionStore) Delete(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (store *subscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	if sub, ok := store.subs[s.ID]; ok {
 		delete(store.subs, s.ID)
 		return sub, nil
@@ -40,8 +50,8 @@ func (store *subscriptionStore) Delete(ctx context.Context, s *ridmodels.Subscri
 	return nil, sql.ErrNoRows
 }
 
-// Insert inserts or updates an Subscription.
-func (store *subscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+// InsertSubscription inserts or updates an Subscription.
+func (store *subscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	storedCopy := *s
 	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
 	store.subs[s.ID] = &storedCopy
@@ -51,15 +61,15 @@ func (store *subscriptionStore) Insert(ctx context.Context, s *ridmodels.Subscri
 }
 
 // Update
-func (store *subscriptionStore) Update(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	return store.Insert(ctx, s)
+func (store *subscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	return nil, errors.New("not implemented")
 }
 
-// SearchIdentificationServiceAreas returns all IdentificationServiceAreas ownded by "owner" in "cells".
-func (store *subscriptionStore) SearchByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+// SearchSubscriptionsByOwner returns all IdentificationServiceAreas ownded by "owner" in "cells".
+func (store *subscriptionStore) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	var subs []*ridmodels.Subscription
 
-	res, _ := store.Search(ctx, cells)
+	res, _ := store.SearchSubscriptions(ctx, cells)
 	for _, s := range res {
 		if s.Owner == owner {
 			subs = append(subs, s)
@@ -68,8 +78,19 @@ func (store *subscriptionStore) SearchByOwner(ctx context.Context, cells s2.Cell
 	return subs, nil
 }
 
-// SearchIdentificationServiceAreas returns all IdentificationServiceAreas ownded by "owner" in "cells".
-func (store *subscriptionStore) Search(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+func (store *subscriptionStore) updateNotificationIdxs(ctx context.Context, cells s2.CellUnion) []*ridmodels.Subscription {
+	var ret []*ridmodels.Subscription
+	subs, _ := store.SearchSubscriptions(ctx, cells)
+	for _, s := range subs {
+		s.NotificationIndex++
+		s, _ = store.InsertSubscription(ctx, s)
+		ret = append(ret, s)
+	}
+	return ret
+}
+
+// SearchSubscriptions returns all IdentificationServiceAreas ownded by "owner" in "cells".
+func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var subs []*ridmodels.Subscription
 
 	for _, s := range store.subs {
@@ -78,15 +99,6 @@ func (store *subscriptionStore) Search(ctx context.Context, cells s2.CellUnion) 
 		}
 	}
 	return subs, nil
-}
-
-func setUpSubApp() *SubscriptionApp {
-	return &SubscriptionApp{
-		Subscription: &subscriptionStore{
-			subs: make(map[dssmodels.ID]*ridmodels.Subscription),
-		},
-		clock: fakeClock,
-	}
 }
 
 func TestBadOwner(t *testing.T) {
@@ -99,11 +111,11 @@ func TestBadOwner(t *testing.T) {
 		Cells: s2.CellUnion{s2.CellID(42)},
 	}
 
-	sub, err := app.Insert(ctx, sub)
+	sub, err := app.InsertSubscription(ctx, sub)
 	require.NoError(t, err)
 	// Test changing owner fails
 	sub.Owner = "new bad owner"
-	_, err = app.Insert(ctx, sub)
+	_, err = app.InsertSubscription(ctx, sub)
 	require.EqualError(t, err, fmt.Sprintf("rpc error: code = PermissionDenied desc = s is owned by orig Owner"))
 }
 
@@ -195,7 +207,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 
 			// Insert a pre-existing subscription to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
-				existing, err := app.Subscription.Insert(ctx, &ridmodels.Subscription{
+				existing, err := app.InsertSubscription(ctx, &ridmodels.Subscription{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
@@ -216,7 +228,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			if !r.endTime.IsZero() {
 				s.EndTime = &r.endTime
 			}
-			sub, err := app.Insert(ctx, s)
+			sub, err := app.InsertSubscription(ctx, s)
 
 			if r.wantErr == "" {
 				require.NoError(t, err)

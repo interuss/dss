@@ -19,8 +19,8 @@ var (
 // Store is an implementation of dss.Store using
 // Cockroach DB as its backend store.
 type Store struct {
-	ISA          repos.ISA
-	Subscription repos.Subscription
+	repos.ISA
+	repos.Subscription
 	*cockroach.DB
 }
 

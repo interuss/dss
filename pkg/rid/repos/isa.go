@@ -11,18 +11,18 @@ import (
 
 // ISA is an interface to a storage layer for the ISA entity
 type ISA interface {
-	Get(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
+	GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
 
-	// Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
+	// DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-	Delete(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
+	DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
 
 	// InsertISA inserts or updates an ISA.
-	Insert(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
+	InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
 
-	// Update
-	Update(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
+	// UpdateISA
+	UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
 
-	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
-	Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
+	// SearchISAs returns all subscriptions ownded by "owner" in "cells".
+	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
 }
