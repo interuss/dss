@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"testing"
 	"time"
@@ -27,6 +26,9 @@ var (
 )
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
+	if len(*storeURI) == 0 {
+		t.Skip()
+	}
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
@@ -40,10 +42,6 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 }
 
 func newStore() (*Store, error) {
-	if len(*storeURI) == 0 {
-		return nil, errors.New("Missing command-line parameter store-uri")
-	}
-
 	cdb, err := cockroach.Dial(*storeURI)
 	if err != nil {
 		return nil, err
