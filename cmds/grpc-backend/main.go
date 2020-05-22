@@ -26,10 +26,16 @@ import (
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/validations"
 
+	"github.com/blang/semver"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+)
+
+const (
+	// The code at this version requires a major schema version equal to 2.
+	RequiredMajorSchemaVersion uint64 = 2
 )
 
 var (
@@ -64,6 +70,18 @@ var (
 
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "commad separated acceptable JWT `aud` claims")
 )
+
+func MustSupportSchema(store repos.Store) {
+	vs, err := store.GetVersion()
+	if err != nil {
+		logger.Panic("could not get schema version from database", zap.Error(err))
+	}
+
+	v := semver.Must(vs)
+	if RequiredMajorSchemaVersion != v.Major {
+		logger.Panic("unsupported schema version! Got %s, requires major version of %d", vs, RequiredMajorSchemaVersion)
+	}
+}
 
 // RunGRPCServer starts the example gRPC service.
 // "network" and "address" are passed to net.Listen.

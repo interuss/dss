@@ -151,6 +151,52 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)
 	);
 	`
+	// TODO: example schema_versions. The onerow_enforcer ensures that 2 versions
+	// can't exist at the same time.
+	// CREATE TABLE schema_versions (
+	// 	onerow_enforcer bool PRIMARY KEY DEFAULT TRUE CHECK(onerow_enforcer)
+	// 	schema_version STRING NOT NULL,
+	// );
+
 	_, err := s.ExecContext(ctx, query)
 	return err
 }
+
+func (s *Store) GetVersion() string {
+	const query = `
+		SELECT EXISTS (
+  		SELECT *
+		  FROM information_schema.tables 
+   		WHERE  table_name   = 'my_t'
+   )`
+	row := s.QueryRowContext(ctx, query)
+	var ret bool
+	err := row.Scan(&ret)
+	if err != nil {
+		return "", err
+	}
+	if ret {
+		// Base version
+		return "1.0.0", nil
+	}
+	// Version without cells joins table.
+	// TODO: leverage proper migrations and use something like the query below.
+	return "2.0.0"
+}
+
+// 	// TODO steeling: we should leverage this function. Instead, we don't have
+// 	// a great way migrate/seed the DB, and we can't combine that with the code
+// 	// here.
+// func (s *Store) GetVersion() float {
+
+// 	const query = `
+//     SELECT
+//       IFNULL(schema_version, '1.0.0')
+//     FROM
+//     	schema_versions
+//   	LIMIT 1`
+// 	row := s.QueryRowContext(ctx, query)
+// 	var ret string
+// 	err := row.Scan(&ret)
+// 	return ret, err
+// }
