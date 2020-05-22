@@ -59,7 +59,6 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
 	}
 
-	// TODO(steeling) do this in a txn.
 	var (
 		isa  *ridmodels.IdentificationServiceArea
 		subs []*ridmodels.Subscription
@@ -113,22 +112,34 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 	}
 	// TODO(steeling) do this in a txn.
 	// Update the notification index for both cells removed and added.
-	cells := isa.Cells
-	if old != nil {
-		// TODO steeling, we should change this to a Custom type, to obfuscate
-		// some of these metrics and prevent us from doing the wrong thing.
-		cells = s2.CellUnionFromUnion(old.Cells, isa.Cells)
-		geo.Levelify(&cells)
-	}
-	subs, err := a.Repository.UpdateNotificationIdxsInCells(ctx, cells)
-	if err != nil {
-		return nil, nil, err
-	}
-	isa, err = a.Repository.InsertISA(ctx, isa)
-	if err != nil {
-		return nil, nil, err
-	}
-	return isa, subs, nil
+	var (
+		ret  *ridmodels.IdentificationServiceArea
+		subs []*ridmodels.Subscription
+	)
+	// The following will automatically retry TXN retry errors.
+	err = a.Repository.InTxnRetrier(ctx, func(repo repos.Repository) error {
+		var err error
+		cells := isa.Cells
+		if old != nil {
+			// TODO steeling, we should change this to a Custom type, to obfuscate
+			// some of these metrics and prevent us from doing the wrong thing.
+			cells = s2.CellUnionFromUnion(old.Cells, isa.Cells)
+			geo.Levelify(&cells)
+		}
+		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
+		// they are both modifying the db. Insert a susbcription alone does
+		// not do this, so that does not need to use a txn (in subscription.go).
+		subs, err = a.Repository.UpdateNotificationIdxsInCells(ctx, cells)
+		if err != nil {
+			return err
+		}
+		ret, err = a.Repository.InsertISA(ctx, isa)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return ret, subs, err
 }
 
 // UpdateISA implments the AppInterface InsertISA method

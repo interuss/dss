@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/dpjacques/clockwork"
@@ -18,6 +19,13 @@ import (
 var (
 	// DefaultClock is what is used as the Store's clock, returned from Dial.
 	DefaultClock = clockwork.NewRealClock()
+	// DefaultTimeout is the timeout applied to the txn retrier.
+	// Note that this is not applied everywhere, but only
+	// on the txn retrier.
+	// If a given deadline is already supplied on the context, the earlier
+	// deadline is used
+	// TODO: use this in other function calls
+	DefaultTimeout = 10 * time.Second
 )
 
 // Store is an implementation of dss.Store using
@@ -47,6 +55,8 @@ func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) 
 	// TODO: consider what tx opts we want to support.
 	// TODO: we really need to remove the upper cockroach package, and have one
 	// "store" for everything
+	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
+	defer cancel()
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
 		storeCopy := *s
 		storeCopy.Queryable = tx

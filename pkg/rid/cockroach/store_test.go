@@ -11,6 +11,8 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/dpjacques/clockwork"
@@ -96,4 +98,47 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		EndTime:           &expires,
 	})
 	require.Error(t, err)
+}
+
+func TestTxnRetrier(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	require.NotNil(t, store)
+	defer tearDownStore()
+
+	err := store.InTxnRetrier(ctx, func(store repos.Repository) error {
+		return store.InTxnRetrier(ctx, func(store repos.Repository) error {
+			return nil
+		})
+	})
+	require.EqualError(t, err, "cannot call InTxnRetrier within an active Txn")
+
+	err = store.InTxnRetrier(ctx, func(store repos.Repository) error {
+		// can query within this
+		isa, err := store.InsertISA(ctx, serviceArea)
+		require.NotNil(t, isa)
+		return err
+	})
+	require.NoError(t, err)
+	// can query afterwads
+	isa, err := store.GetISA(ctx, serviceArea.ID)
+	require.NoError(t, err)
+	require.NotNil(t, isa)
+
+	// Test the retry happens
+	// 20ms, let's see how many retries we get.
+	// Using a context ensures we bail out.
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Millisecond)
+	defer cancel()
+	count := 0
+	err = store.InTxnRetrier(ctx, func(store repos.Repository) error {
+		// can query within this
+		count++
+		// Postgre retryable error
+		return &pq.Error{Code: "40001"}
+	})
+	// Ensure it was retried.
+	require.Greater(t, count, 1)
 }
