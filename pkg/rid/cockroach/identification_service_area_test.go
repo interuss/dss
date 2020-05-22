@@ -16,7 +16,7 @@ import (
 var (
 	// Ensure the struct conforms to the interface
 	_           repos.ISA = &Store{}
-	overflow              = -1
+	overflow              = uint64(17106221850767130624) // face 5 L13 overflows
 	serviceArea           = &ridmodels.IdentificationServiceArea{
 		ID:        dssmodels.ID(uuid.New().String()),
 		Owner:     dssmodels.Owner(uuid.New().String()),
@@ -25,7 +25,7 @@ var (
 		EndTime:   &endTime,
 		Cells: s2.CellUnion{
 			s2.CellID(uint64(overflow)),
-			s2.CellID(42),
+			s2.CellID(17106221850767130624),
 		},
 	}
 )
@@ -34,21 +34,18 @@ func TestStoreSearchISAs(t *testing.T) {
 	var (
 		ctx   = context.Background()
 		cells = s2.CellUnion{
-			s2.CellID(42),
-			s2.CellID(84),
-			s2.CellID(126),
-			s2.CellID(168),
+			s2.CellID(17106221850767130624),
+			s2.CellID(17106221885126868992),
+			s2.CellID(17106221919486607360),
 			s2.CellID(uint64(overflow)),
 		}
 		store, tearDownStore = setUpStore(ctx, t)
 	)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
 
 	isa := *serviceArea
 	isa.Cells = cells
-	saOut, _, err := store.InsertISA(ctx, &isa)
+	saOut, err := store.InsertISA(ctx, &isa)
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 	require.Equal(t, isa.ID, saOut.ID)
@@ -61,7 +58,7 @@ func TestStoreSearchISAs(t *testing.T) {
 	}{
 		{
 			name:  "search for empty cell",
-			cells: s2.CellUnion{s2.CellID(210)},
+			cells: s2.CellUnion{s2.CellID(17106221953846345728)},
 			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
 				return &start, nil
 			},
@@ -69,7 +66,7 @@ func TestStoreSearchISAs(t *testing.T) {
 		},
 		{
 			name:  "search for only one cell",
-			cells: s2.CellUnion{s2.CellID(42)},
+			cells: s2.CellUnion{s2.CellID(17106221850767130624)},
 			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
 				return &start, nil
 			},
@@ -141,23 +138,21 @@ func TestStoreSearchISAs(t *testing.T) {
 func TestBadVersion(t *testing.T) {
 	ctx := context.Background()
 	store, tearDownStore := setUpStore(ctx, t)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
 
-	saOut1, _, err := store.InsertISA(ctx, serviceArea)
+	saOut1, err := store.InsertISA(ctx, serviceArea)
 	require.NoError(t, err)
 	require.NotNil(t, saOut1)
 
 	// Rewriting service area should fail
-	saOut2, _, err := store.InsertISA(ctx, serviceArea)
+	saOut2, err := store.InsertISA(ctx, serviceArea)
 	require.Error(t, err)
 	require.Nil(t, saOut2)
 
 	// Rewriting, but with the correct version should work.
 	newEndTime := saOut1.EndTime.Add(time.Minute)
 	saOut1.EndTime = &newEndTime
-	saOut3, _, err := store.InsertISA(ctx, saOut1)
+	saOut3, err := store.InsertISA(ctx, saOut1)
 	require.NoError(t, err)
 	require.NotNil(t, saOut3)
 }
@@ -165,11 +160,9 @@ func TestBadVersion(t *testing.T) {
 func TestStoreExpiredISA(t *testing.T) {
 	ctx := context.Background()
 	store, tearDownStore := setUpStore(ctx, t)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
 
-	saOut, _, err := store.InsertISA(ctx, serviceArea)
+	saOut, err := store.InsertISA(ctx, serviceArea)
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 
@@ -204,34 +197,18 @@ func TestStoreDeleteISAs(t *testing.T) {
 		ctx                  = context.Background()
 		store, tearDownStore = setUpStore(ctx, t)
 	)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
-
-	insertedSubscriptions := []*ridmodels.Subscription{}
-	for _, r := range subscriptionsPool {
-		copy := *r.input
-		copy.Cells = s2.CellUnion{s2.CellID(42)}
-		s1, err := store.InsertSubscription(ctx, &copy)
-		require.NoError(t, err)
-		require.NotNil(t, s1)
-		require.Equal(t, 42, s1.NotificationIndex)
-		insertedSubscriptions = append(insertedSubscriptions, s1)
-	}
+	defer tearDownStore()
 
 	// Insert the ISA.
 	copy := *serviceArea
-	isa, subscriptionsOut, err := store.InsertISA(ctx, &copy)
+	isa, err := store.InsertISA(ctx, &copy)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
 
-	for i := range insertedSubscriptions {
-		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
-	}
 	// Can't delete with different owner.
 	iCopy := *isa
 	iCopy.Owner = "bad-owner"
-	_, _, err = store.DeleteISA(ctx, &iCopy)
+	_, err = store.DeleteISA(ctx, &iCopy)
 	require.Error(t, err)
 
 	// Delete the ISA.
@@ -239,32 +216,22 @@ func TestStoreDeleteISAs(t *testing.T) {
 	isa, err = store.GetISA(ctx, isa.ID)
 	require.NoError(t, err)
 
-	serviceAreaOut, subscriptionsOut, err := store.DeleteISA(ctx, isa)
+	serviceAreaOut, err := store.DeleteISA(ctx, isa)
 	require.NoError(t, err)
 	require.Equal(t, isa, serviceAreaOut)
-	require.NotNil(t, subscriptionsOut)
-	require.Len(t, subscriptionsOut, len(subscriptionsPool))
-	for i, s := range subscriptionsPool {
-		require.Equal(t, s.input.URL, subscriptionsOut[i].URL)
-	}
-
-	for i := range insertedSubscriptions {
-		require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
-	}
 }
 
 func TestStoreISAWithNoGeoData(t *testing.T) {
 	ctx := context.Background()
 	store, tearDownStore := setUpStore(ctx, t)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
+
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.IdentificationServiceArea{
 		ID:      dssmodels.ID(uuid.New().String()),
 		Owner:   dssmodels.Owner("original owner"),
 		EndTime: &endTime,
 	}
-	_, _, err := store.InsertISA(ctx, sub)
+	_, err := store.InsertISA(ctx, sub)
 	require.Error(t, err)
 }

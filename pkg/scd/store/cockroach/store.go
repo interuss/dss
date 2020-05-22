@@ -22,12 +22,12 @@ type Store struct {
 }
 
 // NewStore returns a Store instance connected to a cockroach instance via db.
-func NewStore(db *cockroach.DB, logger *zap.Logger) (*Store, error) {
+func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
 	return &Store{
 		DB:     db,
 		logger: logger,
 		clock:  DefaultClock,
-	}, nil
+	}
 }
 
 // Close closes the underlying DB connection.

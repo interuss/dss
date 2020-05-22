@@ -11,6 +11,12 @@ type DB struct {
 	*sql.DB
 }
 
+// tx, err := c.Begin()
+// if err != nil {
+// 	return nil, err
+// }
+// defer recoverRollbackRepanic(ctx, tx)
+
 // Dial returns a DB instance connected to a cockroach instance available at
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html

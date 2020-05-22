@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 )
@@ -57,13 +58,20 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
 	}
 
-	old, subs, err := a.ISA.DeleteISA(ctx, old)
+	// TODO(steeling) do this in a txn.
+	subs, err := a.Subscription.UpdateNotificationIdxsInCells(ctx, old.Cells)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	isa, err := a.ISA.DeleteISA(ctx, old)
 	// TODO: change this to return no error, and a nil object and use that
 	// to determine a not found, etc.
 	if err == sql.ErrNoRows {
 		return nil, nil, dsserr.VersionMismatch("old version")
 	}
-	return old, subs, err
+
+	return isa, subs, err
 }
 
 // InsertISA implments the AppInterface InsertISA method
@@ -94,6 +102,27 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 	if err := isa.AdjustTimeRange(a.clock.Now(), old); err != nil {
 		return nil, nil, err
 	}
+	// TODO(steeling) do this in a txn.
+	// Update the notification index for both cells removed and added.
+	cells := isa.Cells
+	if old != nil {
+		cells = s2.CellUnionFromUnion(old.Cells, isa.Cells)
+		geo.Levelify(&cells)
+		fmt.Println(len(cells), len(old.Cells), len(isa.Cells))
+	}
+	subs, err := a.Subscription.UpdateNotificationIdxsInCells(ctx, cells)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return a.ISA.InsertISA(ctx, isa)
+	isa, err = a.ISA.InsertISA(ctx, isa)
+	if err != nil {
+		return nil, nil, err
+	}
+	return isa, subs, nil
+}
+
+// UpdateISA implments the AppInterface InsertISA method
+func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+	return nil, nil, dsserr.Internal("not yet implemented")
 }

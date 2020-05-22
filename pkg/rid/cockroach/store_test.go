@@ -25,7 +25,7 @@ var (
 	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
-func setUpStore(ctx context.Context, t *testing.T) (*Store, func() error) {
+func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
@@ -34,8 +34,8 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func() error) {
 		t.Skip(err)
 	}
 	require.NoError(t, store.Bootstrap(ctx))
-	return store, func() error {
-		return cleanUp(ctx, store)
+	return store, func() {
+		require.NoError(t, cleanUp(ctx, store))
 	}
 }
 
@@ -76,7 +76,7 @@ func TestStoreBootstrap(t *testing.T) {
 		store, tearDownStore = setUpStore(ctx, t)
 	)
 	require.NotNil(t, store)
-	require.NoError(t, tearDownStore())
+	tearDownStore()
 }
 
 func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
@@ -85,9 +85,7 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		store, tearDownStore = setUpStore(ctx, t)
 	)
 	require.NotNil(t, store)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
 
 	var (
 		begins  = time.Now()

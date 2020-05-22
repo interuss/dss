@@ -9,6 +9,12 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"go.uber.org/zap"
+)
+
+const (
+	// Defined in requirement DSS0030.
+	maxSubscriptionsPerArea = 10
 )
 
 // SubscriptionApp provides the interface to the application logic for Subscription entities
@@ -57,6 +63,18 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 	// Validate and perhaps correct StartTime and EndTime.
 	if err := s.AdjustTimeRange(a.clock.Now(), old); err != nil {
 		return nil, err
+	}
+
+	// Check the user hasn't created too many subscriptions in this area.
+	count, err := a.Subscription.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
+	if err != nil {
+		a.logger.Error("Error fetching max subscription count", zap.Error(err))
+		return nil, dsserr.Internal(
+			"failed to fetch subscription count, rejecting request")
+	}
+	if count >= maxSubscriptionsPerArea {
+		return nil, dsserr.Exhausted(
+			"too many existing subscriptions in this area already")
 	}
 
 	return a.Subscription.InsertSubscription(ctx, s)

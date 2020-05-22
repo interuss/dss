@@ -39,6 +39,21 @@ var (
 	errBadCoordSet                        = errors.New("coordinates did not create a well formed area")
 )
 
+// Levelify takes a cell union that might have been normalized and returns to
+// the appropriate level
+func Levelify(cells *s2.CellUnion) {
+	// thirty is the number of s2 cells, we make it negative to get the number
+	// of cells we want
+	cells.Denormalize(DefaultMinimumCellLevel, 1)
+}
+
+func ValidateCell(cell s2.CellID) error {
+	if cell.Level() < DefaultMinimumCellLevel || cell.Level() > DefaultMaximumCellLevel {
+		return errors.New("cells must be at level 13 at current implementation")
+	}
+	return nil
+}
+
 // ErrAreaTooLarge is the error passed back when the requested Area is larger
 // than maxAllowedAreaKm2
 type ErrAreaTooLarge struct {

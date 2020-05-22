@@ -27,4 +27,11 @@ type Subscription interface {
 
 	// SearchSubscriptionsByOwner returns all subscriptions ownded by "owner" in "cells".
 	SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
+
+	// UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.
+	UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error)
+
+	// MaxSubscriptionCountInCellsByOwner finds, out of a set of cells, the cell with the most subscriptions
+	// belonging to the given owner, and returns that number.
+	MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error)
 }

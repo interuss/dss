@@ -31,7 +31,7 @@ var (
 				NotificationIndex: 42,
 				Cells: s2.CellUnion{
 					s2.CellID(uint64(overflow)),
-					s2.CellID(42),
+					12494535935418957824,
 				},
 			},
 		},
@@ -44,7 +44,7 @@ var (
 				EndTime:           &endTime,
 				NotificationIndex: 42,
 				Cells: s2.CellUnion{
-					s2.CellID(uint64(overflow)),
+					12494535935418957824,
 				},
 			},
 		},
@@ -56,9 +56,7 @@ func TestStoreGetSubscription(t *testing.T) {
 		ctx                  = context.Background()
 		store, tearDownStore = setUpStore(ctx, t)
 	)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
@@ -80,9 +78,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 		ctx                  = context.Background()
 		store, tearDownStore = setUpStore(ctx, t)
 	)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
@@ -123,61 +119,12 @@ func TestStoreInsertSubscription(t *testing.T) {
 	}
 }
 
-func TestStoreInsertTooManySubscription(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
-
-	// Helper function that makes a subscription with a random ID, fixed owner,
-	// and provided cellIDs.
-	makeSubscription := func(cellIDs []uint64) *ridmodels.Subscription {
-		s := *subscriptionsPool[0].input
-		s.Owner = dssmodels.Owner("bob")
-		s.ID = dssmodels.ID(uuid.New().String())
-
-		s.Cells = make(s2.CellUnion, len(cellIDs))
-		for i, id := range cellIDs {
-			s.Cells[i] = s2.CellID(id)
-		}
-		return &s
-	}
-
-	// We should be able to insert 10 subscriptions without error.
-	for i := 0; i < 10; i++ {
-		ret, err := store.InsertSubscription(ctx, makeSubscription([]uint64{42, 43}))
-		require.NoError(t, err)
-		require.NotNil(t, &ret)
-	}
-
-	// Inserting the 11th subscription will fail.
-	ret, err := store.InsertSubscription(ctx, makeSubscription([]uint64{42, 43}))
-	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = too many existing subscriptions in this area already")
-	require.Nil(t, ret)
-
-	// Inserting a subscription in a different cell will succeed.
-	ret, err = store.InsertSubscription(ctx, makeSubscription([]uint64{45}))
-	require.NoError(t, err)
-	require.NotNil(t, &ret)
-
-	// Inserting a subscription that overlaps with 42 or 43 will fail.
-	ret, err = store.InsertSubscription(ctx, makeSubscription([]uint64{7, 43}))
-	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = too many existing subscriptions in this area already")
-	require.Nil(t, ret)
-}
-
 func TestStoreDeleteSubscription(t *testing.T) {
 	var (
 		ctx                  = context.Background()
 		store, tearDownStore = setUpStore(ctx, t)
 	)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
@@ -214,18 +161,17 @@ func TestStoreSearchSubscription(t *testing.T) {
 		ctx                  = context.Background()
 		store, tearDownStore = setUpStore(ctx, t)
 	)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
 
 	var (
-		overflow = -1
-		cells    = s2.CellUnion{
-			s2.CellID(42),
-			s2.CellID(84),
-			s2.CellID(126),
-			s2.CellID(168),
-			s2.CellID(200),
+		// pick an L13 value that overflows.
+		overflow = uint64(17106221850767130624)
+
+		cells = s2.CellUnion{
+			s2.CellID(12494535935418957824),
+			s2.CellID(12494535866699481088),
+			s2.CellID(12494535901059219456),
+			s2.CellID(12494535866699481088),
 			s2.CellID(overflow),
 		}
 		owners = []dssmodels.Owner{
@@ -256,14 +202,13 @@ func TestStoreSearchSubscription(t *testing.T) {
 func TestStoreExpiredSubscription(t *testing.T) {
 	ctx := context.Background()
 	store, tearDownStore := setUpStore(ctx, t)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
+
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
 		ID:      dssmodels.ID(uuid.New().String()),
 		Owner:   dssmodels.Owner("original owner"),
-		Cells:   s2.CellUnion{s2.CellID(42)},
+		Cells:   s2.CellUnion{s2.CellID(12494535866699481088)},
 		EndTime: &endTime,
 	}
 	_, err := store.InsertSubscription(ctx, sub)
@@ -296,9 +241,8 @@ func TestStoreExpiredSubscription(t *testing.T) {
 func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
 	ctx := context.Background()
 	store, tearDownStore := setUpStore(ctx, t)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
+
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
 		ID:      dssmodels.ID(uuid.New().String()),

@@ -8,20 +8,17 @@ import (
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	dsssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 const (
-	// Defined in requirement DSS0030.
-	maxSubscriptionsPerArea = 10
-	subscriptionFields      = "id, owner, url, notification_index, cells, starts_at, ends_at, updated_at"
+	subscriptionFields = "id, owner, url, notification_index, cells, starts_at, ends_at, updated_at"
 )
 
 // SubscriptionStore is an implementation of the SubscriptionRepo for CRDB.
@@ -33,8 +30,8 @@ type SubscriptionStore struct {
 }
 
 // process a query that should return one or many subscriptions.
-func (c *SubscriptionStore) process(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
-	rows, err := q.QueryContext(ctx, query, args...)
+func (c *SubscriptionStore) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
+	rows, err := c.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +66,8 @@ func (c *SubscriptionStore) process(ctx context.Context, q dsssql.Queryable, que
 }
 
 // processOne processes a query that should return exactly a single subscription.
-func (c *SubscriptionStore) processOne(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*ridmodels.Subscription, error) {
-	subs, err := c.process(ctx, q, query, args...)
+func (c *SubscriptionStore) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.Subscription, error) {
+	subs, err := c.process(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +80,13 @@ func (c *SubscriptionStore) processOne(ctx context.Context, q dsssql.Queryable, 
 	return subs[0], nil
 }
 
-// fetchMaxSubscriptionCountByCellAndOwner counts how many subscriptions the
+// MaxSubscriptionCountInCellsByOwner counts how many subscriptions the
 // owner has in each one of these cells, and returns the number of subscriptions
 // in the cell with the highest number of subscriptions.
-func (c *SubscriptionStore) fetchMaxSubscriptionCountByCellAndOwner(
-	ctx context.Context, q dsssql.Queryable, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+func (c *SubscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+	// TODO:steeling this query is expensive. The standard defines the max sub
+	// per "area", but area is loosely defined. Since we may not have to be so
+	// strict we could keep this count in memory, (or in some other storage).
 	var query = `
     SELECT
       IFNULL(MAX(subscriptions_per_cell_id), 0)
@@ -110,13 +109,31 @@ func (c *SubscriptionStore) fetchMaxSubscriptionCountByCellAndOwner(
 		cids[i] = int64(cell)
 	}
 
-	row := q.QueryRowContext(ctx, query, owner, c.clock.Now(), pq.Int64Array(cids))
+	row := c.DB.QueryRowContext(ctx, query, owner, c.clock.Now(), pq.Int64Array(cids))
 	var ret int
 	err := row.Scan(&ret)
 	return ret, err
 }
 
-func (c *SubscriptionStore) push(ctx context.Context, q dsssql.Queryable, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+// GetSubscription returns the subscription identified by "id".
+func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
+	// TODO(steeling) we should enforce startTime and endTime to not be null at the DB level.
+	var query = fmt.Sprintf(`
+		SELECT %s FROM subscriptions
+		WHERE id = $1
+		AND
+			ends_at > $2`, subscriptionFields)
+	return c.processOne(ctx, query, id, c.clock.Now())
+}
+
+// UpdateSubscription updates the Subscription.. not yet implemented.
+func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	return nil, dsserr.Internal("not yet implemented")
+}
+
+// InsertSubscription inserts subscription into the store and returns
+// the resulting subscription including its ID.
+func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		udpateQuery = fmt.Sprintf(`
 		UPDATE
@@ -138,13 +155,15 @@ func (c *SubscriptionStore) push(ctx context.Context, q dsssql.Queryable, s *rid
 	cids := make([]int64, len(s.Cells))
 
 	for i, cell := range s.Cells {
+		if err := geo.ValidateCell(cell); err != nil {
+			return nil, err
+		}
 		cids[i] = int64(cell)
 	}
 
 	var err error
-	var ret *ridmodels.Subscription
 	if s.Version.Empty() {
-		ret, err = c.processOne(ctx, q, insertQuery,
+		ret, err := c.processOne(ctx, insertQuery,
 			s.ID,
 			s.Owner,
 			s.URL,
@@ -155,70 +174,22 @@ func (c *SubscriptionStore) push(ctx context.Context, q dsssql.Queryable, s *rid
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		ret, err = c.processOne(ctx, q, udpateQuery,
-			s.ID,
-			s.Owner,
-			s.URL,
-			s.NotificationIndex,
-			pq.Int64Array(cids),
-			s.StartTime,
-			s.EndTime,
-			s.Version.ToTimestamp())
-		if err != nil {
-			return nil, err
-		}
+		return ret, nil
 	}
 
+	ret, err := c.processOne(ctx, udpateQuery,
+		s.ID,
+		s.Owner,
+		s.URL,
+		s.NotificationIndex,
+		pq.Int64Array(cids),
+		s.StartTime,
+		s.EndTime,
+		s.Version.ToTimestamp())
+	if err != nil {
+		return nil, err
+	}
 	return ret, nil
-}
-
-// GetSubscription returns the subscription identified by "id".
-func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
-	// TODO(steeling) we should enforce startTime and endTime to not be null at the DB level.
-	var query = fmt.Sprintf(`
-		SELECT %s FROM subscriptions
-		WHERE id = $1
-		AND
-			ends_at > $2`, subscriptionFields)
-	return c.processOne(ctx, c.DB, query, id, c.clock.Now())
-}
-
-// UpdateSubscription updates the Subscription.. not yet implemented.
-func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	return nil, dsserr.Internal("not yet implemented")
-}
-
-// InsertSubscription inserts subscription into the store and returns
-// the resulting subscription including its ID.
-func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	tx, err := c.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer recoverRollbackRepanic(ctx, tx)
-
-	// Check the user hasn't created too many subscriptions in this area.
-	// TODO: bring this logic into the application
-	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, tx, s.Cells, s.Owner)
-	if err != nil {
-		c.logger.Warn("Error fetching max subscription count", zap.Error(err))
-		return nil, multierr.Combine(dsserr.Internal(
-			"failed to fetch subscription count, rejecting request"), tx.Rollback())
-	}
-	if count >= maxSubscriptionsPerArea {
-		return nil, multierr.Combine(dsserr.Exhausted(
-			"too many existing subscriptions in this area already"), tx.Rollback())
-	}
-
-	newSubscription, err := c.push(ctx, tx, s)
-	if err != nil {
-		return nil, multierr.Combine(err, tx.Rollback())
-	}
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-	return newSubscription, nil
 }
 
 // DeleteSubscription deletes the subscription identified by "id" and
@@ -234,7 +205,20 @@ func (c *SubscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels
 			AND updated_at = $3
 		RETURNING %s`, subscriptionFields)
 	)
-	return c.processOne(ctx, c.DB, query, s.ID, s.Owner, s.Version.ToTimestamp())
+	return c.processOne(ctx, query, s.ID, s.Owner, s.Version.ToTimestamp())
+}
+
+// UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.
+func (c *SubscriptionStore) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+	var updateQuery = fmt.Sprintf(`
+			UPDATE subscriptions
+			SET notification_index = notification_index + 1
+			WHERE
+				cells && $1
+				AND ends_at >= $2
+			RETURNING %s`, subscriptionFields)
+	return c.process(
+		ctx, updateQuery, pq.Array(cells), c.clock.Now())
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
@@ -260,7 +244,7 @@ func (c *SubscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.Ce
 		cids[i] = int64(cell)
 	}
 
-	return c.process(ctx, c.DB, query, pq.Array(cids), c.clock.Now())
+	return c.process(ctx, query, pq.Array(cids), c.clock.Now())
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
@@ -288,5 +272,5 @@ func (c *SubscriptionStore) SearchSubscriptionsByOwner(ctx context.Context, cell
 		cids[i] = int64(cell)
 	}
 
-	return c.process(ctx, c.DB, query, pq.Int64Array(cids), owner, c.clock.Now())
+	return c.process(ctx, query, pq.Int64Array(cids), owner, c.clock.Now())
 }
