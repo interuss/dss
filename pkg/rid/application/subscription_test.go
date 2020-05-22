@@ -139,9 +139,6 @@ func (store *subscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.C
 // SearchSubscriptions returns all IdentificationServiceAreas ownded by "owner" in "cells".
 func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var subs []*ridmodels.Subscription
-	if len(cells) > 0 {
-	}
-
 	for _, s := range store.subs {
 		// Don't call Intersects, since that's smarter code than we implement in the DB.
 		appended := false
