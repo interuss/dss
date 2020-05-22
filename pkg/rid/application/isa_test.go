@@ -15,6 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	_ ISAApp = &app{}
+)
+
 func setUpISAApp(ctx context.Context, t *testing.T) (*app, func() error) {
 	l := zap.L()
 	repo, cleanup := setUpRepo(ctx, t, l)
@@ -215,6 +219,7 @@ func TestInsertISA(t *testing.T) {
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
 					EndTime:   &r.updateFromEndTime,
+					Cells:     s2.CellUnion{12494535935418957824},
 				})
 				require.NoError(t, err)
 				version = existing.Version
@@ -230,6 +235,7 @@ func TestInsertISA(t *testing.T) {
 				ID:      id,
 				Owner:   owner,
 				Version: version,
+				Cells:   s2.CellUnion{12494535935418957824},
 			}
 			if !r.startTime.IsZero() {
 				sa.StartTime = &r.startTime
@@ -259,45 +265,51 @@ func TestInsertISA(t *testing.T) {
 
 func TestAppDeleteISAs(t *testing.T) {
 	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
+		ctx          = context.Background()
+		app, cleanup = setUpISAApp(ctx, t)
 	)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer cleanup()
 
 	insertedSubscriptions := []*ridmodels.Subscription{}
 	for _, r := range subscriptionsPool {
 		copy := *r.input
-		copy.Cells = s2.CellUnion{s2.CellID(42)}
-		s1, err := store.InsertSubscription(ctx, &copy)
+		s1, err := app.InsertSubscription(ctx, &copy)
 		require.NoError(t, err)
 		require.NotNil(t, s1)
 		require.Equal(t, 42, s1.NotificationIndex)
 		insertedSubscriptions = append(insertedSubscriptions, s1)
 	}
+	serviceArea := &ridmodels.IdentificationServiceArea{
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     dssmodels.Owner(uuid.New().String()),
+		URL:       "https://no/place/like/home/for/flights",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells: s2.CellUnion{
+			s2.CellID(12494535935418957824),
+		},
+	}
 
 	// Insert the ISA.
 	copy := *serviceArea
-	isa, subscriptionsOut, err := store.InsertISA(ctx, &copy)
+	isa, subscriptionsOut, err := app.InsertISA(ctx, &copy)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
+	require.Len(t, subscriptionsOut, len(insertedSubscriptions))
 
 	for i := range insertedSubscriptions {
 		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
 	}
 	// Can't delete with different owner.
-	iCopy := *isa
-	iCopy.Owner = "bad-owner"
-	_, _, err = store.DeleteISA(ctx, &iCopy)
+	_, _, err = app.DeleteISA(ctx, isa.ID, "bad-owner", isa.Version)
 	require.Error(t, err)
 
 	// Delete the ISA.
 	// Ensure a fresh Get, then delete still updates the sub indexes
-	isa, err = store.GetISA(ctx, isa.ID)
+	isa, err = app.GetISA(ctx, isa.ID)
 	require.NoError(t, err)
 
-	serviceAreaOut, subscriptionsOut, err := store.DeleteISA(ctx, isa)
+	serviceAreaOut, subscriptionsOut, err := app.DeleteISA(ctx, isa.ID, isa.Owner, isa.Version)
 	require.NoError(t, err)
 	require.Equal(t, isa, serviceAreaOut)
 	require.NotNil(t, subscriptionsOut)
@@ -309,3 +321,4 @@ func TestAppDeleteISAs(t *testing.T) {
 	for i := range insertedSubscriptions {
 		require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
 	}
+}

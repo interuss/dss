@@ -15,6 +15,43 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	// Ensure the struct conforms to the interface
+	_                 SubscriptionApp = &app{}
+	subscriptionsPool                 = []struct {
+		name  string
+		input *ridmodels.Subscription
+	}{
+		{
+			name: "a subscription with startTime and endTime",
+			input: &ridmodels.Subscription{
+				ID:                dssmodels.ID(uuid.New().String()),
+				Owner:             dssmodels.Owner(uuid.New().String()),
+				URL:               "https://no/place/like/home",
+				StartTime:         &startTime,
+				EndTime:           &endTime,
+				NotificationIndex: 42,
+				Cells: s2.CellUnion{
+					12494535935418957824,
+				},
+			},
+		},
+		{
+			name: "a subscription without startTime and with endTime",
+			input: &ridmodels.Subscription{
+				ID:                dssmodels.ID(uuid.New().String()),
+				Owner:             dssmodels.Owner(uuid.New().String()),
+				URL:               "https://no/place/like/home",
+				EndTime:           &endTime,
+				NotificationIndex: 42,
+				Cells: s2.CellUnion{
+					12494535935418957824,
+				},
+			},
+		},
+	}
+)
+
 func setUpSubApp() *app {
 	return &app{
 		Subscription: &subscriptionStore{
@@ -74,14 +111,11 @@ func (store *subscriptionStore) SearchSubscriptionsByOwner(ctx context.Context, 
 }
 
 func (store *subscriptionStore) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	var ret []*ridmodels.Subscription
 	subs, _ := store.SearchSubscriptions(ctx, cells)
-	for _, s := range subs {
-		s.NotificationIndex++
-		s, _ = store.InsertSubscription(ctx, s)
-		ret = append(ret, s)
+	for i := range subs {
+		subs[i].NotificationIndex++
 	}
-	return ret, nil
+	return subs, nil
 }
 
 func (store *subscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
@@ -107,6 +141,8 @@ func (store *subscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.C
 // SearchSubscriptions returns all IdentificationServiceAreas ownded by "owner" in "cells".
 func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var subs []*ridmodels.Subscription
+	if len(cells) > 0 {
+	}
 
 	for _, s := range store.subs {
 		// Don't call Intersects, since that's smarter code than we implement in the DB.
@@ -134,7 +170,7 @@ func TestBadOwner(t *testing.T) {
 	sub := &ridmodels.Subscription{
 		ID:    dssmodels.ID(uuid.New().String()),
 		Owner: "orig Owner",
-		Cells: s2.CellUnion{s2.CellID(42)},
+		Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
 	}
 
 	sub, err := app.InsertSubscription(ctx, sub)

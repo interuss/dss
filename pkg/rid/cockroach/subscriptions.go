@@ -162,8 +162,9 @@ func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels
 	}
 
 	var err error
+	var ret *ridmodels.Subscription
 	if s.Version.Empty() {
-		ret, err := c.processOne(ctx, insertQuery,
+		ret, err = c.processOne(ctx, insertQuery,
 			s.ID,
 			s.Owner,
 			s.URL,
@@ -171,25 +172,18 @@ func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels
 			pq.Int64Array(cids),
 			s.StartTime,
 			s.EndTime)
-		if err != nil {
-			return nil, err
-		}
-		return ret, nil
+	} else {
+		ret, err = c.processOne(ctx, udpateQuery,
+			s.ID,
+			s.Owner,
+			s.URL,
+			s.NotificationIndex,
+			pq.Int64Array(cids),
+			s.StartTime,
+			s.EndTime,
+			s.Version.ToTimestamp())
 	}
-
-	ret, err := c.processOne(ctx, udpateQuery,
-		s.ID,
-		s.Owner,
-		s.URL,
-		s.NotificationIndex,
-		pq.Int64Array(cids),
-		s.StartTime,
-		s.EndTime,
-		s.Version.ToTimestamp())
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
+	return ret, err
 }
 
 // DeleteSubscription deletes the subscription identified by "id" and
@@ -217,8 +211,13 @@ func (c *SubscriptionStore) UpdateNotificationIdxsInCells(ctx context.Context, c
 				cells && $1
 				AND ends_at >= $2
 			RETURNING %s`, subscriptionFields)
+
+	cids := make([]int64, len(cells))
+	for i, cell := range cells {
+		cids[i] = int64(cell)
+	}
 	return c.process(
-		ctx, updateQuery, pq.Array(cells), c.clock.Now())
+		ctx, updateQuery, pq.Int64Array(cids), c.clock.Now())
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".

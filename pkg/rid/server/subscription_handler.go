@@ -103,6 +103,7 @@ func (s *Server) GetSubscription(
 	}, nil
 }
 
+// TODO: put the validation logic in the models layer
 func (s *Server) createOrUpdateSubscription(
 	ctx context.Context, id string, version *dssmodels.Version, callbacks *ridpb.SubscriptionCallbacks, extents *ridpb.Volume4D) (
 	*ridpb.PutSubscriptionResponse, error) {

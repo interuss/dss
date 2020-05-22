@@ -106,15 +106,15 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 	// Update the notification index for both cells removed and added.
 	cells := isa.Cells
 	if old != nil {
+		// TODO steeling, we should change this to a Custom type, to obfuscate
+		// some of these metrics and prevent us from doing the wrong thing.
 		cells = s2.CellUnionFromUnion(old.Cells, isa.Cells)
 		geo.Levelify(&cells)
-		fmt.Println(len(cells), len(old.Cells), len(isa.Cells))
 	}
 	subs, err := a.Subscription.UpdateNotificationIdxsInCells(ctx, cells)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	isa, err = a.ISA.InsertISA(ctx, isa)
 	if err != nil {
 		return nil, nil, err

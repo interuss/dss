@@ -127,19 +127,13 @@ func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationS
 	}
 
 	var err error
+	var ret *ridmodels.IdentificationServiceArea
 	if isa.Version.Empty() {
-		ret, err := c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Array(cids), isa.StartTime, isa.EndTime)
-		if err != nil {
-			return nil, err
-		}
-		return ret, nil
+		ret, err = c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime)
+	} else {
+		ret, err = c.processOne(ctx, updateAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
 	}
-
-	ret, err := c.processOne(ctx, updateAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
+	return ret, err
 }
 
 // UpdateISA updates the IdentificationServiceArea identified by "id" and owned
@@ -167,12 +161,6 @@ func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationS
 				updated_at = $3
 			RETURNING %s`, isaFields)
 	)
-	// Get the cells since the ISA might not have them set.
-	cids := make([]int64, len(isa.Cells))
-	for i, cell := range isa.Cells {
-		cids[i] = int64(cell)
-	}
-
 	return c.processOne(ctx, deleteQuery, isa.ID, isa.Owner, isa.Version.ToTimestamp())
 }
 

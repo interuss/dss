@@ -46,6 +46,7 @@ func (s *Server) createOrUpdateISA(
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
+	// TODO: put the validation logic in the models layer
 	if flightsURL == "" {
 		return nil, dsserr.BadRequest("missing required flightsURL")
 	}
