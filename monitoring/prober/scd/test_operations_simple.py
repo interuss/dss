@@ -134,6 +134,7 @@ def test_create_op1(scd_session, op1_uuid):
   assert op['version'] == 1
   assert 'subscription_id' in op
   assert 'state' not in op
+  assert op.get('ovn', '')
 
   # Make sure the implicit Subscription exists when queried separately
   resp = scd_session.get('/subscriptions/{}'.format(op['subscription_id']))
@@ -157,6 +158,14 @@ def test_delete_implicit_sub(scd_session, op1_uuid):
   assert resp.status_code == 400, resp.content
 
 
+# Try (unsuccessfully) to delete Op1 from non-owning USS
+# Preconditions: Operation op1_uuid created by scd_session user
+# Mutations: None
+def test_delete_op1_by_uss2(scd_session2, op1_uuid):
+  resp = scd_session2.delete('/operation_references/{}'.format(op1_uuid))
+  assert resp.status_code == 403, resp.content
+
+
 # Try to create Op2 without specifying a valid Subscription
 # Preconditions: Operation op1_uuid created by scd_session user
 # Mutations: None
@@ -169,7 +178,7 @@ def test_create_op2_no_sub(scd_session2, op2_uuid):
 # Create a Subscription we can use for Op2
 # Preconditions: Operation op1_uuid created by scd_session user
 # Mutations: Subscription sub2_uuid created by scd_session2 user
-def test_create_op2sub(scd_session2, sub2_uuid):
+def test_create_op2sub(scd_session2, sub2_uuid, op1_uuid):
   if scd_session2 is None:
     return
   time_start = datetime.datetime.utcnow()
@@ -183,6 +192,13 @@ def test_create_op2sub(scd_session2, sub2_uuid):
   }
   resp = scd_session2.put('/subscriptions/{}'.format(sub2_uuid), json=req)
   assert resp.status_code == 200, resp.content
+
+  # The Subscription response should mention Op1, but not include its OVN
+  data = resp.json()
+  ops = data['operations']
+  assert len(ops) > 0
+  op = [op for op in ops if op['id'] == op1_uuid][0]
+  assert not op.get('ovn', '')
 
   resp = scd_session2.get('/subscriptions/{}'.format(sub2_uuid))
   assert resp.status_code == 200, resp.content
@@ -225,6 +241,7 @@ def test_create_op2(scd_session2, op2_uuid, sub2_uuid, op1_uuid):
   assert op['version'] == 1
   assert 'subscription_id' in op
   assert 'state' not in op
+  assert op.get('ovn', '')
 
   resp = scd_session2.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 200, resp.content
@@ -237,6 +254,50 @@ def test_create_op2(scd_session2, op2_uuid, sub2_uuid, op1_uuid):
 
   global op2_ovn
   op2_ovn = op['ovn']
+
+
+# Op1 and Op2 should both be visible to USS1, but Op2 shouldn't have an OVN
+# Preconditions:
+#   * Operation op1_uuid created by scd_session user
+#   * Operation op2_uuid created by scd_session2 user
+# Mutations: None
+def test_read_ops_from_uss1(scd_session, op1_uuid, op2_uuid):
+  if scd_session is None:
+    return
+  time_now = datetime.datetime.utcnow()
+  resp = scd_session.post('/operation_references/query', json={
+    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(89.999, 180, 300))
+  })
+  assert resp.status_code == 200, resp.content
+
+  ops = {op['id']: op for op in resp.json().get('operation_references', [])}
+  assert op1_uuid in ops
+  assert op2_uuid in ops
+
+  assert ops[op1_uuid].get('ovn', '')
+  assert not ops[op2_uuid].get('ovn', '')
+
+
+# Op1 and Op2 should both be visible to USS2, but Op1 shouldn't have an OVN
+# Preconditions:
+#   * Operation op1_uuid created by scd_session user
+#   * Operation op2_uuid created by scd_session2 user
+# Mutations: None
+def test_read_ops_from_uss2(scd_session2, op1_uuid, op2_uuid):
+  if scd_session2 is None:
+    return
+  time_now = datetime.datetime.utcnow()
+  resp = scd_session2.post('/operation_references/query', json={
+    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(89.999, 180, 300))
+  })
+  assert resp.status_code == 200, resp.content
+
+  ops = {op['id']: op for op in resp.json().get('operation_references', [])}
+  assert op1_uuid in ops
+  assert op2_uuid in ops
+
+  assert not ops[op1_uuid].get('ovn', '')
+  assert ops[op2_uuid].get('ovn', '')
 
 
 # Try (unsuccessfully) to mutate Op1 with various bad keys
@@ -310,6 +371,7 @@ def test_mutate_op1(scd_session, op1_uuid, sub2_uuid):
   assert op['version'] == 2
   assert op['subscription_id'] == existing_op['subscription_id']
   assert 'state' not in op
+  assert op.get('ovn', '')
 
   # USS1 should definitely be instructed to notify USS2's Subscription of the updated Operation
   subscribers = _parse_subscribers(data.get('subscribers', []))
@@ -331,9 +393,92 @@ def test_delete_dependent_sub(scd_session2, sub2_uuid):
   assert resp.status_code == 400, resp.content
 
 
+# Mutate the stand-alone Subscription
+# Preconditions:
+#   * Operation op1_uuid created by scd_session user
+#   * Subscription sub2_uuid created by scd_session2 user
+#   * Operation op2_uuid created by scd_session2 user
+# Mutations: Subscription sub2_uuid mutated
+def test_mutate_sub2(scd_session2, sub2_uuid, op1_uuid, op2_uuid):
+  if scd_session2 is None:
+    return
+  time_now = datetime.datetime.utcnow()
+  time_start = time_now - datetime.timedelta(minutes=1)
+  time_end = time_now + datetime.timedelta(minutes=61)
+
+  # Create a good mutation request
+  req = _make_op2_request()
+  req['uss_base_url'] = URL_SUB2
+  req['extents'] = req['extents'][0]
+  del req['state']
+  req['old_version'] = 1
+  req['notify_for_operations'] = True
+  req['notify_for_constraints'] = False
+  req['extents']['time_start'] = common.make_time(time_start)
+  req['extents']['time_end'] = common.make_time(time_end)
+
+  # Attempt mutation with wrong version
+  req['old_version'] = 0
+  resp = scd_session2.put('/subscriptions/{}'.format(sub2_uuid), json=req)
+  assert resp.status_code == 409, resp.content
+  req['old_version'] = 1
+
+  # # Attempt mutation with start time that doesn't cover Op2
+  # req['extents']['time_start'] = common.make_time(time_now + datetime.timedelta(seconds=5))
+  # resp = scd_session2.put('/subscriptions/{}'.format(sub2_uuid), json=req)
+  # assert resp.status_code == 400, resp.content
+  # req['extents']['time_start'] = common.make_time(time_start)
+  #
+  # # Attempt mutation with end time that doesn't cover Op2
+  # req['extents']['time_end'] = common.make_time(time_now)
+  # resp = scd_session2.put('/subscriptions/{}'.format(sub2_uuid), json=req)
+  # assert resp.status_code == 400, resp.content
+  # req['extents']['time_end'] = common.make_time(time_end)
+  #
+  # # Attempt mutation with minimum altitude that doesn't cover Op2
+  # req['extents']['altitude_lower'] = common.make_altitude(10)
+  # resp = scd_session2.put('/subscriptions/{}'.format(sub2_uuid), json=req)
+  # assert resp.status_code == 400, resp.content
+  # req['extents']['altitude_lower'] = common.make_altitude(0)
+  #
+  # # Attempt mutation with maximum altitude that doesn't cover Op2
+  # req['extents']['altitude_upper'] = common.make_altitude(10)
+  # resp = scd_session2.put('/subscriptions/{}'.format(sub2_uuid), json=req)
+  # assert resp.status_code == 400, resp.content
+  # req['extents']['altitude_upper'] = common.make_altitude(200)
+  #
+  # # Attempt mutation with outline that doesn't cover Op2
+  # old_lat = req['extents']['outline_circle']['center']['lat']
+  # req['extents']['outline_circle']['center']['lat'] = 45
+  # resp = scd_session2.put('/subscriptions/{}'.format(sub2_uuid), json=req)
+  # assert resp.status_code == 400, resp.content
+  # req['extents']['outline_circle']['center']['lat'] = old_lat
+
+  # Attempt mutation without notifying for Operations
+  req['notify_for_operations'] = False
+  resp = scd_session2.put('/subscriptions/{}'.format(sub2_uuid), json=req)
+  assert resp.status_code == 400, resp.content
+  req['notify_for_operations'] = True
+
+  # Perform a valid mutation
+  resp = scd_session2.put('/subscriptions/{}'.format(sub2_uuid), json=req)
+  assert resp.status_code == 200, resp.content
+
+  # The Subscription response should mention Op1 and Op2, but not include Op1's OVN
+  data = resp.json()
+  ops = {op['id']: op for op in data['operations']}
+  assert len(ops) >= 2
+  assert not ops[op1_uuid].get('ovn', '')
+  assert ops[op2_uuid].get('ovn', '')
+
+  # Make sure the Subscription is still retrievable specifically
+  resp = scd_session2.get('/subscriptions/{}'.format(sub2_uuid))
+  assert resp.status_code == 200, resp.content
+
+
 # Delete Op1
 # Preconditions:
-#   * Subscription sub2_uuid created by scd_session2 user
+#   * Subscription sub2_uuid created/mutated by scd_session2 user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: Operation op1_uuid deleted
 def test_delete_op1(scd_session, op1_uuid, sub2_uuid):
@@ -356,7 +501,7 @@ def test_delete_op1(scd_session, op1_uuid, sub2_uuid):
 # Delete Op2
 # Preconditions:
 #   * Operation op1_uuid deleted
-#   * Subscription sub2_uuid created by scd_session2 user
+#   * Subscription sub2_uuid created/mutated by scd_session2 user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: Operation op2_uuid deleted
 def test_delete_op2(scd_session2, op2_uuid, sub2_uuid):
@@ -379,7 +524,7 @@ def test_delete_op2(scd_session2, op2_uuid, sub2_uuid):
 # Delete Subscription used to serve Op2
 # Preconditions:
 #   * Operation op1_uuid deleted
-#   * Subscription sub2_uuid created by scd_session2 user
+#   * Subscription sub2_uuid created/mutated by scd_session2 user
 #   * Operation op2_uuid deleted
 # Mutations: Subscription sub2_uuid deleted
 def test_delete_sub2(scd_session2, sub2_uuid):
