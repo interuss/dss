@@ -21,16 +21,6 @@ var (
 		input *ridmodels.Subscription
 	}{
 		{
-			name: "a subscription without startTime and endTime",
-			input: &ridmodels.Subscription{
-				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             dssmodels.Owner(uuid.New().String()),
-				URL:               "https://no/place/like/home",
-				NotificationIndex: 42,
-				EndTime:           &endTime,
-			},
-		},
-		{
 			name: "a subscription with startTime and endTime",
 			input: &ridmodels.Subscription{
 				ID:                dssmodels.ID(uuid.New().String()),
@@ -39,17 +29,10 @@ var (
 				StartTime:         &startTime,
 				EndTime:           &endTime,
 				NotificationIndex: 42,
-			},
-		},
-		{
-			name: "a subscription with startTime and without endTime",
-			input: &ridmodels.Subscription{
-				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             dssmodels.Owner(uuid.New().String()),
-				URL:               "https://no/place/like/home",
-				StartTime:         &startTime,
-				EndTime:           &endTime,
-				NotificationIndex: 42,
+				Cells: s2.CellUnion{
+					s2.CellID(uint64(overflow)),
+					s2.CellID(42),
+				},
 			},
 		},
 		{
@@ -60,6 +43,9 @@ var (
 				URL:               "https://no/place/like/home",
 				EndTime:           &endTime,
 				NotificationIndex: 42,
+				Cells: s2.CellUnion{
+					s2.CellID(uint64(overflow)),
+				},
 			},
 		},
 	}
@@ -210,10 +196,10 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			// Can't delete other users data.
 			sub1BadOwner := *sub1
 			sub1BadOwner.Owner = "wrongOwner"
+
 			sub3, err := store.Subscription.Delete(ctx, &sub1BadOwner)
 			require.Error(t, err)
 			require.Nil(t, sub3)
-
 			sub4, err := store.Subscription.Delete(ctx, sub1)
 			require.NoError(t, err)
 			require.NotNil(t, sub4)
@@ -245,19 +231,16 @@ func TestStoreSearchSubscription(t *testing.T) {
 		owners = []dssmodels.Owner{
 			"me",
 			"my",
-			"self",
-			"and",
 		}
 	)
 
 	for i, r := range subscriptionsPool {
 		subscription := *r.input
 		subscription.Owner = owners[i]
-		subscription.Cells = cells[:i]
+		subscription.Cells = cells[:i+1]
 		sub1, err := store.Subscription.Insert(ctx, &subscription)
 		require.NoError(t, err)
 		require.NotNil(t, sub1)
-
 	}
 
 	for _, owner := range owners {
@@ -307,5 +290,21 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 	ret, err = store.Subscription.Get(ctx, sub.ID)
 	require.Nil(t, ret)
+	require.Error(t, err)
+}
+
+func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+	endTime := fakeClock.Now().Add(24 * time.Hour)
+	sub := &ridmodels.Subscription{
+		ID:      dssmodels.ID(uuid.New().String()),
+		Owner:   dssmodels.Owner("original owner"),
+		EndTime: &endTime,
+	}
+	_, err := store.Subscription.Insert(ctx, sub)
 	require.Error(t, err)
 }

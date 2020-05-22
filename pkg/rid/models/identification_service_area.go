@@ -25,6 +25,19 @@ type IdentificationServiceArea struct {
 	AltitudeLo *float32
 }
 
+// SetCells is a convenience function that accepts an int64 array and converts
+// to s2.CellUnion.
+// TODO: wrap s2.CellUnion in a custom type that embeds the struct such that
+// we can still call its function directly, but also implements scan for sql
+// driver.
+func (i *IdentificationServiceArea) SetCells(cids []int64) {
+	cells := s2.CellUnion{}
+	for _, id := range cids {
+		cells = append(cells, s2.CellID(id))
+	}
+	i.Cells = cells
+}
+
 // ToProto converts an IdentificationServiceArea struct to an
 // IdentificationServiceArea proto for API consumption.
 func (i *IdentificationServiceArea) ToProto() (*ridpb.IdentificationServiceArea, error) {

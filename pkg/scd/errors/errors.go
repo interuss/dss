@@ -10,17 +10,18 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
-const ErrMessageMissingOVNs = "at least one current OVN not provided"
+const errMessageMissingOVNs = "at least one current OVN not provided"
 
 var (
 	errMissingOVNs = status.Error(dsserrors.MissingOVNs, "current OVNS not provided for one or more Operations or Constraints")
 )
 
-// Used to return sufficient information for an appropriate client error response when a client is missing one or more
+// MissingOVNsErrorResponse is Used to return sufficient information for an
+// appropriate client error response when a client is missing one or more
 // OVNs for relevant Operations or Constraints.
 func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (bool, error) {
 	response := &scdpb.AirspaceConflictResponse{
-		Message: ErrMessageMissingOVNs,
+		Message: errMessageMissingOVNs,
 	}
 	for _, missingOp := range missingOps {
 		opRef, err := missingOp.ToProto()
@@ -40,7 +41,7 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (bool, error) {
 
 	p := &spb.Status{
 		Code:    int32(dsserrors.MissingOVNs),
-		Message: ErrMessageMissingOVNs,
+		Message: errMessageMissingOVNs,
 		Details: []*any.Any{
 			{
 				TypeUrl: "github.com/interuss/dss/" + string(response.ProtoReflect().Descriptor().FullName()),
@@ -51,7 +52,8 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (bool, error) {
 	return true, status.ErrorProto(p)
 }
 
-// A single, consistent error to use internally when the Storage layer detects missing OVNs
+// MissingOVNsInternalError is a single, consistent error to use internally when
+// the Storage layer detects missing OVNs
 func MissingOVNsInternalError() error {
 	return errMissingOVNs
 }

@@ -65,14 +65,18 @@ func (v *Version) Scan(src interface{}) error {
 	if src == nil {
 		return nil
 	}
-	temp := VersionFromTime(src.(time.Time))
+	t, ok := src.(time.Time)
+	if !ok {
+		return errors.New("error scanning version")
+	}
+	temp := VersionFromTime(t)
 	*v = *temp
 	return nil
 }
 
 // Empty checks if the version is nil.
 func (v *Version) Empty() bool {
-	return v == nil
+	return v == nil || v.t.IsZero()
 }
 
 // Matches returns true if 2 versions are equal.
@@ -92,6 +96,6 @@ func (v *Version) String() string {
 }
 
 // ToTimestamp converts the version back its commit timestamp.
-func (v *Version) ToTimestamp() time.Time {
-	return v.t
+func (v *Version) ToTimestamp() *time.Time {
+	return &v.t
 }

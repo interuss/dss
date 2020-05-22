@@ -85,18 +85,12 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		starts_at TIMESTAMPTZ,
 		ends_at TIMESTAMPTZ,
 		updated_at TIMESTAMPTZ NOT NULL,
+		cells INT64[] NOT NULL CHECK (array_length(cells, 1) > 0 AND array_length(cells, 1) IS NOT NULL),
 		INDEX owner_idx (owner),
+		INVERTED INDEX cells_idx (cells),
 		INDEX starts_at_idx (starts_at),
 		INDEX ends_at_idx (ends_at),
 		CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)
-	);
-	CREATE TABLE IF NOT EXISTS cells_subscriptions (
-		cell_id INT64 NOT NULL,
-		cell_level INT CHECK (cell_level BETWEEN 0 and 30),
-		subscription_id UUID NOT NULL REFERENCES subscriptions (id) ON DELETE CASCADE,
-		PRIMARY KEY (cell_id, subscription_id),
-		INDEX cell_id_idx (cell_id),
-		INDEX subscription_id_idx (subscription_id)
 	);
 	CREATE TABLE IF NOT EXISTS identification_service_areas (
 		id UUID PRIMARY KEY,
@@ -105,19 +99,13 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		starts_at TIMESTAMPTZ,
 		ends_at TIMESTAMPTZ,
 		updated_at TIMESTAMPTZ NOT NULL,
+		cells INT64[] NOT NULL CHECK (array_length(cells, 1) IS NOT NULL),
 		INDEX owner_idx (owner),
+		INVERTED INDEX cells_idx (cells),
 		INDEX starts_at_idx (starts_at),
 		INDEX ends_at_idx (ends_at),
 		INDEX updated_at_idx (updated_at),
 		CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)
-	);
-	CREATE TABLE IF NOT EXISTS cells_identification_service_areas (
-		cell_id INT64 NOT NULL,
-		cell_level INT CHECK (cell_level BETWEEN 0 and 30),
-		identification_service_area_id UUID NOT NULL REFERENCES identification_service_areas (id) ON DELETE CASCADE,
-		PRIMARY KEY (cell_id, identification_service_area_id),
-		INDEX cell_id_idx (cell_id),
-		INDEX identification_service_area_id_idx (identification_service_area_id)
 	);
 	`
 	_, err := s.ExecContext(ctx, query)

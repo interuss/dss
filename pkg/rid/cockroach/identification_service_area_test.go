@@ -62,32 +62,32 @@ func TestStoreSearchISAs(t *testing.T) {
 		{
 			name:  "search for empty cell",
 			cells: s2.CellUnion{s2.CellID(210)},
-			timestampMutator: func(time.Time, time.Time) (*time.Time, *time.Time) {
-				return nil, nil
+			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
+				return &start, nil
 			},
 			expectedLen: 0,
 		},
 		{
 			name:  "search for only one cell",
 			cells: s2.CellUnion{s2.CellID(42)},
-			timestampMutator: func(time.Time, time.Time) (*time.Time, *time.Time) {
-				return nil, nil
+			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
+				return &start, nil
 			},
 			expectedLen: 1,
 		},
 		{
 			name:  "search for only one cell with high bit set",
 			cells: s2.CellUnion{s2.CellID(uint64(overflow))},
-			timestampMutator: func(time.Time, time.Time) (*time.Time, *time.Time) {
-				return nil, nil
+			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
+				return &start, nil
 			},
 			expectedLen: 1,
 		},
 		{
-			name:  "search with nil timestamps",
+			name:  "search with nil ends_at",
 			cells: cells,
-			timestampMutator: func(time.Time, time.Time) (*time.Time, *time.Time) {
-				return nil, nil
+			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
+				return &start, nil
 			},
 			expectedLen: 1,
 		},
@@ -177,7 +177,8 @@ func TestStoreExpiredISA(t *testing.T) {
 	fakeClock.Advance(59 * time.Minute)
 
 	// We should still be able to find the ISA by searching and by ID.
-	serviceAreas, err := store.ISA.Search(ctx, serviceArea.Cells, nil, nil)
+	now := fakeClock.Now()
+	serviceAreas, err := store.ISA.Search(ctx, serviceArea.Cells, &now, nil)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 
@@ -187,8 +188,9 @@ func TestStoreExpiredISA(t *testing.T) {
 
 	// But now the ISA has expired.
 	fakeClock.Advance(2 * time.Minute)
+	now = fakeClock.Now()
 
-	serviceAreas, err = store.ISA.Search(ctx, serviceArea.Cells, nil, nil)
+	serviceAreas, err = store.ISA.Search(ctx, serviceArea.Cells, &now, nil)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 0)
 
@@ -249,4 +251,20 @@ func TestStoreDeleteISAs(t *testing.T) {
 	for i := range insertedSubscriptions {
 		require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
 	}
+}
+
+func TestStoreISAWithNoGeoData(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer func() {
+		require.NoError(t, tearDownStore())
+	}()
+	endTime := fakeClock.Now().Add(24 * time.Hour)
+	sub := &ridmodels.IdentificationServiceArea{
+		ID:      dssmodels.ID(uuid.New().String()),
+		Owner:   dssmodels.Owner("original owner"),
+		EndTime: &endTime,
+	}
+	_, _, err := store.ISA.Insert(ctx, sub)
+	require.Error(t, err)
 }
