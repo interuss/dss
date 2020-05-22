@@ -3,12 +3,17 @@ package cockroach
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 
+	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"go.uber.org/zap"
+
+	dssql "github.com/interuss/dss/pkg/sql"
 )
 
 var (
@@ -18,11 +23,52 @@ var (
 
 // Store is an implementation of dss.Store using
 // Cockroach DB as its backend store.
+// TODO: Add the SCD interfaces here, and collapse this store with the
+// outer pkg/cockroach
 type Store struct {
 	repos.ISA
 	repos.Subscription
-	*cockroach.DB
+
+	// The Queryable interface is what most calls happen on. Without calling
+	// InTxnRetrier, Queryable is set to the same field as db.
+	dssql.Queryable
+	db *cockroach.DB
 }
+
+// InTxnRetrier supplies a new repo, that will perform all of the DB accesses
+// in a Txn, and will retry any Txn's that fail due to retry-able errors
+// (typically contention).
+// Note: Currently the Newly supplied Repo *does not* support nested calls
+// to InTxnRetrier.
+func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) error) error {
+	fmt.Println("In the retrier!")
+	if s.db == s.Queryable {
+		return errors.New("cannot call InTxnRetrier within an active Txn")
+	}
+
+	// TODO: consider what tx opts we want to support.
+	// TODO: we really need to remove the upper cockroach package, and have one
+	// "store" for everything
+	fmt.Println("CALL OUT TO crdb")
+	fmt.Println(s.db)
+	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
+		fmt.Println("In the execution!")
+		storeCopy := *s
+
+		return f(&storeCopy)
+	})
+}
+
+// Close closes the underlying DB connection.
+func (s *Store) Close() error {
+	return s.db.Close()
+}
+
+// tx, err := c.Begin()
+// if err != nil {
+// 	return nil, err
+// }
+// defer recoverRollbackRepanic(ctx, tx)
 
 func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 	if p := recover(); p != nil {
@@ -39,13 +85,9 @@ func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
 	return &Store{
 		ISA:          &ISAStore{db, DefaultClock, logger},
 		Subscription: &SubscriptionStore{db, DefaultClock, logger},
-		DB:           db,
+		db:           db,
+		Queryable:    db,
 	}
-}
-
-// Close closes the underlying DB connection.
-func (s *Store) Close() error {
-	return s.DB.Close()
 }
 
 // Bootstrap bootstraps the underlying database with required tables.

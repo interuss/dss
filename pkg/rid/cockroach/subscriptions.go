@@ -6,13 +6,13 @@ import (
 	"fmt"
 
 	"github.com/dpjacques/clockwork"
-	"github.com/interuss/dss/pkg/cockroach"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 
 	"github.com/golang/geo/s2"
+	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
@@ -23,7 +23,7 @@ const (
 
 // SubscriptionStore is an implementation of the SubscriptionRepo for CRDB.
 type SubscriptionStore struct {
-	*cockroach.DB
+	dssql.Queryable
 
 	clock  clockwork.Clock
 	logger *zap.Logger
@@ -31,7 +31,7 @@ type SubscriptionStore struct {
 
 // process a query that should return one or many subscriptions.
 func (c *SubscriptionStore) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
-	rows, err := c.DB.QueryContext(ctx, query, args...)
+	rows, err := c.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (c *SubscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.Conte
 		cids[i] = int64(cell)
 	}
 
-	row := c.DB.QueryRowContext(ctx, query, owner, c.clock.Now(), pq.Int64Array(cids))
+	row := c.QueryRowContext(ctx, query, owner, c.clock.Now(), pq.Int64Array(cids))
 	var ret int
 	err := row.Scan(&ret)
 	return ret, err

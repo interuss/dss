@@ -11,6 +11,8 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridcrdb "github.com/interuss/dss/pkg/rid/cockroach"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/rid/repos"
+	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/stretchr/testify/require"
 
 	"go.uber.org/zap"
@@ -23,16 +25,26 @@ var (
 	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
-func setUpRepo(ctx context.Context, t *testing.T, logger *zap.Logger) (*ridcrdb.Store, func() error) {
+type mockRepo struct {
+	*isaStore
+	*subscriptionStore
+	dssql.Queryable
+}
+
+func (s *mockRepo) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) error) error {
+	return f(s)
+}
+
+func setUpRepo(ctx context.Context, t *testing.T, logger *zap.Logger) (repos.Repository, func() error) {
 	DefaultClock = fakeClock
 
 	if len(*storeURI) == 0 {
 		logger.Info("using the stubbed in memory store.")
-		return &ridcrdb.Store{
-			ISA: &isaStore{
+		return &mockRepo{
+			isaStore: &isaStore{
 				isas: make(map[dssmodels.ID]*ridmodels.IdentificationServiceArea),
 			},
-			Subscription: &subscriptionStore{
+			subscriptionStore: &subscriptionStore{
 				subs: make(map[dssmodels.ID]*ridmodels.Subscription),
 			},
 		}, func() error { return nil }

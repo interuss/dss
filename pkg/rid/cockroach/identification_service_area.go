@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/dpjacques/clockwork"
-	"github.com/interuss/dss/pkg/cockroach"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 
 	"github.com/golang/geo/s2"
+	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
@@ -24,14 +24,14 @@ const (
 
 // ISAStore is an implementation of the ISARepo for CRDB.
 type ISAStore struct {
-	*cockroach.DB
+	dssql.Queryable
 
 	clock  clockwork.Clock
 	logger *zap.Logger
 }
 
 func (c *ISAStore) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
-	rows, err := c.DB.QueryContext(ctx, query, args...)
+	rows, err := c.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

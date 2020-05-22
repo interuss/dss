@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -214,8 +215,7 @@ func TestInsertISA(t *testing.T) {
 
 			// Insert a pre-existing ISA to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
-				// TEMP: this used to be app.Repository
-				existing, _, err := app.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
+				existing, err := app.Repository.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
@@ -306,11 +306,13 @@ func TestAppDeleteISAs(t *testing.T) {
 	require.Error(t, err)
 
 	// Delete the ISA.
-	// Ensure a fresh Get, then delete still updates the sub indexes
+	// Ensure a fresh Get, then delete still updates the subscription indexes
 	isa, err = app.GetISA(ctx, isa.ID)
+	fmt.Println("get calls: ", isa)
 	require.NoError(t, err)
 
 	serviceAreaOut, subscriptionsOut, err := app.DeleteISA(ctx, isa.ID, isa.Owner, isa.Version)
+	fmt.Println("SOUT: ", serviceAreaOut)
 	require.NoError(t, err)
 	require.Equal(t, isa, serviceAreaOut)
 	require.NotNil(t, subscriptionsOut)

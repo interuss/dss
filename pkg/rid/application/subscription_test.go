@@ -304,8 +304,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 
 			// Insert a pre-existing subscription to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
-				// same here
-				existing, err := app.InsertSubscription(ctx, &ridmodels.Subscription{
+				existing, err := app.Repository.InsertSubscription(ctx, &ridmodels.Subscription{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,

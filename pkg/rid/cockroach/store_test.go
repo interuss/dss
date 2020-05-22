@@ -48,9 +48,9 @@ func newStore() (*Store, error) {
 		return nil, err
 	}
 	return &Store{
-		ISA:          &ISAStore{DB: cdb, clock: fakeClock, logger: zap.L()},
-		Subscription: &SubscriptionStore{cdb, fakeClock, zap.L()},
-		DB:           cdb,
+		ISA:          &ISAStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
+		Subscription: &SubscriptionStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
+		db:           cdb,
 	}, nil
 }
 
