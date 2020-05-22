@@ -162,7 +162,7 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 	return err
 }
 
-func (s *Store) GetVersion() string {
+func (s *Store) GetVersion(ctx context.Context) (string, error) {
 	const query = `
 		SELECT EXISTS (
   		SELECT *
@@ -181,7 +181,7 @@ func (s *Store) GetVersion() string {
 	}
 	// Version without cells joins table.
 	// TODO: leverage proper migrations and use something like the query below.
-	return "2.0.0"
+	return "2.0.0", nil
 }
 
 // 	// TODO steeling: we should leverage this function. Instead, we don't have

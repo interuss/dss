@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net"
 	"net/url"
 	"strconv"
@@ -71,15 +72,17 @@ var (
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "commad separated acceptable JWT `aud` claims")
 )
 
-func MustSupportSchema(store repos.Store) {
-	vs, err := store.GetVersion()
+func MustSupportSchema(ctx context.Context, store *ridc.Store) {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+
+	vs, err := store.GetVersion(ctx)
 	if err != nil {
 		logger.Panic("could not get schema version from database", zap.Error(err))
 	}
 
-	v := semver.Must(vs)
+	v := semver.MustParse(vs)
 	if RequiredMajorSchemaVersion != v.Major {
-		logger.Panic("unsupported schema version! Got %s, requires major version of %d", vs, RequiredMajorSchemaVersion)
+		logger.Panic(fmt.Sprintf("unsupported schema version! Got %s, requires major version of %d", vs, RequiredMajorSchemaVersion))
 	}
 }
 
@@ -126,6 +129,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	if err := store.Bootstrap(ctx); err != nil {
 		logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
 	}
+
+	MustSupportSchema(ctx, store)
 
 	var (
 		dssServer = &rid.Server{

@@ -144,8 +144,9 @@ func TestGetVersion(t *testing.T) {
 		ctx                  = context.Background()
 		store, tearDownStore = setUpStore(ctx, t)
 	)
+	defer tearDownStore()
 	version, err := store.GetVersion(ctx)
 	require.NoError(t, err)
-	vs, err := semver.Parse(version)
+	_, err = semver.Parse(version)
 	require.NoError(t, err)
 }
