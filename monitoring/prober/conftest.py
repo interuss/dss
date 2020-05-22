@@ -128,6 +128,12 @@ def pytest_addoption(parser):
   parser.addoption('--oauth-password')
   parser.addoption('--oauth-client-id')
 
+  parser.addoption('--oauth2-service-account-json')
+
+  parser.addoption('--oauth2-username')
+  parser.addoption('--oauth2-password')
+  parser.addoption('--oauth2-client-id')
+
   parser.addoption('--use-dummy-oauth')
 
 
@@ -204,10 +210,10 @@ def scd_session2(pytestconfig):
 
   # Create an auth adapter to get JWTs using the given credentials.  We can use
   # either a service account, a username/password/client_id or a dummy oauth server.
-  if pytestconfig.getoption('oauth_service_account_json') is not None:
+  if pytestconfig.getoption('oauth2_service_account_json') is not None:
     auth_adapter = ServiceAccountAuthAdapter(oauth_token_endpoint,
                                              pytestconfig.getoption('oauth2_service_account_json'))
-  elif pytestconfig.getoption('oauth_username') is not None:
+  elif pytestconfig.getoption('oauth2_username') is not None:
     auth_adapter = UsernamePasswordAuthAdapter(oauth_token_endpoint,
                                                pytestconfig.getoption('oauth2_username'),
                                                pytestconfig.getoption('oauth2_password'),
