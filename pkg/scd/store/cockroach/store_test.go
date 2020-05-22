@@ -2,8 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"flag"
 	"testing"
 	"time"
@@ -30,13 +28,14 @@ var (
 )
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func() error) {
+	if len(*storeURI) == 0 {
+		t.Skip()
+	}
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
 	store, err := newStore()
-	if err != nil {
-		t.Skip(err)
-	}
+	require.NoError(t, err)
 	require.NoError(t, store.Bootstrap(ctx))
 	return store, func() error {
 		return cleanUp(ctx, store)
@@ -44,17 +43,12 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func() error) {
 }
 
 func newStore() (*Store, error) {
-	if len(*storeURI) == 0 {
-		return nil, errors.New("Missing command-line parameter store-uri")
-	}
-
-	db, err := sql.Open("postgres", *storeURI)
+	cdb, err := cockroach.Dial(*storeURI)
 	if err != nil {
 		return nil, err
 	}
-
 	return &Store{
-		DB:     &cockroach.DB{DB: db},
+		DB:     cdb,
 		logger: zap.L(),
 		clock:  fakeClock,
 	}, nil

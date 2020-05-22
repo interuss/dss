@@ -6,58 +6,48 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dpjacques/clockwork"
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 )
 
-// ISAAppInterface provides the interface to the application logic for ISA entities
-type ISAAppInterface interface {
-	Get(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
+// AppInterface provides the interface to the application logic for ISA entities
+// Note that there is no need for the applciation layer to have the same API as
+// the repo layer.
+type ISAApp interface {
+	GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
 
-	// Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
+	// DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-	Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
+	DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
 
-	// Insert inserts or updates an ISA.
-	Insert(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
+	// InsertISA inserts or updates an ISA.
+	InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
 
-	// Update
-	Update(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
+	// UpdateISA
+	UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
 
-	// SearchSubscriptions returns all subscriptions ownded by "owner" in "cells".
-	Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
+	// SearchISAs returns all subscriptions ownded by "owner" in "cells".
+	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
 }
 
-// ISAApp is the main implementation of the ISAApp logic.
-type ISAApp struct {
-	// TODO: don't fully embed the ISA repo once we reduce the complexity in the store.
-	// Right now it's "coincidence" that the repo has the same signatures as the App interface
-	// but we will want to simplify the repos and add the complexity here.
-	repos.ISA
-	// TODO:steeling the ISAApp will need access to the Subscription Repo since it touches
-	// subs on inserts as well. Probably easiest if it just has the whole set of
-	// Repositories
-	clock clockwork.Clock
-}
-
-// Search for ISA within the volume bounds.
-func (a *ISAApp) Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+// SearchISAs for ISA within the volume bounds.
+func (a *app) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	now := a.clock.Now()
 	if earliest == nil || earliest.Before(now) {
 		earliest = &now
 	}
 
-	return a.ISA.Search(ctx, cells, earliest, latest)
+	return a.Repository.SearchISAs(ctx, cells, earliest, latest)
 }
 
-// Delete the given ISA
-func (a *ISAApp) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+// DeleteISA the given ISA
+func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := a.ISA.Get(ctx, id)
+	old, err := a.Repository.GetISA(ctx, id)
 	switch {
 	case err == sql.ErrNoRows || old == nil: // Return a 404 here.
 		return nil, nil, dsserr.NotFound(id.String())
@@ -69,18 +59,32 @@ func (a *ISAApp) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
 	}
 
-	old, subs, err := a.ISA.Delete(ctx, old)
-	// TODO: change this to return no error, and a nil object and use that
-	// to determine a not found, etc.
-	if err == sql.ErrNoRows {
-		return nil, nil, dsserr.VersionMismatch("old version")
-	}
-	return old, subs, err
+	var (
+		isa  *ridmodels.IdentificationServiceArea
+		subs []*ridmodels.Subscription
+	)
+	// The following will automatically retry TXN retry errors.
+	err = a.Repository.InTxnRetrier(ctx, func(repo repos.Repository) error {
+		var err error
+		subs, err = repo.UpdateNotificationIdxsInCells(ctx, old.Cells)
+		if err != nil {
+			return err
+		}
+
+		isa, err = repo.DeleteISA(ctx, old)
+		// TODO: change this to return no error, and a nil object and use that
+		// to determine a not found, etc.
+		if err == sql.ErrNoRows {
+			return dsserr.VersionMismatch("old version")
+		}
+		return err
+	})
+	return isa, subs, err
 }
 
-// Insert implments the ISAAppInterface Insert method
-func (a *ISAApp) Insert(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	old, err := a.ISA.Get(ctx, isa.ID)
+// InsertISA implments the AppInterface InsertISA method
+func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+	old, err := a.Repository.GetISA(ctx, isa.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -106,6 +110,39 @@ func (a *ISAApp) Insert(ctx context.Context, isa *ridmodels.IdentificationServic
 	if err := isa.AdjustTimeRange(a.clock.Now(), old); err != nil {
 		return nil, nil, err
 	}
+	// TODO(steeling) do this in a txn.
+	// Update the notification index for both cells removed and added.
+	var (
+		ret  *ridmodels.IdentificationServiceArea
+		subs []*ridmodels.Subscription
+	)
+	// The following will automatically retry TXN retry errors.
+	err = a.Repository.InTxnRetrier(ctx, func(repo repos.Repository) error {
+		var err error
+		cells := isa.Cells
+		if old != nil {
+			// TODO steeling, we should change this to a Custom type, to obfuscate
+			// some of these metrics and prevent us from doing the wrong thing.
+			cells = s2.CellUnionFromUnion(old.Cells, isa.Cells)
+			geo.Levelify(&cells)
+		}
+		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
+		// they are both modifying the db. Insert a susbcription alone does
+		// not do this, so that does not need to use a txn (in subscription.go).
+		subs, err = a.Repository.UpdateNotificationIdxsInCells(ctx, cells)
+		if err != nil {
+			return err
+		}
+		ret, err = a.Repository.InsertISA(ctx, isa)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return ret, subs, err
+}
 
-	return a.ISA.Insert(ctx, isa)
+// UpdateISA implments the AppInterface InsertISA method
+func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+	return nil, nil, dsserr.Internal("not yet implemented")
 }

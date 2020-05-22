@@ -7,6 +7,7 @@ go 1.14
 
 require (
 	cloud.google.com/go v0.57.0
+	github.com/cockroachdb/cockroach-go v0.0.0-20200504194139-73ffeee90b62
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dpjacques/clockwork v0.1.0
 	github.com/gogo/protobuf v1.3.1

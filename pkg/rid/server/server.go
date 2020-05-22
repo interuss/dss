@@ -27,7 +27,7 @@ var (
 
 // Server implements ridpb.DiscoveryAndSynchronizationService.
 type Server struct {
-	App     *application.App
+	App     application.App
 	Timeout time.Duration
 }
 

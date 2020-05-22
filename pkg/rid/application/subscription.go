@@ -5,42 +5,42 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/dpjacques/clockwork"
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/interuss/dss/pkg/rid/repos"
+	"go.uber.org/zap"
 )
 
-// SubscriptionAppInterface provides the interface to the application logic for Subscription entities
-type SubscriptionAppInterface interface {
-	Get(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error)
+const (
+	// Defined in requirement DSS0030.
+	maxSubscriptionsPerArea = 10
+)
 
-	// Delete deletes the Subscription identified by "id" and owned by "owner".
+// SubscriptionApp provides the interface to the application logic for Subscription entities
+// AppInterface provides the interface to the application logic for ISA entities
+// Note that there is no need for the applciation layer to have the same API as
+// the repo layer.
+type SubscriptionApp interface {
+	GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error)
+
+	// DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
 	// Returns the delete Subscription and all IdentificationServiceAreas affected by the delete.
-	Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error)
+	DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error)
 
-	// Insert inserts or updates an Subscription.
-	Insert(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
+	// InsertSubscription inserts or updates an Subscription.
+	InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
 
-	// Update
-	Update(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
+	// UpdateSubscription
+	UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
 
-	// SearchIdentificationServiceAreas returns all IdentificationServiceAreas ownded by "owner" in "cells".
-	SearchByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
+	// SearchSubscriptionsByOwner returns all IdentificationServiceAreas ownded by "owner" in "cells".
+	SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
 }
 
-// SubscriptionApp is the main implementation of the SubscriptionApp logic.
-type SubscriptionApp struct {
-	// TODO: don't fully embed the Sub repo once we reduce the complexity in the store.
-	repos.Subscription
-	clock clockwork.Clock
-}
-
-// Insert implements the SubscriptionAppInterface Insert method
-func (a *SubscriptionApp) Insert(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	old, err := a.Subscription.Get(ctx, s.ID)
+// InsertSubscription implements the App InsertSubscription method
+func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	old, err := a.Repository.GetSubscription(ctx, s.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -64,16 +64,26 @@ func (a *SubscriptionApp) Insert(ctx context.Context, s *ridmodels.Subscription)
 	if err := s.AdjustTimeRange(a.clock.Now(), old); err != nil {
 		return nil, err
 	}
-	if old == nil {
-		return a.Subscription.Insert(ctx, s)
+
+	// Check the user hasn't created too many subscriptions in this area.
+	count, err := a.Repository.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
+	if err != nil {
+		a.logger.Error("Error fetching max subscription count", zap.Error(err))
+		return nil, dsserr.Internal(
+			"failed to fetch subscription count, rejecting request")
 	}
-	return a.Subscription.Update(ctx, s)
+	if count >= maxSubscriptionsPerArea {
+		return nil, dsserr.Exhausted(
+			"too many existing subscriptions in this area already")
+	}
+
+	return a.Repository.InsertSubscription(ctx, s)
 }
 
-// Delete deletes the Subscription identified by "id" and owned by "owner".
-func (a *SubscriptionApp) Delete(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
+// DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
+func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
 
-	old, err := a.Subscription.Get(ctx, id)
+	old, err := a.Repository.GetSubscription(ctx, id)
 	switch {
 	case err == sql.ErrNoRows || old == nil:
 		return nil, dsserr.NotFound(id.String())
@@ -82,7 +92,7 @@ func (a *SubscriptionApp) Delete(ctx context.Context, id dssmodels.ID, owner dss
 	case old.Owner != owner:
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
 	}
-	old, err = a.Subscription.Delete(ctx, old)
+	old, err = a.Repository.DeleteSubscription(ctx, old)
 	if err == sql.ErrNoRows {
 		return nil, dsserr.VersionMismatch("old version")
 	}

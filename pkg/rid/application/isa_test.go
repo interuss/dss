@@ -8,74 +8,62 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
-func setUpISAApp() *ISAApp {
-	return &ISAApp{
-		ISA: &isaStore{
-			isas: make(map[dssmodels.ID]*ridmodels.IdentificationServiceArea),
-			subscriptionStore: &subscriptionStore{
-				subs: make(map[dssmodels.ID]*ridmodels.Subscription),
-			},
-		},
-		clock: fakeClock,
-	}
+var (
+	_ ISAApp = &app{}
+)
+
+func setUpISAApp(ctx context.Context, t *testing.T) (*app, func()) {
+	l := zap.L()
+	repo, cleanup := setUpRepo(ctx, t, l)
+	return NewFromRepo(repo, l).(*app), cleanup
 }
 
 // TODO:steeling add owner logic.
 type isaStore struct {
-	isas              map[dssmodels.ID]*ridmodels.IdentificationServiceArea
-	subscriptionStore *subscriptionStore // TODO:steeling refactor this out.
+	isas map[dssmodels.ID]*ridmodels.IdentificationServiceArea
 }
 
-func (store *isaStore) Get(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+func (store *isaStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	if isa, ok := store.isas[id]; ok {
 		return isa, nil
 	}
 	return nil, sql.ErrNoRows
 }
 
-func (store *isaStore) updateNotificationIdxs(ctx context.Context, isa *ridmodels.IdentificationServiceArea) []*ridmodels.Subscription {
-	var ret []*ridmodels.Subscription
-	subs, _ := store.subscriptionStore.Search(ctx, isa.Cells)
-	for _, s := range subs {
-		s.NotificationIndex++
-		s, _ = store.subscriptionStore.Insert(ctx, s)
-		ret = append(ret, s)
-	}
-	return ret
-}
-
-// Delete deletes the IdentificationServiceArea identified by "id" and owned by "owner".
+// DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all IdentificationServiceAreas affected by the delete.
-func (store *isaStore) Delete(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+func (store *isaStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	isa, ok := store.isas[isa.ID]
 	if !ok {
-		return nil, nil, sql.ErrNoRows
+		return nil, sql.ErrNoRows
 	}
 	delete(store.isas, isa.ID)
 
-	return isa, store.updateNotificationIdxs(ctx, isa), nil
+	return isa, nil
 }
 
-// Insert inserts or updates an IdentificationServiceArea.
-func (store *isaStore) Insert(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
+// InsertISA inserts or updates an IdentificationServiceArea.
+func (store *isaStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	storedCopy := *isa
 	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
 	store.isas[isa.ID] = &storedCopy
 
 	returnedCopy := storedCopy
-	return &returnedCopy, store.updateNotificationIdxs(ctx, &storedCopy), nil
+	return &returnedCopy, nil
 }
 
-func (store *isaStore) Update(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	return store.Insert(ctx, isa)
+func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	return nil, dsserr.Internal("not yet implemented")
 }
 
-func (store *isaStore) Search(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (store *isaStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var isas []*ridmodels.IdentificationServiceArea
 
 	for _, isa := range store.isas {
@@ -86,9 +74,70 @@ func (store *isaStore) Search(ctx context.Context, cells s2.CellUnion, earliest 
 	return isas, nil
 }
 
+func TestISAUpdateIdxCells(t *testing.T) {
+	ctx := context.Background()
+	app, cleanup := setUpISAApp(ctx, t)
+
+	defer cleanup()
+	// ensure that when we do an update, nothing in the s2 library joins multiple
+	// cells together at a lower level.
+
+	// These 4 cells are fully encompassed by the parent cell, meaning the s2
+	// library might try to Normalize (this is the name of the function) the Union
+	// into a single cell. We don't support this currently, so let's make sure
+	// this doesn't happen.
+	isa, _, err := app.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     "owner",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, isa)
+	// Now insert 2 subs, one overlaps with the original isa, and the second, overlaps
+	// with the soon to be new version of the isa. both should increase their
+	// notification index.
+
+	_, err = app.InsertSubscription(ctx, &ridmodels.Subscription{
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     "owner",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells:     s2.CellUnion{17106221850767130624, 17106221919486607360},
+	})
+	require.NoError(t, err)
+
+	_, err = app.InsertSubscription(ctx, &ridmodels.Subscription{
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     "owner",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells:     s2.CellUnion{17106221953846345728},
+	})
+	require.NoError(t, err)
+
+	isa.Cells = s2.CellUnion{17106221953846345728}
+
+	isa, subs, err := app.InsertISA(ctx, isa)
+	require.NoError(t, err)
+	require.NotNil(t, isa)
+	require.Len(t, subs, 2)
+	for _, sub := range subs {
+		require.Equal(t, 1, sub.NotificationIndex)
+	}
+
+	isas, err := app.SearchISAs(ctx, isa.Cells, &startTime, nil)
+	require.NoError(t, err)
+	require.NotNil(t, isas)
+	require.Len(t, isas, 1)
+}
+
 func TestInsertISA(t *testing.T) {
 	ctx := context.Background()
-	app := setUpISAApp()
+	app, cleanup := setUpISAApp(ctx, t)
+
+	defer cleanup()
 
 	for _, r := range []struct {
 		name                string
@@ -165,11 +214,12 @@ func TestInsertISA(t *testing.T) {
 
 			// Insert a pre-existing ISA to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
-				existing, _, err := app.ISA.Insert(ctx, &ridmodels.IdentificationServiceArea{
+				existing, err := app.Repository.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
 					EndTime:   &r.updateFromEndTime,
+					Cells:     s2.CellUnion{12494535935418957824},
 				})
 				require.NoError(t, err)
 				version = existing.Version
@@ -177,7 +227,7 @@ func TestInsertISA(t *testing.T) {
 				// Can't update if it has a different owner
 				isa := *existing
 				isa.Owner = "bad-owner"
-				_, _, err = app.Insert(ctx, &isa)
+				_, _, err = app.InsertISA(ctx, &isa)
 				require.Error(t, err)
 			}
 
@@ -185,6 +235,7 @@ func TestInsertISA(t *testing.T) {
 				ID:      id,
 				Owner:   owner,
 				Version: version,
+				Cells:   s2.CellUnion{12494535935418957824},
 			}
 			if !r.startTime.IsZero() {
 				sa.StartTime = &r.startTime
@@ -192,7 +243,7 @@ func TestInsertISA(t *testing.T) {
 			if !r.endTime.IsZero() {
 				sa.EndTime = &r.endTime
 			}
-			isa, _, err := app.Insert(ctx, sa)
+			isa, _, err := app.InsertISA(ctx, sa)
 
 			if r.wantErr == "" {
 				require.NoError(t, err)
@@ -209,5 +260,65 @@ func TestInsertISA(t *testing.T) {
 				require.Equal(t, r.wantEndTime, *isa.EndTime)
 			}
 		})
+	}
+}
+
+func TestAppDeleteISAs(t *testing.T) {
+	var (
+		ctx          = context.Background()
+		app, cleanup = setUpISAApp(ctx, t)
+	)
+	defer cleanup()
+
+	insertedSubscriptions := []*ridmodels.Subscription{}
+	for _, r := range subscriptionsPool {
+		copy := *r.input
+		s1, err := app.InsertSubscription(ctx, &copy)
+		require.NoError(t, err)
+		require.NotNil(t, s1)
+		require.Equal(t, 42, s1.NotificationIndex)
+		insertedSubscriptions = append(insertedSubscriptions, s1)
+	}
+	serviceArea := &ridmodels.IdentificationServiceArea{
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     dssmodels.Owner(uuid.New().String()),
+		URL:       "https://no/place/like/home/for/flights",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells: s2.CellUnion{
+			s2.CellID(12494535935418957824),
+		},
+	}
+
+	// Insert the ISA.
+	copy := *serviceArea
+	isa, subscriptionsOut, err := app.InsertISA(ctx, &copy)
+	require.NoError(t, err)
+	require.NotNil(t, isa)
+	require.Len(t, subscriptionsOut, len(insertedSubscriptions))
+
+	for i := range insertedSubscriptions {
+		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
+	}
+	// Can't delete with different owner.
+	_, _, err = app.DeleteISA(ctx, isa.ID, "bad-owner", isa.Version)
+	require.Error(t, err)
+
+	// Delete the ISA.
+	// Ensure a fresh Get, then delete still updates the subscription indexes
+	isa, err = app.GetISA(ctx, isa.ID)
+	require.NoError(t, err)
+
+	serviceAreaOut, subscriptionsOut, err := app.DeleteISA(ctx, isa.ID, isa.Owner, isa.Version)
+	require.NoError(t, err)
+	require.Equal(t, isa, serviceAreaOut)
+	require.NotNil(t, subscriptionsOut)
+	require.Len(t, subscriptionsOut, len(subscriptionsPool))
+	for i, s := range subscriptionsPool {
+		require.Equal(t, s.input.URL, subscriptionsOut[i].URL)
+	}
+
+	for i := range insertedSubscriptions {
+		require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
 	}
 }

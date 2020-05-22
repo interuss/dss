@@ -22,7 +22,7 @@ func (s *Server) GetIdentificationServiceArea(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isa, err := s.App.ISA.Get(ctx, dssmodels.ID(req.GetId()))
+	isa, err := s.App.GetISA(ctx, dssmodels.ID(req.GetId()))
 	if err == sql.ErrNoRows {
 		return nil, dsserr.NotFound(req.GetId())
 	}
@@ -46,6 +46,7 @@ func (s *Server) createOrUpdateISA(
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
+	// TODO: put the validation logic in the models layer
 	if flightsURL == "" {
 		return nil, dsserr.BadRequest("missing required flightsURL")
 	}
@@ -64,7 +65,7 @@ func (s *Server) createOrUpdateISA(
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
 	}
 
-	insertedISA, subscribers, err := s.App.ISA.Insert(ctx, isa)
+	insertedISA, subscribers, err := s.App.InsertISA(ctx, isa)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +129,7 @@ func (s *Server) DeleteIdentificationServiceArea(
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isa, subscribers, err := s.App.ISA.Delete(ctx, dssmodels.ID(req.GetId()), owner, version)
+	isa, subscribers, err := s.App.DeleteISA(ctx, dssmodels.ID(req.GetId()), owner, version)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +187,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isas, err := s.App.ISA.Search(ctx, cu, earliest, latest)
+	isas, err := s.App.SearchISAs(ctx, cu, earliest, latest)
 	if err != nil {
 		return nil, err
 	}

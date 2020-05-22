@@ -2,8 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"flag"
 	"testing"
 	"time"
@@ -12,6 +10,8 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/dpjacques/clockwork"
@@ -25,36 +25,32 @@ var (
 	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
-func setUpStore(ctx context.Context, t *testing.T) (*Store, func() error) {
+func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
+	if len(*storeURI) == 0 {
+		t.Skip()
+	}
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
 	store, err := newStore()
-	if err != nil {
-		t.Skip(err)
-	}
+	require.NoError(t, err)
 	require.NoError(t, store.Bootstrap(ctx))
-	return store, func() error {
-		return cleanUp(ctx, store)
+	return store, func() {
+		require.NoError(t, cleanUp(ctx, store))
+		require.NoError(t, store.Close())
 	}
 }
 
 func newStore() (*Store, error) {
-	if len(*storeURI) == 0 {
-		return nil, errors.New("Missing command-line parameter store-uri")
-	}
-
-	db, err := sql.Open("postgres", *storeURI)
+	cdb, err := cockroach.Dial(*storeURI)
 	if err != nil {
 		return nil, err
 	}
-
-	cdb := &cockroach.DB{DB: db}
-
 	return &Store{
-		ISA:          &ISAStore{DB: cdb, clock: fakeClock, logger: zap.L()},
-		Subscription: &SubscriptionStore{cdb, fakeClock, zap.L()},
-		DB:           cdb,
+		ISA:          &ISAStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
+		Subscription: &SubscriptionStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
+		db:           cdb,
+		Queryable:    cdb,
 	}, nil
 }
 
@@ -76,7 +72,7 @@ func TestStoreBootstrap(t *testing.T) {
 		store, tearDownStore = setUpStore(ctx, t)
 	)
 	require.NotNil(t, store)
-	require.NoError(t, tearDownStore())
+	tearDownStore()
 }
 
 func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
@@ -85,15 +81,13 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		store, tearDownStore = setUpStore(ctx, t)
 	)
 	require.NotNil(t, store)
-	defer func() {
-		require.NoError(t, tearDownStore())
-	}()
+	defer tearDownStore()
 
 	var (
 		begins  = time.Now()
 		expires = begins.Add(-5 * time.Minute)
 	)
-	_, err := store.Subscription.Insert(ctx, &ridmodels.Subscription{
+	_, err := store.InsertSubscription(ctx, &ridmodels.Subscription{
 		ID:                dssmodels.ID(uuid.New().String()),
 		Owner:             "me-myself-and-i",
 		URL:               "https://no/place/like/home",
@@ -102,4 +96,48 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		EndTime:           &expires,
 	})
 	require.Error(t, err)
+}
+
+func TestTxnRetrier(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	require.NotNil(t, store)
+	defer tearDownStore()
+
+	err := store.InTxnRetrier(ctx, func(store repos.Repository) error {
+		return store.InTxnRetrier(ctx, func(store repos.Repository) error {
+			return nil
+		})
+	})
+	require.EqualError(t, err, "cannot call InTxnRetrier within an active Txn")
+
+	err = store.InTxnRetrier(ctx, func(store repos.Repository) error {
+		// can query within this
+		isa, err := store.InsertISA(ctx, serviceArea)
+		require.NotNil(t, isa)
+		return err
+	})
+	require.NoError(t, err)
+	// can query afterwads
+	isa, err := store.GetISA(ctx, serviceArea.ID)
+	require.NoError(t, err)
+	require.NotNil(t, isa)
+
+	// Test the retry happens
+	// 20ms, let's see how many retries we get.
+	// Using a context ensures we bail out.
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Millisecond)
+	defer cancel()
+	count := 0
+	err = store.InTxnRetrier(ctx, func(store repos.Repository) error {
+		// can query within this
+		count++
+		// Postgre retryable error
+		return &pq.Error{Code: "40001"}
+	})
+	require.Error(t, err)
+	// Ensure it was retried.
+	require.Greater(t, count, 1)
 }

@@ -103,10 +103,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	if err != nil {
 		logger.Panic("Failed to dial CRDB instance", zap.Error(err))
 	}
-	store, err := ridc.NewStore(crdb, logger)
-	if err != nil {
-		logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
-	}
+	store := ridc.NewStore(crdb, logger)
 
 	if err := store.Bootstrap(ctx); err != nil {
 		logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
@@ -114,7 +111,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 
 	var (
 		dssServer = &rid.Server{
-			App:     application.NewFromRepo(store),
+			App:     application.NewFromRepo(store, logger),
 			Timeout: *timeout,
 		}
 		auxServer      = &aux.Server{}
@@ -125,10 +122,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	)
 
 	if *enableSCD {
-		store, err := scdc.NewStore(crdb, logger)
-		if err != nil {
-			logger.Panic("Failed to open connection to CRDB", zap.String("uri", uri), zap.Error(err))
-		}
+		store := scdc.NewStore(crdb, logger)
 
 		if err := store.Bootstrap(ctx); err != nil {
 			logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
