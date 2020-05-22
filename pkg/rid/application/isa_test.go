@@ -214,7 +214,8 @@ func TestInsertISA(t *testing.T) {
 
 			// Insert a pre-existing ISA to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
-				existing, err := app.ISA.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
+				// TEMP: this used to be app.Repository
+				existing, _, err := app.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,

@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"testing"
 	"time"
@@ -42,10 +41,8 @@ func setUpRepo(ctx context.Context, t *testing.T, logger *zap.Logger) (*ridcrdb.
 	logger.Info("using cockroachDB.")
 
 	// Use a real store.
-	db, err := sql.Open("postgres", *storeURI)
+	cdb, err := cockroach.Dial(*storeURI)
 	require.NoError(t, err)
-
-	cdb := &cockroach.DB{DB: db}
 
 	store := ridcrdb.NewStore(cdb, logger)
 	require.NoError(t, store.Bootstrap(ctx))

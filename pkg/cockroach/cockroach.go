@@ -4,11 +4,38 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/rid/repos"
+	dssql "github.com/interuss/dss/pkg/sql"
 )
 
 // DB models a connection to a CRDB instance.
 type DB struct {
-	*sql.DB
+	// The Queryable interface is what most calls happen on. Without calling
+	// InTxnRetrier, Queryable is set to the same field as db.
+	dssql.Queryable
+
+	db *sql.DB
+}
+
+// InTxnRetrier supplies a new repo, that will perform all of the DB accesses
+// in a Txn, and will retry any Txn's that fail due to retry-able errors
+// (typically contention).
+// Note: Currently the Newly supplied Repo *does not* support nested calls
+// to InTxnRetrier.
+func (d *DB) InTxnRetrier(f func(repo repos.Repository) error) error {
+	return nil
+}
+
+// TODO: remove this function when SCD transitions to InTxnRetrier
+func (d *DB) Begin() (*sql.Tx, error) {
+	logging.Logger.Warn("this method is deprecated, please use InTxnRetrier")
+	return d.db.Begin()
+}
+
+func (d *DB) Close() error {
+	return d.db.Close()
 }
 
 // tx, err := c.Begin()
@@ -27,7 +54,7 @@ func Dial(uri string) (*DB, error) {
 	}
 
 	return &DB{
-		DB: db,
+		db: db,
 	}, nil
 }
 

@@ -13,6 +13,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 var (
@@ -52,13 +53,10 @@ var (
 	}
 )
 
-func setUpSubApp() *app {
-	return &app{
-		Subscription: &subscriptionStore{
-			subs: make(map[dssmodels.ID]*ridmodels.Subscription),
-		},
-		clock: fakeClock,
-	}
+func setUpSubApp(ctx context.Context, t *testing.T) (*app, func() error) {
+	l := zap.L()
+	repo, cleanup := setUpRepo(ctx, t, l)
+	return NewFromRepo(repo, l).(*app), cleanup
 }
 
 type subscriptionStore struct {
@@ -165,7 +163,8 @@ func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s
 
 func TestBadOwner(t *testing.T) {
 	ctx := context.Background()
-	app := setUpSubApp()
+	app, cleanup := setUpSubApp(ctx, t)
+	defer cleanup()
 
 	sub := &ridmodels.Subscription{
 		ID:    dssmodels.ID(uuid.New().String()),
@@ -183,7 +182,9 @@ func TestBadOwner(t *testing.T) {
 
 func TestSubscriptionUpdateCells(t *testing.T) {
 	ctx := context.Background()
-	app := setUpSubApp()
+	app, cleanup := setUpSubApp(ctx, t)
+	defer cleanup()
+
 	// ensure that when we do an update, nothing in the s2 library joins multiple
 	// cells together at a lower level.
 
@@ -216,7 +217,8 @@ func TestSubscriptionUpdateCells(t *testing.T) {
 
 func TestInsertSubscriptionsWithTimes(t *testing.T) {
 	ctx := context.Background()
-	app := setUpSubApp()
+	app, cleanup := setUpSubApp(ctx, t)
+	defer cleanup()
 
 	for _, r := range []struct {
 		name                string
@@ -302,7 +304,8 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 
 			// Insert a pre-existing subscription to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
-				existing, err := app.Subscription.InsertSubscription(ctx, &ridmodels.Subscription{
+				// same here
+				existing, err := app.InsertSubscription(ctx, &ridmodels.Subscription{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
@@ -345,10 +348,10 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 
 func TestInsertTooManySubscription(t *testing.T) {
 	var (
-		ctx = context.Background()
-		app = setUpSubApp()
+		ctx          = context.Background()
+		app, cleanup = setUpSubApp(ctx, t)
 	)
-
+	defer cleanup()
 	// Helper function that makes a subscription with a random ID, fixed owner,
 	// and provided cellIDs.
 	makeSubscription := func(cellIDs []uint64) *ridmodels.Subscription {

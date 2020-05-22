@@ -11,6 +11,7 @@ import (
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/rid/repos"
 )
 
 // AppInterface provides the interface to the application logic for ISA entities
@@ -40,13 +41,13 @@ func (a *app) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time
 		earliest = &now
 	}
 
-	return a.ISA.SearchISAs(ctx, cells, earliest, latest)
+	return a.Repository.SearchISAs(ctx, cells, earliest, latest)
 }
 
 // DeleteISA the given ISA
 func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := a.ISA.GetISA(ctx, id)
+	old, err := a.Repository.GetISA(ctx, id)
 	switch {
 	case err == sql.ErrNoRows || old == nil: // Return a 404 here.
 		return nil, nil, dsserr.NotFound(id.String())
@@ -59,24 +60,32 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 	}
 
 	// TODO(steeling) do this in a txn.
-	subs, err := a.Subscription.UpdateNotificationIdxsInCells(ctx, old.Cells)
-	if err != nil {
-		return nil, nil, err
-	}
+	var (
+		isa  *ridmodels.IdentificationServiceArea
+		subs []*ridmodels.Subscription
+	)
+	// The following will automatically retry TXN retry errors.
+	err = a.Repository.InTxnRetrier(func(repo repos.Repository) error {
+		var err error
+		subs, err = repo.UpdateNotificationIdxsInCells(ctx, old.Cells)
+		if err != nil {
+			return err
+		}
 
-	isa, err := a.ISA.DeleteISA(ctx, old)
-	// TODO: change this to return no error, and a nil object and use that
-	// to determine a not found, etc.
-	if err == sql.ErrNoRows {
-		return nil, nil, dsserr.VersionMismatch("old version")
-	}
-
+		isa, err = repo.DeleteISA(ctx, old)
+		// TODO: change this to return no error, and a nil object and use that
+		// to determine a not found, etc.
+		if err == sql.ErrNoRows {
+			return dsserr.VersionMismatch("old version")
+		}
+		return err
+	})
 	return isa, subs, err
 }
 
 // InsertISA implments the AppInterface InsertISA method
 func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	old, err := a.ISA.GetISA(ctx, isa.ID)
+	old, err := a.Repository.GetISA(ctx, isa.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -111,11 +120,11 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		cells = s2.CellUnionFromUnion(old.Cells, isa.Cells)
 		geo.Levelify(&cells)
 	}
-	subs, err := a.Subscription.UpdateNotificationIdxsInCells(ctx, cells)
+	subs, err := a.Repository.UpdateNotificationIdxsInCells(ctx, cells)
 	if err != nil {
 		return nil, nil, err
 	}
-	isa, err = a.ISA.InsertISA(ctx, isa)
+	isa, err = a.Repository.InsertISA(ctx, isa)
 	if err != nil {
 		return nil, nil, err
 	}

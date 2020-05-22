@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"flag"
 	"testing"
@@ -48,13 +47,12 @@ func newStore() (*Store, error) {
 		return nil, errors.New("Missing command-line parameter store-uri")
 	}
 
-	db, err := sql.Open("postgres", *storeURI)
+	cdb, err := cockroach.Dial(*storeURI)
 	if err != nil {
 		return nil, err
 	}
-
 	return &Store{
-		DB:     &cockroach.DB{DB: db},
+		DB:     cdb,
 		logger: zap.L(),
 		clock:  fakeClock,
 	}, nil
