@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blang/semver"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -151,6 +150,16 @@ func TestGetVersion(t *testing.T) {
 	defer tearDownStore()
 	version, err := store.GetVersion(ctx)
 	require.NoError(t, err)
-	_, err = semver.Parse(version)
 	require.NoError(t, err)
+
+	// TODO: remove the below checks when we have better schema management
+	require.Equal(t, "2.0.0", version)
+
+	_, err = store.Queryable.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS cells_subscriptions (id STRING PRIMARY KEY);`)
+	require.NoError(t, err)
+
+	version, err = store.GetVersion(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "1.0.0", version)
+
 }

@@ -27,7 +27,6 @@ import (
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/validations"
 
-	"github.com/blang/semver"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -36,7 +35,7 @@ import (
 
 const (
 	// The code at this version requires a major schema version equal to 2.
-	RequiredMajorSchemaVersion uint64 = 2
+	RequiredMajorSchemaVersion = "2"
 )
 
 var (
@@ -80,9 +79,8 @@ func MustSupportSchema(ctx context.Context, store *ridc.Store) {
 		logger.Panic("could not get schema version from database", zap.Error(err))
 	}
 
-	v := semver.MustParse(vs)
-	if RequiredMajorSchemaVersion != v.Major {
-		logger.Panic(fmt.Sprintf("unsupported schema version! Got %s, requires major version of %d", vs, RequiredMajorSchemaVersion))
+	if RequiredMajorSchemaVersion != semver.Major(vs) {
+		logger.Panic(fmt.Sprintf("unsupported schema version! Got %s, requires major version of %s.", vs, RequiredMajorSchemaVersion))
 	}
 }
 
