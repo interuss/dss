@@ -100,6 +100,10 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 }
 
 func TestTxnRetrier(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
 	require.NotNil(t, store)
 	defer tearDownStore()
 
@@ -137,8 +141,8 @@ func TestTxnRetrier(t *testing.T) {
 	require.Error(t, err)
 	// Ensure it was retried.
 	require.Greater(t, count, 1)
-
 }
+
 func TestGetVersion(t *testing.T) {
 	var (
 		ctx                  = context.Background()

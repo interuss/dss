@@ -162,6 +162,7 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 	return err
 }
 
+// GetVersion returns the current semver of the schema
 func (s *Store) GetVersion(ctx context.Context) (string, error) {
 	const query = `
 		SELECT EXISTS (
