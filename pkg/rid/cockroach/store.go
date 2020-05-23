@@ -164,7 +164,7 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 
 // GetVersion returns the current semver of the schema
 func (s *Store) GetVersion(ctx context.Context) (string, error) {
-	// We treat the existance of cells_subscriptions as running on the initial
+	// We treat the existence of cells_subscriptions as running on the initial
 	// version, 1.0.0
 	const query = `
 		SELECT EXISTS (
