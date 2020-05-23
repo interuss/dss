@@ -36,7 +36,7 @@ import (
 
 const (
 	// The code at this version requires a major schema version equal to 2.
-	RequiredMajorSchemaVersion = "2"
+	RequiredMajorSchemaVersion = "v2"
 )
 
 var (

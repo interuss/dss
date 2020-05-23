@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dpjacques/clockwork"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/lib/pq"
-	"go.uber.org/zap"
-
-	"github.com/dpjacques/clockwork"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"golang.org/x/mod/semver"
 )
 
 var (
@@ -153,13 +153,13 @@ func TestGetVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	// TODO: remove the below checks when we have better schema management
-	require.Equal(t, "2.0.0", version)
+	require.Equal(t, "v2", semver.Major(version))
 
 	_, err = store.Queryable.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS cells_subscriptions (id STRING PRIMARY KEY);`)
 	require.NoError(t, err)
 
 	version, err = store.GetVersion(ctx)
 	require.NoError(t, err)
-	require.Equal(t, "1.0.0", version)
+	require.Equal(t, "v1", semver.Major(version))
 
 }

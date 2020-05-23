@@ -180,11 +180,11 @@ func (s *Store) GetVersion(ctx context.Context) (string, error) {
 	}
 	if ret {
 		// Base version
-		return "1.0.0", nil
+		return "v1.0.0", nil
 	}
 	// Version without cells joins table.
 	// TODO: leverage proper migrations and use something like the query below.
-	return "2.0.0", nil
+	return "v2.0.0", nil
 }
 
 // 	// TODO steeling: we should leverage this function. Instead, we don't have
@@ -194,7 +194,7 @@ func (s *Store) GetVersion(ctx context.Context) (string, error) {
 
 // 	const query = `
 //     SELECT
-//       IFNULL(schema_version, '1.0.0')
+//       IFNULL(schema_version, 'v1.0.0')
 //     FROM
 //     	schema_versions
 //   	LIMIT 1`
