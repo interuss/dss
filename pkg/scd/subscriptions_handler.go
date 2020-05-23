@@ -74,7 +74,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
     // Store Subscription model
     sub, ops, err := store.UpsertSubscription(sub)
     if err != nil {
-      return true, err
+      return false, err
     }
     if sub == nil {
       return false, dsserr.Internal(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
