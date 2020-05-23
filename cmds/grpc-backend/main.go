@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net"
 	"net/url"
 	"strconv"
@@ -25,11 +26,17 @@ import (
 	"github.com/interuss/dss/pkg/scd"
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/validations"
+	"golang.org/x/mod/semver"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+)
+
+const (
+	// The code at this version requires a major schema version equal to 2.
+	RequiredMajorSchemaVersion = "v2"
 )
 
 var (
@@ -64,6 +71,19 @@ var (
 
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "commad separated acceptable JWT `aud` claims")
 )
+
+func MustSupportSchema(ctx context.Context, store *ridc.Store) {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+
+	vs, err := store.GetVersion(ctx)
+	if err != nil {
+		logger.Panic("could not get schema version from database", zap.Error(err))
+	}
+
+	if RequiredMajorSchemaVersion != semver.Major(vs) {
+		logger.Panic(fmt.Sprintf("unsupported schema version! Got %s, requires major version of %s.", vs, RequiredMajorSchemaVersion))
+	}
+}
 
 // RunGRPCServer starts the example gRPC service.
 // "network" and "address" are passed to net.Listen.
@@ -108,6 +128,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	if err := store.Bootstrap(ctx); err != nil {
 		logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
 	}
+
+	MustSupportSchema(ctx, store)
 
 	var (
 		dssServer = &rid.Server{
