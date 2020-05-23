@@ -11,6 +11,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	scdstore "github.com/interuss/dss/pkg/scd/store"
 	"google.golang.org/grpc/status"
 )
 
@@ -30,29 +31,42 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-	// Delete Operation in Store
-	op, subs, err := a.Store.DeleteOperation(ctx, id, owner)
-	if err != nil {
-		return nil, err
-	}
-	if op == nil {
-		return nil, dsserr.Internal(fmt.Sprintf("DeleteOperation returned no Operation for ID: %s", id))
-	}
-	if subs == nil {
-		return nil, dsserr.Internal(fmt.Sprintf("DeleteOperation returned nil Subscriptions for ID: %s", id))
-	}
+  var response *scdpb.ChangeOperationReferenceResponse
+  action := func(store scdstore.Store) (retryable bool, err error) {
+    // Delete Operation in Store
+    op, subs, err := store.DeleteOperation(ctx, id, owner)
+    if err != nil {
+      return false, err
+    }
+    if op == nil {
+      return false, dsserr.Internal(fmt.Sprintf("DeleteOperation returned no Operation for ID: %s", id))
+    }
+    if subs == nil {
+      return false, dsserr.Internal(fmt.Sprintf("DeleteOperation returned nil Subscriptions for ID: %s", id))
+    }
 
-	// Convert deleted Operation to proto
-	opProto, err := op.ToProto()
-	if err != nil {
-		return nil, dsserr.Internal(err.Error())
-	}
+    // Convert deleted Operation to proto
+    opProto, err := op.ToProto()
+    if err != nil {
+      return false, dsserr.Internal(err.Error())
+    }
 
-	// Return response to client
-	return &scdpb.ChangeOperationReferenceResponse{
-		OperationReference: opProto,
-		Subscribers:        makeSubscribersToNotify(subs),
-	}, nil
+    // Return response to client
+    response = &scdpb.ChangeOperationReferenceResponse{
+      OperationReference: opProto,
+      Subscribers:        makeSubscribersToNotify(subs),
+    }
+
+	  return false, nil
+  }
+
+  err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+  if err != nil {
+    // TODO: wrap err in dss.Internal?
+    return nil, err
+  }
+
+	return response, nil
 }
 
 // GetOperationReference returns a single operation ref for the given ID.
@@ -67,23 +81,36 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-	sub, err := a.Store.GetOperation(ctx, id)
-	if err != nil {
-		return nil, err
+  var response *scdpb.GetOperationReferenceResponse
+  action := func(store scdstore.Store) (retryable bool, err error) {
+    sub, err := a.Store.GetOperation(ctx, id)
+    if err != nil {
+      return false, err
+    }
+
+    if sub.Owner != owner {
+      sub.OVN = scdmodels.OVN("")
+    }
+
+    p, err := sub.ToProto()
+    if err != nil {
+      return false, dsserr.Internal(err.Error())
+    }
+
+    response = &scdpb.GetOperationReferenceResponse{
+      OperationReference: p,
+    }
+
+    return false, nil
 	}
 
-	if sub.Owner != owner {
-		sub.OVN = scdmodels.OVN("")
-	}
+  err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+  if err != nil {
+    // TODO: wrap err in dss.Internal?
+    return nil, err
+  }
 
-	p, err := sub.ToProto()
-	if err != nil {
-		return nil, dsserr.Internal(err.Error())
-	}
-
-	return &scdpb.GetOperationReferenceResponse{
-		OperationReference: p,
-	}, nil
+	return response, nil
 }
 
 // SearchOperationReferences queries existing operation refs in the given
@@ -107,24 +134,36 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-	// Perform search query on Store
-	ops, err := a.Store.SearchOperations(ctx, vol4, owner)
-	if err != nil {
-		return nil, err
+  var response *scdpb.SearchOperationReferenceResponse
+  action := func(store scdstore.Store) (retryable bool, err error) {
+    // Perform search query on Store
+    ops, err := store.SearchOperations(ctx, vol4, owner)
+    if err != nil {
+      return false, err
+    }
+
+    // Create response for client
+    response = &scdpb.SearchOperationReferenceResponse{}
+    for _, op := range ops {
+      p, err := op.ToProto()
+      if err != nil {
+        return false, dsserr.Internal("error converting Operation model to proto")
+      }
+      if op.Owner != owner {
+        p.Ovn = ""
+      }
+      response.OperationReferences = append(response.OperationReferences, p)
+    }
+
+    return false, nil
 	}
 
-	// Return response to client
-	response := &scdpb.SearchOperationReferenceResponse{}
-	for _, op := range ops {
-		p, err := op.ToProto()
-		if err != nil {
-			return nil, dsserr.Internal("error converting Operation model to proto")
-		}
-		if op.Owner != owner {
-			p.Ovn = ""
-		}
-		response.OperationReferences = append(response.OperationReferences, p)
-	}
+  err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+  if err != nil {
+    // TODO: wrap err in dss.Internal?
+    return nil, err
+  }
+
 	return response, nil
 }
 
@@ -211,50 +250,63 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		key = append(key, scdmodels.OVN(ovn))
 	}
 
-	op, subs, err := a.Store.UpsertOperation(ctx, &scdmodels.Operation{
-		ID:      id,
-		Owner:   owner,
-		Version: scdmodels.Version(params.OldVersion),
+  var response *scdpb.ChangeOperationReferenceResponse
+  action := func(store scdstore.Store) (retryable bool, err error) {
+    op, subs, err := store.UpsertOperation(ctx, &scdmodels.Operation{
+      ID:      id,
+      Owner:   owner,
+      Version: scdmodels.Version(params.OldVersion),
 
-		StartTime:     uExtent.StartTime,
-		EndTime:       uExtent.EndTime,
-		AltitudeLower: uExtent.SpatialVolume.AltitudeLo,
-		AltitudeUpper: uExtent.SpatialVolume.AltitudeHi,
-		Cells:         cells,
+      StartTime:     uExtent.StartTime,
+      EndTime:       uExtent.EndTime,
+      AltitudeLower: uExtent.SpatialVolume.AltitudeLo,
+      AltitudeUpper: uExtent.SpatialVolume.AltitudeHi,
+      Cells:         cells,
 
-		USSBaseURL:     params.UssBaseUrl,
-		SubscriptionID: subscriptionID,
-		State:          scdmodels.OperationState(params.State),
-	}, key)
+      USSBaseURL:     params.UssBaseUrl,
+      SubscriptionID: subscriptionID,
+      State:          scdmodels.OperationState(params.State),
+    }, key)
 
-	if err == scderr.MissingOVNsInternalError() {
-		// The client is missing some OVNs; provide the pointers to the
-		// information they need
-		ops, err := a.Store.SearchOperations(ctx, uExtent, owner)
-		if err != nil {
-			return nil, err
-		}
-		success, err := scderr.MissingOVNsErrorResponse(ops)
-		if !success {
-			return nil, dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", err))
-		}
-		return nil, err
-	}
+    if err == scderr.MissingOVNsInternalError() {
+      // The client is missing some OVNs; provide the pointers to the
+      // information they need
+      ops, err := a.Store.SearchOperations(ctx, uExtent, owner)
+      if err != nil {
+        return false, err
+      }
+      success, err := scderr.MissingOVNsErrorResponse(ops)
+      if !success {
+        return false, dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", err))
+      }
+      return false, err
+    }
 
-	if err != nil {
-		if _, ok := status.FromError(err); ok {
-			return nil, err
-		}
-		return nil, dsserr.Internal(fmt.Sprintf("failed to upsert operation: %s", err))
-	}
+    if err != nil {
+      if _, ok := status.FromError(err); ok {
+        return false, err
+      }
+      return false, dsserr.Internal(fmt.Sprintf("failed to upsert operation: %s", err))
+    }
 
-	p, err := op.ToProto()
-	if err != nil {
-		return nil, dsserr.Internal("could not convert Operation to proto")
-	}
+    p, err := op.ToProto()
+    if err != nil {
+      return false, dsserr.Internal("could not convert Operation to proto")
+    }
 
-	return &scdpb.ChangeOperationReferenceResponse{
-		OperationReference: p,
-		Subscribers:        makeSubscribersToNotify(subs),
-	}, nil
+    response = &scdpb.ChangeOperationReferenceResponse{
+      OperationReference: p,
+      Subscribers:        makeSubscribersToNotify(subs),
+    }
+
+    return false, nil
+  }
+
+  err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+  if err != nil {
+    // TODO: wrap err in dss.Internal?
+    return nil, err
+  }
+
+	return response, nil
 }
