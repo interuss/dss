@@ -1,7 +1,6 @@
 package cockroach
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -355,7 +354,7 @@ func (c *Store) pushSubscription(q dsssql.Queryable, s *scdmodels.Subscription) 
 
 // GetSubscription returns the subscription identified by "id".
 func (c *Store) GetSubscription(id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
-	sub, err := c.fetchSubscriptionByIDAndOwner(c.DB, id, owner)
+	sub, err := c.fetchSubscriptionByIDAndOwner(c.tx, id, owner)
 	switch err {
 	case nil:
 		return sub, nil
@@ -397,7 +396,7 @@ func (c *Store) UpsertSubscription(s *scdmodels.Subscription) (*scdmodels.Subscr
 	}
 
 	// Check the user hasn't created too many subscriptions in this area.
-	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(s.Cells, s.Owner)
+	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(c.tx, s.Cells, s.Owner)
 	if err != nil {
 		c.logger.Warn("Error fetching max subscription count", zap.Error(err))
 		return nil, nil, dsserr.Internal(
@@ -410,7 +409,7 @@ func (c *Store) UpsertSubscription(s *scdmodels.Subscription) (*scdmodels.Subscr
 		return nil, nil, dsserr.Exhausted(errMsg)
 	}
 
-	newSubscription, err := c.pushSubscription(s)
+	newSubscription, err := c.pushSubscription(c.tx, s)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -418,7 +417,7 @@ func (c *Store) UpsertSubscription(s *scdmodels.Subscription) (*scdmodels.Subscr
 
 	var affectedOperations []*scdmodels.Operation
 	if len(s.Cells) > 0 {
-		ops, err := c.searchOperations(&dssmodels.Volume4D{
+		ops, err := c.searchOperations(c.tx, &dssmodels.Volume4D{
 			StartTime: s.StartTime,
 			EndTime:   s.EndTime,
 			SpatialVolume: &dssmodels.Volume3D{
@@ -467,7 +466,7 @@ func (c *Store) DeleteSubscription(id scdmodels.ID, owner dssmodels.Owner, versi
 	)
 
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := c.fetchSubscriptionByID(id)
+	old, err := c.fetchSubscriptionByID(c.tx, id)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
 		return nil, dsserr.NotFound(id.String())
@@ -535,7 +534,7 @@ func (c *Store) SearchSubscriptions(cells s2.CellUnion, owner dssmodels.Owner) (
 	}
 
 	subscriptions, err := c.fetchSubscriptions(
-		query, pq.Array(cids), owner, c.clock.Now())
+		c.tx, query, pq.Array(cids), owner, c.clock.Now())
 
 	switch {
 	case err != nil:

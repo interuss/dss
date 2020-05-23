@@ -72,7 +72,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
     // TODO: validate against DependentOperations when available
 
     // Store Subscription model
-    sub, ops, err := store.UpsertSubscription(ctx, sub)
+    sub, ops, err := store.UpsertSubscription(sub)
     if err != nil {
       return true, err
     }
@@ -104,7 +104,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
     return false, nil
 	}
 
-	err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
 	if err != nil {
 	  // TODO: wrap err in dss.Internal?
 	  return nil, err
@@ -132,7 +132,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
   var response *scdpb.GetSubscriptionResponse
   action := func(store scdstore.Store) (retryable bool, err error) {
     // Get Subscription from Store
-    sub, err := store.GetSubscription(ctx, id, owner)
+    sub, err := store.GetSubscription(id, owner)
     if err != nil {
       return false, err
     }
@@ -189,7 +189,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
   var response *scdpb.SearchSubscriptionsResponse
   action := func(store scdstore.Store) (retryable bool, err error) {
     // Perform search query on Store
-    subs, err := store.SearchSubscriptions(ctx, cells, owner) //TODO: incorporate time bounds into query
+    subs, err := store.SearchSubscriptions(cells, owner) //TODO: incorporate time bounds into query
     if err != nil {
       return false, err
     }
@@ -207,7 +207,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
     return false, nil
   }
 
-  err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+  err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
   if err != nil {
     // TODO: wrap err in dss.Internal?
     return nil, err
@@ -235,7 +235,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
   var response *scdpb.DeleteSubscriptionResponse
   action := func(store scdstore.Store) (retryable bool, err error) {
     // Delete Subscription in Store
-    sub, err := store.DeleteSubscription(ctx, id, owner, scdmodels.Version(0))
+    sub, err := store.DeleteSubscription(id, owner, scdmodels.Version(0))
     if err != nil {
       return false, err
     }

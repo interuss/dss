@@ -2,9 +2,11 @@ package cockroach
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
+	scdstore "github.com/interuss/dss/pkg/scd/store"
 	"go.uber.org/zap"
 )
 
@@ -16,7 +18,7 @@ var (
 // Store is an implementation of scd.Store using
 // a CockroachDB transaction.
 type Store struct {
-  tx     *cockroach.Tx
+  tx     *sql.Tx
   ctx    context.Context
 	logger *zap.Logger
 	clock  clockwork.Clock
@@ -25,20 +27,20 @@ type Store struct {
 // Transaction is an implementation of scd.Transaction using
 // a CockroachDB transaction.
 type Transaction struct {
-  tx     *cockroach.Tx
+  tx     *sql.Tx
   logger *zap.Logger
   ctx    context.Context
   clock  clockwork.Clock
 }
 
 // Implement store.Transaction interface
-func (t *Transaction) Store() (Store, error) {
+func (t *Transaction) Store() (scdstore.Store, error) {
   return &Store{
-    tx:     t.tx
-    logger: t.logger
-    ctx:    t.ctx
-    clock:  t.clock
-  }
+    tx:     t.tx,
+    logger: t.logger,
+    ctx:    t.ctx,
+    clock:  t.clock,
+  }, nil
 }
 
 // Implement store.Transaction interface
@@ -50,7 +52,7 @@ func (t *Transaction) Commit() error {
 func (t *Transaction) Rollback() error {
   return t.tx.Rollback()
 }
-​
+
 // Transactor is an implementation of scd.Transactor using
 // a CockroachDB database.
 type Transactor struct {
@@ -69,17 +71,17 @@ func NewTransactor(db *cockroach.DB, logger *zap.Logger) *Transactor {
 }
 
 // Implement store.Transactor interface
-func (t *Transactor) Transact(ctx context.Context) (Transaction, error) {
+func (t *Transactor) Transact(ctx context.Context) (scdstore.Transaction, error) {
   tx, err := t.db.Begin()
 	if err != nil {
 		return nil, err
 	}
   return &Transaction{
-    tx:     tx
-    logger: t.logger
-    ctx:    ctx
-    clock:  t.clock
-  }
+    tx:     tx,
+    logger: t.logger,
+    ctx:    ctx,
+    clock:  t.clock,
+  }, nil
 }
 
 // Close closes the underlying DB connection.
@@ -91,7 +93,7 @@ func (t *Transactor) Close() error {
 //
 // TODO: We should handle database migrations properly, but bootstrap both us
 // *and* the database with this manual approach here.
-func (s *Store) Bootstrap(ctx context.Context) error {
+func (t *Transactor) Bootstrap(ctx context.Context) error {
 	const query = `
 	CREATE TABLE IF NOT EXISTS scd_subscriptions (
 		id UUID PRIMARY KEY,
@@ -148,6 +150,6 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		INDEX operation_id_idx (operation_id)
 	);
 	`
-	_, err := s.ExecContext(ctx, query)
+	_, err := t.db.ExecContext(ctx, query)
 	return err
 }

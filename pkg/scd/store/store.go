@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"time"
 
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -47,12 +46,6 @@ type SubscriptionStore interface {
 	DeleteSubscription(id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error)
 }
 
-// Store abstracts interactions with a backing data store.
-type Store interface {
-	OperationStore
-	SubscriptionStore
-}
-
 // Store abstracts strategic conflict detection interactions with the backing
 // data store.
 type Store interface {
@@ -70,7 +63,7 @@ type Transaction interface {
 	// Rollback rolls back all the operations performed on the Transactor so far.
 	Rollback() error
 }
-​
+
 type Transactor interface {
 	// Transact begins an atomic transaction
 	Transact(ctx context.Context) (Transaction, error)
@@ -83,7 +76,8 @@ type TransactionOperation func(store Store) (retryable bool, err error)
 // PerformOperationWithRetries creates a Transaction from the Transactor,
 // attempts to perform the provided action, and retries this process again if
 // it fails in a retryable way.
-func PerformOperationWithRetries(ctx context.Context, transactor Transactor, operation TransactionOperation, int retries) (err error) {
+func PerformOperationWithRetries(ctx context.Context, transactor Transactor, operation TransactionOperation, retries int) (error) {
+  var err error
   for i := 0; i <= retries; i++ {
     // Prepare a Store for `operation` to act on
     tx, err := transactor.Transact(ctx)
@@ -118,4 +112,6 @@ func PerformOperationWithRetries(ctx context.Context, transactor Transactor, ope
       return err
     }
   }
+
+  return err
 }

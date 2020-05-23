@@ -34,7 +34,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
   var response *scdpb.ChangeOperationReferenceResponse
   action := func(store scdstore.Store) (retryable bool, err error) {
     // Delete Operation in Store
-    op, subs, err := store.DeleteOperation(ctx, id, owner)
+    op, subs, err := store.DeleteOperation(id, owner)
     if err != nil {
       return false, err
     }
@@ -83,7 +83,7 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 
   var response *scdpb.GetOperationReferenceResponse
   action := func(store scdstore.Store) (retryable bool, err error) {
-    sub, err := a.Store.GetOperation(ctx, id)
+    sub, err := store.GetOperation(id)
     if err != nil {
       return false, err
     }
@@ -137,7 +137,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
   var response *scdpb.SearchOperationReferenceResponse
   action := func(store scdstore.Store) (retryable bool, err error) {
     // Perform search query on Store
-    ops, err := store.SearchOperations(ctx, vol4, owner)
+    ops, err := store.SearchOperations(vol4, owner)
     if err != nil {
       return false, err
     }
@@ -158,7 +158,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
     return false, nil
 	}
 
-  err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+  err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
   if err != nil {
     // TODO: wrap err in dss.Internal?
     return nil, err
@@ -215,44 +215,44 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 	subscriptionID := scdmodels.ID(params.GetSubscriptionId())
 
-	if subscriptionID.Empty() {
-		if err := scdmodels.ValidateUSSBaseURL(
-			params.GetNewSubscription().GetUssBaseUrl(),
-		); err != nil {
-			return nil, dsserr.BadRequest(err.Error())
-		}
-		// TODO(tvoss): Creation of the subscription and the operation is not
-		// atomic. That is, if the creation of the operation fails, we need to
-		// rollback this subscription, too. See
-		// https://github.com/interuss/dss/issues/277 for tracking purposes.
-		sub, _, err := a.putSubscription(ctx, &scdmodels.Subscription{
-			ID:         scdmodels.ID(uuid.New().String()),
-			Owner:      owner,
-			StartTime:  uExtent.StartTime,
-			EndTime:    uExtent.EndTime,
-			AltitudeLo: uExtent.SpatialVolume.AltitudeLo,
-			AltitudeHi: uExtent.SpatialVolume.AltitudeHi,
-			Cells:      cells,
-
-			BaseURL:              params.GetNewSubscription().GetUssBaseUrl(),
-			NotifyForOperations:  true,
-			NotifyForConstraints: params.GetNewSubscription().GetNotifyForConstraints(),
-			ImplicitSubscription: true,
-		})
-		if err != nil {
-			return nil, dsserr.Internal(fmt.Sprintf("failed to create implicit subscription: %s", err))
-		}
-		subscriptionID = sub.ID
-	}
-
-	key := []scdmodels.OVN{}
-	for _, ovn := range params.GetKey() {
-		key = append(key, scdmodels.OVN(ovn))
-	}
-
   var response *scdpb.ChangeOperationReferenceResponse
   action := func(store scdstore.Store) (retryable bool, err error) {
-    op, subs, err := store.UpsertOperation(ctx, &scdmodels.Operation{
+    if subscriptionID.Empty() {
+      if err := scdmodels.ValidateUSSBaseURL(
+        params.GetNewSubscription().GetUssBaseUrl(),
+      ); err != nil {
+        return false, dsserr.BadRequest(err.Error())
+      }
+      // TODO(tvoss): Creation of the subscription and the operation is not
+      // atomic. That is, if the creation of the operation fails, we need to
+      // rollback this subscription, too. See
+      // https://github.com/interuss/dss/issues/277 for tracking purposes.
+      sub, _, err := store.UpsertSubscription(&scdmodels.Subscription{
+        ID:         scdmodels.ID(uuid.New().String()),
+        Owner:      owner,
+        StartTime:  uExtent.StartTime,
+        EndTime:    uExtent.EndTime,
+        AltitudeLo: uExtent.SpatialVolume.AltitudeLo,
+        AltitudeHi: uExtent.SpatialVolume.AltitudeHi,
+        Cells:      cells,
+
+        BaseURL:              params.GetNewSubscription().GetUssBaseUrl(),
+        NotifyForOperations:  true,
+        NotifyForConstraints: params.GetNewSubscription().GetNotifyForConstraints(),
+        ImplicitSubscription: true,
+      })
+      if err != nil {
+        return false, dsserr.Internal(fmt.Sprintf("failed to create implicit subscription: %s", err))
+      }
+      subscriptionID = sub.ID
+    }
+
+    key := []scdmodels.OVN{}
+    for _, ovn := range params.GetKey() {
+      key = append(key, scdmodels.OVN(ovn))
+    }
+
+    op, subs, err := store.UpsertOperation(&scdmodels.Operation{
       ID:      id,
       Owner:   owner,
       Version: scdmodels.Version(params.OldVersion),
@@ -271,7 +271,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
     if err == scderr.MissingOVNsInternalError() {
       // The client is missing some OVNs; provide the pointers to the
       // information they need
-      ops, err := a.Store.SearchOperations(ctx, uExtent, owner)
+      ops, err := store.SearchOperations(uExtent, owner)
       if err != nil {
         return false, err
       }
@@ -302,7 +302,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
     return false, nil
   }
 
-  err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+  err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
   if err != nil {
     // TODO: wrap err in dss.Internal?
     return nil, err

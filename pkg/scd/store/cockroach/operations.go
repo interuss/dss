@@ -1,7 +1,6 @@
 package cockroach
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -50,7 +49,7 @@ func init() {
 }
 
 func (s *Store) fetchOperations(q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Operation, error) {
-	rows, err := q.QueryContext(query, args...)
+	rows, err := q.QueryContext(s.ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +223,7 @@ func (s *Store) populateOperationCells(q dsssql.Queryable, o *scdmodels.Operatio
 
 // GetOperation returns an operation for the given ID from CockroachDB
 func (s *Store) GetOperation(id scdmodels.ID) (*scdmodels.Operation, error) {
-	sub, err := s.fetchOperationByID(s.DB, id)
+	sub, err := s.fetchOperationByID(s.tx, id)
 	switch err {
 	case nil:
 		return sub, nil
@@ -268,7 +267,7 @@ func (s *Store) DeleteOperation(id scdmodels.ID, owner dssmodels.Owner) (*scdmod
 	)
 
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := s.fetchOperationByID(id)
+	old, err := s.fetchOperationByID(s.tx, id)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
 		return nil, nil, dsserr.NotFound(id.String())
@@ -277,7 +276,7 @@ func (s *Store) DeleteOperation(id scdmodels.ID, owner dssmodels.Owner) (*scdmod
 	case old != nil && old.Owner != owner:
 		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Operation is owned by %s", old.Owner))
 	}
-	if err := s.populateOperationCells(old); err != nil {
+	if err := s.populateOperationCells(s.tx, old); err != nil {
 		return nil, nil, err
 	}
 
@@ -285,7 +284,7 @@ func (s *Store) DeleteOperation(id scdmodels.ID, owner dssmodels.Owner) (*scdmod
 	for i, cell := range old.Cells {
 		cids[i] = int64(cell)
 	}
-	subscriptions, err := s.fetchSubscriptionsForNotification(cids)
+	subscriptions, err := s.fetchSubscriptionsForNotification(s.tx, cids)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -302,7 +301,7 @@ func (s *Store) DeleteOperation(id scdmodels.ID, owner dssmodels.Owner) (*scdmod
 
 // UpsertOperation inserts or updates an operation in CockroachDB
 func (s *Store) UpsertOperation(operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
-	old, err := s.fetchOperationByID(operation.ID)
+	old, err := s.fetchOperationByID(s.tx, operation.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -334,7 +333,7 @@ func (s *Store) UpsertOperation(operation *scdmodels.Operation, key []scdmodels.
 	// whether all affected OVNs are matched.
 	switch operation.State {
 	case scdmodels.OperationStateAccepted, scdmodels.OperationStateActivated:
-		operations, err := s.searchOperations(&dssmodels.Volume4D{
+		operations, err := s.searchOperations(s.tx, &dssmodels.Volume4D{
 			StartTime: operation.StartTime,
 			EndTime:   operation.EndTime,
 			SpatialVolume: &dssmodels.Volume3D{
@@ -363,7 +362,7 @@ func (s *Store) UpsertOperation(operation *scdmodels.Operation, key []scdmodels.
 		// We default to not checking the OVNs for now for all other operation states.
 	}
 
-	area, subscribers, err := s.pushOperation(operation)
+	area, subscribers, err := s.pushOperation(s.tx, operation)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -436,7 +435,7 @@ func (s *Store) searchOperations(q dsssql.Queryable, v4d *dssmodels.Volume4D, ow
 
 // SearchOperations returns operations within the 4D volume from CockroachDB
 func (s *Store) SearchOperations(v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
-	result, err := s.searchOperations(v4d, owner)
+	result, err := s.searchOperations(s.tx, v4d, owner)
 	if err != nil {
 		return nil, err
 	}
