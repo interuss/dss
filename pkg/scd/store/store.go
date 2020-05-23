@@ -12,39 +12,39 @@ import (
 // OperationStore abstracts operation-specific interactions with the backing data store.
 type OperationStore interface {
 	// GetOperation returns the operation identified by "id".
-	GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error)
+	GetOperation(id scdmodels.ID) (*scdmodels.Operation, error)
 
 	// DeleteOperation deletes the operation identified by "id" and owned by "owner".
 	// Returns the deleted Operation and all Subscriptions affected by the delete.
-	DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error)
+	DeleteOperation(id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error)
 
 	// UpsertOperation inserts or updates an operation using key as a fencing
 	// token. If operation does not reference an existing subscription, an
 	// implicit subscription with parameters notifySubscriptionForConstraints
 	// and subscriptionBaseURL is created.
-	UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error)
+	UpsertOperation(operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error)
 
 	// SearchOperations returns all operations ownded by "owner" intersecting "v4d".
-	SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error)
+	SearchOperations(v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error)
 }
 
 // SubscriptionStore abstracts subscription-specific interactions with the backing data store.
 type SubscriptionStore interface {
 	// SearchSubscriptions returns all Subscriptions owned by "owner" in "cells".
-	SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error)
+	SearchSubscriptions(cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error)
 
 	// GetSubscription returns the Subscription referenced by id, or nil if the
 	// Subscription doesn't exist
-	GetSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error)
+	GetSubscription(id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error)
 
 	// UpsertSubscription upserts sub into the store and returns the result
 	// subscription.
-	UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error)
+	UpsertSubscription(sub *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error)
 
 	// DeleteSubscription deletes a Subscription from the store and returns the
 	// deleted subscription.  Returns nil and an error if the Subscription does
 	// not exist, or is owned by someone other than the specified owner.
-	DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error)
+	DeleteSubscription(id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error)
 }
 
 // Store abstracts interactions with a backing data store.
@@ -53,105 +53,69 @@ type Store interface {
 	SubscriptionStore
 }
 
-var (
-	_ Store = &DummyStore{}
-)
-
-// DummyStore implements Store interface entirely with error-free no-ops
-type DummyStore struct {
+// Store abstracts strategic conflict detection interactions with the backing
+// data store.
+type Store interface {
+	OperationStore
+	SubscriptionStore
 }
 
-func makeDummyOperation(id scdmodels.ID) *scdmodels.Operation {
-	var (
-		altLo = float32(11235)
-		altHi = float32(81321)
-		start = time.Now()
-		end   = start.Add(2 * time.Minute)
-	)
+type Transaction interface {
+  // Retrieve Store that operates within this Transaction.
+  Store() (Store, error)
 
-	return &scdmodels.Operation{
-		ID:            id,
-		Version:       314,
-		OVN:           scdmodels.NewOVNFromTime(time.Now(), id.String()),
-		USSBaseURL:    "https://exampleuss.com/utm",
-		AltitudeLower: &altLo,
-		AltitudeUpper: &altHi,
-		StartTime:     &start,
-		EndTime:       &end,
-		State:         scdmodels.OperationStateAccepted,
-	}
+	// Commit commits all the operations performed on the Transactor so far.
+	Commit() error
 
+	// Rollback rolls back all the operations performed on the Transactor so far.
+	Rollback() error
+}
+​
+type Transactor interface {
+	// Transact begins an atomic transaction
+	Transact(ctx context.Context) (Transaction, error)
 }
 
-// makeDummySubscription returns a dummy subscription instance with ID id.
-func makeDummySubscription(id scdmodels.ID) *scdmodels.Subscription {
-	altLo := float32(11235)
-	altHi := float32(81321)
-	result := &scdmodels.Subscription{
-		ID:                   id,
-		Version:              314,
-		NotificationIndex:    123,
-		BaseURL:              "https://exampleuss.com/utm",
-		AltitudeLo:           &altLo,
-		AltitudeHi:           &altHi,
-		NotifyForOperations:  true,
-		NotifyForConstraints: false,
-		ImplicitSubscription: true,
-		DependentOperations: []scdmodels.ID{
-			scdmodels.ID("c09bcff5-35a4-41de-9220-6c140a9857ee"),
-			scdmodels.ID("2cff1c62-cf1a-41ad-826b-d12dad432f21"),
-		},
-	}
-	return result
-}
+// TransactionOperation is an application action involving one or more chained
+// Store actions joined by application logic.
+type TransactionOperation func(store Store) (retryable bool, err error)
 
-// SearchSubscriptions is a stubbed implementation of SearchSubscriptions.
-func (s *DummyStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error) {
-	subs := []*scdmodels.Subscription{
-		makeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
-	}
-	return subs, nil
-}
+// PerformOperationWithRetries creates a Transaction from the Transactor,
+// attempts to perform the provided action, and retries this process again if
+// it fails in a retryable way.
+func PerformOperationWithRetries(ctx context.Context, transactor Transactor, operation TransactionOperation, int retries) (err error) {
+  for i := 0; i <= retries; i++ {
+    // Prepare a Store for `operation` to act on
+    tx, err := transactor.Transact(ctx)
+    if err != nil {
+      return err
+    }
 
-// GetSubscription is a stubbed implementation of GetSubscription.
-func (s *DummyStore) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
-	return makeDummySubscription(id), nil
-}
+    store, err := tx.Store()
+    if err != nil {
+      return err
+    }
 
-// UpsertSubscription is a stubbed implementation of UpsertSubscription.
-func (s *DummyStore) UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
-	return sub, []*scdmodels.Operation{makeDummyOperation(sub.ID)}, nil
-}
-
-// DeleteSubscription is a stubbed implementation of DeleteSubscription.
-func (s *DummyStore) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error) {
-	sub := makeDummySubscription(id)
-	sub.ID = id
-	return sub, nil
-}
-
-// GetOperation is a stubbed implementation of GetOperation.
-func (s *DummyStore) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
-	return makeDummyOperation(id), nil
-}
-
-// DeleteOperation is a stubbed implementation of DeleteOperation.
-func (s *DummyStore) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
-	return makeDummyOperation(id), []*scdmodels.Subscription{
-		makeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
-	}, nil
-}
-
-// UpsertOperation is a stubbed implementation of UpsertOperation.
-func (s *DummyStore) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
-	return operation, []*scdmodels.Subscription{
-		makeDummySubscription(scdmodels.ID("444eab15-8384-4e39-8589-5161689aee56")),
-	}, nil
-}
-
-// SearchOperations is a stubbed implementation of SearchOperations.
-func (s *DummyStore) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
-	return []*scdmodels.Operation{
-		makeDummyOperation("444eab15-8384-4e39-8589-5161689aee56"),
-	}, nil
+    retryable, err := operation(store)
+    if err == nil {
+      // Operation was successful
+      err = tx.Commit()
+      if err != nil {
+        // Commit errors are assumed to be retryable
+        continue
+      }
+      // TransactionOperation and Commit were successful
+      return nil
+    } else if retryable {
+      // A transient error occurred
+      // TODO: log transient failure
+      err = tx.Rollback()
+      if err != nil {
+        return err
+      }
+    } else {
+      // A non-retryable error occurred
+      return err
+    }
+  }
 }

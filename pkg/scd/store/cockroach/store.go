@@ -13,26 +13,78 @@ var (
 	DefaultClock = clockwork.NewRealClock()
 )
 
-// Store is an implementation of dss.Store using
-// Cockroach DB as its backend store.
+// Store is an implementation of scd.Store using
+// a CockroachDB transaction.
 type Store struct {
-	*cockroach.DB
+  tx     *cockroach.Tx
+  ctx    context.Context
 	logger *zap.Logger
 	clock  clockwork.Clock
 }
 
-// NewStore returns a Store instance connected to a cockroach instance via db.
-func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
-	return &Store{
-		DB:     db,
+// Transaction is an implementation of scd.Transaction using
+// a CockroachDB transaction.
+type Transaction struct {
+  tx     *cockroach.Tx
+  logger *zap.Logger
+  ctx    context.Context
+  clock  clockwork.Clock
+}
+
+// Implement store.Transaction interface
+func (t *Transaction) Store() (Store, error) {
+  return &Store{
+    tx:     t.tx
+    logger: t.logger
+    ctx:    t.ctx
+    clock:  t.clock
+  }
+}
+
+// Implement store.Transaction interface
+func (t *Transaction) Commit() error {
+  return t.tx.Commit()
+}
+
+// Implement store.Transaction interface
+func (t *Transaction) Rollback() error {
+  return t.tx.Rollback()
+}
+​
+// Transactor is an implementation of scd.Transactor using
+// a CockroachDB database.
+type Transactor struct {
+	db     *cockroach.DB
+	logger *zap.Logger
+	clock  clockwork.Clock
+}
+
+// NewTransactor returns a Transactor instance connected to a cockroach instance via db.
+func NewTransactor(db *cockroach.DB, logger *zap.Logger) *Transactor {
+	return &Transactor{
+		db:     db,
 		logger: logger,
 		clock:  DefaultClock,
 	}
 }
 
+// Implement store.Transactor interface
+func (t *Transactor) Transact(ctx context.Context) (Transaction, error) {
+  tx, err := t.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+  return &Transaction{
+    tx:     tx
+    logger: t.logger
+    ctx:    ctx
+    clock:  t.clock
+  }
+}
+
 // Close closes the underlying DB connection.
-func (s *Store) Close() error {
-	return s.DB.Close()
+func (t *Transactor) Close() error {
+	return t.db.Close()
 }
 
 // Bootstrap bootstraps the underlying database with required tables.
