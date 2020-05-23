@@ -54,8 +54,8 @@ type Store interface {
 }
 
 type Transaction interface {
-  // Retrieve Store that operates within this Transaction.
-  Store() (Store, error)
+	// Retrieve Store that operates within this Transaction.
+	Store() (Store, error)
 
 	// Commit commits all the operations performed on the Transactor so far.
 	Commit() error
@@ -71,47 +71,40 @@ type Transactor interface {
 
 // TransactionOperation is an application action involving one or more chained
 // Store actions joined by application logic.
-type TransactionOperation func(store Store) (retryable bool, err error)
+type TransactionOperation func(store Store) (err error)
 
 // PerformOperationWithRetries creates a Transaction from the Transactor,
 // attempts to perform the provided action, and retries this process again if
 // it fails in a retryable way.
-func PerformOperationWithRetries(ctx context.Context, transactor Transactor, operation TransactionOperation, retries int) (error) {
-  var err error
-  for i := 0; i <= retries; i++ {
-    // Prepare a Store for `operation` to act on
-    tx, err := transactor.Transact(ctx)
-    if err != nil {
-      return err
-    }
+func PerformOperationWithRetries(ctx context.Context, transactor Transactor, operation TransactionOperation, retries int) error {
+	var err error
+	for i := 0; i <= retries; i++ {
+		// Prepare a Store for `operation` to act on
+		tx, err := transactor.Transact(ctx)
+		if err != nil {
+			return err
+		}
 
-    store, err := tx.Store()
-    if err != nil {
-      return err
-    }
+		store, err := tx.Store()
+		if err != nil {
+			return err
+		}
 
-    retryable, err := operation(store)
-    if err == nil {
-      // Operation was successful
-      err = tx.Commit()
-      if err != nil {
-        // Commit errors are assumed to be retryable
-        continue
-      }
-      // TransactionOperation and Commit were successful
-      return nil
-    } else if retryable {
-      // A transient error occurred
-      // TODO: log transient failure
-      err = tx.Rollback()
-      if err != nil {
-        return err
-      }
-    } else {
-      // A non-retryable error occurred
-      return err
-    }
-  }
+		err = operation(store)
+		if err == nil {
+			// Operation was successful
+			err = tx.Commit()
+			if err != nil {
+				// Commit errors are assumed to be retryable
+				continue
+			}
+			// TransactionOperation and Commit were successful
+			return nil
+		} else {
+			// A non-retryable error occurred
+			return err
+		}
+	}
 
-  return err
+	return err
 }

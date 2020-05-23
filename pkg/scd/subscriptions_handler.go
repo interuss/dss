@@ -67,47 +67,47 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		return nil, dsserr.BadRequest("no notification triggers requested for Subscription")
 	}
 
-  var result *scdpb.PutSubscriptionResponse
-	action := func(store scdstore.Store) (retryable bool, err error) {
-    // TODO: validate against DependentOperations when available
+	var result *scdpb.PutSubscriptionResponse
+	action := func(store scdstore.Store) (err error) {
+		// TODO: validate against DependentOperations when available
 
-    // Store Subscription model
-    sub, ops, err := store.UpsertSubscription(sub)
-    if err != nil {
-      return false, err
-    }
-    if sub == nil {
-      return false, dsserr.Internal(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
-    }
-    for _, op := range ops {
-      if op.Owner != owner {
-        op.OVN = scdmodels.OVN("")
-      }
-    }
+		// Store Subscription model
+		sub, ops, err := store.UpsertSubscription(sub)
+		if err != nil {
+			return err
+		}
+		if sub == nil {
+			return dsserr.Internal(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
+		}
+		for _, op := range ops {
+			if op.Owner != owner {
+				op.OVN = scdmodels.OVN("")
+			}
+		}
 
-    // Convert Subscription to proto
-    p, err := sub.ToProto()
-    if err != nil {
-      return false, dsserr.Internal(err.Error())
-    }
-    result = &scdpb.PutSubscriptionResponse{
-      Subscription: p,
-    }
-    for _, op := range ops {
-      if op.Owner != owner {
-        op.OVN = scdmodels.OVN("")
-      }
-      pop, _ := op.ToProto()
-      result.Operations = append(result.Operations, pop)
-    }
+		// Convert Subscription to proto
+		p, err := sub.ToProto()
+		if err != nil {
+			return dsserr.Internal(err.Error())
+		}
+		result = &scdpb.PutSubscriptionResponse{
+			Subscription: p,
+		}
+		for _, op := range ops {
+			if op.Owner != owner {
+				op.OVN = scdmodels.OVN("")
+			}
+			pop, _ := op.ToProto()
+			result.Operations = append(result.Operations, pop)
+		}
 
-    return false, nil
+		return nil
 	}
 
 	err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
 	if err != nil {
-	  // TODO: wrap err in dss.Internal?
-	  return nil, err
+		// TODO: wrap err in dss.Internal?
+		return nil, err
 	}
 
 	// Return response to client
@@ -129,35 +129,35 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-  var response *scdpb.GetSubscriptionResponse
-  action := func(store scdstore.Store) (retryable bool, err error) {
-    // Get Subscription from Store
-    sub, err := store.GetSubscription(id, owner)
-    if err != nil {
-      return false, err
-    }
+	var response *scdpb.GetSubscriptionResponse
+	action := func(store scdstore.Store) (err error) {
+		// Get Subscription from Store
+		sub, err := store.GetSubscription(id, owner)
+		if err != nil {
+			return err
+		}
 
-    // Convert Subscription to proto
-    p, err := sub.ToProto()
-    if err != nil {
-      return false, dsserr.Internal("unable to convert Subscription to proto")
-    }
+		// Convert Subscription to proto
+		p, err := sub.ToProto()
+		if err != nil {
+			return dsserr.Internal("unable to convert Subscription to proto")
+		}
 
-    // Return response to client
-    response = &scdpb.GetSubscriptionResponse{
-      Subscription: p,
-    }
+		// Return response to client
+		response = &scdpb.GetSubscriptionResponse{
+			Subscription: p,
+		}
 
-    return false, nil
-  }
+		return nil
+	}
 
-  err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
-  if err != nil {
-    // TODO: wrap err in dss.Internal?
-    return nil, err
-  }
+	err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	if err != nil {
+		// TODO: wrap err in dss.Internal?
+		return nil, err
+	}
 
-  return response, nil
+	return response, nil
 }
 
 // QuerySubscriptions queries existing subscriptions in the given bounds.
@@ -186,32 +186,32 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-  var response *scdpb.SearchSubscriptionsResponse
-  action := func(store scdstore.Store) (retryable bool, err error) {
-    // Perform search query on Store
-    subs, err := store.SearchSubscriptions(cells, owner) //TODO: incorporate time bounds into query
-    if err != nil {
-      return false, err
-    }
+	var response *scdpb.SearchSubscriptionsResponse
+	action := func(store scdstore.Store) (err error) {
+		// Perform search query on Store
+		subs, err := store.SearchSubscriptions(cells, owner) //TODO: incorporate time bounds into query
+		if err != nil {
+			return err
+		}
 
-    // Return response to client
-    response = &scdpb.SearchSubscriptionsResponse{}
-    for _, sub := range subs {
-      p, err := sub.ToProto()
-      if err != nil {
-        return false, dsserr.Internal("error converting Subscription model to proto")
-      }
-      response.Subscriptions = append(response.Subscriptions, p)
-    }
+		// Return response to client
+		response = &scdpb.SearchSubscriptionsResponse{}
+		for _, sub := range subs {
+			p, err := sub.ToProto()
+			if err != nil {
+				return dsserr.Internal("error converting Subscription model to proto")
+			}
+			response.Subscriptions = append(response.Subscriptions, p)
+		}
 
-    return false, nil
-  }
+		return nil
+	}
 
-  err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
-  if err != nil {
-    // TODO: wrap err in dss.Internal?
-    return nil, err
-  }
+	err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	if err != nil {
+		// TODO: wrap err in dss.Internal?
+		return nil, err
+	}
 
 	return response, nil
 }
@@ -232,36 +232,36 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-  var response *scdpb.DeleteSubscriptionResponse
-  action := func(store scdstore.Store) (retryable bool, err error) {
-    // Delete Subscription in Store
-    sub, err := store.DeleteSubscription(id, owner, scdmodels.Version(0))
-    if err != nil {
-      return false, err
-    }
-    if sub == nil {
-      return false, dsserr.Internal(fmt.Sprintf("DeleteSubscription returned no Subscription for ID: %s", id))
-    }
+	var response *scdpb.DeleteSubscriptionResponse
+	action := func(store scdstore.Store) (err error) {
+		// Delete Subscription in Store
+		sub, err := store.DeleteSubscription(id, owner, scdmodels.Version(0))
+		if err != nil {
+			return err
+		}
+		if sub == nil {
+			return dsserr.Internal(fmt.Sprintf("DeleteSubscription returned no Subscription for ID: %s", id))
+		}
 
-    // Convert deleted Subscription to proto
-    p, err := sub.ToProto()
-    if err != nil {
-      return false, dsserr.Internal("error converting Subscription model to proto")
-    }
+		// Convert deleted Subscription to proto
+		p, err := sub.ToProto()
+		if err != nil {
+			return dsserr.Internal("error converting Subscription model to proto")
+		}
 
-    // Create response for client
-    response = &scdpb.DeleteSubscriptionResponse{
-      Subscription: p,
-    }
+		// Create response for client
+		response = &scdpb.DeleteSubscriptionResponse{
+			Subscription: p,
+		}
 
-	  return false, nil
-  }
+		return nil
+	}
 
-  err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
-  if err != nil {
-    // TODO: wrap err in dss.Internal?
-    return nil, err
-  }
+	err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	if err != nil {
+		// TODO: wrap err in dss.Internal?
+		return nil, err
+	}
 
 	return response, nil
 }

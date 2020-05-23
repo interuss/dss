@@ -18,8 +18,8 @@ var (
 // Store is an implementation of scd.Store using
 // a CockroachDB transaction.
 type Store struct {
-  tx     *sql.Tx
-  ctx    context.Context
+	tx     *sql.Tx
+	ctx    context.Context
 	logger *zap.Logger
 	clock  clockwork.Clock
 }
@@ -27,30 +27,30 @@ type Store struct {
 // Transaction is an implementation of scd.Transaction using
 // a CockroachDB transaction.
 type Transaction struct {
-  tx     *sql.Tx
-  logger *zap.Logger
-  ctx    context.Context
-  clock  clockwork.Clock
+	tx     *sql.Tx
+	logger *zap.Logger
+	ctx    context.Context
+	clock  clockwork.Clock
 }
 
 // Implement store.Transaction interface
 func (t *Transaction) Store() (scdstore.Store, error) {
-  return &Store{
-    tx:     t.tx,
-    logger: t.logger,
-    ctx:    t.ctx,
-    clock:  t.clock,
-  }, nil
+	return &Store{
+		tx:     t.tx,
+		logger: t.logger,
+		ctx:    t.ctx,
+		clock:  t.clock,
+	}, nil
 }
 
 // Implement store.Transaction interface
 func (t *Transaction) Commit() error {
-  return t.tx.Commit()
+	return t.tx.Commit()
 }
 
 // Implement store.Transaction interface
 func (t *Transaction) Rollback() error {
-  return t.tx.Rollback()
+	return t.tx.Rollback()
 }
 
 // Transactor is an implementation of scd.Transactor using
@@ -72,16 +72,16 @@ func NewTransactor(db *cockroach.DB, logger *zap.Logger) *Transactor {
 
 // Implement store.Transactor interface
 func (t *Transactor) Transact(ctx context.Context) (scdstore.Transaction, error) {
-  tx, err := t.db.Begin()
+	tx, err := t.db.Begin()
 	if err != nil {
 		return nil, err
 	}
-  return &Transaction{
-    tx:     tx,
-    logger: t.logger,
-    ctx:    ctx,
-    clock:  t.clock,
-  }, nil
+	return &Transaction{
+		tx:     tx,
+		logger: t.logger,
+		ctx:    ctx,
+		clock:  t.clock,
+	}, nil
 }
 
 // Close closes the underlying DB connection.
