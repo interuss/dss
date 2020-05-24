@@ -100,10 +100,9 @@ func PerformOperationWithRetries(ctx context.Context, transactor Transactor, ope
 			}
 			// TransactionOperation and Commit were successful
 			return nil
-		} else {
-			// A non-retryable error occurred
-			return err
 		}
+    // A non-retryable error occurred
+    return err
 	}
 
 	return err
