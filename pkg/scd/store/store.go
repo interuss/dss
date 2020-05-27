@@ -2,6 +2,9 @@ package store
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
 
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -78,6 +81,7 @@ type TransactionOperation func(store Store) (err error)
 // it fails in a retryable way.
 func PerformOperationWithRetries(ctx context.Context, transactor Transactor, operation TransactionOperation, retries int) error {
 	var err error
+	var tx Transaction
 	for i := 0; i <= retries; i++ {
 		// Prepare a Store for `operation` to act on
 		tx, err := transactor.Transact(ctx)
@@ -94,16 +98,32 @@ func PerformOperationWithRetries(ctx context.Context, transactor Transactor, ope
 		if err == nil {
 			// Operation was successful
 			err = tx.Commit()
-			if err != nil {
+			if err != nil && err != sql.ErrTxDone {
 				// Commit errors are assumed to be retryable
 				continue
 			}
 			// TransactionOperation and Commit were successful
 			return nil
 		}
+
 		// A non-retryable error occurred
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil && rollbackErr != sql.ErrTxDone {
+			return errors.New(fmt.Sprintf(
+				"error rolling back transaction after unsuccessful operation attempt: `%s` after `%s`",
+				rollbackErr, err))
+		}
 		return err
 	}
 
+	// We've reached the maximum number of retries
+	if tx != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil && rollbackErr != sql.ErrTxDone {
+			return errors.New(fmt.Sprintf(
+				"error rolling back transaction after maximum retries: `%s` after `%s`",
+				rollbackErr, err))
+		}
+	}
 	return err
 }
