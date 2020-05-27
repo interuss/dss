@@ -158,7 +158,7 @@ local util = import 'util.libsonnet';
         spec: $.PodSpec,
         metadata: {
           labels: sset.metadata.labels {
-            app: 'name'
+            app: name,
           },
           annotations: {},
         },
