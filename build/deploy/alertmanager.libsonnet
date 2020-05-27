@@ -45,11 +45,6 @@ local alertmanagerConfig(metadata) = {
       spec+: {
 				replicas: 1,
         template+: {
-          metadata+: {
-            labels+: {
-              app: 'alertmanager',
-            },
-          },
           spec+: {
             containers: [
               {
