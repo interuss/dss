@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/golang/geo/s2"
@@ -109,9 +108,9 @@ func PerformOperationWithRetries(ctx context.Context, transactor Transactor, ope
 		// A non-retryable error occurred
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil && rollbackErr != sql.ErrTxDone {
-			return errors.New(fmt.Errorf(
+			return fmt.Errorf(
 				"error rolling back transaction after unsuccessful operation attempt: `%s` after `%s`",
-				rollbackErr, err))
+				rollbackErr, err)
 		}
 		return err
 	}
@@ -120,9 +119,9 @@ func PerformOperationWithRetries(ctx context.Context, transactor Transactor, ope
 	if tx != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil && rollbackErr != sql.ErrTxDone {
-			return errors.New(fmt.Errorf(
+			return fmt.Errorf(
 				"error rolling back transaction after maximum retries: `%s` after `%s`",
-				rollbackErr, err))
+				rollbackErr, err)
 		}
 	}
 	return err
