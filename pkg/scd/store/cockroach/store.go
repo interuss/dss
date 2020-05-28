@@ -19,7 +19,6 @@ var (
 // a CockroachDB transaction.
 type Store struct {
 	tx     *sql.Tx
-	ctx    context.Context
 	logger *zap.Logger
 	clock  clockwork.Clock
 }
@@ -29,7 +28,6 @@ type Store struct {
 type Transaction struct {
 	tx     *sql.Tx
 	logger *zap.Logger
-	ctx    context.Context
 	clock  clockwork.Clock
 }
 
@@ -38,7 +36,6 @@ func (t *Transaction) Store() (scdstore.Store, error) {
 	return &Store{
 		tx:     t.tx,
 		logger: t.logger,
-		ctx:    t.ctx,
 		clock:  t.clock,
 	}, nil
 }
@@ -71,7 +68,7 @@ func NewTransactor(db *cockroach.DB, logger *zap.Logger) *Transactor {
 }
 
 // Implement store.Transactor interface
-func (t *Transactor) Transact(ctx context.Context) (scdstore.Transaction, error) {
+func (t *Transactor) Transact() (scdstore.Transaction, error) {
 	tx, err := t.db.Begin()
 	if err != nil {
 		return nil, err
@@ -79,7 +76,6 @@ func (t *Transactor) Transact(ctx context.Context) (scdstore.Transaction, error)
 	return &Transaction{
 		tx:     tx,
 		logger: t.logger,
-		ctx:    ctx,
 		clock:  t.clock,
 	}, nil
 }

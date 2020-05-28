@@ -32,9 +32,9 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 	}
 
 	var response *scdpb.ChangeOperationReferenceResponse
-	action := func(store scdstore.Store) (err error) {
+	action := func(ctx context.Context, store scdstore.Store) (err error) {
 		// Delete Operation in Store
-		op, subs, err := store.DeleteOperation(id, owner)
+		op, subs, err := store.DeleteOperation(ctx, id, owner)
 		if err != nil {
 			return err
 		}
@@ -82,8 +82,8 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 	}
 
 	var response *scdpb.GetOperationReferenceResponse
-	action := func(store scdstore.Store) (err error) {
-		sub, err := store.GetOperation(id)
+	action := func(ctx context.Context, store scdstore.Store) (err error) {
+		sub, err := store.GetOperation(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -135,9 +135,9 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	}
 
 	var response *scdpb.SearchOperationReferenceResponse
-	action := func(store scdstore.Store) (err error) {
+	action := func(ctx context.Context, store scdstore.Store) (err error) {
 		// Perform search query on Store
-		ops, err := store.SearchOperations(vol4, owner)
+		ops, err := store.SearchOperations(ctx, vol4, owner)
 		if err != nil {
 			return err
 		}
@@ -216,7 +216,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	subscriptionID := scdmodels.ID(params.GetSubscriptionId())
 
 	var response *scdpb.ChangeOperationReferenceResponse
-	action := func(store scdstore.Store) (err error) {
+	action := func(ctx context.Context, store scdstore.Store) (err error) {
 		if subscriptionID.Empty() {
 			if err := scdmodels.ValidateUSSBaseURL(
 				params.GetNewSubscription().GetUssBaseUrl(),
@@ -224,7 +224,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				return dsserr.BadRequest(err.Error())
 			}
 
-			sub, _, err := store.UpsertSubscription(&scdmodels.Subscription{
+			sub, _, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
 				ID:         scdmodels.ID(uuid.New().String()),
 				Owner:      owner,
 				StartTime:  uExtent.StartTime,
@@ -249,7 +249,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			key = append(key, scdmodels.OVN(ovn))
 		}
 
-		op, subs, err := store.UpsertOperation(&scdmodels.Operation{
+		op, subs, err := store.UpsertOperation(ctx, &scdmodels.Operation{
 			ID:      id,
 			Owner:   owner,
 			Version: scdmodels.Version(params.OldVersion),
@@ -268,7 +268,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		if err == scderr.MissingOVNsInternalError() {
 			// The client is missing some OVNs; provide the pointers to the
 			// information they need
-			ops, err := store.SearchOperations(uExtent, owner)
+			ops, err := store.SearchOperations(ctx, uExtent, owner)
 			if err != nil {
 				return err
 			}

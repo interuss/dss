@@ -1,6 +1,7 @@
 package cockroach
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -55,7 +56,7 @@ func init() {
 	)
 }
 
-func (c *Store) fetchCellsForSubscription(q dsssql.Queryable, id scdmodels.ID) (s2.CellUnion, error) {
+func (c *Store) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (s2.CellUnion, error) {
 	var (
 		cellsQuery = `
 			SELECT
@@ -67,7 +68,7 @@ func (c *Store) fetchCellsForSubscription(q dsssql.Queryable, id scdmodels.ID) (
 		`
 	)
 
-	rows, err := q.QueryContext(c.ctx, cellsQuery, id)
+	rows, err := q.QueryContext(ctx, cellsQuery, id)
 	if err != nil {
 		return nil, fmt.Errorf("fetchCellsForSubscription Query error: %s", err)
 	}
@@ -87,8 +88,8 @@ func (c *Store) fetchCellsForSubscription(q dsssql.Queryable, id scdmodels.ID) (
 	return cu, rows.Err()
 }
 
-func (c *Store) fetchSubscriptions(q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
-	rows, err := q.QueryContext(c.ctx, query, args...)
+func (c *Store) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
+	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func (c *Store) fetchSubscriptions(q dsssql.Queryable, query string, args ...int
 }
 
 func (c *Store) fetchSubscriptionsForNotification(
-	q dsssql.Queryable, cells []int64) ([]*scdmodels.Subscription, error) {
+	ctx context.Context, q dsssql.Queryable, cells []int64) ([]*scdmodels.Subscription, error) {
 	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
 	// UPDATE FROM query.
 	// First: get unique subscription IDs.
@@ -136,7 +137,7 @@ func (c *Store) fetchSubscriptionsForNotification(
  				scd_cells_subscriptions
  			WHERE
  				cell_id = ANY($1)`
-	rows, err := q.QueryContext(c.ctx, query, pq.Array(cells))
+	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
 	if err != nil {
 		return nil, err
 	}
@@ -168,11 +169,11 @@ func (c *Store) fetchSubscriptionsForNotification(
  			RETURNING
  				%s`, subscriptionFieldsWithoutPrefix)
 	return c.fetchSubscriptions(
-		q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
+		ctx, q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
 }
 
-func (c *Store) fetchSubscription(q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Subscription, error) {
-	subs, err := c.fetchSubscriptions(q, query, args...)
+func (c *Store) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Subscription, error) {
+	subs, err := c.fetchSubscriptions(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +186,7 @@ func (c *Store) fetchSubscription(q dsssql.Queryable, query string, args ...inte
 	return subs[0], nil
 }
 
-func (c *Store) fetchSubscriptionByID(q dsssql.Queryable, id scdmodels.ID) (*scdmodels.Subscription, error) {
+func (c *Store) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (*scdmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -197,18 +198,18 @@ func (c *Store) fetchSubscriptionByID(q dsssql.Queryable, id scdmodels.ID) (*scd
 			AND
 				ends_at >= $2`, subscriptionFieldsWithPrefix)
 	)
-	result, err := c.fetchSubscription(q, query, id, c.clock.Now())
+	result, err := c.fetchSubscription(ctx, q, query, id, c.clock.Now())
 	if err != nil {
 		return nil, err
 	}
-	result.Cells, err = c.fetchCellsForSubscription(q, id)
+	result.Cells, err = c.fetchCellsForSubscription(ctx, q, id)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (c *Store) fetchSubscriptionByIDAndOwner(q dsssql.Queryable, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
+func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q dsssql.Queryable, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
 	var query = fmt.Sprintf(`
 		SELECT
 			%s
@@ -220,15 +221,15 @@ func (c *Store) fetchSubscriptionByIDAndOwner(q dsssql.Queryable, id scdmodels.I
 			owner = $2
 		AND
 			ends_at >= $3`, subscriptionFieldsWithPrefix)
-	result, err := c.fetchSubscription(q, query, id, owner, c.clock.Now())
+	result, err := c.fetchSubscription(ctx, q, query, id, owner, c.clock.Now())
 	if err != nil {
 		return nil, err
 	}
-	result.Cells, err = c.fetchCellsForSubscription(q, id)
+	result.Cells, err = c.fetchCellsForSubscription(ctx, q, id)
 	if err != nil {
 		return nil, err
 	}
-	ops, err := c.searchOperations(q, &dssmodels.Volume4D{
+	ops, err := c.searchOperations(ctx, q, &dssmodels.Volume4D{
 		SpatialVolume: &dssmodels.Volume3D{
 			AltitudeLo: result.AltitudeLo,
 			AltitudeHi: result.AltitudeHi,
@@ -252,7 +253,7 @@ func (c *Store) fetchSubscriptionByIDAndOwner(q dsssql.Queryable, id scdmodels.I
 // owner has in each one of these cells, and returns the number of subscriptions
 // in the cell with the highest number of subscriptions.
 func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
-	q dsssql.Queryable, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+	ctx context.Context, q dsssql.Queryable, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
 	var query = `
     SELECT
       IFNULL(MAX(subscriptions_per_cell_id), 0)
@@ -275,13 +276,13 @@ func (c *Store) fetchMaxSubscriptionCountByCellAndOwner(
 		cids[i] = int64(cell)
 	}
 
-	row := q.QueryRowContext(c.ctx, query, owner, pq.Array(cids), c.clock.Now())
+	row := q.QueryRowContext(ctx, query, owner, pq.Array(cids), c.clock.Now())
 	var ret int
 	err := row.Scan(&ret)
 	return ret, err
 }
 
-func (c *Store) pushSubscription(q dsssql.Queryable, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+func (c *Store) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
 	var (
 		upsertQuery = fmt.Sprintf(`
 		WITH v AS (
@@ -324,7 +325,7 @@ func (c *Store) pushSubscription(q dsssql.Queryable, s *scdmodels.Subscription) 
 	}
 
 	cells := s.Cells
-	s, err := c.fetchSubscription(q, upsertQuery,
+	s, err := c.fetchSubscription(ctx, q, upsertQuery,
 		s.ID,
 		s.Owner,
 		s.BaseURL,
@@ -340,12 +341,12 @@ func (c *Store) pushSubscription(q dsssql.Queryable, s *scdmodels.Subscription) 
 	s.Cells = cells
 
 	for i := range cids {
-		if _, err := q.ExecContext(c.ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID); err != nil {
+		if _, err := q.ExecContext(ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID); err != nil {
 			return nil, err
 		}
 	}
 
-	if _, err := q.ExecContext(c.ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
+	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
 		return nil, err
 	}
 
@@ -353,8 +354,8 @@ func (c *Store) pushSubscription(q dsssql.Queryable, s *scdmodels.Subscription) 
 }
 
 // GetSubscription returns the subscription identified by "id".
-func (c *Store) GetSubscription(id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
-	sub, err := c.fetchSubscriptionByIDAndOwner(c.tx, id, owner)
+func (c *Store) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
+	sub, err := c.fetchSubscriptionByIDAndOwner(ctx, c.tx, id, owner)
 	switch err {
 	case nil:
 		return sub, nil
@@ -367,8 +368,8 @@ func (c *Store) GetSubscription(id scdmodels.ID, owner dssmodels.Owner) (*scdmod
 
 // UpsertSubscription upserts subscription into the store and returns
 // the resulting subscription including its ID.
-func (c *Store) UpsertSubscription(s *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
-	old, err := c.fetchSubscriptionByID(c.tx, s.ID)
+func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
+	old, err := c.fetchSubscriptionByID(ctx, c.tx, s.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -396,7 +397,7 @@ func (c *Store) UpsertSubscription(s *scdmodels.Subscription) (*scdmodels.Subscr
 	}
 
 	// Check the user hasn't created too many subscriptions in this area.
-	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(c.tx, s.Cells, s.Owner)
+	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, c.tx, s.Cells, s.Owner)
 	if err != nil {
 		c.logger.Warn("Error fetching max subscription count", zap.Error(err))
 		return nil, nil, dsserr.Internal(
@@ -409,7 +410,7 @@ func (c *Store) UpsertSubscription(s *scdmodels.Subscription) (*scdmodels.Subscr
 		return nil, nil, dsserr.Exhausted(errMsg)
 	}
 
-	newSubscription, err := c.pushSubscription(c.tx, s)
+	newSubscription, err := c.pushSubscription(ctx, c.tx, s)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -417,7 +418,7 @@ func (c *Store) UpsertSubscription(s *scdmodels.Subscription) (*scdmodels.Subscr
 
 	var affectedOperations []*scdmodels.Operation
 	if len(s.Cells) > 0 {
-		ops, err := c.searchOperations(c.tx, &dssmodels.Volume4D{
+		ops, err := c.searchOperations(ctx, c.tx, &dssmodels.Volume4D{
 			StartTime: s.StartTime,
 			EndTime:   s.EndTime,
 			SpatialVolume: &dssmodels.Volume3D{
@@ -439,7 +440,7 @@ func (c *Store) UpsertSubscription(s *scdmodels.Subscription) (*scdmodels.Subscr
 
 // DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
-func (c *Store) DeleteSubscription(id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error) {
+func (c *Store) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error) {
 	const (
 		query = `
 		DELETE FROM
@@ -466,7 +467,7 @@ func (c *Store) DeleteSubscription(id scdmodels.ID, owner dssmodels.Owner, versi
 	)
 
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := c.fetchSubscriptionByID(c.tx, id)
+	old, err := c.fetchSubscriptionByID(ctx, c.tx, id)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
 		return nil, dsserr.NotFound(id.String())
@@ -478,7 +479,7 @@ func (c *Store) DeleteSubscription(id scdmodels.ID, owner dssmodels.Owner, versi
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
 	}
 
-	res, err := c.tx.ExecContext(c.ctx, query, id, owner)
+	res, err := c.tx.ExecContext(ctx, query, id, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -499,7 +500,7 @@ func (c *Store) DeleteSubscription(id scdmodels.ID, owner dssmodels.Owner, versi
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
-func (c *Store) SearchSubscriptions(cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error) {
+func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -534,7 +535,7 @@ func (c *Store) SearchSubscriptions(cells s2.CellUnion, owner dssmodels.Owner) (
 	}
 
 	subscriptions, err := c.fetchSubscriptions(
-		c.tx, query, pq.Array(cids), owner, c.clock.Now())
+		ctx, c.tx, query, pq.Array(cids), owner, c.clock.Now())
 
 	switch {
 	case err != nil:
