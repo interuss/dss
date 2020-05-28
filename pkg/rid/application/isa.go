@@ -41,13 +41,13 @@ func (a *app) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time
 		earliest = &now
 	}
 
-	return a.Repository.SearchISAs(ctx, cells, earliest, latest)
+	return a.Transactor.SearchISAs(ctx, cells, earliest, latest)
 }
 
 // DeleteISA the given ISA
 func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := a.Repository.GetISA(ctx, id)
+	old, err := a.Transactor.GetISA(ctx, id)
 	switch {
 	case err == sql.ErrNoRows || old == nil: // Return a 404 here.
 		return nil, nil, dsserr.NotFound(id.String())
@@ -64,7 +64,7 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err = a.Repository.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err = a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
 		var err error
 		subs, err = repo.UpdateNotificationIdxsInCells(ctx, old.Cells)
 		if err != nil {
@@ -84,7 +84,7 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 
 // InsertISA implments the AppInterface InsertISA method
 func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	old, err := a.Repository.GetISA(ctx, isa.ID)
+	old, err := a.Transactor.GetISA(ctx, isa.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -117,7 +117,7 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err = a.Repository.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err = a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
 		var err error
 		cells := isa.Cells
 		if old != nil {
@@ -129,11 +129,11 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
 		// they are both modifying the db. Insert a susbcription alone does
 		// not do this, so that does not need to use a txn (in subscription.go).
-		subs, err = a.Repository.UpdateNotificationIdxsInCells(ctx, cells)
+		subs, err = a.Transactor.UpdateNotificationIdxsInCells(ctx, cells)
 		if err != nil {
 			return err
 		}
-		ret, err = a.Repository.InsertISA(ctx, isa)
+		ret, err = a.Transactor.InsertISA(ctx, isa)
 		if err != nil {
 			return err
 		}

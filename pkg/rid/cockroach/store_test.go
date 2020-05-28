@@ -36,7 +36,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	require.NoError(t, err)
 	require.NoError(t, store.Bootstrap(ctx))
 	return store, func() {
-		require.NoError(t, cleanUp(ctx, store))
+		require.NoError(t, CleanUp(ctx, store))
 		require.NoError(t, store.Close())
 	}
 }
@@ -47,22 +47,19 @@ func newStore() (*Store, error) {
 		return nil, err
 	}
 	return &Store{
-		ISA:          &ISAStore{Queryable: cdb, logger: zap.L()},
-		Subscription: &SubscriptionStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
-		db:           cdb,
-		Queryable:    cdb,
+		ISAStore:          &ISAStore{Queryable: cdb, logger: zap.L()},
+		SubscriptionStore: &SubscriptionStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
+		db:                cdb,
 	}, nil
 }
 
-// cleanUp drops all required tables from the store, useful for testing.
-func cleanUp(ctx context.Context, s *Store) error {
+// CleanUp drops all required tables from the store, useful for testing.
+func CleanUp(ctx context.Context, s *Store) error {
 	const query = `
-	DROP TABLE IF EXISTS cells_subscriptions;
 	DROP TABLE IF EXISTS subscriptions;
-	DROP TABLE IF EXISTS cells_identification_service_areas;
 	DROP TABLE IF EXISTS identification_service_areas;`
 
-	_, err := s.ExecContext(ctx, query)
+	_, err := s.db.ExecContext(ctx, query)
 	return err
 }
 
@@ -107,13 +104,6 @@ func TestTxnRetrier(t *testing.T) {
 	defer tearDownStore()
 
 	err := store.InTxnRetrier(ctx, func(store repos.Repository) error {
-		return store.InTxnRetrier(ctx, func(store repos.Repository) error {
-			return nil
-		})
-	})
-	require.EqualError(t, err, "cannot call InTxnRetrier within an active Txn")
-
-	err = store.InTxnRetrier(ctx, func(store repos.Repository) error {
 		// can query within this
 		isa, err := store.InsertISA(ctx, serviceArea)
 		require.NotNil(t, isa)
@@ -155,11 +145,14 @@ func TestGetVersion(t *testing.T) {
 	// TODO: remove the below checks when we have better schema management
 	require.Equal(t, "v2", semver.Major(version))
 
-	_, err = store.Queryable.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS cells_subscriptions (id STRING PRIMARY KEY);`)
+	_, err = store.db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS cells_subscriptions (id STRING PRIMARY KEY);`)
 	require.NoError(t, err)
 
 	version, err = store.GetVersion(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "v1", semver.Major(version))
+}
+
+func TestTransactor(t *testing.T) {
 
 }

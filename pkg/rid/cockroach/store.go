@@ -3,7 +3,6 @@ package cockroach
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
@@ -12,8 +11,6 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"go.uber.org/zap"
-
-	dssql "github.com/interuss/dss/pkg/sql"
 )
 
 var (
@@ -33,12 +30,9 @@ var (
 // TODO: Add the SCD interfaces here, and collapse this store with the
 // outer pkg/cockroach
 type Store struct {
-	repos.ISA
-	repos.Subscription
+	*ISAStore
+	*SubscriptionStore
 
-	// The Queryable interface is what most calls happen on. Without calling
-	// InTxnRetrier, Queryable is set to the same field as db.
-	dssql.Queryable
 	db *cockroach.DB
 }
 
@@ -48,10 +42,6 @@ type Store struct {
 // Note: Currently the Newly supplied Repo *does not* support nested calls
 // to InTxnRetrier.
 func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) error) error {
-	if s.db != s.Queryable {
-		return errors.New("cannot call InTxnRetrier within an active Txn")
-	}
-
 	// TODO: consider what tx opts we want to support.
 	// TODO: we really need to remove the upper cockroach package, and have one
 	// "store" for everything
@@ -61,7 +51,16 @@ func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) 
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		storeCopy := *s
-		storeCopy.Queryable = tx
+		if storeCopy.ISAStore != nil {
+			isaCopy := *(storeCopy.ISAStore)
+			storeCopy.ISAStore = &isaCopy
+			isaCopy.Queryable = tx
+		}
+		if storeCopy.SubscriptionStore != nil {
+			subCopy := *(storeCopy.SubscriptionStore)
+			storeCopy.SubscriptionStore = &subCopy
+			subCopy.Queryable = tx
+		}
 		return f(&storeCopy)
 	})
 }
@@ -87,7 +86,6 @@ func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
 		ISA:          &ISAStore{db, logger},
 		Subscription: &SubscriptionStore{db, DefaultClock, logger},
 		db:           db,
-		Queryable:    db,
 	}
 }
 
@@ -158,7 +156,7 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 	// 	schema_version STRING NOT NULL,
 	// );
 
-	_, err := s.ExecContext(ctx, query)
+	_, err := s.db.ExecContext(ctx, query)
 	return err
 }
 
@@ -172,7 +170,7 @@ func (s *Store) GetVersion(ctx context.Context) (string, error) {
 		  FROM information_schema.tables 
    		WHERE table_name = 'cells_subscriptions'
    )`
-	row := s.QueryRowContext(ctx, query)
+	row := s.db.QueryRowContext(ctx, query)
 	var ret bool
 	err := row.Scan(&ret)
 	if err != nil {
