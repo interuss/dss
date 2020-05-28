@@ -78,6 +78,8 @@ type TransactionOperation func(store Store) (err error)
 // PerformOperationWithRetries creates a Transaction from the Transactor,
 // attempts to perform the provided action, and retries this process again if
 // it fails in a retryable way.
+// TODO: consider using crdb-go's transaction retry system which detects a
+// larger set of retryable errors
 func PerformOperationWithRetries(ctx context.Context, transactor Transactor, operation TransactionOperation, retries int) error {
 	var err error
 	var tx Transaction
