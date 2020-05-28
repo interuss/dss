@@ -24,7 +24,7 @@ var (
 			name: "a subscription with startTime and endTime",
 			input: &ridmodels.Subscription{
 				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             dssmodels.Owner(uuid.New().String()),
+				Owner:             "myself",
 				URL:               "https://no/place/like/home",
 				StartTime:         &startTime,
 				EndTime:           &endTime,
@@ -39,8 +39,22 @@ var (
 			name: "a subscription without startTime and with endTime",
 			input: &ridmodels.Subscription{
 				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             dssmodels.Owner(uuid.New().String()),
+				Owner:             "myself",
 				URL:               "https://no/place/like/home",
+				EndTime:           &endTime,
+				NotificationIndex: 42,
+				Cells: s2.CellUnion{
+					12494535935418957824,
+				},
+			},
+		},
+		{
+			name: "a subscription without startTime and with endTime",
+			input: &ridmodels.Subscription{
+				ID:                dssmodels.ID(uuid.New().String()),
+				Owner:             "me",
+				URL:               "https://no/place/like/home",
+				StartTime:         &startTime,
 				EndTime:           &endTime,
 				NotificationIndex: 42,
 				Cells: s2.CellUnion{
@@ -177,6 +191,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 		owners = []dssmodels.Owner{
 			"me",
 			"my",
+			"self",
 		}
 	)
 
@@ -192,7 +207,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 	found, err := store.SearchSubscriptions(ctx, cells)
 	require.NoError(t, err)
 	require.NotNil(t, found)
-	require.Len(t, found, 2)
+	require.Len(t, found, 3)
 	for _, owner := range owners {
 		found, err := store.SearchSubscriptionsByOwner(ctx, cells, owner)
 		require.NoError(t, err)
@@ -255,4 +270,18 @@ func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
 	}
 	_, err := store.InsertSubscription(ctx, sub)
 	require.Error(t, err)
+}
+
+func TestMaxSubscriptionCountInCellsByOwner(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer tearDownStore()
+	for _, s := range subscriptionsPool {
+		_, err := store.InsertSubscription(ctx, s.input)
+		require.NoError(t, err)
+	}
+
+	count, err := store.MaxSubscriptionCountInCellsByOwner(ctx, s2.CellUnion{12494535935418957824}, "myself")
+	require.NoError(t, err)
+	require.Equal(t, 2, count)
 }

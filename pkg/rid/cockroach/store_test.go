@@ -2,6 +2,7 @@ package cockroach
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"testing"
 	"time"
@@ -24,6 +25,10 @@ var (
 	startTime = fakeClock.Now().Add(-time.Minute)
 	endTime   = fakeClock.Now().Add(time.Hour)
 )
+
+func init() {
+	DefaultTimeout = 50 * time.Millisecond
+}
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	if len(*storeURI) == 0 {
@@ -154,5 +159,83 @@ func TestGetVersion(t *testing.T) {
 }
 
 func TestTransactor(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	require.NotNil(t, store)
+	defer tearDownStore()
+	subscription := subscriptionsPool[0].input
+	subscription1 := subscriptionsPool[1].input
 
+	txnCount := 0
+
+	err := store.InTxnRetrier(ctx, func(s2 repos.Repository) error {
+		if txnCount > 0 {
+			return errors.New("bail early")
+		}
+		txnCount++
+		subs, err := s2.SearchSubscriptions(ctx, subscription.Cells)
+
+		require.NoError(t, err)
+		require.Len(t, subs, 0)
+
+		_, err = s2.InsertSubscription(ctx, subscription)
+		require.NoError(t, err)
+		// Query outside the txn
+		_, err = store.InsertSubscription(ctx, subscription1)
+		require.NoError(t, err)
+
+		subs, err = s2.SearchSubscriptions(ctx, subscription.Cells)
+
+		require.NoError(t, err)
+		require.Len(t, subs, 1)
+		return err
+	})
+	require.NoError(t, err)
+	subs, err := store.SearchSubscriptions(ctx, subscription.Cells)
+	require.NoError(t, err)
+
+	require.Len(t, subs, 2)
+}
+
+func TestBasicTxn(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	require.NotNil(t, store)
+	defer tearDownStore()
+	subscription := subscriptionsPool[0].input
+	subscription1 := subscriptionsPool[1].input
+
+	tx, err := store.db.Begin()
+
+	s2 := *(store.SubscriptionStore)
+	s2.Queryable = tx
+
+	require.NotEqual(t, store.SubscriptionStore.Queryable, s2.Queryable)
+
+	subs, err := s2.SearchSubscriptions(ctx, subscription.Cells)
+
+	require.NoError(t, err)
+	require.Len(t, subs, 0)
+
+	_, err = s2.InsertSubscription(ctx, subscription)
+	require.NoError(t, err)
+	// Query outside the txn
+	_, err = store.InsertSubscription(ctx, subscription1)
+	require.NoError(t, err)
+
+	subs, err = s2.SearchSubscriptions(ctx, subscription.Cells)
+
+	require.NoError(t, err)
+	require.Len(t, subs, 1)
+
+	require.NoError(t, tx.Commit())
+
+	subs, err = store.SearchSubscriptions(ctx, subscription.Cells)
+	require.NoError(t, err)
+
+	require.Len(t, subs, 2)
 }
