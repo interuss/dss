@@ -24,9 +24,6 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
   app:: 'prometheus',
   port:: 9090,
   spec+: {
-    selector: {
-      name: 'prometheus',
-    },
     type: 'LoadBalancer',
     loadBalancerIP: metadata.prometheus.IP,
     loadBalancerSourceRanges: metadata.prometheus.whitelist_ip_ranges
@@ -211,12 +208,6 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
       app:: 'prometheus',
       port:: 9090,
       enable_monitoring:: true,
-      spec+: {
-        selector: {
-          name: 'prometheus',
-        },
-        type: 'ClusterIP',
-      },
     },
   },
 }
