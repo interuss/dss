@@ -61,7 +61,8 @@ func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) 
 			storeCopy.SubscriptionStore = &subCopy
 			subCopy.Queryable = tx
 		}
-		return f(&storeCopy)
+		err := f(&storeCopy)
+		return err
 	})
 }
 

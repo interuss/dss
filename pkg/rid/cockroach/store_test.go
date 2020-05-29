@@ -2,6 +2,7 @@ package cockroach
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"testing"
 	"time"
@@ -155,6 +156,10 @@ func TestGetVersion(t *testing.T) {
 	version, err = store.GetVersion(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "v1", semver.Major(version))
+
+	_, err = store.db.ExecContext(ctx, `DROP TABLE cells_subscriptions;`)
+	require.NoError(t, err)
+
 }
 
 func TestTransactor(t *testing.T) {
@@ -168,14 +173,13 @@ func TestTransactor(t *testing.T) {
 	subscription1 := subscriptionsPool[1].input
 
 	txnCount := 0
-
-	store.InTxnRetrier(ctx, func(s1 repos.Repository) error {
+	err := store.InTxnRetrier(ctx, func(s1 repos.Repository) error {
 		// We should get to this retry, then return nothing.
 		if txnCount > 0 {
-			return nil
+			return errors.New("already failed")
 		}
 		txnCount++
-		store.InTxnRetrier(ctx, func(s2 repos.Repository) error {
+		err := store.InTxnRetrier(ctx, func(s2 repos.Repository) error {
 			subs, err := s1.SearchSubscriptions(ctx, subscription.Cells)
 			require.NoError(t, err)
 			require.Len(t, subs, 0)
@@ -184,15 +188,18 @@ func TestTransactor(t *testing.T) {
 			require.NoError(t, err)
 
 			// Tx1 conflicts first
-			s1.InsertSubscription(ctx, subscription)
+			_, err = s1.InsertSubscription(ctx, subscription)
+			require.NoError(t, err)
 
 			// Tx1 is rolled back, so tx2 can proceed.
-			s2.InsertSubscription(ctx, subscription1)
+			_, err = s2.InsertSubscription(ctx, subscription1)
+			require.NoError(t, err)
+
 			return nil
 		})
-		return nil
+		return err
 	})
-
+	require.Error(t, err)
 	subs, err := store.SearchSubscriptions(ctx, subscription.Cells)
 	require.NoError(t, err)
 
@@ -203,6 +210,7 @@ func TestTransactor(t *testing.T) {
 
 	_, err = store.GetSubscription(ctx, subscription1.ID)
 	require.NoError(t, err)
+
 }
 
 // Test here for posterity to demonstrate transaction semantics
