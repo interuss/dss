@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"testing"
 	"time"
@@ -170,35 +169,43 @@ func TestTransactor(t *testing.T) {
 
 	txnCount := 0
 
-	err := store.InTxnRetrier(ctx, func(s2 repos.Repository) error {
+	store.InTxnRetrier(ctx, func(s1 repos.Repository) error {
+		// We should get to this retry, then return nothing.
 		if txnCount > 0 {
-			return errors.New("bail early")
+			return nil
 		}
 		txnCount++
-		subs, err := s2.SearchSubscriptions(ctx, subscription.Cells)
+		store.InTxnRetrier(ctx, func(s2 repos.Repository) error {
+			subs, err := s1.SearchSubscriptions(ctx, subscription.Cells)
+			require.NoError(t, err)
+			require.Len(t, subs, 0)
+			subs, err = s2.SearchSubscriptions(ctx, subscription.Cells)
+			require.Len(t, subs, 0)
+			require.NoError(t, err)
 
-		require.NoError(t, err)
-		require.Len(t, subs, 0)
+			// Tx1 conflicts first
+			s1.InsertSubscription(ctx, subscription)
 
-		_, err = s2.InsertSubscription(ctx, subscription)
-		require.NoError(t, err)
-		// Query outside the txn
-		_, err = store.InsertSubscription(ctx, subscription1)
-		require.NoError(t, err)
-
-		subs, err = s2.SearchSubscriptions(ctx, subscription.Cells)
-
-		require.NoError(t, err)
-		require.Len(t, subs, 1)
-		return err
+			// Tx1 is rolled back, so tx2 can proceed.
+			s2.InsertSubscription(ctx, subscription1)
+			return nil
+		})
+		return nil
 	})
-	require.NoError(t, err)
+
 	subs, err := store.SearchSubscriptions(ctx, subscription.Cells)
 	require.NoError(t, err)
 
-	require.Len(t, subs, 2)
+	require.Len(t, subs, 1)
+
+	_, err = store.GetSubscription(ctx, subscription.ID)
+	require.Error(t, err)
+
+	_, err = store.GetSubscription(ctx, subscription1.ID)
+	require.NoError(t, err)
 }
 
+// Test here for posterity to demonstrate transaction semantics
 func TestBasicTxn(t *testing.T) {
 	var (
 		ctx                  = context.Background()
@@ -209,33 +216,41 @@ func TestBasicTxn(t *testing.T) {
 	subscription := subscriptionsPool[0].input
 	subscription1 := subscriptionsPool[1].input
 
-	tx, err := store.db.Begin()
+	tx1, err := store.db.Begin()
+	require.NoError(t, err)
+
+	s1 := *(store.SubscriptionStore)
+	s1.Queryable = tx1
+
+	tx2, err := store.db.Begin()
+	require.NoError(t, err)
 
 	s2 := *(store.SubscriptionStore)
-	s2.Queryable = tx
+	s2.Queryable = tx2
 
+	require.NotEqual(t, store.SubscriptionStore.Queryable, s1.Queryable)
 	require.NotEqual(t, store.SubscriptionStore.Queryable, s2.Queryable)
 
-	subs, err := s2.SearchSubscriptions(ctx, subscription.Cells)
-
+	subs, err := s1.SearchSubscriptions(ctx, subscription.Cells)
 	require.NoError(t, err)
 	require.Len(t, subs, 0)
-
-	_, err = s2.InsertSubscription(ctx, subscription)
-	require.NoError(t, err)
-	// Query outside the txn
-	_, err = store.InsertSubscription(ctx, subscription1)
-	require.NoError(t, err)
-
 	subs, err = s2.SearchSubscriptions(ctx, subscription.Cells)
-
+	require.Len(t, subs, 0)
 	require.NoError(t, err)
-	require.Len(t, subs, 1)
 
-	require.NoError(t, tx.Commit())
+	// Tx1 conflicts first
+	sub, err := s1.InsertSubscription(ctx, subscription)
+	require.NoError(t, err)
+	require.NotNil(t, sub)
+	// Tx1 is rolled back, so tx2 can proceed.
+	_, err = s2.InsertSubscription(ctx, subscription1)
+	require.NoError(t, err)
+
+	require.Error(t, tx1.Commit())
+	require.NoError(t, tx2.Commit())
 
 	subs, err = store.SearchSubscriptions(ctx, subscription.Cells)
 	require.NoError(t, err)
 
-	require.Len(t, subs, 2)
+	require.Len(t, subs, 1)
 }
