@@ -133,7 +133,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 
 	var (
 		dssServer = &rid.Server{
-			App:     application.NewFromRepo(store, logger),
+			App:     application.NewFromTransactor(store, logger),
 			Timeout: *timeout,
 		}
 		auxServer      = &aux.Server{}

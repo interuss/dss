@@ -2,6 +2,7 @@ package cockroach
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"testing"
 	"time"
@@ -25,6 +26,10 @@ var (
 	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
+func init() {
+	DefaultTimeout = 50 * time.Millisecond
+}
+
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	if len(*storeURI) == 0 {
 		t.Skip()
@@ -36,7 +41,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	require.NoError(t, err)
 	require.NoError(t, store.Bootstrap(ctx))
 	return store, func() {
-		require.NoError(t, cleanUp(ctx, store))
+		require.NoError(t, CleanUp(ctx, store))
 		require.NoError(t, store.Close())
 	}
 }
@@ -47,22 +52,19 @@ func newStore() (*Store, error) {
 		return nil, err
 	}
 	return &Store{
-		ISA:          &ISAStore{Queryable: cdb, logger: zap.L()},
-		Subscription: &SubscriptionStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
-		db:           cdb,
-		Queryable:    cdb,
+		ISAStore:          &ISAStore{Queryable: cdb, logger: zap.L()},
+		SubscriptionStore: &SubscriptionStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
+		db:                cdb,
 	}, nil
 }
 
-// cleanUp drops all required tables from the store, useful for testing.
-func cleanUp(ctx context.Context, s *Store) error {
+// CleanUp drops all required tables from the store, useful for testing.
+func CleanUp(ctx context.Context, s *Store) error {
 	const query = `
-	DROP TABLE IF EXISTS cells_subscriptions;
 	DROP TABLE IF EXISTS subscriptions;
-	DROP TABLE IF EXISTS cells_identification_service_areas;
 	DROP TABLE IF EXISTS identification_service_areas;`
 
-	_, err := s.ExecContext(ctx, query)
+	_, err := s.db.ExecContext(ctx, query)
 	return err
 }
 
@@ -107,13 +109,6 @@ func TestTxnRetrier(t *testing.T) {
 	defer tearDownStore()
 
 	err := store.InTxnRetrier(ctx, func(store repos.Repository) error {
-		return store.InTxnRetrier(ctx, func(store repos.Repository) error {
-			return nil
-		})
-	})
-	require.EqualError(t, err, "cannot call InTxnRetrier within an active Txn")
-
-	err = store.InTxnRetrier(ctx, func(store repos.Repository) error {
 		// can query within this
 		isa, err := store.InsertISA(ctx, serviceArea)
 		require.NotNil(t, isa)
@@ -155,11 +150,115 @@ func TestGetVersion(t *testing.T) {
 	// TODO: remove the below checks when we have better schema management
 	require.Equal(t, "v2", semver.Major(version))
 
-	_, err = store.Queryable.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS cells_subscriptions (id STRING PRIMARY KEY);`)
+	_, err = store.db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS cells_subscriptions (id STRING PRIMARY KEY);`)
 	require.NoError(t, err)
 
 	version, err = store.GetVersion(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "v1", semver.Major(version))
 
+	_, err = store.db.ExecContext(ctx, `DROP TABLE cells_subscriptions;`)
+	require.NoError(t, err)
+
+}
+
+func TestTransactor(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	require.NotNil(t, store)
+	defer tearDownStore()
+	subscription1 := subscriptionsPool[0].input
+	subscription2 := subscriptionsPool[1].input
+
+	txnCount := 0
+	err := store.InTxnRetrier(ctx, func(s1 repos.Repository) error {
+		// We should get to this retry, then return nothing.
+		if txnCount > 0 {
+			return errors.New("already failed")
+		}
+		txnCount++
+		err := store.InTxnRetrier(ctx, func(s2 repos.Repository) error {
+			subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
+			require.NoError(t, err)
+			require.Len(t, subs, 0)
+			subs, err = s2.SearchSubscriptions(ctx, subscription1.Cells)
+			require.Len(t, subs, 0)
+			require.NoError(t, err)
+
+			// Tx1 conflicts first
+			_, err = s1.InsertSubscription(ctx, subscription1)
+			require.NoError(t, err)
+
+			// Tx1 is rolled back, so tx2 can proceed.
+			_, err = s2.InsertSubscription(ctx, subscription2)
+			require.NoError(t, err)
+
+			return nil
+		})
+		return err
+	})
+	require.Error(t, err)
+	subs, err := store.SearchSubscriptions(ctx, subscription1.Cells)
+	require.NoError(t, err)
+
+	require.Len(t, subs, 1)
+
+	_, err = store.GetSubscription(ctx, subscription1.ID)
+	require.Error(t, err)
+
+	_, err = store.GetSubscription(ctx, subscription2.ID)
+	require.NoError(t, err)
+
+}
+
+// Test here for posterity to demonstrate transaction semantics
+func TestBasicTxn(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	require.NotNil(t, store)
+	defer tearDownStore()
+	subscription1 := subscriptionsPool[0].input
+	subscription2 := subscriptionsPool[1].input
+
+	tx1, err := store.db.Begin()
+	require.NoError(t, err)
+
+	s1 := *(store.SubscriptionStore)
+	s1.Queryable = tx1
+
+	tx2, err := store.db.Begin()
+	require.NoError(t, err)
+
+	s2 := *(store.SubscriptionStore)
+	s2.Queryable = tx2
+
+	require.NotEqual(t, store.SubscriptionStore.Queryable, s1.Queryable)
+	require.NotEqual(t, store.SubscriptionStore.Queryable, s2.Queryable)
+
+	subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
+	require.NoError(t, err)
+	require.Len(t, subs, 0)
+	subs, err = s2.SearchSubscriptions(ctx, subscription1.Cells)
+	require.Len(t, subs, 0)
+	require.NoError(t, err)
+
+	// Tx1 conflicts first
+	sub, err := s1.InsertSubscription(ctx, subscription1)
+	require.NoError(t, err)
+	require.NotNil(t, sub)
+	// Tx1 is rolled back, so tx2 can proceed.
+	_, err = s2.InsertSubscription(ctx, subscription2)
+	require.NoError(t, err)
+
+	require.Error(t, tx1.Commit())
+	require.NoError(t, tx2.Commit())
+
+	subs, err = store.SearchSubscriptions(ctx, subscription1.Cells)
+	require.NoError(t, err)
+
+	require.Len(t, subs, 1)
 }

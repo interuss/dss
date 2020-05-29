@@ -40,7 +40,7 @@ type SubscriptionApp interface {
 
 // InsertSubscription implements the App InsertSubscription method
 func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	old, err := a.Repository.GetSubscription(ctx, s.ID)
+	old, err := a.Transactor.GetSubscription(ctx, s.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -66,7 +66,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 	}
 
 	// Check the user hasn't created too many subscriptions in this area.
-	count, err := a.Repository.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
+	count, err := a.Transactor.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
 	if err != nil {
 		a.logger.Error("Error fetching max subscription count", zap.Error(err))
 		return nil, dsserr.Internal(
@@ -77,13 +77,13 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 			"too many existing subscriptions in this area already")
 	}
 
-	return a.Repository.InsertSubscription(ctx, s)
+	return a.Transactor.InsertSubscription(ctx, s)
 }
 
 // DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
 func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
 
-	old, err := a.Repository.GetSubscription(ctx, id)
+	old, err := a.Transactor.GetSubscription(ctx, id)
 	switch {
 	case err == sql.ErrNoRows || old == nil:
 		return nil, dsserr.NotFound(id.String())
@@ -92,7 +92,7 @@ func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dss
 	case old.Owner != owner:
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
 	}
-	old, err = a.Repository.DeleteSubscription(ctx, old)
+	old, err = a.Transactor.DeleteSubscription(ctx, old)
 	if err == sql.ErrNoRows {
 		return nil, dsserr.VersionMismatch("old version")
 	}

@@ -55,8 +55,8 @@ var (
 
 func setUpSubApp(ctx context.Context, t *testing.T) (*app, func()) {
 	l := zap.L()
-	repo, cleanup := setUpRepo(ctx, t, l)
-	return NewFromRepo(repo, l).(*app), cleanup
+	transactor, cleanup := setUpTransactor(ctx, t, l)
+	return NewFromTransactor(transactor, l).(*app), cleanup
 }
 
 type subscriptionStore struct {
@@ -301,7 +301,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 
 			// Insert a pre-existing subscription to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
-				existing, err := app.Repository.InsertSubscription(ctx, &ridmodels.Subscription{
+				existing, err := app.Transactor.InsertSubscription(ctx, &ridmodels.Subscription{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,

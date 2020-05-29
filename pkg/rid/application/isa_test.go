@@ -21,8 +21,8 @@ var (
 
 func setUpISAApp(ctx context.Context, t *testing.T) (*app, func()) {
 	l := zap.L()
-	repo, cleanup := setUpRepo(ctx, t, l)
-	return NewFromRepo(repo, l).(*app), cleanup
+	transactor, cleanup := setUpTransactor(ctx, t, l)
+	return NewFromTransactor(transactor, l).(*app), cleanup
 }
 
 // TODO:steeling add owner logic.
@@ -214,7 +214,7 @@ func TestInsertISA(t *testing.T) {
 
 			// Insert a pre-existing ISA to simulate updating from something.
 			if !r.updateFromStartTime.IsZero() {
-				existing, err := app.Repository.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
+				existing, err := app.Transactor.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
 					ID:        id,
 					Owner:     owner,
 					StartTime: &r.updateFromStartTime,
