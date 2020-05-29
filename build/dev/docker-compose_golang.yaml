@@ -8,7 +8,7 @@ version: '3.7'
 services:
 
   dss-crdb-for-debugging:
-    image: cockroachdb/cockroach:v20.1.0
+    image: cockroachdb/cockroach:v20.1.1
     command: start --insecure
     expose:
       - 26257
