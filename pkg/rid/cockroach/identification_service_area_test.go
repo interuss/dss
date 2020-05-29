@@ -187,9 +187,10 @@ func TestStoreExpiredISA(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 0)
 
+	// A get should work even if it is expired.
 	ret, err = store.GetISA(ctx, serviceArea.ID)
-	require.Error(t, err)
-	require.Nil(t, ret)
+	require.NoError(t, err)
+	require.NotNil(t, ret)
 }
 
 func TestStoreDeleteISAs(t *testing.T) {

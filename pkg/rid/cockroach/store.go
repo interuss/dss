@@ -84,7 +84,7 @@ func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 // NewStore returns a Store instance connected to a cockroach instance via db.
 func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
 	return &Store{
-		ISA:          &ISAStore{db, DefaultClock, logger},
+		ISA:          &ISAStore{db, logger},
 		Subscription: &SubscriptionStore{db, DefaultClock, logger},
 		db:           db,
 		Queryable:    db,

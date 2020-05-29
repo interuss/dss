@@ -40,11 +40,10 @@ def test_sleep_5_seconds():
   time.sleep(5)
 
 
-def test_not_returned_by_id(session, isa1_uuid):
+def test_returned_by_id(session, isa1_uuid):
   # And we can't get it by ID...
   resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
-  assert resp.status_code == 404
-  assert resp.json()['message'] == 'resource not found: {}'.format(isa1_uuid)
+  assert resp.status_code == 200
 
 
 def test_not_returned_by_search(session, isa1_uuid):

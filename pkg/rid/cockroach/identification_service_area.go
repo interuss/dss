@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dpjacques/clockwork"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -26,7 +25,6 @@ const (
 type ISAStore struct {
 	dssql.Queryable
 
-	clock  clockwork.Clock
 	logger *zap.Logger
 }
 
@@ -85,10 +83,8 @@ func (c *ISAStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Iden
 		SELECT %s FROM
 			identification_service_areas
 		WHERE
-			id = $1
-		AND
-			ends_at > $2`, isaFields)
-	return c.processOne(ctx, query, id, c.clock.Now())
+			id = $1`, isaFields)
+	return c.processOne(ctx, query, id)
 }
 
 // InsertISA inserts the IdentificationServiceArea identified by "id" and owned
