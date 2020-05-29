@@ -238,8 +238,8 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	require.Len(t, subs, 0)
 
 	ret, err = store.GetSubscription(ctx, sub.ID)
-	require.Nil(t, ret)
-	require.Error(t, err)
+	require.NotNil(t, ret)
+	require.NoError(t, err)
 }
 
 func TestStoreSubscriptionWithNoGeoData(t *testing.T) {

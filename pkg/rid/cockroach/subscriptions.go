@@ -120,10 +120,8 @@ func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID
 	// TODO(steeling) we should enforce startTime and endTime to not be null at the DB level.
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
-		WHERE id = $1
-		AND
-			ends_at > $2`, subscriptionFields)
-	return c.processOne(ctx, query, id, c.clock.Now())
+		WHERE id = $1`, subscriptionFields)
+	return c.processOne(ctx, query, id)
 }
 
 // UpdateSubscription updates the Subscription.. not yet implemented.
