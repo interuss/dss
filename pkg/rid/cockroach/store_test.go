@@ -169,8 +169,8 @@ func TestTransactor(t *testing.T) {
 	)
 	require.NotNil(t, store)
 	defer tearDownStore()
-	subscription := subscriptionsPool[0].input
-	subscription1 := subscriptionsPool[1].input
+	subscription1 := subscriptionsPool[0].input
+	subscription2 := subscriptionsPool[1].input
 
 	txnCount := 0
 	err := store.InTxnRetrier(ctx, func(s1 repos.Repository) error {
@@ -180,19 +180,19 @@ func TestTransactor(t *testing.T) {
 		}
 		txnCount++
 		err := store.InTxnRetrier(ctx, func(s2 repos.Repository) error {
-			subs, err := s1.SearchSubscriptions(ctx, subscription.Cells)
+			subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 			require.NoError(t, err)
 			require.Len(t, subs, 0)
-			subs, err = s2.SearchSubscriptions(ctx, subscription.Cells)
+			subs, err = s2.SearchSubscriptions(ctx, subscription1.Cells)
 			require.Len(t, subs, 0)
 			require.NoError(t, err)
 
 			// Tx1 conflicts first
-			_, err = s1.InsertSubscription(ctx, subscription)
+			_, err = s1.InsertSubscription(ctx, subscription1)
 			require.NoError(t, err)
 
 			// Tx1 is rolled back, so tx2 can proceed.
-			_, err = s2.InsertSubscription(ctx, subscription1)
+			_, err = s2.InsertSubscription(ctx, subscription2)
 			require.NoError(t, err)
 
 			return nil
@@ -200,15 +200,15 @@ func TestTransactor(t *testing.T) {
 		return err
 	})
 	require.Error(t, err)
-	subs, err := store.SearchSubscriptions(ctx, subscription.Cells)
+	subs, err := store.SearchSubscriptions(ctx, subscription1.Cells)
 	require.NoError(t, err)
 
 	require.Len(t, subs, 1)
 
-	_, err = store.GetSubscription(ctx, subscription.ID)
+	_, err = store.GetSubscription(ctx, subscription1.ID)
 	require.Error(t, err)
 
-	_, err = store.GetSubscription(ctx, subscription1.ID)
+	_, err = store.GetSubscription(ctx, subscription2.ID)
 	require.NoError(t, err)
 
 }
@@ -221,8 +221,8 @@ func TestBasicTxn(t *testing.T) {
 	)
 	require.NotNil(t, store)
 	defer tearDownStore()
-	subscription := subscriptionsPool[0].input
-	subscription1 := subscriptionsPool[1].input
+	subscription1 := subscriptionsPool[0].input
+	subscription2 := subscriptionsPool[1].input
 
 	tx1, err := store.db.Begin()
 	require.NoError(t, err)
@@ -239,25 +239,25 @@ func TestBasicTxn(t *testing.T) {
 	require.NotEqual(t, store.SubscriptionStore.Queryable, s1.Queryable)
 	require.NotEqual(t, store.SubscriptionStore.Queryable, s2.Queryable)
 
-	subs, err := s1.SearchSubscriptions(ctx, subscription.Cells)
+	subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 	require.NoError(t, err)
 	require.Len(t, subs, 0)
-	subs, err = s2.SearchSubscriptions(ctx, subscription.Cells)
+	subs, err = s2.SearchSubscriptions(ctx, subscription1.Cells)
 	require.Len(t, subs, 0)
 	require.NoError(t, err)
 
 	// Tx1 conflicts first
-	sub, err := s1.InsertSubscription(ctx, subscription)
+	sub, err := s1.InsertSubscription(ctx, subscription1)
 	require.NoError(t, err)
 	require.NotNil(t, sub)
 	// Tx1 is rolled back, so tx2 can proceed.
-	_, err = s2.InsertSubscription(ctx, subscription1)
+	_, err = s2.InsertSubscription(ctx, subscription2)
 	require.NoError(t, err)
 
 	require.Error(t, tx1.Commit())
 	require.NoError(t, tx2.Commit())
 
-	subs, err = store.SearchSubscriptions(ctx, subscription.Cells)
+	subs, err = store.SearchSubscriptions(ctx, subscription1.Cells)
 	require.NoError(t, err)
 
 	require.Len(t, subs, 1)
