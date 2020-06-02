@@ -77,14 +77,12 @@ func (c *Store) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryabl
 	var (
 		cu   s2.CellUnion
 		cidi int64
-		cid  s2.CellID
 	)
 	for rows.Next() {
 		if err := rows.Scan(&cidi); err != nil {
 			return nil, fmt.Errorf("fetchCellsForSubscription row scan error: %s", err)
 		}
-		cid = s2.CellID(cidi)
-		cu = append(cu, cid)
+		cu = append(cu, s2.CellID(cidi))
 	}
 
 	return cu, rows.Err()
