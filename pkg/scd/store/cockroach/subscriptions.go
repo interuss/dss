@@ -3,6 +3,7 @@ package cockroach
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -70,18 +71,20 @@ func (c *Store) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryabl
 
 	rows, err := q.QueryContext(ctx, cellsQuery, id)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("fetchCellsForSubscription Query error: %s", err))
 	}
 	defer rows.Close()
 
 	var (
-		cu  s2.CellUnion
-		cid s2.CellID
+		cu   s2.CellUnion
+		cidi int64
+		cid  s2.CellID
 	)
 	for rows.Next() {
-		if err := rows.Scan(&cid); err != nil {
-			return nil, err
+		if err := rows.Scan(&cidi); err != nil {
+			return nil, errors.New(fmt.Sprintf("fetchCellsForSubscription row scan error: %s", err))
 		}
+		cid = s2.CellID(cidi)
 		cu = append(cu, cid)
 	}
 
