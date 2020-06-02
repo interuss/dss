@@ -98,15 +98,6 @@ local volumes = import 'volumes.libsonnet';
         },
       },
       podManagementPolicy: 'Parallel',
-      updateStrategy: {
-        type: 'RollingUpdate',
-        rollingUpdate: {
-          // Update 1 at a time and wait until healthy. Note this may prevent 
-          // recovery during certain types of outages, although it will ensure
-          // a healthy cluster is not taken down due to a bad update.
-          maxUnavailable: 0,
-        },
-      },
       volumeClaimTemplates: [
         {
           metadata: {
