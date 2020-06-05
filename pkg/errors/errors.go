@@ -2,6 +2,7 @@ package errors
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 
@@ -47,20 +48,19 @@ func init() {
 func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		resp, err = handler(ctx, req)
-		status, ok := status.FromError(err)
+		statusErr, ok := status.FromError(err)
 
 		switch {
 		case !ok:
-			logger.Error("encountered error during unary server call", zap.String("method", info.FullMethod), zap.Error(err))
-			err = errInternal
-		case status.Code() == codes.Internal, status.Code() == codes.Unknown:
-			logger.Error("encountered internal error during unary server call",
+			logger.Error("encountered non-Status error during unary server call", zap.String("method", info.FullMethod), zap.Error(err))
+			err = status.Error(codes.Internal, fmt.Sprintf("a non-Status error occurred: %s", err))
+		case statusErr.Code() == codes.Internal, statusErr.Code() == codes.Unknown:
+			logger.Error("encountered internal Status error during unary server call",
 				zap.String("method", info.FullMethod),
-				zap.Stringer("code", status.Code()),
-				zap.String("message", status.Message()),
-				zap.Any("details", status.Details()),
+				zap.Stringer("code", statusErr.Code()),
+				zap.String("message", statusErr.Message()),
+				zap.Any("details", statusErr.Details()),
 				zap.Error(err))
-			// err = errInternal
 		}
 		return
 	}

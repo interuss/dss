@@ -11,6 +11,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	scdstore "github.com/interuss/dss/pkg/scd/store"
 	"google.golang.org/grpc/status"
 )
 
@@ -30,29 +31,42 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-	// Delete Operation in Store
-	op, subs, err := a.Store.DeleteOperation(ctx, id, owner)
+	var response *scdpb.ChangeOperationReferenceResponse
+	action := func(ctx context.Context, store scdstore.Store) (err error) {
+		// Delete Operation in Store
+		op, subs, err := store.DeleteOperation(ctx, id, owner)
+		if err != nil {
+			return err
+		}
+		if op == nil {
+			return dsserr.Internal(fmt.Sprintf("DeleteOperation returned no Operation for ID: %s", id))
+		}
+		if subs == nil {
+			return dsserr.Internal(fmt.Sprintf("DeleteOperation returned nil Subscriptions for ID: %s", id))
+		}
+
+		// Convert deleted Operation to proto
+		opProto, err := op.ToProto()
+		if err != nil {
+			return dsserr.Internal(err.Error())
+		}
+
+		// Return response to client
+		response = &scdpb.ChangeOperationReferenceResponse{
+			OperationReference: opProto,
+			Subscribers:        makeSubscribersToNotify(subs),
+		}
+
+		return nil
+	}
+
+	err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
 	if err != nil {
+		// TODO: wrap err in dss.Internal?
 		return nil, err
 	}
-	if op == nil {
-		return nil, dsserr.Internal(fmt.Sprintf("DeleteOperation returned no Operation for ID: %s", id))
-	}
-	if subs == nil {
-		return nil, dsserr.Internal(fmt.Sprintf("DeleteOperation returned nil Subscriptions for ID: %s", id))
-	}
 
-	// Convert deleted Operation to proto
-	opProto, err := op.ToProto()
-	if err != nil {
-		return nil, dsserr.Internal(err.Error())
-	}
-
-	// Return response to client
-	return &scdpb.ChangeOperationReferenceResponse{
-		OperationReference: opProto,
-		Subscribers:        makeSubscribersToNotify(subs),
-	}, nil
+	return response, nil
 }
 
 // GetOperationReference returns a single operation ref for the given ID.
@@ -67,23 +81,36 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-	sub, err := a.Store.GetOperation(ctx, id)
+	var response *scdpb.GetOperationReferenceResponse
+	action := func(ctx context.Context, store scdstore.Store) (err error) {
+		sub, err := store.GetOperation(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if sub.Owner != owner {
+			sub.OVN = scdmodels.OVN("")
+		}
+
+		p, err := sub.ToProto()
+		if err != nil {
+			return dsserr.Internal(err.Error())
+		}
+
+		response = &scdpb.GetOperationReferenceResponse{
+			OperationReference: p,
+		}
+
+		return nil
+	}
+
+	err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
 	if err != nil {
+		// TODO: wrap err in dss.Internal?
 		return nil, err
 	}
 
-	if sub.Owner != owner {
-		sub.OVN = scdmodels.OVN("")
-	}
-
-	p, err := sub.ToProto()
-	if err != nil {
-		return nil, dsserr.Internal(err.Error())
-	}
-
-	return &scdpb.GetOperationReferenceResponse{
-		OperationReference: p,
-	}, nil
+	return response, nil
 }
 
 // SearchOperationReferences queries existing operation refs in the given
@@ -107,24 +134,36 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
-	// Perform search query on Store
-	ops, err := a.Store.SearchOperations(ctx, vol4, owner)
+	var response *scdpb.SearchOperationReferenceResponse
+	action := func(ctx context.Context, store scdstore.Store) (err error) {
+		// Perform search query on Store
+		ops, err := store.SearchOperations(ctx, vol4, owner)
+		if err != nil {
+			return err
+		}
+
+		// Create response for client
+		response = &scdpb.SearchOperationReferenceResponse{}
+		for _, op := range ops {
+			p, err := op.ToProto()
+			if err != nil {
+				return dsserr.Internal("error converting Operation model to proto")
+			}
+			if op.Owner != owner {
+				p.Ovn = ""
+			}
+			response.OperationReferences = append(response.OperationReferences, p)
+		}
+
+		return nil
+	}
+
+	err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
 	if err != nil {
+		// TODO: wrap err in dss.Internal?
 		return nil, err
 	}
 
-	// Return response to client
-	response := &scdpb.SearchOperationReferenceResponse{}
-	for _, op := range ops {
-		p, err := op.ToProto()
-		if err != nil {
-			return nil, dsserr.Internal("error converting Operation model to proto")
-		}
-		if op.Owner != owner {
-			p.Ovn = ""
-		}
-		response.OperationReferences = append(response.OperationReferences, p)
-	}
 	return response, nil
 }
 
@@ -176,85 +215,95 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 	subscriptionID := scdmodels.ID(params.GetSubscriptionId())
 
-	if subscriptionID.Empty() {
-		if err := scdmodels.ValidateUSSBaseURL(
-			params.GetNewSubscription().GetUssBaseUrl(),
-		); err != nil {
-			return nil, dsserr.BadRequest(err.Error())
-		}
-		// TODO(tvoss): Creation of the subscription and the operation is not
-		// atomic. That is, if the creation of the operation fails, we need to
-		// rollback this subscription, too. See
-		// https://github.com/interuss/dss/issues/277 for tracking purposes.
-		sub, _, err := a.putSubscription(ctx, &scdmodels.Subscription{
-			ID:         scdmodels.ID(uuid.New().String()),
-			Owner:      owner,
-			StartTime:  uExtent.StartTime,
-			EndTime:    uExtent.EndTime,
-			AltitudeLo: uExtent.SpatialVolume.AltitudeLo,
-			AltitudeHi: uExtent.SpatialVolume.AltitudeHi,
-			Cells:      cells,
+	var response *scdpb.ChangeOperationReferenceResponse
+	action := func(ctx context.Context, store scdstore.Store) (err error) {
+		if subscriptionID.Empty() {
+			if err := scdmodels.ValidateUSSBaseURL(
+				params.GetNewSubscription().GetUssBaseUrl(),
+			); err != nil {
+				return dsserr.BadRequest(err.Error())
+			}
 
-			BaseURL:              params.GetNewSubscription().GetUssBaseUrl(),
-			NotifyForOperations:  true,
-			NotifyForConstraints: params.GetNewSubscription().GetNotifyForConstraints(),
-			ImplicitSubscription: true,
-		})
-		if err != nil {
-			return nil, dsserr.Internal(fmt.Sprintf("failed to create implicit subscription: %s", err))
+			sub, _, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
+				ID:         scdmodels.ID(uuid.New().String()),
+				Owner:      owner,
+				StartTime:  uExtent.StartTime,
+				EndTime:    uExtent.EndTime,
+				AltitudeLo: uExtent.SpatialVolume.AltitudeLo,
+				AltitudeHi: uExtent.SpatialVolume.AltitudeHi,
+				Cells:      cells,
+
+				BaseURL:              params.GetNewSubscription().GetUssBaseUrl(),
+				NotifyForOperations:  true,
+				NotifyForConstraints: params.GetNewSubscription().GetNotifyForConstraints(),
+				ImplicitSubscription: true,
+			})
+			if err != nil {
+				return dsserr.Internal(fmt.Sprintf("failed to create implicit subscription: %s", err))
+			}
+			subscriptionID = sub.ID
 		}
-		subscriptionID = sub.ID
+
+		key := []scdmodels.OVN{}
+		for _, ovn := range params.GetKey() {
+			key = append(key, scdmodels.OVN(ovn))
+		}
+
+		op, subs, err := store.UpsertOperation(ctx, &scdmodels.Operation{
+			ID:      id,
+			Owner:   owner,
+			Version: scdmodels.Version(params.OldVersion),
+
+			StartTime:     uExtent.StartTime,
+			EndTime:       uExtent.EndTime,
+			AltitudeLower: uExtent.SpatialVolume.AltitudeLo,
+			AltitudeUpper: uExtent.SpatialVolume.AltitudeHi,
+			Cells:         cells,
+
+			USSBaseURL:     params.UssBaseUrl,
+			SubscriptionID: subscriptionID,
+			State:          scdmodels.OperationState(params.State),
+		}, key)
+
+		if err == scderr.MissingOVNsInternalError() {
+			// The client is missing some OVNs; provide the pointers to the
+			// information they need
+			ops, err := store.SearchOperations(ctx, uExtent, owner)
+			if err != nil {
+				return err
+			}
+			success, err := scderr.MissingOVNsErrorResponse(ops)
+			if !success {
+				return dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", err))
+			}
+			return err
+		}
+
+		if err != nil {
+			if _, ok := status.FromError(err); ok {
+				return err
+			}
+			return dsserr.Internal(fmt.Sprintf("failed to upsert operation: %s", err))
+		}
+
+		p, err := op.ToProto()
+		if err != nil {
+			return dsserr.Internal("could not convert Operation to proto")
+		}
+
+		response = &scdpb.ChangeOperationReferenceResponse{
+			OperationReference: p,
+			Subscribers:        makeSubscribersToNotify(subs),
+		}
+
+		return nil
 	}
 
-	key := []scdmodels.OVN{}
-	for _, ovn := range params.GetKey() {
-		key = append(key, scdmodels.OVN(ovn))
-	}
-
-	op, subs, err := a.Store.UpsertOperation(ctx, &scdmodels.Operation{
-		ID:      id,
-		Owner:   owner,
-		Version: scdmodels.Version(params.OldVersion),
-
-		StartTime:     uExtent.StartTime,
-		EndTime:       uExtent.EndTime,
-		AltitudeLower: uExtent.SpatialVolume.AltitudeLo,
-		AltitudeUpper: uExtent.SpatialVolume.AltitudeHi,
-		Cells:         cells,
-
-		USSBaseURL:     params.UssBaseUrl,
-		SubscriptionID: subscriptionID,
-		State:          scdmodels.OperationState(params.State),
-	}, key)
-
-	if err == scderr.MissingOVNsInternalError() {
-		// The client is missing some OVNs; provide the pointers to the
-		// information they need
-		ops, err := a.Store.SearchOperations(ctx, uExtent, owner)
-		if err != nil {
-			return nil, err
-		}
-		success, err := scderr.MissingOVNsErrorResponse(ops)
-		if !success {
-			return nil, dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", err))
-		}
+	err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	if err != nil {
+		// TODO: wrap err in dss.Internal?
 		return nil, err
 	}
 
-	if err != nil {
-		if _, ok := status.FromError(err); ok {
-			return nil, err
-		}
-		return nil, dsserr.Internal(fmt.Sprintf("failed to upsert operation: %s", err))
-	}
-
-	p, err := op.ToProto()
-	if err != nil {
-		return nil, dsserr.Internal("could not convert Operation to proto")
-	}
-
-	return &scdpb.ChangeOperationReferenceResponse{
-		OperationReference: p,
-		Subscribers:        makeSubscribersToNotify(subs),
-	}, nil
+	return response, nil
 }
