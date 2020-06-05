@@ -56,22 +56,22 @@ type Server struct {
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
-func (a *Server) AuthScopes() map[auth.Operation][]auth.Scope {
+func (a *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
 	// TODO: replace with correct scopes
-	return map[auth.Operation][]auth.Scope{
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteConstraintReference": {constraintManagementScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteOperationReference":  {strategicCoordinationScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteSubscription":        {strategicCoordinationScope, constraintConsumptionScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetConstraintReference":    {strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetOperationReference":     {strategicCoordinationScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetSubscription":           {strategicCoordinationScope, constraintConsumptionScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/MakeDssReport":             {strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/PutConstraintReference":    {constraintManagementScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/PutOperationReference":     {strategicCoordinationScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/PutSubscription":           {strategicCoordinationScope, constraintConsumptionScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QueryConstraintReferences": {strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QuerySubscriptions":        {strategicCoordinationScope, constraintConsumptionScope},
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/SearchOperationReferences": {strategicCoordinationScope},
+	return map[auth.Operation]auth.KeyClaimedScopesValidator{
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteConstraintReference": auth.RequireAnyScope(constraintManagementScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteOperationReference":  auth.RequireAnyScope(strategicCoordinationScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteSubscription":        auth.RequireAnyScope(strategicCoordinationScope, constraintConsumptionScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetConstraintReference":    auth.RequireAnyScope(strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetOperationReference":     auth.RequireAnyScope(strategicCoordinationScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetSubscription":           auth.RequireAnyScope(strategicCoordinationScope, constraintConsumptionScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/MakeDssReport":             auth.RequireAnyScope(strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/PutConstraintReference":    auth.RequireAnyScope(constraintManagementScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/PutOperationReference":     auth.RequireAnyScope(strategicCoordinationScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/PutSubscription":           auth.RequireAnyScope(strategicCoordinationScope, constraintConsumptionScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QueryConstraintReferences": auth.RequireAnyScope(strategicCoordinationScope, constraintConsumptionScope, constraintManagementScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QuerySubscriptions":        auth.RequireAnyScope(strategicCoordinationScope, constraintConsumptionScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/SearchOperationReferences": auth.RequireAnyScope(strategicCoordinationScope),
 	}
 }
 
