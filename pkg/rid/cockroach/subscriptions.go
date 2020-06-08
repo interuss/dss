@@ -126,12 +126,6 @@ func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID
 
 // UpdateSubscription updates the Subscription.. not yet implemented.
 func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	return nil, dsserr.Internal("not yet implemented")
-}
-
-// InsertSubscription inserts subscription into the store and returns
-// the resulting subscription including its ID.
-func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		udpateQuery = fmt.Sprintf(`
 		UPDATE
@@ -140,6 +134,32 @@ func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels
 		WHERE id = $1 AND updated_at = $8
 		RETURNING
 			%s`, subscriptionFields, subscriptionFields)
+	)
+
+	cids := make([]int64, len(s.Cells))
+
+	for i, cell := range s.Cells {
+		if err := geo.ValidateCell(cell); err != nil {
+			return nil, err
+		}
+		cids[i] = int64(cell)
+	}
+
+	return c.processOne(ctx, udpateQuery,
+		s.ID,
+		s.Owner,
+		s.URL,
+		s.NotificationIndex,
+		pq.Int64Array(cids),
+		s.StartTime,
+		s.EndTime,
+		s.Version.ToTimestamp())
+}
+
+// InsertSubscription inserts subscription into the store and returns
+// the resulting subscription including its ID.
+func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	var (
 		insertQuery = fmt.Sprintf(`
 		INSERT INTO
 		  subscriptions
@@ -159,29 +179,14 @@ func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels
 		cids[i] = int64(cell)
 	}
 
-	var err error
-	var ret *ridmodels.Subscription
-	if s.Version.Empty() {
-		ret, err = c.processOne(ctx, insertQuery,
-			s.ID,
-			s.Owner,
-			s.URL,
-			s.NotificationIndex,
-			pq.Int64Array(cids),
-			s.StartTime,
-			s.EndTime)
-	} else {
-		ret, err = c.processOne(ctx, udpateQuery,
-			s.ID,
-			s.Owner,
-			s.URL,
-			s.NotificationIndex,
-			pq.Int64Array(cids),
-			s.StartTime,
-			s.EndTime,
-			s.Version.ToTimestamp())
-	}
-	return ret, err
+	return c.processOne(ctx, insertQuery,
+		s.ID,
+		s.Owner,
+		s.URL,
+		s.NotificationIndex,
+		pq.Int64Array(cids),
+		s.StartTime,
+		s.EndTime)
 }
 
 // DeleteSubscription deletes the subscription identified by "id" and

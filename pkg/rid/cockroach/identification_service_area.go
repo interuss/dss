@@ -96,13 +96,6 @@ func (c *ISAStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Iden
 // if there's an existing entity.
 func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
-		updateAreasQuery = fmt.Sprintf(`
-			UPDATE
-				identification_service_areas
-			SET	(%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
-			WHERE id = $1 AND updated_at = $7
-			RETURNING
-				%s`, isaFields, isaFields)
 		insertAreasQuery = fmt.Sprintf(`
 			INSERT INTO
 				identification_service_areas
@@ -122,14 +115,7 @@ func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationS
 		cids[i] = int64(cell)
 	}
 
-	var err error
-	var ret *ridmodels.IdentificationServiceArea
-	if isa.Version.Empty() {
-		ret, err = c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime)
-	} else {
-		ret, err = c.processOne(ctx, updateAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
-	}
-	return ret, err
+	return c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime)
 }
 
 // UpdateISA updates the IdentificationServiceArea identified by "id" and owned
@@ -139,7 +125,26 @@ func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationS
 // by it.
 // TODO: simplify the logic to just update, without the primary query.
 func (c *ISAStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
+	var (
+		updateAreasQuery = fmt.Sprintf(`
+			UPDATE
+				identification_service_areas
+			SET	(%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
+			WHERE id = $1 AND updated_at = $7
+			RETURNING
+				%s`, isaFields, isaFields)
+	)
+
+	cids := make([]int64, len(isa.Cells))
+
+	for i, cell := range isa.Cells {
+		if err := geo.ValidateCell(cell); err != nil {
+			return nil, err
+		}
+		cids[i] = int64(cell)
+	}
+
+	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
@@ -152,12 +157,25 @@ func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationS
 			WHERE
 				id = $1
 			AND
-				owner = $2
-			AND
 				updated_at = $3
 			RETURNING %s`, isaFields)
 	)
-	return c.processOne(ctx, deleteQuery, isa.ID, isa.Owner, isa.Version.ToTimestamp())
+	return c.processOne(ctx, deleteQuery, isa.ID, isa.Version.ToTimestamp())
+}
+
+// UnsafeDeleteISA deletes the IdentificationServiceArea identified by "id". It
+// should only be called in a transaction that verifies the version.
+// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
+func (c *ISAStore) UnsafeDeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	var (
+		deleteQuery = fmt.Sprintf(`
+			DELETE FROM
+				identification_service_areas
+			WHERE
+				id = $1
+			RETURNING %s`, isaFields)
+	)
+	return c.processOne(ctx, deleteQuery, isa.ID)
 }
 
 // SearchISAs searches IdentificationServiceArea
