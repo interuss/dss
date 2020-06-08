@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/dpjacques/clockwork"
@@ -75,7 +74,7 @@ func (c *SubscriptionStore) processOne(ctx context.Context, query string, args .
 		return nil, fmt.Errorf("query returned %d subscriptions", len(subs))
 	}
 	if len(subs) == 0 {
-		return nil, sql.ErrNoRows
+		return nil, nil
 	}
 	return subs[0], nil
 }
@@ -189,20 +188,18 @@ func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels
 		s.EndTime)
 }
 
-// DeleteSubscription deletes the subscription identified by "id" and
-// returns the deleted subscription.
-func (c *SubscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+// UnsafeDeleteSubscription deletes the subscription identified by ID.
+// It must be done in a txn and the version verified.
+func (c *SubscriptionStore) UnsafeDeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 		DELETE FROM
 			subscriptions
 		WHERE
 			id = $1
-			AND owner = $2
-			AND updated_at = $3
 		RETURNING %s`, subscriptionFields)
 	)
-	return c.processOne(ctx, query, s.ID, s.Owner, s.Version.ToTimestamp())
+	return c.processOne(ctx, query, s.ID)
 }
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.

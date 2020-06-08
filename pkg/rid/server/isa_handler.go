@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -23,11 +22,11 @@ func (s *Server) GetIdentificationServiceArea(
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	isa, err := s.App.GetISA(ctx, dssmodels.ID(req.GetId()))
-	if err == sql.ErrNoRows {
-		return nil, dsserr.NotFound(req.GetId())
-	}
 	if err != nil {
 		return nil, err
+	}
+	if isa == nil {
+		return nil, dsserr.NotFound(req.GetId())
 	}
 	p, err := isa.ToProto()
 	if err != nil {

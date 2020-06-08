@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -57,10 +56,10 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 
 		old, err = repo.UnsafeDeleteISA(ctx, old)
 		switch {
-		case err == sql.ErrNoRows: // Return a 404 here.
-			return dsserr.NotFound(id.String(), version.String())
 		case err != nil:
 			return err
+		case old == nil: // Return a 404 here.
+			return dsserr.NotFound(id.String(), version.String())
 		case !version.Matches(old.Version):
 			return dsserr.VersionMismatch("old version")
 		case old.Owner != owner:
@@ -98,25 +97,13 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		if err, ok := err.(*pq.Error); ok && err.Code == "23505" {
 			return dsserr.AlreadyExists("ISA with ID: %s already exists", isa.ID)
 		}
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	})
 	return ret, subs, err
 }
 
 // UpdateISA implments the AppInterface InsertISA method
 func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	old, err := a.Transactor.GetISA(ctx, isa.ID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if old.Owner != isa.Owner {
-		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
-	}
-
 	// Validate and perhaps correct StartTime and EndTime.
 	// TODO: recommended to explicitly force the user to pass in the correct time,
 	// instead of changing it on them.
@@ -142,14 +129,21 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		if err != nil {
 			return err
 		}
-		ret, err = a.Transactor.InsertISA(ctx, isa)
-		return err
+		ret, err = a.Transactor.UpdateISA(ctx, isa)
+		switch {
+		case err != nil:
+			return err
+		case ret == nil:
+			// TODO: this should return a 404 or a 409, but the standard doesn't allow
+			// for a 404 on updates.
+			// When this changes, we can model after UnsafeDelete, and check the
+			// version param here.
+			return dsserr.AlreadyExists("this ISA was either updated or deleted")
+		case ret.Owner != isa.Owner:
+			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+		}
+		return nil
 	})
-	// This can happen if either the version was changed, or the entity was
-	// deleted. The grpc error code for already exists maps to an HTTP 409
-	// CONFLICT code.
-	if ret == nil {
-		return nil, nil, dsserr.AlreadyExists("this ISA was either updated or deleted")
-	}
+
 	return ret, subs, err
 }

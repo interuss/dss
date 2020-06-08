@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"testing"
@@ -67,7 +66,7 @@ func (store *subscriptionStore) GetSubscription(ctx context.Context, id dssmodel
 	if sub, ok := store.subs[id]; ok {
 		return sub, nil
 	}
-	return nil, sql.ErrNoRows
+	return nil, nil
 }
 
 // DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
@@ -77,7 +76,7 @@ func (store *subscriptionStore) DeleteSubscription(ctx context.Context, s *ridmo
 		delete(store.subs, s.ID)
 		return sub, nil
 	}
-	return nil, sql.ErrNoRows
+	return nil, nil
 }
 
 // InsertSubscription inserts or updates an Subscription.

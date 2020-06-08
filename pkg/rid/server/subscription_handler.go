@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
@@ -88,11 +87,11 @@ func (s *Server) GetSubscription(
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	subscription, err := s.App.GetSubscription(ctx, dssmodels.ID(req.GetId()))
-	if err == sql.ErrNoRows {
-		return nil, dsserr.NotFound(req.GetId())
-	}
 	if err != nil {
 		return nil, err
+	}
+	if subscription == nil {
+		return nil, dsserr.NotFound(req.GetId())
 	}
 	p, err := subscription.ToProto()
 	if err != nil {

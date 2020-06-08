@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -34,7 +33,7 @@ func (store *isaStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.
 	if isa, ok := store.isas[id]; ok {
 		return isa, nil
 	}
-	return nil, sql.ErrNoRows
+	return nil, nil
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
@@ -42,7 +41,7 @@ func (store *isaStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.
 func (store *isaStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	isa, ok := store.isas[isa.ID]
 	if !ok {
-		return nil, sql.ErrNoRows
+		return nil, nil
 	}
 	delete(store.isas, isa.ID)
 

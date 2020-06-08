@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -18,7 +17,8 @@ import (
 )
 
 const (
-	isaFields = "id, owner, url, cells, starts_at, ends_at, updated_at"
+	isaFields       = "id, owner, url, cells, starts_at, ends_at, updated_at"
+	updateISAFields = "id, url, cells, starts_at, ends_at, updated_at"
 )
 
 // ISAStore is an implementation of the ISARepo for CRDB.
@@ -72,7 +72,7 @@ func (c *ISAStore) processOne(ctx context.Context, query string, args ...interfa
 		return nil, fmt.Errorf("query returned %d identification_service_areas", len(isas))
 	}
 	if len(isas) == 0 {
-		return nil, sql.ErrNoRows
+		return nil, nil
 	}
 	return isas[0], nil
 }
@@ -129,10 +129,10 @@ func (c *ISAStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationS
 		updateAreasQuery = fmt.Sprintf(`
 			UPDATE
 				identification_service_areas
-			SET	(%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
+			SET	(%s) = ($1, $2, $3, $4, $5, transaction_timestamp())
 			WHERE id = $1 AND updated_at = $7
 			RETURNING
-				%s`, isaFields, isaFields)
+				%s`, updateISAFields, isaFields)
 	)
 
 	cids := make([]int64, len(isa.Cells))
@@ -144,7 +144,7 @@ func (c *ISAStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationS
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
+	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".

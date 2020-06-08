@@ -2,13 +2,14 @@ package application
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
@@ -38,26 +39,44 @@ type SubscriptionApp interface {
 	SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
 }
 
-// InsertSubscription implements the App InsertSubscription method
 func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	old, err := a.Transactor.GetSubscription(ctx, s.ID)
-	switch {
-	case err == sql.ErrNoRows:
-		break
-	case err != nil:
+	// Validate and perhaps correct StartTime and EndTime.
+	if err := s.AdjustTimeRange(a.clock.Now(), nil); err != nil {
 		return nil, err
 	}
+
+	// Check the user hasn't created too many subscriptions in this area.
+	count, err := a.Transactor.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
+	if err != nil {
+		a.logger.Error("Error fetching max subscription count", zap.Error(err))
+		return nil, dsserr.Internal(
+			"failed to fetch subscription count, rejecting request")
+	}
+	if count >= maxSubscriptionsPerArea {
+		return nil, dsserr.Exhausted(
+			"too many existing subscriptions in this area already")
+	}
+
+	sub, err := a.Transactor.InsertSubscription(ctx, s)
+	if err, ok := err.(*pq.Error); ok && err.Code == "23505" {
+		return dsserr.AlreadyExists("Sub with ID: %s already exists", isa.ID)
+	}
+	return sub, err
+}
+
+// InsertSubscription implements the App InsertSubscription method
+func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	old, err := a.Transactor.GetSubscription(ctx, s.ID)
 	switch {
-	case old == nil && !s.Version.Empty():
+	case err != nil:
+		return nil, err
+	case old == nil:
 		// The user wants to update an existing subscription, but one wasn't found.
 		return nil, dsserr.NotFound(s.ID.String())
-	case old != nil && s.Version.Empty():
-		// The user wants to create a new subscription but it already exists.
-		return nil, dsserr.AlreadyExists(s.ID.String())
-	case old != nil && !s.Version.Matches(old.Version):
+	case !s.Version.Matches(old.Version):
 		// The user wants to update a subscription but the version doesn't match.
 		return nil, dsserr.VersionMismatch("old version")
-	case old != nil && old.Owner != s.Owner:
+	case old.Owner != s.Owner:
 		return nil, dsserr.PermissionDenied(fmt.Sprintf("s is owned by %s", old.Owner))
 	}
 	// Validate and perhaps correct StartTime and EndTime.
@@ -77,24 +96,26 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 			"too many existing subscriptions in this area already")
 	}
 
-	return a.Transactor.InsertSubscription(ctx, s)
+	return a.Transactor.UpdateSubscription(ctx, s)
 }
 
 // DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
 func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
-
-	old, err := a.Transactor.GetSubscription(ctx, id)
-	switch {
-	case err == sql.ErrNoRows || old == nil:
-		return nil, dsserr.NotFound(id.String())
-	case err != nil:
-		return nil, err
-	case old.Owner != owner:
-		return nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
-	}
-	old, err = a.Transactor.DeleteSubscription(ctx, old)
-	if err == sql.ErrNoRows {
-		return nil, dsserr.VersionMismatch("old version")
-	}
+	var old *ridmodels.Subscription
+	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+		var err error
+		old, err = repo.UnsafeDeleteSubscription(ctx, old)
+		switch {
+		case err != nil:
+			return err
+		case old == nil: // Return a 404 here.
+			return dsserr.NotFound(id.String(), version.String())
+		case !version.Matches(old.Version):
+			return dsserr.VersionMismatch("old version")
+		case old.Owner != owner:
+			return dsserr.PermissionDenied(fmt.Sprintf("Sub is owned by %s", old.Owner))
+		}
+		return nil
+	})
 	return old, err
 }
