@@ -184,12 +184,6 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		return nil, dsserr.Internal("failed to convert to internal geometry model")
 	}
 
-	// Extract S2 cells from area of interest
-	cells, err := vol4.CalculateSpatialCovering()
-	if err != nil {
-		return nil, dssErrorOfAreaError(err)
-	}
-
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
@@ -199,7 +193,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	var response *scdpb.SearchSubscriptionsResponse
 	action := func(ctx context.Context, store scdstore.Store) (err error) {
 		// Perform search query on Store
-		subs, err := store.SearchSubscriptions(ctx, cells, owner) //TODO: incorporate time bounds into query
+		subs, err := store.SearchSubscriptions(ctx, vol4)
 		if err != nil {
 			return err
 		}
@@ -207,11 +201,13 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		// Return response to client
 		response = &scdpb.SearchSubscriptionsResponse{}
 		for _, sub := range subs {
-			p, err := sub.ToProto()
-			if err != nil {
-				return dsserr.Internal("error converting Subscription model to proto")
+			if sub.Owner == owner {
+				p, err := sub.ToProto()
+				if err != nil {
+					return dsserr.Internal("error converting Subscription model to proto")
+				}
+				response.Subscriptions = append(response.Subscriptions, p)
 			}
-			response.Subscriptions = append(response.Subscriptions, p)
 		}
 
 		return nil

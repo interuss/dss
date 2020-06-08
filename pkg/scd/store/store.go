@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 )
@@ -31,8 +30,8 @@ type OperationStore interface {
 
 // SubscriptionStore abstracts subscription-specific interactions with the backing data store.
 type SubscriptionStore interface {
-	// SearchSubscriptions returns all Subscriptions owned by "owner" in "cells".
-	SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error)
+	// SearchSubscriptions returns all Subscriptions in "v4d".
+	SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error)
 
 	// GetSubscription returns the Subscription referenced by id, or nil if the
 	// Subscription doesn't exist
