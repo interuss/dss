@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-  "github.com/dpjacques/clockwork"
+	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -68,11 +68,11 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		return nil, dsserr.BadRequest("no notification triggers requested for Subscription")
 	}
 
-  // Validate and perhaps correct StartTime and EndTime.
-  clock := clockwork.NewRealClock()
-  if err := sub.AdjustTimeRange(clock.Now(), sub); err != nil {
-    return nil, err
-  }
+	// Validate and perhaps correct StartTime and EndTime.
+	clock := clockwork.NewRealClock()
+	if err := sub.AdjustTimeRange(clock.Now(), sub); err != nil {
+		return nil, err
+	}
 
 	var result *scdpb.PutSubscriptionResponse
 	action := func(ctx context.Context, store scdstore.Store) (err error) {
