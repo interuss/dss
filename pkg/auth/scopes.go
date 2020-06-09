@@ -21,17 +21,17 @@ func (s Scope) String() string {
 	return string(s)
 }
 
-// MergeOperationsAndScopes merges a and be together.
-func MergeOperationsAndScopes(requiredScopes ...map[Operation][]Scope) map[Operation][]Scope {
-	result := map[Operation][]Scope{}
+// MergeOperationsAndScopesValidators merges scopesValidators.
+func MergeOperationsAndScopesValidators(scopesValidators ...map[Operation]KeyClaimedScopesValidator) map[Operation]KeyClaimedScopesValidator {
+	result := map[Operation]KeyClaimedScopesValidator{}
 
-	if len(requiredScopes) == 0 {
+	if len(scopesValidators) == 0 {
 		return result
 	}
 
-	for _, rs := range requiredScopes {
+	for _, rs := range scopesValidators {
 		for k, v := range rs {
-			result[k] = append(result[k], v...)
+			result[k] = v
 		}
 	}
 
