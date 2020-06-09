@@ -355,7 +355,7 @@ func (c *Store) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scd
 
 // GetSubscription returns the subscription identified by "id".
 func (c *Store) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
-	sub, err := c.fetchSubscriptionByIDAndOwner(ctx, c.DB, id, owner)
+	sub, err := c.fetchSubscriptionByIDAndOwner(ctx, c.tx, id, owner)
 	switch err {
 	case nil:
 		return sub, nil
@@ -369,61 +369,56 @@ func (c *Store) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssm
 // UpsertSubscription upserts subscription into the store and returns
 // the resulting subscription including its ID.
 func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
-
-	tx, err := c.Begin()
-	if err != nil {
-		return nil, nil, err
-	}
-	old, err := c.fetchSubscriptionByID(ctx, tx, s.ID)
+	old, err := c.fetchSubscriptionByID(ctx, c.tx, s.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
 	case err != nil:
-		return nil, nil, multierr.Combine(err, tx.Rollback())
+		return nil, nil, err
 	}
 
 	switch {
 	case old == nil && !s.Version.Empty():
 		// The user wants to update an existing subscription, but one wasn't found.
-		return nil, nil, multierr.Combine(dsserr.NotFound(s.ID.String()), tx.Rollback())
+		return nil, nil, dsserr.NotFound(s.ID.String())
 	case old != nil && s.Version.Empty():
 		// The user wants to create a new subscription but it already exists.
-		return nil, nil, multierr.Combine(dsserr.AlreadyExists(s.ID.String()), tx.Rollback())
+		return nil, nil, dsserr.AlreadyExists(s.ID.String())
 	case old != nil && !s.Version.Matches(old.Version):
 		// The user wants to update a subscription but the version doesn't match.
-		return nil, nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
+		return nil, nil, dsserr.VersionMismatch("old version")
 	case old != nil && old.Owner != s.Owner:
-		return nil, nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner)), tx.Rollback())
+		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
 	if err := s.AdjustTimeRange(c.clock.Now(), old); err != nil {
-		return nil, nil, multierr.Combine(err, tx.Rollback())
+		return nil, nil, err
 	}
 
 	// Check the user hasn't created too many subscriptions in this area.
-	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, tx, s.Cells, s.Owner)
+	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, c.tx, s.Cells, s.Owner)
 	if err != nil {
 		c.logger.Warn("Error fetching max subscription count", zap.Error(err))
-		return nil, nil, multierr.Combine(dsserr.Internal(
-			"failed to fetch subscription count, rejecting request"), tx.Rollback())
+		return nil, nil, dsserr.Internal(
+			"failed to fetch subscription count, rejecting request")
 	} else if count >= maxSubscriptionsPerArea {
 		errMsg := "too many existing subscriptions in this area already"
 		if old != nil {
 			errMsg = errMsg + ", rejecting update request"
 		}
-		return nil, nil, multierr.Combine(dsserr.Exhausted(errMsg), tx.Rollback())
+		return nil, nil, dsserr.Exhausted(errMsg)
 	}
 
-	newSubscription, err := c.pushSubscription(ctx, tx, s)
+	newSubscription, err := c.pushSubscription(ctx, c.tx, s)
 	if err != nil {
-		return nil, nil, multierr.Combine(err, tx.Rollback())
+		return nil, nil, err
 	}
 	newSubscription.Cells = s.Cells
 
 	var affectedOperations []*scdmodels.Operation
 	if len(s.Cells) > 0 {
-		ops, err := c.searchOperations(ctx, tx, &dssmodels.Volume4D{
+		ops, err := c.searchOperations(ctx, c.tx, &dssmodels.Volume4D{
 			StartTime: s.StartTime,
 			EndTime:   s.EndTime,
 			SpatialVolume: &dssmodels.Volume3D{
@@ -435,13 +430,9 @@ func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscriptio
 			},
 		}, s.Owner)
 		if err != nil {
-			return nil, nil, multierr.Combine(err, tx.Rollback())
+			return nil, nil, err
 		}
 		affectedOperations = ops
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, nil, err
 	}
 
 	return newSubscription, affectedOperations, nil
@@ -475,35 +466,30 @@ func (c *Store) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner d
 			)`
 	)
 
-	tx, err := c.Begin()
+	// We fetch to know whether to return a concurrency error, or a not found error
+	old, err := c.fetchSubscriptionByID(ctx, c.tx, id)
+	switch {
+	case err == sql.ErrNoRows: // Return a 404 here.
+		return nil, dsserr.NotFound(id.String())
+	case err != nil:
+		return nil, err
+	case !version.Empty() && !version.Matches(old.Version):
+		return nil, dsserr.VersionMismatch("old version")
+	case old != nil && old.Owner != owner:
+		return nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+	}
+
+	res, err := c.tx.ExecContext(ctx, query, id, owner)
 	if err != nil {
 		return nil, err
 	}
 
-	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := c.fetchSubscriptionByID(ctx, tx, id)
-	switch {
-	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, multierr.Combine(dsserr.NotFound(id.String()), tx.Rollback())
-	case err != nil:
-		return nil, multierr.Combine(err, tx.Rollback())
-	case !version.Empty() && !version.Matches(old.Version):
-		return nil, multierr.Combine(dsserr.VersionMismatch("old version"), tx.Rollback())
-	case old != nil && old.Owner != owner:
-		return nil, multierr.Combine(dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner)), tx.Rollback())
-	}
-
-	res, err := tx.ExecContext(ctx, query, id, owner)
-	if err != nil {
-		return nil, multierr.Combine(err, tx.Rollback())
-	}
-
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return nil, multierr.Combine(err, tx.Rollback())
+		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := c.tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -543,25 +529,20 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 		return nil, dsserr.BadRequest("no location provided")
 	}
 
-	tx, err := c.Begin()
-	if err != nil {
-		return nil, err
-	}
-
 	cids := make([]int64, len(cells))
 	for i, cell := range cells {
 		cids[i] = int64(cell)
 	}
 
 	subscriptions, err := c.fetchSubscriptions(
-		ctx, tx, query, pq.Array(cids), owner, c.clock.Now())
+		ctx, c.tx, query, pq.Array(cids), owner, c.clock.Now())
 
 	switch {
 	case err != nil:
-		return nil, multierr.Combine(err, tx.Rollback())
+		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := c.tx.Commit(); err != nil {
 		return nil, err
 	}
 
