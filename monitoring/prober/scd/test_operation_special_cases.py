@@ -43,4 +43,4 @@ def test_op_query_degenerate_polygon(scd_session):
   with open('./scd/resources/op_request_3.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
-  assert resp.status_code == 400 or resp.status_code == 200, resp.content
+  assert resp.status_code == 200, resp.content

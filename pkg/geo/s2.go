@@ -119,10 +119,16 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 // CoveringForLoop calculates an s2 cell covering for loop or returns an area if
 // the area covered by loop is too large.
 func CoveringForLoop(loop *s2.Loop) (s2.CellUnion, error) {
-	if loopAreaKm2(loop) > maxAllowedAreaKm2 {
+	area := loopAreaKm2(loop)
+	if area > maxAllowedAreaKm2 {
 		return nil, &ErrAreaTooLarge{
 			msg: fmt.Sprintf("area is too large (%fkm² > %fkm²)", loopAreaKm2(loop), maxAllowedAreaKm2),
 		}
+	}
+	if area <= 0 {
+		// Since the loop has no area, try a PolyLine
+		pl := s2.Polyline(loop.Vertices())
+		return RegionCoverer.Covering(&pl), nil
 	}
 	return RegionCoverer.Covering(loop), nil
 }
