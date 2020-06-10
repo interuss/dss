@@ -13,6 +13,10 @@ import (
 	scdstore "github.com/interuss/dss/pkg/scd/store"
 )
 
+var (
+	DefaultClock = clockwork.NewRealClock()
+)
+
 // PutSubscription creates a single subscription.
 func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
@@ -69,8 +73,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
-	clock := clockwork.NewRealClock()
-	if err := sub.AdjustTimeRange(clock.Now(), sub); err != nil {
+	if err := sub.AdjustTimeRange(DefaultClock.Now(), sub); err != nil {
 		return nil, err
 	}
 
