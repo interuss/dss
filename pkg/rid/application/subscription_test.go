@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -79,7 +78,6 @@ func (store *subscriptionStore) DeleteSubscription(ctx context.Context, s *ridmo
 	return nil, nil
 }
 
-// InsertSubscription inserts or updates an Subscription.
 func (store *subscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	storedCopy := *s
 	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
@@ -89,12 +87,15 @@ func (store *subscriptionStore) InsertSubscription(ctx context.Context, s *ridmo
 	return &returnedCopy, nil
 }
 
-// Update
 func (store *subscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	return nil, errors.New("not implemented")
+	storedCopy := *s
+	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
+	store.subs[s.ID] = &storedCopy
+
+	returnedCopy := storedCopy
+	return &returnedCopy, nil
 }
 
-// SearchSubscriptionsByOwner returns all IdentificationServiceAreas ownded by "owner" in "cells".
 func (store *subscriptionStore) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	var subs []*ridmodels.Subscription
 
@@ -135,7 +136,6 @@ func (store *subscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.C
 	return max, nil
 }
 
-// SearchSubscriptions returns all IdentificationServiceAreas ownded by "owner" in "cells".
 func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var subs []*ridmodels.Subscription
 	for _, s := range store.subs {
@@ -172,7 +172,7 @@ func TestBadOwner(t *testing.T) {
 	require.NoError(t, err)
 	// Test changing owner fails
 	sub.Owner = "new bad owner"
-	_, err = app.InsertSubscription(ctx, sub)
+	_, err = app.UpdateSubscription(ctx, sub)
 	require.EqualError(t, err, fmt.Sprintf("rpc error: code = PermissionDenied desc = s is owned by orig Owner"))
 }
 
@@ -201,7 +201,7 @@ func TestSubscriptionUpdateCells(t *testing.T) {
 
 	sub.Cells = s2.CellUnion{17106221953846345728}
 
-	sub, err = app.InsertSubscription(ctx, sub)
+	sub, err = app.UpdateSubscription(ctx, sub)
 	require.NoError(t, err)
 	require.NotNil(t, sub)
 
@@ -255,6 +255,59 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			endTime:   fakeClock.Now().Add(10 * time.Minute),
 			wantErr:   "rpc error: code = InvalidArgument desc = subscription time_end must be after time_start",
 		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			id := dssmodels.ID(uuid.New().String())
+			owner := dssmodels.Owner(uuid.New().String())
+			var version *dssmodels.Version
+
+			s := &ridmodels.Subscription{
+				ID:      id,
+				Owner:   owner,
+				Version: version,
+				Cells:   s2.CellUnion{s2.CellID(17106221850767130624)},
+			}
+			if !r.startTime.IsZero() {
+				s.StartTime = &r.startTime
+			}
+			if !r.endTime.IsZero() {
+				s.EndTime = &r.endTime
+			}
+			sub, err := app.InsertSubscription(ctx, s)
+
+			if r.wantErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, r.wantErr)
+			}
+
+			if !r.wantStartTime.IsZero() {
+				require.NotNil(t, sub.StartTime)
+				require.Equal(t, r.wantStartTime, *sub.StartTime)
+			}
+			if !r.wantEndTime.IsZero() {
+				require.NotNil(t, sub.EndTime)
+				require.Equal(t, r.wantEndTime, *sub.EndTime)
+			}
+		})
+	}
+}
+
+func TestUpdateSubscriptionsWithTimes(t *testing.T) {
+	ctx := context.Background()
+	app, cleanup := setUpSubApp(ctx, t)
+	defer cleanup()
+
+	for _, r := range []struct {
+		name                string
+		updateFromStartTime time.Time
+		updateFromEndTime   time.Time
+		startTime           time.Time
+		endTime             time.Time
+		wantErr             string
+		wantStartTime       time.Time
+		wantEndTime         time.Time
+	}{
 		{
 			name:                "updating-keeps-old-times",
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
@@ -299,17 +352,15 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			var version *dssmodels.Version
 
 			// Insert a pre-existing subscription to simulate updating from something.
-			if !r.updateFromStartTime.IsZero() {
-				existing, err := app.Transactor.InsertSubscription(ctx, &ridmodels.Subscription{
-					ID:        id,
-					Owner:     owner,
-					StartTime: &r.updateFromStartTime,
-					EndTime:   &r.updateFromEndTime,
-					Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
-				})
-				require.NoError(t, err)
-				version = existing.Version
-			}
+			existing, err := app.Transactor.InsertSubscription(ctx, &ridmodels.Subscription{
+				ID:        id,
+				Owner:     owner,
+				StartTime: &r.updateFromStartTime,
+				EndTime:   &r.updateFromEndTime,
+				Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
+			})
+			require.NoError(t, err)
+			version = existing.Version
 
 			s := &ridmodels.Subscription{
 				ID:      id,
@@ -323,7 +374,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			if !r.endTime.IsZero() {
 				s.EndTime = &r.endTime
 			}
-			sub, err := app.InsertSubscription(ctx, s)
+			sub, err := app.UpdateSubscription(ctx, s)
 
 			if r.wantErr == "" {
 				require.NoError(t, err)

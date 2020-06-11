@@ -11,7 +11,6 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
-	"github.com/lib/pq"
 )
 
 // AppInterface provides the interface to the application logic for ISA entities
@@ -47,29 +46,32 @@ func (a *app) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time
 // DeleteISA the given ISA
 func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	var (
-		old  *ridmodels.IdentificationServiceArea
+		ret  *ridmodels.IdentificationServiceArea
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
 	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
-		var err error
-
-		old, err = repo.UnsafeDeleteISA(ctx, old)
+		old, err := repo.GetISA(ctx, id)
 		switch {
 		case err != nil:
 			return err
-		case old == nil: // Return a 404 here.
-			return dsserr.NotFound(id.String(), version.String())
+		case old == nil:
+			return dsserr.NotFound(id.String())
 		case !version.Matches(old.Version):
-			return dsserr.VersionMismatch("old version")
+			return dsserr.VersionMismatch(fmt.Sprintf("old version for isa %s", id))
 		case old.Owner != owner:
 			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+		}
+
+		ret, err = repo.DeleteISA(ctx, old)
+		if err != nil {
+			return err
 		}
 
 		subs, err = repo.UpdateNotificationIdxsInCells(ctx, old.Cells)
 		return err
 	})
-	return old, subs, err
+	return ret, subs, err
 }
 
 // InsertISA implments the AppInterface InsertISA method
@@ -84,40 +86,61 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err = a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
-		var err error
-		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
-		// they are both modifying the db. Insert a susbcription alone does
-		// not do this, so that does not need to use a txn (in subscription.go).
-		subs, err = a.Transactor.UpdateNotificationIdxsInCells(ctx, isa.Cells)
+	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+		// ensure it doesn't exist yet
+		old, err := repo.GetISA(ctx, isa.ID)
 		if err != nil {
 			return err
 		}
-		ret, err = a.Transactor.InsertISA(ctx, isa)
-		if err, ok := err.(*pq.Error); ok && err.Code == "23505" {
-			return dsserr.AlreadyExists("ISA with ID: %s already exists", isa.ID)
+		if old != nil {
+			return dsserr.AlreadyExists(fmt.Sprintf("isa with id: %s already exists", isa.ID))
 		}
+
+		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
+		// they are both modifying the db. Insert a susbcription alone does
+		// not do this, so that does not need to use a txn (in subscription.go).
+		subs, err = repo.UpdateNotificationIdxsInCells(ctx, isa.Cells)
+		if err != nil {
+			return err
+		}
+		ret, err = repo.InsertISA(ctx, isa)
 		return err
 	})
 	return ret, subs, err
 }
 
-// UpdateISA implments the AppInterface InsertISA method
+// UpdateISA implments the AppInterface UpdateISA method
 func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	// Validate and perhaps correct StartTime and EndTime.
-	// TODO: recommended to explicitly force the user to pass in the correct time,
-	// instead of changing it on them.
-	if err := isa.AdjustTimeRange(a.clock.Now(), old); err != nil {
-		return nil, nil, err
-	}
 	// Update the notification index for both cells removed and added.
 	var (
 		ret  *ridmodels.IdentificationServiceArea
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err = a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
 		var err error
+
+		old, err := repo.GetISA(ctx, isa.ID)
+		switch {
+		case err != nil:
+			return err
+		case old == nil:
+			return dsserr.NotFound(fmt.Sprintf("isa not found: %s", isa.ID))
+		case old.Owner != isa.Owner:
+			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+		case !old.Version.Matches(isa.Version):
+			return dsserr.VersionMismatch(fmt.Sprintf("old version for isa: %s", isa.ID))
+		}
+		// Validate and perhaps correct StartTime and EndTime.
+		if err := isa.AdjustTimeRange(a.clock.Now(), old); err != nil {
+			return err
+		}
+
+		ret, err = repo.UpdateISA(ctx, isa)
+		if err != nil {
+			return err
+		}
+
 		// TODO steeling, we should change this to a Custom type, to obfuscate
 		// some of these metrics and prevent us from doing the wrong thing.
 		cells := s2.CellUnionFromUnion(old.Cells, isa.Cells)
@@ -125,24 +148,8 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
 		// they are both modifying the db. Insert a susbcription alone does
 		// not do this, so that does not need to use a txn (in subscription.go).
-		subs, err = a.Transactor.UpdateNotificationIdxsInCells(ctx, cells)
-		if err != nil {
-			return err
-		}
-		ret, err = a.Transactor.UpdateISA(ctx, isa)
-		switch {
-		case err != nil:
-			return err
-		case ret == nil:
-			// TODO: this should return a 404 or a 409, but the standard doesn't allow
-			// for a 404 on updates.
-			// When this changes, we can model after UnsafeDelete, and check the
-			// version param here.
-			return dsserr.AlreadyExists("this ISA was either updated or deleted")
-		case ret.Owner != isa.Owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
-		}
-		return nil
+		subs, err = repo.UpdateNotificationIdxsInCells(ctx, cells)
+		return err
 	})
 
 	return ret, subs, err

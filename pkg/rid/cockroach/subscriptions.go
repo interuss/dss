@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	subscriptionFields = "id, owner, url, notification_index, cells, starts_at, ends_at, updated_at"
+	subscriptionFields       = "id, owner, url, notification_index, cells, starts_at, ends_at, updated_at"
+	updateSubscriptionFields = "id, url, notification_index, cells, starts_at, ends_at, updated_at"
 )
 
 // SubscriptionStore is an implementation of the SubscriptionRepo for CRDB.
@@ -129,10 +130,10 @@ func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels
 		udpateQuery = fmt.Sprintf(`
 		UPDATE
 		  subscriptions
-		SET (%s) = ($1, $2, $3, $4, $5, $6, $7, transaction_timestamp())
-		WHERE id = $1 AND updated_at = $8
+		SET (%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
+		WHERE id = $1 AND updated_at = $7
 		RETURNING
-			%s`, subscriptionFields, subscriptionFields)
+			%s`, updateSubscriptionFields, subscriptionFields)
 	)
 
 	cids := make([]int64, len(s.Cells))
@@ -146,7 +147,6 @@ func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels
 
 	return c.processOne(ctx, udpateQuery,
 		s.ID,
-		s.Owner,
 		s.URL,
 		s.NotificationIndex,
 		pq.Int64Array(cids),
@@ -188,18 +188,19 @@ func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels
 		s.EndTime)
 }
 
-// UnsafeDeleteSubscription deletes the subscription identified by ID.
+// DeleteSubscription deletes the subscription identified by ID.
 // It must be done in a txn and the version verified.
-func (c *SubscriptionStore) UnsafeDeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (c *SubscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 		DELETE FROM
 			subscriptions
 		WHERE
 			id = $1
+			AND updated_at = $2
 		RETURNING %s`, subscriptionFields)
 	)
-	return c.processOne(ctx, query, s.ID)
+	return c.processOne(ctx, query, s.ID, s.Version.ToTimestamp())
 }
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.

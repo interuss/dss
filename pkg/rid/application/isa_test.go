@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
-	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/stretchr/testify/require"
@@ -36,8 +35,7 @@ func (store *isaStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.
 	return nil, nil
 }
 
-// DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
-// Returns the delete IdentificationServiceArea and all IdentificationServiceAreas affected by the delete.
+// Implements repos.ISA.DeleteISA
 func (store *isaStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	isa, ok := store.isas[isa.ID]
 	if !ok {
@@ -48,7 +46,7 @@ func (store *isaStore) DeleteISA(ctx context.Context, isa *ridmodels.Identificat
 	return isa, nil
 }
 
-// InsertISA inserts or updates an IdentificationServiceArea.
+// Implements repos.ISA.InsertISA
 func (store *isaStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	storedCopy := *isa
 	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
@@ -58,10 +56,16 @@ func (store *isaStore) InsertISA(ctx context.Context, isa *ridmodels.Identificat
 	return &returnedCopy, nil
 }
 
+// Implements repos.ISA.UpdateISA
 func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	return nil, dsserr.Internal("not yet implemented")
+	storedCopy := *isa
+	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
+	store.isas[isa.ID] = &storedCopy
+	returnedCopy := storedCopy
+	return &returnedCopy, nil
 }
 
+// Implements repos.ISA.SearchISA
 func (store *isaStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var isas []*ridmodels.IdentificationServiceArea
 
@@ -118,7 +122,7 @@ func TestISAUpdateIdxCells(t *testing.T) {
 
 	isa.Cells = s2.CellUnion{17106221953846345728}
 
-	isa, subs, err := app.InsertISA(ctx, isa)
+	isa, subs, err := app.UpdateISA(ctx, isa)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
 	require.Len(t, subs, 2)
@@ -139,14 +143,12 @@ func TestInsertISA(t *testing.T) {
 	defer cleanup()
 
 	for _, r := range []struct {
-		name                string
-		updateFromStartTime time.Time
-		updateFromEndTime   time.Time
-		startTime           time.Time
-		endTime             time.Time
-		wantErr             string
-		wantStartTime       time.Time
-		wantEndTime         time.Time
+		name          string
+		startTime     time.Time
+		endTime       time.Time
+		wantErr       string
+		wantStartTime time.Time
+		wantEndTime   time.Time
 	}{
 		{
 			name:    "missing-end-time",
@@ -175,6 +177,55 @@ func TestInsertISA(t *testing.T) {
 			endTime:   fakeClock.Now().Add(10 * time.Minute),
 			wantErr:   "rpc error: code = InvalidArgument desc = IdentificationServiceArea time_end must be after time_start",
 		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			sa := &ridmodels.IdentificationServiceArea{
+				ID:    dssmodels.ID(uuid.New().String()),
+				Owner: dssmodels.Owner(uuid.New().String()),
+				Cells: s2.CellUnion{12494535935418957824},
+			}
+			if !r.startTime.IsZero() {
+				sa.StartTime = &r.startTime
+			}
+			if !r.endTime.IsZero() {
+				sa.EndTime = &r.endTime
+			}
+			isa, _, err := app.InsertISA(ctx, sa)
+
+			if r.wantErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, r.wantErr)
+			}
+
+			if !r.wantStartTime.IsZero() {
+				require.NotNil(t, isa.StartTime)
+				require.Equal(t, r.wantStartTime, *isa.StartTime)
+			}
+			if !r.wantEndTime.IsZero() {
+				require.NotNil(t, isa.EndTime)
+				require.Equal(t, r.wantEndTime, *isa.EndTime)
+			}
+		})
+	}
+}
+
+func TestUpdateISA(t *testing.T) {
+	ctx := context.Background()
+	app, cleanup := setUpISAApp(ctx, t)
+
+	defer cleanup()
+
+	for _, r := range []struct {
+		name                string
+		updateFromStartTime time.Time
+		updateFromEndTime   time.Time
+		startTime           time.Time
+		endTime             time.Time
+		wantErr             string
+		wantStartTime       time.Time
+		wantEndTime         time.Time
+	}{
 		{
 			name:                "updating-keeps-old-times",
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
@@ -209,31 +260,20 @@ func TestInsertISA(t *testing.T) {
 		t.Run(r.name, func(t *testing.T) {
 			id := dssmodels.ID(uuid.New().String())
 			owner := dssmodels.Owner(uuid.New().String())
-			var version *dssmodels.Version
-
 			// Insert a pre-existing ISA to simulate updating from something.
-			if !r.updateFromStartTime.IsZero() {
-				existing, err := app.Transactor.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
-					ID:        id,
-					Owner:     owner,
-					StartTime: &r.updateFromStartTime,
-					EndTime:   &r.updateFromEndTime,
-					Cells:     s2.CellUnion{12494535935418957824},
-				})
-				require.NoError(t, err)
-				version = existing.Version
-
-				// Can't update if it has a different owner
-				isa := *existing
-				isa.Owner = "bad-owner"
-				_, _, err = app.InsertISA(ctx, &isa)
-				require.Error(t, err)
-			}
+			existing, err := app.Transactor.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
+				ID:        id,
+				Owner:     owner,
+				StartTime: &r.updateFromStartTime,
+				EndTime:   &r.updateFromEndTime,
+				Cells:     s2.CellUnion{12494535935418957824},
+			})
+			require.NoError(t, err)
 
 			sa := &ridmodels.IdentificationServiceArea{
 				ID:      id,
 				Owner:   owner,
-				Version: version,
+				Version: existing.Version,
 				Cells:   s2.CellUnion{12494535935418957824},
 			}
 			if !r.startTime.IsZero() {
@@ -242,7 +282,7 @@ func TestInsertISA(t *testing.T) {
 			if !r.endTime.IsZero() {
 				sa.EndTime = &r.endTime
 			}
-			isa, _, err := app.InsertISA(ctx, sa)
+			isa, _, err := app.UpdateISA(ctx, sa)
 
 			if r.wantErr == "" {
 				require.NoError(t, err)

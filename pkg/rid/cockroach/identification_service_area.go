@@ -163,21 +163,6 @@ func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationS
 	return c.processOne(ctx, deleteQuery, isa.ID, isa.Version.ToTimestamp())
 }
 
-// UnsafeDeleteISA deletes the IdentificationServiceArea identified by "id". It
-// should only be called in a transaction that verifies the version.
-// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
-func (c *ISAStore) UnsafeDeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	var (
-		deleteQuery = fmt.Sprintf(`
-			DELETE FROM
-				identification_service_areas
-			WHERE
-				id = $1
-			RETURNING %s`, isaFields)
-	)
-	return c.processOne(ctx, deleteQuery, isa.ID)
-}
-
 // SearchISAs searches IdentificationServiceArea
 // instances that intersect with "cells" and, if set, the temporal volume
 // defined by "earliest" and "latest".
