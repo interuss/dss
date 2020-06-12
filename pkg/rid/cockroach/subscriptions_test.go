@@ -154,13 +154,6 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			require.NoError(t, err)
 			require.Nil(t, sub2)
 
-			// Can't delete other users data.
-			sub1BadOwner := *sub1
-			sub1BadOwner.Owner = "wrongOwner"
-
-			sub3, err := store.DeleteSubscription(ctx, &sub1BadOwner)
-			require.NoError(t, err)
-			require.Nil(t, sub3)
 			sub4, err := store.DeleteSubscription(ctx, sub1)
 			require.NoError(t, err)
 			require.NotNil(t, sub4)
