@@ -205,11 +205,13 @@ func TestTransactor(t *testing.T) {
 
 	require.Len(t, subs, 1)
 
-	_, err = store.GetSubscription(ctx, subscription1.ID)
-	require.Error(t, err)
-
-	_, err = store.GetSubscription(ctx, subscription2.ID)
+	s, err := store.GetSubscription(ctx, subscription1.ID)
 	require.NoError(t, err)
+	require.Nil(t, s)
+
+	s, err = store.GetSubscription(ctx, subscription2.ID)
+	require.NoError(t, err)
+	require.NotNil(t, s)
 
 }
 

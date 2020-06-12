@@ -97,5 +97,9 @@ func (v *Version) String() string {
 
 // ToTimestamp converts the version back its commit timestamp.
 func (v *Version) ToTimestamp() *time.Time {
+	if v == nil {
+		t := time.Time{}
+		return &t
+	}
 	return &v.t
 }

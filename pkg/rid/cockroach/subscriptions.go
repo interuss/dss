@@ -116,6 +116,7 @@ func (c *SubscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.Conte
 }
 
 // GetSubscription returns the subscription identified by "id".
+// Returns nil, nil if not found
 func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	// TODO(steeling) we should enforce startTime and endTime to not be null at the DB level.
 	var query = fmt.Sprintf(`
@@ -125,6 +126,7 @@ func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID
 }
 
 // UpdateSubscription updates the Subscription.. not yet implemented.
+// Returns nil, nil if ID, version not found
 func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		udpateQuery = fmt.Sprintf(`
@@ -190,6 +192,7 @@ func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels
 
 // DeleteSubscription deletes the subscription identified by ID.
 // It must be done in a txn and the version verified.
+// Returns nil, nil if ID, version not found
 func (c *SubscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`

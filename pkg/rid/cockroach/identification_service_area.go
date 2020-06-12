@@ -78,6 +78,7 @@ func (c *ISAStore) processOne(ctx context.Context, query string, args ...interfa
 }
 
 // GetISA returns the isa identified by "id".
+// Returns nil, nil if not found
 func (c *ISAStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
@@ -124,13 +125,14 @@ func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationS
 // Returns the created IdentificationServiceArea and all Subscriptions affected
 // by it.
 // TODO: simplify the logic to just update, without the primary query.
+// Returns nil, nil if ID, version not found
 func (c *ISAStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		updateAreasQuery = fmt.Sprintf(`
 			UPDATE
 				identification_service_areas
 			SET	(%s) = ($1, $2, $3, $4, $5, transaction_timestamp())
-			WHERE id = $1 AND updated_at = $7
+			WHERE id = $1 AND updated_at = $6
 			RETURNING
 				%s`, updateISAFields, isaFields)
 	)
@@ -149,6 +151,7 @@ func (c *ISAStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationS
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
+// Returns nil, nil if ID, version not found
 func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		deleteQuery = fmt.Sprintf(`
@@ -157,7 +160,7 @@ func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationS
 			WHERE
 				id = $1
 			AND
-				updated_at = $3
+				updated_at = $2
 			RETURNING %s`, isaFields)
 	)
 	return c.processOne(ctx, deleteQuery, isa.ID, isa.Version.ToTimestamp())
