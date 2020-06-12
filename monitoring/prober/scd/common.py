@@ -66,3 +66,9 @@ def make_polygon(coords: List[Tuple[float, float]]) -> Dict:
   return {
     "vertices": [ {'lat': lat, 'lng': lng} for (lat, lng) in full_coords]
   }
+
+
+def iso8601_equal(dts1: str, dts2: str) -> bool:
+  dt1 = datetime.fromisoformat(dts1.replace("Z", "+00:00"))
+  dt2 = datetime.fromisoformat(dts2.replace("Z", "+00:00"))
+  return dt1 == dt2

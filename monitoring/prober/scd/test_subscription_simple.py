@@ -119,8 +119,8 @@ def test_mutate_sub(scd_session, sub1_uuid):
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  assert data['subscription']['time_start']['value'] == req['extents']['time_start']['value']
-  assert data['subscription']['time_end']['value'] == req['extents']['time_end']['value']
+  assert common.iso8601_equal(data['subscription']['time_start']['value'], req['extents']['time_start']['value'])
+  assert common.iso8601_equal(data['subscription']['time_end']['value'], req['extents']['time_end']['value'])
 
 
 def test_delete_sub(scd_session, sub1_uuid):

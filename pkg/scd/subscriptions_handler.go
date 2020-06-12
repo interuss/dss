@@ -4,12 +4,17 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	scdstore "github.com/interuss/dss/pkg/scd/store"
+)
+
+var (
+	DefaultClock = clockwork.NewRealClock()
 )
 
 // PutSubscription creates a single subscription.
@@ -65,6 +70,11 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Validate requested Subscription
 	if !sub.NotifyForOperations && !sub.NotifyForConstraints {
 		return nil, dsserr.BadRequest("no notification triggers requested for Subscription")
+	}
+
+	// Validate and perhaps correct StartTime and EndTime.
+	if err := sub.AdjustTimeRange(DefaultClock.Now(), sub); err != nil {
+		return nil, err
 	}
 
 	var result *scdpb.PutSubscriptionResponse

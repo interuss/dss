@@ -136,9 +136,9 @@ func RunGRPCServer(ctx context.Context, address string) error {
 			App:     application.NewFromTransactor(store, logger),
 			Timeout: *timeout,
 		}
-		auxServer      = &aux.Server{}
-		scdServer      *scd.Server
-		requiredScopes = auth.MergeOperationsAndScopes(
+		auxServer        = &aux.Server{}
+		scdServer        *scd.Server
+		scopesValidators = auth.MergeOperationsAndScopesValidators(
 			rid.AuthScopes(), auxServer.AuthScopes(),
 		)
 	)
@@ -153,7 +153,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 			Transactor: transactor,
 			Timeout:    *timeout,
 		}
-		requiredScopes = auth.MergeOperationsAndScopes(requiredScopes, scdServer.AuthScopes())
+		scopesValidators = auth.MergeOperationsAndScopesValidators(scopesValidators, scdServer.AuthScopes())
 	}
 
 	var keyResolver auth.KeyResolver
@@ -180,7 +180,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		ctx, auth.Configuration{
 			KeyResolver:       keyResolver,
 			KeyRefreshTimeout: *keyRefreshTimeout,
-			RequiredScopes:    requiredScopes,
+			ScopesValidators:  scopesValidators,
 			AcceptedAudiences: strings.Split(*jwtAudiences, ","),
 		},
 	)

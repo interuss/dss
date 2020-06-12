@@ -148,21 +148,90 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 	return keys, nil
 }
 
+// KeyClaimedScopesValidator validates a set of scopes claimed by an incoming
+// JWT.
+type KeyClaimedScopesValidator interface {
+	// ValidateKeyClaimedScopes returns an error if 'scopes' are not sufficient
+	// to authorize an operation, nil otherwise.
+	ValidateKeyClaimedScopes(ctx context.Context, scopes ScopeSet) error
+}
+
+type allScopesRequiredValidator struct {
+	scopes []Scope
+}
+
+func (v *allScopesRequiredValidator) ValidateKeyClaimedScopes(ctx context.Context, scopes ScopeSet) error {
+	var (
+		missing []string
+	)
+
+	for _, scope := range v.scopes {
+		if _, present := scopes[scope]; !present {
+			missing = append(missing, scope.String())
+		}
+	}
+
+	if len(missing) > 0 {
+		return &missingScopesError{
+			s: missing,
+		}
+	}
+
+	return nil
+}
+
+// RequireAllScopes returns a KeyClaimedScopesValidator instance ensuring that
+// every element in scopes is claimed by an incoming set of scopes.
+func RequireAllScopes(scopes ...Scope) KeyClaimedScopesValidator {
+	return &allScopesRequiredValidator{
+		scopes: scopes,
+	}
+}
+
+type anyScopesRequiredValidator struct {
+	scopes []Scope
+}
+
+func (v *anyScopesRequiredValidator) ValidateKeyClaimedScopes(ctx context.Context, scopes ScopeSet) error {
+	var (
+		missing []string
+	)
+
+	for _, scope := range v.scopes {
+		if _, present := scopes[scope]; present {
+			return nil
+		}
+		missing = append(missing, scope.String())
+	}
+
+	return &missingScopesError{
+		s: missing,
+	}
+}
+
+// RequireAnyScope returns a KeyClaimedScopesValidator instance ensuring that
+// at least one element in scopes is claimed by an incoming set of scopes.
+func RequireAnyScope(scopes ...Scope) KeyClaimedScopesValidator {
+	return &anyScopesRequiredValidator{
+		scopes: scopes,
+	}
+}
+
 // Authorizer authorizes incoming requests.
 type Authorizer struct {
 	logger            *zap.Logger
 	keys              []interface{}
 	keyGuard          sync.RWMutex
-	requiredScopes    map[Operation][]Scope
+	scopesValidators  map[Operation]KeyClaimedScopesValidator
 	acceptedAudiences map[string]bool
 }
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
 type Configuration struct {
-	KeyResolver       KeyResolver           // Used to initialize and periodically refresh keys.
-	KeyRefreshTimeout time.Duration         // Keys are refreshed on this cadence.
-	RequiredScopes    map[Operation][]Scope // RequiredScopes are enforced if not nil.
-	AcceptedAudiences []string              // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
+	KeyResolver       KeyResolver                             // Used to initialize and periodically refresh keys.
+	KeyRefreshTimeout time.Duration                           // Keys are refreshed on this cadence.
+	ScopesValidators  map[Operation]KeyClaimedScopesValidator // ScopesValidators are used to enforce authorization for operations.
+	AcceptedAudiences []string                                // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
 }
 
 // NewRSAAuthorizer returns an Authorizer instance using values from configuration.
@@ -180,7 +249,7 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 	}
 
 	authorizer := &Authorizer{
-		requiredScopes:    configuration.RequiredScopes,
+		scopesValidators:  configuration.ScopesValidators,
 		acceptedAudiences: auds,
 		logger:            logger,
 		keys:              keys,
@@ -252,36 +321,21 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 			fmt.Sprintf("invalid token audience: %v", keyClaims.Audience))
 	}
 
-	if err := a.missingScopes(info, keyClaims.Scopes); err != nil {
-		return nil, dsserr.PermissionDenied(fmt.Sprintf("missing scopes: %v", err))
+	if err := a.validateKeyClaimedScopes(ctx, info, keyClaims.Scopes); err != nil {
+		return nil, dsserr.PermissionDenied(fmt.Sprintf("missing scopes"))
 	}
 
 	return handler(ContextWithOwner(ctx, models.Owner(keyClaims.Subject)), req)
 }
 
-// Returns all of the required scopes that are missing.
-func (a *Authorizer) missingScopes(info *grpc.UnaryServerInfo, keyClaimedScopes scopes) error {
-	var (
-		operation     = Operation(info.FullMethod)
-		missingScopes []string
-	)
-
-	if a.requiredScopes != nil {
-		for _, required := range a.requiredScopes[operation] {
-			if _, ok := keyClaimedScopes[required]; !ok {
-				missingScopes = append(missingScopes, required.String())
-			}
-		}
+// Matches keyClaimedScopes against the required scopes and returns true if
+// keyClaimedScopes contains at least one of the required scopes in a.
+func (a *Authorizer) validateKeyClaimedScopes(ctx context.Context, info *grpc.UnaryServerInfo, keyClaimedScopes ScopeSet) error {
+	if validator, known := a.scopesValidators[Operation(info.FullMethod)]; known {
+		return validator.ValidateKeyClaimedScopes(ctx, keyClaimedScopes)
 	}
 
-	// Need to explicitly return nil
-	if len(missingScopes) == 0 {
-		return nil
-	}
-
-	return &missingScopesError{
-		s: missingScopes,
-	}
+	return nil
 }
 
 func getToken(ctx context.Context) (string, bool) {

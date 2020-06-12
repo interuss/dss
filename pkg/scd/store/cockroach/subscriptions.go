@@ -391,11 +391,6 @@ func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscriptio
 		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
 	}
 
-	// Validate and perhaps correct StartTime and EndTime.
-	if err := s.AdjustTimeRange(c.clock.Now(), old); err != nil {
-		return nil, nil, err
-	}
-
 	// Check the user hasn't created too many subscriptions in this area.
 	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, c.tx, s.Cells, s.Owner)
 	if err != nil {
