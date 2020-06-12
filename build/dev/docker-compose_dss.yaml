@@ -21,7 +21,7 @@ services:
     image: interuss-local/dss
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
-    command: /usr/bin/grpc-backend -cockroach_host dss-crdb-for-debugging -public_key_files /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -accepted_jwt_audiences localhost
+    command: /usr/bin/grpc-backend -cockroach_host dss-crdb-for-debugging -public_key_files /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -accepted_jwt_audiences localhost -enable_scd
     expose:
       - 8081
     depends_on:
@@ -29,7 +29,7 @@ services:
 
   http-gateway-for-debugging:
     image: interuss-local/dss
-    command: /usr/bin/http-gateway -grpc-backend grpc-backend-for-debugging:8081 -addr :8082
+    command: /usr/bin/http-gateway -grpc-backend grpc-backend-for-debugging:8081 -addr :8082 -enable_scd
     ports:
       - "8082:8082"
     depends_on:
