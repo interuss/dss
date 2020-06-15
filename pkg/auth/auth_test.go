@@ -130,14 +130,14 @@ func TestRSAAuthInterceptor(t *testing.T) {
 }
 
 func TestMissingScopes(t *testing.T) {
-	ac := &Authorizer{requiredScopes: map[Operation][]Scope{
-		"/dss.SyncService/PutFoo": {Scope("required1"), Scope("required2")},
+	ac := &Authorizer{scopesValidators: map[Operation]KeyClaimedScopesValidator{
+		"/dss.SyncService/PutFoo": RequireAnyScope(("required1"), Scope("required2")),
 	}}
 
 	var tests = []struct {
-		info   *grpc.UnaryServerInfo
-		scopes map[Scope]struct{}
-		want   error
+		info                  *grpc.UnaryServerInfo
+		scopes                map[Scope]struct{}
+		matchesRequiredScopes bool
 	}{
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
@@ -145,43 +145,30 @@ func TestMissingScopes(t *testing.T) {
 				"required1": {},
 				"required2": {},
 			},
-			nil,
+			true,
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
 			map[Scope]struct{}{
 				"required2": {},
 			},
-			&missingScopesError{[]string{"required1"}},
+			true,
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
 			map[Scope]struct{}{
 				"required1": {},
 			},
-			&missingScopesError{[]string{"required2"}},
+			true,
 		},
 		{
 			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
 			map[Scope]struct{}{},
-			&missingScopesError{[]string{"required1", "required2"}},
+			false,
 		},
 	}
 	for _, tc := range tests {
-		got := ac.missingScopes(tc.info, tc.scopes)
-		want := tc.want
-		// both are nil, terminate early.
-		if got == want {
-			continue
-		}
-		// 1 is nil, and the other is not
-		if (got == nil) != (want == nil) {
-			t.Errorf("got: %s, want %s", got, want)
-		}
-		// Neither are nil, but maybe still don't equal each other
-		if got.Error() != want.Error() {
-			t.Errorf("got: %s, want %s", got, want)
-		}
+		require.Equal(t, tc.matchesRequiredScopes, ac.validateKeyClaimedScopes(context.Background(), tc.info, tc.scopes) == nil)
 	}
 }
 

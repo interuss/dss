@@ -32,17 +32,17 @@ type Server struct {
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
-func AuthScopes() map[auth.Operation][]auth.Scope {
-	return map[auth.Operation][]auth.Scope{
-		"/ridpb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea":  {Scopes.ISA.Write},
-		"/ridpb.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea":  {Scopes.ISA.Write},
-		"/ridpb.DiscoveryAndSynchronizationService/GetIdentificationServiceArea":     {Scopes.ISA.Read},
-		"/ridpb.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas": {Scopes.ISA.Read},
-		"/ridpb.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea":  {Scopes.ISA.Write},
-		"/ridpb.DiscoveryAndSynchronizationService/CreateSubscription":               {Scopes.ISA.Write},
-		"/ridpb.DiscoveryAndSynchronizationService/DeleteSubscription":               {Scopes.ISA.Write},
-		"/ridpb.DiscoveryAndSynchronizationService/GetSubscription":                  {Scopes.ISA.Read},
-		"/ridpb.DiscoveryAndSynchronizationService/SearchSubscriptions":              {Scopes.ISA.Read},
-		"/ridpb.DiscoveryAndSynchronizationService/UpdateSubscription":               {Scopes.ISA.Write},
+func AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
+	return map[auth.Operation]auth.KeyClaimedScopesValidator{
+		"/ridpb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ISA.Write),
+		"/ridpb.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ISA.Write),
+		"/ridpb.DiscoveryAndSynchronizationService/GetIdentificationServiceArea":     auth.RequireAllScopes(Scopes.ISA.Read),
+		"/ridpb.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas": auth.RequireAllScopes(Scopes.ISA.Read),
+		"/ridpb.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ISA.Write),
+		"/ridpb.DiscoveryAndSynchronizationService/CreateSubscription":               auth.RequireAllScopes(Scopes.ISA.Write),
+		"/ridpb.DiscoveryAndSynchronizationService/DeleteSubscription":               auth.RequireAllScopes(Scopes.ISA.Write),
+		"/ridpb.DiscoveryAndSynchronizationService/GetSubscription":                  auth.RequireAllScopes(Scopes.ISA.Read),
+		"/ridpb.DiscoveryAndSynchronizationService/SearchSubscriptions":              auth.RequireAllScopes(Scopes.ISA.Read),
+		"/ridpb.DiscoveryAndSynchronizationService/UpdateSubscription":               auth.RequireAllScopes(Scopes.ISA.Write),
 	}
 }

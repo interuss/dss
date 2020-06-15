@@ -14,9 +14,9 @@ import (
 type Server struct{}
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
-func (a *Server) AuthScopes() map[auth.Operation][]auth.Scope {
-	return map[auth.Operation][]auth.Scope{
-		"/auxpb.DSSAuxService/ValidateOauth": {server.Scopes.ISA.Write},
+func (a *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
+	return map[auth.Operation]auth.KeyClaimedScopesValidator{
+		"/auxpb.DSSAuxService/ValidateOauth": auth.RequireAllScopes(server.Scopes.ISA.Write),
 	}
 }
 

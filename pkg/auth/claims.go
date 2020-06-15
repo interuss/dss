@@ -17,10 +17,10 @@ var (
 	Now = time.Now
 )
 
-// scopes models a set of scopes.
-type scopes map[Scope]struct{}
+// ScopeSet models a set of scopes.
+type ScopeSet map[Scope]struct{}
 
-func (s *scopes) UnmarshalJSON(data []byte) error {
+func (s *ScopeSet) UnmarshalJSON(data []byte) error {
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
 		return err
@@ -37,7 +37,7 @@ func (s *scopes) UnmarshalJSON(data []byte) error {
 
 type claims struct {
 	jwt.StandardClaims
-	Scopes scopes `json:"scope"`
+	Scopes ScopeSet `json:"scope"`
 }
 
 func (c *claims) Valid() error {
