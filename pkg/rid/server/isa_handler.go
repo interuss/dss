@@ -37,30 +37,37 @@ func (s *Server) GetIdentificationServiceArea(
 	}, nil
 }
 
-func (s *Server) createOrUpdateISA(
-	ctx context.Context, id string, version *dssmodels.Version, extents *ridpb.Volume4D, flightsURL string) (
+// CreateIdentificationServiceArea creates an ISA
+func (s *Server) CreateIdentificationServiceArea(
+	ctx context.Context, req *ridpb.CreateIdentificationServiceAreaRequest) (
 	*ridpb.PutIdentificationServiceAreaResponse, error) {
+
+	params := req.GetParams()
+	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
+	defer cancel()
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
+	if params == nil {
+		return nil, dsserr.BadRequest("params not set")
+	}
 	// TODO: put the validation logic in the models layer
-	if flightsURL == "" {
+	if params.FlightsUrl == "" {
 		return nil, dsserr.BadRequest("missing required flightsURL")
 	}
-	if extents == nil {
+	if params.Extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
 	}
 
 	isa := &ridmodels.IdentificationServiceArea{
-		ID:      dssmodels.ID(id),
-		URL:     flightsURL,
-		Owner:   owner,
-		Version: version,
+		ID:    dssmodels.ID(req.Id),
+		URL:   params.GetFlightsUrl(),
+		Owner: owner,
 	}
 
-	if err := isa.SetExtents(extents); err != nil {
+	if err := isa.SetExtents(params.Extents); err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
 	}
 
@@ -85,17 +92,6 @@ func (s *Server) createOrUpdateISA(
 	}, nil
 }
 
-// CreateIdentificationServiceArea creates an ISA
-func (s *Server) CreateIdentificationServiceArea(
-	ctx context.Context, req *ridpb.CreateIdentificationServiceAreaRequest) (
-	*ridpb.PutIdentificationServiceAreaResponse, error) {
-
-	params := req.GetParams()
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
-	return s.createOrUpdateISA(ctx, req.GetId(), nil, params.Extents, params.GetFlightsUrl())
-}
-
 // UpdateIdentificationServiceArea updates an existing ISA.
 func (s *Server) UpdateIdentificationServiceArea(
 	ctx context.Context, req *ridpb.UpdateIdentificationServiceAreaRequest) (
@@ -110,7 +106,51 @@ func (s *Server) UpdateIdentificationServiceArea(
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 
-	return s.createOrUpdateISA(ctx, req.GetId(), version, params.Extents, params.GetFlightsUrl())
+	owner, ok := auth.OwnerFromContext(ctx)
+	if !ok {
+		return nil, dsserr.PermissionDenied("missing owner from context")
+	}
+	// TODO: put the validation logic in the models layer
+	if params == nil {
+		return nil, dsserr.BadRequest("params not set")
+	}
+	if params.FlightsUrl == "" {
+		return nil, dsserr.BadRequest("missing required flightsURL")
+	}
+	if params.Extents == nil {
+		return nil, dsserr.BadRequest("missing required extents")
+	}
+
+	isa := &ridmodels.IdentificationServiceArea{
+		ID:      dssmodels.ID(req.Id),
+		URL:     params.FlightsUrl,
+		Owner:   owner,
+		Version: version,
+	}
+
+	if err := isa.SetExtents(params.Extents); err != nil {
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
+	}
+
+	insertedISA, subscribers, err := s.App.UpdateISA(ctx, isa)
+	if err != nil {
+		return nil, err
+	}
+
+	pbISA, err := insertedISA.ToProto()
+	if err != nil {
+		return nil, dsserr.Internal(err.Error())
+	}
+
+	pbSubscribers := []*ridpb.SubscriberToNotify{}
+	for _, subscriber := range subscribers {
+		pbSubscribers = append(pbSubscribers, subscriber.ToNotifyProto())
+	}
+
+	return &ridpb.PutIdentificationServiceAreaResponse{
+		ServiceArea: pbISA,
+		Subscribers: pbSubscribers,
+	}, nil
 }
 
 // DeleteIdentificationServiceArea deletes an existing ISA.

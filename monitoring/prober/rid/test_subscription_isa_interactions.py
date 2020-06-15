@@ -72,6 +72,7 @@ def test_modify_isa(session, isa1_uuid, sub1_uuid):
   version = resp.json()['service_area']['version']
 
   # Then modify it.
+  time_end = datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
   resp = session.put(
       '/identification_service_areas/{}/{}'.format(isa1_uuid, version),
       json={
@@ -83,6 +84,8 @@ def test_modify_isa(session, isa1_uuid, sub1_uuid):
                   'altitude_lo': 12345,
                   'altitude_hi': 67890,
               },
+  
+              'time_end': time_end.strftime(common.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       })
