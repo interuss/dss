@@ -157,6 +157,9 @@ func (c *Store) fetchSubscriptionsForNotification(
 
 	// Next: update the notification_index of each one and return the rest of the
 	// data.
+	// TODO: Relevant Subscriptions are ones that overlap the old or new
+	//   Operation/Constraint Volume4D, not just any that end after the current
+	//   time.  The query logic below needs to be fixed.
 	var updateQuery = fmt.Sprintf(`
  			UPDATE
  				scd_subscriptions
@@ -194,11 +197,9 @@ func (c *Store) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, i
 			FROM
 				scd_subscriptions
 			WHERE
-				id = $1
-			AND
-				ends_at >= $2`, subscriptionFieldsWithPrefix)
+				id = $1`, subscriptionFieldsWithPrefix)
 	)
-	result, err := c.fetchSubscription(ctx, q, query, id, c.clock.Now())
+	result, err := c.fetchSubscription(ctx, q, query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -218,10 +219,8 @@ func (c *Store) fetchSubscriptionByIDAndOwner(ctx context.Context, q dsssql.Quer
 		WHERE
 			id = $1
 		AND
-			owner = $2
-		AND
-			ends_at >= $3`, subscriptionFieldsWithPrefix)
-	result, err := c.fetchSubscription(ctx, q, query, id, owner, c.clock.Now())
+			owner = $2`, subscriptionFieldsWithPrefix)
+	result, err := c.fetchSubscription(ctx, q, query, id, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -392,6 +391,8 @@ func (c *Store) UpsertSubscription(ctx context.Context, s *scdmodels.Subscriptio
 	}
 
 	// Check the user hasn't created too many subscriptions in this area.
+	// TODO: Revisit this logic since the SCD standard does not specify a maximum
+	// number of Subscriptions
 	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, c.tx, s.Cells, s.Owner)
 	if err != nil {
 		c.logger.Warn("Error fetching max subscription count", zap.Error(err))
@@ -515,9 +516,7 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 			ON
 				scd_subscriptions.id = unique_subscription_ids.subscription_id
 			WHERE
-				scd_subscriptions.owner = $2
-			AND
-				ends_at >= $3`, subscriptionFieldsWithPrefix)
+				scd_subscriptions.owner = $2`, subscriptionFieldsWithPrefix)
 	)
 
 	if len(cells) == 0 {
@@ -530,7 +529,7 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 	}
 
 	subscriptions, err := c.fetchSubscriptions(
-		ctx, c.tx, query, pq.Array(cids), owner, c.clock.Now())
+		ctx, c.tx, query, pq.Array(cids), owner)
 
 	switch {
 	case err != nil:
