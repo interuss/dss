@@ -267,6 +267,11 @@ def sub2_uuid():
 
 
 @pytest.fixture(scope='module')
+def sub3_uuid():
+  return str(uuid.uuid4())
+
+
+@pytest.fixture(scope='module')
 def op1_uuid():
   return str(uuid.uuid4())
 

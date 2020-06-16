@@ -485,25 +485,21 @@ func (c *Store) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner d
 		return nil, err
 	}
 
-	if err := c.tx.Commit(); err != nil {
-		return nil, err
-	}
-
 	if rows == 0 {
 		return nil, dsserr.BadRequest("failed to delete implicit subscription with active operation")
 	}
 	return old, nil
 }
 
-// SearchSubscriptions returns all subscriptions in "cells".
-func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*scdmodels.Subscription, error) {
+// Implements SubscriptionStore.SearchSubscriptions
+func (c *Store) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
 				%s
 			FROM
 				scd_subscriptions
-			LEFT JOIN
+			JOIN
 				(SELECT DISTINCT
 					scd_cells_subscriptions.subscription_id
 				FROM
@@ -516,11 +512,20 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 			ON
 				scd_subscriptions.id = unique_subscription_ids.subscription_id
 			WHERE
-				scd_subscriptions.owner = $2`, subscriptionFieldsWithPrefix)
+				COALESCE(starts_at <= $3, true)
+			AND
+				COALESCE(ends_at >= $2, true)`, subscriptionFieldsWithPrefix)
 	)
 
+	// TODO: Lazily calculate & cache spatial covering so that it is only ever
+	// computed once on a particular Volume4D
+	cells, err := v4d.CalculateSpatialCovering()
+	if err != nil {
+		return nil, err
+	}
+
 	if len(cells) == 0 {
-		return nil, dsserr.BadRequest("no location provided")
+		return nil, nil
 	}
 
 	cids := make([]int64, len(cells))
@@ -529,14 +534,8 @@ func (c *Store) SearchSubscriptions(ctx context.Context, cells s2.CellUnion, own
 	}
 
 	subscriptions, err := c.fetchSubscriptions(
-		ctx, c.tx, query, pq.Array(cids), owner)
-
-	switch {
-	case err != nil:
-		return nil, err
-	}
-
-	if err := c.tx.Commit(); err != nil {
+		ctx, c.tx, query, pq.Array(cids), v4d.StartTime, v4d.EndTime)
+	if err != nil {
 		return nil, err
 	}
 
