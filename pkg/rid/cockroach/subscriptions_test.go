@@ -103,7 +103,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 			// Test changes without the version differing.
 			r2 := *sub1
 			r2.URL = "new url"
-			sub2, err := store.InsertSubscription(ctx, &r2)
+			sub2, err := store.UpdateSubscription(ctx, &r2)
 			require.NoError(t, err)
 			require.NotNil(t, sub2)
 			require.Equal(t, "new url", sub2.URL)
@@ -112,16 +112,16 @@ func TestStoreInsertSubscription(t *testing.T) {
 			r3 := *sub2
 			r3.URL = "new url 2"
 			r3.Version = nil
-			sub3, err := store.InsertSubscription(ctx, &r3)
-			require.Error(t, err)
+			sub3, err := store.UpdateSubscription(ctx, &r3)
+			require.NoError(t, err)
 			require.Nil(t, sub3)
 
 			// Bad version doesn't work.
 			r4 := *sub2
 			r4.URL = "new url 3"
 			r4.Version = dssmodels.VersionFromTime(time.Now())
-			sub4, err := store.InsertSubscription(ctx, &r4)
-			require.Error(t, err)
+			sub4, err := store.UpdateSubscription(ctx, &r4)
+			require.NoError(t, err)
 			require.Nil(t, sub4)
 
 			sub5, err := store.GetSubscription(ctx, sub1.ID)
@@ -146,21 +146,14 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
-			// Ensure mismatched versions return an error
+			// Ensure mismatched versions returns nothing
 			sub1BadVersion := *sub1
 			sub1BadVersion.Version, err = dssmodels.VersionFromString("a3cg3tcuhk000")
 			require.NoError(t, err)
 			sub2, err := store.DeleteSubscription(ctx, &sub1BadVersion)
-			require.Error(t, err)
+			require.NoError(t, err)
 			require.Nil(t, sub2)
 
-			// Can't delete other users data.
-			sub1BadOwner := *sub1
-			sub1BadOwner.Owner = "wrongOwner"
-
-			sub3, err := store.DeleteSubscription(ctx, &sub1BadOwner)
-			require.Error(t, err)
-			require.Nil(t, sub3)
 			sub4, err := store.DeleteSubscription(ctx, sub1)
 			require.NoError(t, err)
 			require.NotNil(t, sub4)

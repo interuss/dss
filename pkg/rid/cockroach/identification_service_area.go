@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -18,7 +17,8 @@ import (
 )
 
 const (
-	isaFields = "id, owner, url, cells, starts_at, ends_at, updated_at"
+	isaFields       = "id, owner, url, cells, starts_at, ends_at, updated_at"
+	updateISAFields = "id, url, cells, starts_at, ends_at, updated_at"
 )
 
 // ISAStore is an implementation of the ISARepo for CRDB.
@@ -72,12 +72,13 @@ func (c *ISAStore) processOne(ctx context.Context, query string, args ...interfa
 		return nil, fmt.Errorf("query returned %d identification_service_areas", len(isas))
 	}
 	if len(isas) == 0 {
-		return nil, sql.ErrNoRows
+		return nil, nil
 	}
 	return isas[0], nil
 }
 
 // GetISA returns the isa identified by "id".
+// Returns nil, nil if not found
 func (c *ISAStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
@@ -96,13 +97,6 @@ func (c *ISAStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Iden
 // if there's an existing entity.
 func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
-		updateAreasQuery = fmt.Sprintf(`
-			UPDATE
-				identification_service_areas
-			SET	(%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
-			WHERE id = $1 AND updated_at = $7
-			RETURNING
-				%s`, isaFields, isaFields)
 		insertAreasQuery = fmt.Sprintf(`
 			INSERT INTO
 				identification_service_areas
@@ -122,14 +116,7 @@ func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationS
 		cids[i] = int64(cell)
 	}
 
-	var err error
-	var ret *ridmodels.IdentificationServiceArea
-	if isa.Version.Empty() {
-		ret, err = c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime)
-	} else {
-		ret, err = c.processOne(ctx, updateAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
-	}
-	return ret, err
+	return c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime)
 }
 
 // UpdateISA updates the IdentificationServiceArea identified by "id" and owned
@@ -138,12 +125,33 @@ func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationS
 // Returns the created IdentificationServiceArea and all Subscriptions affected
 // by it.
 // TODO: simplify the logic to just update, without the primary query.
+// Returns nil, nil if ID, version not found
 func (c *ISAStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
+	var (
+		updateAreasQuery = fmt.Sprintf(`
+			UPDATE
+				identification_service_areas
+			SET	(%s) = ($1, $2, $3, $4, $5, transaction_timestamp())
+			WHERE id = $1 AND updated_at = $6
+			RETURNING
+				%s`, updateISAFields, isaFields)
+	)
+
+	cids := make([]int64, len(isa.Cells))
+
+	for i, cell := range isa.Cells {
+		if err := geo.ValidateCell(cell); err != nil {
+			return nil, err
+		}
+		cids[i] = int64(cell)
+	}
+
+	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
+// Returns nil, nil if ID, version not found
 func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		deleteQuery = fmt.Sprintf(`
@@ -152,12 +160,10 @@ func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationS
 			WHERE
 				id = $1
 			AND
-				owner = $2
-			AND
-				updated_at = $3
+				updated_at = $2
 			RETURNING %s`, isaFields)
 	)
-	return c.processOne(ctx, deleteQuery, isa.ID, isa.Owner, isa.Version.ToTimestamp())
+	return c.processOne(ctx, deleteQuery, isa.ID, isa.Version.ToTimestamp())
 }
 
 // SearchISAs searches IdentificationServiceArea

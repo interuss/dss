@@ -10,16 +10,19 @@ import (
 
 // Subscription is an interface to a storage layer for the Subscription entity
 type Subscription interface {
+	// Returns nil, nil if not found
 	GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error)
 
 	// DeleteSubscription deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
+	// Returns nil, nil if ID, version not found
 	DeleteSubscription(ctx context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error)
 
 	// InsertSubscription inserts or updates an ISA.
 	InsertSubscription(ctx context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error)
 
 	// UpdateSubscription
+	// Returns nil, nil if ID, version not found
 	UpdateSubscription(ctx context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error)
 
 	// SearchSubscriptions returns all subscriptions ownded by in "cells".

@@ -145,14 +145,14 @@ func TestBadVersion(t *testing.T) {
 	require.NotNil(t, saOut1)
 
 	// Rewriting service area should fail
-	saOut2, err := store.InsertISA(ctx, serviceArea)
-	require.Error(t, err)
+	saOut2, err := store.UpdateISA(ctx, serviceArea)
+	require.NoError(t, err)
 	require.Nil(t, saOut2)
 
 	// Rewriting, but with the correct version should work.
 	newEndTime := saOut1.EndTime.Add(time.Minute)
 	saOut1.EndTime = &newEndTime
-	saOut3, err := store.InsertISA(ctx, saOut1)
+	saOut3, err := store.UpdateISA(ctx, saOut1)
 	require.NoError(t, err)
 	require.NotNil(t, saOut3)
 }
@@ -205,12 +205,6 @@ func TestStoreDeleteISAs(t *testing.T) {
 	isa, err := store.InsertISA(ctx, &copy)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
-
-	// Can't delete with different owner.
-	iCopy := *isa
-	iCopy.Owner = "bad-owner"
-	_, err = store.DeleteISA(ctx, &iCopy)
-	require.Error(t, err)
 
 	// Delete the ISA.
 	// Ensure a fresh Get, then delete still updates the sub indexes

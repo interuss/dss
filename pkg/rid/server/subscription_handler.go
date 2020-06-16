@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
@@ -18,6 +17,7 @@ func (s *Server) DeleteSubscription(
 	ctx context.Context, req *ridpb.DeleteSubscriptionRequest) (
 	*ridpb.DeleteSubscriptionResponse, error) {
 
+	// TODO: simply verify the owner was set in an upper level.
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
@@ -26,6 +26,7 @@ func (s *Server) DeleteSubscription(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
+	//TODO: put the context with timeout into an interceptor so it's always set.
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	subscription, err := s.App.DeleteSubscription(ctx, dssmodels.ID(req.GetId()), owner, version)
@@ -88,11 +89,11 @@ func (s *Server) GetSubscription(
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	subscription, err := s.App.GetSubscription(ctx, dssmodels.ID(req.GetId()))
-	if err == sql.ErrNoRows {
-		return nil, dsserr.NotFound(req.GetId())
-	}
 	if err != nil {
 		return nil, err
+	}
+	if subscription == nil {
+		return nil, dsserr.NotFound(req.GetId())
 	}
 	p, err := subscription.ToProto()
 	if err != nil {
@@ -103,30 +104,36 @@ func (s *Server) GetSubscription(
 	}, nil
 }
 
-// TODO: put the validation logic in the models layer
-func (s *Server) createOrUpdateSubscription(
-	ctx context.Context, id string, version *dssmodels.Version, callbacks *ridpb.SubscriptionCallbacks, extents *ridpb.Volume4D) (
+// CreateSubscription creates a single subscription.
+func (s *Server) CreateSubscription(
+	ctx context.Context, req *ridpb.CreateSubscriptionRequest) (
 	*ridpb.PutSubscriptionResponse, error) {
+
+	params := req.GetParams()
+	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
+	defer cancel()
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
-	if callbacks == nil {
+	if params == nil {
+		return nil, dsserr.BadRequest("params not set")
+	}
+	if params.Callbacks == nil {
 		return nil, dsserr.BadRequest("missing required callbacks")
 	}
-	if extents == nil {
+	if params.Extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
 	}
 
 	sub := &ridmodels.Subscription{
-		ID:      dssmodels.ID(id),
-		Owner:   owner,
-		URL:     callbacks.IdentificationServiceAreaUrl,
-		Version: version,
+		ID:    dssmodels.ID(req.GetId()),
+		Owner: owner,
+		URL:   params.Callbacks.IdentificationServiceAreaUrl,
 	}
 
-	if err := sub.SetExtents(extents); err != nil {
+	if err := sub.SetExtents(params.Extents); err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
 	}
 
@@ -161,17 +168,6 @@ func (s *Server) createOrUpdateSubscription(
 	}, nil
 }
 
-// CreateSubscription creates a single subscription.
-func (s *Server) CreateSubscription(
-	ctx context.Context, req *ridpb.CreateSubscriptionRequest) (
-	*ridpb.PutSubscriptionResponse, error) {
-
-	params := req.GetParams()
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
-	return s.createOrUpdateSubscription(ctx, req.GetId(), nil, params.Callbacks, params.Extents)
-}
-
 // UpdateSubscription updates a single subscription.
 func (s *Server) UpdateSubscription(
 	ctx context.Context, req *ridpb.UpdateSubscriptionRequest) (
@@ -186,5 +182,59 @@ func (s *Server) UpdateSubscription(
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	return s.createOrUpdateSubscription(ctx, req.GetId(), version, params.Callbacks, params.Extents)
+
+	owner, ok := auth.OwnerFromContext(ctx)
+	if !ok {
+		return nil, dsserr.PermissionDenied("missing owner from context")
+	}
+	if params == nil {
+		return nil, dsserr.BadRequest("params not set")
+	}
+	if params.Callbacks == nil {
+		return nil, dsserr.BadRequest("missing required callbacks")
+	}
+	if params.Extents == nil {
+		return nil, dsserr.BadRequest("missing required extents")
+	}
+
+	sub := &ridmodels.Subscription{
+		ID:      dssmodels.ID(req.GetId()),
+		Owner:   owner,
+		URL:     params.Callbacks.IdentificationServiceAreaUrl,
+		Version: version,
+	}
+
+	if err := sub.SetExtents(params.Extents); err != nil {
+		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
+	}
+
+	insertedSub, err := s.App.UpdateSubscription(ctx, sub)
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := insertedSub.ToProto()
+	if err != nil {
+		return nil, err
+	}
+
+	// Find ISAs that were in this subscription's area.
+	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the ISAs to protos.
+	isaProtos := make([]*ridpb.IdentificationServiceArea, len(isas))
+	for i, isa := range isas {
+		isaProtos[i], err = isa.ToProto()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &ridpb.PutSubscriptionResponse{
+		Subscription: p,
+		ServiceAreas: isaProtos,
+	}, nil
 }

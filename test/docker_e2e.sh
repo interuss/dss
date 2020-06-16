@@ -66,7 +66,7 @@ docker run -d --rm --name dss-crdb-for-debugging \
 	cockroachdb/cockroach:v20.1.1 start \
 	--insecure > /dev/null
 
-sleep 5
+sleep 1
 echo " ------------ GRPC BACKEND ---------------- "
 echo "Cleaning up any pre-existing grpc-backend container"
 docker rm -f grpc-backend-for-testing &> /dev/null || echo "No grpc backend to clean up"
@@ -86,7 +86,7 @@ docker run -d --name grpc-backend-for-testing \
 	-accepted_jwt_audiences local-gateway \
 	-enable_scd
 
-sleep 5
+sleep 1
 echo " ------------- HTTP GATEWAY -------------- "
 echo "Cleaning up any pre-existing http-gateway container"
 docker rm -f http-gateway-for-testing &> /dev/null || echo "No http gateway to clean up"
@@ -101,7 +101,6 @@ docker run -d --name http-gateway-for-testing -p 8082:8082 \
 	-trace-requests \
 	-enable_scd
 
-sleep 5
 echo " -------------- DUMMY OAUTH -------------- "
 echo "Building dummy-oauth server container"
 docker build -q --rm -f cmds/dummy-oauth/Dockerfile . -t local-dummy-oauth
@@ -115,7 +114,7 @@ docker run -d --name dummy-oauth-for-testing -p 8085:8085 \
 	local-dummy-oauth \
 	-private_key_file /app/test.key
 
-sleep 5
+sleep 1
 echo " -------------- PYTEST -------------- "
 echo "Building Integration Test container"
 docker build -q --rm -f monitoring/prober/Dockerfile monitoring/prober -t e2e-test

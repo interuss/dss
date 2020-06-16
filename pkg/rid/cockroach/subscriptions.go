@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/dpjacques/clockwork"
@@ -18,7 +17,8 @@ import (
 )
 
 const (
-	subscriptionFields = "id, owner, url, notification_index, cells, starts_at, ends_at, updated_at"
+	subscriptionFields       = "id, owner, url, notification_index, cells, starts_at, ends_at, updated_at"
+	updateSubscriptionFields = "id, url, notification_index, cells, starts_at, ends_at, updated_at"
 )
 
 // SubscriptionStore is an implementation of the SubscriptionRepo for CRDB.
@@ -75,7 +75,7 @@ func (c *SubscriptionStore) processOne(ctx context.Context, query string, args .
 		return nil, fmt.Errorf("query returned %d subscriptions", len(subs))
 	}
 	if len(subs) == 0 {
-		return nil, sql.ErrNoRows
+		return nil, nil
 	}
 	return subs[0], nil
 }
@@ -116,6 +116,7 @@ func (c *SubscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.Conte
 }
 
 // GetSubscription returns the subscription identified by "id".
+// Returns nil, nil if not found
 func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	// TODO(steeling) we should enforce startTime and endTime to not be null at the DB level.
 	var query = fmt.Sprintf(`
@@ -125,21 +126,41 @@ func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID
 }
 
 // UpdateSubscription updates the Subscription.. not yet implemented.
+// Returns nil, nil if ID, version not found
 func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	return nil, dsserr.Internal("not yet implemented")
+	var (
+		udpateQuery = fmt.Sprintf(`
+		UPDATE
+		  subscriptions
+		SET (%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
+		WHERE id = $1 AND updated_at = $7
+		RETURNING
+			%s`, updateSubscriptionFields, subscriptionFields)
+	)
+
+	cids := make([]int64, len(s.Cells))
+
+	for i, cell := range s.Cells {
+		if err := geo.ValidateCell(cell); err != nil {
+			return nil, err
+		}
+		cids[i] = int64(cell)
+	}
+
+	return c.processOne(ctx, udpateQuery,
+		s.ID,
+		s.URL,
+		s.NotificationIndex,
+		pq.Int64Array(cids),
+		s.StartTime,
+		s.EndTime,
+		s.Version.ToTimestamp())
 }
 
 // InsertSubscription inserts subscription into the store and returns
 // the resulting subscription including its ID.
 func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
-		udpateQuery = fmt.Sprintf(`
-		UPDATE
-		  subscriptions
-		SET (%s) = ($1, $2, $3, $4, $5, $6, $7, transaction_timestamp())
-		WHERE id = $1 AND updated_at = $8
-		RETURNING
-			%s`, subscriptionFields, subscriptionFields)
 		insertQuery = fmt.Sprintf(`
 		INSERT INTO
 		  subscriptions
@@ -159,33 +180,19 @@ func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels
 		cids[i] = int64(cell)
 	}
 
-	var err error
-	var ret *ridmodels.Subscription
-	if s.Version.Empty() {
-		ret, err = c.processOne(ctx, insertQuery,
-			s.ID,
-			s.Owner,
-			s.URL,
-			s.NotificationIndex,
-			pq.Int64Array(cids),
-			s.StartTime,
-			s.EndTime)
-	} else {
-		ret, err = c.processOne(ctx, udpateQuery,
-			s.ID,
-			s.Owner,
-			s.URL,
-			s.NotificationIndex,
-			pq.Int64Array(cids),
-			s.StartTime,
-			s.EndTime,
-			s.Version.ToTimestamp())
-	}
-	return ret, err
+	return c.processOne(ctx, insertQuery,
+		s.ID,
+		s.Owner,
+		s.URL,
+		s.NotificationIndex,
+		pq.Int64Array(cids),
+		s.StartTime,
+		s.EndTime)
 }
 
-// DeleteSubscription deletes the subscription identified by "id" and
-// returns the deleted subscription.
+// DeleteSubscription deletes the subscription identified by ID.
+// It must be done in a txn and the version verified.
+// Returns nil, nil if ID, version not found
 func (c *SubscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
@@ -193,11 +200,10 @@ func (c *SubscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels
 			subscriptions
 		WHERE
 			id = $1
-			AND owner = $2
-			AND updated_at = $3
+			AND updated_at = $2
 		RETURNING %s`, subscriptionFields)
 	)
-	return c.processOne(ctx, query, s.ID, s.Owner, s.Version.ToTimestamp())
+	return c.processOne(ctx, query, s.ID, s.Version.ToTimestamp())
 }
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.
