@@ -16,7 +16,7 @@ type DB struct {
 	*sql.DB
 }
 
-func (d *DB) getDB(ctx context.Context) dssql.Queryable {
+func (d *DB) getQueryable(ctx context.Context) dssql.Queryable {
 	dbi := ctx.Value(txKey)
 	if dbi == nil {
 		// Return the default db
@@ -35,15 +35,15 @@ func SetTx(ctx context.Context, tx *sql.Tx) context.Context {
 }
 
 func (d *DB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return d.getDB(ctx).QueryContext(ctx, query, args...)
+	return d.getQueryable(ctx).QueryContext(ctx, query, args...)
 }
 
 func (d *DB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	return d.getDB(ctx).QueryRowContext(ctx, query, args...)
+	return d.getQueryable(ctx).QueryRowContext(ctx, query, args...)
 }
 
 func (d *DB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return d.getDB(ctx).ExecContext(ctx, query, args...)
+	return d.getQueryable(ctx).ExecContext(ctx, query, args...)
 }
 
 // Dial returns a DB instance connected to a cockroach instance available at
