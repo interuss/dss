@@ -8,9 +8,7 @@
   - delete
 """
 
-import datetime
 import json
-import os
 
 from . import common
 
@@ -18,7 +16,6 @@ from . import common
 # Preconditions: None
 # Mutations: None
 def test_op_request_1(scd_session):
-  print(os.getcwd())
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/2df6b920-b6ee-4082-b6e7-75eb4fde25d1', json=req)
