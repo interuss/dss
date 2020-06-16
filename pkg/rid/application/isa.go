@@ -10,7 +10,6 @@ import (
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/interuss/dss/pkg/rid/repos"
 )
 
 // AppInterface provides the interface to the application logic for ISA entities
@@ -40,7 +39,7 @@ func (a *app) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time
 		earliest = &now
 	}
 
-	return a.Transactor.SearchISAs(ctx, cells, earliest, latest)
+	return a.Repository.SearchISAs(ctx, cells, earliest, latest)
 }
 
 // DeleteISA the given ISA
@@ -50,8 +49,8 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
-		old, err := repo.GetISA(ctx, id)
+	err := a.Repository.InTxnRetrier(ctx, func(ctx context.Context) error {
+		old, err := a.Repository.GetISA(ctx, id)
 		switch {
 		case err != nil:
 			return err
@@ -63,12 +62,12 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
 		}
 
-		ret, err = repo.DeleteISA(ctx, old)
+		ret, err = a.Repository.DeleteISA(ctx, old)
 		if err != nil {
 			return err
 		}
 
-		subs, err = repo.UpdateNotificationIdxsInCells(ctx, old.Cells)
+		subs, err = a.Repository.UpdateNotificationIdxsInCells(ctx, old.Cells)
 		return err
 	})
 	return ret, subs, err
@@ -86,9 +85,9 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Repository.InTxnRetrier(ctx, func(ctx context.Context) error {
 		// ensure it doesn't exist yet
-		old, err := repo.GetISA(ctx, isa.ID)
+		old, err := a.Repository.GetISA(ctx, isa.ID)
 		if err != nil {
 			return err
 		}
@@ -99,11 +98,11 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
 		// they are both modifying the db. Insert a susbcription alone does
 		// not do this, so that does not need to use a txn (in subscription.go).
-		subs, err = repo.UpdateNotificationIdxsInCells(ctx, isa.Cells)
+		subs, err = a.Repository.UpdateNotificationIdxsInCells(ctx, isa.Cells)
 		if err != nil {
 			return err
 		}
-		ret, err = repo.InsertISA(ctx, isa)
+		ret, err = a.Repository.InsertISA(ctx, isa)
 		return err
 	})
 	return ret, subs, err
@@ -117,10 +116,10 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Repository.InTxnRetrier(ctx, func(ctx context.Context) error {
 		var err error
 
-		old, err := repo.GetISA(ctx, isa.ID)
+		old, err := a.Repository.GetISA(ctx, isa.ID)
 		switch {
 		case err != nil:
 			return err
@@ -136,7 +135,7 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 			return err
 		}
 
-		ret, err = repo.UpdateISA(ctx, isa)
+		ret, err = a.Repository.UpdateISA(ctx, isa)
 		if err != nil {
 			return err
 		}
@@ -148,7 +147,7 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
 		// they are both modifying the db. Insert a susbcription alone does
 		// not do this, so that does not need to use a txn (in subscription.go).
-		subs, err = repo.UpdateNotificationIdxsInCells(ctx, cells)
+		subs, err = a.Repository.UpdateNotificationIdxsInCells(ctx, cells)
 		return err
 	})
 

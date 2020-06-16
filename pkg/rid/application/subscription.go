@@ -8,7 +8,6 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/interuss/dss/pkg/rid/repos"
 	"go.uber.org/zap"
 )
 
@@ -44,10 +43,10 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		return nil, err
 	}
 	var sub *ridmodels.Subscription
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Repository.InTxnRetrier(ctx, func(ctx context.Context) error {
 
 		// ensure it doesn't exist yet
-		old, err := repo.GetSubscription(ctx, s.ID)
+		old, err := a.Repository.GetSubscription(ctx, s.ID)
 		if err != nil {
 			return err
 		}
@@ -56,7 +55,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		}
 
 		// Check the user hasn't created too many subscriptions in this area.
-		count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
+		count, err := a.Repository.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
 		if err != nil {
 			a.logger.Error("Error fetching max subscription count", zap.Error(err))
 			return dsserr.Internal(
@@ -67,7 +66,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 				"too many existing subscriptions in this area already")
 		}
 
-		sub, err = repo.InsertSubscription(ctx, s)
+		sub, err = a.Repository.InsertSubscription(ctx, s)
 		return err
 
 	})
@@ -78,8 +77,8 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var sub *ridmodels.Subscription
 
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
-		old, err := repo.GetSubscription(ctx, s.ID)
+	err := a.Repository.InTxnRetrier(ctx, func(ctx context.Context) error {
+		old, err := a.Repository.GetSubscription(ctx, s.ID)
 		switch {
 		case err != nil:
 			return err
@@ -98,7 +97,7 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 		}
 
 		// Check the user hasn't created too many subscriptions in this area.
-		count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
+		count, err := a.Repository.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
 		if err != nil {
 			a.logger.Error("Error fetching max subscription count", zap.Error(err))
 			return dsserr.Internal(
@@ -108,7 +107,7 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 			return dsserr.Exhausted(
 				"too many existing subscriptions in this area already")
 		}
-		sub, err = repo.UpdateSubscription(ctx, s)
+		sub, err = a.Repository.UpdateSubscription(ctx, s)
 		return err
 	})
 	return sub, err
@@ -117,9 +116,9 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 // DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
 func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
 	var ret *ridmodels.Subscription
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Repository.InTxnRetrier(ctx, func(ctx context.Context) error {
 		var err error
-		old, err := repo.GetSubscription(ctx, id)
+		old, err := a.Repository.GetSubscription(ctx, id)
 		switch {
 		case err != nil:
 			return err
@@ -131,7 +130,7 @@ func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dss
 			return dsserr.PermissionDenied(fmt.Sprintf("Sub is owned by %s", old.Owner))
 		}
 
-		ret, err = repo.DeleteSubscription(ctx, old)
+		ret, err = a.Repository.DeleteSubscription(ctx, old)
 		return err
 	})
 	return ret, err

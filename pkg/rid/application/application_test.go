@@ -31,15 +31,15 @@ type mockRepo struct {
 	dssql.Queryable
 }
 
-func (s *mockRepo) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) error) error {
-	return f(s)
+func (s *mockRepo) InTxnRetrier(ctx context.Context, f func(ctx context.Context) error) error {
+	return f(ctx)
 }
 
 func (s *mockRepo) Close() error {
 	return nil
 }
 
-func setUpTransactor(ctx context.Context, t *testing.T, logger *zap.Logger) (repos.Transactor, func()) {
+func setUpRepo(ctx context.Context, t *testing.T, logger *zap.Logger) (repos.Repository, func()) {
 	DefaultClock = fakeClock
 
 	if len(*storeURI) == 0 {

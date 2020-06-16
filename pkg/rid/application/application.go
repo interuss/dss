@@ -14,7 +14,7 @@ type app struct {
 	// TODO: don't fully embed the repos once we reduce the complexity in the store.
 	// Right now it's "coincidence" that the repo has the same signatures as the App interface
 	// but we will want to simplify the repos and add the complexity here.
-	repos.Transactor
+	repos.Repository
 	clock  clockwork.Clock
 	logger *zap.Logger
 }
@@ -24,11 +24,11 @@ type App interface {
 	SubscriptionApp
 }
 
-// NewFromTransactor is a convenience function for creating an App
+// NewFromRepo is a convenience function for creating an App
 // with the given store.
-func NewFromTransactor(transactor repos.Transactor, logger *zap.Logger) App {
+func NewFromRepo(repo repos.Repository, logger *zap.Logger) App {
 	return &app{
-		Transactor: transactor,
+		Repository: repo,
 		clock:      DefaultClock,
 		logger:     logger,
 	}

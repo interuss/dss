@@ -1,14 +1,49 @@
 package cockroach
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+
+	dssql "github.com/interuss/dss/pkg/sql"
 )
 
-// DB models a connection to a CRDB instance.
+var txKey = "transaction_interface_key"
+
+// DB abstracts common operations on sql.DB and sql.Tx instances.
 type DB struct {
 	*sql.DB
+}
+
+func (d *DB) getDB(ctx context.Context) dssql.Queryable {
+	dbi := ctx.Value(txKey)
+	if dbi == nil {
+		// Return the default db
+		return d.DB
+	}
+
+	return dbi.(dssql.Queryable)
+}
+
+func InTx(ctx context.Context) bool {
+	return ctx.Value(txKey) != nil
+}
+
+func SetTx(ctx context.Context, tx *sql.Tx) context.Context {
+	return context.WithValue(ctx, txKey, tx)
+}
+
+func (d *DB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return d.getDB(ctx).QueryContext(ctx, query, args...)
+}
+
+func (d *DB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return d.getDB(ctx).QueryRowContext(ctx, query, args...)
+}
+
+func (d *DB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return d.getDB(ctx).ExecContext(ctx, query, args...)
 }
 
 // Dial returns a DB instance connected to a cockroach instance available at

@@ -3,13 +3,13 @@ package cockroach
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
-	"github.com/interuss/dss/pkg/rid/repos"
 	"go.uber.org/zap"
 )
 
@@ -41,16 +41,19 @@ type Store struct {
 // (typically contention).
 // Note: Currently the Newly supplied Repo *does not* support nested calls
 // to InTxnRetrier.
-func (s *Store) InTxnRetrier(ctx context.Context, f func(ctx context.Context, repo repos.Repository) error) error {
+func (s *Store) InTxnRetrier(ctx context.Context, f func(ctx context.Context) error) error {
 	// TODO: consider what tx opts we want to support.
 	// TODO: we really need to remove the upper cockroach package, and have one
 	// "store" for everything
+	if cockroach.InTx(ctx) {
+		return errors.New("cannot nest calls to InTxnRetrier")
+	}
 	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
 	defer cancel()
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
-		err := f(ctx.WithValue(ctx, dssql.DBKey, tx), &storeCopy)
+		err := f(cockroach.SetTx(ctx, tx))
 		return err
 	})
 }
@@ -73,8 +76,8 @@ func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 // NewStore returns a Store instance connected to a cockroach instance via db.
 func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
 	return &Store{
-		ISAStore:          &ISAStore{dssql.Queryable{db}, logger},
-		SubscriptionStore: &SubscriptionStore{dssql.Queryable{db}, DefaultClock, logger},
+		ISAStore:          &ISAStore{db, logger},
+		SubscriptionStore: &SubscriptionStore{db, DefaultClock, logger},
 		db:                db,
 	}
 }

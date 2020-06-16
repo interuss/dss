@@ -12,7 +12,6 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -108,7 +107,7 @@ func TestTxnRetrier(t *testing.T) {
 	require.NotNil(t, store)
 	defer tearDownStore()
 
-	err := store.InTxnRetrier(ctx, func(store repos.Repository) error {
+	err := store.InTxnRetrier(ctx, func(ctx context.Context) error {
 		// can query within this
 		isa, err := store.InsertISA(ctx, serviceArea)
 		require.NotNil(t, isa)
@@ -126,7 +125,7 @@ func TestTxnRetrier(t *testing.T) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Millisecond)
 	defer cancel()
 	count := 0
-	err = store.InTxnRetrier(ctx, func(store repos.Repository) error {
+	err = store.InTxnRetrier(ctx, func(ctx context.Context) error {
 		// can query within this
 		count++
 		// Postgre retryable error
@@ -162,7 +161,7 @@ func TestGetVersion(t *testing.T) {
 
 }
 
-func TestTransactor(t *testing.T) {
+func TestRepository(t *testing.T) {
 	var (
 		ctx                  = context.Background()
 		store, tearDownStore = setUpStore(ctx, t)
@@ -173,26 +172,26 @@ func TestTransactor(t *testing.T) {
 	subscription2 := subscriptionsPool[1].input
 
 	txnCount := 0
-	err := store.InTxnRetrier(ctx, func(s1 repos.Repository) error {
+	err := store.InTxnRetrier(ctx, func(ctx1 context.Context) error {
 		// We should get to this retry, then return nothing.
 		if txnCount > 0 {
 			return errors.New("already failed")
 		}
 		txnCount++
-		err := store.InTxnRetrier(ctx, func(s2 repos.Repository) error {
-			subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
+		err := store.InTxnRetrier(ctx, func(ctx2 context.Context) error {
+			subs, err := store.SearchSubscriptions(ctx1, subscription1.Cells)
 			require.NoError(t, err)
 			require.Len(t, subs, 0)
-			subs, err = s2.SearchSubscriptions(ctx, subscription1.Cells)
+			subs, err = store.SearchSubscriptions(ctx2, subscription1.Cells)
 			require.Len(t, subs, 0)
 			require.NoError(t, err)
 
 			// Tx1 conflicts first
-			_, err = s1.InsertSubscription(ctx, subscription1)
+			_, err = store.InsertSubscription(ctx1, subscription1)
 			require.NoError(t, err)
 
 			// Tx1 is rolled back, so tx2 can proceed.
-			_, err = s2.InsertSubscription(ctx, subscription2)
+			_, err = store.InsertSubscription(ctx2, subscription2)
 			require.NoError(t, err)
 
 			return nil
