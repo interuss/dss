@@ -9,7 +9,11 @@ import (
 	dssql "github.com/interuss/dss/pkg/sql"
 )
 
-var txKey = "transaction_interface_key"
+type key int
+
+const (
+	txKey key = iota
+)
 
 // DB abstracts common operations on sql.DB and sql.Tx instances.
 type DB struct {
