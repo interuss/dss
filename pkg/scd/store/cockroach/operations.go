@@ -105,10 +105,8 @@ func (s *Store) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id s
 		SELECT %s FROM
 			scd_operations
 		WHERE
-			id = $1
-		AND
-			ends_at >= $2`, operationFieldsWithoutPrefix)
-	return s.fetchOperation(ctx, q, query, id, s.clock.Now())
+			id = $1`, operationFieldsWithoutPrefix)
+	return s.fetchOperation(ctx, q, query, id)
 }
 
 // pushOperation creates/updates the Operation identified by "id" and owned by
@@ -397,9 +395,7 @@ func (s *Store) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *d
 			AND
 				COALESCE(scd_operations.ends_at >= $4, true)
 			AND
-				COALESCE(scd_operations.starts_at <= $5, true)
-			AND
-				scd_operations.ends_at >= $6`, operationFieldsWithPrefix)
+				COALESCE(scd_operations.starts_at <= $5, true)`, operationFieldsWithPrefix)
 	)
 
 	if v4d.SpatialVolume == nil || v4d.SpatialVolume.Footprint == nil {
@@ -425,7 +421,6 @@ func (s *Store) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *d
 		v4d.SpatialVolume.AltitudeHi,
 		v4d.StartTime,
 		v4d.EndTime,
-		s.clock.Now(),
 	)
 	if err != nil {
 		return nil, err

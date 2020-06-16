@@ -41,9 +41,6 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 		if op == nil {
 			return dsserr.Internal(fmt.Sprintf("DeleteOperation returned no Operation for ID: %s", id))
 		}
-		if subs == nil {
-			return dsserr.Internal(fmt.Sprintf("DeleteOperation returned nil Subscriptions for ID: %s", id))
-		}
 
 		// Convert deleted Operation to proto
 		opProto, err := op.ToProto()
