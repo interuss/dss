@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS cells_identification_service_areas (
     INDEX identification_service_area_id_idx (identification_service_area_id)
 );
 
-CREATE TABLE schema_versions (
+CREATE TABLE IF NOT EXISTS schema_versions (
 	onerow_enforcer bool PRIMARY KEY DEFAULT TRUE CHECK(onerow_enforcer),
 	schema_version STRING NOT NULL
 );
