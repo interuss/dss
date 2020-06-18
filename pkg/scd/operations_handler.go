@@ -11,7 +11,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
-	scdstore "github.com/interuss/dss/pkg/scd/store"
+	"github.com/interuss/dss/pkg/scd/repos"
 	"google.golang.org/grpc/status"
 )
 
@@ -32,9 +32,9 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 	}
 
 	var response *scdpb.ChangeOperationReferenceResponse
-	action := func(ctx context.Context, store scdstore.Store) (err error) {
+	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Delete Operation in Store
-		op, subs, err := store.DeleteOperation(ctx, id, owner)
+		op, subs, err := r.DeleteOperation(ctx, id, owner)
 		if err != nil {
 			return err
 		}
@@ -57,7 +57,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 		return nil
 	}
 
-	err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	err := a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err
@@ -79,8 +79,8 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 	}
 
 	var response *scdpb.GetOperationReferenceResponse
-	action := func(ctx context.Context, store scdstore.Store) (err error) {
-		sub, err := store.GetOperation(ctx, id)
+	action := func(ctx context.Context, r repos.Repository) (err error) {
+		sub, err := r.GetOperation(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -101,7 +101,7 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 		return nil
 	}
 
-	err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	err := a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err
@@ -132,9 +132,9 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	}
 
 	var response *scdpb.SearchOperationReferenceResponse
-	action := func(ctx context.Context, store scdstore.Store) (err error) {
+	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Perform search query on Store
-		ops, err := store.SearchOperations(ctx, vol4, owner)
+		ops, err := r.SearchOperations(ctx, vol4, owner)
 		if err != nil {
 			return err
 		}
@@ -155,7 +155,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 		return nil
 	}
 
-	err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err
@@ -213,7 +213,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	subscriptionID := scdmodels.ID(params.GetSubscriptionId())
 
 	var response *scdpb.ChangeOperationReferenceResponse
-	action := func(ctx context.Context, store scdstore.Store) (err error) {
+	action := func(ctx context.Context, r repos.Repository) (err error) {
 		if subscriptionID.Empty() {
 			if err := scdmodels.ValidateUSSBaseURL(
 				params.GetNewSubscription().GetUssBaseUrl(),
@@ -221,7 +221,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				return dsserr.BadRequest(err.Error())
 			}
 
-			sub, _, err := store.UpsertSubscription(ctx, &scdmodels.Subscription{
+			sub, _, err := r.UpsertSubscription(ctx, &scdmodels.Subscription{
 				ID:         scdmodels.ID(uuid.New().String()),
 				Owner:      owner,
 				StartTime:  uExtent.StartTime,
@@ -246,7 +246,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			key = append(key, scdmodels.OVN(ovn))
 		}
 
-		op, subs, err := store.UpsertOperation(ctx, &scdmodels.Operation{
+		op, subs, err := r.UpsertOperation(ctx, &scdmodels.Operation{
 			ID:      id,
 			Owner:   owner,
 			Version: scdmodels.Version(params.OldVersion),
@@ -265,7 +265,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		if err == scderr.MissingOVNsInternalError() {
 			// The client is missing some OVNs; provide the pointers to the
 			// information they need
-			ops, err := store.SearchOperations(ctx, uExtent, owner)
+			ops, err := r.SearchOperations(ctx, uExtent, owner)
 			if err != nil {
 				return err
 			}
@@ -296,7 +296,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil
 	}
 
-	err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err

@@ -10,7 +10,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
-	scdstore "github.com/interuss/dss/pkg/scd/store"
+	"github.com/interuss/dss/pkg/scd/repos"
 )
 
 var (
@@ -78,11 +78,11 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	}
 
 	var result *scdpb.PutSubscriptionResponse
-	action := func(ctx context.Context, store scdstore.Store) (err error) {
+	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// TODO: validate against DependentOperations when available
 
 		// Store Subscription model
-		sub, ops, err := store.UpsertSubscription(ctx, sub)
+		sub, ops, err := r.UpsertSubscription(ctx, sub)
 		if err != nil {
 			return err
 		}
@@ -114,7 +114,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		return nil
 	}
 
-	err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err
@@ -140,9 +140,9 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	}
 
 	var response *scdpb.GetSubscriptionResponse
-	action := func(ctx context.Context, store scdstore.Store) (err error) {
+	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Get Subscription from Store
-		sub, err := store.GetSubscription(ctx, id, owner)
+		sub, err := r.GetSubscription(ctx, id, owner)
 		if err != nil {
 			return err
 		}
@@ -161,7 +161,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 		return nil
 	}
 
-	err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	err := a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err
@@ -191,9 +191,9 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	}
 
 	var response *scdpb.SearchSubscriptionsResponse
-	action := func(ctx context.Context, store scdstore.Store) (err error) {
+	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Perform search query on Store
-		subs, err := store.SearchSubscriptions(ctx, vol4)
+		subs, err := r.SearchSubscriptions(ctx, vol4)
 		if err != nil {
 			return err
 		}
@@ -213,7 +213,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		return nil
 	}
 
-	err = scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err
@@ -239,9 +239,9 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	}
 
 	var response *scdpb.DeleteSubscriptionResponse
-	action := func(ctx context.Context, store scdstore.Store) (err error) {
+	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Delete Subscription in Store
-		sub, err := store.DeleteSubscription(ctx, id, owner, scdmodels.Version(0))
+		sub, err := r.DeleteSubscription(ctx, id, owner, scdmodels.Version(0))
 		if err != nil {
 			return err
 		}
@@ -263,7 +263,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 		return nil
 	}
 
-	err := scdstore.PerformOperationWithRetries(ctx, a.Transactor, action, 0)
+	err := a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err
