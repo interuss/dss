@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
-	scdstore "github.com/interuss/dss/pkg/scd/store"
+	"github.com/interuss/dss/pkg/scd/repos"
+	dsssql "github.com/interuss/dss/pkg/sql"
 	"go.uber.org/zap"
 )
 
@@ -15,81 +17,61 @@ var (
 	DefaultClock = clockwork.NewRealClock()
 )
 
-// Store is an implementation of scd.Store using
+// repo is an implementation of repos.Repo using
 // a CockroachDB transaction.
-type Store struct {
-	tx     *sql.Tx
+type repo struct {
+	q      dsssql.Queryable
 	logger *zap.Logger
 	clock  clockwork.Clock
 }
 
-// Transaction is an implementation of scd.Transaction using
-// a CockroachDB transaction.
-type Transaction struct {
-	tx     *sql.Tx
-	logger *zap.Logger
-	clock  clockwork.Clock
-}
-
-// Implement store.Transaction interface
-func (t *Transaction) Store() (scdstore.Store, error) {
-	return &Store{
-		tx:     t.tx,
-		logger: t.logger,
-		clock:  t.clock,
-	}, nil
-}
-
-// Implement store.Transaction interface
-func (t *Transaction) Commit() error {
-	return t.tx.Commit()
-}
-
-// Implement store.Transaction interface
-func (t *Transaction) Rollback() error {
-	return t.tx.Rollback()
-}
-
-// Transactor is an implementation of scd.Transactor using
+// Store is an implementation of an scd.Store using
 // a CockroachDB database.
-type Transactor struct {
+type Store struct {
 	db     *cockroach.DB
 	logger *zap.Logger
 	clock  clockwork.Clock
 }
 
-// NewTransactor returns a Transactor instance connected to a cockroach instance via db.
-func NewTransactor(db *cockroach.DB, logger *zap.Logger) *Transactor {
-	return &Transactor{
+// NewStore returns a Store instance connected to a cockroach instance via db.
+func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
+	return &Store{
 		db:     db,
 		logger: logger,
 		clock:  DefaultClock,
 	}
 }
 
-// Implement store.Transactor interface
-func (t *Transactor) Transact() (scdstore.Transaction, error) {
-	tx, err := t.db.Begin()
-	if err != nil {
-		return nil, err
-	}
-	return &Transaction{
-		tx:     tx,
-		logger: t.logger,
-		clock:  t.clock,
+// Interact returns a new repo instance.
+func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
+	return &repo{
+		q:      s.db,
+		logger: s.logger,
+		clock:  s.clock,
 	}, nil
 }
 
+// Transact implements store.Transactor interface.
+func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repository) error) error {
+	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
+		return f(ctx, &repo{
+			q:      tx,
+			logger: s.logger,
+			clock:  s.clock,
+		})
+	})
+}
+
 // Close closes the underlying DB connection.
-func (t *Transactor) Close() error {
-	return t.db.Close()
+func (s *Store) Close() error {
+	return s.db.Close()
 }
 
 // Bootstrap bootstraps the underlying database with required tables.
 //
 // TODO: We should handle database migrations properly, but bootstrap both us
 // *and* the database with this manual approach here.
-func (t *Transactor) Bootstrap(ctx context.Context) error {
+func (s *Store) Bootstrap(ctx context.Context) error {
 	const query = `
 	CREATE TABLE IF NOT EXISTS scd_subscriptions (
 		id UUID PRIMARY KEY,
@@ -146,6 +128,6 @@ func (t *Transactor) Bootstrap(ctx context.Context) error {
 		INDEX operation_id_idx (operation_id)
 	);
 	`
-	_, err := t.db.ExecContext(ctx, query)
+	_, err := s.db.ExecContext(ctx, query)
 	return err
 }

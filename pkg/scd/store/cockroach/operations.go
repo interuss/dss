@@ -49,7 +49,7 @@ func init() {
 	)
 }
 
-func (s *Store) fetchOperations(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Operation, error) {
+func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Operation, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (s *Store) fetchOperations(ctx context.Context, q dsssql.Queryable, query s
 	return payload, nil
 }
 
-func (s *Store) fetchOperation(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Operation, error) {
+func (s *repo) fetchOperation(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Operation, error) {
 	operations, err := s.fetchOperations(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (s *Store) fetchOperation(ctx context.Context, q dsssql.Queryable, query st
 	return operations[0], nil
 }
 
-func (s *Store) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (*scdmodels.Operation, error) {
+func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (*scdmodels.Operation, error) {
 	query := fmt.Sprintf(`
 		SELECT %s FROM
 			scd_operations
@@ -114,7 +114,7 @@ func (s *Store) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id s
 //
 // Returns the created/updated Operation and all Subscriptions
 // affected by the operation.
-func (s *Store) pushOperation(ctx context.Context, q dsssql.Queryable, operation *scdmodels.Operation) (
+func (s *repo) pushOperation(ctx context.Context, q dsssql.Queryable, operation *scdmodels.Operation) (
 	*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	var (
 		upsertOperationsQuery = fmt.Sprintf(`
@@ -190,7 +190,7 @@ func (s *Store) pushOperation(ctx context.Context, q dsssql.Queryable, operation
 	return operation, subscriptions, nil
 }
 
-func (s *Store) populateOperationCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.Operation) error {
+func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.Operation) error {
 	const query = `
 	SELECT
 		cell_id
@@ -221,8 +221,8 @@ func (s *Store) populateOperationCells(ctx context.Context, q dsssql.Queryable, 
 }
 
 // GetOperation returns an operation for the given ID from CockroachDB
-func (s *Store) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
-	sub, err := s.fetchOperationByID(ctx, s.tx, id)
+func (s *repo) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
+	sub, err := s.fetchOperationByID(ctx, s.q, id)
 	switch err {
 	case nil:
 		return sub, nil
@@ -234,7 +234,7 @@ func (s *Store) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.O
 }
 
 // DeleteOperation deletes an operation for the given ID from CockroachDB
-func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+func (s *repo) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	var (
 		deleteQuery = `
 			DELETE FROM
@@ -266,7 +266,7 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 	)
 
 	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := s.fetchOperationByID(ctx, s.tx, id)
+	old, err := s.fetchOperationByID(ctx, s.q, id)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
 		return nil, nil, dsserr.NotFound(id.String())
@@ -275,7 +275,7 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 	case old != nil && old.Owner != owner:
 		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Operation is owned by %s", old.Owner))
 	}
-	if err := s.populateOperationCells(ctx, s.tx, old); err != nil {
+	if err := s.populateOperationCells(ctx, s.q, old); err != nil {
 		return nil, nil, err
 	}
 
@@ -283,15 +283,15 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 	for i, cell := range old.Cells {
 		cids[i] = int64(cell)
 	}
-	subscriptions, err := s.fetchSubscriptionsForNotification(ctx, s.tx, cids)
+	subscriptions, err := s.fetchSubscriptionsForNotification(ctx, s.q, cids)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if _, err := s.tx.ExecContext(ctx, deleteQuery, id, owner); err != nil {
+	if _, err := s.q.ExecContext(ctx, deleteQuery, id, owner); err != nil {
 		return nil, nil, err
 	}
-	if _, err := s.tx.ExecContext(ctx, deleteImplicitSubscriptionQuery, old.SubscriptionID, owner); err != nil {
+	if _, err := s.q.ExecContext(ctx, deleteImplicitSubscriptionQuery, old.SubscriptionID, owner); err != nil {
 		return nil, nil, err
 	}
 
@@ -299,8 +299,8 @@ func (s *Store) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssm
 }
 
 // UpsertOperation inserts or updates an operation in CockroachDB
-func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
-	old, err := s.fetchOperationByID(ctx, s.tx, operation.ID)
+func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+	old, err := s.fetchOperationByID(ctx, s.q, operation.ID)
 	switch {
 	case err == sql.ErrNoRows:
 		break
@@ -332,7 +332,7 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 	// whether all affected OVNs are matched.
 	switch operation.State {
 	case scdmodels.OperationStateAccepted, scdmodels.OperationStateActivated:
-		operations, err := s.searchOperations(ctx, s.tx, &dssmodels.Volume4D{
+		operations, err := s.searchOperations(ctx, s.q, &dssmodels.Volume4D{
 			StartTime: operation.StartTime,
 			EndTime:   operation.EndTime,
 			SpatialVolume: &dssmodels.Volume3D{
@@ -361,7 +361,7 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 		// We default to not checking the OVNs for now for all other operation states.
 	}
 
-	area, subscribers, err := s.pushOperation(ctx, s.tx, operation)
+	area, subscribers, err := s.pushOperation(ctx, s.q, operation)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -369,7 +369,7 @@ func (s *Store) UpsertOperation(ctx context.Context, operation *scdmodels.Operat
 	return area, subscribers, nil
 }
 
-func (s *Store) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
+func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
 	var (
 		operationsIntersectingVolumeQuery = fmt.Sprintf(`
 			SELECT
@@ -430,8 +430,8 @@ func (s *Store) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *d
 }
 
 // SearchOperations returns operations within the 4D volume from CockroachDB
-func (s *Store) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
-	result, err := s.searchOperations(ctx, s.tx, v4d, owner)
+func (s *repo) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
+	result, err := s.searchOperations(ctx, s.q, v4d, owner)
 	if err != nil {
 		return nil, err
 	}
