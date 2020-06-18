@@ -6,8 +6,8 @@ import (
 	"github.com/interuss/dss/pkg/scd/repos"
 )
 
-// Store abstracts strategic conflict detection interactions with the backing
-// data store.
+// Store provides the means by which to obtain Repos with which to interact with
+// the strategic conflict detection backing store.
 type Store interface {
 	Interactor
 	Transactor

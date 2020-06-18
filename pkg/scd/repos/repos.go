@@ -45,7 +45,7 @@ type Subscription interface {
 	DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error)
 }
 
-// Repository aggregates all entity-specific repo interfaces.
+// Repository aggregates all SCD-specific repo interfaces.
 type Repository interface {
 	Operation
 	Subscription

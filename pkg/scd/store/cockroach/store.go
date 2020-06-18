@@ -42,7 +42,7 @@ func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
 	}
 }
 
-// Interact returns a new repo instance.
+// Interact implements store.Interactor interface.
 func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
 	return &repo{
 		q:      s.db,
