@@ -9,7 +9,7 @@ from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
 import pytest
 
-SCOPES = [
+ALL_SCOPES = [
     'dss.write.identification_service_areas',
     'dss.read.identification_service_areas',
     'utm.strategic_coordination',
@@ -19,7 +19,7 @@ SCOPES = [
 
 
 class AuthAdapter(object):
-  """Base class for requests adapters that add JWTs to requests."""
+  """Base class for an adapter that add JWTs to requests."""
 
   def __init__(self):
     self._tokens = {}
@@ -29,10 +29,12 @@ class AuthAdapter(object):
 
     raise NotImplementedError()
 
-  def get_headers(self, url: str) -> Dict[str, str]:
+  def get_headers(self, url: str, scopes: List[str] = None) -> Dict[str, str]:
     intended_audience = urllib.parse.urlparse(url).hostname
     if intended_audience not in self._tokens:
-      self._tokens[intended_audience] = self.issue_token(intended_audience, SCOPES)
+      if scopes is None:
+        scopes = ALL_SCOPES
+      self._tokens[intended_audience] = self.issue_token(intended_audience, scopes)
     token = self._tokens[intended_audience]
     return {'Authorization': 'Bearer ' + token}
 
@@ -42,17 +44,16 @@ class AuthAdapter(object):
 
 
 class DummyOAuthServerAdapter(AuthAdapter):
-  """Requests adapter that gets JWTs that uses the Dummy OAuth Server"""
+  """Auth adapter that gets JWTs that uses the Dummy OAuth Server"""
 
   def __init__(self, token_endpoint: str, sub: str):
     super().__init__()
 
-    oauth_session = requests.Session()
-
     self._oauth_token_endpoint = token_endpoint
     self._sub = sub
-    self._oauth_session = oauth_session
+    self._oauth_session = requests.Session()
 
+  # Overrides method in AuthAdapter
   def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
     url = '{}?grant_type=client_credentials&scope={}&intended_audience={}&issuer=dummy&sub={}'.format(
         self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
@@ -61,7 +62,7 @@ class DummyOAuthServerAdapter(AuthAdapter):
     return response['access_token']
 
 class ServiceAccountAuthAdapter(AuthAdapter):
-  """Requests adapter that gets JWTs using a service account."""
+  """Auth adapter that gets JWTs using a service account."""
 
   def __init__(self, token_endpoint, service_account_json):
     super().__init__()
@@ -73,7 +74,8 @@ class ServiceAccountAuthAdapter(AuthAdapter):
     self._oauth_token_endpoint = token_endpoint
     self._oauth_session = oauth_session
 
-  def issue_token(self, intended_audience, scopes):
+  # Overrides method in AuthAdapter
+  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
     url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
         self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
         urllib.parse.quote(intended_audience))
@@ -82,7 +84,7 @@ class ServiceAccountAuthAdapter(AuthAdapter):
 
 
 class UsernamePasswordAuthAdapter(AuthAdapter):
-  """Requests adapter that gets JWTs using a username and password."""
+  """Auth adapter that gets JWTs using a username and password."""
 
   def __init__(self, token_endpoint, username, password, client_id):
     super().__init__()
@@ -92,7 +94,8 @@ class UsernamePasswordAuthAdapter(AuthAdapter):
     self._password = password
     self._client_id = client_id
 
-  def issue_token(self, intended_audience, scopes):
+  # Overrides method in AuthAdapter
+  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
     scopes.append('aud:{}'.format(intended_audience))
     response = requests.post(self._oauth_token_endpoint, data={
       'grant_type': "password",
@@ -117,7 +120,7 @@ class DSSTestSession(requests.Session):
     self._prefix_url = prefix_url
     self._auth_adapter = auth_adapter
 
-  # Overrides methods on requests.Session
+  # Overrides method on requests.Session
   def prepare_request(self, request, **kwargs):
     # Automatically prefix any unprefixed URLs
     if request.url.startswith('/'):
@@ -125,10 +128,25 @@ class DSSTestSession(requests.Session):
 
     # Automatically add auth header if auth adapter exists
     if self._auth_adapter:
-      for k, v in self._auth_adapter.get_headers(request.url).items():
-        request.headers[k] = v
+      self._auth_adapter.add_headers(request)
 
     return super().prepare_request(request, **kwargs)
+
+  # Overrides method on request.Session
+  def get(self, url, **kwargs):
+    return super().get(url, **kwargs)
+
+  # Overrides method on request.Session
+  def put(self, url, **kwargs):
+    return super().put(url, **kwargs)
+
+  # Overrides method on request.Session
+  def post(self, url, **kwargs):
+    return super().post(url, **kwargs)
+
+  # Overrides method on request.Session
+  def delete(self, url, **kwargs):
+    return super().delete(url, **kwargs)
 
   def issue_token(self, scopes):
     intended_audience = urllib.parse.urlparse(self._prefix_url).hostname
