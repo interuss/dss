@@ -71,15 +71,15 @@ def test_create_isa(session, isa1_uuid):
   assert resp.status_code == 200
 
 
-def test_get_isa_without_token(rogue_session, isa1_uuid):
-  resp = rogue_session.get('/identification_service_areas/{}'.format(isa1_uuid))
+def test_get_isa_without_token(no_auth_session, isa1_uuid):
+  resp = no_auth_session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 401
   assert resp.json()['message'] == 'missing token'
 
 
-def test_get_isa_with_fake_token(rogue_session, isa1_uuid):
-  rogue_session.headers['Authorization'] = 'Bearer fake_token'
-  resp = rogue_session.get('/identification_service_areas/{}'.format(isa1_uuid))
+def test_get_isa_with_fake_token(no_auth_session, isa1_uuid):
+  no_auth_session.headers['Authorization'] = 'Bearer fake_token'
+  resp = no_auth_session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 401
   assert resp.json()['message'] == 'token contains an invalid number of segments'
 

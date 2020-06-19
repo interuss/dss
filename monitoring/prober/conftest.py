@@ -228,7 +228,7 @@ def scd_session2(pytestconfig):
 
 
 @pytest.fixture(scope='function')
-def rogue_session(pytestconfig):
+def no_auth_session(pytestconfig):
   dss_endpoint = pytestconfig.getoption('dss_endpoint')
   api_version_role = pytestconfig.getoption('api_version_role', '')
   if dss_endpoint is None:
