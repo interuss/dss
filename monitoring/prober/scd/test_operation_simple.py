@@ -31,7 +31,7 @@ def _make_op1_request():
 # Preconditions: None
 # Mutations: None
 def test_op_does_not_exist_get(scd_session, op1_uuid):
-  resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
+  resp = scd_session.get('/operation_references/{}'.format(op1_uuid), scope=common.SCOPE_SC)
   assert resp.status_code == 404, resp.content
 
 

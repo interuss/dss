@@ -30,12 +30,15 @@ class AuthAdapter(object):
     raise NotImplementedError()
 
   def get_headers(self, url: str, scopes: List[str] = None) -> Dict[str, str]:
+    if scopes is None:
+      scopes = ALL_SCOPES
     intended_audience = urllib.parse.urlparse(url).hostname
+    scope_string = ' '.join(scopes)
     if intended_audience not in self._tokens:
-      if scopes is None:
-        scopes = ALL_SCOPES
-      self._tokens[intended_audience] = self.issue_token(intended_audience, scopes)
-    token = self._tokens[intended_audience]
+      self._tokens[intended_audience] = {}
+    if scope_string not in self._tokens[intended_audience]:
+      self._tokens[intended_audience][scope_string] = self.issue_token(intended_audience, scopes)
+    token = self._tokens[intended_audience][scope_string]
     return {'Authorization': 'Bearer ' + token}
 
   def add_headers(self, request: requests.PreparedRequest, scopes: List[str]):
@@ -135,7 +138,7 @@ class DSSTestSession(requests.Session):
         scopes = kwargs['scopes']
         del kwargs['scopes']
       if 'scope' in kwargs:
-        scopes = [kwargs['scopes']]
+        scopes = [kwargs['scope']]
         del kwargs['scope']
       if scopes is None:
         scopes = ALL_SCOPES
