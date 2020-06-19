@@ -26,8 +26,20 @@ type MyMigrate struct {
 	*migrate.Migrate
 }
 
+// Direction is an alias for int indicating the direction and steps of migration
+type Direction int
+
+func (d Direction) String() string {
+	if d > 0 {
+		return "Up"
+	} else if d < 0 {
+		return "Down"
+	}
+	return "No Change"
+}
+
 var (
-	path      = flag.String("migration_files", "", "path to db migration files directory")
+	path      = flag.String("migration_dir", "", "path to db migration files directory")
 	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: v1.0.0)")
 	step      = flag.Int("migration_step", 0, "the db migration step to go to")
 
@@ -50,7 +62,7 @@ var (
 func main() {
 	flag.Parse()
 	if *path == "" {
-		log.Panic("Must specify migration_files path")
+		log.Panic("Must specify migration_dir path")
 	}
 	if (*dbVersion == "" && *step == 0) || (*dbVersion != "" && *step != 0) {
 		log.Panic("Must specify a db_version or migration_step to goto")
@@ -94,20 +106,20 @@ func main() {
 		}()
 	}
 	totalMove := 0
-	direction := myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
-	for direction != 0 {
-		executeErr := myMigrater.Steps(direction)
-		if executeErr != nil {
-			log.Fatal(executeErr)
+	migrateDirection := myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
+	for migrateDirection != 0 {
+		migraterErr = myMigrater.Steps(int(migrateDirection))
+		if migraterErr != nil {
+			log.Fatal(migraterErr)
 		}
-		totalMove += direction
-		log.Printf("Migrated %s by %d step", directionText(direction), int(math.Abs(float64(direction))))
-		direction = myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
+		totalMove += int(migrateDirection)
+		log.Printf("Migrated %s by %d step", migrateDirection.String(), int(math.Abs(float64(int(migrateDirection)))))
+		migrateDirection = myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
 	}
 	if totalMove == 0 {
 		log.Println("No Changes")
 	} else {
-		log.Printf("Moved %d steps %s in total", int(math.Abs(float64(totalMove))), directionText(totalMove))
+		log.Printf("Moved %d steps %s in total", int(math.Abs(float64(totalMove))), migrateDirection.String())
 	}
 
 	currentDBVersion, err := getCurrentDBVersion(postgresURI)
@@ -121,73 +133,62 @@ func main() {
 	log.Printf("DB Version: %s, Migration Step # %d, Dirty: %v", currentDBVersion, migrationStep, dirty)
 }
 
-func directionText(direction int) string {
-	if direction > 0 {
-		return "Up"
-	} else if direction < 0 {
-		return "Down"
-	}
-	return "No Change"
-}
-
 func getCurrentDBVersion(crdbURI string) (string, error) {
 	crdb, err := dssCockroach.Dial(crdbURI)
+	defer func() {
+		crdb.Close()
+	}()
 	if err != nil {
-		log.Panic("Failed to dial CockroachDB")
+		return "", fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
 	}
 	// check if schema_versions table exists
 	const checkTableQuery = `
 		SELECT EXISTS (
   		SELECT *
 		  FROM information_schema.tables 
-   		WHERE table_name = 'schema_versions'
-  )`
-	row := crdb.QueryRow(checkTableQuery)
-	var ret bool
-	scanErr := row.Scan(&ret)
-	if scanErr != nil {
-		return "", scanErr
+		WHERE table_name = 'schema_versions'
+	)`
+	var (
+		version = "v0.0.0"
+		exists  bool
+	)
+
+	if err := crdb.QueryRow(checkTableQuery).Scan(&exists); err != nil {
+		return "", err
 	}
-	version := "v0.0.0"
-	if ret {
-		const getVersionQuery = `
+
+	if !exists {
+		return version, nil
+	}
+	// query for the schema version string
+	const getVersionQuery = `
       SELECT schema_version 
       FROM schema_versions
-      WHERE onerow_enforcer = TRUE`
-		row := crdb.QueryRow(getVersionQuery)
-		scanErr = row.Scan(&version)
-		if scanErr != nil {
-			return "", scanErr
-		}
-		if version == "" {
-			version = "v0.0.0"
-		}
+	  WHERE onerow_enforcer = TRUE`
+	if err := crdb.QueryRow(getVersionQuery).Scan(&version); err != nil {
+		return "", err
 	}
-	crdb.Close()
+	// if for some reason the string returned is empty
+	if version == "" {
+		version = "v0.0.0"
+	}
 	return version, nil
 }
 
 func parseVersion(version string) [3]int {
-	splitVersion := strings.Split(version, ".")
-	first, err := strconv.Atoi(strings.Replace(splitVersion[0], "v", "", 1))
-	if err != nil {
+	var (
+		major, minor, patch int
+	)
+	if n, err := fmt.Sscanf(version, "v%d.%d.%d", &major, &minor, &patch); err != nil || n != 3 {
 		log.Panic(err)
 	}
-	second, err := strconv.Atoi(strings.Replace(splitVersion[1], "v", "", 1))
-	if err != nil {
-		log.Panic(err)
-	}
-	third, err := strconv.Atoi(strings.Replace(splitVersion[2], "v", "", 1))
-	if err != nil {
-		log.Panic(err)
-	}
-	result := [3]int{first, second, third}
+	result := [3]int{major, minor, patch}
 	return result
 }
 
 // MigrationDirection reads our custom DB version string as well as the Migration Steps from the framework
-// and returns a signed integer value of the direction and count to migrate the db
-func (m *MyMigrate) MigrationDirection(dbURI string, desiredVersion string, desireStep int) int {
+// and returns a signed integer value of the Direction and count to migrate the db
+func (m *MyMigrate) MigrationDirection(dbURI string, desiredVersion string, desireStep int) Direction {
 	if desireStep != 0 {
 		migrateStep, dirty, err := m.Version()
 		if err != nil {
@@ -196,7 +197,7 @@ func (m *MyMigrate) MigrationDirection(dbURI string, desiredVersion string, desi
 		if dirty {
 			log.Fatal("DB in Dirty state, Please fix before migrating")
 		}
-		return desireStep - int(migrateStep)
+		return Direction(desireStep - int(migrateStep))
 	}
 	currentVersion, err := getCurrentDBVersion(dbURI)
 	if err != nil {
