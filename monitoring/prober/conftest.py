@@ -2,6 +2,7 @@ import copy
 import requests
 import urllib.parse
 import uuid
+from typing import Dict, List
 
 from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
@@ -19,23 +20,27 @@ SCOPES = [
 class AuthAdapter(requests.adapters.HTTPAdapter):
   """Base class for requests adapters that add JWTs to requests."""
 
-  def issue_token(self, intended_audience, scopes):
+  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
     """Subclasses must return a bearer token for the given audience."""
 
     raise NotImplementedError()
 
-  def add_headers(self, request, **kwargs):
-    intended_audience = urllib.parse.urlparse(request.url).hostname
+  def get_headers(self, url: str) -> Dict[str, str]:
+    intended_audience = urllib.parse.urlparse(url).hostname
     if intended_audience not in self._tokens:
       self._tokens[intended_audience] = self.issue_token(intended_audience, SCOPES)
     token = self._tokens[intended_audience]
-    request.headers['Authorization'] = 'Bearer ' + token
+    return {'Authorization': 'Bearer ' + token}
+
+  def add_headers(self, request: requests.Request, **kwargs):
+    for k, v in self.get_headers(request.url).items():
+      request.headers[k] = v
 
 
 class DummyOAuthServerAdapter(AuthAdapter):
   """Requests adapter that gets JWTs that uses the Dummy OAuth Server"""
 
-  def __init__(self, token_endpoint, sub):
+  def __init__(self, token_endpoint: str, sub: str):
     super().__init__()
 
     oauth_session = requests.Session()
@@ -45,7 +50,7 @@ class DummyOAuthServerAdapter(AuthAdapter):
     self._oauth_session = oauth_session
     self._tokens = {}
 
-  def issue_token(self, intended_audience, scopes):
+  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
     url = '{}?grant_type=client_credentials&scope={}&intended_audience={}&issuer=dummy&sub={}'.format(
         self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
         urllib.parse.quote(intended_audience), self._sub)
@@ -115,6 +120,7 @@ class PrefixURLSession(requests.Session):
     adapter = self.get_adapter(self._prefix_url)
     intended_audience = urllib.parse.urlparse(self._prefix_url).hostname
     return adapter.issue_token(intended_audience, scopes)
+
 
 def pytest_addoption(parser):
   parser.addoption('--api-version-role')
