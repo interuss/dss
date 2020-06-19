@@ -2,7 +2,6 @@ import copy
 import requests
 import urllib.parse
 import uuid
-import traceback
 from typing import Dict, List
 
 from google.auth.transport import requests as google_requests
@@ -148,10 +147,6 @@ class DSSTestSession(requests.Session):
       kwargs['auth'] = auth
 
     return super().request(method, url, **kwargs)
-
-  def issue_token(self, scopes):
-    intended_audience = urllib.parse.urlparse(self._prefix_url).hostname
-    return self._auth_adapter.issue_token(intended_audience, scopes)
 
 
 def pytest_addoption(parser):
