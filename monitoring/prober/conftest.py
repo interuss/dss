@@ -156,35 +156,38 @@ def pytest_addoption(parser):
   parser.addoption('--use-dummy-oauth')
 
 
-@pytest.fixture(scope='session')
-def session(pytestconfig):
+def make_auth_adapter(pytestconfig, prefix: str, dummy_oauth_sub: str):
   oauth_token_endpoint = pytestconfig.getoption('oauth_token_endpoint')
 
   # Create an auth adapter to get JWTs using the given credentials.  We can use
   # either a service account, a username/password/client_id or a dummy oauth server.
-  if pytestconfig.getoption('oauth_service_account_json') is not None:
+  if pytestconfig.getoption(prefix + '_service_account_json') is not None:
     auth_adapter = ServiceAccountAuthAdapter(oauth_token_endpoint,
-        pytestconfig.getoption('oauth_service_account_json'))
-  elif pytestconfig.getoption('oauth_username') is not None:
+                                             pytestconfig.getoption(prefix + '_service_account_json'))
+  elif pytestconfig.getoption(prefix + '_username') is not None:
     auth_adapter = UsernamePasswordAuthAdapter(oauth_token_endpoint,
-        pytestconfig.getoption('oauth_username'),
-        pytestconfig.getoption('oauth_password'),
-        pytestconfig.getoption('oauth_client_id'))
+                                               pytestconfig.getoption(prefix + '_username'),
+                                               pytestconfig.getoption(prefix + '_password'),
+                                               pytestconfig.getoption(prefix + '_client_id'))
   elif pytestconfig.getoption('use_dummy_oauth') is not None:
-    auth_adapter = DummyOAuthServerAdapter(oauth_token_endpoint, 'fake_uss')
+    auth_adapter = DummyOAuthServerAdapter(oauth_token_endpoint, dummy_oauth_sub)
   else:
     raise ValueError(
-        'You must provide either an OAuth service account, or a username, '
-        'password and client ID')
+      'You must provide either an OAuth service account, or a username, '
+      'password and client ID')
 
+  return auth_adapter
+
+
+@pytest.fixture(scope='session')
+def session(pytestconfig):
   dss_endpoint = pytestconfig.getoption('dss_endpoint')
   if dss_endpoint is None:
     raise ValueError('Missing required --dss-endpoint')
   api_version_role = pytestconfig.getoption('api_version_role', '')
 
+  auth_adapter = make_auth_adapter(pytestconfig, 'oauth', 'fake_uss')
   s = DSSTestSession(dss_endpoint + api_version_role, auth_adapter)
-  #s.mount('http://', auth_adapter)
-  #s.mount('https://', auth_adapter)
   return s
 
 
@@ -194,28 +197,8 @@ def scd_session(pytestconfig):
   if scd_dss_endpoint is None:
     return None
 
-  oauth_token_endpoint = pytestconfig.getoption('oauth_token_endpoint')
-
-  # Create an auth adapter to get JWTs using the given credentials.  We can use
-  # either a service account, a username/password/client_id or a dummy oauth server.
-  if pytestconfig.getoption('oauth_service_account_json') is not None:
-    auth_adapter = ServiceAccountAuthAdapter(oauth_token_endpoint,
-        pytestconfig.getoption('oauth_service_account_json'))
-  elif pytestconfig.getoption('oauth_username') is not None:
-    auth_adapter = UsernamePasswordAuthAdapter(oauth_token_endpoint,
-        pytestconfig.getoption('oauth_username'),
-        pytestconfig.getoption('oauth_password'),
-        pytestconfig.getoption('oauth_client_id'))
-  elif pytestconfig.getoption('use_dummy_oauth') is not None:
-    auth_adapter = DummyOAuthServerAdapter(oauth_token_endpoint, 'fake_uss')
-  else:
-    raise ValueError(
-        'You must provide either an OAuth service account, or a username, '
-        'password and client ID')
-
+  auth_adapter = make_auth_adapter(pytestconfig, 'oauth', 'fake_uss')
   s = DSSTestSession(scd_dss_endpoint, auth_adapter)
-  #s.mount('http://', auth_adapter)
-  #s.mount('https://', auth_adapter)
   return s
 
 
@@ -225,28 +208,8 @@ def scd_session2(pytestconfig):
   if scd_dss_endpoint is None:
     return None
 
-  oauth_token_endpoint = pytestconfig.getoption('oauth_token_endpoint')
-
-  # Create an auth adapter to get JWTs using the given credentials.  We can use
-  # either a service account, a username/password/client_id or a dummy oauth server.
-  if pytestconfig.getoption('oauth2_service_account_json') is not None:
-    auth_adapter = ServiceAccountAuthAdapter(oauth_token_endpoint,
-                                             pytestconfig.getoption('oauth2_service_account_json'))
-  elif pytestconfig.getoption('oauth2_username') is not None:
-    auth_adapter = UsernamePasswordAuthAdapter(oauth_token_endpoint,
-                                               pytestconfig.getoption('oauth2_username'),
-                                               pytestconfig.getoption('oauth2_password'),
-                                               pytestconfig.getoption('oauth2_client_id'))
-  elif pytestconfig.getoption('use_dummy_oauth') is not None:
-    auth_adapter = DummyOAuthServerAdapter(oauth_token_endpoint, 'fake_uss2')
-  else:
-    raise ValueError(
-      'You must provide either an OAuth service account, or a username, '
-      'password and client ID')
-
+  auth_adapter = make_auth_adapter(pytestconfig, 'oauth', 'fake_uss2')
   s = DSSTestSession(scd_dss_endpoint, auth_adapter)
-  #s.mount('http://', auth_adapter)
-  #s.mount('https://', auth_adapter)
   return s
 
 
