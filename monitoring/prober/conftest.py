@@ -38,8 +38,8 @@ class AuthAdapter(object):
     token = self._tokens[intended_audience]
     return {'Authorization': 'Bearer ' + token}
 
-  def add_headers(self, request: requests.Request, **kwargs):
-    for k, v in self.get_headers(request.url).items():
+  def add_headers(self, request: requests.PreparedRequest, scopes: List[str]):
+    for k, v in self.get_headers(request.url, scopes).items():
       request.headers[k] = v
 
 
@@ -126,27 +126,25 @@ class DSSTestSession(requests.Session):
     if request.url.startswith('/'):
       request.url = self._prefix_url + request.url
 
-    # Automatically add auth header if auth adapter exists
-    if self._auth_adapter:
-      self._auth_adapter.add_headers(request)
-
     return super().prepare_request(request, **kwargs)
 
-  # Overrides method on request.Session
-  def get(self, url, **kwargs):
-    return super().get(url, **kwargs)
+  def request(self, method, url, **kwargs):
+    if 'auth' not in kwargs and self._auth_adapter:
+      scopes = None
+      if 'scopes' in kwargs:
+        scopes = kwargs['scopes']
+        del kwargs['scopes']
+      if 'scope' in kwargs:
+        scopes = [kwargs['scopes']]
+        del kwargs['scope']
+      if scopes is None:
+        scopes = ALL_SCOPES
+      def auth(prepared_request: requests.PreparedRequest) -> requests.PreparedRequest:
+        self._auth_adapter.add_headers(prepared_request, scopes)
+        return prepared_request
+      kwargs['auth'] = auth
 
-  # Overrides method on request.Session
-  def put(self, url, **kwargs):
-    return super().put(url, **kwargs)
-
-  # Overrides method on request.Session
-  def post(self, url, **kwargs):
-    return super().post(url, **kwargs)
-
-  # Overrides method on request.Session
-  def delete(self, url, **kwargs):
-    return super().delete(url, **kwargs)
+    return super().request(method, url, **kwargs)
 
   def issue_token(self, scopes):
     intended_audience = urllib.parse.urlparse(self._prefix_url).hostname
