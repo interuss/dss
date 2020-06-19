@@ -2,6 +2,7 @@ import copy
 import requests
 import urllib.parse
 import uuid
+import traceback
 from typing import Dict, List
 
 from google.auth.transport import requests as google_requests
@@ -17,8 +18,11 @@ SCOPES = [
 ]
 
 
-class AuthAdapter(requests.adapters.HTTPAdapter):
+class AuthAdapter(object):
   """Base class for requests adapters that add JWTs to requests."""
+
+  def __init__(self):
+    self._tokens = {}
 
   def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
     """Subclasses must return a bearer token for the given audience."""
@@ -48,7 +52,6 @@ class DummyOAuthServerAdapter(AuthAdapter):
     self._oauth_token_endpoint = token_endpoint
     self._sub = sub
     self._oauth_session = oauth_session
-    self._tokens = {}
 
   def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
     url = '{}?grant_type=client_credentials&scope={}&intended_audience={}&issuer=dummy&sub={}'.format(
@@ -69,7 +72,6 @@ class ServiceAccountAuthAdapter(AuthAdapter):
 
     self._oauth_token_endpoint = token_endpoint
     self._oauth_session = oauth_session
-    self._tokens = {}
 
   def issue_token(self, intended_audience, scopes):
     url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
@@ -89,7 +91,6 @@ class UsernamePasswordAuthAdapter(AuthAdapter):
     self._username = username
     self._password = password
     self._client_id = client_id
-    self._tokens = {}
 
   def issue_token(self, intended_audience, scopes):
     scopes.append('aud:{}'.format(intended_audience))
@@ -103,23 +104,35 @@ class UsernamePasswordAuthAdapter(AuthAdapter):
     return response['access_token']
 
 
-class PrefixURLSession(requests.Session):
-  """Requests session that adds a prefix to URLs that start with a '/'."""
+class DSSTestSession(requests.Session):
+  """
+  Requests session that provides additional functionality for DSS tests:
+    * Adds a prefix to URLs that start with a '/'.
+    * Automatically applies authorization according to adapter, when present
+  """
 
-  def __init__(self, prefix_url):
+  def __init__(self, prefix_url: str, auth_adapter: AuthAdapter = None):
     super().__init__()
 
     self._prefix_url = prefix_url
+    self._auth_adapter = auth_adapter
 
+  # Overrides methods on requests.Session
   def prepare_request(self, request, **kwargs):
+    # Automatically prefix any unprefixed URLs
     if request.url.startswith('/'):
       request.url = self._prefix_url + request.url
+
+    # Automatically add auth header if auth adapter exists
+    if self._auth_adapter:
+      for k, v in self._auth_adapter.get_headers(request.url).items():
+        request.headers[k] = v
+
     return super().prepare_request(request, **kwargs)
 
   def issue_token(self, scopes):
-    adapter = self.get_adapter(self._prefix_url)
     intended_audience = urllib.parse.urlparse(self._prefix_url).hostname
-    return adapter.issue_token(intended_audience, scopes)
+    return self._auth_adapter.issue_token(intended_audience, scopes)
 
 
 def pytest_addoption(parser):
@@ -169,9 +182,9 @@ def session(pytestconfig):
     raise ValueError('Missing required --dss-endpoint')
   api_version_role = pytestconfig.getoption('api_version_role', '')
 
-  s = PrefixURLSession(dss_endpoint + api_version_role)
-  s.mount('http://', auth_adapter)
-  s.mount('https://', auth_adapter)
+  s = DSSTestSession(dss_endpoint + api_version_role, auth_adapter)
+  #s.mount('http://', auth_adapter)
+  #s.mount('https://', auth_adapter)
   return s
 
 
@@ -200,9 +213,9 @@ def scd_session(pytestconfig):
         'You must provide either an OAuth service account, or a username, '
         'password and client ID')
 
-  s = PrefixURLSession(scd_dss_endpoint)
-  s.mount('http://', auth_adapter)
-  s.mount('https://', auth_adapter)
+  s = DSSTestSession(scd_dss_endpoint, auth_adapter)
+  #s.mount('http://', auth_adapter)
+  #s.mount('https://', auth_adapter)
   return s
 
 
@@ -231,23 +244,20 @@ def scd_session2(pytestconfig):
       'You must provide either an OAuth service account, or a username, '
       'password and client ID')
 
-  s = PrefixURLSession(scd_dss_endpoint)
-  s.mount('http://', auth_adapter)
-  s.mount('https://', auth_adapter)
+  s = DSSTestSession(scd_dss_endpoint, auth_adapter)
+  #s.mount('http://', auth_adapter)
+  #s.mount('https://', auth_adapter)
   return s
 
 
 @pytest.fixture(scope='function')
 def rogue_session(pytestconfig):
-  auth_adapter = requests.Session()
   dss_endpoint = pytestconfig.getoption('dss_endpoint')
   api_version_role = pytestconfig.getoption('api_version_role', '')
   if dss_endpoint is None:
     raise ValueError('Missing required --dss-endpoint')
 
-  s = PrefixURLSession(dss_endpoint + api_version_role)
-  s.mount('http://', auth_adapter)
-  s.mount('https://', auth_adapter)
+  s = DSSTestSession(dss_endpoint + api_version_role, None)
   return s
 
 
