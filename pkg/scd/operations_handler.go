@@ -143,7 +143,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	var response *scdpb.SearchOperationReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Perform search query on Store
-		ops, err := r.SearchOperations(ctx, vol4, owner)
+		ops, err := r.SearchOperations(ctx, vol4)
 		if err != nil {
 			return err
 		}
@@ -296,7 +296,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		if err == scderr.MissingOVNsInternalError() {
 			// The client is missing some OVNs; provide the pointers to the
 			// information they need
-			ops, err := r.SearchOperations(ctx, uExtent, owner)
+			ops, err := r.SearchOperations(ctx, uExtent)
 			if err != nil {
 				return err
 			}

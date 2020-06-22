@@ -22,8 +22,8 @@ type Operation interface {
 	// and subscriptionBaseURL is created.
 	UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error)
 
-	// SearchOperations returns all operations ownded by "owner" intersecting "v4d".
-	SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error)
+	// SearchOperations returns all operations intersecting "v4d".
+	SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error)
 }
 
 // Subscription abstracts subscription-specific interactions with the backing repository.

@@ -238,7 +238,7 @@ func (c *repo) fetchSubscriptionByIDAndOwner(ctx context.Context, q dsssql.Query
 		},
 		StartTime: result.StartTime,
 		EndTime:   result.EndTime,
-	}, owner)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -424,7 +424,7 @@ func (c *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription
 					return s.Cells, nil
 				}),
 			},
-		}, s.Owner)
+		})
 		if err != nil {
 			return nil, nil, err
 		}
