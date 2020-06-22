@@ -15,7 +15,6 @@ import (
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -210,39 +209,6 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 	return result, nil
 }
 
-// fetchMaxSubscriptionCountByCellAndOwner counts how many subscriptions the
-// owner has in each one of these cells, and returns the number of subscriptions
-// in the cell with the highest number of subscriptions.
-func (c *repo) fetchMaxSubscriptionCountByCellAndOwner(
-	ctx context.Context, q dsssql.Queryable, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
-	var query = `
-    SELECT
-      IFNULL(MAX(subscriptions_per_cell_id), 0)
-    FROM (
-      SELECT
-        COUNT(*) AS subscriptions_per_cell_id
-      FROM
-        scd_subscriptions AS s,
-        scd_cells_subscriptions as c
-      WHERE
-        s.id = c.subscription_id AND
-        s.owner = $1 AND
-        c.cell_id = ANY($2) AND
-        s.ends_at >= $3
-      GROUP BY c.cell_id
-    )`
-
-	cids := make([]int64, len(cells))
-	for i, cell := range cells {
-		cids[i] = int64(cell)
-	}
-
-	row := q.QueryRowContext(ctx, query, owner, pq.Array(cids), c.clock.Now())
-	var ret int
-	err := row.Scan(&ret)
-	return ret, err
-}
-
 func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
 	var (
 		upsertQuery = fmt.Sprintf(`
@@ -327,73 +293,15 @@ func (c *repo) GetSubscription(ctx context.Context, id scdmodels.ID) (*scdmodels
 	}
 }
 
-// UpsertSubscription upserts subscription into the store and returns
-// the resulting subscription including its ID.
-func (c *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error) {
-	old, err := c.fetchSubscriptionByID(ctx, c.q, s.ID)
-	switch {
-	case err == sql.ErrNoRows:
-		break
-	case err != nil:
-		return nil, nil, err
-	}
-
-	switch {
-	case old == nil && !s.Version.Empty():
-		// The user wants to update an existing subscription, but one wasn't found.
-		return nil, nil, dsserr.NotFound(s.ID.String())
-	case old != nil && s.Version.Empty():
-		// The user wants to create a new subscription but it already exists.
-		return nil, nil, dsserr.AlreadyExists(s.ID.String())
-	case old != nil && !s.Version.Matches(old.Version):
-		// The user wants to update a subscription but the version doesn't match.
-		return nil, nil, dsserr.VersionMismatch("old version")
-	case old != nil && old.Owner != s.Owner:
-		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
-	}
-
-	// Check the user hasn't created too many subscriptions in this area.
-	// TODO: Revisit this logic since the SCD standard does not specify a maximum
-	// number of Subscriptions
-	count, err := c.fetchMaxSubscriptionCountByCellAndOwner(ctx, c.q, s.Cells, s.Owner)
-	if err != nil {
-		c.logger.Warn("Error fetching max subscription count", zap.Error(err))
-		return nil, nil, dsserr.Internal(
-			"failed to fetch subscription count, rejecting request")
-	} else if count >= maxSubscriptionsPerArea {
-		errMsg := "too many existing subscriptions in this area already"
-		if old != nil {
-			errMsg = errMsg + ", rejecting update request"
-		}
-		return nil, nil, dsserr.Exhausted(errMsg)
-	}
-
+// Implements repos.Subscription.UpsertSubscription
+func (c *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
 	newSubscription, err := c.pushSubscription(ctx, c.q, s)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	newSubscription.Cells = s.Cells
 
-	var affectedOperations []*scdmodels.Operation
-	if len(s.Cells) > 0 {
-		ops, err := c.searchOperations(ctx, c.q, &dssmodels.Volume4D{
-			StartTime: s.StartTime,
-			EndTime:   s.EndTime,
-			SpatialVolume: &dssmodels.Volume3D{
-				AltitudeLo: s.AltitudeLo,
-				AltitudeHi: s.AltitudeHi,
-				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-					return s.Cells, nil
-				}),
-			},
-		})
-		if err != nil {
-			return nil, nil, err
-		}
-		affectedOperations = ops
-	}
-
-	return newSubscription, affectedOperations, nil
+	return newSubscription, nil
 }
 
 // DeleteSubscription deletes the subscription identified by "id" and

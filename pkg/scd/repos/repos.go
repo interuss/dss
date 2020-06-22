@@ -37,7 +37,7 @@ type Subscription interface {
 
 	// UpsertSubscription upserts sub into the store and returns the result
 	// subscription.
-	UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error)
+	UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error)
 
 	// DeleteSubscription deletes a Subscription from the store and returns the
 	// deleted subscription.  Returns an error if the Subscription does not

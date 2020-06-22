@@ -248,7 +248,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				return dsserr.BadRequest(err.Error())
 			}
 
-			sub, _, err := r.UpsertSubscription(ctx, &scdmodels.Subscription{
+			sub, err := r.UpsertSubscription(ctx, &scdmodels.Subscription{
 				ID:         scdmodels.ID(uuid.New().String()),
 				Owner:      owner,
 				StartTime:  uExtent.StartTime,
