@@ -44,7 +44,7 @@ def test_put_isa_with_read_only_scope_token(session, isa2_uuid):
               'time_end': time_end.strftime(common.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
-      }, scope='dss.read.identification_service_areas')
+      }, scope=common.SCOPE_READ)
   assert resp.status_code == 403
 
 
