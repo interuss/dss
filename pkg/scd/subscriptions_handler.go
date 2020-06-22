@@ -142,9 +142,17 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	var response *scdpb.GetSubscriptionResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Get Subscription from Store
-		sub, err := r.GetSubscription(ctx, id, owner)
+		sub, err := r.GetSubscription(ctx, id)
 		if err != nil {
 			return err
+		}
+		if sub == nil {
+			return dsserr.NotFound(id.String())
+		}
+
+		// Check if the client is authorized to view this Subscription
+		if owner != sub.Owner {
+			return dsserr.PermissionDenied("Subscription owned by a different client")
 		}
 
 		// Convert Subscription to proto
@@ -240,17 +248,25 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 
 	var response *scdpb.DeleteSubscriptionResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
+		// Check to make sure it's ok to delete this Subscription
+		old, err := r.GetSubscription(ctx, id)
+		switch {
+		case err != nil:
+			return err
+		case old == nil: // Return a 404 here.
+			return dsserr.NotFound(id.String())
+		case old.Owner != owner:
+			return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
+		}
+
 		// Delete Subscription in Store
-		sub, err := r.DeleteSubscription(ctx, id, owner, scdmodels.Version(0))
+		err = r.DeleteSubscription(ctx, id)
 		if err != nil {
 			return err
 		}
-		if sub == nil {
-			return dsserr.Internal(fmt.Sprintf("DeleteSubscription returned no Subscription for ID: %s", id))
-		}
 
 		// Convert deleted Subscription to proto
-		p, err := sub.ToProto()
+		p, err := old.ToProto()
 		if err != nil {
 			return dsserr.Internal("error converting Subscription model to proto")
 		}

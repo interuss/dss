@@ -31,18 +31,18 @@ type Subscription interface {
 	// SearchSubscriptions returns all Subscriptions in "v4d".
 	SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error)
 
-	// GetSubscription returns the Subscription referenced by id, or nil if the
-	// Subscription doesn't exist
-	GetSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error)
+	// GetSubscription returns the Subscription referenced by id, or nil and no
+	// error if the Subscription doesn't exist
+	GetSubscription(ctx context.Context, id scdmodels.ID) (*scdmodels.Subscription, error)
 
 	// UpsertSubscription upserts sub into the store and returns the result
 	// subscription.
 	UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, []*scdmodels.Operation, error)
 
 	// DeleteSubscription deletes a Subscription from the store and returns the
-	// deleted subscription.  Returns nil and an error if the Subscription does
-	// not exist, or is owned by someone other than the specified owner.
-	DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error)
+	// deleted subscription.  Returns an error if the Subscription does not
+	// exist.
+	DeleteSubscription(ctx context.Context, id scdmodels.ID) error
 }
 
 // Repository aggregates all SCD-specific repo interfaces.

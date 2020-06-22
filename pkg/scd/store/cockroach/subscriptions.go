@@ -210,44 +210,6 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 	return result, nil
 }
 
-func (c *repo) fetchSubscriptionByIDAndOwner(ctx context.Context, q dsssql.Queryable, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
-	var query = fmt.Sprintf(`
-		SELECT
-			%s
-		FROM
-			scd_subscriptions
-		WHERE
-			id = $1
-		AND
-			owner = $2`, subscriptionFieldsWithPrefix)
-	result, err := c.fetchSubscription(ctx, q, query, id, owner)
-	if err != nil {
-		return nil, err
-	}
-	result.Cells, err = c.fetchCellsForSubscription(ctx, q, id)
-	if err != nil {
-		return nil, err
-	}
-	ops, err := c.searchOperations(ctx, q, &dssmodels.Volume4D{
-		SpatialVolume: &dssmodels.Volume3D{
-			AltitudeLo: result.AltitudeLo,
-			AltitudeHi: result.AltitudeHi,
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-				return result.Cells, nil
-			}),
-		},
-		StartTime: result.StartTime,
-		EndTime:   result.EndTime,
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, op := range ops {
-		result.DependentOperations = append(result.DependentOperations, op.ID)
-	}
-	return result, nil
-}
-
 // fetchMaxSubscriptionCountByCellAndOwner counts how many subscriptions the
 // owner has in each one of these cells, and returns the number of subscriptions
 // in the cell with the highest number of subscriptions.
@@ -353,13 +315,13 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 }
 
 // GetSubscription returns the subscription identified by "id".
-func (c *repo) GetSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Subscription, error) {
-	sub, err := c.fetchSubscriptionByIDAndOwner(ctx, c.q, id, owner)
+func (c *repo) GetSubscription(ctx context.Context, id scdmodels.ID) (*scdmodels.Subscription, error) {
+	sub, err := c.fetchSubscriptionByID(ctx, c.q, id)
 	switch err {
 	case nil:
 		return sub, nil
 	case sql.ErrNoRows:
-		return nil, dsserr.NotFound(id.String())
+		return nil, nil
 	default:
 		return nil, err
 	}
@@ -436,15 +398,13 @@ func (c *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription
 
 // DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
-func (c *repo) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error) {
+func (c *repo) DeleteSubscription(ctx context.Context, id scdmodels.ID) error {
 	const (
 		query = `
 		DELETE FROM
 			scd_subscriptions
 		WHERE
 			id = $1
-		AND
-			owner = $2
 		AND
 			0 = ALL (
 				SELECT
@@ -462,33 +422,20 @@ func (c *repo) DeleteSubscription(ctx context.Context, id scdmodels.ID, owner ds
 			)`
 	)
 
-	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := c.fetchSubscriptionByID(ctx, c.q, id)
-	switch {
-	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, dsserr.NotFound(id.String())
-	case err != nil:
-		return nil, err
-	case !version.Empty() && !version.Matches(old.Version):
-		return nil, dsserr.VersionMismatch("old version")
-	case old != nil && old.Owner != owner:
-		return nil, dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
-	}
-
-	res, err := c.q.ExecContext(ctx, query, id, owner)
+	res, err := c.q.ExecContext(ctx, query, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if rows == 0 {
-		return nil, dsserr.BadRequest("failed to delete implicit subscription with active operation")
+		return dsserr.BadRequest("failed to delete implicit subscription with active operation")
 	}
-	return old, nil
+	return nil
 }
 
 // Implements SubscriptionStore.SearchSubscriptions
