@@ -144,14 +144,14 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	)
 
 	if *enableSCD {
-		transactor := scdc.NewTransactor(crdb, logger)
+		store := scdc.NewStore(crdb, logger)
 
-		if err := transactor.Bootstrap(ctx); err != nil {
+		if err := store.Bootstrap(ctx); err != nil {
 			logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
 		}
 		scdServer = &scd.Server{
-			Transactor: transactor,
-			Timeout:    *timeout,
+			Store:   store,
+			Timeout: *timeout,
 		}
 		scopesValidators = auth.MergeOperationsAndScopesValidators(scopesValidators, scdServer.AuthScopes())
 	}
