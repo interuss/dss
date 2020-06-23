@@ -25,23 +25,45 @@ var (
 	DefaultTimeout = 10 * time.Second
 )
 
+type repo struct {
+	*isa
+	*subscription
+}
+
 // Store is an implementation of dss.Store using
 // Cockroach DB as its backend store.
 // TODO: Add the SCD interfaces here, and collapse this store with the
 // outer pkg/cockroach
 type Store struct {
-	*ISAStore
-	*SubscriptionStore
-
-	db *cockroach.DB
+	db     *cockroach.DB
+	logger *zap.Logger
+	clock  clockwork.Clock
 }
 
-// InTxnRetrier supplies a new repo, that will perform all of the DB accesses
+// Interact implements store.Interactor interface.
+func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
+	logger := logging.WithValuesFromContext(ctx, s.logger)
+
+	return &repo{
+		isa: &isa{
+			Queryable: s.db,
+			logger:    logger,
+		},
+		subscription: &subscription{
+			Queryable: s.db,
+			logger:    logger,
+			clock:     s.clock,
+		},
+	}, nil
+}
+
+// Transact supplies a new repo, that will perform all of the DB accesses
 // in a Txn, and will retry any Txn's that fail due to retry-able errors
 // (typically contention).
 // Note: Currently the Newly supplied Repo *does not* support nested calls
 // to InTxnRetrier.
-func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) error) error {
+func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) error) error {
+	logger := logging.WithValuesFromContext(ctx, s.logger)
 	// TODO: consider what tx opts we want to support.
 	// TODO: we really need to remove the upper cockroach package, and have one
 	// "store" for everything
@@ -50,19 +72,17 @@ func (s *Store) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) 
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
-		storeCopy := *s
-		if storeCopy.ISAStore != nil {
-			isaCopy := *(storeCopy.ISAStore)
-			storeCopy.ISAStore = &isaCopy
-			isaCopy.Queryable = tx
-		}
-		if storeCopy.SubscriptionStore != nil {
-			subCopy := *(storeCopy.SubscriptionStore)
-			storeCopy.SubscriptionStore = &subCopy
-			subCopy.Queryable = tx
-		}
-		err := f(&storeCopy)
-		return err
+		return f(&repo{
+			isa: &isa{
+				Queryable: tx,
+				logger:    logger,
+			},
+			subscription: &subscription{
+				Queryable: tx,
+				logger:    logger,
+				clock:     s.clock,
+			},
+		})
 	})
 }
 
@@ -84,9 +104,9 @@ func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 // NewStore returns a Store instance connected to a cockroach instance via db.
 func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
 	return &Store{
-		ISAStore:          &ISAStore{db, logger},
-		SubscriptionStore: &SubscriptionStore{db, DefaultClock, logger},
-		db:                db,
+		db:     db,
+		logger: logger,
+		clock:  DefaultClock,
 	}
 }
 
@@ -156,6 +176,16 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 	// 	onerow_enforcer bool PRIMARY KEY DEFAULT TRUE CHECK(onerow_enforcer)
 	// 	schema_version STRING NOT NULL,
 	// );
+
+	_, err := s.db.ExecContext(ctx, query)
+	return err
+}
+
+// CleanUp removes all database tables managed by s.
+func (s *Store) CleanUp(ctx context.Context) error {
+	const query = `
+	DROP TABLE IF EXISTS subscriptions;
+	DROP TABLE IF EXISTS identification_service_areas;`
 
 	_, err := s.db.ExecContext(ctx, query)
 	return err
