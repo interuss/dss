@@ -11,7 +11,6 @@ require (
 	github.com/cockroachdb/cockroach-go v0.0.0-20200504194139-73ffeee90b62
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dpjacques/clockwork v0.1.0
-	github.com/golang-migrate/migrate v3.5.4+incompatible
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec
 	github.com/golang/protobuf v1.4.2
