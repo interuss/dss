@@ -127,6 +127,29 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		INDEX cell_id_idx (cell_id),
 		INDEX operation_id_idx (operation_id)
 	);
+	CREATE TABLE IF NOT EXISTS scd_constraints (
+		id UUID PRIMARY KEY,
+		owner STRING NOT NULL,
+		version INT4 NOT NULL DEFAULT 0,
+		url STRING NOT NULL,
+		altitude_lower REAL,
+		altitude_upper REAL,
+		starts_at TIMESTAMPTZ,
+		ends_at TIMESTAMPTZ,
+		updated_at TIMESTAMPTZ NOT NULL,
+		INDEX owner_idx (owner),
+		INDEX starts_at_idx (starts_at),
+		INDEX ends_at_idx (ends_at),
+		CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)
+	);
+	CREATE TABLE IF NOT EXISTS scd_cells_constraints (
+		cell_id INT64 NOT NULL,
+		cell_level INT CHECK (cell_level BETWEEN 0 and 30),
+		constraint_id UUID NOT NULL REFERENCES scd_constraints (id) ON DELETE CASCADE,
+		PRIMARY KEY (cell_id, constraint_id),
+		INDEX cell_id_idx (cell_id),
+		INDEX constraint_id_idx (constraint_id)
+	);
 	`
 	_, err := s.db.ExecContext(ctx, query)
 	return err

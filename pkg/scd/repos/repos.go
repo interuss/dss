@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 
+	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 )
@@ -45,8 +46,31 @@ type Subscription interface {
 	DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error)
 }
 
+// repos.Constraint abstracts constraint-specific interactions with the backing store.
+type Constraint interface {
+	// SearchConstraints returns all Constraints in "v4d".
+	SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Constraint, error)
+
+	// GetConstraint returns the Constraint referenced by id, or
+	// (nil, sql.ErrNoRows) if the Constraint doesn't exist
+	GetConstraint(ctx context.Context, id scdmodels.ID) (*scdmodels.Constraint, error)
+
+	// GetConstraintCells returns the S2 cells in which the Constraint with the
+	// referenced id resides.
+	GetConstraintCells(ctx context.Context, id scdmodels.ID) (s2.CellUnion, error)
+
+	// UpsertConstraint upserts "constraint" covering "cells" into the store.
+	UpsertConstraint(ctx context.Context, constraint *scdmodels.Constraint, cells s2.CellUnion) (*scdmodels.Constraint, error)
+
+	// DeleteConstraint deletes a Constraint from the store and returns the
+	// deleted subscription.  Returns nil and an error if the Constraint does
+	// not exist.
+	DeleteConstraint(ctx context.Context, id scdmodels.ID) error
+}
+
 // Repository aggregates all SCD-specific repo interfaces.
 type Repository interface {
 	Operation
 	Subscription
+	Constraint
 }

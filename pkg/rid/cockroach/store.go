@@ -168,7 +168,7 @@ func (s *Store) GetVersion(ctx context.Context) (string, error) {
 	const query = `
 		SELECT EXISTS (
   		SELECT *
-		  FROM information_schema.tables 
+		  FROM information_schema.tables
    		WHERE table_name = 'cells_subscriptions'
    )`
 	row := s.db.QueryRowContext(ctx, query)
@@ -182,6 +182,24 @@ func (s *Store) GetVersion(ctx context.Context) (string, error) {
 		return "v1.0.0", nil
 	}
 	// Version without cells joins table.
+
+	// We treat the existence of scd_constraints as running on the
+	// newest version, 3.0.0
+	const query3 = `
+    SELECT EXISTS (
+      SELECT *
+      FROM information_schema.tables
+      WHERE table_name = 'scd_constraints'
+   )`
+	row = s.db.QueryRowContext(ctx, query3)
+	err = row.Scan(&ret)
+	if err != nil {
+		return "", err
+	}
+	if ret {
+		return "v3.0.0", nil
+	}
+
 	// TODO: leverage proper migrations and use something like the query below.
 	return "v2.0.0", nil
 }

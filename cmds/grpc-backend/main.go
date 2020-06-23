@@ -35,8 +35,8 @@ import (
 )
 
 const (
-	// The code at this version requires a major schema version equal to 2.
-	RequiredMajorSchemaVersion = "v2"
+	// The code at this version requires a major schema version equal to 3.
+	RequiredMajorSchemaVersion = "v3"
 )
 
 var (
@@ -129,8 +129,6 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
 	}
 
-	MustSupportSchema(ctx, store)
-
 	var (
 		dssServer = &rid.Server{
 			App:     application.NewFromTransactor(store, logger),
@@ -155,6 +153,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		}
 		scopesValidators = auth.MergeOperationsAndScopesValidators(scopesValidators, scdServer.AuthScopes())
 	}
+
+	MustSupportSchema(ctx, store)
 
 	var keyResolver auth.KeyResolver
 	switch {

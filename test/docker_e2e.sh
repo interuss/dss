@@ -124,6 +124,7 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--link http-gateway-for-testing:local-gateway \
 	-v $RESULTFILE:/app/test_result \
 	e2e-test \
+	${1:-.} \
 	--junitxml=/app/test_result \
 	--oauth-token-endpoint http://oauth:8085/token \
 	--dss-endpoint http://local-gateway:8082 \

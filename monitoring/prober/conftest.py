@@ -131,3 +131,7 @@ def op1_uuid():
 @pytest.fixture(scope='module')
 def op2_uuid():
   return str(uuid.uuid4())
+
+@pytest.fixture(scope='module')
+def c1_uuid():
+  return str(uuid.uuid4())

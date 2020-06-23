@@ -5,4 +5,4 @@ WORKDIR /app
 RUN pip install -r requirements.txt
 RUN rm -rf __pycache__
 
-ENTRYPOINT ["pytest", "."]
+ENTRYPOINT ["pytest"]

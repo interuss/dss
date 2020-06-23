@@ -15,6 +15,9 @@ from . import common
 from .common import SCOPE_SC, SCOPE_CI, SCOPE_CM
 
 
+BASE_URL = 'https://example.com/uss'
+
+
 def _make_op1_request():
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -22,9 +25,9 @@ def _make_op1_request():
     'extents': [common.make_vol4(time_start, time_end, 0, 120, common.make_circle(-56, 178, 50))],
     'old_version': 0,
     'state': 'Accepted',
-    'uss_base_url': 'https://example.com/dss',
+    'uss_base_url': BASE_URL,
     'new_subscription': {
-      'uss_base_url': 'https://example.com/dss',
+      'uss_base_url': BASE_URL,
       'notify_for_constraints': False
     }
   }
@@ -108,7 +111,7 @@ def test_create_op(scd_session, op1_uuid):
   data = resp.json()
   op = data['operation_reference']
   assert op['id'] == op1_uuid
-  assert op['uss_base_url'] == 'https://example.com/dss'
+  assert op['uss_base_url'] == BASE_URL
   assert op['time_start']['value'] == req['extents'][0]['time_start']['value']
   assert op['time_end']['value'] == req['extents'][0]['time_end']['value']
   assert op['version'] == 1
@@ -131,7 +134,7 @@ def test_get_op_by_id(scd_session, op1_uuid):
   data = resp.json()
   op = data['operation_reference']
   assert op['id'] == op1_uuid
-  assert op['uss_base_url'] == 'https://example.com/dss'
+  assert op['uss_base_url'] == BASE_URL
   assert op['version'] == 1
   assert 'state' not in op
 
@@ -219,7 +222,7 @@ def test_mutate_op(scd_session, op1_uuid):
     'extents': req['extents'],
     'old_version': existing_op['version'],
     'state': 'Activated',
-    'uss_base_url': 'https://example.com/dss2',
+    'uss_base_url': 'https://example.com/uss2',
     'subscription_id': existing_op['subscription_id']
   }
 
@@ -235,7 +238,7 @@ def test_mutate_op(scd_session, op1_uuid):
   data = resp.json()
   op = data['operation_reference']
   assert op['id'] == op1_uuid
-  assert op['uss_base_url'] == 'https://example.com/dss2'
+  assert op['uss_base_url'] == 'https://example.com/uss2'
   assert op['version'] == 2
   assert op['subscription_id'] == existing_op['subscription_id']
   assert 'state' not in op
