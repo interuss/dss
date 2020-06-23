@@ -69,6 +69,6 @@ def test_op_bad_state_transition(scd_session, op1_uuid):
   # Create operation with Closed state
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
-    req['state'] = 'Closed'
+    req['state'] = 'Ended'
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 400, resp.content
