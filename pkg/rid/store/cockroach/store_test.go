@@ -241,11 +241,11 @@ func TestBasicTxn(t *testing.T) {
 	tx1, err := store.db.Begin()
 	require.NoError(t, err)
 	s1 := &repo{
-		isa: &isa{
+		isaRepo: &isaRepo{
 			Queryable: tx1,
 			logger:    logging.Logger,
 		},
-		subscription: &subscription{
+		subscriptionRepo: &subscriptionRepo{
 			Queryable: tx1,
 			logger:    logging.Logger,
 			clock:     DefaultClock,
@@ -255,11 +255,11 @@ func TestBasicTxn(t *testing.T) {
 	tx2, err := store.db.Begin()
 	require.NoError(t, err)
 	s2 := &repo{
-		isa: &isa{
+		isaRepo: &isaRepo{
 			Queryable: tx2,
 			logger:    logging.Logger,
 		},
-		subscription: &subscription{
+		subscriptionRepo: &subscriptionRepo{
 			Queryable: tx2,
 			logger:    logging.Logger,
 			clock:     DefaultClock,

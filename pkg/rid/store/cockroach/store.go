@@ -26,12 +26,13 @@ var (
 )
 
 type repo struct {
-	*isa
-	*subscription
+	*isaRepo
+	*subscriptionRepo
 }
 
-// Store is an implementation of dss.Store using
-// Cockroach DB as its backend store.
+// Store is an implementation of store.Store using Cockroach DB as its backend
+// store.
+//
 // TODO: Add the SCD interfaces here, and collapse this store with the
 // outer pkg/cockroach
 type Store struct {
@@ -45,11 +46,11 @@ func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	logger := logging.WithValuesFromContext(ctx, s.logger)
 
 	return &repo{
-		isa: &isa{
+		isaRepo: &isaRepo{
 			Queryable: s.db,
 			logger:    logger,
 		},
-		subscription: &subscription{
+		subscriptionRepo: &subscriptionRepo{
 			Queryable: s.db,
 			logger:    logger,
 			clock:     s.clock,
@@ -60,8 +61,6 @@ func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 // Transact supplies a new repo, that will perform all of the DB accesses
 // in a Txn, and will retry any Txn's that fail due to retry-able errors
 // (typically contention).
-// Note: Currently the Newly supplied Repo *does not* support nested calls
-// to InTxnRetrier.
 func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) error) error {
 	logger := logging.WithValuesFromContext(ctx, s.logger)
 	// TODO: consider what tx opts we want to support.
@@ -73,11 +72,11 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
-			isa: &isa{
+			isaRepo: &isaRepo{
 				Queryable: tx,
 				logger:    logger,
 			},
-			subscription: &subscription{
+			subscriptionRepo: &subscriptionRepo{
 				Queryable: tx,
 				logger:    logger,
 				clock:     s.clock,

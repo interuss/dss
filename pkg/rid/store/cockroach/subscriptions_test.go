@@ -15,7 +15,7 @@ import (
 
 var (
 	// Ensure the struct conforms to the interface
-	_                 repos.Subscription = &subscription{}
+	_                 repos.Subscription = &subscriptionRepo{}
 	subscriptionsPool                    = []struct {
 		name  string
 		input *ridmodels.Subscription
