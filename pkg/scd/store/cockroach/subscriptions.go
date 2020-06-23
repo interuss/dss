@@ -17,11 +17,6 @@ import (
 	"go.uber.org/multierr"
 )
 
-const (
-	// Defined in requirement DSS0030.
-	maxSubscriptionsPerArea = 10
-)
-
 var (
 	subscriptionFieldsWithIndices   [11]string
 	subscriptionFieldsWithPrefix    string
