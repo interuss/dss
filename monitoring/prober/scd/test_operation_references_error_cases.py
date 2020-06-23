@@ -83,6 +83,10 @@ def test_op_already_exists(scd_session, op1_uuid):
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 409, resp.content
 
+  # Delete operation
+  resp = scd_session.delete('/operation_references/{}'.format(op1_uuid))
+  assert resp.status_code == 200, resp.content
+
 
 def test_op_404_version1(scd_session, op1_uuid):
   with open('./scd/resources/op_404_version1.json', 'r') as f:
@@ -129,3 +133,7 @@ def test_op_repeated_requests(scd_session, op1_uuid):
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 400, resp.content
+
+  # Delete operation
+  resp = scd_session.delete('/operation_references/{}'.format(op1_uuid))
+  assert resp.status_code == 200, resp.content
