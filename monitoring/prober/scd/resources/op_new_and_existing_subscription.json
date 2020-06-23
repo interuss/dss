@@ -42,15 +42,15 @@
         "format": "RFC3339"
       },
       "timeEnd": {
-        "value": "2020-06-30T16:02:00.00Z",
+        "value": "2030-06-30T16:02:00.00Z",
         "format": "RFC3339"
       }
     }
   ],
   "oldVersion": 0,
-  "key": [""],
+  "key": [],
   "state": "Accepted",
-  "ussBaseUrl": "http://localhost:8080",
+  "ussBaseUrl": "https://localhost:8080",
   "subscription_id": "a0a9e3ec-5110-4bcf-b34d-1e9dfce7d2a8",
   "new_subscription": {
     "uss_base_url": "https://localhost:8080",

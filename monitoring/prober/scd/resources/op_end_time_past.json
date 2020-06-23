@@ -48,9 +48,9 @@
     }
   ],
   "oldVersion": 0,
-  "key": [""],
+  "key": [],
   "state": "Accepted",
-  "ussBaseUrl": "http://localhost:8080",
+  "ussBaseUrl": "https://localhost:8080",
   "new_subscription": {
     "uss_base_url": "https://localhost:8080",
     "notify_for_constraints": false
