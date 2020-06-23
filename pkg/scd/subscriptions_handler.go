@@ -68,9 +68,9 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		NotifyForConstraints: params.NotifyForConstraints,
 	}
 
-	// Validate subrequested Subscription
+	// Validate requested Subscription
 	if !subreq.NotifyForOperations && !subreq.NotifyForConstraints {
-		return nil, dsserr.BadRequest("no notification triggers subrequested for Subscription")
+		return nil, dsserr.BadRequest("no notification triggers requested for Subscription")
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
