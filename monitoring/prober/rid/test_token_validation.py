@@ -25,14 +25,11 @@ def test_validate_token_bad_user(session):
   resp = session.get('/validate_oauth?owner=bad_user')
   assert resp.status_code == 403
 
-def test_put_isa_with_read_only_scope_token(rogue_session, session, isa2_uuid):
-  read_only_token = session.issue_token(['dss.read.identification_service_areas'])
-  rogue_session.headers['Authorization'] = f'Bearer {read_only_token}'
-
+def test_put_isa_with_read_only_scope_token(session, isa2_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = rogue_session.put(
+  resp = session.put(
       '/identification_service_areas/{}'.format(isa2_uuid),
       json={
           'extents': {
@@ -47,7 +44,7 @@ def test_put_isa_with_read_only_scope_token(rogue_session, session, isa2_uuid):
               'time_end': time_end.strftime(common.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
-      })
+      }, scope=common.SCOPE_READ)
   assert resp.status_code == 403
 
 
@@ -74,21 +71,21 @@ def test_create_isa(session, isa1_uuid):
   assert resp.status_code == 200
 
 
-def test_get_isa_without_token(rogue_session, isa1_uuid):
-  resp = rogue_session.get('/identification_service_areas/{}'.format(isa1_uuid))
+def test_get_isa_without_token(no_auth_session, isa1_uuid):
+  resp = no_auth_session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 401
   assert resp.json()['message'] == 'missing token'
 
 
-def test_get_isa_with_fake_token(rogue_session, isa1_uuid):
-  rogue_session.headers['Authorization'] = 'Bearer fake_token'
-  resp = rogue_session.get('/identification_service_areas/{}'.format(isa1_uuid))
+def test_get_isa_with_fake_token(no_auth_session, isa1_uuid):
+  no_auth_session.headers['Authorization'] = 'Bearer fake_token'
+  resp = no_auth_session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 401
   assert resp.json()['message'] == 'token contains an invalid number of segments'
 
 
-def test_get_isa_without_scope(rogue_session, session, isa1_uuid):
-  no_scope_token = session.issue_token([])
-  rogue_session.headers['Authorization'] = f'Bearer {no_scope_token}'
-  resp = rogue_session.get('/identification_service_areas/{}'.format(isa1_uuid))
+def test_get_isa_without_scope(session, isa1_uuid):
+  # TODO: A real OAuth server is unlikely to grant tokens without any scopes.
+  # Adapt this test to work on a real OAuth server, or remove.
+  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid), scope='')
   assert resp.status_code == 403
