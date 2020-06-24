@@ -39,7 +39,7 @@ func (d Direction) String() string {
 }
 
 var (
-	path      = flag.String("migration_dir", "", "path to db migration files directory")
+	path      = flag.String("schemas_dir", "", "path to db migration files directory")
 	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: v1.0.0)")
 	step      = flag.Int("migration_step", 0, "the db migration step to go to")
 
@@ -62,7 +62,7 @@ var (
 func main() {
 	flag.Parse()
 	if *path == "" {
-		log.Panic("Must specify migration_dir path")
+		log.Panic("Must specify schemas_dir path")
 	}
 	if (*dbVersion == "" && *step == 0) || (*dbVersion != "" && *step != 0) {
 		log.Panic("Must specify a db_version or migration_step to goto")
@@ -107,6 +107,7 @@ func main() {
 	}
 	totalMove := 0
 	migrateDirection := myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
+	preMigrationStep, _, _ := myMigrater.Version()
 	for migrateDirection != 0 {
 		migraterErr = myMigrater.Steps(int(migrateDirection))
 		if migraterErr != nil {
@@ -116,21 +117,21 @@ func main() {
 		log.Printf("Migrated %s by %d step", migrateDirection.String(), int(math.Abs(float64(int(migrateDirection)))))
 		migrateDirection = myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
 	}
+	postMigrationStep, dirty, err := myMigrater.Version()
+	if err != nil {
+		log.Fatal("Failed to get Migration Step for confirmation")
+	}
 	if totalMove == 0 {
 		log.Println("No Changes")
 	} else {
-		log.Printf("Moved %d steps %s in total", int(math.Abs(float64(totalMove))), migrateDirection.String())
+		log.Printf("Moved %d steps %s in total from Step %d to Step %d", int(math.Abs(float64(totalMove))), migrateDirection.String(), preMigrationStep, postMigrationStep)
 	}
 
 	currentDBVersion, err := getCurrentDBVersion(postgresURI)
 	if err != nil {
 		log.Fatal("Failed to get Current DB version for confirmation")
 	}
-	migrationStep, dirty, err := myMigrater.Version()
-	if err != nil {
-		log.Fatal("Failed to get Migration Step for confirmation")
-	}
-	log.Printf("DB Version: %s, Migration Step # %d, Dirty: %v", currentDBVersion, migrationStep, dirty)
+	log.Printf("DB Version: %s, Migration Step # %d, Dirty: %v", currentDBVersion, postMigrationStep, dirty)
 }
 
 func getCurrentDBVersion(crdbURI string) (string, error) {
