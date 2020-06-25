@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
@@ -51,7 +50,6 @@ func init() {
 func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Constraint, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
-		logging.Logger.Warn(fmt.Sprintf("fetchConstraints: error in QueryContext with %s", query))
 		return nil, err
 	}
 	defer rows.Close()
@@ -74,14 +72,12 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 			&updatedAt,
 		)
 		if err != nil {
-			logging.Logger.Warn("fetchConstraints: error in rows.Scan")
 			return nil, err
 		}
 		c.OVN = scdmodels.NewOVNFromTime(updatedAt, c.ID.String())
 		payload = append(payload, c)
 	}
 	if err := rows.Err(); err != nil {
-		logging.Logger.Warn("fetchConstraints: error in rows")
 		return nil, err
 	}
 	return payload, nil
@@ -90,11 +86,9 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 func (c *repo) fetchConstraint(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Constraint, error) {
 	constraints, err := c.fetchConstraints(ctx, q, query, args...)
 	if err != nil {
-		logging.Logger.Warn("fetchConstraint: error in fetchConstraints")
 		return nil, err
 	}
 	if len(constraints) > 1 {
-		logging.Logger.Warn(fmt.Sprintf("fetchConstraint: returned %d constraints when 1 was expected", len(constraints)))
 		return nil, multierr.Combine(err, fmt.Errorf("query returned %d constraints", len(constraints)))
 	}
 	if len(constraints) == 0 {
