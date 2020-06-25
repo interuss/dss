@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -39,17 +40,16 @@ func (d Direction) String() string {
 }
 
 var (
-	path      = flag.String("schemas_dir", "", "path to db migration files directory")
+	path      = flag.String("schemas_dir", "/Users/pcharlie/charlie_dss/dss/build/db-schemas/scd", "path to db migration files directory")
 	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: v1.0.0)")
-	step      = flag.Int("migration_step", 0, "the db migration step to go to")
+	step      = flag.Int("migration_step", 1, "the db migration step to go to")
 
 	cockroachParams = struct {
-		host            *string
-		port            *int
-		sslMode         *string
-		sslDir          *string
-		user            *string
-		applicationName *string
+		host    *string
+		port    *int
+		sslMode *string
+		sslDir  *string
+		user    *string
 	}{
 		host:    flag.String("cockroach_host", "0.0.0.0", "cockroach host to connect to"),
 		port:    flag.Int("cockroach_port", 26257, "cockroach port to connect to"),
@@ -74,6 +74,7 @@ func main() {
 		"ssl_mode":         *cockroachParams.sslMode,
 		"ssl_dir":          *cockroachParams.sslDir,
 		"application_name": "SchemaManager",
+		"db_name":          filepath.Base(*path),
 	}
 	postgresURI, err := dssCockroach.BuildURI(uriParams)
 	if err != nil {
@@ -114,7 +115,7 @@ func main() {
 			log.Fatal(migraterErr)
 		}
 		totalMove += int(migrateDirection)
-		log.Printf("Migrated %s by %d step", migrateDirection.String(), int(math.Abs(float64(int(migrateDirection)))))
+		log.Printf("Migrated %s by %d step", migrateDirection.String(), intAbs(int(migrateDirection)))
 		migrateDirection = myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
 	}
 	postMigrationStep, dirty, err := myMigrater.Version()
@@ -124,7 +125,7 @@ func main() {
 	if totalMove == 0 {
 		log.Println("No Changes")
 	} else {
-		log.Printf("Moved %d steps %s in total from Step %d to Step %d", int(math.Abs(float64(totalMove))), migrateDirection.String(), preMigrationStep, postMigrationStep)
+		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMove), preMigrationStep, postMigrationStep)
 	}
 
 	currentDBVersion, err := getCurrentDBVersion(postgresURI)
@@ -132,6 +133,10 @@ func main() {
 		log.Fatal("Failed to get Current DB version for confirmation")
 	}
 	log.Printf("DB Version: %s, Migration Step # %d, Dirty: %v", currentDBVersion, postMigrationStep, dirty)
+}
+
+func intAbs(x int) int {
+	return int(math.Abs(float64(x)))
 }
 
 func getCurrentDBVersion(crdbURI string) (string, error) {
@@ -192,7 +197,7 @@ func parseVersion(version string) [3]int {
 func (m *MyMigrate) MigrationDirection(dbURI string, desiredVersion string, desireStep int) Direction {
 	if desireStep != 0 {
 		migrateStep, dirty, err := m.Version()
-		if err != nil {
+		if err != migrate.ErrNilVersion && err != nil {
 			log.Panic(err)
 		}
 		if dirty {
