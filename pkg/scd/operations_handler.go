@@ -19,11 +19,10 @@ import (
 // the specified version.
 func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.DeleteOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
 	// Retrieve Operation ID
-	idString := req.GetEntityuuid()
-	if idString == "" {
+	id := scdmodels.ID(req.GetEntityuuid())
+	if id.Empty() {
 		return nil, dsserr.BadRequest("missing Operation ID")
 	}
-	id := scdmodels.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
