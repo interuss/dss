@@ -356,6 +356,10 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 			if _, match := keyIdx[op.OVN]; !match {
 				return nil, nil, scderr.MissingOVNsInternalError()
 			}
+			delete(keyIdx, op.OVN)
+		}
+		if len(keyIdx) != 0 {
+			return nil, nil, dsserr.BadRequest("Invalid OVN present")
 		}
 	default:
 		// We default to not checking the OVNs for now for all other operation states.

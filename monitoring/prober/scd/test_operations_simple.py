@@ -96,8 +96,9 @@ def test_op1_does_not_exist_query_1(scd_session, op1_uuid):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
+  end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(89.999, 180, 300))
+    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(89.999, 180, 300))
   })
   assert resp.status_code == 200, resp.content
   assert op1_uuid not in [op['id'] for op in resp.json().get('operation_references', [])]
@@ -110,8 +111,9 @@ def test_op1_does_not_exist_query_2(scd_session2, op1_uuid):
   if scd_session2 is None:
     return
   time_now = datetime.datetime.utcnow()
+  end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session2.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(89.999, 180, 300))
+    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(89.999, 180, 300))
   })
   assert resp.status_code == 200, resp.content
   assert op1_uuid not in [op['id'] for op in resp.json().get('operation_references', [])]
@@ -265,8 +267,9 @@ def test_read_ops_from_uss1(scd_session, op1_uuid, op2_uuid):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
+  end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(89.999, 180, 300))
+    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(89.999, 180, 300))
   })
   assert resp.status_code == 200, resp.content
 
@@ -287,8 +290,9 @@ def test_read_ops_from_uss2(scd_session2, op1_uuid, op2_uuid):
   if scd_session2 is None:
     return
   time_now = datetime.datetime.utcnow()
+  end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session2.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(89.999, 180, 300))
+    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(89.999, 180, 300))
   })
   assert resp.status_code == 200, resp.content
 
