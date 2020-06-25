@@ -83,6 +83,9 @@ func main() {
 	crdbURI := strings.Replace(postgresURI, "postgresql", "cockroachdb", 1)
 	*path = fmt.Sprintf("file://%v", *path)
 	migrater, migraterErr := migrate.New(*path, crdbURI)
+	if migraterErr != nil {
+		log.Panic(migraterErr)
+	}
 	myMigrater := &MyMigrate{migrater}
 	defer func() {
 		if migraterErr == nil {
