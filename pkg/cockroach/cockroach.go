@@ -52,7 +52,7 @@ func BuildURI(params map[string]string) (string, error) {
 		db = fmt.Sprintf("/%s", db)
 	}
 	if ssl == "disable" {
-		return fmt.Sprintf("postgresql://%s@%s:%s/%s?application_name=%s&sslmode=disable", u, h, p, db, an), nil
+		return fmt.Sprintf("postgresql://%s@%s:%s%s?application_name=%s&sslmode=disable", u, h, p, db, an), nil
 	}
 	dir := params["ssl_dir"]
 	if dir == "" {
@@ -60,7 +60,7 @@ func BuildURI(params map[string]string) (string, error) {
 	}
 
 	return fmt.Sprintf(
-		"postgresql://%s@%s:%s/%s?application_name=%s&sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.key",
+		"postgresql://%s@%s:%s%s?application_name=%s&sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.key",
 		u, h, p, db, an, ssl, dir, dir, u, dir, u,
 	), nil
 }
