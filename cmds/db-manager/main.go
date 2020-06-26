@@ -40,9 +40,9 @@ func (d Direction) String() string {
 }
 
 var (
-	path      = flag.String("schemas_dir", "/Users/pcharlie/charlie_dss/dss/build/db-schemas/scd", "path to db migration files directory")
+	path      = flag.String("schemas_dir", "", "path to db migration files directory")
 	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: v1.0.0)")
-	step      = flag.Int("migration_step", 1, "the db migration step to go to")
+	step      = flag.Int("migration_step", 0, "the db migration step to go to")
 
 	cockroachParams = struct {
 		host    *string
@@ -51,7 +51,7 @@ var (
 		sslDir  *string
 		user    *string
 	}{
-		host:    flag.String("cockroach_host", "0.0.0.0", "cockroach host to connect to"),
+		host:    flag.String("cockroach_host", "", "cockroach host to connect to"),
 		port:    flag.Int("cockroach_port", 26257, "cockroach port to connect to"),
 		sslMode: flag.String("cockroach_ssl_mode", "disable", "cockroach sslmode"),
 		user:    flag.String("cockroach_user", "root", "cockroach user to authenticate as"),
@@ -94,24 +94,28 @@ func main() {
 			}
 		}
 	}()
-	if migraterErr == nil {
-		myMigrater.PrefetchMigrations = 10
-		myMigrater.LockTimeout = time.Duration(15) * time.Second
+	myMigrater.PrefetchMigrations = 10
+	myMigrater.LockTimeout = time.Duration(15) * time.Second
 
-		// handle Ctrl+c
-		signals := make(chan os.Signal, 1)
-		signal.Notify(signals, syscall.SIGINT)
-		go func() {
-			for range signals {
-				log.Println("Stopping after this running migration ...")
-				myMigrater.GracefulStop <- true
-				return
-			}
-		}()
-	}
+	// handle Ctrl+c
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT)
+	go func() {
+		for range signals {
+			log.Println("Stopping after this running migration ...")
+			myMigrater.GracefulStop <- true
+			return
+		}
+	}()
 	totalMove := 0
-	migrateDirection := myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
-	preMigrationStep, _, _ := myMigrater.Version()
+	migrateDirection, err := myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
+	if err != nil {
+		log.Panic(err)
+	}
+	preMigrationStep, _, err := myMigrater.Version()
+	if err != nil {
+		log.Panic(err)
+	}
 	for migrateDirection != 0 {
 		migraterErr = myMigrater.Steps(int(migrateDirection))
 		if migraterErr != nil {
@@ -119,7 +123,10 @@ func main() {
 		}
 		totalMove += int(migrateDirection)
 		log.Printf("Migrated %s by %d step", migrateDirection.String(), intAbs(int(migrateDirection)))
-		migrateDirection = myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
+		migrateDirection, err = myMigrater.MigrationDirection(postgresURI, *dbVersion, *step)
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 	postMigrationStep, dirty, err := myMigrater.Version()
 	if err != nil {
@@ -197,20 +204,20 @@ func parseVersion(version string) [3]int {
 
 // MigrationDirection reads our custom DB version string as well as the Migration Steps from the framework
 // and returns a signed integer value of the Direction and count to migrate the db
-func (m *MyMigrate) MigrationDirection(dbURI string, desiredVersion string, desireStep int) Direction {
-	if desireStep != 0 {
-		migrateStep, dirty, err := m.Version()
+func (m *MyMigrate) MigrationDirection(dbURI string, desiredVersion string, desiredStep int) (Direction, error) {
+	if desiredStep != 0 {
+		currentStep, dirty, err := m.Version()
 		if err != migrate.ErrNilVersion && err != nil {
-			log.Panic(err)
+			return 0, fmt.Errorf("Failed to get Migration Step to determine migration direction: %v", err)
 		}
 		if dirty {
 			log.Fatal("DB in Dirty state, Please fix before migrating")
 		}
-		return Direction(desireStep - int(migrateStep))
+		return Direction(desiredStep - int(currentStep)), nil
 	}
 	currentVersion, err := getCurrentDBVersion(dbURI)
 	if err != nil {
-		log.Panic("Failed to get current version", zap.Error(err))
+		return 0, fmt.Errorf("Failed to get current DB version to determine migration direction: %v", err)
 	}
 	var (
 		current     = parseVersion(currentVersion)
@@ -219,10 +226,10 @@ func (m *MyMigrate) MigrationDirection(dbURI string, desiredVersion string, desi
 	for i := 0; i < 3; i++ {
 		diff := destination[0] - current[0]
 		if diff > 0 {
-			return 1
+			return 1, nil
 		} else if diff < 0 {
-			return -1
+			return -1, nil
 		}
 	}
-	return 0
+	return 0, nil
 }

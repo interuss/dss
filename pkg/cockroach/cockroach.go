@@ -48,8 +48,8 @@ func BuildURI(params map[string]string) (string, error) {
 		return "", errors.New("missing crdb ssl_mode")
 	}
 	db := params["db_name"]
-	if db == "" {
-		db = "defaultdb"
+	if db != "" {
+		db = fmt.Sprintf("/%s", db)
 	}
 	if ssl == "disable" {
 		return fmt.Sprintf("postgresql://%s@%s:%s/%s?application_name=%s&sslmode=disable", u, h, p, db, an), nil
