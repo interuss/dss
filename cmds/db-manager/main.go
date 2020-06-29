@@ -41,7 +41,7 @@ func (d Direction) String() string {
 }
 
 var (
-	path      = flag.String("schemas_dir", "", "path to db migration files directory")
+	path      = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
 	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: v1.0.0)")
 	step      = flag.Int("migration_step", 0, "the db migration step to go to")
 
@@ -140,11 +140,14 @@ func (m *MyMigrate) DoMigrate(desiredDBVersion string, desiredStep int) (int, er
 	return totalMoves, nil
 }
 
-// New instanciates a new migrate object
+// New instantiates a new migrate object
 func New(path string, dbURI string) (*MyMigrate, error) {
 	crdbURI := strings.Replace(dbURI, "postgresql", "cockroachdb", 1)
 	path = fmt.Sprintf("file://%v", path)
 	migrater, err := migrate.New(path, crdbURI)
+	if err != nil {
+		return nil, err
+	}
 	myMigrater := &MyMigrate{migrater, dbURI}
 	// handle Ctrl+c
 	signals := make(chan os.Signal, 1)
