@@ -3,6 +3,8 @@ package scd
 import (
 	"context"
 	"fmt"
+	"github.com/golang/protobuf/ptypes"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
@@ -131,10 +133,17 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 		return nil, dsserr.PermissionDenied("missing owner from context")
 	}
 
+	if aoi.TimeEnd != nil {
+		endTime, _ := ptypes.Timestamp(aoi.TimeEnd.Value)
+		if time.Now().After(endTime) {
+			return nil, dsserr.BadRequest("end time is in the past")
+		}
+	}
+
 	var response *scdpb.SearchOperationReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Perform search query on Store
-		ops, err := r.SearchOperations(ctx, vol4, owner)
+		ops, err := r.SearchOperations(ctx, vol4)
 		if err != nil {
 			return err
 		}
@@ -186,6 +195,12 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, dsserr.BadRequest("missing required UssBaseUrl")
 	}
 
+	if err := scdmodels.ValidateUSSBaseURL(
+		params.UssBaseUrl,
+	); err != nil {
+		return nil, dsserr.BadRequest(err.Error())
+	}
+
 	for idx, extent := range params.GetExtents() {
 		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)
 		if err != nil {
@@ -210,6 +225,18 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, dssErrorOfAreaError(err)
 	}
 
+	if uExtent.EndTime.Before(*uExtent.StartTime) {
+		return nil, dsserr.BadRequest("end time is past the start time")
+	}
+
+	if time.Now().After(*uExtent.EndTime) {
+		return nil, dsserr.BadRequest("end time is in the past")
+	}
+
+	if params.OldVersion == 0 && params.State != "Accepted" {
+		return nil, dsserr.BadRequest("invalid state for version 0")
+	}
+
 	subscriptionID := scdmodels.ID(params.GetSubscriptionId())
 
 	var response *scdpb.ChangeOperationReferenceResponse
@@ -221,7 +248,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				return dsserr.BadRequest(err.Error())
 			}
 
-			sub, _, err := r.UpsertSubscription(ctx, &scdmodels.Subscription{
+			sub, err := r.UpsertSubscription(ctx, &scdmodels.Subscription{
 				ID:         scdmodels.ID(uuid.New().String()),
 				Owner:      owner,
 				StartTime:  uExtent.StartTime,
@@ -239,6 +266,10 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				return dsserr.Internal(fmt.Sprintf("failed to create implicit subscription: %s", err))
 			}
 			subscriptionID = sub.ID
+		} else {
+			if _, err := uuid.Parse(subscriptionID.String()); err != nil {
+				return dsserr.BadRequest("Invalid subscription id")
+			}
 		}
 
 		key := []scdmodels.OVN{}
@@ -265,7 +296,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		if err == scderr.MissingOVNsInternalError() {
 			// The client is missing some OVNs; provide the pointers to the
 			// information they need
-			ops, err := r.SearchOperations(ctx, uExtent, owner)
+			ops, err := r.SearchOperations(ctx, uExtent)
 			if err != nil {
 				return err
 			}

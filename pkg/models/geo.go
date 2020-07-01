@@ -23,6 +23,8 @@ const (
 	maxLat            = 90.0
 	minLng            = -180.0
 	maxLng            = 180.0
+	UnitsM            = "M"
+	ReferenceW84      = "W84"
 )
 
 var (
@@ -458,6 +460,14 @@ func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 
 // Volume3DFromSCDProto converts a vol3 proto to a Volume3D
 func Volume3DFromSCDProto(vol3 *scdpb.Volume3D) (*Volume3D, error) {
+	if vol3.GetAltitudeLower().Units != UnitsM || vol3.GetAltitudeUpper().Units != UnitsM {
+		return nil, errors.New("invalid unit")
+	}
+
+	if vol3.GetAltitudeLower().Reference != ReferenceW84 || vol3.GetAltitudeUpper().Reference != ReferenceW84 {
+		return nil, errors.New("invalid reference")
+	}
+
 	switch {
 	case vol3.GetOutlineCircle() != nil && vol3.GetOutlinePolygon() != nil:
 		return nil, errors.New("both circle and polygon specified in outline geometry")
