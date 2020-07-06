@@ -14,6 +14,21 @@ import (
 	"github.com/interuss/dss/pkg/scd/repos"
 )
 
+func incrementNotificationIndices(ctx context.Context, r repos.Repository, subs []*scdmodels.Subscription) error {
+	subIds := make([]scdmodels.ID, len(subs))
+	for i, sub := range subs {
+		subIds[i] = sub.ID
+	}
+	newIndices, err := r.IncrementNotificationIndices(ctx, subIds)
+	if err != nil {
+		return err
+	}
+	for i, newIndex := range newIndices {
+		subs[i].NotificationIndex = newIndex
+	}
+	return nil
+}
+
 // DeleteConstraintReference deletes a single constraint ref for a given ID at
 // the specified version.
 func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.DeleteConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
@@ -64,7 +79,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		}
 
 		// Limit Subscription notifications to only those interested in Constraints
-		subs := make([]*scdmodels.Subscription, len(allsubs))
+		var subs []*scdmodels.Subscription
 		for _, sub := range allsubs {
 			if sub.NotifyForConstraints {
 				subs = append(subs, sub)
@@ -73,6 +88,12 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 
 		// Delete Constraint in Store
 		err = r.DeleteConstraint(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		// Increment notification indices for relevant Subscriptions
+		err = incrementNotificationIndices(ctx, r, subs)
 		if err != nil {
 			return err
 		}
@@ -126,11 +147,13 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 			constraint.OVN = scdmodels.OVN("")
 		}
 
+		// Convert retrieved Constraint to proto
 		p, err := constraint.ToProto()
 		if err != nil {
 			return err
 		}
 
+		// Return response to client
 		response = &scdpb.GetConstraintReferenceResponse{
 			ConstraintReference: p,
 		}
@@ -266,18 +289,26 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		}
 
 		// Limit Subscription notifications to only those interested in Constraints
-		subs := make([]*scdmodels.Subscription, len(allsubs))
+		var subs []*scdmodels.Subscription
 		for _, sub := range allsubs {
 			if sub.NotifyForConstraints {
 				subs = append(subs, sub)
 			}
 		}
 
+		// Increment notification indices for relevant Subscriptions
+		err = incrementNotificationIndices(ctx, r, subs)
+		if err != nil {
+			return err
+		}
+
+		// Convert upserted Constraint to proto
 		p, err := constraint.ToProto()
 		if err != nil {
 			return err
 		}
 
+		// Return response to client
 		response = &scdpb.ChangeConstraintReferenceResponse{
 			ConstraintReference: p,
 			Subscribers:         makeSubscribersToNotify(subs),

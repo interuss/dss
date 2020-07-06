@@ -102,12 +102,36 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		result = &scdpb.PutSubscriptionResponse{
 			Subscription: p,
 		}
-		for _, op := range ops {
-			if op.Owner != owner {
-				op.OVN = scdmodels.OVN("")
+
+		if sub.NotifyForOperations {
+			// Attach Operations to response
+			for _, op := range ops {
+				if op.Owner != owner {
+					op.OVN = scdmodels.OVN("")
+				}
+				pop, _ := op.ToProto()
+				result.Operations = append(result.Operations, pop)
 			}
-			pop, _ := op.ToProto()
-			result.Operations = append(result.Operations, pop)
+		}
+
+		if sub.NotifyForConstraints {
+			// Query relevant Constraints
+			constraints, err := r.SearchConstraints(ctx, extents)
+			if err != nil {
+				return err
+			}
+
+			// Attach Constraints to response
+			for _, constraint := range constraints {
+				p, err := constraint.ToProto()
+				if err != nil {
+					return err
+				}
+				if constraint.Owner != owner {
+					p.Ovn = ""
+				}
+				result.Constraints = append(result.Constraints, p)
+			}
 		}
 
 		return nil

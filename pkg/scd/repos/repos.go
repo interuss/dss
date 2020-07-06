@@ -44,6 +44,11 @@ type Subscription interface {
 	// deleted subscription.  Returns nil and an error if the Subscription does
 	// not exist, or is owned by someone other than the specified owner.
 	DeleteSubscription(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner, version scdmodels.Version) (*scdmodels.Subscription, error)
+
+	// IncrementNotificationIndices increments the notification index of each
+	// specified Subscription and returns the resulting corresponding
+	// notification indices.
+	IncrementNotificationIndices(ctx context.Context, subscriptionIds []scdmodels.ID) ([]int, error)
 }
 
 // repos.Constraint abstracts constraint-specific interactions with the backing store.
