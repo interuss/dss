@@ -32,9 +32,7 @@ def test_isa_huge_area(session, isa1_uuid):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400
-  assert resp.json(
-  )['message'] == ('bad extents: area is too large (5033985024.455878km² > '
-                   '2500.000000km²)')
+  assert 'area is too large' in resp.json()['message']
 
 
 def test_isa_empty_vertices(session, isa1_uuid):
