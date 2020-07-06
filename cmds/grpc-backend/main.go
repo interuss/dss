@@ -126,8 +126,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 	store := ridc.NewStore(crdb, logger)
 
-	if err := store.Bootstrap(ctx); err != nil {
-		logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
+	if err := store.GetVersion(ctx); err != nil {
+		logger.Panic("Failed to get Database Schema Version", zap.Error(err))
 	}
 
 	MustSupportSchema(ctx, store)
@@ -147,8 +147,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	if *enableSCD {
 		store := scdc.NewStore(crdb, logger)
 
-		if err := store.Bootstrap(ctx); err != nil {
-			logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
+		if err := store.GetVersion(ctx); err != nil {
+			logger.Panic("Failed to get Database Schema Version", zap.Error(err))
 		}
 		scdServer = &scd.Server{
 			Store:   store,
