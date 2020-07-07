@@ -1,0 +1,58 @@
+{
+  "extents": [
+    {
+      "volume": {
+        "outlinePolygon": {
+          "vertices": [
+            {
+              "lng": 9.980582850817164,
+              "lat": 9.98038769564864
+            },
+            {
+              "lng": 9.980390688694534,
+              "lat": 9.980585843863055
+            },
+            {
+              "lng": 10.019861937948736,
+              "lat": 10.02005709311726
+            },
+            {
+              "lng": 10.020054117178084,
+              "lat": 10.01985896200956
+            },
+            {
+              "lng": 9.980582850817164,
+              "lat": 9.98038769564864
+            }
+          ]
+        },
+        "altitudeLower": {
+          "value": -12.191999609856008,
+          "reference": "W84",
+          "units": "M"
+        },
+        "altitudeUpper": {
+          "value": 18.287999414784014,
+          "reference": "W84",
+          "units": "M"
+        }
+      },
+      "timeStart": {
+        "value": "2020-06-30T15:58:00.00Z",
+        "format": "RFC3339"
+      },
+      "timeEnd": {
+        "value": "2030-06-30T16:02:00.00Z",
+        "format": "RFC3339"
+      }
+    }
+  ],
+  "oldVersion": 0,
+  "key": [],
+  "state": "Accepted",
+  "uss_base_url": "http://localhost:8080",
+  "new_subscription": {
+    "uss_base_url": "https://localhost:8080",
+    "notify_for_constraints": false
+  }
+}

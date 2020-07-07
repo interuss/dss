@@ -342,7 +342,7 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 					return operation.Cells, nil
 				}),
 			},
-		}, operation.Owner)
+		})
 		if err != nil {
 			return nil, nil, err
 		}
@@ -356,6 +356,10 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 			if _, match := keyIdx[op.OVN]; !match {
 				return nil, nil, scderr.MissingOVNsInternalError()
 			}
+			delete(keyIdx, op.OVN)
+		}
+		if len(keyIdx) != 0 {
+			return nil, nil, dsserr.BadRequest("Invalid OVN present")
 		}
 	default:
 		// We default to not checking the OVNs for now for all other operation states.
@@ -369,7 +373,7 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 	return area, subscribers, nil
 }
 
-func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
+func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error) {
 	var (
 		operationsIntersectingVolumeQuery = fmt.Sprintf(`
 			SELECT
@@ -430,8 +434,8 @@ func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *ds
 }
 
 // SearchOperations returns operations within the 4D volume from CockroachDB
-func (s *repo) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D, owner dssmodels.Owner) ([]*scdmodels.Operation, error) {
-	result, err := s.searchOperations(ctx, s.q, v4d, owner)
+func (s *repo) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error) {
+	result, err := s.searchOperations(ctx, s.q, v4d)
 	if err != nil {
 		return nil, err
 	}

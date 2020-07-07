@@ -103,7 +103,7 @@ docker run -d --name http-gateway-for-testing -p 8082:8082 \
 
 echo " -------------- DUMMY OAUTH -------------- "
 echo "Building dummy-oauth server container"
-docker build -q --rm -f cmds/dummy-oauth/Dockerfile . -t local-dummy-oauth
+docker build --rm -f cmds/dummy-oauth/Dockerfile . -t local-dummy-oauth > dummy-oauth-build.log
 
 echo "Cleaning up any pre-existing dummy-oauth container"
 docker rm -f dummy-oauth-for-testing &> /dev/null || echo "No dummy oauth to clean up"

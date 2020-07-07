@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dpjacques/clockwork"
+	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -50,7 +51,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		return nil, dssErrorOfAreaError(err)
 	}
 
-	sub := &scdmodels.Subscription{
+	subreq := &scdmodels.Subscription{
 		ID:      id,
 		Owner:   owner,
 		Version: scdmodels.Version(params.OldVersion),
@@ -67,31 +68,72 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	}
 
 	// Validate requested Subscription
-	if !sub.NotifyForOperations && !sub.NotifyForConstraints {
+	if !subreq.NotifyForOperations && !subreq.NotifyForConstraints {
 		return nil, dsserr.BadRequest("no notification triggers requested for Subscription")
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
-	if err := sub.AdjustTimeRange(DefaultClock.Now(), sub); err != nil {
+	if err := subreq.AdjustTimeRange(DefaultClock.Now(), subreq); err != nil {
 		return nil, err
 	}
 
 	var result *scdpb.PutSubscriptionResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// TODO: validate against DependentOperations when available
+		// Check existing Subscription (if any)
+		old, err := r.GetSubscription(ctx, subreq.ID)
+		if err != nil {
+			return err
+		}
+
+		if old == nil {
+			// There is no previous Subscription (this is a creation attempt)
+			if !subreq.Version.Empty() {
+				// The user wants to update an existing Subscription, but one wasn't found.
+				return dsserr.NotFound(subreq.ID.String())
+			}
+		} else {
+			// There is a previous Subscription (this is an update attempt)
+			switch {
+			case subreq.Version.Empty():
+				// The user wants to create a new Subscription but it already exists.
+				return dsserr.AlreadyExists(subreq.ID.String())
+			case !subreq.Version.Matches(old.Version):
+				// The user wants to update a Subscription but the version doesn't match.
+				return dsserr.VersionMismatch("old version")
+			case old.Owner != subreq.Owner:
+				return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
+			}
+
+			// TODO: validate against DependentOperations when available
+		}
 
 		// Store Subscription model
-		sub, ops, err := r.UpsertSubscription(ctx, sub)
+		sub, err := r.UpsertSubscription(ctx, subreq)
 		if err != nil {
 			return err
 		}
 		if sub == nil {
 			return dsserr.Internal(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
 		}
-		for _, op := range ops {
-			if op.Owner != owner {
-				op.OVN = scdmodels.OVN("")
+
+		// Find relevant Operations
+		var relevantOperations []*scdmodels.Operation
+		if len(sub.Cells) > 0 {
+			ops, err := r.SearchOperations(ctx, &dssmodels.Volume4D{
+				StartTime: sub.StartTime,
+				EndTime:   sub.EndTime,
+				SpatialVolume: &dssmodels.Volume3D{
+					AltitudeLo: sub.AltitudeLo,
+					AltitudeHi: sub.AltitudeHi,
+					Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+						return sub.Cells, nil
+					}),
+				},
+			})
+			if err != nil {
+				return err
 			}
+			relevantOperations = ops
 		}
 
 		// Convert Subscription to proto
@@ -105,7 +147,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 
 		if sub.NotifyForOperations {
 			// Attach Operations to response
-			for _, op := range ops {
+			for _, op := range relevantOperations {
 				if op.Owner != owner {
 					op.OVN = scdmodels.OVN("")
 				}
@@ -164,9 +206,17 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	var response *scdpb.GetSubscriptionResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Get Subscription from Store
-		sub, err := r.GetSubscription(ctx, id, owner)
+		sub, err := r.GetSubscription(ctx, id)
 		if err != nil {
 			return err
+		}
+		if sub == nil {
+			return dsserr.NotFound(id.String())
+		}
+
+		// Check if the client is authorized to view this Subscription
+		if owner != sub.Owner {
+			return dsserr.PermissionDenied("Subscription owned by a different client")
 		}
 
 		// Convert Subscription to proto
@@ -261,17 +311,25 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 
 	var response *scdpb.DeleteSubscriptionResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
+		// Check to make sure it's ok to delete this Subscription
+		old, err := r.GetSubscription(ctx, id)
+		switch {
+		case err != nil:
+			return err
+		case old == nil: // Return a 404 here.
+			return dsserr.NotFound(id.String())
+		case old.Owner != owner:
+			return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
+		}
+
 		// Delete Subscription in Store
-		sub, err := r.DeleteSubscription(ctx, id, owner, scdmodels.Version(0))
+		err = r.DeleteSubscription(ctx, id)
 		if err != nil {
 			return err
 		}
-		if sub == nil {
-			return dsserr.Internal(fmt.Sprintf("DeleteSubscription returned no Subscription for ID: %s", id))
-		}
 
 		// Convert deleted Subscription to proto
-		p, err := sub.ToProto()
+		p, err := old.ToProto()
 		if err != nil {
 			return dsserr.Internal("error converting Subscription model to proto")
 		}

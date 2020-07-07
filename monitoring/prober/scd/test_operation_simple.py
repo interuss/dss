@@ -19,7 +19,7 @@ BASE_URL = 'https://example.com/uss'
 
 
 def _make_op1_request():
-  time_start = datetime.datetime.utcnow()
+  time_start = datetime.datetime.utcnow() + datetime.timedelta(minutes=20)
   time_end = time_start + datetime.timedelta(minutes=60)
   return {
     'extents': [common.make_vol4(time_start, time_end, 0, 120, common.make_circle(-56, 178, 50))],
@@ -47,19 +47,20 @@ def test_op_does_not_exist_query(scd_session, op1_uuid):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
+  end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(-56, 178, 300))
+    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(-56, 178, 300))
   }, scope=SCOPE_SC)
   assert resp.status_code == 200, resp.content
   assert op1_uuid not in [op['id'] for op in resp.json().get('operation_references', [])]
 
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(-56, 178, 300))
+    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(-56, 178, 300))
   }, scope=SCOPE_CI)
   assert resp.status_code == 403, resp.content
 
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(-56, 178, 300))
+    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(-56, 178, 300))
   }, scope=SCOPE_CM)
   assert resp.status_code == 403, resp.content
 
@@ -174,7 +175,7 @@ def test_get_op_by_search_earliest_time_included(scd_session, op1_uuid):
 # Mutations: None
 @default_scope(SCOPE_SC)
 def test_get_op_by_search_earliest_time_excluded(scd_session, op1_uuid):
-  earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=61)
+  earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=81)
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': common.make_vol4(earliest_time, None, 0, 5000, common.make_circle(-56, 178, 300))
   })
@@ -186,7 +187,7 @@ def test_get_op_by_search_earliest_time_excluded(scd_session, op1_uuid):
 # Mutations: None
 @default_scope(SCOPE_SC)
 def test_get_op_by_search_latest_time_included(scd_session, op1_uuid):
-  latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
+  latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=20)
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': common.make_vol4(None, latest_time, 0, 5000, common.make_circle(-56, 178, 300))
   })
@@ -198,7 +199,7 @@ def test_get_op_by_search_latest_time_included(scd_session, op1_uuid):
 # Mutations: None
 @default_scope(SCOPE_SC)
 def test_get_op_by_search_latest_time_excluded(scd_session, op1_uuid):
-  latest_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
+  latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': common.make_vol4(None, latest_time, 0, 5000, common.make_circle(-56, 178, 300))
   })
