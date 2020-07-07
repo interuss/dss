@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 
-	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 )
@@ -60,12 +59,8 @@ type Constraint interface {
 	// (nil, sql.ErrNoRows) if the Constraint doesn't exist
 	GetConstraint(ctx context.Context, id scdmodels.ID) (*scdmodels.Constraint, error)
 
-	// GetConstraintCells returns the S2 cells in which the Constraint with the
-	// referenced id resides.
-	GetConstraintCells(ctx context.Context, id scdmodels.ID) (s2.CellUnion, error)
-
-	// UpsertConstraint upserts "constraint" covering "cells" into the store.
-	UpsertConstraint(ctx context.Context, constraint *scdmodels.Constraint, cells s2.CellUnion) (*scdmodels.Constraint, error)
+	// UpsertConstraint upserts "constraint" into the store.
+	UpsertConstraint(ctx context.Context, constraint *scdmodels.Constraint) (*scdmodels.Constraint, error)
 
 	// DeleteConstraint deletes a Constraint from the store and returns the
 	// deleted subscription.  Returns nil and an error if the Constraint does

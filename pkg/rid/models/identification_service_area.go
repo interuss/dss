@@ -8,6 +8,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"google.golang.org/protobuf/proto"
 )
@@ -31,11 +32,7 @@ type IdentificationServiceArea struct {
 // we can still call its function directly, but also implements scan for sql
 // driver.
 func (i *IdentificationServiceArea) SetCells(cids []int64) {
-	cells := s2.CellUnion{}
-	for _, id := range cids {
-		cells = append(cells, s2.CellID(id))
-	}
-	i.Cells = cells
+	i.Cells = geo.CellUnionFromInt64(cids)
 }
 
 // ToProto converts an IdentificationServiceArea struct to an

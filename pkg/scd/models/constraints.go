@@ -3,13 +3,14 @@ package models
 import (
 	"time"
 
+	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 )
 
-// Constraint models a constraint, sans planar geographic information.
+// Constraint models a constraint, as known by the DSS
 type Constraint struct {
 	ID            ID
 	Version       Version
@@ -20,6 +21,7 @@ type Constraint struct {
 	AltitudeLower *float32
 	AltitudeUpper *float32
 	USSBaseURL    string
+	Cells         s2.CellUnion
 }
 
 // ToProto converts the Constraint to its proto API format

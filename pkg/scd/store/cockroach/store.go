@@ -137,18 +137,12 @@ func (s *Store) Bootstrap(ctx context.Context) error {
 		starts_at TIMESTAMPTZ,
 		ends_at TIMESTAMPTZ,
 		updated_at TIMESTAMPTZ NOT NULL,
+    cells INT64[] NOT NULL CHECK (array_length(cells, 1) IS NOT NULL),
+		INVERTED INDEX cells_idx (cells),
 		INDEX owner_idx (owner),
 		INDEX starts_at_idx (starts_at),
 		INDEX ends_at_idx (ends_at),
 		CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)
-	);
-	CREATE TABLE IF NOT EXISTS scd_cells_constraints (
-		cell_id INT64 NOT NULL,
-		cell_level INT CHECK (cell_level BETWEEN 0 and 30),
-		constraint_id UUID NOT NULL REFERENCES scd_constraints (id) ON DELETE CASCADE,
-		PRIMARY KEY (cell_id, constraint_id),
-		INDEX cell_id_idx (cell_id),
-		INDEX constraint_id_idx (constraint_id)
 	);
 	`
 	_, err := s.db.ExecContext(ctx, query)

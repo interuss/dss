@@ -57,12 +57,6 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 			return dsserr.PermissionDenied(fmt.Sprintf("constraint is owned by %s", old.Owner))
 		}
 
-		// Identify cells possibly containing Subscriptions to be notified
-		cells, err := r.GetConstraintCells(ctx, id)
-		if err != nil {
-			return err
-		}
-
 		// Find Subscriptions that may overlap the Constraint's Volume4D
 		allsubs, err := r.SearchSubscriptions(ctx, &dssmodels.Volume4D{
 			StartTime: old.StartTime,
@@ -71,7 +65,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 				AltitudeHi: old.AltitudeUpper,
 				AltitudeLo: old.AltitudeLower,
 				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-					return cells, nil
+					return old.Cells, nil
 				}),
 			}})
 		if err != nil {
@@ -245,10 +239,6 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		if old == nil {
 			notifyVol4 = uExtent
 		} else {
-			oldCells, err := r.GetConstraintCells(ctx, id)
-			if err != nil {
-				return err
-			}
 			oldVol4 := &dssmodels.Volume4D{
 				StartTime: old.StartTime,
 				EndTime:   old.EndTime,
@@ -256,7 +246,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 					AltitudeHi: old.AltitudeUpper,
 					AltitudeLo: old.AltitudeLower,
 					Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-						return oldCells, nil
+						return old.Cells, nil
 					}),
 				}}
 			notifyVol4, err = dssmodels.UnionVolumes4D(uExtent, oldVol4)
@@ -277,7 +267,8 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 			AltitudeUpper: uExtent.SpatialVolume.AltitudeHi,
 
 			USSBaseURL: params.UssBaseUrl,
-		}, cells)
+			Cells:      cells,
+		})
 		if err != nil {
 			return err
 		}
