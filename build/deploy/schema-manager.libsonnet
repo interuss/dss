@@ -20,7 +20,7 @@ local rid_schema_mount = {
     rid_schema: base.ConfigMap(metadata, 'db-rid-schema') {
       data: defaultdb_schema.data
     },
-    DefaultSchemaManager: if metadata.cockroach.shouldInit then base.Job(metadata, 'default-schema-manager') {
+    RIDSchemaManager: if metadata.cockroach.shouldInit then base.Job(metadata, 'rid-schema-manager') {
       spec+: {
         template+: {
           spec+: {
@@ -37,8 +37,8 @@ local rid_schema_mount = {
                 cockroach_ssl_mode: 'verify-full',
                 cockroach_user: 'root',
                 cockroach_ssl_dir: '/cockroach/cockroach-certs',
-                db_version: metadata.schema_manager.desired_db_version,
-                schemas_dir: '/db-schemas/defaultdb'
+                db_version: metadata.schema_manager.desired_rid_db_version,
+                schemas_dir: rid_schema_mount.mountPath,
 
               },
               volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert + [rid_schema_mount],

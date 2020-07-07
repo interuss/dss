@@ -20,6 +20,10 @@ local metadata = metadataBase {
   backend+: {
     image: 'your_image_name',
   },
+  schema_manager+: {
+    image: 'your_schema_manager_image_name',
+    desired_rid_db_version: 'v2.0.0',
+  },
 };
 
 dss.all(metadata)
