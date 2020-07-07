@@ -126,7 +126,7 @@ which ever provider you choose.
     `workspace/<CLUSTER_CONTEXT>` and fill in with your fields.
 
 1.  If you are only turning up a single cluster for development, set
-    metadata.single_cluster to true in metadata_base.libsonnet.
+    metadata.single_cluster to true in your main.jsonnet.
 
 1.  You can find the APIServer for spec.json by running:
 
@@ -142,7 +142,7 @@ which ever provider you choose.
     existing clusters.
 
 1. To start the profiling service for the grpc-backend and/or http-gateway then enter the service
-   name for the profiler at `metadata_base.libsonnet`. The name should be based on your cloud provider acceptable values. For Google cloud the name should meet the regex `^[a-z]([-a-z0-9_.]{0,253}[a-z0-9])?$`
+   name for the profiler in your `main.jsonnet`. The name should be based on your cloud provider acceptable values. For Google cloud the name should meet the regex `^[a-z]([-a-z0-9_.]{0,253}[a-z0-9])?$`
 
 1.  Run `tk apply workspace/<CLUSTER_CONTEXT>` to apply it to the
     cluster.
