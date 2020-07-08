@@ -41,3 +41,11 @@ def test_op_query_degenerate_polygon(scd_session):
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
   assert resp.status_code == 200, resp.content
+
+# Preconditions: None
+# Mutations: None
+def test_op_query_not_area_too_large(scd_session):
+  with open('./scd/resources/op_request_4.json', 'r') as f:
+    req = json.load(f)
+  resp = scd_session.post('/operation_references/query', json=req)
+  assert resp.status_code == 200, resp.content

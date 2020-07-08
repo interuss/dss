@@ -1,0 +1,39 @@
+{
+  "area_of_interest": {
+    "volume": {
+      "outline_polygon": {
+        "vertices": [{
+          "lng": -96.88579602648282,
+          "lat": 32.59387252346966
+        }, {
+          "lng": -96.88579602648282,
+          "lat": 32.86069708752762
+        }, {
+          "lng": -96.65241275918919,
+          "lat": 32.86069708752762
+        }, {
+          "lng": -96.65241275918919,
+          "lat": 32.59387252346966
+        }]
+      },
+      "altitude_lower": {
+        "value": -158.46905896231343,
+        "reference": "W84",
+        "units": "M"
+      },
+      "altitude_upper": {
+        "value": 911.2196235450058,
+        "reference": "W84",
+        "units": "M"
+      }
+    },
+    "time_start": {
+      "value": "2020-07-06T22:28:00Z",
+      "format": "RFC3339"
+    },
+    "time_end": {
+      "value": "2120-07-06T22:43:41Z",
+      "format": "RFC3339"
+    }
+  }
+}
