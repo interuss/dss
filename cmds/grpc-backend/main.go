@@ -126,7 +126,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 	store := ridc.NewStore(crdb, logger)
 
-	if err := store.GetVersion(ctx); err != nil {
+	if _, err := store.GetVersion(ctx); err != nil {
 		logger.Panic("Failed to get Database Schema Version", zap.Error(err))
 	}
 
@@ -147,7 +147,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	if *enableSCD {
 		store := scdc.NewStore(crdb, logger)
 
-		if err := store.GetVersion(ctx); err != nil {
+		if err := store.Bootstrap(ctx); err != nil {
 			logger.Panic("Failed to get Database Schema Version", zap.Error(err))
 		}
 		scdServer = &scd.Server{
