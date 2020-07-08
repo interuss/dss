@@ -244,5 +244,7 @@ func main() {
 	if err := RunGRPCServer(ctx, *address); err != nil {
 		logger.Panic("Failed to execute service", zap.Error(err))
 	}
+
+	logger.Info("locality: " + *locality)
 	logger.Info("Shutting down gracefully")
 }
