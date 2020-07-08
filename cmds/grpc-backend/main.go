@@ -52,6 +52,7 @@ var (
 	dumpRequests      = flag.Bool("dump_requests", false, "Log request and response protos")
 	profServiceName   = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
 	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
+	locality          = flag.String("locality", "", "self-identification string used as CRDB table writer column")
 
 	cockroachParams = struct {
 		host            *string
