@@ -229,3 +229,9 @@ Pick a username and create an account:
 
 Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
 warning.
+
+## Updgrading Database Schemas
+
+All Schemas related files are in `deploy/db-schemas` directory, any changes you wish to make to the Database schema should be done in their respective Database folders. The files are applied in steps from 1 to N in the direction specified in the file's suffix.
+
+For the first ever run during the CRDB cluster initilization the db-manager will run once to bootstrap and bring up the database up to date. In order to upgrade existing clusters you will need to update the `desired_xyz_db_version` field in `main.jsonnet`, delete the existing db-manager job in your k8s cluster and redeploy the newly configured db-manager. It should automatically up/down grade your database schema to your desired version.

@@ -14,6 +14,10 @@ local metadata = prod.metadata {
     ipName: 'your-ingress-name',
     hostname: 'your_hostname.com',
   },
+  schema_manager+: {
+    image: 'your_schema_manager_image_name',
+    desired_rid_db_version: 'v2.0.0',
+  },
 };
 
 prod.all(metadata) {

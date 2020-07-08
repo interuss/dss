@@ -46,6 +46,10 @@ authentication. This backend talks directly to CockroachDB.
 Individual CockroachDB nodes hosting sharded data of the DAR. More information about CockroachDB
 [here](https://www.cockroachlabs.com/docs/stable/architecture/overview.html).
 
+### DB Manager
+
+Component responsible for bootstrapping the Database on first run when the CRDB Cluster is initialized for the first time. Only the first run is automatic to bootstrap the Database to the desired version. This component is also used to upgrade the Database Schemas, and if the cluster has already been bootstrapped with this, it must be invoked manually.
+
 ## Directories of Interest:
 *   [`build/`](build) has all of the configuration required to build and
     deploy a DSS instance. The README in that directory contains more
