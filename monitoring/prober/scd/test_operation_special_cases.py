@@ -11,7 +11,7 @@
 import json
 
 from . import common
-
+import time
 
 # Preconditions: None
 # Mutations: None
@@ -49,3 +49,15 @@ def test_op_query_not_area_too_large(scd_session):
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
   assert resp.status_code == 200, resp.content
+
+# Preconditions: None
+# Mutations: None
+def test_op_response_time_more_than_2sec(scd_session):
+  now = time.time()
+  with open('./scd/resources/op_request_5.json', 'r') as f:
+    req = json.load(f)
+  resp = scd_session.put('/operation_references/d9c59219-2cc4-4d05-83ba-cbb3e8bb6224', json=req)
+  assert resp.status_code == 200, resp.content
+  later = time.time()
+  difference = int(later - now)
+  assert difference < 2
