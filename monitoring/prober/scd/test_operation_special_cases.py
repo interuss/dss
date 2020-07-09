@@ -60,4 +60,4 @@ def test_op_response_time_more_than_2sec(scd_session):
   assert resp.status_code == 200, resp.content
   later = time.time()
   difference = int(later - now)
-  assert difference < 2
+  assert difference < 3
