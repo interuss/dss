@@ -8,10 +8,11 @@
   - delete
 """
 
+import datetime
 import json
 
 from . import common
-import time
+
 
 # Preconditions: None
 # Mutations: None
@@ -53,11 +54,15 @@ def test_op_query_not_area_too_large(scd_session):
 # Preconditions: None
 # Mutations: None
 def test_op_response_time_more_than_2sec(scd_session):
-  now = time.time()
   with open('./scd/resources/op_request_5.json', 'r') as f:
     req = json.load(f)
+  start = datetime.datetime.utcnow()
   resp = scd_session.put('/operation_references/d9c59219-2cc4-4d05-83ba-cbb3e8bb6224', json=req)
+  end = datetime.datetime.utcnow()
   assert resp.status_code == 200, resp.content
-  later = time.time()
-  difference = int(later - now)
-  assert difference < 3
+
+  difference = (end - start).total_seconds()
+  assert difference < 2.0
+
+  resp = scd_session.delete('/operation_references/d9c59219-2cc4-4d05-83ba-cbb3e8bb6224')
+  assert resp.status_code == 200, resp.content
