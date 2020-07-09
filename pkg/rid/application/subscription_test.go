@@ -53,7 +53,7 @@ var (
 
 func setUpSubApp(ctx context.Context, t *testing.T) (*app, func()) {
 	l := zap.L()
-	transactor, cleanup := setUpTransactor(ctx, t, l)
+	transactor, cleanup := setUpStore(ctx, t, l)
 	return NewFromTransactor(transactor, l).(*app), cleanup
 }
 
@@ -178,6 +178,7 @@ func TestBadOwner(t *testing.T) {
 
 func TestSubscriptionUpdateCells(t *testing.T) {
 	ctx := context.Background()
+	owner := dssmodels.Owner("owner")
 	app, cleanup := setUpSubApp(ctx, t)
 	defer cleanup()
 
@@ -190,7 +191,7 @@ func TestSubscriptionUpdateCells(t *testing.T) {
 	// this doesn't happen.
 	sub, err := app.InsertSubscription(ctx, &ridmodels.Subscription{
 		ID:        dssmodels.ID(uuid.New().String()),
-		Owner:     "owner",
+		Owner:     owner,
 		StartTime: &startTime,
 		EndTime:   &endTime,
 		Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
@@ -205,7 +206,7 @@ func TestSubscriptionUpdateCells(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, sub)
 
-	subs, err := app.SearchSubscriptions(ctx, sub.Cells)
+	subs, err := app.SearchSubscriptionsByOwner(ctx, sub.Cells, owner)
 	require.NoError(t, err)
 	require.NotNil(t, subs)
 	require.Len(t, subs, 1)
@@ -347,12 +348,17 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			id := dssmodels.ID(uuid.New().String())
-			owner := dssmodels.Owner(uuid.New().String())
-			var version *dssmodels.Version
+			var (
+				id      = dssmodels.ID(uuid.New().String())
+				owner   = dssmodels.Owner(uuid.New().String())
+				version *dssmodels.Version
+			)
+
+			repo, err := app.Store.Interact(ctx)
+			require.NoError(t, err)
 
 			// Insert a pre-existing subscription to simulate updating from something.
-			existing, err := app.Transactor.InsertSubscription(ctx, &ridmodels.Subscription{
+			existing, err := repo.InsertSubscription(ctx, &ridmodels.Subscription{
 				ID:        id,
 				Owner:     owner,
 				StartTime: &r.updateFromStartTime,

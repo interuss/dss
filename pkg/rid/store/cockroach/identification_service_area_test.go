@@ -15,7 +15,7 @@ import (
 
 var (
 	// Ensure the struct conforms to the interface
-	_           repos.ISA = &Store{}
+	_           repos.ISA = &repo{}
 	overflow              = uint64(17106221850767130624) // face 5 L13 overflows
 	serviceArea           = &ridmodels.IdentificationServiceArea{
 		ID:        dssmodels.ID(uuid.New().String()),
@@ -43,9 +43,12 @@ func TestStoreSearchISAs(t *testing.T) {
 	)
 	defer tearDownStore()
 
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	isa := *serviceArea
 	isa.Cells = cells
-	saOut, err := store.InsertISA(ctx, &isa)
+	saOut, err := repo.InsertISA(ctx, &isa)
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 	require.Equal(t, isa.ID, saOut.ID)
@@ -128,7 +131,7 @@ func TestStoreSearchISAs(t *testing.T) {
 		t.Run(r.name, func(t *testing.T) {
 			earliest, latest := r.timestampMutator(*saOut.StartTime, *saOut.EndTime)
 
-			serviceAreas, err := store.SearchISAs(ctx, r.cells, earliest, latest)
+			serviceAreas, err := repo.SearchISAs(ctx, r.cells, earliest, latest)
 			require.NoError(t, err)
 			require.Len(t, serviceAreas, r.expectedLen)
 		})
@@ -140,19 +143,22 @@ func TestBadVersion(t *testing.T) {
 	store, tearDownStore := setUpStore(ctx, t)
 	defer tearDownStore()
 
-	saOut1, err := store.InsertISA(ctx, serviceArea)
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	saOut1, err := repo.InsertISA(ctx, serviceArea)
 	require.NoError(t, err)
 	require.NotNil(t, saOut1)
 
 	// Rewriting service area should fail
-	saOut2, err := store.UpdateISA(ctx, serviceArea)
+	saOut2, err := repo.UpdateISA(ctx, serviceArea)
 	require.NoError(t, err)
 	require.Nil(t, saOut2)
 
 	// Rewriting, but with the correct version should work.
 	newEndTime := saOut1.EndTime.Add(time.Minute)
 	saOut1.EndTime = &newEndTime
-	saOut3, err := store.UpdateISA(ctx, saOut1)
+	saOut3, err := repo.UpdateISA(ctx, saOut1)
 	require.NoError(t, err)
 	require.NotNil(t, saOut3)
 }
@@ -162,7 +168,10 @@ func TestStoreExpiredISA(t *testing.T) {
 	store, tearDownStore := setUpStore(ctx, t)
 	defer tearDownStore()
 
-	saOut, err := store.InsertISA(ctx, serviceArea)
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	saOut, err := repo.InsertISA(ctx, serviceArea)
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 
@@ -171,11 +180,11 @@ func TestStoreExpiredISA(t *testing.T) {
 
 	// We should still be able to find the ISA by searching and by ID.
 	now := fakeClock.Now()
-	serviceAreas, err := store.SearchISAs(ctx, serviceArea.Cells, &now, nil)
+	serviceAreas, err := repo.SearchISAs(ctx, serviceArea.Cells, &now, nil)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 
-	ret, err := store.GetISA(ctx, serviceArea.ID)
+	ret, err := repo.GetISA(ctx, serviceArea.ID)
 	require.NoError(t, err)
 	require.NotNil(t, ret)
 
@@ -183,12 +192,12 @@ func TestStoreExpiredISA(t *testing.T) {
 	fakeClock.Advance(2 * time.Minute)
 	now = fakeClock.Now()
 
-	serviceAreas, err = store.SearchISAs(ctx, serviceArea.Cells, &now, nil)
+	serviceAreas, err = repo.SearchISAs(ctx, serviceArea.Cells, &now, nil)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 0)
 
 	// A get should work even if it is expired.
-	ret, err = store.GetISA(ctx, serviceArea.ID)
+	ret, err = repo.GetISA(ctx, serviceArea.ID)
 	require.NoError(t, err)
 	require.NotNil(t, ret)
 }
@@ -200,18 +209,21 @@ func TestStoreDeleteISAs(t *testing.T) {
 	)
 	defer tearDownStore()
 
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	// Insert the ISA.
 	copy := *serviceArea
-	isa, err := store.InsertISA(ctx, &copy)
+	isa, err := repo.InsertISA(ctx, &copy)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
 
 	// Delete the ISA.
 	// Ensure a fresh Get, then delete still updates the sub indexes
-	isa, err = store.GetISA(ctx, isa.ID)
+	isa, err = repo.GetISA(ctx, isa.ID)
 	require.NoError(t, err)
 
-	serviceAreaOut, err := store.DeleteISA(ctx, isa)
+	serviceAreaOut, err := repo.DeleteISA(ctx, isa)
 	require.NoError(t, err)
 	require.Equal(t, isa, serviceAreaOut)
 }
@@ -221,12 +233,15 @@ func TestStoreISAWithNoGeoData(t *testing.T) {
 	store, tearDownStore := setUpStore(ctx, t)
 	defer tearDownStore()
 
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.IdentificationServiceArea{
 		ID:      dssmodels.ID(uuid.New().String()),
 		Owner:   dssmodels.Owner("original owner"),
 		EndTime: &endTime,
 	}
-	_, err := store.InsertISA(ctx, sub)
+	_, err = repo.InsertISA(ctx, sub)
 	require.Error(t, err)
 }

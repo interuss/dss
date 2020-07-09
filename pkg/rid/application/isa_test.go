@@ -19,7 +19,7 @@ var (
 
 func setUpISAApp(ctx context.Context, t *testing.T) (*app, func()) {
 	l := zap.L()
-	transactor, cleanup := setUpTransactor(ctx, t, l)
+	transactor, cleanup := setUpStore(ctx, t, l)
 	return NewFromTransactor(transactor, l).(*app), cleanup
 }
 
@@ -260,8 +260,10 @@ func TestUpdateISA(t *testing.T) {
 		t.Run(r.name, func(t *testing.T) {
 			id := dssmodels.ID(uuid.New().String())
 			owner := dssmodels.Owner(uuid.New().String())
+			repo, err := app.Store.Interact(ctx)
+			require.NoError(t, err)
 			// Insert a pre-existing ISA to simulate updating from something.
-			existing, err := app.Transactor.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
+			existing, err := repo.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
 				ID:        id,
 				Owner:     owner,
 				StartTime: &r.updateFromStartTime,

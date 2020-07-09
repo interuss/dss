@@ -10,12 +10,12 @@ import (
 	"github.com/dpjacques/clockwork"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"golang.org/x/mod/semver"
 )
 
@@ -52,9 +52,9 @@ func newStore() (*Store, error) {
 		return nil, err
 	}
 	return &Store{
-		ISAStore:          &ISAStore{Queryable: cdb, logger: zap.L()},
-		SubscriptionStore: &SubscriptionStore{Queryable: cdb, clock: fakeClock, logger: zap.L()},
-		db:                cdb,
+		db:     cdb,
+		logger: logging.Logger,
+		clock:  fakeClock,
 	}, nil
 }
 
@@ -85,11 +85,14 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 	require.NotNil(t, store)
 	defer tearDownStore()
 
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	var (
 		begins  = time.Now()
 		expires = begins.Add(-5 * time.Minute)
 	)
-	_, err := store.InsertSubscription(ctx, &ridmodels.Subscription{
+	_, err = repo.InsertSubscription(ctx, &ridmodels.Subscription{
 		ID:                dssmodels.ID(uuid.New().String()),
 		Owner:             "me-myself-and-i",
 		URL:               "https://no/place/like/home",
@@ -108,15 +111,18 @@ func TestTxnRetrier(t *testing.T) {
 	require.NotNil(t, store)
 	defer tearDownStore()
 
-	err := store.InTxnRetrier(ctx, func(store repos.Repository) error {
+	err := store.Transact(ctx, func(repo repos.Repository) error {
 		// can query within this
-		isa, err := store.InsertISA(ctx, serviceArea)
+		isa, err := repo.InsertISA(ctx, serviceArea)
 		require.NotNil(t, isa)
 		return err
 	})
 	require.NoError(t, err)
 	// can query afterwads
-	isa, err := store.GetISA(ctx, serviceArea.ID)
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	isa, err := repo.GetISA(ctx, serviceArea.ID)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
 
@@ -126,7 +132,7 @@ func TestTxnRetrier(t *testing.T) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Millisecond)
 	defer cancel()
 	count := 0
-	err = store.InTxnRetrier(ctx, func(store repos.Repository) error {
+	err = store.Transact(ctx, func(repo repos.Repository) error {
 		// can query within this
 		count++
 		// Postgre retryable error
@@ -169,17 +175,18 @@ func TestTransactor(t *testing.T) {
 	)
 	require.NotNil(t, store)
 	defer tearDownStore()
+
 	subscription1 := subscriptionsPool[0].input
 	subscription2 := subscriptionsPool[1].input
 
 	txnCount := 0
-	err := store.InTxnRetrier(ctx, func(s1 repos.Repository) error {
+	err := store.Transact(ctx, func(s1 repos.Repository) error {
 		// We should get to this retry, then return nothing.
 		if txnCount > 0 {
 			return errors.New("already failed")
 		}
 		txnCount++
-		err := store.InTxnRetrier(ctx, func(s2 repos.Repository) error {
+		err := store.Transact(ctx, func(s2 repos.Repository) error {
 			subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 			require.NoError(t, err)
 			require.Len(t, subs, 0)
@@ -200,16 +207,20 @@ func TestTransactor(t *testing.T) {
 		return err
 	})
 	require.Error(t, err)
-	subs, err := store.SearchSubscriptions(ctx, subscription1.Cells)
+
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	subs, err := repo.SearchSubscriptions(ctx, subscription1.Cells)
 	require.NoError(t, err)
 
 	require.Len(t, subs, 1)
 
-	s, err := store.GetSubscription(ctx, subscription1.ID)
+	s, err := repo.GetSubscription(ctx, subscription1.ID)
 	require.NoError(t, err)
 	require.Nil(t, s)
 
-	s, err = store.GetSubscription(ctx, subscription2.ID)
+	s, err = repo.GetSubscription(ctx, subscription2.ID)
 	require.NoError(t, err)
 	require.NotNil(t, s)
 
@@ -223,23 +234,37 @@ func TestBasicTxn(t *testing.T) {
 	)
 	require.NotNil(t, store)
 	defer tearDownStore()
+
 	subscription1 := subscriptionsPool[0].input
 	subscription2 := subscriptionsPool[1].input
 
 	tx1, err := store.db.Begin()
 	require.NoError(t, err)
-
-	s1 := *(store.SubscriptionStore)
-	s1.Queryable = tx1
+	s1 := &repo{
+		isaRepo: &isaRepo{
+			Queryable: tx1,
+			logger:    logging.Logger,
+		},
+		subscriptionRepo: &subscriptionRepo{
+			Queryable: tx1,
+			logger:    logging.Logger,
+			clock:     DefaultClock,
+		},
+	}
 
 	tx2, err := store.db.Begin()
 	require.NoError(t, err)
-
-	s2 := *(store.SubscriptionStore)
-	s2.Queryable = tx2
-
-	require.NotEqual(t, store.SubscriptionStore.Queryable, s1.Queryable)
-	require.NotEqual(t, store.SubscriptionStore.Queryable, s2.Queryable)
+	s2 := &repo{
+		isaRepo: &isaRepo{
+			Queryable: tx2,
+			logger:    logging.Logger,
+		},
+		subscriptionRepo: &subscriptionRepo{
+			Queryable: tx2,
+			logger:    logging.Logger,
+			clock:     DefaultClock,
+		},
+	}
 
 	subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 	require.NoError(t, err)
@@ -259,7 +284,10 @@ func TestBasicTxn(t *testing.T) {
 	require.Error(t, tx1.Commit())
 	require.NoError(t, tx2.Commit())
 
-	subs, err = store.SearchSubscriptions(ctx, subscription1.Cells)
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	subs, err = repo.SearchSubscriptions(ctx, subscription2.Cells)
 	require.NoError(t, err)
 
 	require.Len(t, subs, 1)

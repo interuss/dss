@@ -38,13 +38,29 @@ type SubscriptionApp interface {
 	SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error)
 }
 
+func (a *app) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
+	repo, err := a.Store.Interact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return repo.GetSubscription(ctx, id)
+}
+
+func (a *app) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+	repo, err := a.Store.Interact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return repo.SearchSubscriptionsByOwner(ctx, cells, owner)
+}
+
 func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	// Validate and perhaps correct StartTime and EndTime.
 	if err := s.AdjustTimeRange(a.clock.Now(), nil); err != nil {
 		return nil, err
 	}
 	var sub *ridmodels.Subscription
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
 
 		// ensure it doesn't exist yet
 		old, err := repo.GetSubscription(ctx, s.ID)
@@ -78,7 +94,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var sub *ridmodels.Subscription
 
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
 		old, err := repo.GetSubscription(ctx, s.ID)
 		switch {
 		case err != nil:
@@ -117,7 +133,7 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 // DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
 func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
 	var ret *ridmodels.Subscription
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
 		var err error
 		old, err := repo.GetSubscription(ctx, id)
 		switch {
