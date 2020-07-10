@@ -9,9 +9,10 @@ import (
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	ridcrdb "github.com/interuss/dss/pkg/rid/cockroach"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/rid/store"
+	ridcrdb "github.com/interuss/dss/pkg/rid/store/cockroach"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/stretchr/testify/require"
 
@@ -31,7 +32,11 @@ type mockRepo struct {
 	dssql.Queryable
 }
 
-func (s *mockRepo) InTxnRetrier(ctx context.Context, f func(repo repos.Repository) error) error {
+func (s *mockRepo) Interact(ctx context.Context) (repos.Repository, error) {
+	return s, nil
+}
+
+func (s *mockRepo) Transact(ctx context.Context, f func(repo repos.Repository) error) error {
 	return f(s)
 }
 
@@ -39,7 +44,7 @@ func (s *mockRepo) Close() error {
 	return nil
 }
 
-func setUpTransactor(ctx context.Context, t *testing.T, logger *zap.Logger) (repos.Transactor, func()) {
+func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.Store, func()) {
 	DefaultClock = fakeClock
 
 	if len(*storeURI) == 0 {
@@ -70,10 +75,5 @@ func setUpTransactor(ctx context.Context, t *testing.T, logger *zap.Logger) (rep
 
 // CleanUp drops all required tables from the store, useful for testing.
 func CleanUp(ctx context.Context, s *ridcrdb.Store) error {
-	const query = `
-	DROP TABLE IF EXISTS subscriptions;
-	DROP TABLE IF EXISTS identification_service_areas;`
-
-	_, err := s.ISAStore.ExecContext(ctx, query)
-	return err
+	return s.CleanUp(ctx)
 }

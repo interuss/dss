@@ -15,7 +15,7 @@ import (
 
 var (
 	// Ensure the struct conforms to the interface
-	_                 repos.Subscription = &SubscriptionStore{}
+	_                 repos.Subscription = &subscriptionRepo{}
 	subscriptionsPool                    = []struct {
 		name  string
 		input *ridmodels.Subscription
@@ -72,13 +72,16 @@ func TestStoreGetSubscription(t *testing.T) {
 	)
 	defer tearDownStore()
 
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.InsertSubscription(ctx, r.input)
+			sub1, err := repo.InsertSubscription(ctx, r.input)
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
-			sub2, err := store.GetSubscription(ctx, sub1.ID)
+			sub2, err := repo.GetSubscription(ctx, sub1.ID)
 			require.NoError(t, err)
 			require.NotNil(t, sub2)
 
@@ -94,16 +97,19 @@ func TestStoreInsertSubscription(t *testing.T) {
 	)
 	defer tearDownStore()
 
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.InsertSubscription(ctx, r.input)
+			sub1, err := repo.InsertSubscription(ctx, r.input)
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
 			// Test changes without the version differing.
 			r2 := *sub1
 			r2.URL = "new url"
-			sub2, err := store.UpdateSubscription(ctx, &r2)
+			sub2, err := repo.UpdateSubscription(ctx, &r2)
 			require.NoError(t, err)
 			require.NotNil(t, sub2)
 			require.Equal(t, "new url", sub2.URL)
@@ -112,7 +118,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 			r3 := *sub2
 			r3.URL = "new url 2"
 			r3.Version = nil
-			sub3, err := store.UpdateSubscription(ctx, &r3)
+			sub3, err := repo.UpdateSubscription(ctx, &r3)
 			require.NoError(t, err)
 			require.Nil(t, sub3)
 
@@ -120,11 +126,11 @@ func TestStoreInsertSubscription(t *testing.T) {
 			r4 := *sub2
 			r4.URL = "new url 3"
 			r4.Version = dssmodels.VersionFromTime(time.Now())
-			sub4, err := store.UpdateSubscription(ctx, &r4)
+			sub4, err := repo.UpdateSubscription(ctx, &r4)
 			require.NoError(t, err)
 			require.Nil(t, sub4)
 
-			sub5, err := store.GetSubscription(ctx, sub1.ID)
+			sub5, err := repo.GetSubscription(ctx, sub1.ID)
 			require.NoError(t, err)
 			require.NotNil(t, sub5)
 
@@ -140,9 +146,12 @@ func TestStoreDeleteSubscription(t *testing.T) {
 	)
 	defer tearDownStore()
 
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
-			sub1, err := store.InsertSubscription(ctx, r.input)
+			sub1, err := repo.InsertSubscription(ctx, r.input)
 			require.NoError(t, err)
 			require.NotNil(t, sub1)
 
@@ -150,11 +159,11 @@ func TestStoreDeleteSubscription(t *testing.T) {
 			sub1BadVersion := *sub1
 			sub1BadVersion.Version, err = dssmodels.VersionFromString("a3cg3tcuhk000")
 			require.NoError(t, err)
-			sub2, err := store.DeleteSubscription(ctx, &sub1BadVersion)
+			sub2, err := repo.DeleteSubscription(ctx, &sub1BadVersion)
 			require.NoError(t, err)
 			require.Nil(t, sub2)
 
-			sub4, err := store.DeleteSubscription(ctx, sub1)
+			sub4, err := repo.DeleteSubscription(ctx, sub1)
 			require.NoError(t, err)
 			require.NotNil(t, sub4)
 
@@ -169,6 +178,9 @@ func TestStoreSearchSubscription(t *testing.T) {
 		store, tearDownStore = setUpStore(ctx, t)
 	)
 	defer tearDownStore()
+
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
 
 	var (
 		// pick an L13 value that overflows.
@@ -192,17 +204,16 @@ func TestStoreSearchSubscription(t *testing.T) {
 		subscription := *r.input
 		subscription.Owner = owners[i]
 		subscription.Cells = cells[:i+1]
-		sub1, err := store.InsertSubscription(ctx, &subscription)
+		sub1, err := repo.InsertSubscription(ctx, &subscription)
 		require.NoError(t, err)
 		require.NotNil(t, sub1)
 	}
 	// Test normal search
-	found, err := store.SearchSubscriptions(ctx, cells)
+	found, err := repo.SearchSubscriptions(ctx, cells)
 	require.NoError(t, err)
-	require.NotNil(t, found)
 	require.Len(t, found, 3)
 	for _, owner := range owners {
-		found, err := store.SearchSubscriptionsByOwner(ctx, cells, owner)
+		found, err := repo.SearchSubscriptionsByOwner(ctx, cells, owner)
 		require.NoError(t, err)
 		require.NotNil(t, found)
 		// We insert one subscription per owner. Hence, no matter how many cells are touched by the subscription,
@@ -216,6 +227,9 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	store, tearDownStore := setUpStore(ctx, t)
 	defer tearDownStore()
 
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
 		ID:      dssmodels.ID(uuid.New().String()),
@@ -223,29 +237,29 @@ func TestStoreExpiredSubscription(t *testing.T) {
 		Cells:   s2.CellUnion{s2.CellID(12494535866699481088)},
 		EndTime: &endTime,
 	}
-	_, err := store.InsertSubscription(ctx, sub)
+	_, err = repo.InsertSubscription(ctx, sub)
 	require.NoError(t, err)
 
 	// The subscription's endTime is 24 hours from now.
 	fakeClock.Advance(23 * time.Hour)
 
 	// We should still be able to find the subscription by searching and by ID.
-	subs, err := store.SearchSubscriptionsByOwner(ctx, sub.Cells, "original owner")
+	subs, err := repo.SearchSubscriptionsByOwner(ctx, sub.Cells, "original owner")
 	require.NoError(t, err)
 	require.Len(t, subs, 1)
 
-	ret, err := store.GetSubscription(ctx, sub.ID)
+	ret, err := repo.GetSubscription(ctx, sub.ID)
 	require.NoError(t, err)
 	require.NotNil(t, &ret)
 
 	// But now the subscription has expired.
 	fakeClock.Advance(2 * time.Hour)
 
-	subs, err = store.SearchSubscriptionsByOwner(ctx, sub.Cells, "original owner")
+	subs, err = repo.SearchSubscriptionsByOwner(ctx, sub.Cells, "original owner")
 	require.NoError(t, err)
 	require.Len(t, subs, 0)
 
-	ret, err = store.GetSubscription(ctx, sub.ID)
+	ret, err = repo.GetSubscription(ctx, sub.ID)
 	require.NotNil(t, ret)
 	require.NoError(t, err)
 }
@@ -255,13 +269,16 @@ func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
 	store, tearDownStore := setUpStore(ctx, t)
 	defer tearDownStore()
 
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
 		ID:      dssmodels.ID(uuid.New().String()),
 		Owner:   dssmodels.Owner("original owner"),
 		EndTime: &endTime,
 	}
-	_, err := store.InsertSubscription(ctx, sub)
+	_, err = repo.InsertSubscription(ctx, sub)
 	require.Error(t, err)
 }
 
@@ -269,12 +286,16 @@ func TestMaxSubscriptionCountInCellsByOwner(t *testing.T) {
 	ctx := context.Background()
 	store, tearDownStore := setUpStore(ctx, t)
 	defer tearDownStore()
+
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
 	for _, s := range subscriptionsPool {
-		_, err := store.InsertSubscription(ctx, s.input)
+		_, err := repo.InsertSubscription(ctx, s.input)
 		require.NoError(t, err)
 	}
 
-	count, err := store.MaxSubscriptionCountInCellsByOwner(ctx, s2.CellUnion{12494535935418957824}, "myself")
+	count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, s2.CellUnion{12494535935418957824}, "myself")
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
 }

@@ -21,8 +21,8 @@ const (
 	updateSubscriptionFields = "id, url, notification_index, cells, starts_at, ends_at, updated_at"
 )
 
-// SubscriptionStore is an implementation of the SubscriptionRepo for CRDB.
-type SubscriptionStore struct {
+// subscriptions is an implementation of the SubscriptionRepo for CRDB.
+type subscriptionRepo struct {
 	dssql.Queryable
 
 	clock  clockwork.Clock
@@ -30,7 +30,7 @@ type SubscriptionStore struct {
 }
 
 // process a query that should return one or many subscriptions.
-func (c *SubscriptionStore) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
 	rows, err := c.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (c *SubscriptionStore) process(ctx context.Context, query string, args ...i
 }
 
 // processOne processes a query that should return exactly a single subscription.
-func (c *SubscriptionStore) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.Subscription, error) {
 	subs, err := c.process(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (c *SubscriptionStore) processOne(ctx context.Context, query string, args .
 // MaxSubscriptionCountInCellsByOwner counts how many subscriptions the
 // owner has in each one of these cells, and returns the number of subscriptions
 // in the cell with the highest number of subscriptions.
-func (c *SubscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+func (c *subscriptionRepo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
 	// TODO:steeling this query is expensive. The standard defines the max sub
 	// per "area", but area is loosely defined. Since we may not have to be so
 	// strict we could keep this count in memory, (or in some other storage).
@@ -117,7 +117,7 @@ func (c *SubscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.Conte
 
 // GetSubscription returns the subscription identified by "id".
 // Returns nil, nil if not found
-func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	// TODO(steeling) we should enforce startTime and endTime to not be null at the DB level.
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
@@ -127,7 +127,7 @@ func (c *SubscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID
 
 // UpdateSubscription updates the Subscription.. not yet implemented.
 // Returns nil, nil if ID, version not found
-func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		udpateQuery = fmt.Sprintf(`
 		UPDATE
@@ -159,7 +159,7 @@ func (c *SubscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels
 
 // InsertSubscription inserts subscription into the store and returns
 // the resulting subscription including its ID.
-func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		insertQuery = fmt.Sprintf(`
 		INSERT INTO
@@ -193,7 +193,7 @@ func (c *SubscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels
 // DeleteSubscription deletes the subscription identified by ID.
 // It must be done in a txn and the version verified.
 // Returns nil, nil if ID, version not found
-func (c *SubscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 		DELETE FROM
@@ -207,7 +207,7 @@ func (c *SubscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels
 }
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.
-func (c *SubscriptionStore) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var updateQuery = fmt.Sprintf(`
 			UPDATE subscriptions
 			SET notification_index = notification_index + 1
@@ -225,7 +225,7 @@ func (c *SubscriptionStore) UpdateNotificationIdxsInCells(ctx context.Context, c
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
-func (c *SubscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -251,7 +251,7 @@ func (c *SubscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.Ce
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
-func (c *SubscriptionStore) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT

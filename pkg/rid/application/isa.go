@@ -33,6 +33,14 @@ type ISAApp interface {
 	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
 }
 
+func (a *app) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+	repo, err := a.Store.Interact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return repo.GetISA(ctx, id)
+}
+
 // SearchISAs for ISA within the volume bounds.
 func (a *app) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	now := a.clock.Now()
@@ -40,7 +48,12 @@ func (a *app) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time
 		earliest = &now
 	}
 
-	return a.Transactor.SearchISAs(ctx, cells, earliest, latest)
+	repo, err := a.Store.Interact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo.SearchISAs(ctx, cells, earliest, latest)
 }
 
 // DeleteISA the given ISA
@@ -50,7 +63,7 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
 		old, err := repo.GetISA(ctx, id)
 		switch {
 		case err != nil:
@@ -86,7 +99,7 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
 		// ensure it doesn't exist yet
 		old, err := repo.GetISA(ctx, isa.ID)
 		if err != nil {
@@ -117,7 +130,7 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err := a.Transactor.InTxnRetrier(ctx, func(repo repos.Repository) error {
+	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
 		var err error
 
 		old, err := repo.GetISA(ctx, isa.ID)

@@ -21,14 +21,14 @@ const (
 	updateISAFields = "id, url, cells, starts_at, ends_at, updated_at"
 )
 
-// ISAStore is an implementation of the ISARepo for CRDB.
-type ISAStore struct {
+// isaRepo is an implementation of the ISARepo for CRDB.
+type isaRepo struct {
 	dssql.Queryable
 
 	logger *zap.Logger
 }
 
-func (c *ISAStore) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
 	rows, err := c.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (c *ISAStore) process(ctx context.Context, query string, args ...interface{
 	return payload, nil
 }
 
-func (c *ISAStore) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
 	isas, err := c.process(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (c *ISAStore) processOne(ctx context.Context, query string, args ...interfa
 
 // GetISA returns the isa identified by "id".
 // Returns nil, nil if not found
-func (c *ISAStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
 			identification_service_areas
@@ -95,7 +95,7 @@ func (c *ISAStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Iden
 // by it.
 // TODO: Simplify the logic to insert without a query, such that the insert fails
 // if there's an existing entity.
-func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		insertAreasQuery = fmt.Sprintf(`
 			INSERT INTO
@@ -126,7 +126,7 @@ func (c *ISAStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationS
 // by it.
 // TODO: simplify the logic to just update, without the primary query.
 // Returns nil, nil if ID, version not found
-func (c *ISAStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		updateAreasQuery = fmt.Sprintf(`
 			UPDATE
@@ -152,7 +152,7 @@ func (c *ISAStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationS
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
 // Returns nil, nil if ID, version not found
-func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		deleteQuery = fmt.Sprintf(`
 			DELETE FROM
@@ -169,7 +169,7 @@ func (c *ISAStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationS
 // SearchISAs searches IdentificationServiceArea
 // instances that intersect with "cells" and, if set, the temporal volume
 // defined by "earliest" and "latest".
-func (c *ISAStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var (
 		// TODO: make earliest and latest required (NOT NULL) and remove coalesce.
 		// Make them real values (not pointers), on the model layer.
