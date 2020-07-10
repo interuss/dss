@@ -48,7 +48,7 @@ Individual CockroachDB nodes hosting sharded data of the DAR. More information a
 
 ### DB Manager
 
-Component responsible for bootstrapping the Database on first run when the CRDB Cluster is initialized for the first time. Only the first run is automatic to bootstrap the Database to the desired version. This component is also used to upgrade the Database Schemas, and if the cluster has already been bootstrapped with this, it must be invoked manually.
+Component responsible for performing orderly database schema migrations, including database bootstrapping. Invoked automatically on first run along with the CRDB cluster-init job, or when requested manually by a user.
 
 ## Directories of Interest:
 *   [`build/`](build) has all of the configuration required to build and

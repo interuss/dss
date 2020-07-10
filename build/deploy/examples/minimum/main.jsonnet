@@ -10,7 +10,7 @@ local metadata = metadataBase {
     locality: 'your_unique_locality',
     nodeIPs: ['0.0.0.0', '1.1.1.1', '2.2.2.2'],
     shouldInit: true, //Set to false if joining a cluster
-    JoinExisting: ['0.db.westus.example.com', '1.db.westus.example.com', '2.db.westus.example.com' ], //If joining a cluster, replace these with at least 3 FQDN's of the existing DSS cockroachdb cluster you are joining.
+    // JoinExisting: ['0.db.westus.example.com', '1.db.westus.example.com', '2.db.westus.example.com' ], //If joining a cluster, replace these with at least 3 FQDN's of the existing DSS cockroachdb cluster you are joining.
   },
   gateway+: {
     ipName: 'your-ingress-name', //Set this if using GKE

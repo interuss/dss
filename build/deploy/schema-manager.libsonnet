@@ -17,6 +17,7 @@ local rid_schema_mount = {
 
 {
   all(metadata): {
+    assert metadata.cockroach.shouldInit == true && metadata.cockroach.JoinExisting == [] : "If shouldInit is True, JoinExisiting should be empty",
     rid_schema: base.ConfigMap(metadata, 'db-rid-schema') {
       data: defaultdb_schema.data
     },
