@@ -41,6 +41,7 @@ local volumes = import 'volumes.libsonnet';
                 public_key_files: std.join(",", metadata.backend.pubKeys),
                 dump_requests: true,
                 accepted_jwt_audiences: metadata.gateway.hostname,
+                locality: metadata.cockroach.locality,
               },
             },
           },
