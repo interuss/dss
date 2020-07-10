@@ -3,6 +3,7 @@ package cockroach
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
@@ -109,125 +110,45 @@ func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
 	}
 }
 
-// Bootstrap bootstraps the underlying database with required tables.
-//
-// TODO: We should handle database migrations properly, but bootstrap both us
-// *and* the database with this manual approach here.
-func (s *Store) Bootstrap(ctx context.Context) error {
-	/*
-			The following tables correspond to the ASTM Remote ID standard A2.5.2.3:
-			a) Cell ID:
-					cells_identification_service_areas.cell_id
-			 		cells_subscriptions.cell_id
-			b) Subscription
-				 	i. subscriptions.id
-				 ii. subscriptions.owner
-				iii. subscriptions.url
-				 iv. subscriptions.starts_at and subscriptions.ends_at
-				  v. the mapping from cells_subscriptions.subscription_id and cell_id
-						 to subscriptions.id
-				 vi. subscriptions.notification_index
-			c) ISA
-		 		 	i. identification_service_areas.id
-				 ii. identification_service_areas.owner
-				iii. identification_service_areas.url
-				 iv. identification_service_areas.starts_at and
-						 identification_service_areas.ends_at
-				  v. the mapping from
-						 cells_identification_service_areas.subscription_id and cell_id
-						 to cells_identification_service_areas.id
-	*/
-	const query = `
-	CREATE TABLE IF NOT EXISTS subscriptions (
-		id UUID PRIMARY KEY,
-		owner STRING NOT NULL,
-		url STRING NOT NULL,
-		notification_index INT4 DEFAULT 0,
-		starts_at TIMESTAMPTZ,
-		ends_at TIMESTAMPTZ,
-		updated_at TIMESTAMPTZ NOT NULL,
-		cells INT64[] NOT NULL CHECK (array_length(cells, 1) > 0 AND array_length(cells, 1) IS NOT NULL),
-		INDEX owner_idx (owner),
-		INVERTED INDEX cells_idx (cells),
-		INDEX starts_at_idx (starts_at),
-		INDEX ends_at_idx (ends_at),
-		CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)
-	);
-	CREATE TABLE IF NOT EXISTS identification_service_areas (
-		id UUID PRIMARY KEY,
-		owner STRING NOT NULL,
-		url STRING NOT NULL,
-		starts_at TIMESTAMPTZ,
-		ends_at TIMESTAMPTZ,
-		updated_at TIMESTAMPTZ NOT NULL,
-		cells INT64[] NOT NULL CHECK (array_length(cells, 1) IS NOT NULL),
-		INDEX owner_idx (owner),
-		INVERTED INDEX cells_idx (cells),
-		INDEX starts_at_idx (starts_at),
-		INDEX ends_at_idx (ends_at),
-		INDEX updated_at_idx (updated_at),
-		CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)
-	);
-	`
-	// TODO: example schema_versions. The onerow_enforcer ensures that 2 versions
-	// can't exist at the same time.
-	// CREATE TABLE schema_versions (
-	// 	onerow_enforcer bool PRIMARY KEY DEFAULT TRUE CHECK(onerow_enforcer)
-	// 	schema_version STRING NOT NULL,
-	// );
-
-	_, err := s.db.ExecContext(ctx, query)
-	return err
-}
-
 // CleanUp removes all database tables managed by s.
 func (s *Store) CleanUp(ctx context.Context) error {
 	const query = `
-	DROP TABLE IF EXISTS subscriptions;
-	DROP TABLE IF EXISTS identification_service_areas;`
+	DELETE FROM subscriptions WHERE id IS NOT NULL;
+	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
 	_, err := s.db.ExecContext(ctx, query)
 	return err
 }
 
-// GetVersion returns the current semver of the schema
+// GetVersion returns the Version string for the Database.
+// If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (string, error) {
-	// We treat the existence of cells_subscriptions as running on the initial
-	// version, 1.0.0
+	// when we have multiple databases we will have to substitute
+	// defaultdb for other database names, this field is current useless
 	const query = `
 		SELECT EXISTS (
   		SELECT *
 		  FROM information_schema.tables 
-   		WHERE table_name = 'cells_subscriptions'
+		WHERE table_name = 'schema_versions'
+		AND table_catalog = 'defaultdb'
    )`
 	row := s.db.QueryRowContext(ctx, query)
 	var ret bool
-	err := row.Scan(&ret)
-	if err != nil {
+	if err := row.Scan(&ret); err != nil {
 		return "", err
 	}
-	if ret {
-		// Base version
-		return "v1.0.0", nil
+	if !ret {
+		// Database has not been bootstrapped using DB Schema Manager
+		return "", fmt.Errorf("DB has not been bootstrapped with Schema Manager")
 	}
-	// Version without cells joins table.
-	// TODO: leverage proper migrations and use something like the query below.
-	return "v2.0.0", nil
+	const getVersionQuery = `
+      SELECT schema_version 
+      FROM defaultdb.schema_versions
+	  WHERE onerow_enforcer = TRUE`
+	row = s.db.QueryRowContext(ctx, getVersionQuery)
+	var dbVersion string
+	if err := row.Scan(&dbVersion); err != nil {
+		return "", err
+	}
+	return dbVersion, nil
 }
-
-// 	// TODO steeling: we should leverage this function. Instead, we don't have
-// 	// a great way migrate/seed the DB, and we can't combine that with the code
-// 	// here.
-// func (s *Store) GetVersion() float {
-
-// 	const query = `
-//     SELECT
-//       IFNULL(schema_version, 'v1.0.0')
-//     FROM
-//     	schema_versions
-//   	LIMIT 1`
-// 	row := s.QueryRowContext(ctx, query)
-// 	var ret string
-// 	err := row.Scan(&ret)
-// 	return ret, err
-// }
