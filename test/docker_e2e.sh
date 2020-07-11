@@ -75,7 +75,7 @@ docker run --rm --name rid-db-manager \
 	-v $(pwd)/build/deploy/db-schemas/defaultdb:/db-schemas/defaultdb \
 	local-db-manager \
 	--schemas_dir db-schemas/defaultdb \
-	--db_version v2.0.0 \
+	--db_version v3.0.0 \
 	--cockroach_host crdb
 
 sleep 1
