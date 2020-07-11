@@ -7,6 +7,8 @@
     "000003_migrate_data_to_index.down.sql": importstr "defaultdb/000003_migrate_data_to_index.down.sql",
     "000003_migrate_data_to_index.up.sql": importstr "defaultdb/000003_migrate_data_to_index.up.sql",
     "000004_drop_cells_table.down.sql": importstr "defaultdb/000004_drop_cells_table.down.sql",
-    "000004_drop_cells_table.up.sql": importstr "defaultdb/000004_drop_cells_table.up.sql"
+    "000004_drop_cells_table.up.sql": importstr "defaultdb/000004_drop_cells_table.up.sql",
+    "000005_bump_version.down.sql": importstr "defaultdb/000005_bump_version.down.sql",
+    "000005_bump_version.up.sql": importstr "defaultdb/000005_bump_version.up.sql",
   },
 }
