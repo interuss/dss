@@ -66,7 +66,6 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	require.NoError(t, err)
 
 	store := ridcrdb.NewStore(cdb, logger)
-	require.NoError(t, store.Bootstrap(ctx))
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
 		require.NoError(t, store.Close())

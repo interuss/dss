@@ -16,7 +16,6 @@ import (
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/mod/semver"
 )
 
 var (
@@ -39,7 +38,6 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 
 	store, err := newStore()
 	require.NoError(t, err)
-	require.NoError(t, store.Bootstrap(ctx))
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
 		require.NoError(t, store.Close())
@@ -61,20 +59,11 @@ func newStore() (*Store, error) {
 // CleanUp drops all required tables from the store, useful for testing.
 func CleanUp(ctx context.Context, s *Store) error {
 	const query = `
-	DROP TABLE IF EXISTS subscriptions;
-	DROP TABLE IF EXISTS identification_service_areas;`
+	DELETE FROM subscriptions WHERE id IS NOT NULL;
+	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
 	_, err := s.db.ExecContext(ctx, query)
 	return err
-}
-
-func TestStoreBootstrap(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	require.NotNil(t, store)
-	tearDownStore()
 }
 
 func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
@@ -141,31 +130,6 @@ func TestTxnRetrier(t *testing.T) {
 	require.Error(t, err)
 	// Ensure it was retried.
 	require.Greater(t, count, 1)
-}
-
-func TestGetVersion(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer tearDownStore()
-	version, err := store.GetVersion(ctx)
-	require.NoError(t, err)
-	require.NoError(t, err)
-
-	// TODO: remove the below checks when we have better schema management
-	require.Equal(t, "v2", semver.Major(version))
-
-	_, err = store.db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS cells_subscriptions (id STRING PRIMARY KEY);`)
-	require.NoError(t, err)
-
-	version, err = store.GetVersion(ctx)
-	require.NoError(t, err)
-	require.Equal(t, "v1", semver.Major(version))
-
-	_, err = store.db.ExecContext(ctx, `DROP TABLE cells_subscriptions;`)
-	require.NoError(t, err)
-
 }
 
 func TestTransactor(t *testing.T) {

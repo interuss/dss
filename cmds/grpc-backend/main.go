@@ -36,7 +36,7 @@ import (
 
 const (
 	// The code at this version requires a major schema version equal to 2.
-	RequiredMajorSchemaVersion = "v2"
+	RequiredMajorSchemaVersion = "v3"
 )
 
 var (
@@ -126,8 +126,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	}
 	store := ridc.NewStore(crdb, logger)
 
-	if err := store.Bootstrap(ctx); err != nil {
-		logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
+	if _, err := store.GetVersion(ctx); err != nil {
+		logger.Panic("Failed to get Database Schema Version", zap.Error(err))
 	}
 
 	MustSupportSchema(ctx, store)

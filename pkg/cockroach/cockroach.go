@@ -1,6 +1,7 @@
 package cockroach
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -63,4 +64,34 @@ func BuildURI(params map[string]string) (string, error) {
 		"postgresql://%s@%s:%s%s?application_name=%s&sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.key",
 		u, h, p, db, an, ssl, dir, dir, u, dir, u,
 	), nil
+}
+
+// GetVersion returns the Schema Version of the requested DB Name
+func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
+	const query = `
+		SELECT EXISTS (
+  		SELECT *
+		  FROM information_schema.tables 
+		WHERE table_name = 'schema_versions'
+		AND table_catalog = $1
+   	)`
+	row := db.QueryRowContext(ctx, query, dbName)
+	var ret bool
+	if err := row.Scan(&ret); err != nil {
+		return "", err
+	}
+	if !ret {
+		// Database has not been bootstrapped using DB Schema Manager
+		return "", fmt.Errorf("RID DB has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
+	}
+	getVersionQuery := fmt.Sprintf(`
+      SELECT schema_version 
+      FROM %s.schema_versions
+	  WHERE onerow_enforcer = TRUE`, dbName)
+	row = db.QueryRowContext(ctx, getVersionQuery)
+	var dbVersion string
+	if err := row.Scan(&dbVersion); err != nil {
+		return "", err
+	}
+	return dbVersion, nil
 }

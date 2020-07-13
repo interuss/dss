@@ -54,6 +54,8 @@ trap on_sigint SIGINT
 echo " -------------- BOOTSTRAP ----------------- "
 echo "Building local container for testing (see grpc-backend-build.log for details)"
 docker build --rm . -t local-interuss-dss-image > grpc-backend-build.log
+echo "Building db-manager container for testing"
+docker build --rm -f cmds/db-manager/Dockerfile . -t local-db-manager > db-manager-build.log
 
 echo " ---------------- CRDB -------------------- "
 echo "cleaning up any crdb pre-existing containers"
@@ -65,6 +67,16 @@ docker run -d --rm --name dss-crdb-for-debugging \
 	-p 8080:8080 \
 	cockroachdb/cockroach:v20.1.1 start \
 	--insecure > /dev/null
+
+sleep 1
+echo "Bootstrapping RID Database tables"
+docker run --rm --name rid-db-manager \
+	--link dss-crdb-for-debugging:crdb \
+	-v $(pwd)/build/deploy/db-schemas/defaultdb:/db-schemas/defaultdb \
+	local-db-manager \
+	--schemas_dir db-schemas/defaultdb \
+	--db_version v3.0.0 \
+	--cockroach_host crdb
 
 sleep 1
 echo " ------------ GRPC BACKEND ---------------- "
