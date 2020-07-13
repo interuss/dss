@@ -148,7 +148,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		store := scdc.NewStore(crdb, logger)
 
 		if err := store.Bootstrap(ctx); err != nil {
-			logger.Panic("Failed to get Database Schema Version", zap.Error(err))
+			logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
 		}
 		scdServer = &scd.Server{
 			Store:   store,
