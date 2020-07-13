@@ -68,14 +68,14 @@ func BuildURI(params map[string]string) (string, error) {
 
 // GetVersion returns the Schema Version of the requested DB Name
 func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
-	query := fmt.Sprintf(`
+	const query = `
 		SELECT EXISTS (
   		SELECT *
 		  FROM information_schema.tables 
 		WHERE table_name = 'schema_versions'
-		AND table_catalog = '%s'
-   )`, dbName)
-	row := db.QueryRowContext(ctx, query)
+		AND table_catalog = $1
+   	)`
+	row := db.QueryRowContext(ctx, query, dbName)
 	var ret bool
 	if err := row.Scan(&ret); err != nil {
 		return "", err
