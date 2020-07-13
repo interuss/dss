@@ -14,7 +14,7 @@ local metadata = metadataBase {
     locality: 'VAR_CRDB_LOCALITY',
     nodeIPs: ['VAR_CRDB_NODE_IP1', 'VAR_CRDB_NODE_IP2', 'VAR_CRDB_NODE_IP3'],
     shouldInit: VAR_SHOULD_INIT,
-    JoinExisting: ['VAR_CRDB_EXISTING_NODE1', 'VAR_CRDB_EXISTING_NODE1', 'VAR_CRDB_EXISTING_NODE1' ],
+    JoinExisting: ['VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1' ],
   },
   gateway+: {
     ipName: 'VAR_INGRESS_NAME',
@@ -23,6 +23,9 @@ local metadata = metadataBase {
   },
   backend+: {
     image: 'VAR_DOCKER_IMAGE_NAME',
+    pubKeys: ['VAR_PUBLIC_KEY_PEM_PATH'],
+    jwksEndpoint: 'VAR_JWKS_ENDPOINT',
+    jwksKeyIds: ['VAR_JWKS_KEY_ID'],
   },
 };
 

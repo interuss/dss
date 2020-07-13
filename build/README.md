@@ -16,8 +16,8 @@ To run a local DSS instance for testing, evaluation, or development, see
 
 ## Preface
 
-This doc provides a well-lit path for deploying the DSS and its dependencies (
-namely CockroachDB) on Kubernetes. The use of Kubernetes is not a requirement,
+This doc provides a well-lit path for deploying the DSS and its dependencies
+(namely CockroachDB) on Kubernetes. The use of Kubernetes is not a requirement,
 and a DSS instance can join a cluster as long as it meets the
 [CockroachDB requirements below](#cockroachdb-requirements).
 
@@ -25,6 +25,11 @@ and a DSS instance can join a cluster as long as it meets the
 
 Download & install the following tools to your workstation:
 
+- If deploying on Google Cloud,
+  [install Google Cloud SDK](https://cloud.google.com/sdk/install)
+  - Confirm successful installation with `gcloud version`
+  - Run `gcloud init` to set up a connection to your account.
+  - `kubectl` can be installed from `gcloud` instead of via the method below.
 - [Install kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) to
   interact with kubernetes
   - Confirm sucessful installation with `kubectl version --client` (should
@@ -35,19 +40,14 @@ Download & install the following tools to your workstation:
   - On Linux, after downloading the binary per instructions, run
     `sudo chmod +x /usr/local/bin/tk`
   - Confirm successful installation with `tk --version`
-- If building new images of the DSS,
-  [install Docker](https://docs.docker.com/get-docker/).
+- [Install Docker](https://docs.docker.com/get-docker/).
   - Confirm successful installation with `docker --version`
-- If generating new CockroachDB certificates,
-  [install CockroachDB](https://www.cockroachlabs.com/get-cockroachdb/)
+- [Install CockroachDB](https://www.cockroachlabs.com/get-cockroachdb/) to
+  generate CockroachDB certificates.
   - These instructions assume CockroachDB Core.
   - You may need to run `sudo chmod +x /usr/local/bin/cockroach` after
     completing the installation instructions.
   - Confirm successful installation with `cockroach version`
-- If deploying on Google Cloud,
-  [install Google Cloud SDK](https://cloud.google.com/sdk/install)
-  - Confirm successful installation with `gcloud version`
-  - Run `gcloud init` to set up a connection to your account.
 - If developing the DSS codebase,
   [install Golang](https://golang.org/doc/install)
   - Confirm successful installation with `go version`
@@ -76,15 +76,15 @@ endpoint.
 
     -   For Google Cloud,
         [these](https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud-helper)
-        are the recommended instructions (`gcloud auth config-docker`). Ensure
-        that
-        [appropriate permissions are enabled](https://cloud.google.com/container-registry/docs/access-control)
+        are the recommended instructions (`gcloud auth configure-docker`).
+        Ensure that
+        [appropriate permissions are enabled](https://cloud.google.com/container-registry/docs/access-control).
 
 1. Use the [`build.sh` script](./build.sh) in this directory to build and push
-an image tagged with the current date and git commit hash.
-
-    -   If using docker requires `sudo`, ensure `DOCKER_URL` is passed correctly
-        with `sudo -E ./build.sh`.
+   an image tagged with the current date and git commit hash.
+        
+1. Note the image name (e.g., `gcr.io/your-project-id/dss:2020-07-10-9cc0a6a84`)
+   printed at the end of the script.
 
 ## Deploying the DSS on Kubernetes
 
@@ -99,6 +99,9 @@ above. You can do this on any supported
 [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/)
 or even on your own infrastructure. Consult the Kubernetes documentation for
 your chosen provider.
+
+If you can augment this documentation with specifics for another cloud provider,
+a PR to that effect would be greatly appreciated.
 
 1.  Create a new Kubernetes cluster. We recommend a new cluster for each DSS
     instance.  A reasonable cluster name might be `dss-us-prod`,
@@ -123,6 +126,14 @@ your chosen provider.
     name to the console: `kubectl config current-context`
     
     -  Record this value and use it for `CLUSTER_CONTEXT` below.
+    
+    - On Google Cloud, first configure kubectl to interact with the cluster
+      created above with
+      [these instructions](https://cloud.google.com/kubernetes-engine/docs/quickstart).
+      Specifically:
+       - `gcloud config set project your-project-id`
+       - `gcloud config set compute/zone your-compute-zone`
+       - `gcloud container clusters get-credentials your-cluster-name`
 
 1.  Ensure the desired namespace is selected; the recommended
     namespace is simply `default` with one cluster per DSS instance.  Print the
@@ -141,14 +152,10 @@ your chosen provider.
        CLUSTER_NAME as appropriate since static IP addresses are defined at
        the project level rather than the cluster level), e.g.:
        
-         -  `gcloud compute addresses create CLUSTER_NAME-gateway --global --ip
-         -version IPV4`
-         -  `gcloud compute addresses create CLUSTER_NAME-crdb-0 --global --ip
-         -version IPV4`
-         -  `gcloud compute addresses create CLUSTER_NAME-crdb-1 --global --ip
-         -version IPV4`
-         -  `gcloud compute addresses create CLUSTER_NAME-crdb-2 --global --ip
-         -version IPV4`
+         -  `gcloud compute addresses create CLUSTER_NAME-gateway --global --ip-version IPV4`
+         -  `gcloud compute addresses create CLUSTER_NAME-crdb-0 --global --ip-version IPV4`
+         -  `gcloud compute addresses create CLUSTER_NAME-crdb-1 --global --ip-version IPV4`
+         -  `gcloud compute addresses create CLUSTER_NAME-crdb-2 --global --ip-version IPV4`
 
 1.  Link static IP addresses to DNS entries.
 
@@ -192,7 +199,7 @@ your chosen provider.
     -directional communication.
     
     - All of the original clusters must perform a rolling restart of their
-      cockroachdb pods to pick up the new certificates:
+      CockroachDB pods to pick up the new certificates:
       
       `kubectl rollout restart statefulset/cockroachdb --namespace <NAMESPACE>`
 
@@ -204,71 +211,102 @@ your chosen provider.
     the `workspace/<CLUSTER_CONTEXT>` folder should have already been created
     by the `make_certs.py` script.
 
-1. Edit `workspace/<CLUSTER_CONTEXT>/main.jsonnet` and replace all `VAR_*`
-   instances with appropriate values:
-   
-   -   VAR_NAMESPACE: Same <NAMESPACE> used in the make-certs.py (and
-       apply-certs.sh) scripts.
-   
-   -   VAR_CLUSTER_CONTEXT: Same <CLUSTER_CONTEXT> name of the cluster used in
-       the `make-certs.py` and `apply-certs.sh` scripts.
-   
-   -   VAR_CRDB_HOSTNAME_SUFFIX: The domain name suffix shared by all of your
-       CockroachDB nodes.  For instance, if your CRDB nodes were addressable at
-       `node1.db.example.com`, `node2.db.example.com`, and
-       `node3.db.example.com`, then VAR_CRDB_HOSTNAME_SUFFIX would be
-       `db.example.com`.
+1.  If providing a .pem file directly as the public key to validate incoming
+    access tokens, copy it to [dss/build/jwt-public-certs](./jwt-public-certs).
+    Public key specification by JWKS is preferred; if using the JWKS approach to
+    to specify the public key, skip this step.
 
-   -   VAR_CRDB_LOCALITY: Unique name for your cluster.  TODO
+1.  Edit `workspace/<CLUSTER_CONTEXT>/main.jsonnet` and replace all `VAR_*`
+    instances with appropriate values:
    
-   -   VAR_CRDB_NODE_IPn: **Numeric** IP address of nth CRDB node (add more
-       entries if you have more than 3 CRDB nodes).  Example: `1.1.1.1`
-       
-   -   VAR_SHOULD_INIT: Set to `false` if joining an existing cluster, `true`
-       otherwise.  When set `true`, this can initialize the data directories
-       on your cluster, and prevent you from joining an existing cluster
-       .  TODO: should this be set false immediately after initial application?
-       
-   -   VAR_EXISTING_CRDB_NODEn: Fully-qualified domain name of existing CRDB
-       nodes if you are joining an existing cluster.  If more than three are
-       available, add additional entries.  If not joining an existing cluster,
-       remove this entire `JoinExisting:` line.
-       
-       - You should supply a minimum of 3 seed nodes to every CockroachDB node.
-         These 3 nodes should be the same for every node (ie: every node points
-         to node 0, 1, and 2). For external clusters you should point to a
-         minimum of 3, or you can use a loadbalanced hostname or IP address of
-         other clusters. You should do this for every cluster, including newly
-         joined clusters. See CockroachDB's note on the
-         [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
+    1.  `VAR_NAMESPACE`: Same <NAMESPACE> used in the make-certs.py (and
+        apply-certs.sh) scripts.
    
-   -   VAR_INGRESS_NAME: If using Google Kubernetes Engine, set this to the
-       TODO
+    1.  `VAR_CLUSTER_CONTEXT`: Same <CLUSTER_CONTEXT> name of the cluster used in
+        the `make-certs.py` and `apply-certs.sh` scripts.
    
-   -   VAR_DOCKER_IMAGE_NAME: Full name of the docker image built in the
-       section above.  `build.sh` prints this name as the last thing it does
-       when run with `DOCKER_URL` set.  It should look something like
-       `gcr.io/your-project-id/dss:2020-07-01-46cae72cf`.
-       
-   -   VAR_APP_HOSTNAME: Fully-qualified domain name of your HTTPS Gateway
-       ingress endpoint.  For example, `dss.example.com`.
-       
-   -   Note that VAR_DOCKER_IMAGE_NAME is used in two places.
+    1.  `VAR_CRDB_HOSTNAME_SUFFIX`: The domain name suffix shared by all of your
+        CockroachDB nodes.  For instance, if your CRDB nodes were addressable at
+        `0.db.example.com`, `1.db.example.com`, and `2.db.example.com`, then
+        VAR_CRDB_HOSTNAME_SUFFIX would be `db.example.com`.
+
+    1.  `VAR_CRDB_LOCALITY`: Unique name for your cluster.  Currently, we
+        recommend "<ORG_NAME>_<CLUSTER_NAME>", and the `=` character is not
+        allowed.  However, any unique (among all other participating DSS
+        instances) value is acceptable.
    
-   -   If you are only turning up a single cluster for development, you
-       may optionally change `single_cluster` to `true`.
+    1.  `VAR_CRDB_NODE_IPn`: IP address (**numeric**) of nth CRDB node (add more
+        entries if you have more than 3 CRDB nodes).  Example: `1.1.1.1`
+       
+    1.  `VAR_SHOULD_INIT`: Set to `false` if joining an existing cluster, `true`
+        if creating the first DSS instance for a Region.  When set `true`, this
+        can initialize the data directories on your cluster, and prevent you
+        from joining an existing cluster.
+       
+    1.  `VAR_EXTERNAL_CRDB_NODEn`: Fully-qualified domain name of existing CRDB
+        nodes if you are joining an existing cluster.  If more than three are
+        available, add additional entries.  If not joining an existing cluster,
+        comment out this `JoinExisting:` line.
+       
+        - You should supply a minimum of 3 seed nodes to every CockroachDB node.
+          These 3 nodes should be the same for every node (ie: every node points
+          to node 0, 1, and 2). For external clusters you should point to a
+          minimum of 3, or you can use a loadbalanced hostname or IP address of
+          other clusters. You should do this for every cluster, including newly
+          joined clusters. See CockroachDB's note on the
+          [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
+   
+    1.  `VAR_INGRESS_NAME`: If using Google Kubernetes Engine, set this to the
+        the name of the gateway static IP address created above (e.g.,
+        `CLUSTER_NAME-gateway`).
+   
+    1.  `VAR_DOCKER_IMAGE_NAME`: Full name of the docker image built in the
+        section above.  `build.sh` prints this name as the last thing it does
+        when run with `DOCKER_URL` set.  It should look something like
+        `gcr.io/your-project-id/dss:2020-07-01-46cae72cf`.
+        
+    1.  `VAR_APP_HOSTNAME`: Fully-qualified domain name of your HTTPS Gateway
+        ingress endpoint.  For example, `dss.example.com`.
+        
+    1.  `VAR_PUBLIC_KEY_PEM_PATH`: If providing a .pem file directly as the
+        public key to validate incoming access tokens, specify the name of this
+        .pem file here as `/public-certs/YOUR-KEY-NAME.pem` replacing
+        YOUR-KEY-NAME as appropriate.  For instance, if using the provided
+        [`us-demo.pem`](./jwt-public-certs/us-demo.pem), use the path
+        `/public-certs/us-demo.pem`.  Note that your .pem file must have been
+        copied into [`jwt-public-certs`](./jwt-public-certs) in an earlier step.
+        
+        - If providing an access token public key via JWKS, provide a blank
+          string for this parameter.
+        
+    1.  `VAR_JWKS_ENDPOINT`: If providing the access token public key via JWKS,
+        specify the JWKS endpoint here.  Example:
+        `https://auth.example.com/.well-known/jwks.json`
+        
+        - If providing a .pem file directly as the public key to valid incoming access tokens, provide a blank string for this parameter.
+        
+    1.  `VAR_JWKS_KEY_ID`: If providing the access token public key via JWKS,
+        specify the `kid` (key ID) of they appropriate key in the JWKS file
+        referenced above.
+    
+        - If providing a .pem file directly as the public key to valid incoming access tokens, provide a blank string for this parameter. 
+
+    -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
+   
+    -   If you are only turning up a single cluster for development, you
+        may optionally change `single_cluster` to `true`.
 
 1.  Edit workspace/<CLUSTER_CONTEXT>/spec.json and replace all VAR_*
     instances with appropriate values:
    
-    -   VAR_API_SERVER: Determine this value with the command:
+    1.  VAR_API_SERVER: Determine this value with the command:
     
         `kubectl config view -o jsonpath="{.clusters[?(@.name==\"<CLUSTER_CONTEXT>\")].cluster.server}"`
         
         - Note that `<CLUSTER_CONTEXT>` should be replaced with your actual
          `CLUSTER_CONTEXT` value prior to executing the above command.
    
-    -   VAR_NAMESPACE: See previous section.
+    1.  VAR_NAMESPACE: See previous section.
 
 1.  Use the [`apply-certs.sh` script](apply-certs.sh) to create secrets on the
     Kubernetes cluster containing the certificates and keys generated in the
@@ -276,46 +314,41 @@ your chosen provider.
 
         ./apply-certs.sh <CLUSTER_CONTEXT> <NAMESPACE>
 
-1.  To start the profiling service for the grpc-backend and/or http-gateway
-    then enter the service name for the profiler at `metadata_base.libsonnet`.
-    The name should be based on your cloud provider acceptable values. For
-    Google cloud the name should meet the regex
-    `^[a-z]([-a-z0-9_.]{0,253}[a-z0-9])?$`
-
 1.  Run `tk apply workspace/<CLUSTER_CONTEXT>` to apply it to the
     cluster.
 
-## Joining an existing CockroachDB cluster
+1.  Wait for services to initialize.  Verify that basic services are functioning
+    by navigating to https://your-gateway-domain.com/healthy.
+    
+    - On Google Cloud, the highest-latency operation is provisioning of the
+      HTTPS certificate which generally takes 10-45 minutes.  To track this
+      progress:
+      - Go to the "Services & Ingress" left-side tab from the Kubernetes Engine
+        page.
+      - Click on the `https-ingress` item (filter by just the cluster of
+        interest if you have multiple clusters in your project).
+      - Under the "Ingress" section for Details, click on the link corresponding
+        with "Load balancer".
+      - Under Frontend for Details, the Certificate column for HTTPS protocol
+        will have an icon next to it which will change to a green checkmark when
+        provisioning is complete.
+      - Click on the certificate link to see provisioning progress.
+      - If everything indicates OK and you still receive a cipher mismatch error
+        message when attempting to visit /healthy, wait an additional 5 minutes
+        before attempting to troubleshoot further.
 
-Follow the steps above for creating a new CockroachDB cluster, but with the
-following differences:
-
-1.  In main.jsonnet, make sure you don't set shouldInit to true. This can
-    initialize the data directories on you cluster, and prevent you from joining
-    an existing cluster.
-
-1.  In main.jsonnet, add the host:ports of existing CockroachDB nodes to the
-    JoinExisting array. You should supply a minimum of 3 seed nodes to every
-    CockroachDB node. These 3 nodes should be the same for every node (ie: every
-    node points to node 0, 1, and 2). For external clusters you should point to
-    a minimum of 3, or you can use a loadbalanced hostname or IP address
-    of other clusters. You should do this for every cluster, including newly
-    joined clusters. See CockroachDB's note on the
-    [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
-
-1.  You must run ./make-certs.py with the `--ca-cert-to-join` flag as described
-    above to use the existing cluster's CA to sign your certificates.
-
-1.  You must share ca.crt with the cluster(s) you are trying to join, and have
-    them apply the new ca.crt, which now contains both your cluster and the
-    original clusters public certs, to enable secure bi-directional
-    communication.
-
-1.  All of the original clusters must then perform a rolling restart of their
-    cockroachdb pods to pick up the new certificates.
+1.  If joining an existing cluster, share your CRDB node addresses with the
+    operator of the existing cluster.  They will add these node addresses to
+    JoinExisting where `VAR_CRDB_EXTERNAL_NODEn` is indicated in the minimum
+    example, and then perform a rolling restart of their CockroachDB pods:
+    
     `kubectl rollout restart statefulset/cockroachdb --namespace <NAMESPACE>`
 
 ## CockroachDB requirements
+These requirements must be met by every DSS instance joining a DSS Region.  The
+Kubernetes deployment instructions above produce a system that complies with all
+these requirements, so this section may be ignored if following those
+instructions.
 
 - Every CockroachDB node must advertise a unique and routable address.
   - The use of domain names with unique prefixes and homogenous suffixes, e.g.:
@@ -344,9 +377,8 @@ of this operational overhead.
 Istio provides better observability by using a sidecar proxy on every binary
 that exports some default metrics, as well as enabling Istio tracing. Istio
 also provides mTLS between all binaries. Enabling Istio is completely optional.
-To enable Istio, simply change the `enable_istio` field in your metadata tuple
-to `true`, then run `tk apply ...` as you would normally. 
-
+To enable Istio, simply set the `enable_istio` field in your metadata tuple to
+`true`, then run `tk apply ...` as you would normally. 
 
 ## Enabling Prometheus Federation (Multi Cluster Monitoring)
 
