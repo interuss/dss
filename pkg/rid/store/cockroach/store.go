@@ -3,7 +3,6 @@ package cockroach
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
@@ -123,32 +122,5 @@ func (s *Store) CleanUp(ctx context.Context) error {
 // GetVersion returns the Version string for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (string, error) {
-	// when we have multiple databases we will have to substitute
-	// defaultdb for other database names, this field is current useless
-	const query = `
-		SELECT EXISTS (
-  		SELECT *
-		  FROM information_schema.tables 
-		WHERE table_name = 'schema_versions'
-		AND table_catalog = 'defaultdb'
-   )`
-	row := s.db.QueryRowContext(ctx, query)
-	var ret bool
-	if err := row.Scan(&ret); err != nil {
-		return "", err
-	}
-	if !ret {
-		// Database has not been bootstrapped using DB Schema Manager
-		return "", fmt.Errorf("DB has not been bootstrapped with Schema Manager")
-	}
-	const getVersionQuery = `
-      SELECT schema_version 
-      FROM defaultdb.schema_versions
-	  WHERE onerow_enforcer = TRUE`
-	row = s.db.QueryRowContext(ctx, getVersionQuery)
-	var dbVersion string
-	if err := row.Scan(&dbVersion); err != nil {
-		return "", err
-	}
-	return dbVersion, nil
+	return cockroach.GetVersion(ctx, s.db, "defaultdb")
 }
