@@ -27,6 +27,10 @@ local metadata = metadataBase {
     jwksEndpoint: 'VAR_JWKS_ENDPOINT',
     jwksKeyIds: ['VAR_JWKS_KEY_ID'],
   },
+  schema_manager+: {
+    image: 'your_schema_manager_image_name',
+    desired_rid_db_version: 'v3.0.0'
+  },
 };
 
 dss.all(metadata)
