@@ -83,8 +83,7 @@ endpoint.
 1. Use the [`build.sh` script](./build.sh) in this directory to build and push
    an image tagged with the current date and git commit hash.
         
-1. Note the image name (e.g., `gcr.io/your-project-id/dss:2020-07-10-9cc0a6a84`)
-   printed at the end of the script.
+1. Note the two VAR_* values printed at the end of the script.
 
 ## Deploying the DSS on Kubernetes
 
@@ -293,6 +292,11 @@ a PR to that effect would be greatly appreciated.
     
         - If providing a .pem file directly as the public key to valid incoming access tokens, provide a blank string for this parameter. 
 
+    1.  `VAR_SCHEMA_MANAGER_IMAGE_NAME`: Full name of the schema manager docker
+        image built in the section above.  `build.sh` prints this name as the
+        last thing it does when run with `DOCKER_URL` set.  It should look
+        something like `gcr.io/your-project-id/db-manager:2020-07-01-46cae72cf`.
+
     -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
    
     -   If you are only turning up a single cluster for development, you
@@ -426,27 +430,33 @@ Pick a username and create an account:
 Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
 warning.
 
-## Updgrading Database Schemas
+## Upgrading Database Schemas
 
-All Schemas related files are in `deploy/db-schemas` directory, any changes you wish to make to the Database schema should be done in their respective Database folders. 
-The files are applied in sequential numeric steps from the current version M to the desired version N
+All schemas-related files are in `deploy/db-schemas` directory.  Any changes you
+wish to make to the database schema should be done in their respective database
+folders.  The files are applied in sequential numeric steps from the current
+version M to the desired version N.
 
-For the first ever run during the CRDB cluster initilization the db-manager will run once to bootstrap and bring up the database up to date.
-To upgrade existing clusters you will need to:
-#### If you are performing this operation on the original cluster
+For the first-ever run during the CRDB cluster initialization, the db-manager
+will run once to bootstrap and bring the database up to date.  To upgrade
+existing clusters you will need to:
+
+### If performing this operation on the original cluster
 1. Update the `desired_xyz_db_version` field in `main.jsonnet`
 2. Delete the existing db-manager job in your k8s cluster
 3. Redeploy the newly configured db-manager with `tk apply -t job/<xyz-schema-manager>`. It should automatically up/down grade your database schema to your desired version.
 
-#### To perform this operation on any other cluster
-1. Upload the `db-schema/<database>` directory as a ConfigMap with `kubectl create configmap -n <namespace> --from-file <path to schemas>`
-1. Prepare a Yaml file to deploy a K8s Job that will run the `db-manager` binary with the following flags
-```
-  --cockroach_host cockroachdb-balanced.<namespace>
-  --cockroach_port 26257
-  --cockroach_ssl_mode: 'verify-full'
-  --cockroach_user: 'root'
-  --cockroach_ssl_dir: <path to the mounted cockroach certificate secrets>
-  --db_version: <desired db version>
-  --schemas_dir: <path to the mounted schemas configmap>
- ```
+### If performing this operation on any other cluster
+1. Upload the `db-schema/<database>` directory as a ConfigMap with
+   `kubectl create configmap -n <namespace> --from-file <path to schemas>`
+1. Prepare a Yaml file to deploy a K8s Job that will run the `db-manager` binary
+   with the following flags:
+   ```
+   --cockroach_host cockroachdb-balanced.<namespace>
+   --cockroach_port 26257
+   --cockroach_ssl_mode: 'verify-full'
+   --cockroach_user: 'root'
+   --cockroach_ssl_dir: <path to the mounted cockroach certificate secrets>
+   --db_version: <desired db version>
+   --schemas_dir: <path to the mounted schemas configmap>
+    ```
