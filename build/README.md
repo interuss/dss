@@ -103,11 +103,12 @@ If you can augment this documentation with specifics for another cloud provider,
 a PR to that effect would be greatly appreciated.
 
 1.  Create a new Kubernetes cluster. We recommend a new cluster for each DSS
-    instance.  A reasonable cluster name might be `dss-us-prod`,
-    `dss-ca-staging`, `dss-mx-integration`, etc.  The name of this cluster
-    will be combined with other information by Kubernetes to generate a longer
-    cluster context ID that will be referred to as CLUSTER_CONTEXT for the
-    remainder of this document.
+    instance.  A reasonable cluster name might be `dss-us-prod-e4a` (where `e4a`
+    is a zone identifier abbreviation), `dss-ca-staging`,
+    `dss-mx-integration-sae1a`, etc.  The name of this cluster will be combined
+    with other information by Kubernetes to generate a longer cluster context ID
+    that will be referred to as CLUSTER_CONTEXT for the remainder of this
+    document.
     
     -  On Google Cloud, the recommended procedure to create a cluster is:
        -  In Google Cloud Platform, go to the Kubernetes Engine page and under
