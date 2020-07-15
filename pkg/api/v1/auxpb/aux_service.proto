@@ -6,6 +6,22 @@ import "google/api/annotations.proto";
 
 option go_package = "pkg/api/v1/auxpb";
 
+// Version models the version of the DSS.
+//
+// Follows https://semver.org/
+message Version {
+  string as_string = 1;
+}
+
+message GetVersionRequest {
+  // Empty on purpose
+}
+
+message GetVersionResponse {
+  // The version of the DSS.
+  Version version = 1;
+}
+
 message ValidateOauthRequest {
   // Validate the owner claim matches the provided owner.
   string owner = 1;
@@ -15,6 +31,15 @@ message ValidateOauthRequest {
 message ValidateOauthResponse {}
 
 service DSSAuxService {
+  // /dss/version
+  //
+  // Queries the version of the DSS.
+  rpc GetVersion(GetVersionRequest) returns (GetVersionResponse) {
+    option (google.api.http) = {
+      get: "/v1/dss/version"
+    };
+  }
+
   // /dss/validate_oauth
   // 
   // Validate Oauth token against the DSS.

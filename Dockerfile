@@ -6,17 +6,12 @@
 FROM golang:1.14.3-alpine AS build
 RUN apk add git bash make
 RUN mkdir /app
+COPY . /app
 WORKDIR /app
-COPY go.mod .
-COPY go.sum .
 
 # Get dependencies - will also be cached if we won't change mod/sum
-RUN go mod download
-
-COPY cmds cmds
-COPY pkg pkg
-
-RUN go install ./...
+RUN make go-mod-download
+RUN make interuss
 
 FROM alpine:latest
 RUN apk update && apk add ca-certificates

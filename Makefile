@@ -1,5 +1,9 @@
 GOPATH := $(shell go env GOPATH)
 GOBIN := $(GOPATH)/bin
+COMMIT := $(shell scripts/git/commit.sh)
+BUILD_LDFLAGS := -X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/build.commit=$(COMMIT) -X github.com/interuss/dss/pkg/build.host=$(shell hostname)
+VERSION_LDFLAGS := -X github.com/interuss/dss/pkg/version.tag=$(shell git describe --tags --abbrev=0) -X github.com/interuss/dss/pkg/version.commit=$(COMMIT)
+LDFLAGS := $(BUILD_LDFLAGS) $(VERSION_LDFLAGS)
 
 ifeq ($(OS),Windows_NT)
   detected_OS := Windows
@@ -9,7 +13,7 @@ endif
 
 .PHONY: interuss
 interuss:
-	go install -ldflags "-X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/build.commit=$(shell git rev-parse --short HEAD) -X github.com/interuss/dss/pkg/build.host=$(shell hostname)" ./...
+	go install -ldflags "$(LDFLAGS)" ./...
 
 go-mod-download: go.mod
 	go mod download
@@ -42,9 +46,11 @@ pkg/api/v1/ridpb/rid.proto: install-proto-generation
 		-indent 2 \
 		-package ridpb
 
+.PHONY: pkg/api/v1/auxpb/aux_service.pb.go
 pkg/api/v1/auxpb/aux_service.pb.go:
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/api/v1/auxpb/aux_service.proto
 
+.PHONY: pkg/api/v1/auxpb/aux_service.pb.gw.go
 pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.pb.go
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/api/v1/auxpb/aux_service.proto
 
@@ -94,7 +100,7 @@ staticcheck: install-staticcheck
 
 .PHONY: test
 test:
-	go test -count=1 -v ./...
+	go test -ldflags "$(LDFLAGS)" -count=1 -v ./...
 
 .PHONY: test-cockroach
 test-cockroach: cleanup-test-cockroach
