@@ -5,7 +5,7 @@
     "name": "minimum_example"
   },
   "spec": {
-    "apiServer": "<populate_this>",
-    "namespace": "your_namespace"
+    "apiServer": "VAR_API_SERVER",
+    "namespace": "VAR_NAMESPACE"
   }
 }
