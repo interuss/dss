@@ -24,7 +24,7 @@ var (
 	// TODO: use this in other function calls
 	DefaultTimeout = 10 * time.Second
 
-	// Name of database storing remote ID data.
+	// DatabaseName is the name of database storing remote ID data.
 	DatabaseName = "defaultdb"
 )
 

@@ -16,7 +16,7 @@ var (
 	// DefaultClock is what is used as the Store's clock, returned from Dial.
 	DefaultClock = clockwork.NewRealClock()
 
-	// Name of database storing strategic conflict detection data.
+	// DatabaseName is the name of database storing strategic conflict detection data.
 	DatabaseName = "scd"
 )
 
