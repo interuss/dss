@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -213,38 +214,10 @@ func getCurrentDBVersion(crdbURI string, database string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
 	}
-	// check if schema_versions table exists
-	const checkTableQuery = `
-		SELECT EXISTS (
-  		SELECT *
-			FROM information_schema.tables 
-		WHERE table_name = 'schema_versions'
-		AND table_catalog = $1
-		)
-	`
-	var (
-		version = "v0.0.0"
-		exists  bool
-	)
-
-	if err := crdb.QueryRow(checkTableQuery, database).Scan(&exists); err != nil {
+	version, err := dssCockroach.GetVersion(context.Background(), crdb, database)
+	if err != nil && version == "" {
+		log.Print(err)
 		return "", err
-	}
-
-	if !exists {
-		return version, nil
-	}
-	// query for the schema version string
-	const getVersionQuery = `
-      SELECT schema_version 
-      FROM schema_versions
-	  WHERE onerow_enforcer = TRUE`
-	if err := crdb.QueryRow(getVersionQuery).Scan(&version); err != nil {
-		return "", err
-	}
-	// if for some reason the string returned is empty
-	if version == "" {
-		version = "v0.0.0"
 	}
 	return version, nil
 }
