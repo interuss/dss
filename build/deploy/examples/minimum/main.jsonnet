@@ -1,24 +1,31 @@
 local dss = import '../../../deploy/dss.libsonnet';
 local metadataBase = import '../../../deploy/metadata_base.libsonnet';
 
+// All VAR_* values below must be replaced with appropriate values; see
+// dss/build/README.md for more information.
+
 local metadata = metadataBase {
-  namespace: 'your_namespace', //Same <NAMESPACE> used in the make-certs.py and apply-certs.sh scripts.
-  clusterName: 'your_cluster_context', //Same <CLUSTER_CONTEXT> used in the make-certs.py, and apply-certs.sh scripts.
+  namespace: 'VAR_NAMESPACE',
+  clusterName: 'VAR_CLUSTER_CONTEXT',
   enable_istio: true,
+  single_cluster: false,
   cockroach+: {
-    hostnameSuffix: 'db.your_hostname_suffix.com',
-    locality: 'your_unique_locality',
-    nodeIPs: ['0.0.0.0', '1.1.1.1', '2.2.2.2'],
-    shouldInit: true, //Set to false if joining a cluster
-    //JoinExisting: ['0.db.westus.example.com', '1.db.westus.example.com', '2.db.westus.example.com' ], //If joining a cluster, replace these with at least 3 FQDN's of the existing DSS cockroachdb cluster you are joining.
+    hostnameSuffix: 'VAR_CRDB_HOSTNAME_SUFFIX',
+    locality: 'VAR_CRDB_LOCALITY',
+    nodeIPs: ['VAR_CRDB_NODE_IP1', 'VAR_CRDB_NODE_IP2', 'VAR_CRDB_NODE_IP3'],
+    shouldInit: false, // <-- This boolean value is VAR_SHOULD_INIT
+    JoinExisting: ['VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1' ],
   },
   gateway+: {
-    ipName: 'your-ingress-name', //Set this if using GKE
-    image: 'your_image_name',
-    hostname: 'yourhostname.com', //FQDN of your gateway ingress endpoint
+    ipName: 'VAR_INGRESS_NAME',
+    image: 'VAR_DOCKER_IMAGE_NAME',
+    hostname: 'VAR_APP_HOSTNAME',
   },
   backend+: {
-    image: 'your_image_name',
+    image: 'VAR_DOCKER_IMAGE_NAME',
+    pubKeys: ['VAR_PUBLIC_KEY_PEM_PATH'],
+    jwksEndpoint: 'VAR_JWKS_ENDPOINT',
+    jwksKeyIds: ['VAR_JWKS_KEY_ID'],
   },
   schema_manager+: {
     image: 'your_schema_manager_image_name',

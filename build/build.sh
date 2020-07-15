@@ -45,4 +45,7 @@ else
   docker image push $DOCKER_URL/db-manager:$VERSION
 
   echo "Built and pushed docker image $DOCKER_URL/db-manager:$VERSION"
+
+  echo "VAR_DOCKER_IMAGE_NAME: $DOCKER_URL/dss:$VERSION"
+  echo "VAR_SCHEMA_MANAGER_IMAGE_NAME: $DOCKER_URL/db-manager:$VERSION"
 fi

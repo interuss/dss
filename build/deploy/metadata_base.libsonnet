@@ -32,7 +32,9 @@
     port: 8081,
     image: error 'must specify image',
     prof_grpc_name: '',
-    pubKeys: ['/public-certs/us-demo.pem'],
+    pubKeys: [''],
+    jwksEndpoint: '',
+    jwksKeyIds: [],
   },
   alert: {
     enable: false,
