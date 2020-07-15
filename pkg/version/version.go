@@ -2,7 +2,6 @@ package version
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/coreos/go-semver/semver"
 )
@@ -28,14 +27,6 @@ func init() {
 	} else {
 		current.Metadata = "undefined"
 	}
-}
-
-func parseIntOrDefault(s string, defaultValue int64) int64 {
-	i, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		return defaultValue
-	}
-	return i
 }
 
 // Current returns the current version.
