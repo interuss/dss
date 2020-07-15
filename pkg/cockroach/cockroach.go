@@ -70,11 +70,12 @@ func BuildURI(params map[string]string) (string, error) {
 func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
 	const query = `
 		SELECT EXISTS (
-  		SELECT *
-		  FROM information_schema.tables 
-		WHERE table_name = 'schema_versions'
-		AND table_catalog = $1
-   	)`
+			SELECT *
+				FROM information_schema.tables 
+			WHERE table_name = 'schema_versions'
+			AND table_catalog = $1
+		)
+	`
 	row := db.QueryRowContext(ctx, query, dbName)
 	var ret bool
 	if err := row.Scan(&ret); err != nil {
@@ -82,12 +83,12 @@ func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
 	}
 	if !ret {
 		// Database has not been bootstrapped using DB Schema Manager
-		return "", fmt.Errorf("RID DB has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
+		return "v0.0.0", fmt.Errorf("%s has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", dbName)
 	}
 	getVersionQuery := fmt.Sprintf(`
-      SELECT schema_version 
-      FROM %s.schema_versions
-	  WHERE onerow_enforcer = TRUE`, dbName)
+		SELECT schema_version 
+			FROM %s.schema_versions
+		WHERE onerow_enforcer = TRUE`, dbName)
 	row = db.QueryRowContext(ctx, getVersionQuery)
 	var dbVersion string
 	if err := row.Scan(&dbVersion); err != nil {
