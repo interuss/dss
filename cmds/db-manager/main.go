@@ -215,7 +215,7 @@ func getCurrentDBVersion(crdbURI string, database string) (string, error) {
 		return "", fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
 	}
 	version, err := dssCockroach.GetVersion(context.Background(), crdb, database)
-	if err != nil && version == "" {
+	if err != nil {
 		log.Print(err)
 		return "", err
 	}

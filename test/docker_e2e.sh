@@ -79,6 +79,16 @@ docker run --rm --name rid-db-manager \
 	--cockroach_host crdb
 
 sleep 1
+echo "Bootstrapping SCD Database tables"
+docker run --rm --name scd-db-manager \
+	--link dss-crdb-for-debugging:crdb \
+	-v $(pwd)/build/deploy/db-schemas/scd:/db-schemas/scd \
+	local-db-manager \
+	--schemas_dir db-schemas/scd \
+	--db_version v1.0.0 \
+	--cockroach_host crdb
+
+sleep 1
 echo " ------------ GRPC BACKEND ---------------- "
 echo "Cleaning up any pre-existing grpc-backend container"
 docker rm -f grpc-backend-for-testing &> /dev/null || echo "No grpc backend to clean up"

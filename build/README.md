@@ -116,8 +116,9 @@ a PR to that effect would be greatly appreciated.
        -  Name the cluster appropriately; e.g., `dss-us-prod`
        -  Select Zonal and [a compute-zone appropriate to your
           geography](https://cloud.google.com/compute/docs/regions-zones#available)
-       -  For the "default-pool" node pool, check "Enable autoscaling" and enter
-          a range of 2-10 nodes.
+       -  For the "default-pool" node pool:
+          - Enter 2 for number of nodes.
+          - Check "Enable autoscaling" and enter a range of 2-10 nodes.
        -  In the "Nodes" bullet under "default-pool", select N2 series and
           n2-standard-8 for machine type.
        -  In the "Networking" bullet under "Clusters", ensure "Enable [VPC
@@ -226,7 +227,11 @@ a PR to that effect would be greatly appreciated.
    
     1.  `VAR_CLUSTER_CONTEXT`: Same <CLUSTER_CONTEXT> name of the cluster used in
         the `make-certs.py` and `apply-certs.sh` scripts.
-   
+
+    1.  `VAR_ENABLE_SCD`: Set this boolean true to enable strategic conflict
+        detection functionality (currently an R&D project tracking an initial
+        draft of the upcoming ASTM standard).
+
     1.  `VAR_CRDB_HOSTNAME_SUFFIX`: The domain name suffix shared by all of your
         CockroachDB nodes.  For instance, if your CRDB nodes were addressable at
         `0.db.example.com`, `1.db.example.com`, and `2.db.example.com`, then
