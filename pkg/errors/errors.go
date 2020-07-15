@@ -13,9 +13,8 @@ import (
 )
 
 var (
-	errInternal = status.Error(codes.Internal, "Internal Server Error")
-
-	internalErrorHandler func(msg string) error
+	errInternal             = status.Error(codes.Internal, "Internal Server Error")
+	obfuscateInternalErrors = true
 )
 
 const (
@@ -29,15 +28,9 @@ const (
 )
 
 func init() {
-	internalErrorHandler = func(msg string) error {
-		return errInternal
-	}
-
 	if s, ok := os.LookupEnv("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS"); ok {
-		if b, _ := strconv.ParseBool(s); !b {
-			internalErrorHandler = func(msg string) error {
-				return status.Error(codes.Internal, msg)
-			}
+		if b, err := strconv.ParseBool(s); err == nil {
+			obfuscateInternalErrors = b
 		}
 	}
 }
@@ -61,6 +54,9 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 				zap.String("message", statusErr.Message()),
 				zap.Any("details", statusErr.Details()),
 				zap.Error(err))
+			if statusErr.Code() == codes.Internal && obfuscateInternalErrors {
+				err = errInternal
+			}
 		}
 		return
 	}
@@ -91,7 +87,7 @@ func BadRequest(msg string) error {
 
 // Internal returns an error that represents an internal DSS error.
 func Internal(msg string) error {
-	return internalErrorHandler(msg)
+	return status.Error(codes.Internal, msg)
 }
 
 // Exhausted is used when a USS creates too many resources in a given area.
