@@ -22,7 +22,7 @@ local metadata = metadataBase {
   },
   schema_manager+: {
     image: 'your_schema_manager_image_name',
-    desired_rid_db_version: 'v3.0.0'
+    desired_rid_db_version: 'v3.1.0'
   },
 };
 
