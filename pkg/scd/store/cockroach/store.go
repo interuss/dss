@@ -15,6 +15,9 @@ import (
 var (
 	// DefaultClock is what is used as the Store's clock, returned from Dial.
 	DefaultClock = clockwork.NewRealClock()
+
+	// Name of database storing strategic conflict detection data.
+	DatabaseName = "scd"
 )
 
 // repo is an implementation of repos.Repo using
@@ -70,5 +73,5 @@ func (s *Store) Close() error {
 // GetVersion returns the Version string for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (string, error) {
-	return cockroach.GetVersion(ctx, s.db, "scd")
+	return cockroach.GetVersion(ctx, s.db, DatabaseName)
 }

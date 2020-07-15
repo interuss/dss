@@ -158,7 +158,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 
 	// Initialize remote ID
 
-	ridCrdb, err := ConnectTo("defaultdb")
+	ridCrdb, err := ConnectTo(ridc.DatabaseName)
 	if err != nil {
 		logger.Panic("Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", zap.Error(err))
 	}
@@ -177,7 +177,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	// Initialize strategic conflict detection
 
 	if *enableSCD {
-		scdCrdb, err := ConnectTo("scd")
+		scdCrdb, err := ConnectTo(scdc.DatabaseName)
 		if err != nil {
 			logger.Panic("Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", zap.Error(err))
 		}
