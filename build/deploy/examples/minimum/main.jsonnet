@@ -13,7 +13,7 @@ local metadata = metadataBase {
     hostnameSuffix: 'VAR_CRDB_HOSTNAME_SUFFIX',
     locality: 'VAR_CRDB_LOCALITY',
     nodeIPs: ['VAR_CRDB_NODE_IP1', 'VAR_CRDB_NODE_IP2', 'VAR_CRDB_NODE_IP3'],
-    shouldInit: VAR_SHOULD_INIT,
+    shouldInit: false, // <-- This boolean value is VAR_SHOULD_INIT
     JoinExisting: ['VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1' ],
   },
   gateway+: {
