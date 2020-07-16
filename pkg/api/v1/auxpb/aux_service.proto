@@ -14,7 +14,7 @@ message Version {
 }
 
 message GetVersionRequest {
-  // Empty on purpose
+  // GetVersion accepts no parameters
 }
 
 message GetVersionResponse {
