@@ -23,6 +23,18 @@ For tests that benefit from being run in a fully-constructed environment, the
 environment and runs a set of tests in that environment.  Docker is the only
 prerequisite to running this end-to-end test on your local system.
 
+### Running a subset of tests
+To test a specific test in the [prober](../monitoring/prober) test suite,
+simply add its name as the first argument to `docker_e2e.sh`.  For example:
+```shell script
+./docker_e2e.sh scd/test_constraint_simple.py
+./docker_e2e.sh scd/test_constraint_simple.py::test_constraint_does_not_exist_get
+```
+
+### Examining gRPC backend logs
+After a `docker_e2e.sh` run, the gRPC backend logs are automatically captured
+to [grpc-backend-for-testing.log](../grpc-backend-for-testing.log).
+
 ## Lint checks
 One of the continuous integration presubmit checks on this repository checks Go
 style with a linter.  To run this check yourself, run the following command in

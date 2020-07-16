@@ -21,11 +21,10 @@ var (
 // PutSubscription creates a single subscription.
 func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	idString := req.GetSubscriptionid()
-	if idString == "" {
+	id := scdmodels.ID(req.GetSubscriptionid())
+	if id.Empty() {
 		return nil, dsserr.BadRequest("missing Subscription ID")
 	}
-	id := scdmodels.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -145,12 +144,36 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		result = &scdpb.PutSubscriptionResponse{
 			Subscription: p,
 		}
-		for _, op := range relevantOperations {
-			if op.Owner != owner {
-				op.OVN = scdmodels.OVN("")
+
+		if sub.NotifyForOperations {
+			// Attach Operations to response
+			for _, op := range relevantOperations {
+				if op.Owner != owner {
+					op.OVN = scdmodels.OVN("")
+				}
+				pop, _ := op.ToProto()
+				result.Operations = append(result.Operations, pop)
 			}
-			pop, _ := op.ToProto()
-			result.Operations = append(result.Operations, pop)
+		}
+
+		if sub.NotifyForConstraints {
+			// Query relevant Constraints
+			constraints, err := r.SearchConstraints(ctx, extents)
+			if err != nil {
+				return err
+			}
+
+			// Attach Constraints to response
+			for _, constraint := range constraints {
+				p, err := constraint.ToProto()
+				if err != nil {
+					return err
+				}
+				if constraint.Owner != owner {
+					p.Ovn = ""
+				}
+				result.Constraints = append(result.Constraints, p)
+			}
 		}
 
 		return nil
@@ -169,11 +192,10 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 // GetSubscription returns a single subscription for the given ID.
 func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscriptionRequest) (*scdpb.GetSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	idString := req.GetSubscriptionid()
-	if idString == "" {
+	id := scdmodels.ID(req.GetSubscriptionid())
+	if id.Empty() {
 		return nil, dsserr.BadRequest("missing Subscription ID")
 	}
-	id := scdmodels.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -276,11 +298,10 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 // specified version.
 func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscriptionRequest) (*scdpb.DeleteSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	idString := req.GetSubscriptionid()
-	if idString == "" {
+	id := scdmodels.ID(req.GetSubscriptionid())
+	if id.Empty() {
 		return nil, dsserr.BadRequest("missing Subscription ID")
 	}
-	id := scdmodels.ID(idString)
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
