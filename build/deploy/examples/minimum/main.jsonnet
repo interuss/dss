@@ -9,6 +9,7 @@ local metadata = metadataBase {
   clusterName: 'VAR_CLUSTER_CONTEXT',
   enable_istio: true,
   single_cluster: false,
+  enableScd: false, // <-- This boolean value is VAR_ENABLE_SCD
   cockroach+: {
     hostnameSuffix: 'VAR_CRDB_HOSTNAME_SUFFIX',
     locality: 'VAR_CRDB_LOCALITY',
@@ -28,8 +29,9 @@ local metadata = metadataBase {
     jwksKeyIds: ['VAR_JWKS_KEY_ID'],
   },
   schema_manager+: {
-    image: 'your_schema_manager_image_name',
-    desired_rid_db_version: 'v3.1.0'
+    image: 'VAR_SCHEMA_MANAGER_IMAGE_NAME',
+    desired_rid_db_version: 'v3.1.0',
+    desired_scd_db_version: 'v1.0.0',
   },
 };
 

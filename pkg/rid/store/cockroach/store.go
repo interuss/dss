@@ -23,6 +23,9 @@ var (
 	// deadline is used
 	// TODO: use this in other function calls
 	DefaultTimeout = 10 * time.Second
+
+	// DatabaseName is the name of database storing remote ID data.
+	DatabaseName = "defaultdb"
 )
 
 type repo struct {
@@ -122,5 +125,5 @@ func (s *Store) CleanUp(ctx context.Context) error {
 // GetVersion returns the Version string for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (string, error) {
-	return cockroach.GetVersion(ctx, s.db, "defaultdb")
+	return cockroach.GetVersion(ctx, s.db, DatabaseName)
 }
