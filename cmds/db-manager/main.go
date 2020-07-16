@@ -184,7 +184,7 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 	const checkDbQuery = `
 		SELECT EXISTS (
 			SELECT *
-				FROM pg_database 
+				FROM pg_database
 			WHERE datname = $1
 		)
 	`
@@ -196,7 +196,7 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 	}
 
 	if !exists {
-		log.Printf("Database \"%s\" doesn't exists, attempt to create", database)
+		log.Printf("Database \"%s\" doesn't exist, attempting to create", database)
 		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", database)
 		_, err := crdb.Exec(createDB)
 		if err != nil {
