@@ -7,6 +7,7 @@
   // Set this field if you don't intend to ever join this instance with others.
   // This disables inter cluster crdb<->crdb access when set to true.
   single_cluster: false,
+  enableScd: false,
   cockroach: {
     locality: error 'must supply crdb locality',
     hostnameSuffix: error 'must supply a hostnameSuffix, or override in statefulset',
@@ -32,7 +33,9 @@
     port: 8081,
     image: error 'must specify image',
     prof_grpc_name: '',
-    pubKeys: ['/public-certs/us-demo.pem'],
+    pubKeys: [''],
+    jwksEndpoint: '',
+    jwksKeyIds: [],
   },
   alert: {
     enable: false,

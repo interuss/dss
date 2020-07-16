@@ -2,7 +2,7 @@ package application
 
 import (
 	"github.com/dpjacques/clockwork"
-	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/rid/store"
 	"go.uber.org/zap"
 )
 
@@ -14,7 +14,7 @@ type app struct {
 	// TODO: don't fully embed the repos once we reduce the complexity in the store.
 	// Right now it's "coincidence" that the repo has the same signatures as the App interface
 	// but we will want to simplify the repos and add the complexity here.
-	repos.Transactor
+	store.Store
 	clock  clockwork.Clock
 	logger *zap.Logger
 }
@@ -26,10 +26,10 @@ type App interface {
 
 // NewFromTransactor is a convenience function for creating an App
 // with the given store.
-func NewFromTransactor(transactor repos.Transactor, logger *zap.Logger) App {
+func NewFromTransactor(store store.Store, logger *zap.Logger) App {
 	return &app{
-		Transactor: transactor,
-		clock:      DefaultClock,
-		logger:     logger,
+		Store:  store,
+		clock:  DefaultClock,
+		logger: logger,
 	}
 }

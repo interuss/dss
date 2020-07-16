@@ -21,8 +21,8 @@ import (
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	application "github.com/interuss/dss/pkg/rid/application"
-	ridc "github.com/interuss/dss/pkg/rid/cockroach"
 	rid "github.com/interuss/dss/pkg/rid/server"
+	ridc "github.com/interuss/dss/pkg/rid/store/cockroach"
 	"github.com/interuss/dss/pkg/scd"
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/validations"
@@ -35,8 +35,13 @@ import (
 )
 
 const (
-	// The code at this version requires a major schema version equal to 3.
-	RequiredMajorSchemaVersion = "v3"
+	// The code at this version requires a major schema version equal to this
+	// value.
+	RidRequiredMajorSchemaVersion = "v3"
+
+	// The code at this version requires a major schema version equal to this
+	// value.
+	ScdRequiredMajorSchemaVersion = "v1"
 )
 
 var (
@@ -52,6 +57,7 @@ var (
 	dumpRequests      = flag.Bool("dump_requests", false, "Log request and response protos")
 	profServiceName   = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
 	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
+	locality          = flag.String("locality", "", "self-identification string used as CRDB table writer column")
 
 	cockroachParams = struct {
 		host            *string
@@ -69,20 +75,58 @@ var (
 		applicationName: flag.String("cockroach_application_name", "dss", "application name for tagging the connection to cockroach"),
 	}
 
-	jwtAudiences = flag.String("accepted_jwt_audiences", "", "commad separated acceptable JWT `aud` claims")
+	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
-func MustSupportSchema(ctx context.Context, store *ridc.Store) {
+func MustSupportRidSchema(ctx context.Context, store *ridc.Store) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
 	vs, err := store.GetVersion(ctx)
 	if err != nil {
-		logger.Panic("could not get schema version from database", zap.Error(err))
+		logger.Panic("Failed to get database schema version for remote ID",
+			zap.Error(err))
+	}
+	if vs == "v0.0.0" {
+		logger.Panic("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
-	if RequiredMajorSchemaVersion != semver.Major(vs) {
-		logger.Panic(fmt.Sprintf("unsupported schema version! Got %s, requires major version of %s.", vs, RequiredMajorSchemaVersion))
+	if RidRequiredMajorSchemaVersion != semver.Major(vs) {
+		logger.Panic(fmt.Sprintf("unsupported schema version for remote ID! Got %s, requires major version of %s.", vs, RidRequiredMajorSchemaVersion))
 	}
+}
+
+func MustSupportScdSchema(ctx context.Context, store *scdc.Store) {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+
+	vs, err := store.GetVersion(ctx)
+	if err != nil {
+		logger.Panic("Failed to get database schema version for strategic conflict detection",
+			zap.Error(err))
+	}
+	if vs == "v0.0.0" {
+		logger.Panic("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
+	}
+
+	if ScdRequiredMajorSchemaVersion != semver.Major(vs) {
+		logger.Panic(fmt.Sprintf("unsupported schema version for strategic conflict detection! Got %s, requires major version of %s.", vs, ScdRequiredMajorSchemaVersion))
+	}
+}
+
+func ConnectTo(dbName string) (*cockroach.DB, error) {
+	uriParams := map[string]string{
+		"host":             *cockroachParams.host,
+		"port":             strconv.Itoa(*cockroachParams.port),
+		"user":             *cockroachParams.user,
+		"ssl_mode":         *cockroachParams.sslMode,
+		"ssl_dir":          *cockroachParams.sslDir,
+		"application_name": *cockroachParams.applicationName,
+		"db_name":          dbName,
+	}
+	uri, err := cockroach.BuildURI(uriParams)
+	if err != nil {
+		return nil, err
+	}
+	return cockroach.Dial(uri)
 }
 
 // RunGRPCServer starts the example gRPC service.
@@ -106,55 +150,51 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		}
 	}()
 
-	uriParams := map[string]string{
-		"host":             *cockroachParams.host,
-		"port":             strconv.Itoa(*cockroachParams.port),
-		"user":             *cockroachParams.user,
-		"ssl_mode":         *cockroachParams.sslMode,
-		"ssl_dir":          *cockroachParams.sslDir,
-		"application_name": *cockroachParams.applicationName,
-	}
-	uri, err := cockroach.BuildURI(uriParams)
-	if err != nil {
-		logger.Panic("Failed to build URI", zap.Error(err))
-	}
-
-	crdb, err := cockroach.Dial(uri)
-	if err != nil {
-		logger.Panic("Failed to dial CRDB instance", zap.Error(err))
-	}
-	store := ridc.NewStore(crdb, logger)
-
-	if err := store.Bootstrap(ctx); err != nil {
-		logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
-	}
-
 	var (
-		dssServer = &rid.Server{
-			App:     application.NewFromTransactor(store, logger),
-			Timeout: *timeout,
-		}
-		auxServer        = &aux.Server{}
-		scdServer        *scd.Server
-		scopesValidators = auth.MergeOperationsAndScopesValidators(
-			rid.AuthScopes(), auxServer.AuthScopes(),
-		)
+		ridServer *rid.Server
+		scdServer *scd.Server
+		auxServer = &aux.Server{}
 	)
 
-	if *enableSCD {
-		store := scdc.NewStore(crdb, logger)
+	// Initialize remote ID
 
-		if err := store.Bootstrap(ctx); err != nil {
-			logger.Panic("Failed to bootstrap CRDB instance", zap.Error(err))
+	ridCrdb, err := ConnectTo(ridc.DatabaseName)
+	if err != nil {
+		logger.Panic("Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", zap.Error(err))
+	}
+	ridStore := ridc.NewStore(ridCrdb, logger)
+
+	MustSupportRidSchema(ctx, ridStore)
+
+	ridServer = &rid.Server{
+		App:     application.NewFromTransactor(ridStore, logger),
+		Timeout: *timeout,
+	}
+	scopesValidators := auth.MergeOperationsAndScopesValidators(
+		rid.AuthScopes(), auxServer.AuthScopes(),
+	)
+
+	// Initialize strategic conflict detection
+
+	if *enableSCD {
+		scdCrdb, err := ConnectTo(scdc.DatabaseName)
+		if err != nil {
+			logger.Panic("Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", zap.Error(err))
 		}
+		scdStore := scdc.NewStore(scdCrdb, logger)
+
+		MustSupportScdSchema(ctx, scdStore)
+
 		scdServer = &scd.Server{
-			Store:   store,
+			Store:   scdStore,
 			Timeout: *timeout,
 		}
-		scopesValidators = auth.MergeOperationsAndScopesValidators(scopesValidators, scdServer.AuthScopes())
+		scopesValidators = auth.MergeOperationsAndScopesValidators(
+			scopesValidators, scdServer.AuthScopes(),
+		)
 	}
 
-	MustSupportSchema(ctx, store)
+	// Initialize access token validation
 
 	var keyResolver auth.KeyResolver
 	switch {
@@ -188,6 +228,8 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		return err
 	}
 
+	// Set up server functionality
+
 	interceptors := []grpc.UnaryServerInterceptor{
 		uss_errors.Interceptor(logger),
 		logging.Interceptor(logger),
@@ -206,7 +248,7 @@ func RunGRPCServer(ctx context.Context, address string) error {
 		reflection.Register(s)
 	}
 
-	ridpb.RegisterDiscoveryAndSynchronizationServiceServer(s, dssServer)
+	ridpb.RegisterDiscoveryAndSynchronizationServiceServer(s, ridServer)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
 	if *enableSCD {
 		logger.Info("config", zap.Any("scd", "enabled"))
@@ -243,5 +285,7 @@ func main() {
 	if err := RunGRPCServer(ctx, *address); err != nil {
 		logger.Panic("Failed to execute service", zap.Error(err))
 	}
+
+	logger.Info("locality: " + *locality)
 	logger.Info("Shutting down gracefully")
 }
