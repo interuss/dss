@@ -184,7 +184,7 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 	const checkDbQuery = `
 		SELECT EXISTS (
 			SELECT *
-				FROM pg_database 
+				FROM pg_database
 			WHERE datname = $1
 		)
 	`
@@ -196,7 +196,7 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 	}
 
 	if !exists {
-		log.Printf("Database \"%s\" doesn't exists, attempt to create", database)
+		log.Printf("Database \"%s\" doesn't exist, attempting to create", database)
 		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", database)
 		_, err := crdb.Exec(createDB)
 		if err != nil {
@@ -215,7 +215,7 @@ func getCurrentDBVersion(crdbURI string, database string) (string, error) {
 		return "", fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
 	}
 	version, err := dssCockroach.GetVersion(context.Background(), crdb, database)
-	if err != nil && version == "" {
+	if err != nil {
 		log.Print(err)
 		return "", err
 	}

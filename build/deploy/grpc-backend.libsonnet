@@ -44,6 +44,7 @@ local volumes = import 'volumes.libsonnet';
                 dump_requests: true,
                 accepted_jwt_audiences: metadata.gateway.hostname,
                 locality: metadata.cockroach.locality,
+                enable_scd: metadata.enableScd,
               },
             },
           },

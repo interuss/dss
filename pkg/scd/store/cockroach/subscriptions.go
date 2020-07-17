@@ -391,3 +391,44 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 
 	return subscriptions, nil
 }
+
+// Implements scd.repos.Subscription.IncrementNotificationIndices
+func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds []scdmodels.ID) ([]int, error) {
+	var updateQuery = fmt.Sprintf(`
+			UPDATE scd_subscriptions
+			SET notification_index = notification_index + 1
+			WHERE id = ANY($1)
+			RETURNING notification_index`)
+
+	ids := make([]string, len(subscriptionIds))
+	for i, id := range subscriptionIds {
+		ids[i] = id.String()
+	}
+
+	rows, err := c.q.QueryContext(ctx, updateQuery, pq.StringArray(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var indices []int
+	for rows.Next() {
+		var notificationIndex int
+		err := rows.Scan(&notificationIndex)
+		if err != nil {
+			return nil, err
+		}
+		indices = append(indices, notificationIndex)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(indices) != len(subscriptionIds) {
+		return nil, fmt.Errorf(
+			"Expected %d notification_index results when incrementing but got %d instead",
+			len(subscriptionIds), len(indices))
+	}
+
+	return indices, nil
+}

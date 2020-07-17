@@ -75,7 +75,17 @@ docker run --rm --name rid-db-manager \
 	-v $(pwd)/build/deploy/db-schemas/defaultdb:/db-schemas/defaultdb \
 	local-db-manager \
 	--schemas_dir db-schemas/defaultdb \
-	--db_version v3.0.0 \
+	--db_version v3.1.0 \
+	--cockroach_host crdb
+
+sleep 1
+echo "Bootstrapping SCD Database tables"
+docker run --rm --name scd-db-manager \
+	--link dss-crdb-for-debugging:crdb \
+	-v $(pwd)/build/deploy/db-schemas/scd:/db-schemas/scd \
+	local-db-manager \
+	--schemas_dir db-schemas/scd \
+	--db_version v1.0.0 \
 	--cockroach_host crdb
 
 sleep 1
@@ -136,6 +146,7 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--link http-gateway-for-testing:local-gateway \
 	-v $RESULTFILE:/app/test_result \
 	e2e-test \
+	${1:-.} \
 	--junitxml=/app/test_result \
 	--oauth-token-endpoint http://oauth:8085/token \
 	--dss-endpoint http://local-gateway:8082 \

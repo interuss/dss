@@ -83,6 +83,16 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	return 0, nil, nil
 }
 
+// SetCells is a convenience function that accepts an int64 array and converts
+// to s2.CellUnion.
+func CellUnionFromInt64(cellIds []int64) s2.CellUnion {
+	cells := s2.CellUnion{}
+	for _, id := range cellIds {
+		cells = append(cells, s2.CellID(id))
+	}
+	return cells
+}
+
 // DistanceMetersToAngle converts distance in [m] to an s1.Angle in radians.
 func DistanceMetersToAngle(distance float64) s1.Angle {
 	return s1.Angle(distance / radiusEarthMeter)

@@ -83,10 +83,10 @@ func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
 	}
 	if !ret {
 		// Database has not been bootstrapped using DB Schema Manager
-		return "v0.0.0", fmt.Errorf("%s has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", dbName)
+		return "v0.0.0", nil
 	}
 	getVersionQuery := fmt.Sprintf(`
-		SELECT schema_version 
+		SELECT schema_version
 			FROM %s.schema_versions
 		WHERE onerow_enforcer = TRUE`, dbName)
 	row = db.QueryRowContext(ctx, getVersionQuery)

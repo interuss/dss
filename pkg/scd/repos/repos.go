@@ -43,10 +43,34 @@ type Subscription interface {
 	// deleted subscription.  Returns an error if the Subscription does not
 	// exist.
 	DeleteSubscription(ctx context.Context, id scdmodels.ID) error
+
+	// IncrementNotificationIndices increments the notification index of each
+	// specified Subscription and returns the resulting corresponding
+	// notification indices.
+	IncrementNotificationIndices(ctx context.Context, subscriptionIds []scdmodels.ID) ([]int, error)
+}
+
+// repos.Constraint abstracts constraint-specific interactions with the backing store.
+type Constraint interface {
+	// SearchConstraints returns all Constraints in "v4d".
+	SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Constraint, error)
+
+	// GetConstraint returns the Constraint referenced by id, or
+	// (nil, sql.ErrNoRows) if the Constraint doesn't exist
+	GetConstraint(ctx context.Context, id scdmodels.ID) (*scdmodels.Constraint, error)
+
+	// UpsertConstraint upserts "constraint" into the store.
+	UpsertConstraint(ctx context.Context, constraint *scdmodels.Constraint) (*scdmodels.Constraint, error)
+
+	// DeleteConstraint deletes a Constraint from the store and returns the
+	// deleted subscription.  Returns nil and an error if the Constraint does
+	// not exist.
+	DeleteConstraint(ctx context.Context, id scdmodels.ID) error
 }
 
 // Repository aggregates all SCD-specific repo interfaces.
 type Repository interface {
 	Operation
 	Subscription
+	Constraint
 }
