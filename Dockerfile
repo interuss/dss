@@ -12,7 +12,9 @@ WORKDIR /app
 # Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download
 
-COPY . /app
+COPY cmds /app/cmds
+COPY pkg /app/pkg
+COPY Makefile /app
 RUN make interuss
 
 FROM alpine:latest
