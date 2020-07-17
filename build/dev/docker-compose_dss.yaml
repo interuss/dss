@@ -11,21 +11,43 @@ services:
   dss-crdb-for-debugging:
     image: cockroachdb/cockroach:v20.1.1
     command: start --insecure
+    volumes:
+      - dss-data:/cockroach
     expose:
       - 26257
     ports:
       - "8080:8080"
     restart: always
 
+  db-manager-default-bootstraper:
+     image: interuss-local/db-manager
+     volumes:
+       - $PWD/../deploy/db-schemas/defaultdb:/db-schemas/defaultdb:ro
+       - dss-data:/var/dss-data
+     entrypoint: /bin/sh -c "(ls /var/dss-data/default_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/defaultdb --db_version v3.1.0 --cockroach_host dss-crdb-for-debugging && touch /var/dss-data/default_bootstrap)"
+     depends_on:
+       - dss-crdb-for-debugging
+
+  db-manager-scd-bootstraper:
+    image: interuss-local/db-manager
+    volumes:
+      - $PWD/../deploy/db-schemas/defaultdb:/db-schemas/scd:ro
+      - dss-data:/var/dss-data
+    entrypoint: /bin/sh -c "(ls /var/dss-data/scd_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/scd --db_version v1.0.0 --cockroach_host dss-crdb-for-debugging && touch /var/dss-data/scd_bootstrap)"
+    depends_on:
+      - dss-crdb-for-debugging
+
   grpc-backend-for-debugging:
     image: interuss-local/dss
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
-    command: /usr/bin/grpc-backend -cockroach_host dss-crdb-for-debugging -public_key_files /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -accepted_jwt_audiences localhost -enable_scd
+      - dss-data:/var/dss-data
+    command: /bin/sh -c "while [ ! -e /var/dss-data/default_bootstrap ] || [ ! -e /var/dss-data/scd_bootstrap ]; do echo \"waiting on DB bootstrapping...\"; sleep 1; done; echo \"DB bootstrap complete...\"; /usr/bin/grpc-backend -cockroach_host dss-crdb-for-debugging -public_key_files /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -accepted_jwt_audiences localhost -enable_scd"
     expose:
       - 8081
     depends_on:
-      - dss-crdb-for-debugging
+      - db-manager-default-bootstraper
+      - db-manager-scd-bootstraper
 
   http-gateway-for-debugging:
     image: interuss-local/dss
@@ -40,3 +62,6 @@ services:
     command: -private_key_file /var/test-certs/auth2.key
     ports:
       - "8085:8085"
+
+volumes:
+  dss-data:
