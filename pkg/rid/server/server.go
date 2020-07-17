@@ -39,10 +39,10 @@ func AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
 		"/ridpb.DiscoveryAndSynchronizationService/GetIdentificationServiceArea":     auth.RequireAllScopes(Scopes.ISA.Read),
 		"/ridpb.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas": auth.RequireAllScopes(Scopes.ISA.Read),
 		"/ridpb.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ISA.Write),
-		"/ridpb.DiscoveryAndSynchronizationService/CreateSubscription":               auth.RequireAllScopes(Scopes.ISA.Write),
-		"/ridpb.DiscoveryAndSynchronizationService/DeleteSubscription":               auth.RequireAllScopes(Scopes.ISA.Write),
+		"/ridpb.DiscoveryAndSynchronizationService/CreateSubscription":               auth.RequireAllScopes(Scopes.ISA.Read),
+		"/ridpb.DiscoveryAndSynchronizationService/DeleteSubscription":               auth.RequireAllScopes(Scopes.ISA.Read),
 		"/ridpb.DiscoveryAndSynchronizationService/GetSubscription":                  auth.RequireAllScopes(Scopes.ISA.Read),
 		"/ridpb.DiscoveryAndSynchronizationService/SearchSubscriptions":              auth.RequireAllScopes(Scopes.ISA.Read),
-		"/ridpb.DiscoveryAndSynchronizationService/UpdateSubscription":               auth.RequireAllScopes(Scopes.ISA.Write),
+		"/ridpb.DiscoveryAndSynchronizationService/UpdateSubscription":               auth.RequireAllScopes(Scopes.ISA.Read),
 	}
 }

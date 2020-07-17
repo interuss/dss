@@ -8,9 +8,12 @@
 
 import datetime
 
+from ..infrastructure import default_scope
 from . import common
+from .common import SCOPE_WRITE
 
 
+@default_scope(SCOPE_WRITE)
 def test_isa_huge_area(session, isa1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -35,6 +38,7 @@ def test_isa_huge_area(session, isa1_uuid):
   assert 'area is too large' in resp.json()['message']
 
 
+@default_scope(SCOPE_WRITE)
 def test_isa_empty_vertices(session, isa1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -59,6 +63,7 @@ def test_isa_empty_vertices(session, isa1_uuid):
   assert resp.json()['message'] == 'bad extents: not enough points in polygon'
 
 
+@default_scope(SCOPE_WRITE)
 def test_isa_missing_footprint(session, isa1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -81,6 +86,7 @@ def test_isa_missing_footprint(session, isa1_uuid):
   )['message'] == 'bad extents: spatial_volume missing required footprint'
 
 
+@default_scope(SCOPE_WRITE)
 def test_isa_missing_spatial_volume(session, isa1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -99,6 +105,7 @@ def test_isa_missing_spatial_volume(session, isa1_uuid):
   )['message'] == 'bad extents: missing required spatial_volume'
 
 
+@default_scope(SCOPE_WRITE)
 def test_isa_missing_extents(session, isa1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -112,6 +119,7 @@ def test_isa_missing_extents(session, isa1_uuid):
   assert resp.json()['message'] == 'missing required extents'
 
 
+@default_scope(SCOPE_WRITE)
 def test_isa_start_time_in_past(session, isa1_uuid):
   time_start = datetime.datetime.utcnow() - datetime.timedelta(minutes=10)
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -137,6 +145,7 @@ def test_isa_start_time_in_past(session, isa1_uuid):
   )['message'] == 'IdentificationServiceArea time_start must not be in the past'
 
 
+@default_scope(SCOPE_WRITE)
 def test_isa_start_time_after_time_end(session, isa1_uuid):
   time_start = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
   time_end = time_start - datetime.timedelta(minutes=5)
@@ -162,6 +171,7 @@ def test_isa_start_time_after_time_end(session, isa1_uuid):
   )['message'] == 'IdentificationServiceArea time_end must be after time_start'
 
 
+@default_scope(SCOPE_WRITE)
 def test_isa_not_on_earth(session, isa1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)

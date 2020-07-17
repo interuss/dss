@@ -9,9 +9,13 @@
 
 import datetime
 
+from ..infrastructure import default_scope
 from . import common
+from .common import SCOPE_READ, SCOPE_WRITE
 
 
+
+@default_scope(SCOPE_WRITE)
 def test_create_isa(session, isa1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -35,6 +39,7 @@ def test_create_isa(session, isa1_uuid):
   assert resp.status_code == 200
 
 
+@default_scope(SCOPE_READ)
 def test_create_subscription(session, isa1_uuid, sub1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -67,7 +72,7 @@ def test_create_subscription(session, isa1_uuid, sub1_uuid):
 
 def test_modify_isa(session, isa1_uuid, sub1_uuid):
   # GET the ISA first to find its version.
-  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
+  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid), scope=SCOPE_READ)
   assert resp.status_code == 200
   version = resp.json()['service_area']['version']
 
@@ -84,11 +89,11 @@ def test_modify_isa(session, isa1_uuid, sub1_uuid):
                   'altitude_lo': 12345,
                   'altitude_hi': 67890,
               },
-  
+
               'time_end': time_end.strftime(common.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
-      })
+      }, scope=SCOPE_WRITE)
   assert resp.status_code == 200
 
   # The response should include our subscription.
@@ -105,13 +110,13 @@ def test_modify_isa(session, isa1_uuid, sub1_uuid):
 
 def test_delete_isa(session, isa1_uuid, sub1_uuid):
   # GET the ISA first to find its version.
-  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
+  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid), scope=SCOPE_READ)
   assert resp.status_code == 200
   version = resp.json()['service_area']['version']
 
   # Then delete it.
   resp = session.delete('/identification_service_areas/{}/{}'.format(
-      isa1_uuid, version))
+      isa1_uuid, version), scope=SCOPE_WRITE)
   assert resp.status_code == 200
 
   # The response should include our subscription.
@@ -126,6 +131,7 @@ def test_delete_isa(session, isa1_uuid, sub1_uuid):
   } in data['subscribers']
 
 
+@default_scope(SCOPE_READ)
 def test_delete_subscription(session, sub1_uuid):
   # GET the sub first to find its version.
   resp = session.get('/subscriptions/{}'.format(sub1_uuid))
