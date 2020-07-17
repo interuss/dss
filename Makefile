@@ -2,7 +2,7 @@ GOPATH := $(shell go env GOPATH)
 GOBIN := $(GOPATH)/bin
 COMMIT := $(shell scripts/git/commit.sh)
 # LAST_RELEASE_TAG determines the version of the DSS and is baked into
-# the executable using linker flags. We gracefully ignore any tag that 
+# the executable using linker flags. We gracefully ignore any tag that
 # does not satisfy the naming pattern v*, thus supporting interleaving release
 # and ordinary tags.
 LAST_RELEASE_TAG := $(shell git describe --tags --abbrev=0 --match='v*' 2> /dev/null | grep -E 'v[0-9]+\.[0-9]+\.[0-9]+')
@@ -54,7 +54,7 @@ pkg/api/v1/ridpb/rid.proto: install-proto-generation
 		-indent 2 \
 		-package ridpb
 
-pkg/api/v1/auxpb/aux_service.pb.go:
+pkg/api/v1/auxpb/aux_service.pb.go: pkg/api/v1/auxpb/aux_service.proto
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/api/v1/auxpb/aux_service.proto
 
 pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.pb.go

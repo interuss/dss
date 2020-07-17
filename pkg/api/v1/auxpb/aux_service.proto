@@ -36,16 +36,16 @@ service DSSAuxService {
   // Queries the version of the DSS.
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse) {
     option (google.api.http) = {
-      get: "/v1/dss/version"
+      get: "/aux/v1/version"
     };
   }
 
   // /dss/validate_oauth
-  // 
+  //
   // Validate Oauth token against the DSS.
   rpc ValidateOauth(ValidateOauthRequest) returns (ValidateOauthResponse) {
     option (google.api.http) = {
-      get: "/v1/dss/validate_oauth"
+      get: "/aux/v1/validate_oauth"
     };
   }
 }

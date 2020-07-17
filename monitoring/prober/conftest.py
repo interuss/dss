@@ -65,6 +65,17 @@ def session(pytestconfig):
 
 
 @pytest.fixture(scope='session')
+def aux_session(pytestconfig):
+  dss_endpoint = pytestconfig.getoption('dss_endpoint')
+  if dss_endpoint is None:
+    raise ValueError('Missing required --dss-endpoint')
+
+  auth_adapter = make_auth_adapter(pytestconfig, 'oauth', 'fake_uss')
+  s = infrastructure.DSSTestSession(dss_endpoint + '/aux/v1', auth_adapter)
+  return s
+
+
+@pytest.fixture(scope='session')
 def scd_session(pytestconfig):
   scd_dss_endpoint = pytestconfig.getoption('scd_dss_endpoint')
   if scd_dss_endpoint is None:

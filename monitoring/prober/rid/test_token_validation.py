@@ -13,18 +13,6 @@ import datetime
 from . import common
 
 
-def test_validate(session):
-  resp = session.get('/validate_oauth')
-  assert resp.status_code == 200
-
-def test_validate_token_good_user(session):
-  resp = session.get('/validate_oauth?owner=fake_uss')
-  assert resp.status_code == 200
-
-def test_validate_token_bad_user(session):
-  resp = session.get('/validate_oauth?owner=bad_user')
-  assert resp.status_code == 403
-
 def test_put_isa_with_read_only_scope_token(session, isa2_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)

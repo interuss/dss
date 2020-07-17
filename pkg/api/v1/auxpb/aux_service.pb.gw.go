@@ -212,9 +212,9 @@ func RegisterDSSAuxServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 }
 
 var (
-	pattern_DSSAuxService_GetVersion_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "dss", "version"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DSSAuxService_GetVersion_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"aux", "v1", "version"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_DSSAuxService_ValidateOauth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "dss", "validate_oauth"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_DSSAuxService_ValidateOauth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"aux", "v1", "validate_oauth"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
