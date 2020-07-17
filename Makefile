@@ -1,5 +1,17 @@
 GOPATH := $(shell go env GOPATH)
 GOBIN := $(GOPATH)/bin
+COMMIT := $(shell scripts/git/commit.sh)
+# LAST_RELEASE_TAG determines the version of the DSS and is baked into
+# the executable using linker flags. We gracefully ignore any tag that
+# does not satisfy the naming pattern v*, thus supporting interleaving release
+# and ordinary tags.
+LAST_RELEASE_TAG := $(shell git describe --tags --abbrev=0 --match='v*' 2> /dev/null | grep -E 'v[0-9]+\.[0-9]+\.[0-9]+')
+LAST_RELEASE_TAG := $(or $(LAST_RELEASE_TAG), v0.0.0)
+
+# Build and version information is baked into the executable itself.
+BUILD_LDFLAGS := -X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/build.commit=$(COMMIT) -X github.com/interuss/dss/pkg/build.host=$(shell hostname)
+VERSION_LDFLAGS := -X github.com/interuss/dss/pkg/version.tag=$(LAST_RELEASE_TAG) -X github.com/interuss/dss/pkg/version.commit=$(COMMIT)
+LDFLAGS := $(BUILD_LDFLAGS) $(VERSION_LDFLAGS)
 
 ifeq ($(OS),Windows_NT)
   detected_OS := Windows
@@ -9,7 +21,7 @@ endif
 
 .PHONY: interuss
 interuss:
-	go install -ldflags "-X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/build.commit=$(shell git rev-parse --short HEAD) -X github.com/interuss/dss/pkg/build.host=$(shell hostname)" ./...
+	go install -ldflags "$(LDFLAGS)" ./...
 
 go-mod-download: go.mod
 	go mod download
@@ -42,7 +54,7 @@ pkg/api/v1/ridpb/rid.proto: install-proto-generation
 		-indent 2 \
 		-package ridpb
 
-pkg/api/v1/auxpb/aux_service.pb.go:
+pkg/api/v1/auxpb/aux_service.pb.go: pkg/api/v1/auxpb/aux_service.proto
 	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/api/v1/auxpb/aux_service.proto
 
 pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.pb.go
@@ -94,7 +106,7 @@ staticcheck: install-staticcheck
 
 .PHONY: test
 test:
-	go test -count=1 -v ./...
+	go test -ldflags "$(LDFLAGS)" -count=1 -v ./...
 
 .PHONY: test-cockroach
 test-cockroach: cleanup-test-cockroach
