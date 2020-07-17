@@ -5,7 +5,7 @@ COMMIT := $(shell scripts/git/commit.sh)
 # the executable using linker flags. We gracefully ignore any tag that 
 # does not satisfy the naming pattern v*, thus supporting interleaving release
 # and ordinary tags.
-LAST_RELEASE_TAG := $(shell git describe --tags --abbrev=0 --match='v*' 2> /dev/null)
+LAST_RELEASE_TAG := $(shell git describe --tags --abbrev=0 --match='v*' 2> /dev/null | grep -E 'v[0-9]+\.[0-9]+\.[0-9]+')
 LAST_RELEASE_TAG := $(or $(LAST_RELEASE_TAG), v0.0.0)
 
 # Build and version information is baked into the executable itself.
