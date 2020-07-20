@@ -59,10 +59,11 @@ def _parse_subscribers(subscribers: Dict) -> Dict[str, Dict[str, int]]:
 
 
 # Parses AirspaceConflictResponse entities into Dict[Operation ID, Operation Reference] +
-# Dict[Constraint ID, Constraint Reference]
-def _parse_conflicts(entities: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
+# Dict[Constraint ID, Constraint Reference] + set of OVNs
+def _parse_conflicts(entities: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict], set]:
   ops = {}
   constraints = {}
+  ovns = {}
   for entity in entities:
     op = entity.get('operation_reference', None)
     if op is not None:
@@ -70,7 +71,10 @@ def _parse_conflicts(entities: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
     constraint = entity.get('constraint', None)
     if constraint is not None:
       constraints[constraint['id']] = constraint
-  return ops, constraints
+    ovn = entity.get('ovn', None)
+    if ovn is not None:
+      ovns.add(ovn)
+  return ops, constraints, ovns
 
 
 # Op1 shouldn't exist by ID for USS1 when starting this sequence
@@ -218,7 +222,7 @@ def test_create_op2_no_key(scd_session2, op2_uuid, sub2_uuid, op1_uuid):
   assert resp.status_code == 409, resp.content
   data = resp.json()
   assert 'entity_conflicts' in data, data
-  missing_ops, _ = _parse_conflicts(data['entity_conflicts'])
+  missing_ops, _, _ = _parse_conflicts(data['entity_conflicts'])
   assert op1_uuid in missing_ops
 
 
@@ -325,21 +329,24 @@ def test_mutate_op1_bad_key(scd_session, op1_uuid, op2_uuid):
   }
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 409, resp.content
-  missing_ops, _ = _parse_conflicts(resp.json()['entity_conflicts'])
+  missing_ops, _, _ = _parse_conflicts(resp.json()['entity_conflicts'])
   assert op1_uuid in missing_ops
   assert op2_uuid in missing_ops
 
   req['key'] = [op1_ovn]
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 409, resp.content
-  missing_ops, _ = _parse_conflicts(resp.json()['entity_conflicts'])
+  missing_ops, _, ovns = _parse_conflicts(resp.json()['entity_conflicts'])
   assert op2_uuid in missing_ops
+  assert not(op2_ovn in ovns)
+  assert not(op1_ovn in ovns)
 
   req['key'] = [op2_ovn]
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
   assert resp.status_code == 409, resp.content
-  missing_ops, _ = _parse_conflicts(resp.json()['entity_conflicts'])
+  missing_ops, _, ovns = _parse_conflicts(resp.json()['entity_conflicts'])
   assert op1_uuid in missing_ops
+  assert not(op2_ovn in ovns)
 
 
 # Successfully mutate Op1
