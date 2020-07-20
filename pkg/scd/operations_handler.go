@@ -3,8 +3,9 @@ package scd
 import (
 	"context"
 	"fmt"
-	"github.com/golang/protobuf/ptypes"
 	"time"
+
+	"github.com/golang/protobuf/ptypes"
 
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
@@ -299,6 +300,13 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			if err != nil {
 				return err
 			}
+
+			for _, op := range ops {
+				if op.Owner != owner {
+					op.OVN = ""
+				}
+			}
+
 			success, err := scderr.MissingOVNsErrorResponse(ops)
 			if !success {
 				return dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", err))
