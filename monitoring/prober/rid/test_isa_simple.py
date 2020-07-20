@@ -9,15 +9,19 @@
 import datetime
 import re
 
+from ..infrastructure import default_scope
 from . import common
+from .common import SCOPE_READ, SCOPE_WRITE
 
 
+@default_scope(SCOPE_READ)
 def test_isa_does_not_exist(session, isa1_uuid):
   resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 404
   assert resp.json()['message'] == 'resource not found: {}'.format(isa1_uuid)
 
 
+@default_scope(SCOPE_WRITE)
 def test_create_isa(session, isa1_uuid):
   """ASTM Compliance Test: DSS0030_A_PUT_ISA."""
   time_start = datetime.datetime.utcnow()
@@ -52,6 +56,7 @@ def test_create_isa(session, isa1_uuid):
   assert 'subscribers' in data
 
 
+@default_scope(SCOPE_READ)
 def test_get_isa_by_id(session, isa1_uuid):
   resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 200
@@ -61,11 +66,13 @@ def test_get_isa_by_id(session, isa1_uuid):
   assert data['service_area']['flights_url'] == 'https://example.com/dss'
 
 
+@default_scope(SCOPE_READ)
 def test_get_isa_by_search_missing_params(session):
   resp = session.get('/identification_service_areas')
   assert resp.status_code == 400
 
 
+@default_scope(SCOPE_READ)
 def test_get_isa_by_search(session, isa1_uuid):
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))
@@ -73,6 +80,7 @@ def test_get_isa_by_search(session, isa1_uuid):
   assert isa1_uuid in [x['id'] for x in resp.json()['service_areas']]
 
 
+@default_scope(SCOPE_READ)
 def test_get_isa_by_search_earliest_time_included(session, isa1_uuid):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=59)
   resp = session.get('/identification_service_areas'
@@ -83,6 +91,7 @@ def test_get_isa_by_search_earliest_time_included(session, isa1_uuid):
   assert isa1_uuid in [x['id'] for x in resp.json()['service_areas']]
 
 
+@default_scope(SCOPE_READ)
 def test_get_isa_by_search_earliest_time_excluded(session, isa1_uuid):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=61)
   resp = session.get('/identification_service_areas'
@@ -93,6 +102,7 @@ def test_get_isa_by_search_earliest_time_excluded(session, isa1_uuid):
   assert isa1_uuid not in [x['id'] for x in resp.json()['service_areas']]
 
 
+@default_scope(SCOPE_READ)
 def test_get_isa_by_search_latest_time_included(session, isa1_uuid):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
   resp = session.get('/identification_service_areas'
@@ -103,6 +113,7 @@ def test_get_isa_by_search_latest_time_included(session, isa1_uuid):
   assert isa1_uuid in [x['id'] for x in resp.json()['service_areas']]
 
 
+@default_scope(SCOPE_READ)
 def test_get_isa_by_search_latest_time_excluded(session, isa1_uuid):
   latest_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
   resp = session.get('/identification_service_areas'
@@ -113,6 +124,7 @@ def test_get_isa_by_search_latest_time_excluded(session, isa1_uuid):
   assert isa1_uuid not in [x['id'] for x in resp.json()['service_areas']]
 
 
+@default_scope(SCOPE_READ)
 def test_get_isa_by_search_area_only(session, isa1_uuid):
   resp = session.get('/identification_service_areas'
                      '?area={}'.format(common.GEO_POLYGON_STRING))
@@ -120,17 +132,20 @@ def test_get_isa_by_search_area_only(session, isa1_uuid):
   assert isa1_uuid in [x['id'] for x in resp.json()['service_areas']]
 
 
-def test_get_isa_by_search_huge_area(session, isa1_uuid):
+@default_scope(SCOPE_READ)
+def test_get_isa_by_search_huge_area(session):
   resp = session.get('/identification_service_areas'
                      '?area={}'.format(common.HUGE_GEO_POLYGON_STRING))
   assert resp.status_code == 413
 
 
+@default_scope(SCOPE_WRITE)
 def test_delete_isa_wrong_version(session, isa1_uuid):
   resp = session.delete('/identification_service_areas/{}/fake_version'.format(isa1_uuid))
   assert resp.status_code == 400
 
 
+@default_scope(SCOPE_WRITE)
 def test_delete_isa_empty_version(session, isa1_uuid):
   resp = session.delete('/identification_service_areas/{}/'.format(isa1_uuid))
   assert resp.status_code == 400
@@ -139,21 +154,23 @@ def test_delete_isa_empty_version(session, isa1_uuid):
 def test_delete_isa(session, isa1_uuid):
   """ASTM Compliance Test: DSS0030_B_DELETE_ISA."""
   # GET the ISA first to find its version.
-  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
+  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid), scope=SCOPE_READ)
   assert resp.status_code == 200
   version = resp.json()['service_area']['version']
 
   # Then delete it.
   resp = session.delete('/identification_service_areas/{}/{}'.format(
-      isa1_uuid, version))
+      isa1_uuid, version), scope=SCOPE_WRITE)
   assert resp.status_code == 200
 
 
+@default_scope(SCOPE_READ)
 def test_get_deleted_isa_by_id(session, isa1_uuid):
   resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 404
 
 
+@default_scope(SCOPE_READ)
 def test_get_deleted_isa_by_search(session, isa1_uuid):
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))

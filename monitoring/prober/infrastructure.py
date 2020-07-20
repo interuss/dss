@@ -1,10 +1,8 @@
 import functools
-import requests
 from typing import Dict, List
 import urllib.parse
 
-from google.auth.transport import requests as google_requests
-from google.oauth2 import service_account
+import requests
 
 ALL_SCOPES = [
   'dss.write.identification_service_areas',
@@ -41,70 +39,6 @@ class AuthAdapter(object):
   def add_headers(self, request: requests.PreparedRequest, scopes: List[str]):
     for k, v in self.get_headers(request.url, scopes).items():
       request.headers[k] = v
-
-
-class DummyOAuthServerAdapter(AuthAdapter):
-  """Auth adapter that gets JWTs that uses the Dummy OAuth Server"""
-
-  def __init__(self, token_endpoint: str, sub: str):
-    super().__init__()
-
-    self._oauth_token_endpoint = token_endpoint
-    self._sub = sub
-    self._oauth_session = requests.Session()
-
-  # Overrides method in AuthAdapter
-  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
-    url = '{}?grant_type=client_credentials&scope={}&intended_audience={}&issuer=dummy&sub={}'.format(
-      self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
-      urllib.parse.quote(intended_audience), self._sub)
-    response = self._oauth_session.post(url).json()
-    return response['access_token']
-
-class ServiceAccountAuthAdapter(AuthAdapter):
-  """Auth adapter that gets JWTs using a service account."""
-
-  def __init__(self, token_endpoint, service_account_json):
-    super().__init__()
-
-    credentials = service_account.Credentials.from_service_account_file(
-      service_account_json).with_scopes(['email'])
-    oauth_session = google_requests.AuthorizedSession(credentials)
-
-    self._oauth_token_endpoint = token_endpoint
-    self._oauth_session = oauth_session
-
-  # Overrides method in AuthAdapter
-  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
-    url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
-      self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
-      urllib.parse.quote(intended_audience))
-    response = self._oauth_session.post(url).json()
-    return response['access_token']
-
-
-class UsernamePasswordAuthAdapter(AuthAdapter):
-  """Auth adapter that gets JWTs using a username and password."""
-
-  def __init__(self, token_endpoint, username, password, client_id):
-    super().__init__()
-
-    self._oauth_token_endpoint = token_endpoint
-    self._username = username
-    self._password = password
-    self._client_id = client_id
-
-  # Overrides method in AuthAdapter
-  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
-    scopes.append('aud:{}'.format(intended_audience))
-    response = requests.post(self._oauth_token_endpoint, data={
-      'grant_type': "password",
-      'username': self._username,
-      'password': self._password,
-      'client_id': self._client_id,
-      'scope': ' '.join(scopes),
-    }).json()
-    return response['access_token']
 
 
 class DSSTestSession(requests.Session):

@@ -7,7 +7,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/rid/server"
+	ridserver "github.com/interuss/dss/pkg/rid/server"
 	"github.com/interuss/dss/pkg/version"
 )
 
@@ -17,7 +17,7 @@ type Server struct{}
 // AuthScopes returns a map of endpoint to required Oauth scope.
 func (a *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
 	return map[auth.Operation]auth.KeyClaimedScopesValidator{
-		"/auxpb.DSSAuxService/ValidateOauth": auth.RequireAllScopes(server.Scopes.ISA.Write),
+		"/auxpb.DSSAuxService/ValidateOauth": auth.RequireAnyScope(ridserver.Scopes.ISA.Read, ridserver.Scopes.ISA.Write),
 	}
 }
 

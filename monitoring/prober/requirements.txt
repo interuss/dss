@@ -1,3 +1,5 @@
 google-auth==1.6.3
 pytest==4.4.1
 requests==2.22.0
+cryptography==2.9.2
+jwcrypto==0.7

@@ -3,9 +3,12 @@
 import datetime
 import time
 
+from ..infrastructure import default_scope
 from . import common
+from .common import SCOPE_READ, SCOPE_WRITE
 
 
+@default_scope(SCOPE_WRITE)
 def test_create(session, isa1_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=5)
@@ -29,6 +32,7 @@ def test_create(session, isa1_uuid):
   assert resp.status_code == 200
 
 
+@default_scope(SCOPE_READ)
 def test_valid_immediately(session, isa1_uuid):
   # The ISA is still valid immediately after we create it.
   resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
@@ -40,12 +44,14 @@ def test_sleep_5_seconds():
   time.sleep(5)
 
 
+@default_scope(SCOPE_READ)
 def test_returned_by_id(session, isa1_uuid):
   # And we can't get it by ID...
   resp = session.get('/identification_service_areas/{}'.format(isa1_uuid))
   assert resp.status_code == 200
 
 
+@default_scope(SCOPE_READ)
 def test_not_returned_by_search(session, isa1_uuid):
   # Or by search.
   resp = session.get('/identification_service_areas?area={}'.format(

@@ -11,6 +11,7 @@
 import datetime
 
 from . import common
+from .common import SCOPE_READ, SCOPE_WRITE
 
 
 def test_put_isa_with_read_only_scope_token(session, isa2_uuid):
@@ -32,7 +33,7 @@ def test_put_isa_with_read_only_scope_token(session, isa2_uuid):
               'time_end': time_end.strftime(common.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
-      }, scope=common.SCOPE_READ)
+      }, scope=SCOPE_READ)
   assert resp.status_code == 403
 
 
@@ -55,7 +56,7 @@ def test_create_isa(session, isa1_uuid):
               'time_end': time_end.strftime(common.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
-      })
+      }, scope=SCOPE_WRITE)
   assert resp.status_code == 200
 
 

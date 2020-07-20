@@ -9,9 +9,12 @@
 import datetime
 import uuid
 
+from ..infrastructure import default_scope
 from . import common
+from .common import SCOPE_READ
 
 
+@default_scope(SCOPE_READ)
 def test_create_sub_empty_vertices(session, sub2_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=10)
@@ -37,6 +40,7 @@ def test_create_sub_empty_vertices(session, sub2_uuid):
   assert resp.status_code == 400
 
 
+@default_scope(SCOPE_READ)
 def test_create_sub_missing_footprint(session, sub2_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=10)
@@ -59,6 +63,7 @@ def test_create_sub_missing_footprint(session, sub2_uuid):
   assert resp.status_code == 400
 
 
+@default_scope(SCOPE_READ)
 def test_create_sub_with_huge_area(session, sub2_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=10)
@@ -84,6 +89,7 @@ def test_create_sub_with_huge_area(session, sub2_uuid):
   assert resp.status_code == 400
 
 
+@default_scope(SCOPE_READ)
 def test_create_too_many_subs(session):
   """ASTM Compliance Test: DSS0050_MAX_SUBS_PER_AREA."""
   time_start = datetime.datetime.utcnow()
@@ -134,6 +140,7 @@ def test_create_too_many_subs(session):
   assert all(all_resp)
 
 
+@default_scope(SCOPE_READ)
 def test_create_sub_with_too_long_end_time(session, sub2_uuid):
     """ASTM Compliance Test: DSS0060_MAX_SUBS_DURATION."""
     time_start = datetime.datetime.utcnow()
@@ -156,6 +163,8 @@ def test_create_sub_with_too_long_end_time(session, sub2_uuid):
     )
     assert resp.status_code == 400
 
+
+@default_scope(SCOPE_READ)
 def test_update_sub_with_too_long_end_time(session, sub2_uuid):
     """ASTM Compliance Test: DSS0060_MAX_SUBS_DURATION."""
     time_start = datetime.datetime.utcnow()

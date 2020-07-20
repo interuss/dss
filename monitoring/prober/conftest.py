@@ -1,111 +1,58 @@
-import copy
 import uuid
+from typing import Optional
 
-from . import infrastructure
+from . import auth, infrastructure
 
 import pytest
 
 
 def pytest_addoption(parser):
-  parser.addoption('--api-version-role')
   parser.addoption('--dss-endpoint')
-  parser.addoption('--scd-dss-endpoint')
-  parser.addoption('--oauth-token-endpoint')
 
-  parser.addoption('--oauth-service-account-json')
-
-  parser.addoption('--oauth-username')
-  parser.addoption('--oauth-password')
-  parser.addoption('--oauth-client-id')
-
-  parser.addoption('--oauth2-service-account-json')
-
-  parser.addoption('--oauth2-username')
-  parser.addoption('--oauth2-password')
-  parser.addoption('--oauth2-client-id')
-
-  parser.addoption('--use-dummy-oauth')
+  parser.addoption('--rid-auth')
+  parser.addoption('--scd-auth1')
+  parser.addoption('--scd-auth2')
 
 
-def make_auth_adapter(pytestconfig, prefix: str, dummy_oauth_sub: str):
-  oauth_token_endpoint = pytestconfig.getoption('oauth_token_endpoint')
+def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[infrastructure.DSSTestSession]:
+  dss_endpoint = pytestconfig.getoption('dss_endpoint')
+  if dss_endpoint is None:
+    pytest.skip('dss-endpoint option not set')
 
-  # Create an auth adapter to get JWTs using the given credentials.  We can use
-  # either a service account, a username/password/client_id or a dummy oauth server.
-  if pytestconfig.getoption(prefix + '_service_account_json') is not None:
-    auth_adapter = infrastructure.ServiceAccountAuthAdapter(
-        oauth_token_endpoint,
-        pytestconfig.getoption(prefix + '_service_account_json'))
-  elif pytestconfig.getoption(prefix + '_username') is not None:
-    auth_adapter = infrastructure.UsernamePasswordAuthAdapter(
-        oauth_token_endpoint,
-        pytestconfig.getoption(prefix + '_username'),
-        pytestconfig.getoption(prefix + '_password'),
-        pytestconfig.getoption(prefix + '_client_id'))
-  elif pytestconfig.getoption('use_dummy_oauth') is not None:
-    auth_adapter = infrastructure.DummyOAuthServerAdapter(oauth_token_endpoint, dummy_oauth_sub)
-  else:
-    raise ValueError(
-      'You must provide either an OAuth service account, or a username, '
-      'password and client ID')
+  auth_adapter = None
+  if auth_option:
+    auth_spec = pytestconfig.getoption(auth_option)
+    if not auth_spec:
+      pytest.skip('%s option not set' % auth_option)
+    auth_adapter = auth.make_auth_adapter(auth_spec)
 
-  return auth_adapter
+  s = infrastructure.DSSTestSession(dss_endpoint + endpoint_suffix, auth_adapter)
+  return s
 
 
 @pytest.fixture(scope='session')
 def session(pytestconfig):
-  dss_endpoint = pytestconfig.getoption('dss_endpoint')
-  if dss_endpoint is None:
-    raise ValueError('Missing required --dss-endpoint')
-  api_version_role = pytestconfig.getoption('api_version_role', '')
-
-  auth_adapter = make_auth_adapter(pytestconfig, 'oauth', 'fake_uss')
-  s = infrastructure.DSSTestSession(dss_endpoint + api_version_role, auth_adapter)
-  return s
+  return make_session(pytestconfig, '/v1/dss', 'rid_auth')
 
 
 @pytest.fixture(scope='session')
 def aux_session(pytestconfig):
-  dss_endpoint = pytestconfig.getoption('dss_endpoint')
-  if dss_endpoint is None:
-    raise ValueError('Missing required --dss-endpoint')
-
-  auth_adapter = make_auth_adapter(pytestconfig, 'oauth', 'fake_uss')
-  s = infrastructure.DSSTestSession(dss_endpoint + '/aux/v1', auth_adapter)
-  return s
+  return make_session(pytestconfig, '/aux/v1', 'rid_auth')
 
 
 @pytest.fixture(scope='session')
 def scd_session(pytestconfig):
-  scd_dss_endpoint = pytestconfig.getoption('scd_dss_endpoint')
-  if scd_dss_endpoint is None:
-    return None
-
-  auth_adapter = make_auth_adapter(pytestconfig, 'oauth', 'fake_uss')
-  s = infrastructure.DSSTestSession(scd_dss_endpoint, auth_adapter)
-  return s
+  return make_session(pytestconfig, '/dss/v1', 'scd_auth1')
 
 
 @pytest.fixture(scope='session')
 def scd_session2(pytestconfig):
-  scd_dss_endpoint = pytestconfig.getoption('scd_dss_endpoint')
-  if scd_dss_endpoint is None:
-    return None
-
-  auth_adapter = make_auth_adapter(pytestconfig, 'oauth', 'fake_uss2')
-  s = infrastructure.DSSTestSession(scd_dss_endpoint, auth_adapter)
-  return s
+  return make_session(pytestconfig, '/dss/v1', 'scd_auth2')
 
 
 @pytest.fixture(scope='function')
 def no_auth_session(pytestconfig):
-  dss_endpoint = pytestconfig.getoption('dss_endpoint')
-  api_version_role = pytestconfig.getoption('api_version_role', '')
-  if dss_endpoint is None:
-    raise ValueError('Missing required --dss-endpoint')
-
-  s = infrastructure.DSSTestSession(dss_endpoint + api_version_role, None)
-  return s
+  return make_session(pytestconfig, '/v1/dss')
 
 
 @pytest.fixture(scope='module')
