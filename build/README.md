@@ -87,11 +87,6 @@ endpoint.
 
 ## Deploying the DSS on Kubernetes
 
-Note: All DSS instances in the same cluster must point their ntpd at the
-same NTP Servers. [CockroachDB recommends](https://www.cockroachlabs.com/docs/stable/recommended-production-settings.html#considerations)
-using [Google's Public NTP](https://developers.google.com/time/) when
-running in a multi-cloud environment.
-
 This section discusses deploying a Kubernetes service, although you can deploy
 a DSS instance however you like as long as it meets the CockroachDB requirements
 above. You can do this on any supported
@@ -380,11 +375,19 @@ instructions.
 - The ordering of the `--locality` flag keys must be the same across all
   CockroachDB nodes in the cluster.
 - All sharing must currently happen out of band.
+- All DSS instances in the same cluster must point their ntpd at the same NTP
+  Servers.
+  [CockroachDB recommends](https://www.cockroachlabs.com/docs/stable/recommended-production-settings.html#considerations)
+  using
+  [Google's Public NTP](https://developers.google.com/time/) when running in a
+  multi-cloud environment.
 
 Note: we are investigating the use of service mesh frameworks to alleviate some
 of this operational overhead.
 
-## Enabling Istio
+## Tools
+
+### Istio
 
 Istio provides better observability by using a sidecar proxy on every binary
 that exports some default metrics, as well as enabling Istio tracing. Istio
@@ -392,7 +395,7 @@ also provides mTLS between all binaries. Enabling Istio is completely optional.
 To enable Istio, simply set the `enable_istio` field in your metadata tuple to
 `true`, then run `tk apply ...` as you would normally. 
 
-## Enabling Prometheus Federation (Multi Cluster Monitoring)
+### Prometheus Federation (Multi Cluster Monitoring)
 
 The DSS uses [Prometheus](https://prometheus.io/docs/introduction/overview/) to
 gather metrics from the binaries deployed with this project, by scraping
@@ -405,23 +408,36 @@ you need to do 2 things:
 1. Externally expose the Prometheus service of the DSS clusters.
 2. Deploy a "Global Prometheus" instance to unify metrics.
 
-### Externally Exposing Prometheus
+#### Externally Exposing Prometheus
 You will need to change the values in the `prometheus` fields in your metadata tuples:
 1. `expose_external` set to `true`
 2. [Optional] Supply a static external IP Address to `IP`
 3. [Highly Recommended] Supply whitelists of [IP Blocks in CIDR form](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing), leaving an empty list mean everyone can publicly access your metrics.
 4. Then Run `tk apply ...` to deploy the changes on your DSS clusters.
 
-### Deploy "Global Prometheus" instance
+#### Deploy "Global Prometheus" instance
 1. Follow guide to deploy Prometheus https://prometheus.io/docs/introduction/first_steps/
 2. The scrape rules for this global instance will scrape other prometheus `/federate` endpoint and rather simple, please look at the [example configuration](https://prometheus.io/docs/prometheus/latest/federation/#configuring-federation).
 
-## Using the CockroachDB web UI
+## Troubleshooting
+
+### Accessing a CockroachDB SQL terminal
+
+To interact with the CockroachDB database directly via SQL terminal:
+
+```
+kubectl \
+  --context <CLUSTER_CONTEXT> exec --namespace <NAMESPACE> -it \
+  cockroachdb-0 -- \
+  ./cockroach sql --certs-dir=cockroach-certs/
+```
+
+### Using the CockroachDB web UI
 
 The CockroachDB web UI is not exposed publicly, but you can forward a port to
 your local machine using kubectl:
 
-### Create a user account
+#### Create a user account
 
 Pick a username and create an account:
 
@@ -429,7 +445,7 @@ Pick a username and create an account:
         ./cockroach --certs-dir ./cockroach-certs \
         user set $USERNAME --password
 
-### Access the web UI
+#### Access the web UI
 
     kubectl -n <NAMESPACE> port-forward cockroachdb-0 8080
 
