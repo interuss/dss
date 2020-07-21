@@ -24,7 +24,7 @@ def _make_sub1_req():
   time_end = time_start + datetime.timedelta(minutes=60)
   lat = LAT0 - common.latitude_degrees(FOOTPRINT_SPACING_M)
   return {
-    "extents": common.make_vol4(time_start, time_end, 0, 300, common.make_circle(lat, LNG0, 100)),
+    "extents": common.make_vol4(None, time_end, 0, 300, common.make_circle(lat, LNG0, 100)),
     "old_version": 0,
     "uss_base_url": "https://example.com/foo",
     "notify_for_operations": True,
