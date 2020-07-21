@@ -10,6 +10,9 @@
 
 import datetime
 
+import pytest
+
+from ..auth import DummyOAuth
 from . import common
 from .common import SCOPE_READ, SCOPE_WRITE
 
@@ -74,7 +77,7 @@ def test_get_isa_with_fake_token(no_auth_session, isa1_uuid):
 
 
 def test_get_isa_without_scope(session, isa1_uuid):
-  # TODO: A real OAuth server is unlikely to grant tokens without any scopes.
-  # Adapt this test to work on a real OAuth server, or remove.
+  if not isinstance(session.auth_adapter, DummyOAuth):
+    pytest.skip('General auth providers will not usually grant tokens without any scopes')
   resp = session.get('/identification_service_areas/{}'.format(isa1_uuid), scope='')
   assert resp.status_code == 403

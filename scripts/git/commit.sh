@@ -2,8 +2,8 @@
 
 COMMIT=$(git rev-parse --short HEAD)
 
-if [[ -n $(git status -s) ]] || [[ -n $(git cherry 2> /dev/null) ]]; then 
+if  [[ -n "$(git status -s)" ]] || [[ -n "$(git cherry 2> /dev/null)" ]]; then
     echo ${COMMIT}-dirty
-else 
+else
     echo ${COMMIT}
 fi

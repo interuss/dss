@@ -188,7 +188,7 @@ def test_get_constraint_by_search_latest_time_excluded(scd_session, c1_uuid):
 # Mutations: Constraint c1_uuid mutated to second version
 def test_mutate_constraint(scd_session, c1_uuid):
   # GET current constraint
-  resp = scd_session.get('/constraint_references/{}'.format(c1_uuid))
+  resp = scd_session.get('/constraint_references/{}'.format(c1_uuid), scope=SCOPE_CI)
   assert resp.status_code == 200, resp.content
   existing_constraint = resp.json().get('constraint_reference', None)
   assert existing_constraint is not None

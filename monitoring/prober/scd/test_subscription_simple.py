@@ -12,7 +12,9 @@
 
 import datetime
 
+from ..infrastructure import default_scope
 from . import common
+from .common import SCOPE_SC
 
 
 def _make_sub1_req():
@@ -44,6 +46,7 @@ def _check_sub1(data, sub1_uuid):
           or len(data['subscription']['dependent_operations']) == 0)
 
 
+@default_scope(SCOPE_SC)
 def test_sub_does_not_exist_get(scd_session, sub1_uuid):
   if scd_session is None:
     return
@@ -51,6 +54,7 @@ def test_sub_does_not_exist_get(scd_session, sub1_uuid):
   assert resp.status_code == 404, resp.content
 
 
+@default_scope(SCOPE_SC)
 def test_sub_does_not_exist_query(scd_session, sub1_uuid):
   if scd_session is None:
     return
@@ -62,6 +66,7 @@ def test_sub_does_not_exist_query(scd_session, sub1_uuid):
   assert sub1_uuid not in [sub['id'] for sub in resp.json().get('subscriptions', [])]
 
 
+@default_scope(SCOPE_SC)
 def test_create_sub(scd_session, sub1_uuid):
   if scd_session is None:
     return
@@ -75,6 +80,7 @@ def test_create_sub(scd_session, sub1_uuid):
   _check_sub1(data, sub1_uuid)
 
 
+@default_scope(SCOPE_SC)
 def test_get_sub_by_id(scd_session, sub1_uuid):
   if scd_session is None:
     return
@@ -85,6 +91,7 @@ def test_get_sub_by_id(scd_session, sub1_uuid):
   _check_sub1(data, sub1_uuid)
 
 
+@default_scope(SCOPE_SC)
 def test_get_sub_by_search(scd_session, sub1_uuid):
   if scd_session is None:
     return
@@ -101,6 +108,7 @@ def test_get_sub_by_search(scd_session, sub1_uuid):
   assert sub1_uuid in [x['id'] for x in resp.json()['subscriptions']]
 
 
+@default_scope(SCOPE_SC)
 def test_mutate_sub(scd_session, sub1_uuid):
   if scd_session is None:
     return
@@ -123,6 +131,7 @@ def test_mutate_sub(scd_session, sub1_uuid):
   assert common.iso8601_equal(data['subscription']['time_end']['value'], req['extents']['time_end']['value'])
 
 
+@default_scope(SCOPE_SC)
 def test_delete_sub(scd_session, sub1_uuid):
   if scd_session is None:
     return
@@ -130,6 +139,7 @@ def test_delete_sub(scd_session, sub1_uuid):
   assert resp.status_code == 200, resp.content
 
 
+@default_scope(SCOPE_SC)
 def test_get_deleted_sub_by_id(scd_session, sub1_uuid):
   if scd_session is None:
     return
@@ -137,6 +147,7 @@ def test_get_deleted_sub_by_id(scd_session, sub1_uuid):
   assert resp.status_code == 404, resp.content
 
 
+@default_scope(SCOPE_SC)
 def test_get_deleted_sub_by_search(scd_session, sub1_uuid):
   if scd_session is None:
     return
