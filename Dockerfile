@@ -12,8 +12,10 @@ WORKDIR /app
 # Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download
 
+COPY .git /app/.git
 COPY cmds /app/cmds
 COPY pkg /app/pkg
+COPY scripts /app/scripts
 COPY Makefile /app
 RUN make interuss
 
