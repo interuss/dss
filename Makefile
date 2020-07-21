@@ -8,6 +8,8 @@ COMMIT := $(shell scripts/git/commit.sh)
 LAST_RELEASE_TAG := $(shell git describe --tags --abbrev=0 --match='v*' 2> /dev/null | grep -E 'v[0-9]+\.[0-9]+\.[0-9]+')
 LAST_RELEASE_TAG := $(or $(LAST_RELEASE_TAG), v0.0.0)
 
+GENERATOR_TAG := generator:$(LAST_RELEASE_TAG)
+
 # Build and version information is baked into the executable itself.
 BUILD_LDFLAGS := -X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/build.commit=$(COMMIT) -X github.com/interuss/dss/pkg/build.host=$(shell hostname)
 VERSION_LDFLAGS := -X github.com/interuss/dss/pkg/version.tag=$(LAST_RELEASE_TAG) -X github.com/interuss/dss/pkg/version.commit=$(COMMIT)
@@ -21,7 +23,7 @@ endif
 
 .PHONY: interuss
 interuss:
-	go install -ldflags "$(LDFLAGS)" ./...
+	go install -ldflags "$(LDFLAGS)" ./cmds/...
 
 go-mod-download: go.mod
 	go mod download
@@ -41,42 +43,72 @@ lint:
 	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all  -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
 
 pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
+	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
+		-I/usr/include \
+		-I/src \
+		-I/go/src \
+		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
+		--go_out=plugins=grpc:. $<
 
 pkg/api/v1/ridpb/rid.pb.gw.go: pkg/api/v1/ridpb/rid.proto pkg/api/v1/ridpb/rid.pb.go
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
+	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
+		-I/usr/include \
+		-I. \
+		-I/go/src \
+		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
+		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
 
-pkg/api/v1/ridpb/rid.proto: install-proto-generation
-	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
+pkg/api/v1/ridpb/rid.proto: generator
+	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) openapi2proto \
 		-spec interfaces/uastech/standards/remoteid/augmented.yaml -annotate \
-		-out $@ \
 		-tag dss \
 		-indent 2 \
-		-package ridpb
+		-package ridpb > $@
 
 pkg/api/v1/auxpb/aux_service.pb.go: pkg/api/v1/auxpb/aux_service.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. pkg/api/v1/auxpb/aux_service.proto
+	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
+		-I/usr/include \
+		-I. \
+		-I/go/src \
+		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
+		--go_out=plugins=grpc:. $<
 
-pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.pb.go
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. pkg/api/v1/auxpb/aux_service.proto
+pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.proto pkg/api/v1/auxpb/aux_service.pb.go
+	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
+		-I/usr/include \
+		-I. \
+		-I/go/src \
+		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
+		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
 
 pkg/api/v1/scdpb/scd.pb.go: pkg/api/v1/scdpb/scd.proto
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --go_out=plugins=grpc:. $<
+	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
+		-I/usr/include \
+		-I. \
+		-I/go/src \
+		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
+		--go_out=plugins=grpc:. $<
 
 pkg/api/v1/scdpb/scd.pb.gw.go: pkg/api/v1/scdpb/scd.proto pkg/api/v1/scdpb/scd.pb.go
-	protoc -I/usr/local/include -I.   -I$(GOPATH)/src   -I$(GOPATH)/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis   --grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
+	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
+		-I/usr/include \
+		-I. \
+		-I/go/src \
+		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
+		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
 
-interfaces/scd_adjusted.yaml:
+interfaces/scd_adjusted.yaml: interfaces/astm-utm/Protocol/utm.yaml
 	./interfaces/adjuster/adjust_openapi_yaml.sh ./interfaces/astm-utm/Protocol/utm.yaml ./interfaces/scd_adjusted.yaml
 
-pkg/api/v1/scdpb/scd.proto: interfaces/scd_adjusted.yaml install-proto-generation
-# 	rm $(dir $@)
-	go run github.com/NYTimes/openapi2proto/cmd/openapi2proto \
+pkg/api/v1/scdpb/scd.proto: interfaces/scd_adjusted.yaml generator
+	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) openapi2proto \
 		-spec interfaces/scd_adjusted.yaml -annotate \
-		-out $@ \
 		-tag dss \
 		-indent 2 \
-		-package scdpb
+		-package scdpb > $@
+
+generator:
+	docker build --rm -t $(GENERATOR_TAG) docker/generator
 
 .PHONY: install-proto-generation
 install-proto-generation:
@@ -86,6 +118,7 @@ endif
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
 	go get github.com/golang/protobuf/protoc-gen-go
+	go get github.com/NYTimes/openapi2proto
 ifeq ($(shell which protoc-gen-go),)
 	$(error protoc-gen-go is not accessible after installation; GOPATH must be set and PATH must contain GOPATH/bin)
 	# Example:
@@ -94,7 +127,7 @@ ifeq ($(shell which protoc-gen-go),)
 endif
 
 .PHONY: protos
-protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpb/rid.pb.gw.go pkg/api/v1/scdpb/scd.pb.gw.go;
+protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpb/rid.pb.gw.go pkg/api/v1/scdpb/scd.pb.gw.go
 
 .PHONY: install-staticcheck
 install-staticcheck:
@@ -106,7 +139,7 @@ staticcheck: install-staticcheck
 
 .PHONY: test
 test:
-	go test -ldflags "$(LDFLAGS)" -count=1 -v ./...
+	go test -ldflags "$(LDFLAGS)" -count=1 -v ./pkg/... ./cmds/...
 
 .PHONY: test-cockroach
 test-cockroach: cleanup-test-cockroach
