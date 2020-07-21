@@ -1,67 +1,79 @@
 # Brings up a full stand-alone DSS sandbox environment with locally-built dss
 # and dummy-oauth InterUSS images.
 
-# To bring up this system:
-# docker-compose -f docker-compose_dss.yaml -p dss_sandbox up
+# To bring up this system, see standalone_instance.md.
 
-version: '3.7'
+version: '3.8'
 
 services:
 
-  dss-crdb-for-debugging:
+  local-dss-crdb:
     image: cockroachdb/cockroach:v20.1.1
     command: start --insecure
-    volumes:
-      - dss-data:/cockroach
     expose:
       - 26257
     ports:
       - "8080:8080"
     restart: always
 
-  db-manager-default-bootstraper:
-     image: interuss-local/db-manager
-     volumes:
-       - $PWD/../deploy/db-schemas/defaultdb:/db-schemas/defaultdb:ro
-       - dss-data:/var/dss-data
-     entrypoint: /bin/sh -c "(ls /var/dss-data/default_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/defaultdb --db_version v3.1.0 --cockroach_host dss-crdb-for-debugging && touch /var/dss-data/default_bootstrap)"
-     depends_on:
-       - dss-crdb-for-debugging
-
-  db-manager-scd-bootstraper:
+  local-dss-rid-bootstrapper:
+    build:
+      context: ../..
+      dockerfile: cmds/db-manager/Dockerfile
     image: interuss-local/db-manager
     volumes:
-      - $PWD/../deploy/db-schemas/defaultdb:/db-schemas/scd:ro
-      - dss-data:/var/dss-data
-    entrypoint: /bin/sh -c "(ls /var/dss-data/scd_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/scd --db_version v1.0.0 --cockroach_host dss-crdb-for-debugging && touch /var/dss-data/scd_bootstrap)"
+      - $PWD/../deploy/db-schemas/defaultdb:/db-schemas/defaultdb:ro
+      - local-dss-data:/var/local-dss-data
+    entrypoint: /bin/sh -c "(ls /var/local-dss-data/rid_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/defaultdb --db_version v3.1.0 --cockroach_host local-dss-crdb && touch /var/local-dss-data/rid_bootstrap)"
     depends_on:
-      - dss-crdb-for-debugging
+      - local-dss-crdb
 
-  grpc-backend-for-debugging:
+  local-dss-scd-bootstrapper:
+    build:
+      context: ../..
+      dockerfile: cmds/db-manager/Dockerfile
+    image: interuss-local/db-manager
+    volumes:
+      - $PWD/../deploy/db-schemas/scd:/db-schemas/scd:ro
+      - local-dss-data:/var/local-dss-data
+    entrypoint: /bin/sh -c "(ls /var/local-dss-data/scd_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/scd --db_version v1.0.0 --cockroach_host local-dss-crdb && touch /var/local-dss-data/scd_bootstrap)"
+    depends_on:
+      - local-dss-crdb
+
+  local-dss-grpc-backend:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
     image: interuss-local/dss
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
-      - dss-data:/var/dss-data
-    command: /bin/sh -c "while [ ! -e /var/dss-data/default_bootstrap ] || [ ! -e /var/dss-data/scd_bootstrap ]; do echo \"waiting on DB bootstrapping...\"; sleep 1; done; echo \"DB bootstrap complete...\"; /usr/bin/grpc-backend -cockroach_host dss-crdb-for-debugging -public_key_files /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -accepted_jwt_audiences localhost -enable_scd"
+      - local-dss-data:/var/local-dss-data
+    command: /bin/sh -c "while [ ! -e /var/local-dss-data/rid_bootstrap ] || [ ! -e /var/local-dss-data/scd_bootstrap ]; do echo \"waiting on DB bootstrapping...\"; sleep 1; done; echo \"DB bootstrap complete...\"; /usr/bin/grpc-backend -cockroach_host local-dss-crdb -public_key_files /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -accepted_jwt_audiences localhost -enable_scd"
     expose:
       - 8081
     depends_on:
-      - db-manager-default-bootstraper
-      - db-manager-scd-bootstraper
+      - local-dss-rid-bootstrapper
+      - local-dss-scd-bootstrapper
 
-  http-gateway-for-debugging:
+  local-dss-http-gateway:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
     image: interuss-local/dss
-    command: /usr/bin/http-gateway -grpc-backend grpc-backend-for-debugging:8081 -addr :8082 -enable_scd
+    command: /usr/bin/http-gateway -grpc-backend local-dss-grpc-backend:8081 -addr :8082 -enable_scd
     ports:
       - "8082:8082"
     depends_on:
-      - grpc-backend-for-debugging
+      - local-dss-grpc-backend
 
-  dummy-oauth:
+  local-dss-dummy-oauth:
+    build:
+      context: ../..
+      dockerfile: cmds/dummy-oauth/Dockerfile
     image: interuss-local/dummy-oauth
     command: -private_key_file /var/test-certs/auth2.key
     ports:
       - "8085:8085"
 
 volumes:
-  dss-data:
+  local-dss-data:
