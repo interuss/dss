@@ -5,6 +5,11 @@ Reproduces issue #314
 import datetime
 import uuid
 
+from ..infrastructure import default_scope
+from .common import SCOPE_SC
+
+
+@default_scope(SCOPE_SC)
 def test_put_sub1(scd_session):
   sub_uuid = uuid.uuid4()
   time_ref = datetime.datetime.utcnow() + datetime.timedelta(days=1)

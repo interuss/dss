@@ -16,7 +16,7 @@ else
 fi
 cd ${BASEDIR}
 
-VERSION=$(date -u +%Y-%m-%d)-$(shell ../scripts/git/commit.sh)
+VERSION=$(date -u +%Y-%m-%d)-$(bash scripts/git/commit.sh)
 
 if [[ -z "${DOCKER_URL}" ]]; then
   echo "DOCKER_URL environment variable is not set; building image to interuss-local/dss..."

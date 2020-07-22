@@ -3,7 +3,10 @@
 
 import json
 
+from ..infrastructure import default_scope
+from .common import SCOPE_SC
 
+@default_scope(SCOPE_SC)
 def test_op_accepted(scd_session, op1_uuid):
   # Accepted for the first time
   with open('./scd/resources/op_request_1.json', 'r') as f:
@@ -12,6 +15,7 @@ def test_op_accepted(scd_session, op1_uuid):
   assert resp.status_code == 200, resp.content
 
 
+@default_scope(SCOPE_SC)
 def test_op_activated(scd_session, op1_uuid):
   # GET current op
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
@@ -29,6 +33,7 @@ def test_op_activated(scd_session, op1_uuid):
   assert resp.status_code == 200, resp.content
 
 
+@default_scope(SCOPE_SC)
 def test_op_accepted_bad1(scd_session, op1_uuid):
   # GET current op
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
@@ -44,6 +49,7 @@ def test_op_accepted_bad1(scd_session, op1_uuid):
   assert resp.status_code == 409, resp.content
 
 
+@default_scope(SCOPE_SC)
 def test_op_bad_state_transition(scd_session, op1_uuid):
   # Delete operation
   resp = scd_session.delete('/operation_references/{}'.format(op1_uuid))

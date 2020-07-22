@@ -151,5 +151,4 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--dss-endpoint http://local-gateway:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
-	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)" \
-	-vv
+	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"
