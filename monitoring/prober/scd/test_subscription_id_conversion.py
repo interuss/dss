@@ -3,9 +3,10 @@ Reproduces issue #314
 """
 
 import datetime
+import uuid
 
 def test_put_sub1(scd_session):
-  sub_uuid = "b61a6450-db42-4d0d-91f2-7c1334eda399"
+  sub_uuid = uuid.uuid4()
   time_ref = datetime.datetime.utcnow() + datetime.timedelta(days=1)
   time_start = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 1, 30)
   time_end = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 22, 15)
