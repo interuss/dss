@@ -72,16 +72,16 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		return nil, dsserr.BadRequest("no notification triggers requested for Subscription")
 	}
 
-	// Validate and perhaps correct StartTime and EndTime.
-	if err := subreq.AdjustTimeRange(DefaultClock.Now(), subreq); err != nil {
-		return nil, err
-	}
-
 	var result *scdpb.PutSubscriptionResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Check existing Subscription (if any)
 		old, err := r.GetSubscription(ctx, subreq.ID)
 		if err != nil {
+			return err
+		}
+
+		// Validate and perhaps correct StartTime and EndTime.
+		if err := subreq.AdjustTimeRange(DefaultClock.Now(), old); err != nil {
 			return err
 		}
 
