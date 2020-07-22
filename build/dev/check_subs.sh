@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script will verify basic functionality of a locally-deployed standalone
-# DSS instance using any of the deployment methods described in
+# DSS instance using any of the deployment method described in
 # standalone_instance.md.
 
 jq --version > /dev/null
@@ -14,40 +14,29 @@ if [ $? -ne 0 ]; then
 fi
 
 # Retrieve token from dummy OAuth server
-export ACCESS_TOKEN_READ=`curl --silent -X POST \
-  "http://localhost:8085/token?grant_type=client_credentials&scope=dss.read.identification_service_areas&intended_audience=localhost&issuer=localhost" \
+export ACCESS_TOKEN=`curl --silent -X POST \
+  "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost" \
   | jq -r '.access_token'`
 
-export ACCESS_TOKEN_WRITE=`curl --silent -X POST \
-  "http://localhost:8085/token?grant_type=client_credentials&scope=dss.write.identification_service_areas&intended_audience=localhost&issuer=localhost" \
-  | jq -r '.access_token'`
-
-echo "DSS response to PUT Subscriptions query:"
+echo "DSS response to [SCD] PUT Subscriptions query:"
 echo "============="
+export TIMESTAMP_NOW=`python -c 'from datetime import datetime; print((datetime.utcnow()).isoformat() + "Z")'`
+export TIMESTAMP_LATER=`python -c 'from datetime import datetime, timedelta; print((datetime.utcnow() + timedelta(minutes=5)).isoformat() + "Z")'`
 curl --silent -X PUT \
   "http://localhost:8082/dss/v1/subscriptions/b76c1049-94e3-47e5-900d-94e4004a7188" \
-  -H "Authorization: Bearer ${ACCESS_TOKEN_WRITE}" \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
   "extents": {
     "volume": {
       "outline_circle": {
-        "type": "Feature",
-        "geometry": {
-          "type": "Point",
-          "coordinates": {
-            "type": "Point",
-            "coordinates": [
-              -122.106325,
-              47.660898
-            ]
-          }
+        "center": {
+          "lng": -122.106325,
+          "lat": 47.660898
         },
-        "properties": {
-          "radius": {
-            "value": 300.183,
-            "units": "M"
-          }
+        "radius": {
+          "value": 300.183,
+          "units": "M"
         }
       },
       "altitude_lower": {
@@ -62,11 +51,11 @@ curl --silent -X PUT \
       }
     },
     "time_start": {
-      "value": "1985-04-12T23:20:50.52Z",
+      "value": "'"$TIMESTAMP_NOW"'",
       "format": "RFC3339"
     },
     "time_end": {
-      "value": "2100-04-12T23:20:50.52Z",
+      "value": "'"$TIMESTAMP_LATER"'",
       "format": "RFC3339"
     }
   },
@@ -79,35 +68,62 @@ echo
 echo "============="
 echo
 
-exit 0
-
-echo "DSS response to GET Subscription query:"
+echo "DSS response to [SCD] GET Subscription query:"
 echo "============="
 curl --silent -X GET \
   "http://localhost:8082/dss/v1/subscriptions/b76c1049-94e3-47e5-900d-94e4004a7188" \
-  -H "Authorization: Bearer ${ACCESS_TOKEN_READ}"
+  -H "Authorization: Bearer ${ACCESS_TOKEN}"
 echo
 echo "============="
 echo
 
-echo "DSS response to DELETE Subscription query:"
+echo "DSS response to [SCD] DELETE Subscription query:"
 echo "============="
 curl --silent -X DELETE \
   "http://localhost:8082/dss/v1/subscriptions/b76c1049-94e3-47e5-900d-94e4004a7188" \
-  -H "Authorization: Bearer ${ACCESS_TOKEN_WRITE}"
+  -H "Authorization: Bearer ${ACCESS_TOKEN}"
 echo
 echo "============="
 echo
 
-echo "DSS response to search Subscriptions query:"
+echo "DSS response to search [SCD] Subscriptions query:"
 echo "============="
 curl --silent -X POST \
   "http://localhost:8082/dss/v1/subscriptions/query" \
-  -H "Authorization: Bearer ${ACCESS_TOKEN_READ}" \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
   "area_of_interest": {
-
+    "volume": {
+      "outline_circle": {
+        "center": {
+          "lng": -122.106325,
+          "lat": 47.660898
+        },
+        "radius": {
+          "value": 300.183,
+          "units": "M"
+        }
+      },
+      "altitude_lower": {
+        "value": 0,
+        "reference": "W84",
+        "units": "M"
+      },
+      "altitude_upper": {
+        "value": 3000,
+        "reference": "W84",
+        "units": "M"
+      }
+    },
+    "time_start": {
+      "value": "'"$TIMESTAMP_NOW"'",
+      "format": "RFC3339"
+    },
+    "time_end": {
+      "value": "'"$TIMESTAMP_LATER"'",
+      "format": "RFC3339"
+    }
   }
 }'
 echo
