@@ -1,5 +1,5 @@
 import functools
-from typing import Dict, List
+from typing import Dict, List, Optional
 import urllib.parse
 
 import requests
@@ -48,11 +48,11 @@ class DSSTestSession(requests.Session):
     * Automatically applies authorization according to adapter, when present
   """
 
-  def __init__(self, prefix_url: str, auth_adapter: AuthAdapter = None):
+  def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
     super().__init__()
 
     self._prefix_url = prefix_url
-    self._auth_adapter = auth_adapter
+    self.auth_adapter = auth_adapter
     self.default_scopes = ALL_SCOPES
 
   # Overrides method on requests.Session
@@ -64,7 +64,7 @@ class DSSTestSession(requests.Session):
     return super().prepare_request(request, **kwargs)
 
   def request(self, method, url, **kwargs):
-    if 'auth' not in kwargs and self._auth_adapter:
+    if 'auth' not in kwargs and self.auth_adapter:
       scopes = None
       if 'scopes' in kwargs:
         scopes = kwargs['scopes']
@@ -75,7 +75,7 @@ class DSSTestSession(requests.Session):
       if scopes is None:
         scopes = self.default_scopes
       def auth(prepared_request: requests.PreparedRequest) -> requests.PreparedRequest:
-        self._auth_adapter.add_headers(prepared_request, scopes)
+        self.auth_adapter.add_headers(prepared_request, scopes)
         return prepared_request
       kwargs['auth'] = auth
 
