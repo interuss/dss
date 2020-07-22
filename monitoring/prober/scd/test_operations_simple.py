@@ -12,7 +12,9 @@
 import datetime
 from typing import Dict, Tuple
 
+from ..infrastructure import default_scope
 from . import common
+from .common import SCOPE_SC
 
 
 URL_OP1 = 'https://example.com/op1/dss'
@@ -80,6 +82,7 @@ def _parse_conflicts(entities: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict], 
 # Op1 shouldn't exist by ID for USS1 when starting this sequence
 # Preconditions: None
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_op1_does_not_exist_get_1(scd_session, op1_uuid):
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 404, resp.content
@@ -88,6 +91,7 @@ def test_op1_does_not_exist_get_1(scd_session, op1_uuid):
 # Op1 shouldn't exist by ID for USS2 when starting this sequence
 # Preconditions: None
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_op1_does_not_exist_get_2(scd_session2, op1_uuid):
   resp = scd_session2.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 404, resp.content
@@ -96,6 +100,7 @@ def test_op1_does_not_exist_get_2(scd_session2, op1_uuid):
 # Op1 shouldn't exist when searching for USS1 when starting this sequence
 # Preconditions: None
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_op1_does_not_exist_query_1(scd_session, op1_uuid):
   if scd_session is None:
     return
@@ -111,6 +116,7 @@ def test_op1_does_not_exist_query_1(scd_session, op1_uuid):
 # Op1 shouldn't exist when searching for USS2 when starting this sequence
 # Preconditions: None
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_op1_does_not_exist_query_2(scd_session2, op1_uuid):
   if scd_session2 is None:
     return
@@ -126,6 +132,7 @@ def test_op1_does_not_exist_query_2(scd_session2, op1_uuid):
 # Create Op1 normally from USS1 (also creates implicit Subscription)
 # Preconditions: None
 # Mutations: Operation op1_uuid created by scd_session user
+@default_scope(SCOPE_SC)
 def test_create_op1(scd_session, op1_uuid):
   req = _make_op1_request()
   resp = scd_session.put('/operation_references/{}'.format(op1_uuid), json=req)
@@ -153,6 +160,7 @@ def test_create_op1(scd_session, op1_uuid):
 # Try (unsuccessfully) to delete the implicit Subscription
 # Preconditions: Operation op1_uuid created by scd_session user
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_delete_implicit_sub(scd_session, op1_uuid):
   if scd_session is None:
     return
@@ -167,6 +175,7 @@ def test_delete_implicit_sub(scd_session, op1_uuid):
 # Try (unsuccessfully) to delete Op1 from non-owning USS
 # Preconditions: Operation op1_uuid created by scd_session user
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_delete_op1_by_uss2(scd_session2, op1_uuid):
   resp = scd_session2.delete('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 403, resp.content
@@ -175,6 +184,7 @@ def test_delete_op1_by_uss2(scd_session2, op1_uuid):
 # Try to create Op2 without specifying a valid Subscription
 # Preconditions: Operation op1_uuid created by scd_session user
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_create_op2_no_sub(scd_session2, op2_uuid):
   req = _make_op2_request()
   resp = scd_session2.put('/operation_references/{}'.format(op2_uuid), json=req)
@@ -184,6 +194,7 @@ def test_create_op2_no_sub(scd_session2, op2_uuid):
 # Create a Subscription we can use for Op2
 # Preconditions: Operation op1_uuid created by scd_session user
 # Mutations: Subscription sub2_uuid created by scd_session2 user
+@default_scope(SCOPE_SC)
 def test_create_op2sub(scd_session2, sub2_uuid, op1_uuid):
   if scd_session2 is None:
     return
@@ -215,6 +226,7 @@ def test_create_op2sub(scd_session2, sub2_uuid, op1_uuid):
 #   * Operation op1_uuid created by scd_session user
 #   * Subscription sub2_uuid created by scd_session2 user
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_create_op2_no_key(scd_session2, op2_uuid, sub2_uuid, op1_uuid):
   req = _make_op2_request()
   req['subscription_id'] = sub2_uuid
@@ -231,6 +243,7 @@ def test_create_op2_no_key(scd_session2, op2_uuid, sub2_uuid, op1_uuid):
 #   * Operation op1_uuid created by scd_session user
 #   * Subscription sub2_uuid created by scd_session2 user
 # Mutations: Operation op2_uuid created by scd_session2 user
+@default_scope(SCOPE_SC)
 def test_create_op2(scd_session2, op2_uuid, sub2_uuid, op1_uuid):
   req = _make_op2_request()
   req['subscription_id'] = sub2_uuid
@@ -267,7 +280,8 @@ def test_create_op2(scd_session2, op2_uuid, sub2_uuid, op1_uuid):
 #   * Operation op1_uuid created by scd_session user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: None
-def test_read_ops_from_uss1(scd_session, op1_uuid, op2_uuid):
+@default_scope(SCOPE_SC)
+def test_read_ops_from_uss1(scd_session, op1_uuid, op2_uuid, scd_session2):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
@@ -290,6 +304,7 @@ def test_read_ops_from_uss1(scd_session, op1_uuid, op2_uuid):
 #   * Operation op1_uuid created by scd_session user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_read_ops_from_uss2(scd_session2, op1_uuid, op2_uuid):
   if scd_session2 is None:
     return
@@ -313,7 +328,8 @@ def test_read_ops_from_uss2(scd_session2, op1_uuid, op2_uuid):
 #   * Operation op1_uuid created by scd_session user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: None
-def test_mutate_op1_bad_key(scd_session, op1_uuid, op2_uuid):
+@default_scope(SCOPE_SC)
+def test_mutate_op1_bad_key(scd_session, op1_uuid, op2_uuid, scd_session2):
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 200, resp.content
   existing_op = resp.json().get('operation_reference', None)
@@ -355,7 +371,8 @@ def test_mutate_op1_bad_key(scd_session, op1_uuid, op2_uuid):
 #   * Subscription sub2_uuid created by scd_session2 user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: Operation op1_uuid mutated to second version
-def test_mutate_op1(scd_session, op1_uuid, sub2_uuid):
+@default_scope(SCOPE_SC)
+def test_mutate_op1(scd_session, op1_uuid, sub2_uuid, scd_session2):
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 200, resp.content
   existing_op = resp.json().get('operation_reference', None)
@@ -397,6 +414,7 @@ def test_mutate_op1(scd_session, op1_uuid, sub2_uuid):
 #   * Subscription sub2_uuid created by scd_session2 user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_delete_dependent_sub(scd_session2, sub2_uuid):
   if scd_session2 is None:
     return
@@ -410,6 +428,7 @@ def test_delete_dependent_sub(scd_session2, sub2_uuid):
 #   * Subscription sub2_uuid created by scd_session2 user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: Subscription sub2_uuid mutated
+@default_scope(SCOPE_SC)
 def test_mutate_sub2(scd_session2, sub2_uuid, op1_uuid, op2_uuid):
   if scd_session2 is None:
     return
@@ -492,9 +511,9 @@ def test_mutate_sub2(scd_session2, sub2_uuid, op1_uuid, op2_uuid):
 #   * Subscription sub2_uuid created/mutated by scd_session2 user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: Operation op1_uuid deleted
+@default_scope(SCOPE_SC)
 def test_delete_op1(scd_session, op1_uuid, sub2_uuid):
   resp = scd_session.delete('/operation_references/{}'.format(op1_uuid))
-  print(resp.content)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
@@ -515,6 +534,7 @@ def test_delete_op1(scd_session, op1_uuid, sub2_uuid):
 #   * Subscription sub2_uuid created/mutated by scd_session2 user
 #   * Operation op2_uuid created by scd_session2 user
 # Mutations: Operation op2_uuid deleted
+@default_scope(SCOPE_SC)
 def test_delete_op2(scd_session2, op2_uuid, sub2_uuid):
   resp = scd_session2.delete('/operation_references/{}'.format(op2_uuid))
   assert resp.status_code == 200, resp.content
@@ -538,6 +558,7 @@ def test_delete_op2(scd_session2, op2_uuid, sub2_uuid):
 #   * Subscription sub2_uuid created/mutated by scd_session2 user
 #   * Operation op2_uuid deleted
 # Mutations: Subscription sub2_uuid deleted
+@default_scope(SCOPE_SC)
 def test_delete_sub2(scd_session2, sub2_uuid):
   if scd_session2 is None:
     return

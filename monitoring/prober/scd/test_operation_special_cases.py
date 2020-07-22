@@ -10,11 +10,13 @@
 
 import json
 
-from . import common
+from ..infrastructure import default_scope
+from .common import SCOPE_SC, SCOPE_CI, SCOPE_CM
 
 
 # Preconditions: None
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_op_request_1(scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
@@ -27,6 +29,7 @@ def test_op_request_1(scd_session):
 
 # Preconditions: None
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_op_request_2(scd_session, op1_uuid):
   with open('./scd/resources/op_request_2.json', 'r') as f:
     req = json.load(f)
@@ -36,6 +39,7 @@ def test_op_request_2(scd_session, op1_uuid):
 
 # Preconditions: None
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_op_query_degenerate_polygon(scd_session):
   with open('./scd/resources/op_request_3.json', 'r') as f:
     req = json.load(f)
@@ -44,6 +48,7 @@ def test_op_query_degenerate_polygon(scd_session):
 
 # Preconditions: None
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_op_query_not_area_too_large(scd_session):
   with open('./scd/resources/op_request_4.json', 'r') as f:
     req = json.load(f)

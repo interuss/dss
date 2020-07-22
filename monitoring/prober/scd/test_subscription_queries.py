@@ -6,7 +6,9 @@
 
 import datetime
 
+from ..infrastructure import default_scope
 from . import common
+from .common import SCOPE_SC, SCOPE_CI, SCOPE_CM
 
 
 LAT0 = 23
@@ -57,6 +59,7 @@ def _make_sub3_req():
 
 # Preconditions: No named Subscriptions exist
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_subs_do_not_exist_get(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
   for sub_uuid in (sub1_uuid, sub2_uuid, sub3_uuid):
     resp = scd_session.get('/subscriptions/{}'.format(sub_uuid))
@@ -65,6 +68,7 @@ def test_subs_do_not_exist_get(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
 
 # Preconditions: No named Subscriptions exist
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_subs_do_not_exist_query(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
   resp = scd_session.post('/subscriptions/query', json={
     'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
@@ -77,6 +81,7 @@ def test_subs_do_not_exist_query(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
 
 # Preconditions: No named Subscriptions exist
 # Mutations: Subscriptions 1, 2, and 3 created
+@default_scope(SCOPE_SC)
 def test_create_subs(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
   resp = scd_session.put('/subscriptions/{}'.format(sub1_uuid), json=_make_sub1_req())
   assert resp.status_code == 200, resp.content
@@ -90,6 +95,7 @@ def test_create_subs(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_search_find_all_subs(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
   resp = scd_session.post(
       '/subscriptions/query',
@@ -105,6 +111,7 @@ def test_search_find_all_subs(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_search_footprint(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
   lat = LAT0 - common.latitude_degrees(FOOTPRINT_SPACING_M)
   print(lat)
@@ -135,6 +142,7 @@ def test_search_footprint(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_search_time(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=1)
@@ -193,6 +201,7 @@ def test_search_time(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_search_time_footprint(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(hours=2.5)
@@ -213,6 +222,7 @@ def test_search_time_footprint(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: Subscriptions 1, 2, and 3 deleted
+@default_scope(SCOPE_SC)
 def test_delete_subs(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
   for sub_uuid in (sub1_uuid, sub2_uuid, sub3_uuid):
     resp = scd_session.delete('/subscriptions/{}'.format(sub_uuid))

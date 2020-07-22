@@ -13,7 +13,7 @@ from typing import Dict
 
 from ..infrastructure import default_scope
 from . import common
-from .common import SCOPE_SC, SCOPE_CM
+from .common import SCOPE_CI, SCOPE_CM
 
 
 CONSTRAINT_BASE_URL_1 = 'https://example.com/con1/uss'
@@ -47,7 +47,7 @@ def _make_sub_req(base_url: str, notify_ops: bool, notify_constraints: bool) -> 
 
 # Preconditions: None
 # Mutations: None
-@default_scope(SCOPE_SC)
+@default_scope(SCOPE_CI)
 def test_subs_do_not_exist(scd_session, sub1_uuid, sub2_uuid):
   if scd_session is None:
     return
@@ -59,7 +59,7 @@ def test_subs_do_not_exist(scd_session, sub1_uuid, sub2_uuid):
 
 # Preconditions: None
 # Mutations: {Sub1, Sub2, Sub3} created by scd_session2 user
-@default_scope(SCOPE_SC)
+@default_scope(SCOPE_CI)
 def test_create_subs(scd_session2, sub1_uuid, sub2_uuid, sub3_uuid):
   if scd_session2 is None:
     return
@@ -87,7 +87,7 @@ def test_constraint_does_not_exist(scd_session, c1_uuid):
 # Preconditions: {Sub1, Sub2, Sub3} created by scd_session2 user
 # Mutations: Constraint c1_uuid created by scd_session user
 @default_scope(SCOPE_CM)
-def test_create_constraint(scd_session, c1_uuid, sub1_uuid, sub2_uuid, sub3_uuid):
+def test_create_constraint(scd_session, c1_uuid, sub1_uuid, sub2_uuid, sub3_uuid, scd_session2):
   req = _make_c1_request()
   resp = scd_session.put('/constraint_references/{}'.format(c1_uuid), json=req)
   assert resp.status_code == 200, resp.content
@@ -114,7 +114,7 @@ def test_create_constraint(scd_session, c1_uuid, sub1_uuid, sub2_uuid, sub3_uuid
 #   * Constraint c1_uuid created by scd_session user
 # Mutations: Constraint c1_uuid mutated to second version
 @default_scope(SCOPE_CM)
-def test_mutate_constraint(scd_session, c1_uuid, sub2_uuid, sub3_uuid):
+def test_mutate_constraint(scd_session, c1_uuid, sub2_uuid, sub3_uuid, scd_session2):
   # GET current constraint
   resp = scd_session.get('/constraint_references/{}'.format(c1_uuid))
   assert resp.status_code == 200, resp.content
@@ -150,10 +150,8 @@ def test_mutate_constraint(scd_session, c1_uuid, sub2_uuid, sub3_uuid):
 
 # Preconditions: {Sub1, Sub2, Sub3} created by scd_session2 user
 # Mutations: Sub1 listens for Constraints, Sub3 doesn't listen for Constraints
+@default_scope(SCOPE_CI)
 def test_mutate_subs(scd_session2, c1_uuid, sub1_uuid, sub3_uuid):
-  if scd_session2 is None:
-    return
-
   # GET current sub1 before mutation
   resp = scd_session2.get('/subscriptions/{}'.format(sub1_uuid))
   assert resp.status_code == 200, resp.content
@@ -190,7 +188,7 @@ def test_mutate_subs(scd_session2, c1_uuid, sub1_uuid, sub3_uuid):
 #   * Constraint c1_uuid mutated by scd_session user to second version
 # Mutations: Constraint c1_uuid mutated to third version
 @default_scope(SCOPE_CM)
-def test_mutate_constraint2(scd_session, c1_uuid, sub1_uuid, sub2_uuid, sub3_uuid):
+def test_mutate_constraint2(scd_session, c1_uuid, sub1_uuid, sub2_uuid, sub3_uuid, scd_session2):
   # GET current constraint
   resp = scd_session.get('/constraint_references/{}'.format(c1_uuid))
   assert resp.status_code == 200, resp.content
@@ -237,14 +235,14 @@ def test_mutate_constraint2(scd_session, c1_uuid, sub1_uuid, sub2_uuid, sub3_uui
 # Preconditions: Constraint c1_uuid mutated to second version
 # Mutations: Constraint c1_uuid deleted
 @default_scope(SCOPE_CM)
-def test_delete_constraint(scd_session, c1_uuid):
+def test_delete_constraint(scd_session, c1_uuid, scd_session2):
   resp = scd_session.delete('/constraint_references/{}'.format(c1_uuid))
   assert resp.status_code == 200, resp.content
 
 
 # Preconditions: {Sub1, Sub2, Sub3} created by scd_session2 user
 # Mutations: {Sub1, Sub2, Sub3} deleted
-@default_scope(SCOPE_SC)
+@default_scope(SCOPE_CI)
 def test_delete_subs(scd_session2, sub1_uuid, sub2_uuid, sub3_uuid):
   if scd_session2 is None:
     return
