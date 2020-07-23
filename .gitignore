@@ -120,3 +120,6 @@ venv.bak/
 # mypy
 .mypy_cache/
 test/e2e_test_result
+
+# local go builds
+go
