@@ -92,3 +92,64 @@ pytest \
     [--scd-auth2 <SPEC>] \
     -vv .
 ```
+
+## Writing prober tests
+This project strives to make prober tests as easy as possible to create in order
+to encourage creation of more tests which improve the validity and reliability
+of the system.  However, there are still some guidelines to follow when making
+new tests.
+
+### Creating a new test
+When creating a new test, the first decision is where to locate the test.  The
+prober is divided by subsystems with each subsystem tested in its respective
+folder ([`aux`](aux), [`rid`](rid), [`scd`](scd)).  Each test_*.py file in those
+folders contains a group of tests, sometimes necessary to be executed in
+sequence.  An individual test reproducing a problem with a specific query might
+be placed in test_<RESOURCE>_special_cases.py.  Otherwise, the new test should
+be located in the most applicable existing group (test_*.py file), or else in a
+new test file if none of the existing files are applicable.
+
+### Test signature
+Tests are as defined by [pytest](https://docs.pytest.org/en/stable/).
+Generally, this means that a new test should be a function that starts with the
+prefix "test_" and makes `assert` statements.  Any test fixtures needed will be
+automatically (magically?) provided by pytest according to name of the arguments
+to the "test_" function.  The available fixtures are defined in
+[conftest.py](conftest.py) and decorated with `@pytest.fixture`.
+
+### Making requests
+To send a request to the DSS during a prober test, use one of the *session
+fixtures.  They come pre-configured so that the URL specified starts at the
+session domain level, so the full URL does not need to be known or specified.
+See other tests for illustrations of what URL segments are necessary.
+
+Every request made to the DSS using a session that includes authorization must
+specify a scope to be included in the access token.  The session fixtures
+automatically acquire and manage access tokens, but the necessary scope must
+still be specified in each request.  To instruct the session to use the same
+scope for all requests within a test, simply decorate the test with
+`@default_scope(<SCOPE>)` or `@default_scopes(<SCOPE1>, <SCOPE2>)` (located in
+[infrastructure.py](infrastructure.py)).  To specify scope for an individual
+request (which also overrides the test-default scope), add a `scope=<SCOPE>`
+keyword argument to the request call (e.g.,
+`response = session.get('/resource', scope='read')`).
+
+### Resources
+Each test file should be robust to statefulness in a DSS instance.
+Specifically:
+
+1. Each test file should ensure that no resources are left behind in the DSS
+   after all the tests in the test file complete successfully.
+1. Each test file interacting with resources should have the first test in the
+   file delete any pre-existing resource that would interfere with the test.
+1. Static IDs should be used for all test resources.  These static IDs can be
+   defined at the module (test file) level as constants.
+1. Static IDs should, whenever possible, clearly stand out as test IDs.  For
+   UUID-formatted IDs, the suggestion is to replace the first and last 6 digits
+   of the ID with zeros.  Tests that depend on ID value for their behavior do
+   not need to follow this guideline.  Tests built from a failing query should
+   try changing the ID to stand out as a test ID, and keep that change as long
+   as the behavior illustrated does not change.
+
+The guidelines above should allow the prober to be used on production DSS
+instances without any nominal adverse effects.
