@@ -108,23 +108,7 @@ pkg/api/v1/scdpb/scd.proto: interfaces/scd_adjusted.yaml generator
 		-package scdpb > $@
 
 generator:
-	docker build --rm -t $(GENERATOR_TAG) docker/generator
-
-.PHONY: install-proto-generation
-install-proto-generation:
-ifeq ($(shell which protoc),)
-	$(error Proto generation requires that protoc be installed; please install protoc.  On a Mac: brew install protobuf  On Linux: See http://google.github.io/proto-lens/installing-protoc.html)
-endif
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.3
-	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.3
-	go get github.com/golang/protobuf/protoc-gen-go
-	go get github.com/NYTimes/openapi2proto
-ifeq ($(shell which protoc-gen-go),)
-	$(error protoc-gen-go is not accessible after installation; GOPATH must be set and PATH must contain GOPATH/bin)
-	# Example:
-	# export GOPATH=/home/$USER/go
-	# export PATH=$PATH:$GOPATH/bin
-endif
+	docker build --rm -t $(GENERATOR_TAG) build/generator
 
 .PHONY: protos
 protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpb/rid.pb.gw.go pkg/api/v1/scdpb/scd.pb.gw.go
