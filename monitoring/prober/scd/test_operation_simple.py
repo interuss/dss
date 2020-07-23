@@ -43,9 +43,8 @@ def test_op_does_not_exist_get(scd_session, op1_uuid):
 
 # Preconditions: None
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_op_does_not_exist_query(scd_session, op1_uuid):
-  if scd_session is None:
-    return
   time_now = datetime.datetime.utcnow()
   end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session.post('/operation_references/query', json={
@@ -260,6 +259,7 @@ def test_delete_op(scd_session, op1_uuid):
 
 # Preconditions: Operation op1_uuid deleted
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_get_deleted_op_by_id(scd_session, op1_uuid):
   resp = scd_session.get('/operation_references/{}'.format(op1_uuid))
   assert resp.status_code == 404, resp.content
@@ -267,6 +267,7 @@ def test_get_deleted_op_by_id(scd_session, op1_uuid):
 
 # Preconditions: Operation op1_uuid deleted
 # Mutations: None
+@default_scope(SCOPE_SC)
 def test_get_deleted_op_by_search(scd_session, op1_uuid):
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(-56, 178, 300))

@@ -4,6 +4,11 @@ Reproduces issue #314
 
 import datetime
 
+from ..infrastructure import default_scope
+from .common import SCOPE_SC
+
+
+@default_scope(SCOPE_SC)
 def test_put_sub1(scd_session):
   time_ref = datetime.datetime.utcnow() + datetime.timedelta(days=1)
   time_start = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 1, 30)

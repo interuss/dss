@@ -154,6 +154,7 @@ class SignedRequest(AuthAdapter):
       'grant_type': 'client_credentials',
       'client_id': self._client_id,
       'scope': ' '.join(scopes),
+      'resource': intended_audience,
       'current_timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
     }
     payload = '&'.join([k + '=' + v for k, v in query.items()])
