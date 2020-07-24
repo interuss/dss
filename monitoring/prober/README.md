@@ -150,6 +150,10 @@ Specifically:
    not need to follow this guideline.  Tests built from a failing query should
    try changing the ID to stand out as a test ID, and keep that change as long
    as the behavior illustrated does not change.
+1. Tests should be designed to pass even with pre-existing resources which may
+   even be in the same area/time range/etc as the test resources.  Toward this
+   end, checking the exact count of results returned by a query, or expecting a
+   single result from a query, should be avoided.
 
 The guidelines above should allow the prober to be used on production DSS
 instances without any nominal adverse effects.
