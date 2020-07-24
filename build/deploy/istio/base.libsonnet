@@ -2540,25 +2540,6 @@
       }
     }
   },
-  "istio-obj-66": {
-    "apiVersion": "authentication.istio.io/v1alpha1",
-    "kind": "MeshPolicy",
-    "metadata": {
-      "name": "default",
-      "labels": {
-        "release": "istio"
-      }
-    },
-    "spec": {
-      "peers": [
-        {
-          "mtls": {
-            "mode": "PERMISSIVE"
-          }
-        }
-      ]
-    }
-  },
   "istio-obj-67": {
     "apiVersion": "policy/v1beta1",
     "kind": "PodDisruptionBudget",

@@ -190,6 +190,9 @@ local util = import 'util.libsonnet';
       template: {
         metadata+: {
           labels: job.metadata.labels,
+          annotations+: {
+            'sidecar.istio.io/inject': 'false'
+          },
         },
         spec: $.PodSpec {
           restartPolicy: 'OnFailure',
