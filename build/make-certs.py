@@ -72,14 +72,8 @@ def main():
                           args.namespace, args.ca_cert_to_join)
 
     # Create the generated directories.
-    try:
-        os.mkdir('workspace')
-    except OSError:
-        pass
-    try:
-        os.mkdir(cr.directory)
-    except OSError:
-        pass
+    os.makedirs('workspace', exist_ok=True)
+    os.makedirs(cr.directory, exist_ok=True)
 
     # Create a new CA.
     # Delete and recreate the ca_certs_dir.
