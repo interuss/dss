@@ -57,6 +57,6 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
       kiali: kiali.all(metadata),
       jaeger: jaeger.all(metadata),
     },
-    schema_manager: if metadata.cockroach.shouldInit == true then schema_manager.all(metadata),
+    schema_manager: if metadata.cockroach.shouldInit == true then schema_manager.all(metadata) else {},
   },
 }

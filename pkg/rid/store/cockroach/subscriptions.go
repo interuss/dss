@@ -129,7 +129,7 @@ func (c *subscriptionRepo) GetSubscription(ctx context.Context, id dssmodels.ID)
 // Returns nil, nil if ID, version not found
 func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
-		udpateQuery = fmt.Sprintf(`
+		updateQuery = fmt.Sprintf(`
 		UPDATE
 		  subscriptions
 		SET (%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
@@ -147,7 +147,7 @@ func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, udpateQuery,
+	return c.processOne(ctx, updateQuery,
 		s.ID,
 		s.URL,
 		s.NotificationIndex,
