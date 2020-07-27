@@ -458,7 +458,7 @@ warning.
 
 ## Upgrading Database Schemas
 
-All schemas-related files are in `deploy/db-schemas` directory.  Any changes you
+All schemas-related files are in `deploy/db_schemas` directory.  Any changes you
 wish to make to the database schema should be done in their respective database
 folders.  The files are applied in sequential numeric steps from the current
 version M to the desired version N.
