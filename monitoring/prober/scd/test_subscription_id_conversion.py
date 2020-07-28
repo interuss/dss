@@ -3,6 +3,7 @@ Reproduces issue #314
 """
 
 import datetime
+import uuid
 
 from ..infrastructure import default_scope
 from .common import SCOPE_SC
@@ -10,6 +11,7 @@ from .common import SCOPE_SC
 
 @default_scope(SCOPE_SC)
 def test_put_sub1(scd_session):
+  sub_uuid = uuid.uuid4()
   time_ref = datetime.datetime.utcnow() + datetime.timedelta(days=1)
   time_start = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 1, 30)
   time_end = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 22, 15)
@@ -35,10 +37,13 @@ def test_put_sub1(scd_session):
     "uss_base_url": "http://localhost:12012/services/uss/public/uss/v1/",
     "notify_for_constraints": True
   }
-  resp = scd_session.put('/subscriptions/b61a6450-db42-4d0d-91f2-7c1334eda399', json=req)
+  resp = scd_session.put('/subscriptions/{}'.format(sub_uuid), json=req)
   assert resp.status_code == 200, resp.content
 
   req["extents"]["time_start"]["value"] = (time_start + datetime.timedelta(hours=1)).isoformat() + "Z"
   req["old_version"] = 1
-  resp = scd_session.put('/subscriptions/b61a6450-db42-4d0d-91f2-7c1334eda399', json=req)
+  resp = scd_session.put('/subscriptions/{}'.format(sub_uuid), json=req)
+  assert resp.status_code == 200, resp.content
+
+  resp = scd_session.delete('/subscriptions/{}'.format(sub_uuid))
   assert resp.status_code == 200, resp.content
