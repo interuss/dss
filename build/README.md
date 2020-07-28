@@ -101,9 +101,8 @@ a PR to that effect would be greatly appreciated.
     instance.  A reasonable cluster name might be `dss-us-prod-e4a` (where `e4a`
     is a zone identifier abbreviation), `dss-ca-staging`,
     `dss-mx-integration-sae1a`, etc.  The name of this cluster will be combined
-    with other information by Kubernetes to generate a longer cluster context ID
-    that will be referred to as CLUSTER_CONTEXT for the remainder of this
-    document.
+    with other information by Kubernetes to generate a longer cluster context
+    ID.
     
     -  On Google Cloud, the recommended procedure to create a cluster is:
        -  In Google Cloud Platform, go to the Kubernetes Engine page and under
@@ -123,7 +122,8 @@ a PR to that effect would be greatly appreciated.
 1.  Make sure correct cluster context is selected by printing the context
     name to the console: `kubectl config current-context`
     
-    -  Record this value and use it for `CLUSTER_CONTEXT` below.
+    -  Record this value and use it for `$CLUSTER_CONTEXT` below; perhaps:
+       `export CLUSTER_CONTEXT=$(kubectl config current-context)`
     
     - On Google Cloud, first configure kubectl to interact with the cluster
       created above with
@@ -136,7 +136,8 @@ a PR to that effect would be greatly appreciated.
 1.  Ensure the desired namespace is selected; the recommended
     namespace is simply `default` with one cluster per DSS instance.  Print the
     the current namespaces with `kubectl get namespace`.  Use the current
-    namespace as the value for `NAMESPACE` below.
+    namespace as the value for `$NAMESPACE` below; perhaps use an environment
+    variable for convenience: `export NAMESPACE=<your namespace>`.
     
 1.  Create static IP addresses: one for the HTTPS Gateway's ingress, and one
     for each CockroachDB node (minimum of 3) if you want to be able to join
@@ -157,8 +158,10 @@ a PR to that effect would be greatly appreciated.
 
 1.  Link static IP addresses to DNS entries.
 
-    -  If joining other clusters, your CockroachDB nodes should have a common
-       hostname suffix; e.g., `*.db.interuss.com`
+    -  Your CockroachDB nodes should have a common hostname suffix; e.g.,
+       `*.db.interuss.com`.  Recommended naming is
+       `0.db.yourdeployment.yourdomain.com`,
+       `1.db.yourdeployment.yourdomain.com`, etc.
     
     -  If using Google Cloud, see
        [these instructions](https://cloud.google.com/dns/docs/quickstart#create_a_new_record)
@@ -168,11 +171,11 @@ a PR to that effect would be greatly appreciated.
 1.  Use [`make-certs.py` script](./make-certs.py) to create certificates for
     the new CockroachDB cluster:
 
-        ./make-certs.py --cluster <CLUSTER_CONTEXT> --namespace <NAMESPACE>
+        ./make-certs.py --cluster $CLUSTER_CONTEXT --namespace $NAMESPACE
             [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
             [--ca-cert-to-join <CA_CERT_FILE>]
 
-    1.  `CLUSTER_CONTEXT` is the name of the cluster (see step 2 above).
+    1.  `$CLUSTER_CONTEXT` is the name of the cluster (see step 2 above).
     
     1.  `Each ADDRESS` is the DNS entry for a CockroachDB node.  To enable
         other clusters to connect to your cluster (including if joining an
@@ -199,14 +202,14 @@ a PR to that effect would be greatly appreciated.
     - All of the original clusters must perform a rolling restart of their
       CockroachDB pods to pick up the new certificates:
       
-      `kubectl rollout restart statefulset/cockroachdb --namespace <NAMESPACE>`
+      `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
 
 1.  Ensure the Docker images are built according to the instructions in the
     [previous section](#docker-images).
 
 1.  From this working directory,
-    `cp -r deploy/examples/minimum/* workspace/<CLUSTER_CONTEXT>`.  Note that
-    the `workspace/<CLUSTER_CONTEXT>` folder should have already been created
+    `cp -r deploy/examples/minimum/* workspace/$CLUSTER_CONTEXT`.  Note that
+    the `workspace/$CLUSTER_CONTEXT` folder should have already been created
     by the `make_certs.py` script.
 
 1.  If providing a .pem file directly as the public key to validate incoming
@@ -214,14 +217,14 @@ a PR to that effect would be greatly appreciated.
     Public key specification by JWKS is preferred; if using the JWKS approach to
     to specify the public key, skip this step.
 
-1.  Edit `workspace/<CLUSTER_CONTEXT>/main.jsonnet` and replace all `VAR_*`
+1.  Edit `workspace/$CLUSTER_CONTEXT/main.jsonnet` and replace all `VAR_*`
     instances with appropriate values:
    
-    1.  `VAR_NAMESPACE`: Same <NAMESPACE> used in the make-certs.py (and
+    1.  `VAR_NAMESPACE`: Same `$NAMESPACE` used in the make-certs.py (and
         apply-certs.sh) scripts.
    
-    1.  `VAR_CLUSTER_CONTEXT`: Same <CLUSTER_CONTEXT> name of the cluster used in
-        the `make-certs.py` and `apply-certs.sh` scripts.
+    1.  `VAR_CLUSTER_CONTEXT`: Same $CLUSTER_CONTEXT used in the `make-certs.py`
+        and `apply-certs.sh` scripts.
 
     1.  `VAR_ENABLE_SCD`: Set this boolean true to enable strategic conflict
         detection functionality (currently an R&D project tracking an initial
@@ -303,15 +306,16 @@ a PR to that effect would be greatly appreciated.
     -   If you are only turning up a single cluster for development, you
         may optionally change `single_cluster` to `true`.
 
-1.  Edit workspace/<CLUSTER_CONTEXT>/spec.json and replace all VAR_*
+1.  Edit workspace/$CLUSTER_CONTEXT/spec.json and replace all VAR_*
     instances with appropriate values:
    
     1.  VAR_API_SERVER: Determine this value with the command:
     
-        `kubectl config view -o jsonpath="{.clusters[?(@.name==\"<CLUSTER_CONTEXT>\")].cluster.server}"`
+        `echo $(kubectl config view -o jsonpath="{.clusters[?(@.name==\"$CLUSTER_CONTEXT\")].cluster.server}")`
         
-        - Note that `<CLUSTER_CONTEXT>` should be replaced with your actual
-         `CLUSTER_CONTEXT` value prior to executing the above command.
+        - Note that `$CLUSTER_CONTEXT` should be replaced with your actual
+         `CLUSTER_CONTEXT` value prior to executing the above command if you
+         have not defined a `CLUSTER_CONTEXT` environment variable.
    
     1.  VAR_NAMESPACE: See previous section.
 
@@ -319,9 +323,9 @@ a PR to that effect would be greatly appreciated.
     Kubernetes cluster containing the certificates and keys generated in the
     previous step.
 
-        ./apply-certs.sh <CLUSTER_CONTEXT> <NAMESPACE>
+        ./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE
 
-1.  Run `tk apply workspace/<CLUSTER_CONTEXT>` to apply it to the
+1.  Run `tk apply workspace/$CLUSTER_CONTEXT` to apply it to the
     cluster.
 
 1.  Wait for services to initialize.  Verify that basic services are functioning
@@ -349,7 +353,7 @@ a PR to that effect would be greatly appreciated.
     JoinExisting where `VAR_CRDB_EXTERNAL_NODEn` is indicated in the minimum
     example, and then perform a rolling restart of their CockroachDB pods:
     
-    `kubectl rollout restart statefulset/cockroachdb --namespace <NAMESPACE>`
+    `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
 
 ## CockroachDB requirements
 These requirements must be met by every DSS instance joining a DSS Region.  The
@@ -427,7 +431,7 @@ To interact with the CockroachDB database directly via SQL terminal:
 
 ```
 kubectl \
-  --context <CLUSTER_CONTEXT> exec --namespace <NAMESPACE> -it \
+  --context $CLUSTER_CONTEXT exec --namespace $NAMESPACE -it \
   cockroachdb-0 -- \
   ./cockroach sql --certs-dir=cockroach-certs/
 ```
@@ -441,20 +445,20 @@ your local machine using kubectl:
 
 Pick a username and create an account:
 
-    kubectl -n <NAMESPACE> exec cockroachdb-0 -ti -- \
+    kubectl -n $NAMESPACE exec cockroachdb-0 -ti -- \
         ./cockroach --certs-dir ./cockroach-certs \
         user set $USERNAME --password
 
 #### Access the web UI
 
-    kubectl -n <NAMESPACE> port-forward cockroachdb-0 8080
+    kubectl -n $NAMESPACE port-forward cockroachdb-0 8080
 
 Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
 warning.
 
 ## Upgrading Database Schemas
 
-All schemas-related files are in `deploy/db-schemas` directory.  Any changes you
+All schemas-related files are in `deploy/db_schemas` directory.  Any changes you
 wish to make to the database schema should be done in their respective database
 folders.  The files are applied in sequential numeric steps from the current
 version M to the desired version N.
@@ -470,11 +474,11 @@ existing clusters you will need to:
 
 ### If performing this operation on any other cluster
 1. Upload the `db-schema/<database>` directory as a ConfigMap with
-   `kubectl create configmap -n <namespace> --from-file <path to schemas>`
+   `kubectl create configmap -n $NAMESPACE --from-file <path to schemas>`
 1. Prepare a Yaml file to deploy a K8s Job that will run the `db-manager` binary
    with the following flags:
    ```
-   --cockroach_host cockroachdb-balanced.<namespace>
+   --cockroach_host cockroachdb-balanced.$NAMESPACE
    --cockroach_port 26257
    --cockroach_ssl_mode: 'verify-full'
    --cockroach_user: 'root'

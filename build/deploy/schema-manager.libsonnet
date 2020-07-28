@@ -1,7 +1,7 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
-local defaultdb_schema = import "db-schemas/defaultdb.libsonnet";
-local scd_schema = import "db-schemas/scd.libsonnet";
+local defaultdb_schema = import "db_schemas/defaultdb.libsonnet";
+local scd_schema = import "db_schemas/scd.libsonnet";
 
 local rid_schema_vol = {
   name: 'db-rid-schema',
