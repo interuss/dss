@@ -10,34 +10,23 @@
 
 import datetime
 import json
+import uuid
 
 from ..infrastructure import default_scope
 from .common import SCOPE_SC, SCOPE_CI, SCOPE_CM
 
 OP1_ID = '00000020-b6ee-4082-b6e7-75eb4f000000'
 OP2_ID = '00000000-ee51-4700-873d-e10911000000'
-BUG_SUB_ID = 'b61a6450-db42-4d0d-91f2-7c1334eda399'
 
 
 def test_ensure_clean_workspace(scd_session):
-  for op_id in (OP1_ID, OP2_ID, BUG_SUB_ID):
+  for op_id in (OP1_ID, OP2_ID):
     resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     if resp.status_code == 200:
       resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
       assert resp.status_code == 200, resp.content
       resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
       assert resp.status_code == 404
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
-
-  for sub_id in (BUG_SUB_ID, ):
-    resp = scd_session.get('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
-    if resp.status_code == 200:
-      resp = scd_session.delete('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
-      assert resp.status_code == 200, resp.content
     elif resp.status_code == 404:
       # As expected.
       pass
@@ -92,6 +81,7 @@ def test_op_query_not_area_too_large(scd_session):
 # Reproduces issue #314
 @default_scope(SCOPE_SC)
 def test_id_conversion_bug(scd_session):
+  sub_uuid = uuid.uuid4()
   time_ref = datetime.datetime.utcnow() + datetime.timedelta(days=1)
   time_start = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 1, 30)
   time_end = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 22, 15)
@@ -117,10 +107,13 @@ def test_id_conversion_bug(scd_session):
     "uss_base_url": "http://localhost:12012/services/uss/public/uss/v1/",
     "notify_for_constraints": True
   }
-  resp = scd_session.put('/subscriptions/{}'.format(BUG_SUB_ID), json=req)
+  resp = scd_session.put('/subscriptions/{}'.format(sub_uuid), json=req)
   assert resp.status_code == 200, resp.content
 
   req["extents"]["time_start"]["value"] = (time_start + datetime.timedelta(hours=1)).isoformat() + "Z"
   req["old_version"] = 1
-  resp = scd_session.put('/subscriptions/{}'.format(BUG_SUB_ID), json=req)
+  resp = scd_session.put('/subscriptions/{}'.format(sub_uuid), json=req)
+  assert resp.status_code == 200, resp.content
+
+  resp = scd_session.delete('/subscriptions/{}'.format(sub_uuid))
   assert resp.status_code == 200, resp.content
