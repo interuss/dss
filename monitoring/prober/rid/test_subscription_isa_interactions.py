@@ -13,15 +13,41 @@ from ..infrastructure import default_scope
 from . import common
 from .common import SCOPE_READ, SCOPE_WRITE
 
+ISA_ID = '000000d5-aa3d-46b8-b2ec-dd22e7000000'
+SUB_ID = '000000ee-85c7-4bc6-8995-aa5f81000000'
+
+
+def test_ensure_clean_workspace(session):
+  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
+  if resp.status_code == 200:
+    version = resp.json()['service_area']['version']
+    resp = session.delete('/identification_service_areas/{}/{}'.format(ISA_ID, version), scope=SCOPE_WRITE)
+    assert resp.status_code == 200, resp.content
+  elif resp.status_code == 404:
+    # As expected.
+    pass
+  else:
+    assert False, resp.content
+
+  resp = session.get('/subscriptions/{}'.format(SUB_ID), scope=SCOPE_READ)
+  if resp.status_code == 200:
+    version = resp.json()['subscription']['version']
+    resp = session.delete('/subscriptions/{}/{}'.format(SUB_ID, version), scope=SCOPE_READ)
+    assert resp.status_code == 200, resp.content
+  elif resp.status_code == 404:
+    # As expected
+    pass
+  else:
+    assert False, resp.content
 
 
 @default_scope(SCOPE_WRITE)
-def test_create_isa(session, isa1_uuid):
+def test_create_isa(session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/identification_service_areas/{}'.format(isa1_uuid),
+      '/identification_service_areas/{}'.format(ISA_ID),
       json={
           'extents': {
               'spatial_volume': {
@@ -40,12 +66,12 @@ def test_create_isa(session, isa1_uuid):
 
 
 @default_scope(SCOPE_READ)
-def test_create_subscription(session, isa1_uuid, sub1_uuid):
+def test_create_subscription(session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/subscriptions/{}'.format(sub1_uuid),
+      '/subscriptions/{}'.format(SUB_ID),
       json={
           'extents': {
               'spatial_volume': {
@@ -67,19 +93,19 @@ def test_create_subscription(session, isa1_uuid, sub1_uuid):
   # The response should include our ISA.
   data = resp.json()
   assert data['subscription']['notification_index'] == 0
-  assert isa1_uuid in [x['id'] for x in data['service_areas']]
+  assert ISA_ID in [x['id'] for x in data['service_areas']]
 
 
-def test_modify_isa(session, isa1_uuid, sub1_uuid):
+def test_modify_isa(session):
   # GET the ISA first to find its version.
-  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid), scope=SCOPE_READ)
+  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
   assert resp.status_code == 200
   version = resp.json()['service_area']['version']
 
   # Then modify it.
   time_end = datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
   resp = session.put(
-      '/identification_service_areas/{}/{}'.format(isa1_uuid, version),
+      '/identification_service_areas/{}/{}'.format(ISA_ID, version),
       json={
           'extents': {
               'spatial_volume': {
@@ -103,20 +129,20 @@ def test_modify_isa(session, isa1_uuid, sub1_uuid):
           'https://example.com/foo',
       'subscriptions': [{
           'notification_index': 1,
-          'subscription_id': sub1_uuid,
+          'subscription_id': SUB_ID,
       },],
   } in data['subscribers']
 
 
-def test_delete_isa(session, isa1_uuid, sub1_uuid):
+def test_delete_isa(session):
   # GET the ISA first to find its version.
-  resp = session.get('/identification_service_areas/{}'.format(isa1_uuid), scope=SCOPE_READ)
+  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
   assert resp.status_code == 200
   version = resp.json()['service_area']['version']
 
   # Then delete it.
   resp = session.delete('/identification_service_areas/{}/{}'.format(
-      isa1_uuid, version), scope=SCOPE_WRITE)
+      ISA_ID, version), scope=SCOPE_WRITE)
   assert resp.status_code == 200
 
   # The response should include our subscription.
@@ -126,15 +152,15 @@ def test_delete_isa(session, isa1_uuid, sub1_uuid):
           'https://example.com/foo',
       'subscriptions': [{
           'notification_index': 2,
-          'subscription_id': sub1_uuid,
+          'subscription_id': SUB_ID,
       },],
   } in data['subscribers']
 
 
 @default_scope(SCOPE_READ)
-def test_delete_subscription(session, sub1_uuid):
+def test_delete_subscription(session):
   # GET the sub first to find its version.
-  resp = session.get('/subscriptions/{}'.format(sub1_uuid))
+  resp = session.get('/subscriptions/{}'.format(SUB_ID))
   assert resp.status_code == 200
 
   data = resp.json()
@@ -142,5 +168,5 @@ def test_delete_subscription(session, sub1_uuid):
   assert data['subscription']['notification_index'] == 2
 
   # Then delete it.
-  resp = session.delete('/subscriptions/{}/{}'.format(sub1_uuid, version))
+  resp = session.delete('/subscriptions/{}/{}'.format(SUB_ID, version))
   assert resp.status_code == 200

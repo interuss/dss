@@ -8,7 +8,11 @@ import datetime
 
 from ..infrastructure import default_scope
 from . import common
-from .common import SCOPE_SC, SCOPE_CI, SCOPE_CM
+from .common import SCOPE_SC
+
+SUB1_ID = '00000088-b268-481c-a32d-6be442000000'
+SUB2_ID = '00000017-a3fe-42d6-9f3b-83dec2000000'
+SUB3_ID = '0000001b-9c8a-475e-a82d-d81922000000'
 
 
 LAT0 = 23
@@ -57,46 +61,59 @@ def _make_sub3_req():
   }
 
 
+def test_ensure_clean_workspace(scd_session):
+  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
+    resp = scd_session.get('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
+    if resp.status_code == 200:
+      resp = scd_session.delete('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
+      assert resp.status_code == 200, resp.content
+    elif resp.status_code == 404:
+      # As expected.
+      pass
+    else:
+      assert False, resp.content
+
+
 # Preconditions: No named Subscriptions exist
 # Mutations: None
 @default_scope(SCOPE_SC)
-def test_subs_do_not_exist_get(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
-  for sub_uuid in (sub1_uuid, sub2_uuid, sub3_uuid):
-    resp = scd_session.get('/subscriptions/{}'.format(sub_uuid))
+def test_subs_do_not_exist_get(scd_session):
+  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
+    resp = scd_session.get('/subscriptions/{}'.format(sub_id))
     assert resp.status_code == 404, resp.content
 
 
 # Preconditions: No named Subscriptions exist
 # Mutations: None
 @default_scope(SCOPE_SC)
-def test_subs_do_not_exist_query(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
+def test_subs_do_not_exist_query(scd_session):
   resp = scd_session.post('/subscriptions/query', json={
     'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
   })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  for sub_uuid in (sub1_uuid, sub2_uuid, sub3_uuid):
-    assert sub_uuid not in result_ids
+  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
+    assert sub_id not in result_ids
 
 
 # Preconditions: No named Subscriptions exist
 # Mutations: Subscriptions 1, 2, and 3 created
 @default_scope(SCOPE_SC)
-def test_create_subs(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
-  resp = scd_session.put('/subscriptions/{}'.format(sub1_uuid), json=_make_sub1_req())
+def test_create_subs(scd_session):
+  resp = scd_session.put('/subscriptions/{}'.format(SUB1_ID), json=_make_sub1_req())
   assert resp.status_code == 200, resp.content
 
-  resp = scd_session.put('/subscriptions/{}'.format(sub2_uuid), json=_make_sub2_req())
+  resp = scd_session.put('/subscriptions/{}'.format(SUB2_ID), json=_make_sub2_req())
   assert resp.status_code == 200, resp.content
 
-  resp = scd_session.put('/subscriptions/{}'.format(sub3_uuid), json=_make_sub3_req())
+  resp = scd_session.put('/subscriptions/{}'.format(SUB3_ID), json=_make_sub3_req())
   assert resp.status_code == 200, resp.content
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
 @default_scope(SCOPE_SC)
-def test_search_find_all_subs(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
+def test_search_find_all_subs(scd_session):
   resp = scd_session.post(
       '/subscriptions/query',
       json={
@@ -105,14 +122,14 @@ def test_search_find_all_subs(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
       })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  for sub_uuid in (sub1_uuid, sub2_uuid, sub3_uuid):
-    assert sub_uuid in result_ids
+  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
+    assert sub_id in result_ids
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
 @default_scope(SCOPE_SC)
-def test_search_footprint(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
+def test_search_footprint(scd_session):
   lat = LAT0 - common.latitude_degrees(FOOTPRINT_SPACING_M)
   print(lat)
   resp = scd_session.post(
@@ -123,9 +140,9 @@ def test_search_footprint(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert sub1_uuid in result_ids
-  assert sub2_uuid not in result_ids
-  assert sub3_uuid not in result_ids
+  assert SUB1_ID in result_ids
+  assert SUB2_ID not in result_ids
+  assert SUB3_ID not in result_ids
 
   resp = scd_session.post(
     '/subscriptions/query',
@@ -135,15 +152,15 @@ def test_search_footprint(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert sub1_uuid not in result_ids
-  assert sub2_uuid in result_ids
-  assert sub3_uuid not in result_ids
+  assert SUB1_ID not in result_ids
+  assert SUB2_ID in result_ids
+  assert SUB3_ID not in result_ids
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
 @default_scope(SCOPE_SC)
-def test_search_time(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
+def test_search_time(scd_session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=1)
 
@@ -155,9 +172,9 @@ def test_search_time(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert sub1_uuid in result_ids
-  assert sub2_uuid not in result_ids
-  assert sub3_uuid not in result_ids
+  assert SUB1_ID in result_ids
+  assert SUB2_ID not in result_ids
+  assert SUB3_ID not in result_ids
 
   resp = scd_session.post(
     '/subscriptions/query',
@@ -167,9 +184,9 @@ def test_search_time(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert sub1_uuid in result_ids
-  assert sub2_uuid not in result_ids
-  assert sub3_uuid not in result_ids
+  assert SUB1_ID in result_ids
+  assert SUB2_ID not in result_ids
+  assert SUB3_ID not in result_ids
 
   time_start = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
   time_end = time_start + datetime.timedelta(minutes=1)
@@ -182,9 +199,9 @@ def test_search_time(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert sub1_uuid not in result_ids
-  assert sub2_uuid not in result_ids
-  assert sub3_uuid in result_ids
+  assert SUB1_ID not in result_ids
+  assert SUB2_ID not in result_ids
+  assert SUB3_ID in result_ids
 
   resp = scd_session.post(
     '/subscriptions/query',
@@ -194,15 +211,15 @@ def test_search_time(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert sub1_uuid not in result_ids
-  assert sub2_uuid not in result_ids
-  assert sub3_uuid in result_ids
+  assert SUB1_ID not in result_ids
+  assert SUB2_ID not in result_ids
+  assert SUB3_ID in result_ids
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
 @default_scope(SCOPE_SC)
-def test_search_time_footprint(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
+def test_search_time_footprint(scd_session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(hours=2.5)
   lat = LAT0 + common.latitude_degrees(FOOTPRINT_SPACING_M)
@@ -214,16 +231,16 @@ def test_search_time_footprint(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert sub1_uuid not in result_ids
-  assert sub2_uuid in result_ids
-  assert sub3_uuid not in result_ids
+  assert SUB1_ID not in result_ids
+  assert SUB2_ID in result_ids
+  assert SUB3_ID not in result_ids
 
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: Subscriptions 1, 2, and 3 deleted
 @default_scope(SCOPE_SC)
-def test_delete_subs(scd_session, sub1_uuid, sub2_uuid, sub3_uuid):
-  for sub_uuid in (sub1_uuid, sub2_uuid, sub3_uuid):
-    resp = scd_session.delete('/subscriptions/{}'.format(sub_uuid))
+def test_delete_subs(scd_session):
+  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
+    resp = scd_session.delete('/subscriptions/{}'.format(sub_id))
     assert resp.status_code == 200, resp.content

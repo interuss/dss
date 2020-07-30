@@ -13,14 +13,29 @@ from ..infrastructure import default_scope
 from . import common
 from .common import SCOPE_READ
 
+SUB_ID = '000000e8-46a4-4df1-b924-f455ad000000'
+
+
+def test_ensure_clean_workspace(session):
+  resp = session.get('/subscriptions/{}'.format(SUB_ID), scope=SCOPE_READ)
+  if resp.status_code == 200:
+    version = resp.json()['subscription']['version']
+    resp = session.delete('/subscriptions/{}/{}'.format(SUB_ID, version), scope=SCOPE_READ)
+    assert resp.status_code == 200, resp.content
+  elif resp.status_code == 404:
+    # As expected.
+    pass
+  else:
+    assert False, resp.content
+
 
 @default_scope(SCOPE_READ)
-def test_create_sub_empty_vertices(session, sub2_uuid):
+def test_create_sub_empty_vertices(session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=10)
 
   resp = session.put(
-      '/subscriptions/{}'.format(sub2_uuid),
+      '/subscriptions/{}'.format(SUB_ID),
       json={
           'extents': {
               'spatial_volume': {
@@ -41,12 +56,12 @@ def test_create_sub_empty_vertices(session, sub2_uuid):
 
 
 @default_scope(SCOPE_READ)
-def test_create_sub_missing_footprint(session, sub2_uuid):
+def test_create_sub_missing_footprint(session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=10)
 
   resp = session.put(
-      '/subscriptions/{}'.format(sub2_uuid),
+      '/subscriptions/{}'.format(SUB_ID),
       json={
           'extents': {
               'spatial_volume': {
@@ -64,12 +79,12 @@ def test_create_sub_missing_footprint(session, sub2_uuid):
 
 
 @default_scope(SCOPE_READ)
-def test_create_sub_with_huge_area(session, sub2_uuid):
+def test_create_sub_with_huge_area(session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=10)
 
   resp = session.put(
-      '/subscriptions/{}'.format(sub2_uuid),
+      '/subscriptions/{}'.format(SUB_ID),
       json={
           'extents': {
               'spatial_volume': {
@@ -141,13 +156,13 @@ def test_create_too_many_subs(session):
 
 
 @default_scope(SCOPE_READ)
-def test_create_sub_with_too_long_end_time(session, sub2_uuid):
+def test_create_sub_with_too_long_end_time(session):
     """ASTM Compliance Test: DSS0060_MAX_SUBS_DURATION."""
     time_start = datetime.datetime.utcnow()
     time_end = time_start + datetime.timedelta(hours=(common.MAX_SUB_TIME_HRS + 1))
 
     resp = session.put(
-        "/subscriptions/{}".format(sub2_uuid),
+        "/subscriptions/{}".format(SUB_ID),
         json={
             "extents": {
                 "spatial_volume": {
@@ -165,13 +180,13 @@ def test_create_sub_with_too_long_end_time(session, sub2_uuid):
 
 
 @default_scope(SCOPE_READ)
-def test_update_sub_with_too_long_end_time(session, sub2_uuid):
+def test_update_sub_with_too_long_end_time(session):
     """ASTM Compliance Test: DSS0060_MAX_SUBS_DURATION."""
     time_start = datetime.datetime.utcnow()
     time_end = time_start + datetime.timedelta(seconds=10)
 
     resp = session.put(
-        "/subscriptions/{}".format(sub2_uuid),
+        '/subscriptions/{}'.format(SUB_ID),
         json={
             "extents": {
                 "spatial_volume": {
@@ -189,7 +204,7 @@ def test_update_sub_with_too_long_end_time(session, sub2_uuid):
 
     time_end = time_start + datetime.timedelta(hours=(common.MAX_SUB_TIME_HRS + 1))
     resp = session.put(
-        "/subscriptions/{}/{}".format(sub2_uuid, resp.json()["subscription"]["version"]),
+        '/subscriptions/{}'.format(SUB_ID) + '/' + resp.json()["subscription"]["version"],
         json={
             "extents": {
                 "spatial_volume": {
