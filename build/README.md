@@ -473,16 +473,13 @@ existing clusters you will need to:
 3. Redeploy the newly configured db-manager with `tk apply -t job/<xyz-schema-manager>`. It should automatically up/down grade your database schema to your desired version.
 
 ### If performing this operation on any other cluster
-1. Upload the `db-schema/<database>` directory as a ConfigMap with
-   `kubectl create configmap -n $NAMESPACE --from-file <path to schemas>`
-1. Prepare a Yaml file to deploy a K8s Job that will run the `db-manager` binary
-   with the following flags:
-   ```
-   --cockroach_host cockroachdb-balanced.$NAMESPACE
-   --cockroach_port 26257
-   --cockroach_ssl_mode: 'verify-full'
-   --cockroach_user: 'root'
-   --cockroach_ssl_dir: <path to the mounted cockroach certificate secrets>
-   --db_version: <desired db version>
-   --schemas_dir: <path to the mounted schemas configmap>
-    ```
+
+1. Create `workspace/$CLUSTER_CONTEXT_schema_manager` directory.
+
+1.  From this working directory,
+    `cp -r deploy/examples/schema_manager/* workspace/$CLUSTER_CONTEXT_schema_manager`.
+
+1.  Edit `workspace/$CLUSTER_CONTEXT_schema_manager/main.jsonnet` and replace all `VAR_*`
+    instances with appropriate values where applicable as explained in the above section.
+
+1.  Run `tk apply workspace/$CLUSTER_CONTEXT_schema_manager`
