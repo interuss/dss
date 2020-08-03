@@ -474,9 +474,9 @@ existing clusters you will need to:
 
 ### If performing this operation on any other cluster
 
-1. Create `workspace/$CLUSTER_CONTEXT_schema_manager` directory.
+1. Create `workspace/$CLUSTER_CONTEXT_schema_manager` in this (build) directory.
 
-1.  From this working directory,
+1.  From this (build) working directory,
     `cp -r deploy/examples/schema_manager/* workspace/$CLUSTER_CONTEXT_schema_manager`.
 
 1.  Edit `workspace/$CLUSTER_CONTEXT_schema_manager/main.jsonnet` and replace all `VAR_*`
