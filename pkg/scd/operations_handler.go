@@ -24,7 +24,7 @@ import (
 // the specified version.
 func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.DeleteOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
 	// Retrieve Operation ID
-	id, err := dssmodels.IdFromString(req.GetEntityuuid())
+	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -71,7 +71,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 
 // GetOperationReference returns a single operation ref for the given ID.
 func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperationReferenceRequest) (*scdpb.GetOperationReferenceResponse, error) {
-	id, err := dssmodels.IdFromString(req.GetEntityuuid())
+	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -176,7 +176,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 
 // PutOperationReference creates a single operation ref.
 func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
-	id, err := dssmodels.IdFromString(req.GetEntityuuid())
+	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -238,7 +238,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, dsserr.BadRequest("invalid state for version 0")
 	}
 
-	subscriptionID, err := dssmodels.IdFromOptionalString(params.GetSubscriptionId())
+	subscriptionID, err := dssmodels.IDFromOptionalString(params.GetSubscriptionId())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format for Subscription ID")
 	}

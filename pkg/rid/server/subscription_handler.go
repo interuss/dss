@@ -27,7 +27,7 @@ func (s *Server) DeleteSubscription(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
-	id, err := dssmodels.IdFromString(req.Id)
+	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -91,7 +91,7 @@ func (s *Server) GetSubscription(
 	ctx context.Context, req *ridpb.GetSubscriptionRequest) (
 	*ridpb.GetSubscriptionResponse, error) {
 
-	id, err := dssmodels.IdFromString(req.Id)
+	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -136,7 +136,7 @@ func (s *Server) CreateSubscription(
 	if params.Extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
 	}
-	id, err := dssmodels.IdFromString(req.Id)
+	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -193,7 +193,7 @@ func (s *Server) UpdateSubscription(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
-	id, err := dssmodels.IdFromString(req.Id)
+	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}

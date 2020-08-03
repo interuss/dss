@@ -43,7 +43,7 @@ func (owner Owner) String() string {
 	return string(owner)
 }
 
-func IdFromString(s string) (ID, error) {
+func IDFromString(s string) (ID, error) {
 	id, err := uuid.Parse(s)
 	if err != nil {
 		return ID(""), err
@@ -51,12 +51,11 @@ func IdFromString(s string) (ID, error) {
 	return ID(id.String()), nil
 }
 
-func IdFromOptionalString(s string) (ID, error) {
+func IDFromOptionalString(s string) (ID, error) {
 	if s == "" {
 		return ID(""), nil
-	} else {
-		return IdFromString(s)
 	}
+	return IDFromString(s)
 }
 
 // VersionFromString converts a version, typically provided from a user, to

@@ -34,7 +34,7 @@ func incrementNotificationIndices(ctx context.Context, r repos.Repository, subs 
 // the specified version.
 func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.DeleteConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
 	// Retrieve Constraint ID
-	id, err := dssmodels.IdFromString(req.GetEntityuuid())
+	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -118,7 +118,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 
 // GetConstraintReference returns a single constraint ref for the given ID.
 func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConstraintReferenceRequest) (*scdpb.GetConstraintReferenceResponse, error) {
-	id, err := dssmodels.IdFromString(req.GetEntityuuid())
+	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -167,7 +167,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 
 // PutConstraintReference creates a single contraint ref.
 func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
-	id, err := dssmodels.IdFromString(req.GetEntityuuid())
+	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}

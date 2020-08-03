@@ -22,7 +22,7 @@ var (
 // PutSubscription creates a single subscription.
 func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id, err := dssmodels.IdFromString(req.GetSubscriptionid())
+	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -192,7 +192,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 // GetSubscription returns a single subscription for the given ID.
 func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscriptionRequest) (*scdpb.GetSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id, err := dssmodels.IdFromString(req.GetSubscriptionid())
+	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -296,7 +296,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 // specified version.
 func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscriptionRequest) (*scdpb.DeleteSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id, err := dssmodels.IdFromString(req.GetSubscriptionid())
+	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}

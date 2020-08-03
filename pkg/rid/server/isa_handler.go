@@ -20,7 +20,7 @@ func (s *Server) GetIdentificationServiceArea(
 	ctx context.Context, req *ridpb.GetIdentificationServiceAreaRequest) (
 	*ridpb.GetIdentificationServiceAreaResponse, error) {
 
-	id, err := dssmodels.IdFromString(req.Id)
+	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -66,7 +66,7 @@ func (s *Server) CreateIdentificationServiceArea(
 	if params.Extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
 	}
-	id, err := dssmodels.IdFromString(req.Id)
+	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -130,7 +130,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 	if params.Extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
 	}
-	id, err := dssmodels.IdFromString(req.Id)
+	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}
@@ -180,7 +180,7 @@ func (s *Server) DeleteIdentificationServiceArea(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
-	id, err := dssmodels.IdFromString(req.Id)
+	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, dsserr.BadRequest("Invalid ID format")
 	}

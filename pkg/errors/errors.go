@@ -36,13 +36,12 @@ func init() {
 	}
 }
 
-func makeErrId() string {
-	errUuid, err := uuid.NewRandom()
+func MakeErrID() string {
+	errUUID, err := uuid.NewRandom()
 	if err == nil {
-		return errUuid.String()
-	} else {
-		return fmt.Sprintf("<error ID could not be constructed: %s>", err)
+		return errUUID.String()
 	}
+	return fmt.Sprintf("<error ID could not be constructed: %s>", err)
 }
 
 // Interceptor returns a grpc.UnaryServerInterceptor that inspects outgoing
@@ -60,21 +59,21 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 			statusErr, ok := status.FromError(rootErr)
 			switch {
 			case !ok:
-				errId := makeErrId()
+				errID := MakeErrID()
 				logger.Error(
-					fmt.Sprintf("encountered non-Status error %s during unary server call", errId),
+					fmt.Sprintf("encountered non-Status error %s during unary server call", errID),
 					zap.String("method", info.FullMethod),
 					zap.String("stacktrace", trace),
 					zap.Error(rootErr))
 				if obfuscateInternalErrors {
-					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errId))
+					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
 				} else {
 					err = status.Error(codes.Internal, err.Error())
 				}
 			case statusErr.Code() == codes.Internal, statusErr.Code() == codes.Unknown:
-				errId := makeErrId()
+				errID := MakeErrID()
 				logger.Error(
-					fmt.Sprintf("encountered internal Status error %s during unary server call", errId),
+					fmt.Sprintf("encountered internal Status error %s during unary server call", errID),
 					zap.String("method", info.FullMethod),
 					zap.Stringer("code", statusErr.Code()),
 					zap.String("message", statusErr.Message()),
@@ -82,7 +81,7 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 					zap.String("stacktrace", trace),
 					zap.Error(rootErr))
 				if obfuscateInternalErrors {
-					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errId))
+					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
 				}
 			}
 		}
