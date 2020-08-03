@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 
+	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
@@ -270,8 +271,43 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			}
 			subscriptionID = sub.ID
 		} else {
-			if _, err := uuid.Parse(subscriptionID.String()); err != nil {
-				return dsserr.BadRequest("Invalid subscription id")
+			sub, err := r.GetSubscription(ctx, subscriptionID)
+			if err != nil {
+				return stacktrace.Propagate(err, "Unable to get Subscription")
+			}
+			if sub == nil {
+				return dsserr.BadRequest("Specified Subscription does not exist")
+			}
+			updateSub := false
+			if sub.StartTime != nil && sub.StartTime.After(*uExtent.StartTime) {
+				if sub.ImplicitSubscription {
+					sub.StartTime = uExtent.StartTime
+					updateSub = true
+				} else {
+					return dsserr.BadRequest("Subscription does not begin until after the Operation starts")
+				}
+			}
+			if sub.EndTime != nil && sub.EndTime.Before(*uExtent.EndTime) {
+				if sub.ImplicitSubscription {
+					sub.EndTime = uExtent.EndTime
+					updateSub = true
+				} else {
+					return dsserr.BadRequest("Subscription ends before the Operation ends")
+				}
+			}
+			if !sub.Cells.Contains(cells) {
+				if sub.ImplicitSubscription {
+					sub.Cells = s2.CellUnionFromUnion(sub.Cells, cells)
+					updateSub = true
+				} else {
+					return dsserr.BadRequest("Subscription does not cover entire spatial area of the Operation")
+				}
+			}
+			if updateSub {
+				_, err := r.UpsertSubscription(ctx, sub)
+				if err != nil {
+					return stacktrace.Propagate(err, "Failed to update implicit Subscription")
+				}
 			}
 		}
 
