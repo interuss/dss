@@ -2,7 +2,7 @@
   "apiVersion": "tanka.dev/v1alpha1",
   "kind": "Environment",
   "metadata": {
-    "name": "minimum_example"
+    "name": "schema_manager_example"
   },
   "spec": {
     "apiServer": "VAR_API_SERVER",
