@@ -27,3 +27,10 @@ WHERE subs.id = compact_sub_cells.subscription_id
     AND cells IS NULL;
 
 COMMIT;
+
+ALTER TABLE identification_service_areas ALTER COLUMN cells SET NOT NULL;
+ALTER TABLE subscriptions ALTER COLUMN cells SET NOT NULL;
+ALTER TABLE identification_service_areas ADD CONSTRAINT isa_cells_not_null CHECK (array_length(cells, 1) IS NOT NULL);
+ALTER TABLE subscriptions ADD CONSTRAINT subs_cells_not_null CHECK (array_length(cells, 1) IS NOT NULL);
+ALTER TABLE identification_service_areas DROP CONSTRAINT IF EXISTS cells_not_null;
+ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS cells_not_null;
