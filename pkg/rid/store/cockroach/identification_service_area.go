@@ -13,6 +13,7 @@ import (
 	"github.com/golang/geo/s2"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/lib/pq"
+	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -191,7 +192,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 	}
 
 	if earliest == nil {
-		return nil, dsserr.Internal("must call with an earliest start time.")
+		return nil, stacktrace.NewError("Earliest start time is missing")
 	}
 
 	cids := make([]int64, len(cells))

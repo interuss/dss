@@ -9,6 +9,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -75,7 +76,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
 		if err != nil {
 			a.logger.Error("Error fetching max subscription count", zap.Error(err))
-			return dsserr.Internal(
+			return stacktrace.Propagate(err,
 				"failed to fetch subscription count, rejecting request")
 		}
 		if count >= maxSubscriptionsPerArea {
@@ -117,7 +118,7 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 		count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
 		if err != nil {
 			a.logger.Error("Error fetching max subscription count", zap.Error(err))
-			return dsserr.Internal(
+			return stacktrace.Propagate(err,
 				"failed to fetch subscription count, rejecting request")
 		}
 		if count >= maxSubscriptionsPerArea {

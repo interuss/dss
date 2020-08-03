@@ -106,7 +106,7 @@ func (c *repo) fetchConstraint(ctx context.Context, q dsssql.Queryable, query st
 }
 
 // Implements scd.repos.Constraint.GetConstraint
-func (c *repo) GetConstraint(ctx context.Context, id scdmodels.ID) (*scdmodels.Constraint, error) {
+func (c *repo) GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.Constraint, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -159,7 +159,7 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 }
 
 // Implements scd.repos.Constraint.DeleteConstraint
-func (c *repo) DeleteConstraint(ctx context.Context, id scdmodels.ID) error {
+func (c *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
 	const (
 		query = `
 		DELETE FROM

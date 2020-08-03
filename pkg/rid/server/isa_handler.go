@@ -12,6 +12,7 @@ import (
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/palantir/stacktrace"
 )
 
 // GetIdentificationServiceArea returns a single ISA for a given ID.
@@ -19,9 +20,14 @@ func (s *Server) GetIdentificationServiceArea(
 	ctx context.Context, req *ridpb.GetIdentificationServiceAreaRequest) (
 	*ridpb.GetIdentificationServiceAreaResponse, error) {
 
+	id, err := dssmodels.IdFromString(req.Id)
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isa, err := s.App.GetISA(ctx, dssmodels.ID(req.GetId()))
+	isa, err := s.App.GetISA(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +66,13 @@ func (s *Server) CreateIdentificationServiceArea(
 	if params.Extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
 	}
+	id, err := dssmodels.IdFromString(req.Id)
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
+	}
 
 	isa := &ridmodels.IdentificationServiceArea{
-		ID:    dssmodels.ID(req.Id),
+		ID:    id,
 		URL:   params.GetFlightsUrl(),
 		Owner: owner,
 	}
@@ -78,7 +88,7 @@ func (s *Server) CreateIdentificationServiceArea(
 
 	pbISA, err := insertedISA.ToProto()
 	if err != nil {
-		return nil, dsserr.Internal(err.Error())
+		return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
 	}
 
 	pbSubscribers := []*ridpb.SubscriberToNotify{}
@@ -120,9 +130,13 @@ func (s *Server) UpdateIdentificationServiceArea(
 	if params.Extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
 	}
+	id, err := dssmodels.IdFromString(req.Id)
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
+	}
 
 	isa := &ridmodels.IdentificationServiceArea{
-		ID:      dssmodels.ID(req.Id),
+		ID:      dssmodels.ID(id),
 		URL:     params.FlightsUrl,
 		Owner:   owner,
 		Version: version,
@@ -139,7 +153,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 	pbISA, err := insertedISA.ToProto()
 	if err != nil {
-		return nil, dsserr.Internal(err.Error())
+		return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
 	}
 
 	pbSubscribers := []*ridpb.SubscriberToNotify{}
@@ -166,16 +180,20 @@ func (s *Server) DeleteIdentificationServiceArea(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
+	id, err := dssmodels.IdFromString(req.Id)
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
+	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isa, subscribers, err := s.App.DeleteISA(ctx, dssmodels.ID(req.GetId()), owner, version)
+	isa, subscribers, err := s.App.DeleteISA(ctx, id, owner, version)
 	if err != nil {
 		return nil, err
 	}
 
 	p, err := isa.ToProto()
 	if err != nil {
-		return nil, dsserr.Internal(err.Error())
+		return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
 	}
 	sp := make([]*ridpb.SubscriberToNotify, len(subscribers))
 	for i := range subscribers {
@@ -212,7 +230,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 		if ts, err := ptypes.Timestamp(et); err == nil {
 			earliest = &ts
 		} else {
-			return nil, dsserr.Internal(err.Error())
+			return nil, stacktrace.Propagate(err, "Unable to convert earliest timestamp to ptype")
 		}
 	}
 
@@ -220,7 +238,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 		if ts, err := ptypes.Timestamp(lt); err == nil {
 			latest = &ts
 		} else {
-			return nil, dsserr.Internal(err.Error())
+			return nil, stacktrace.Propagate(err, "Unable to convert latest timestamp to ptype")
 		}
 	}
 

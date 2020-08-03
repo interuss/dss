@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/uuid"
+	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -13,7 +15,6 @@ import (
 )
 
 var (
-	errInternal             = status.Error(codes.Internal, "Internal Server Error")
 	obfuscateInternalErrors = true
 )
 
@@ -35,27 +36,54 @@ func init() {
 	}
 }
 
+func makeErrId() string {
+	errUuid, err := uuid.NewRandom()
+	if err == nil {
+		return errUuid.String()
+	} else {
+		return fmt.Sprintf("<error ID could not be constructed: %s>", err)
+	}
+}
+
 // Interceptor returns a grpc.UnaryServerInterceptor that inspects outgoing
 // errors and logs (to "logger") and replaces errors that are not *status.Status
 // instances or status instances that indicate an internal/unknown error.
 func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		resp, err = handler(ctx, req)
-		statusErr, ok := status.FromError(err)
 
-		switch {
-		case !ok:
-			logger.Error("encountered non-Status error during unary server call", zap.String("method", info.FullMethod), zap.Error(err))
-			err = status.Error(codes.Internal, fmt.Sprintf("a non-Status error occurred: %s", err))
-		case statusErr.Code() == codes.Internal, statusErr.Code() == codes.Unknown:
-			logger.Error("encountered internal Status error during unary server call",
-				zap.String("method", info.FullMethod),
-				zap.Stringer("code", statusErr.Code()),
-				zap.String("message", statusErr.Message()),
-				zap.Any("details", statusErr.Details()),
-				zap.Error(err))
-			if statusErr.Code() == codes.Internal && obfuscateInternalErrors {
-				err = errInternal
+		if err != nil {
+			// Separate the root cause from the stacktrace wrapping.
+			trace := err.Error()
+			rootErr := stacktrace.RootCause(err)
+
+			statusErr, ok := status.FromError(rootErr)
+			switch {
+			case !ok:
+				errId := makeErrId()
+				logger.Error(
+					fmt.Sprintf("encountered non-Status error %s during unary server call", errId),
+					zap.String("method", info.FullMethod),
+					zap.String("stacktrace", trace),
+					zap.Error(rootErr))
+				if obfuscateInternalErrors {
+					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errId))
+				} else {
+					err = status.Error(codes.Internal, err.Error())
+				}
+			case statusErr.Code() == codes.Internal, statusErr.Code() == codes.Unknown:
+				errId := makeErrId()
+				logger.Error(
+					fmt.Sprintf("encountered internal Status error %s during unary server call", errId),
+					zap.String("method", info.FullMethod),
+					zap.Stringer("code", statusErr.Code()),
+					zap.String("message", statusErr.Message()),
+					zap.Any("details", statusErr.Details()),
+					zap.String("stacktrace", trace),
+					zap.Error(rootErr))
+				if obfuscateInternalErrors {
+					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errId))
+				}
 			}
 		}
 		return

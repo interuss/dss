@@ -12,10 +12,11 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	"github.com/palantir/stacktrace"
 )
 
 func incrementNotificationIndices(ctx context.Context, r repos.Repository, subs []*scdmodels.Subscription) error {
-	subIds := make([]scdmodels.ID, len(subs))
+	subIds := make([]dssmodels.ID, len(subs))
 	for i, sub := range subs {
 		subIds[i] = sub.ID
 	}
@@ -33,9 +34,9 @@ func incrementNotificationIndices(ctx context.Context, r repos.Repository, subs 
 // the specified version.
 func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.DeleteConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
 	// Retrieve Constraint ID
-	id := scdmodels.ID(req.GetEntityuuid())
-	if id.Empty() {
-		return nil, dsserr.BadRequest("missing Constraint ID")
+	id, err := dssmodels.IdFromString(req.GetEntityuuid())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -95,7 +96,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		// Convert deleted Constraint to proto
 		constraintProto, err := old.ToProto()
 		if err != nil {
-			return dsserr.Internal(err.Error())
+			return stacktrace.Propagate(err, "Could not convert Constraint to proto")
 		}
 
 		// Return response to client
@@ -107,7 +108,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		return nil
 	}
 
-	err := a.Store.Transact(ctx, action)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
 		return nil, err
 	}
@@ -117,9 +118,9 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 
 // GetConstraintReference returns a single constraint ref for the given ID.
 func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConstraintReferenceRequest) (*scdpb.GetConstraintReferenceResponse, error) {
-	id := scdmodels.ID(req.GetEntityuuid())
-	if id.Empty() {
-		return nil, dsserr.BadRequest("missing Constraint ID")
+	id, err := dssmodels.IdFromString(req.GetEntityuuid())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
 	}
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -155,7 +156,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 		return nil
 	}
 
-	err := a.Store.Transact(ctx, action)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err
@@ -166,9 +167,9 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 
 // PutConstraintReference creates a single contraint ref.
 func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
-	id := scdmodels.ID(req.GetEntityuuid())
-	if id.Empty() {
-		return nil, dsserr.BadRequest("missing Constraint ID")
+	id, err := dssmodels.IdFromString(req.GetEntityuuid())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
 	}
 
 	// Retrieve ID of client making call

@@ -10,6 +10,7 @@ import (
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/palantir/stacktrace"
 )
 
 // DeleteSubscription deletes an existing subscription.
@@ -26,16 +27,20 @@ func (s *Server) DeleteSubscription(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
+	id, err := dssmodels.IdFromString(req.Id)
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
+	}
 	//TODO: put the context with timeout into an interceptor so it's always set.
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.App.DeleteSubscription(ctx, dssmodels.ID(req.GetId()), owner, version)
+	subscription, err := s.App.DeleteSubscription(ctx, id, owner, version)
 	if err != nil {
 		return nil, err
 	}
 	p, err := subscription.ToProto()
 	if err != nil {
-		return nil, dsserr.Internal(err.Error())
+		return nil, stacktrace.Propagate(err, "Unable to convert Subscription to proto")
 	}
 	return &ridpb.DeleteSubscriptionResponse{
 		Subscription: p,
@@ -86,9 +91,14 @@ func (s *Server) GetSubscription(
 	ctx context.Context, req *ridpb.GetSubscriptionRequest) (
 	*ridpb.GetSubscriptionResponse, error) {
 
+	id, err := dssmodels.IdFromString(req.Id)
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.App.GetSubscription(ctx, dssmodels.ID(req.GetId()))
+	subscription, err := s.App.GetSubscription(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -126,9 +136,13 @@ func (s *Server) CreateSubscription(
 	if params.Extents == nil {
 		return nil, dsserr.BadRequest("missing required extents")
 	}
+	id, err := dssmodels.IdFromString(req.Id)
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
+	}
 
 	sub := &ridmodels.Subscription{
-		ID:    dssmodels.ID(req.GetId()),
+		ID:    id,
 		Owner: owner,
 		URL:   params.Callbacks.IdentificationServiceAreaUrl,
 	}
@@ -179,6 +193,10 @@ func (s *Server) UpdateSubscription(
 	if err != nil {
 		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
 	}
+	id, err := dssmodels.IdFromString(req.Id)
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
+	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
@@ -198,7 +216,7 @@ func (s *Server) UpdateSubscription(
 	}
 
 	sub := &ridmodels.Subscription{
-		ID:      dssmodels.ID(req.GetId()),
+		ID:      id,
 		Owner:   owner,
 		URL:     params.Callbacks.IdentificationServiceAreaUrl,
 		Version: version,

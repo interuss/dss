@@ -12,7 +12,7 @@ import (
 
 // Constraint models a constraint, as known by the DSS
 type Constraint struct {
-	ID            ID
+	ID            dssmodels.ID
 	Version       Version
 	OVN           OVN
 	Owner         dssmodels.Owner

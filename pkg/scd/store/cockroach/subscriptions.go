@@ -50,7 +50,7 @@ func init() {
 	)
 }
 
-func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (s2.CellUnion, error) {
+func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (s2.CellUnion, error) {
 	var (
 		cellsQuery = `
 			SELECT
@@ -183,7 +183,7 @@ func (c *repo) fetchSubscription(ctx context.Context, q dsssql.Queryable, query 
 	return subs[0], nil
 }
 
-func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (*scdmodels.Subscription, error) {
+func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*scdmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -276,7 +276,7 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 }
 
 // GetSubscription returns the subscription identified by "id".
-func (c *repo) GetSubscription(ctx context.Context, id scdmodels.ID) (*scdmodels.Subscription, error) {
+func (c *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels.Subscription, error) {
 	sub, err := c.fetchSubscriptionByID(ctx, c.q, id)
 	switch err {
 	case nil:
@@ -301,7 +301,7 @@ func (c *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription
 
 // DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
-func (c *repo) DeleteSubscription(ctx context.Context, id scdmodels.ID) error {
+func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 	const (
 		query = `
 		DELETE FROM
@@ -393,7 +393,7 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 }
 
 // Implements scd.repos.Subscription.IncrementNotificationIndices
-func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds []scdmodels.ID) ([]int, error) {
+func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error) {
 	var updateQuery = fmt.Sprintf(`
 			UPDATE scd_subscriptions
 			SET notification_index = notification_index + 1
