@@ -498,6 +498,77 @@ func TestCreateISA(t *testing.T) {
 	}
 }
 
+func TestUpdateISA(t *testing.T) {
+	ctx := auth.ContextWithOwner(context.Background(), "foo")
+	version, _ := dssmodels.VersionFromString("bar")
+	for _, r := range []struct {
+		name       string
+		id         dssmodels.ID
+		extents    *ridpb.Volume4D
+		flightsURL string
+		wantISA    *ridmodels.IdentificationServiceArea
+		wantErr    error 
+		version   *dssmodels.Version
+	}{
+		{
+			name: "success",
+			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents:    testdata.LoopVolume4D,
+			flightsURL: "https://example.com",
+			version:  version,
+			wantISA: &ridmodels.IdentificationServiceArea {
+				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				URL:        "https://example.com",
+				Owner:      "foo",
+				Cells:      mustPolygonToCellIDs(testdata.LoopPolygon),
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
+				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
+				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
+				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
+				Writer: "locality value",
+				Version: version,
+			},
+		},
+		{
+			name:  "missing-flights-url",
+			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents:    testdata.LoopVolume4D,
+			version:  version,
+			wantErr: dsserr.BadRequest("missing required flightsURL"),
+		},
+		{
+			name: "missing-extents",
+			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			flightsURL: "https://example.com",
+			version: version,
+			wantErr: dsserr.BadRequest("missing required extents"),
+		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			ma := &mockApp{}
+			if r.wantISA != nil {
+				ma.On("UpdateISA", mock.Anything, r.wantISA).Return(
+					r.wantISA, []*ridmodels.Subscription(nil), nil)
+			}
+			s := &Server{
+				App: ma,
+				Locality: "locality value",
+			}
+			_, err := s.UpdateIdentificationServiceArea(ctx, &ridpb.UpdateIdentificationServiceAreaRequest{
+				Id: r.id.String(),
+				Version: r.version.String(),
+				Params: &ridpb.UpdateIdentificationServiceAreaParameters{
+					Extents:    r.extents,
+					FlightsUrl: r.flightsURL,
+				},
+			})
+			require.Equal(t, r.wantErr, err)
+			require.True(t, ma.AssertExpectations(t))
+		})
+	}
+}
+
+
 func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 	var (
 		id = uuid.New().String()
