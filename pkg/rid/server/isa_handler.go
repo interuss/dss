@@ -126,6 +126,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 		URL:     params.FlightsUrl,
 		Owner:   owner,
 		Version: version,
+		Writer:  s.Locality,
 	}
 
 	if err := isa.SetExtents(params.Extents); err != nil {

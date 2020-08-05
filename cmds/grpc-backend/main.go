@@ -131,7 +131,7 @@ func ConnectTo(dbName string) (*cockroach.DB, error) {
 
 // RunGRPCServer starts the example gRPC service.
 // "network" and "address" are passed to net.Listen.
-func RunGRPCServer(ctx context.Context, address string) error {
+func RunGRPCServer(ctx context.Context, address string, locality string) error {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
 	if len(*jwtAudiences) == 0 {
@@ -167,8 +167,9 @@ func RunGRPCServer(ctx context.Context, address string) error {
 	MustSupportRidSchema(ctx, ridStore)
 
 	ridServer = &rid.Server{
-		App:     application.NewFromTransactor(ridStore, logger),
-		Timeout: *timeout,
+		App:      application.NewFromTransactor(ridStore, logger),
+		Timeout:  *timeout,
+		Locality: locality,
 	}
 	scopesValidators := auth.MergeOperationsAndScopesValidators(
 		rid.AuthScopes(), auxServer.AuthScopes(),
@@ -282,10 +283,9 @@ func main() {
 		}
 	}
 
-	if err := RunGRPCServer(ctx, *address); err != nil {
+	if err := RunGRPCServer(ctx, *address, *locality); err != nil {
 		logger.Panic("Failed to execute service", zap.Error(err))
 	}
 
-	logger.Info("locality: " + *locality)
 	logger.Info("Shutting down gracefully")
 }
