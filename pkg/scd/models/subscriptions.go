@@ -23,7 +23,7 @@ const (
 
 // Subscription represents an SCD subscription
 type Subscription struct {
-	ID                ID
+	ID                dssmodels.ID
 	Version           Version
 	NotificationIndex int
 	Owner             dssmodels.Owner
@@ -36,7 +36,7 @@ type Subscription struct {
 	NotifyForOperations  bool
 	NotifyForConstraints bool
 	ImplicitSubscription bool
-	DependentOperations  []ID
+	DependentOperations  []dssmodels.ID
 	Cells                s2.CellUnion
 }
 

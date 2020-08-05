@@ -9,9 +9,6 @@ import (
 )
 
 type (
-	// ID models the id of an entity.
-	ID string
-
 	// OVN models an opaque version number.
 	OVN string
 
@@ -20,16 +17,6 @@ type (
 	// Primarily used as a fencing token in data mutations.
 	Version int32
 )
-
-// Empty returns true if id indicates an empty ID.
-func (id ID) Empty() bool {
-	return len(id) == 0
-}
-
-// String returns the string representation of id.
-func (id ID) String() string {
-	return string(id)
-}
 
 // NewOVNFromTime encodes t as an OVN.
 func NewOVNFromTime(t time.Time, salt string) OVN {

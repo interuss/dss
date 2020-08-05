@@ -10,11 +10,11 @@ import (
 // Operation abstracts operation-specific interactions with the backing repository.
 type Operation interface {
 	// GetOperation returns the operation identified by "id".
-	GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error)
+	GetOperation(ctx context.Context, id dssmodels.ID) (*scdmodels.Operation, error)
 
 	// DeleteOperation deletes the operation identified by "id" and owned by "owner".
 	// Returns the deleted Operation and all Subscriptions affected by the delete.
-	DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error)
+	DeleteOperation(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error)
 
 	// UpsertOperation inserts or updates an operation using key as a fencing
 	// token. If operation does not reference an existing subscription, an
@@ -33,7 +33,7 @@ type Subscription interface {
 
 	// GetSubscription returns the Subscription referenced by id, or nil and no
 	// error if the Subscription doesn't exist
-	GetSubscription(ctx context.Context, id scdmodels.ID) (*scdmodels.Subscription, error)
+	GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels.Subscription, error)
 
 	// UpsertSubscription upserts sub into the store and returns the result
 	// subscription.
@@ -42,12 +42,12 @@ type Subscription interface {
 	// DeleteSubscription deletes a Subscription from the store and returns the
 	// deleted subscription.  Returns an error if the Subscription does not
 	// exist.
-	DeleteSubscription(ctx context.Context, id scdmodels.ID) error
+	DeleteSubscription(ctx context.Context, id dssmodels.ID) error
 
 	// IncrementNotificationIndices increments the notification index of each
 	// specified Subscription and returns the resulting corresponding
 	// notification indices.
-	IncrementNotificationIndices(ctx context.Context, subscriptionIds []scdmodels.ID) ([]int, error)
+	IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error)
 }
 
 // repos.Constraint abstracts constraint-specific interactions with the backing store.
@@ -57,7 +57,7 @@ type Constraint interface {
 
 	// GetConstraint returns the Constraint referenced by id, or
 	// (nil, sql.ErrNoRows) if the Constraint doesn't exist
-	GetConstraint(ctx context.Context, id scdmodels.ID) (*scdmodels.Constraint, error)
+	GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.Constraint, error)
 
 	// UpsertConstraint upserts "constraint" into the store.
 	UpsertConstraint(ctx context.Context, constraint *scdmodels.Constraint) (*scdmodels.Constraint, error)
@@ -65,7 +65,7 @@ type Constraint interface {
 	// DeleteConstraint deletes a Constraint from the store and returns the
 	// deleted subscription.  Returns nil and an error if the Constraint does
 	// not exist.
-	DeleteConstraint(ctx context.Context, id scdmodels.ID) error
+	DeleteConstraint(ctx context.Context, id dssmodels.ID) error
 }
 
 // Repository aggregates all SCD-specific repo interfaces.

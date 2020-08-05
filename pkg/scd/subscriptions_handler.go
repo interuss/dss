@@ -12,6 +12,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	"github.com/palantir/stacktrace"
 )
 
 var (
@@ -21,9 +22,9 @@ var (
 // PutSubscription creates a single subscription.
 func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id := scdmodels.ID(req.GetSubscriptionid())
-	if id.Empty() {
-		return nil, dsserr.BadRequest("missing Subscription ID")
+	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -113,7 +114,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 			return err
 		}
 		if sub == nil {
-			return dsserr.Internal(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
+			return stacktrace.NewError(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
 		}
 
 		// Find relevant Operations
@@ -139,7 +140,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		// Convert Subscription to proto
 		p, err := sub.ToProto()
 		if err != nil {
-			return dsserr.Internal(err.Error())
+			return stacktrace.Propagate(err, "Could not convert Subscription to proto")
 		}
 		result = &scdpb.PutSubscriptionResponse{
 			Subscription: p,
@@ -181,7 +182,6 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
 		return nil, err
 	}
 
@@ -192,9 +192,9 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 // GetSubscription returns a single subscription for the given ID.
 func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscriptionRequest) (*scdpb.GetSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id := scdmodels.ID(req.GetSubscriptionid())
-	if id.Empty() {
-		return nil, dsserr.BadRequest("missing Subscription ID")
+	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -222,7 +222,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 		// Convert Subscription to proto
 		p, err := sub.ToProto()
 		if err != nil {
-			return dsserr.Internal("unable to convert Subscription to proto")
+			return stacktrace.Propagate(err, "unable to convert Subscription to proto")
 		}
 
 		// Return response to client
@@ -233,9 +233,8 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 		return nil
 	}
 
-	err := a.Store.Transact(ctx, action)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
 		return nil, err
 	}
 
@@ -253,7 +252,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	// Parse area of interest to common Volume4D
 	vol4, err := dssmodels.Volume4DFromSCDProto(aoi)
 	if err != nil {
-		return nil, dsserr.Internal("failed to convert to internal geometry model")
+		return nil, stacktrace.Propagate(err, "failed to convert to internal geometry model")
 	}
 
 	// Retrieve ID of client making call
@@ -276,7 +275,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 			if sub.Owner == owner {
 				p, err := sub.ToProto()
 				if err != nil {
-					return dsserr.Internal("error converting Subscription model to proto")
+					return stacktrace.Propagate(err, "error converting Subscription model to proto")
 				}
 				response.Subscriptions = append(response.Subscriptions, p)
 			}
@@ -287,7 +286,6 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
 		return nil, err
 	}
 
@@ -298,9 +296,9 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 // specified version.
 func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscriptionRequest) (*scdpb.DeleteSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id := scdmodels.ID(req.GetSubscriptionid())
-	if id.Empty() {
-		return nil, dsserr.BadRequest("missing Subscription ID")
+	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -331,7 +329,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 		// Convert deleted Subscription to proto
 		p, err := old.ToProto()
 		if err != nil {
-			return dsserr.Internal("error converting Subscription model to proto")
+			return stacktrace.Propagate(err, "error converting Subscription model to proto")
 		}
 
 		// Create response for client
@@ -342,9 +340,8 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 		return nil
 	}
 
-	err := a.Store.Transact(ctx, action)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
 		return nil, err
 	}
 

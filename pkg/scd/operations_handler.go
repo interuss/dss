@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 
+	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
@@ -15,6 +16,7 @@ import (
 	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc/status"
 )
 
@@ -22,9 +24,9 @@ import (
 // the specified version.
 func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.DeleteOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
 	// Retrieve Operation ID
-	id := scdmodels.ID(req.GetEntityuuid())
-	if id.Empty() {
-		return nil, dsserr.BadRequest("missing Operation ID")
+	id, err := dssmodels.IDFromString(req.GetEntityuuid())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -41,13 +43,13 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 			return err
 		}
 		if op == nil {
-			return dsserr.Internal(fmt.Sprintf("DeleteOperation returned no Operation for ID: %s", id))
+			return stacktrace.NewError(fmt.Sprintf("DeleteOperation returned no Operation for ID: %s", id))
 		}
 
 		// Convert deleted Operation to proto
 		opProto, err := op.ToProto()
 		if err != nil {
-			return dsserr.Internal(err.Error())
+			return stacktrace.Propagate(err, "Could not convert Operation to proto")
 		}
 
 		// Return response to client
@@ -59,9 +61,8 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 		return nil
 	}
 
-	err := a.Store.Transact(ctx, action)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
 		return nil, err
 	}
 
@@ -70,9 +71,9 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 
 // GetOperationReference returns a single operation ref for the given ID.
 func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperationReferenceRequest) (*scdpb.GetOperationReferenceResponse, error) {
-	id := scdmodels.ID(req.GetEntityuuid())
-	if id.Empty() {
-		return nil, dsserr.BadRequest("missing Operation ID")
+	id, err := dssmodels.IDFromString(req.GetEntityuuid())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
 	}
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -82,18 +83,18 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 
 	var response *scdpb.GetOperationReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
-		sub, err := r.GetOperation(ctx, id)
+		op, err := r.GetOperation(ctx, id)
 		if err != nil {
 			return err
 		}
 
-		if sub.Owner != owner {
-			sub.OVN = scdmodels.OVN("")
+		if op.Owner != owner {
+			op.OVN = scdmodels.OVN("")
 		}
 
-		p, err := sub.ToProto()
+		p, err := op.ToProto()
 		if err != nil {
-			return dsserr.Internal(err.Error())
+			return stacktrace.Propagate(err, "Could not convert Operation to proto")
 		}
 
 		response = &scdpb.GetOperationReferenceResponse{
@@ -103,7 +104,7 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 		return nil
 	}
 
-	err := a.Store.Transact(ctx, action)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
 		// TODO: wrap err in dss.Internal?
 		return nil, err
@@ -124,7 +125,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	// Parse area of interest to common Volume4D
 	vol4, err := dssmodels.Volume4DFromSCDProto(aoi)
 	if err != nil {
-		return nil, dsserr.Internal("failed to convert to internal geometry model")
+		return nil, dsserr.BadRequest(fmt.Sprintf("Error parsing geometry: %s", err))
 	}
 
 	// Retrieve ID of client making call
@@ -153,7 +154,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 		for _, op := range ops {
 			p, err := op.ToProto()
 			if err != nil {
-				return dsserr.Internal("error converting Operation model to proto")
+				return stacktrace.Propagate(err, "Could not convert Operation model to proto")
 			}
 			if op.Owner != owner {
 				p.Ovn = ""
@@ -175,9 +176,9 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 
 // PutOperationReference creates a single operation ref.
 func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
-	id := scdmodels.ID(req.GetEntityuuid())
-	if id.Empty() {
-		return nil, dsserr.BadRequest("missing Operation ID")
+	id, err := dssmodels.IDFromString(req.GetEntityuuid())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -237,7 +238,10 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, dsserr.BadRequest("invalid state for version 0")
 	}
 
-	subscriptionID := scdmodels.ID(params.GetSubscriptionId())
+	subscriptionID, err := dssmodels.IDFromOptionalString(params.GetSubscriptionId())
+	if err != nil {
+		return nil, dsserr.BadRequest("Invalid ID format for Subscription ID")
+	}
 
 	var response *scdpb.ChangeOperationReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
@@ -249,7 +253,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			}
 
 			sub, err := r.UpsertSubscription(ctx, &scdmodels.Subscription{
-				ID:         scdmodels.ID(uuid.New().String()),
+				ID:         dssmodels.ID(uuid.New().String()),
 				Owner:      owner,
 				StartTime:  uExtent.StartTime,
 				EndTime:    uExtent.EndTime,
@@ -263,12 +267,47 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				ImplicitSubscription: true,
 			})
 			if err != nil {
-				return dsserr.Internal(fmt.Sprintf("failed to create implicit subscription: %s", err))
+				return stacktrace.Propagate(err, "failed to create implicit subscription")
 			}
 			subscriptionID = sub.ID
 		} else {
-			if _, err := uuid.Parse(subscriptionID.String()); err != nil {
-				return dsserr.BadRequest("Invalid subscription id")
+			sub, err := r.GetSubscription(ctx, subscriptionID)
+			if err != nil {
+				return stacktrace.Propagate(err, "Unable to get Subscription")
+			}
+			if sub == nil {
+				return dsserr.BadRequest("Specified Subscription does not exist")
+			}
+			updateSub := false
+			if sub.StartTime != nil && sub.StartTime.After(*uExtent.StartTime) {
+				if sub.ImplicitSubscription {
+					sub.StartTime = uExtent.StartTime
+					updateSub = true
+				} else {
+					return dsserr.BadRequest("Subscription does not begin until after the Operation starts")
+				}
+			}
+			if sub.EndTime != nil && sub.EndTime.Before(*uExtent.EndTime) {
+				if sub.ImplicitSubscription {
+					sub.EndTime = uExtent.EndTime
+					updateSub = true
+				} else {
+					return dsserr.BadRequest("Subscription ends before the Operation ends")
+				}
+			}
+			if !sub.Cells.Contains(cells) {
+				if sub.ImplicitSubscription {
+					sub.Cells = s2.CellUnionFromUnion(sub.Cells, cells)
+					updateSub = true
+				} else {
+					return dsserr.BadRequest("Subscription does not cover entire spatial area of the Operation")
+				}
+			}
+			if updateSub {
+				_, err := r.UpsertSubscription(ctx, sub)
+				if err != nil {
+					return stacktrace.Propagate(err, "Failed to update implicit Subscription")
+				}
 			}
 		}
 
@@ -309,7 +348,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 			success, err := scderr.MissingOVNsErrorResponse(ops)
 			if !success {
-				return dsserr.Internal(fmt.Sprintf("failed to construct missing OVNs error message: %s", err))
+				return stacktrace.Propagate(err, "failed to construct missing OVNs error message")
 			}
 			return err
 		}
@@ -318,12 +357,12 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			if _, ok := status.FromError(err); ok {
 				return err
 			}
-			return dsserr.Internal(fmt.Sprintf("failed to upsert operation: %s", err))
+			return stacktrace.Propagate(err, "failed to upsert operation")
 		}
 
 		p, err := op.ToProto()
 		if err != nil {
-			return dsserr.Internal("could not convert Operation to proto")
+			return stacktrace.Propagate(err, "could not convert Operation to proto")
 		}
 
 		response = &scdpb.ChangeOperationReferenceResponse{

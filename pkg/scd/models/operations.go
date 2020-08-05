@@ -25,7 +25,7 @@ type OperationState string
 
 // Operation models an operation.
 type Operation struct {
-	ID             ID
+	ID             dssmodels.ID
 	Version        Version
 	OVN            OVN
 	Owner          dssmodels.Owner
@@ -36,7 +36,7 @@ type Operation struct {
 	USSBaseURL     string
 	State          OperationState
 	Cells          s2.CellUnion
-	SubscriptionID ID
+	SubscriptionID dssmodels.ID
 }
 
 // ToProto converts the Operation to its proto API format

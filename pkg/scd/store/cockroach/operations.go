@@ -100,7 +100,7 @@ func (s *repo) fetchOperation(ctx context.Context, q dsssql.Queryable, query str
 	return operations[0], nil
 }
 
-func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id scdmodels.ID) (*scdmodels.Operation, error) {
+func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*scdmodels.Operation, error) {
 	query := fmt.Sprintf(`
 		SELECT %s FROM
 			scd_operations
@@ -221,7 +221,7 @@ func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o
 }
 
 // GetOperation returns an operation for the given ID from CockroachDB
-func (s *repo) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Operation, error) {
+func (s *repo) GetOperation(ctx context.Context, id dssmodels.ID) (*scdmodels.Operation, error) {
 	sub, err := s.fetchOperationByID(ctx, s.q, id)
 	switch err {
 	case nil:
@@ -234,7 +234,7 @@ func (s *repo) GetOperation(ctx context.Context, id scdmodels.ID) (*scdmodels.Op
 }
 
 // DeleteOperation deletes an operation for the given ID from CockroachDB
-func (s *repo) DeleteOperation(ctx context.Context, id scdmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
 	var (
 		deleteQuery = `
 			DELETE FROM

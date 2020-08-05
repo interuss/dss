@@ -4,13 +4,17 @@ import (
 	"errors"
 	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type (
-	// ID represents a UUID string.
+	// ID represents a UUID-formatted string.
 	ID string
+
 	// Owner is the owner taken from the oauth token.
 	Owner string
+
 	// Version represents a version, which can be supplied as a commit timestamp
 	// or a string.
 	Version struct {
@@ -31,8 +35,27 @@ func (id ID) String() string {
 	return string(id)
 }
 
+func (id ID) Empty() bool {
+	return string(id) == ""
+}
+
 func (owner Owner) String() string {
 	return string(owner)
+}
+
+func IDFromString(s string) (ID, error) {
+	id, err := uuid.Parse(s)
+	if err != nil {
+		return ID(""), err
+	}
+	return ID(id.String()), nil
+}
+
+func IDFromOptionalString(s string) (ID, error) {
+	if s == "" {
+		return ID(""), nil
+	}
+	return IDFromString(s)
 }
 
 // VersionFromString converts a version, typically provided from a user, to

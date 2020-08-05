@@ -43,7 +43,7 @@ def test_op_ref_incorrect_units(scd_session):
   with open('./scd/resources/op_ref_incorrect_units.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
-  assert resp.status_code == 500, resp.content
+  assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_SC)
@@ -51,7 +51,7 @@ def test_op_ref_incorrect_altitude_ref(scd_session):
   with open('./scd/resources/op_ref_incorrect_altitude_ref.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
-  assert resp.status_code == 500, resp.content
+  assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_SC)
@@ -76,7 +76,7 @@ def test_op_bad_subscription_id_random(scd_session):
     req = json.load(f)
     req['subscription_id'] = uuid.uuid4().hex
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
-  assert resp.status_code == 500, resp.content
+  assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_SC)
@@ -84,7 +84,7 @@ def test_op_new_and_existing_subscription(scd_session):
   with open('./scd/resources/op_new_and_existing_subscription.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
-  assert resp.status_code == 500, resp.content
+  assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_SC)
@@ -165,3 +165,11 @@ def test_op_repeated_requests(scd_session):
   # Delete operation
   resp = scd_session.delete('/operation_references/{}'.format(OP_ID))
   assert resp.status_code == 200, resp.content
+
+
+@default_scope(SCOPE_SC)
+def test_op_invalid_id(scd_session):
+  with open('./scd/resources/op_request_1.json', 'r') as f:
+    req = json.load(f)
+  resp = scd_session.put('/operation_references/not_uuid_format', json=req)
+  assert resp.status_code == 400, resp.content
