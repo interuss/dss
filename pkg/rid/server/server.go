@@ -27,8 +27,9 @@ var (
 
 // Server implements ridpb.DiscoveryAndSynchronizationService.
 type Server struct {
-	App     application.App
-	Timeout time.Duration
+	App      application.App
+	Timeout  time.Duration
+	Locality string
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.

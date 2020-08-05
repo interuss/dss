@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -173,7 +172,7 @@ func TestBadOwner(t *testing.T) {
 	// Test changing owner fails
 	sub.Owner = "new bad owner"
 	_, err = app.UpdateSubscription(ctx, sub)
-	require.EqualError(t, err, fmt.Sprintf("rpc error: code = PermissionDenied desc = s is owned by orig Owner"))
+	require.EqualError(t, err, "rpc error: code = PermissionDenied desc = s is owned by orig Owner")
 }
 
 func TestSubscriptionUpdateCells(t *testing.T) {

@@ -394,11 +394,11 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 
 // Implements scd.repos.Subscription.IncrementNotificationIndices
 func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error) {
-	var updateQuery = fmt.Sprintf(`
+	var updateQuery = `
 			UPDATE scd_subscriptions
 			SET notification_index = notification_index + 1
 			WHERE id = ANY($1)
-			RETURNING notification_index`)
+			RETURNING notification_index`
 
 	ids := make([]string, len(subscriptionIds))
 	for i, id := range subscriptionIds {
