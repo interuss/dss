@@ -507,16 +507,16 @@ func TestUpdateISA(t *testing.T) {
 		extents    *ridpb.Volume4D
 		flightsURL string
 		wantISA    *ridmodels.IdentificationServiceArea
-		wantErr    error 
-		version   *dssmodels.Version
+		wantErr    error
+		version    *dssmodels.Version
 	}{
 		{
-			name: "success",
+			name:       "success",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents:    testdata.LoopVolume4D,
 			flightsURL: "https://example.com",
-			version:  version,
-			wantISA: &ridmodels.IdentificationServiceArea {
+			version:    version,
+			wantISA: &ridmodels.IdentificationServiceArea{
 				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 				URL:        "https://example.com",
 				Owner:      "foo",
@@ -525,23 +525,23 @@ func TestUpdateISA(t *testing.T) {
 				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
 				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
 				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
-				Writer: "locality value",
-				Version: version,
+				Writer:     "locality value",
+				Version:    version,
 			},
 		},
 		{
-			name:  "missing-flights-url",
-			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents:    testdata.LoopVolume4D,
-			version:  version,
+			name:    "missing-flights-url",
+			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			extents: testdata.LoopVolume4D,
+			version: version,
 			wantErr: dsserr.BadRequest("missing required flightsURL"),
 		},
 		{
-			name: "missing-extents",
+			name:       "missing-extents",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			flightsURL: "https://example.com",
-			version: version,
-			wantErr: dsserr.BadRequest("missing required extents"),
+			version:    version,
+			wantErr:    dsserr.BadRequest("missing required extents"),
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -551,11 +551,11 @@ func TestUpdateISA(t *testing.T) {
 					r.wantISA, []*ridmodels.Subscription(nil), nil)
 			}
 			s := &Server{
-				App: ma,
+				App:      ma,
 				Locality: "locality value",
 			}
 			_, err := s.UpdateIdentificationServiceArea(ctx, &ridpb.UpdateIdentificationServiceAreaRequest{
-				Id: r.id.String(),
+				Id:      r.id.String(),
 				Version: r.version.String(),
 				Params: &ridpb.UpdateIdentificationServiceAreaParameters{
 					Extents:    r.extents,

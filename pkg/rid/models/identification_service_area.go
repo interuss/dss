@@ -24,7 +24,7 @@ type IdentificationServiceArea struct {
 	Version    *dssmodels.Version
 	AltitudeHi *float32
 	AltitudeLo *float32
-	Writer	   string
+	Writer     string
 }
 
 // SetCells is a convenience function that accepts an int64 array and converts
