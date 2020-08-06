@@ -57,12 +57,16 @@ func (store *isaStore) InsertISA(ctx context.Context, isa *ridmodels.Identificat
 }
 
 // Implements repos.ISA.UpdateISA
-func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea, version string) (*ridmodels.IdentificationServiceArea, error) {
 	storedCopy := *isa
 	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
 	store.isas[isa.ID] = &storedCopy
 	returnedCopy := storedCopy
 	return &returnedCopy, nil
+}
+
+func (store *isaStore) GetVersion(ctx context.Context) (string, error) {
+	return "v3.1.0", nil
 }
 
 // Implements repos.ISA.SearchISA

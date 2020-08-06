@@ -15,11 +15,14 @@ import (
 	"github.com/lib/pq"
 	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
+	"golang.org/x/mod/semver"
 )
 
 const (
 	isaFields       = "id, owner, url, cells, starts_at, ends_at, updated_at"
 	updateISAFields = "id, url, cells, starts_at, ends_at, updated_at"
+	isaFields_v3_1 = "id, owner, url, cells, starts_at, ends_at, updated_at, writer"
+	updateISAFields_v3_1 = "id, url, cells, starts_at, ends_at, updated_at, writer"
 )
 
 // isaRepo is an implementation of the ISARepo for CRDB.
@@ -127,7 +130,15 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 // by it.
 // TODO: simplify the logic to just update, without the primary query.
 // Returns nil, nil if ID, version not found
-func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea, version string) (*ridmodels.IdentificationServiceArea, error) {
+	if c.storeHasAtleastVersion3_1(version) {
+		return c.updateISAV3_1(ctx, isa)
+	} else {
+		return c.updateISAV3(ctx, isa)
+	}
+}
+
+func (c *isaRepo) updateISAV3(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		updateAreasQuery = fmt.Sprintf(`
 			UPDATE
@@ -148,6 +159,29 @@ func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationSe
 	}
 
 	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
+}
+
+func (c *isaRepo) updateISAV3_1(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	var (
+		updateAreasQuery = fmt.Sprintf(`
+			UPDATE
+				identification_service_areas
+			SET	(%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
+			WHERE id = $1 AND updated_at = $7
+			RETURNING
+				%s`, updateISAFields_v3_1, isaFields_v3_1)
+	)
+
+	cids := make([]int64, len(isa.Cells))
+
+	for i, cell := range isa.Cells {
+		if err := geo.ValidateCell(cell); err != nil {
+			return nil, err
+		}
+		cids[i] = int64(cell)
+	}
+
+	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Writer, isa.Version.ToTimestamp())
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
@@ -201,4 +235,8 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 	}
 
 	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
+}
+
+func (c *isaRepo) storeHasAtleastVersion3_1(version string) (bool) {
+	return semver.Compare(version, "v3.1.0") >= 0
 }
