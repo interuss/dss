@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	isaFields       = "id, owner, url, cells, starts_at, ends_at, updated_at"
-	updateISAFields_v3 = "id, url, cells, starts_at, ends_at, updated_at"
-	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
+	isaFields         = "id, owner, url, cells, starts_at, ends_at, updated_at"
+	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
+	updateISAFields   = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
 // isaRepo is an implementation of the ISARepo for CRDB.
@@ -132,9 +132,8 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea, version string) (*ridmodels.IdentificationServiceArea, error) {
 	if c.storeHasAtleastVersion3_1(version) {
 		return c.updateISAV3_1(ctx, isa)
-	} else {
-		return c.updateISAV3(ctx, isa)
 	}
+	return c.updateISAV3(ctx, isa)
 }
 
 func (c *isaRepo) updateISAV3(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
@@ -145,7 +144,7 @@ func (c *isaRepo) updateISAV3(ctx context.Context, isa *ridmodels.Identification
 			SET	(%s) = ($1, $2, $3, $4, $5, transaction_timestamp())
 			WHERE id = $1 AND updated_at = $6
 			RETURNING
-				%s`, updateISAFields_v3, isaFields)
+				%s`, updateISAFieldsV3, isaFields)
 	)
 
 	cids := make([]int64, len(isa.Cells))
@@ -180,7 +179,7 @@ func (c *isaRepo) updateISAV3_1(ctx context.Context, isa *ridmodels.Identificati
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp(),  isa.Writer)
+	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp(), isa.Writer)
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
@@ -236,6 +235,6 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
 }
 
-func (c *isaRepo) storeHasAtleastVersion3_1(version string) (bool) {
+func (c *isaRepo) storeHasAtleastVersion3_1(version string) bool {
 	return semver.Compare(version, "v3.1.0") >= 0
 }
