@@ -20,9 +20,8 @@ import (
 
 const (
 	isaFields       = "id, owner, url, cells, starts_at, ends_at, updated_at"
-	updateISAFields = "id, url, cells, starts_at, ends_at, updated_at"
-	isaFields_v3_1 = "id, owner, url, cells, starts_at, ends_at, updated_at, writer"
-	updateISAFields_v3_1 = "id, url, cells, starts_at, ends_at, updated_at, writer"
+	updateISAFields_v3 = "id, url, cells, starts_at, ends_at, updated_at"
+	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
 // isaRepo is an implementation of the ISARepo for CRDB.
@@ -146,7 +145,7 @@ func (c *isaRepo) updateISAV3(ctx context.Context, isa *ridmodels.Identification
 			SET	(%s) = ($1, $2, $3, $4, $5, transaction_timestamp())
 			WHERE id = $1 AND updated_at = $6
 			RETURNING
-				%s`, updateISAFields, isaFields)
+				%s`, updateISAFields_v3, isaFields)
 	)
 
 	cids := make([]int64, len(isa.Cells))
@@ -166,10 +165,10 @@ func (c *isaRepo) updateISAV3_1(ctx context.Context, isa *ridmodels.Identificati
 		updateAreasQuery = fmt.Sprintf(`
 			UPDATE
 				identification_service_areas
-			SET	(%s) = ($1, $2, $3, $4, $5, $6, transaction_timestamp())
-			WHERE id = $1 AND updated_at = $7
+			SET	(%s) = ($1, $2, $3, $4, $5, $7, transaction_timestamp())
+			WHERE id = $1 AND updated_at = $6
 			RETURNING
-				%s`, updateISAFields_v3_1, isaFields_v3_1)
+				%s`, updateISAFields, isaFields)
 	)
 
 	cids := make([]int64, len(isa.Cells))
@@ -181,7 +180,7 @@ func (c *isaRepo) updateISAV3_1(ctx context.Context, isa *ridmodels.Identificati
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Writer, isa.Version.ToTimestamp())
+	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp(),  isa.Writer)
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
