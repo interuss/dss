@@ -143,3 +143,7 @@ cleanup-test-cockroach:
 .PHONY: test-e2e
 test-e2e:
 	test/docker_e2e.sh
+
+.PHONY: test-e2e-rid-v3
+test-e2e-rid-v3:
+	test/docker_e2e_rid_v3.sh
