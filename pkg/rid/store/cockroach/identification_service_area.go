@@ -20,8 +20,9 @@ import (
 
 const (
 	isaFields         = "id, owner, url, cells, starts_at, ends_at, updated_at"
-	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
 	updateISAFields   = "id, url, cells, starts_at, ends_at, writer, updated_at"
+	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
+
 )
 
 // isaRepo is an implementation of the ISARepo for CRDB.
