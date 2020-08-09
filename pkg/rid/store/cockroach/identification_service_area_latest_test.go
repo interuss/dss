@@ -27,6 +27,7 @@ var (
 			s2.CellID(uint64(overflow)),
 			s2.CellID(17106221850767130624),
 		},
+		Writer:    "writer value",
 	}
 )
 
@@ -150,19 +151,15 @@ func TestBadRecordVersion(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut1)
 
-	storeVersion, err := store.GetVersion(ctx)
-	require.NoError(t, err)
-	require.Equal(t, storeVersion, "v3.1.0")
-
 	// Rewriting service area should fail
-	saOut2, err := repo.UpdateISA(ctx, serviceArea, storeVersion)
+	saOut2, err := repo.UpdateISA(ctx, serviceArea)
 	require.NoError(t, err)
 	require.Nil(t, saOut2)
 
 	// Rewriting, but with the correct version should work.
 	newEndTime := saOut1.EndTime.Add(time.Minute)
 	saOut1.EndTime = &newEndTime
-	saOut3, err := repo.UpdateISA(ctx, saOut1, storeVersion)
+	saOut3, err := repo.UpdateISA(ctx, saOut1)
 	require.NoError(t, err)
 	require.NotNil(t, saOut3)
 }
@@ -248,29 +245,4 @@ func TestStoreISAWithNoGeoData(t *testing.T) {
 	}
 	_, err = repo.InsertISA(ctx, sub)
 	require.Error(t, err)
-}
-
-func TestBadRecordVersionOnRidDbV3(t *testing.T) {
-	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
-
-	saOut1, err := repo.InsertISA(ctx, serviceArea)
-	require.NoError(t, err)
-	require.NotNil(t, saOut1)
-
-	// Rewriting service area should fail
-	saOut2, err := repo.UpdateISA(ctx, serviceArea, "v3.0.0")
-	require.NoError(t, err)
-	require.Nil(t, saOut2)
-
-	// Rewriting, but with the correct version should work.
-	newEndTime := saOut1.EndTime.Add(time.Minute)
-	saOut1.EndTime = &newEndTime
-	saOut3, err := repo.UpdateISA(ctx, saOut1, "v3.0.0")
-	require.NoError(t, err)
-	require.NotNil(t, saOut3)
 }
