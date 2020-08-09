@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/palantir/stacktrace"
 )
 
 const (
@@ -59,7 +60,7 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 	if s.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*s.StartTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
 		}
 		result.TimeStart = &scdpb.Time{
 			Value:  ts,
@@ -70,7 +71,7 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 	if s.EndTime != nil {
 		ts, err := ptypes.TimestampProto(*s.EndTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
 		}
 		result.TimeEnd = &scdpb.Time{
 			Value:  ts,

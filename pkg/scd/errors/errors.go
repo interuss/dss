@@ -1,55 +1,43 @@
 package errors
 
 import (
-	any "github.com/golang/protobuf/ptypes/any"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserrors "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/palantir/stacktrace"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
-	proto "google.golang.org/protobuf/proto"
 )
 
-const errMessageMissingOVNs = "at least one current OVN not provided"
+const errMessageMissingOVNs = "At least one current OVN not provided"
 
 var (
-	errMissingOVNs = status.Error(dsserrors.MissingOVNs, "current OVNS not provided for one or more Operations or Constraints")
+	errMissingOVNs = status.Error(dsserrors.MissingOVNs, "Current OVNS not provided for one or more Operations or Constraints")
 )
 
 // MissingOVNsErrorResponse is Used to return sufficient information for an
 // appropriate client error response when a client is missing one or more
 // OVNs for relevant Operations or Constraints.
-func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (bool, error) {
-	response := &scdpb.AirspaceConflictResponse{
+func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (*spb.Status, error) {
+	detail := &scdpb.AirspaceConflictResponse{
 		Message: errMessageMissingOVNs,
 	}
 	for _, missingOp := range missingOps {
 		opRef, err := missingOp.ToProto()
 		if err != nil {
-			return false, err
+			return nil, stacktrace.Propagate(err, "Error converting missing Operation to proto")
 		}
 		entityRef := &scdpb.EntityReference{
 			OperationReference: opRef,
 		}
-		response.EntityConflicts = append(response.EntityConflicts, entityRef)
+		detail.EntityConflicts = append(detail.EntityConflicts, entityRef)
 	}
 
-	serialized, err := proto.MarshalOptions{Deterministic: true}.Marshal(response)
+	p, err := dsserrors.MakeStatusProto(dsserrors.MissingOVNs, errMessageMissingOVNs, detail)
 	if err != nil {
-		return false, err
+		return nil, stacktrace.Propagate(err, "Error adding AirspaceConflictResponse detail to Status")
 	}
-
-	p := &spb.Status{
-		Code:    int32(dsserrors.MissingOVNs),
-		Message: errMessageMissingOVNs,
-		Details: []*any.Any{
-			{
-				TypeUrl: "github.com/interuss/dss/" + string(response.ProtoReflect().Descriptor().FullName()),
-				Value:   serialized,
-			},
-		},
-	}
-	return true, status.ErrorProto(p)
+	return p, nil
 }
 
 // MissingOVNsInternalError is a single, consistent error to use internally when

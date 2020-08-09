@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -20,6 +19,7 @@ import (
 	"github.com/interuss/dss/pkg/models"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -84,19 +84,19 @@ func (r *FromFileKeyResolver) ResolveKeys(context.Context) ([]interface{}, error
 	for _, f := range r.KeyFiles {
 		bytes, err := ioutil.ReadFile(f)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error reading key file")
 		}
 		pub, _ := pem.Decode(bytes)
 		if pub == nil {
-			return nil, errors.New("failed to decode keyFile")
+			return nil, stacktrace.NewError("Failed to decode key file")
 		}
 		parsedKey, err := x509.ParsePKIXPublicKey(pub.Bytes)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error parsing key as x509 public key")
 		}
 		key, ok := parsedKey.(*rsa.PublicKey)
 		if !ok {
-			return nil, fmt.Errorf("could not create rsa public key from %s", f)
+			return nil, stacktrace.NewError("Could not create RSA public key from %s", f)
 		}
 		r.keys = append(r.keys, key)
 	}
@@ -120,13 +120,13 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error retrieving JWKS at %s", req.URL))
 	}
 	defer resp.Body.Close()
 
 	jwks := jose.JSONWebKeySet{}
 	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error decoding JWKS")
 	}
 
 	var keys []interface{}
@@ -138,7 +138,7 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 		// jwks.Key returns a slice of keys.
 		jkeys := jwks.Key(kid)
 		if len(jkeys) == 0 {
-			return nil, fmt.Errorf("failed to resolve key(s) for ID: %s", kid)
+			return nil, stacktrace.NewError("failed to resolve key(s) for ID: %s", kid)
 		}
 		webKeys = append(webKeys, jkeys...)
 	}
@@ -240,7 +240,7 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 
 	keys, err := configuration.KeyResolver.ResolveKeys(ctx)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Unable to resolve keys")
 	}
 
 	auds := make(map[string]bool)
@@ -290,7 +290,7 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 
 	tknStr, ok := getToken(ctx)
 	if !ok {
-		return nil, dsserr.Unauthenticated("missing token")
+		return nil, dsserr.Unauthenticated("Missing access token")
 	}
 
 	a.keyGuard.RLock()
@@ -312,17 +312,17 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 		}
 	}
 	if !validated {
-		a.logger.Error("token validation failed", zap.Error(err))
+		a.logger.Error("Access token validation failed", zap.Error(err))
 		return nil, dsserr.Unauthenticated(err.Error())
 	}
 
 	if !a.acceptedAudiences[keyClaims.Audience] {
 		return nil, dsserr.Unauthenticated(
-			fmt.Sprintf("invalid token audience: %v", keyClaims.Audience))
+			fmt.Sprintf("Invalid access token audience: %v", keyClaims.Audience))
 	}
 
 	if err := a.validateKeyClaimedScopes(ctx, info, keyClaims.Scopes); err != nil {
-		return nil, dsserr.PermissionDenied("missing scopes")
+		return nil, dsserr.PermissionDenied("Access token missing scopes")
 	}
 
 	return handler(ContextWithOwner(ctx, models.Owner(keyClaims.Subject)), req)

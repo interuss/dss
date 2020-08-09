@@ -6,12 +6,15 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/google/uuid"
 	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
+	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -44,6 +47,27 @@ func makeErrID() string {
 	return fmt.Sprintf("<error ID could not be constructed: %s>", err)
 }
 
+// MakeStatusProto adds the content of a proto as a detail to a Status proto
+// consisting of the provided code and message.
+func MakeStatusProto(code codes.Code, message string, detail proto.Message) (*spb.Status, error) {
+	serialized, err := proto.MarshalOptions{Deterministic: true}.Marshal(detail)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error serializing detail proto")
+	}
+
+	p := &spb.Status{
+		Code:    int32(code),
+		Message: message,
+		Details: []*any.Any{
+			{
+				TypeUrl: "github.com/interuss/dss/" + string(detail.ProtoReflect().Descriptor().FullName()),
+				Value:   serialized,
+			},
+		},
+	}
+	return p, nil
+}
+
 // Interceptor returns a grpc.UnaryServerInterceptor that inspects outgoing
 // errors and logs (to "logger") and replaces errors that are not *status.Status
 // instances or status instances that indicate an internal/unknown error.
@@ -59,12 +83,12 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 		trace := err.Error()
 		rootErr := stacktrace.RootCause(err)
 
+		errID := makeErrID()
+
 		statusErr, ok := status.FromError(rootErr)
-		switch {
-		case !ok:
-			errID := makeErrID()
+		if !ok {
 			logger.Error(
-				fmt.Sprintf("encountered non-Status error %s during unary server call", errID),
+				fmt.Sprintf("Non-Status error %s during unary server call", errID),
 				zap.String("method", info.FullMethod),
 				zap.String("stacktrace", trace),
 				zap.Error(rootErr))
@@ -73,20 +97,20 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 			} else {
 				err = status.Error(codes.Internal, err.Error())
 			}
-		case statusErr.Code() == codes.Internal, statusErr.Code() == codes.Unknown:
-			errID := makeErrID()
+		} else {
 			logger.Error(
-				fmt.Sprintf("encountered internal Status error %s during unary server call", errID),
+				fmt.Sprintf("Status error %s during unary server call", errID),
 				zap.String("method", info.FullMethod),
 				zap.Stringer("code", statusErr.Code()),
 				zap.String("message", statusErr.Message()),
 				zap.Any("details", statusErr.Details()),
 				zap.String("stacktrace", trace),
 				zap.Error(rootErr))
-			if obfuscateInternalErrors {
+			if obfuscateInternalErrors && (statusErr.Code() == codes.Internal || statusErr.Code() == codes.Unknown) {
 				err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
 			}
 		}
+
 		return
 	}
 }
@@ -94,7 +118,7 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 // AlreadyExists returns an error used when creating a resource that already
 // exists.
 func AlreadyExists(id string) error {
-	return status.Error(codes.AlreadyExists, "resource already exists: "+id)
+	return status.Error(codes.AlreadyExists, "Resource already exists: "+id)
 }
 
 // VersionMismatch returns an error used when updating a resource with an old
@@ -105,7 +129,7 @@ func VersionMismatch(msg string) error {
 
 // NotFound returns an error used when looking up a resource that doesn't exist.
 func NotFound(id string) error {
-	return status.Error(codes.NotFound, "resource not found: "+id)
+	return status.Error(codes.NotFound, "Resource not found: "+id)
 }
 
 // BadRequest returns an error that is used when a user supplies bad request

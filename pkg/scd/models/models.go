@@ -3,9 +3,10 @@ package models
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"net/url"
 	"time"
+
+	"github.com/palantir/stacktrace"
 )
 
 type (
@@ -61,9 +62,9 @@ func ValidateUSSBaseURL(s string) error {
 	case "https":
 		// All good, proceed normally.
 	case "http":
-		return errors.New("uss_base_url in new_subscription must use TLS")
+		return stacktrace.NewError("uss_base_url in new_subscription must use TLS")
 	default:
-		return errors.New("uss_base_url must support https scheme")
+		return stacktrace.NewError("uss_base_url must support https scheme")
 	}
 
 	return nil

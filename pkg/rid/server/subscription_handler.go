@@ -21,11 +21,11 @@ func (s *Server) DeleteSubscription(
 	// TODO: simply verify the owner was set in an upper level.
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
+		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid version: %s", err))
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
@@ -36,7 +36,7 @@ func (s *Server) DeleteSubscription(
 	defer cancel()
 	subscription, err := s.App.DeleteSubscription(ctx, id, owner, version)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not delete Subscription at the application layer")
 	}
 	p, err := subscription.ToProto()
 	if err != nil {
@@ -54,12 +54,12 @@ func (s *Server) SearchSubscriptions(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		errMsg := fmt.Sprintf("bad area: %s", err)
+		errMsg := fmt.Sprintf("Invalid area: %s", err)
 		switch err.(type) {
 		case *geo.ErrAreaTooLarge:
 			return nil, dsserr.AreaTooLarge(errMsg)
@@ -71,13 +71,13 @@ func (s *Server) SearchSubscriptions(
 	defer cancel()
 	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, owner)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not search Subscriptions")
 	}
 	sp := make([]*ridpb.Subscription, len(subscriptions))
 	for i := range subscriptions {
 		sp[i], err = subscriptions[i].ToProto()
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
 		}
 	}
 
@@ -100,14 +100,14 @@ func (s *Server) GetSubscription(
 	defer cancel()
 	subscription, err := s.App.GetSubscription(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not get Subscription at the application layer")
 	}
 	if subscription == nil {
 		return nil, dsserr.NotFound(req.GetId())
 	}
 	p, err := subscription.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
 	}
 	return &ridpb.GetSubscriptionResponse{
 		Subscription: p,
@@ -125,16 +125,16 @@ func (s *Server) CreateSubscription(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 	if params == nil {
-		return nil, dsserr.BadRequest("params not set")
+		return nil, dsserr.BadRequest("Params not set")
 	}
 	if params.Callbacks == nil {
-		return nil, dsserr.BadRequest("missing required callbacks")
+		return nil, dsserr.BadRequest("Missing required callbacks")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("missing required extents")
+		return nil, dsserr.BadRequest("Missing required extents")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
@@ -148,23 +148,23 @@ func (s *Server) CreateSubscription(
 	}
 
 	if err := sub.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
+		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid extents: %s", err))
 	}
 
 	insertedSub, err := s.App.InsertSubscription(ctx, sub)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not insert Subscription at the application layer")
 	}
 
 	p, err := insertedSub.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
 	}
 
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not search ISAs at the application layer")
 	}
 
 	// Convert the ISAs to protos.
@@ -172,7 +172,7 @@ func (s *Server) CreateSubscription(
 	for i, isa := range isas {
 		isaProtos[i], err = isa.ToProto()
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
 		}
 	}
 
@@ -191,7 +191,7 @@ func (s *Server) UpdateSubscription(
 
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
+		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid version: %s", err))
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
@@ -203,16 +203,16 @@ func (s *Server) UpdateSubscription(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 	if params == nil {
-		return nil, dsserr.BadRequest("params not set")
+		return nil, dsserr.BadRequest("Params not set")
 	}
 	if params.Callbacks == nil {
-		return nil, dsserr.BadRequest("missing required callbacks")
+		return nil, dsserr.BadRequest("Missing required callbacks")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("missing required extents")
+		return nil, dsserr.BadRequest("Missing required extents")
 	}
 
 	sub := &ridmodels.Subscription{
@@ -223,23 +223,23 @@ func (s *Server) UpdateSubscription(
 	}
 
 	if err := sub.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
+		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid extents: %s", err))
 	}
 
 	insertedSub, err := s.App.UpdateSubscription(ctx, sub)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not update Subscription at the application layer")
 	}
 
 	p, err := insertedSub.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
 	}
 
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not search ISAs at the application layer")
 	}
 
 	// Convert the ISAs to protos.
@@ -247,7 +247,7 @@ func (s *Server) UpdateSubscription(
 	for i, isa := range isas {
 		isaProtos[i], err = isa.ToProto()
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
 		}
 	}
 

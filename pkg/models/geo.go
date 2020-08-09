@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/geo"
+	"github.com/palantir/stacktrace"
 )
 
 const (
@@ -22,14 +23,14 @@ const (
 var (
 	// ErrMissingSpatialVolume indicates that a spatial volume is required but
 	// missing to complete an operation.
-	ErrMissingSpatialVolume = errors.New("missing spatial volume")
+	ErrMissingSpatialVolume = errors.New("Missing spatial volume")
 	// ErrMissingFootprint indicates that a geometry footprint is required but
 	// missing to complete an operation.
-	ErrMissingFootprint = errors.New("missing footprint")
+	ErrMissingFootprint = errors.New("Missing footprint")
 
-	errNotEnoughPointsInPolygon = errors.New("not enough points in polygon")
-	errBadCoordSet              = errors.New("coordinates did not create a well formed area")
-	errRadiusMustBeLargerThan0  = errors.New("radius must be larger than 0")
+	errNotEnoughPointsInPolygon = errors.New("Not enough points in polygon")
+	errBadCoordSet              = errors.New("Coordinates did not create a well formed area")
+	errRadiusMustBeLargerThan0  = errors.New("Radius must be larger than 0")
 
 	unitToMeterMultiplicativeFactors = map[unit]float32{
 		unitMeter: 1,
@@ -169,7 +170,7 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 			if volume.SpatialVolume.Footprint != nil {
 				cells, err := volume.SpatialVolume.Footprint.CalculateCovering()
 				if err != nil {
-					return nil, err
+					return nil, stacktrace.Propagate(err, "Error calculating footprint covering")
 				}
 
 				if result.SpatialVolume.Footprint == nil {

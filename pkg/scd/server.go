@@ -24,7 +24,7 @@ func dssErrorOfAreaError(err error) error {
 	case *geo.ErrAreaTooLarge:
 		return dsserr.AreaTooLarge(err.Error())
 	default:
-		return dsserr.BadRequest(fmt.Sprintf("bad area: %s", err))
+		return dsserr.BadRequest(fmt.Sprintf("Bad area: %s", err))
 	}
 }
 

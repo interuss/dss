@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
+	"github.com/palantir/stacktrace"
 )
 
 const (
@@ -36,9 +37,9 @@ var (
 	// RegionCoverer provides an overridable interface to defaultRegionCoverer
 	RegionCoverer = defaultRegionCoverer
 
-	errOddNumberOfCoordinatesInAreaString = errors.New("odd number of coordinates in area string")
-	errNotEnoughPointsInPolygon           = errors.New("not enough points in polygon")
-	errBadCoordSet                        = errors.New("coordinates did not create a well formed area")
+	errOddNumberOfCoordinatesInAreaString = errors.New("Odd number of coordinates in area string")
+	errNotEnoughPointsInPolygon           = errors.New("Not enough points in polygon")
+	errBadCoordSet                        = errors.New("Coordinates did not create a well formed area")
 )
 
 // Levelify takes a cell union that might have been normalized and returns to
@@ -51,7 +52,7 @@ func Levelify(cells *s2.CellUnion) {
 
 func ValidateCell(cell s2.CellID) error {
 	if cell.Level() < DefaultMinimumCellLevel || cell.Level() > DefaultMaximumCellLevel {
-		return errors.New("cells must be at level 13 at current implementation")
+		return stacktrace.NewError("Cells must be at level 13 at current implementation")
 	}
 	return nil
 }
@@ -121,7 +122,7 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 	area2 := loopAreaKm2(loop)
 	if area2 > maxAllowedAreaKm2 {
 		return nil, &ErrAreaTooLarge{
-			msg: fmt.Sprintf("area is too large (%fkm² > %fkm²)", math.Min(area1, area2), maxAllowedAreaKm2),
+			msg: fmt.Sprintf("Area is too large (%fkm² > %fkm²)", math.Min(area1, area2), maxAllowedAreaKm2),
 		}
 	}
 	if area2 <= 0 {

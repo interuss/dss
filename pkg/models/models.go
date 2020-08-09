@@ -1,11 +1,11 @@
 package models
 
 import (
-	"errors"
 	"strconv"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/palantir/stacktrace"
 )
 
 type (
@@ -46,7 +46,7 @@ func (owner Owner) String() string {
 func IDFromString(s string) (ID, error) {
 	id, err := uuid.Parse(s)
 	if err != nil {
-		return ID(""), err
+		return ID(""), stacktrace.Propagate(err, "Error parsing ID in UUID format")
 	}
 	return ID(id.String()), nil
 }
@@ -62,13 +62,13 @@ func IDFromOptionalString(s string) (ID, error) {
 // a Version struct.
 func VersionFromString(s string) (*Version, error) {
 	if s == "" {
-		return nil, errors.New("requires version string")
+		return nil, stacktrace.NewError("Missing version string")
 	}
 	v := &Version{s: s}
 
 	nanos, err := strconv.ParseUint(string(s), versionBase, 64)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error parsing version to integer")
 	}
 	v.t = time.Unix(0, int64(nanos))
 	return v, nil
@@ -90,7 +90,7 @@ func (v *Version) Scan(src interface{}) error {
 	}
 	t, ok := src.(time.Time)
 	if !ok {
-		return errors.New("error scanning version")
+		return stacktrace.NewError("Error scanning version")
 	}
 	temp := VersionFromTime(t)
 	*v = *temp

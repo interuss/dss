@@ -32,7 +32,7 @@ func ValidateUUID(req interface{}) error {
 		return nil
 	}
 	if _, err := uuid.Parse(r.GetId()); err != nil {
-		return dsserr.BadRequest("invalid uuid")
+		return dsserr.BadRequest("Invalid uuid")
 	}
 	return nil
 }

@@ -30,7 +30,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	var (
@@ -40,14 +40,14 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Parse extents
 	extents, err := dssmodels.Volume4DFromSCDProto(params.GetExtents())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("unable to parse extents: %s", err))
+		return nil, dsserr.BadRequest(fmt.Sprintf("Unable to parse extents: %s", err))
 	}
 
 	// Construct requested Subscription model
 	cells, err := extents.CalculateSpatialCovering()
 	switch err {
 	case nil, dssmodels.ErrMissingSpatialVolume, dssmodels.ErrMissingFootprint:
-		// All good, let's go ahead.
+		// We may be able to fill these values from a previous Subscription or via defaults.
 	default:
 		return nil, dssErrorOfAreaError(err)
 	}
@@ -70,7 +70,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 
 	// Validate requested Subscription
 	if !subreq.NotifyForOperations && !subreq.NotifyForConstraints {
-		return nil, dsserr.BadRequest("no notification triggers requested for Subscription")
+		return nil, dsserr.BadRequest("No notification triggers requested for Subscription")
 	}
 
 	var result *scdpb.PutSubscriptionResponse
@@ -78,12 +78,12 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		// Check existing Subscription (if any)
 		old, err := r.GetSubscription(ctx, subreq.ID)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Could not get Subscription from repo")
 		}
 
 		// Validate and perhaps correct StartTime and EndTime.
 		if err := subreq.AdjustTimeRange(DefaultClock.Now(), old); err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error adjusting time range of Subscription")
 		}
 
 		if old == nil {
@@ -100,7 +100,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 				return dsserr.AlreadyExists(subreq.ID.String())
 			case !subreq.Version.Matches(old.Version):
 				// The user wants to update a Subscription but the version doesn't match.
-				return dsserr.VersionMismatch("old version")
+				return dsserr.VersionMismatch(fmt.Sprintf("Version %d is not the current version", subreq.Version))
 			case old.Owner != subreq.Owner:
 				return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
 			}
@@ -111,7 +111,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		// Store Subscription model
 		sub, err := r.UpsertSubscription(ctx, subreq)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Could not upsert Subscription into repo")
 		}
 		if sub == nil {
 			return stacktrace.NewError(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
@@ -132,7 +132,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 				},
 			})
 			if err != nil {
-				return err
+				return stacktrace.Propagate(err, "Could not search Operations in repo")
 			}
 			relevantOperations = ops
 		}
@@ -161,14 +161,14 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 			// Query relevant Constraints
 			constraints, err := r.SearchConstraints(ctx, extents)
 			if err != nil {
-				return err
+				return stacktrace.Propagate(err, "Could not search Constraints in repo")
 			}
 
 			// Attach Constraints to response
 			for _, constraint := range constraints {
 				p, err := constraint.ToProto()
 				if err != nil {
-					return err
+					return stacktrace.Propagate(err, "Could not convert Constraint to proto")
 				}
 				if constraint.Owner != owner {
 					p.Ovn = ""
@@ -182,7 +182,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	// Return response to client
@@ -200,7 +200,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	var response *scdpb.GetSubscriptionResponse
@@ -208,7 +208,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 		// Get Subscription from Store
 		sub, err := r.GetSubscription(ctx, id)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Could not get Subscription from repo")
 		}
 		if sub == nil {
 			return dsserr.NotFound(id.String())
@@ -222,7 +222,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 		// Convert Subscription to proto
 		p, err := sub.ToProto()
 		if err != nil {
-			return stacktrace.Propagate(err, "unable to convert Subscription to proto")
+			return stacktrace.Propagate(err, "Unable to convert Subscription to proto")
 		}
 
 		// Return response to client
@@ -235,7 +235,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil
@@ -246,19 +246,19 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	// Retrieve the area of interest parameter
 	aoi := req.GetParams().AreaOfInterest
 	if aoi == nil {
-		return nil, dsserr.BadRequest("missing area_of_interest")
+		return nil, dsserr.BadRequest("Missing area_of_interest")
 	}
 
 	// Parse area of interest to common Volume4D
 	vol4, err := dssmodels.Volume4DFromSCDProto(aoi)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to convert to internal geometry model")
+		return nil, stacktrace.Propagate(err, "Failed to convert to internal geometry model")
 	}
 
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	var response *scdpb.SearchSubscriptionsResponse
@@ -266,7 +266,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		// Perform search query on Store
 		subs, err := r.SearchSubscriptions(ctx, vol4)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Could not search Subscriptions in repo")
 		}
 
 		// Return response to client
@@ -275,7 +275,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 			if sub.Owner == owner {
 				p, err := sub.ToProto()
 				if err != nil {
-					return stacktrace.Propagate(err, "error converting Subscription model to proto")
+					return stacktrace.Propagate(err, "Error converting Subscription model to proto")
 				}
 				response.Subscriptions = append(response.Subscriptions, p)
 			}
@@ -286,7 +286,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil
@@ -304,7 +304,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	var response *scdpb.DeleteSubscriptionResponse
@@ -313,23 +313,23 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 		old, err := r.GetSubscription(ctx, id)
 		switch {
 		case err != nil:
-			return err
+			return stacktrace.Propagate(err, "Could not get Subscription from repo")
 		case old == nil: // Return a 404 here.
 			return dsserr.NotFound(id.String())
 		case old.Owner != owner:
 			return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
 		}
 
-		// Delete Subscription in Store
+		// Delete Subscription in repo
 		err = r.DeleteSubscription(ctx, id)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Could not delete Subscription from repo")
 		}
 
 		// Convert deleted Subscription to proto
 		p, err := old.ToProto()
 		if err != nil {
-			return stacktrace.Propagate(err, "error converting Subscription model to proto")
+			return stacktrace.Propagate(err, "Error converting Subscription model to proto")
 		}
 
 		// Create response for client
@@ -342,7 +342,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil

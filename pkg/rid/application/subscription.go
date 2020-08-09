@@ -42,7 +42,7 @@ type SubscriptionApp interface {
 func (a *app) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	repo, err := a.Store.Interact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 	return repo.GetSubscription(ctx, id)
 }
@@ -50,7 +50,7 @@ func (a *app) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.
 func (a *app) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	repo, err := a.Store.Interact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 	return repo.SearchSubscriptionsByOwner(ctx, cells, owner)
 }
@@ -58,7 +58,7 @@ func (a *app) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion
 func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	// Validate and perhaps correct StartTime and EndTime.
 	if err := s.AdjustTimeRange(a.clock.Now(), nil); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Unable to adjust time range")
 	}
 	var sub *ridmodels.Subscription
 	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
@@ -66,10 +66,10 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		// ensure it doesn't exist yet
 		old, err := repo.GetSubscription(ctx, s.ID)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error getting Subscription from repo")
 		}
 		if old != nil {
-			return dsserr.AlreadyExists(fmt.Sprintf("sub with id: %s already exists", s.ID))
+			return dsserr.AlreadyExists(fmt.Sprintf("Subscription with ID %s already exists", s.ID))
 		}
 
 		// Check the user hasn't created too many subscriptions in this area.
@@ -77,16 +77,19 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		if err != nil {
 			a.logger.Error("Error fetching max subscription count", zap.Error(err))
 			return stacktrace.Propagate(err,
-				"failed to fetch subscription count, rejecting request")
+				"Failed to fetch subscription count, rejecting request")
 		}
 		if count >= maxSubscriptionsPerArea {
 			return dsserr.Exhausted(
-				"too many existing subscriptions in this area already")
+				"Too many existing subscriptions in this area already")
 		}
 
 		sub, err = repo.InsertSubscription(ctx, s)
-		return err
+		if err != nil {
+			return stacktrace.Propagate(err, "Error inserting Subscription into repo")
+		}
 
+		return nil
 	})
 	return sub, err
 }
@@ -99,19 +102,19 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 		old, err := repo.GetSubscription(ctx, s.ID)
 		switch {
 		case err != nil:
-			return err
+			return stacktrace.Propagate(err, "Error getting Subscription from repo")
 		case old == nil:
 			// The user wants to update an existing subscription, but one wasn't found.
 			return dsserr.NotFound(s.ID.String())
 		case !s.Version.Matches(old.Version):
 			// The user wants to update a subscription but the version doesn't match.
-			return dsserr.VersionMismatch("old version")
+			return dsserr.VersionMismatch("Old version")
 		case old.Owner != s.Owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("s is owned by %s", old.Owner))
+			return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
 		}
 		// Validate and perhaps correct StartTime and EndTime.
 		if err := s.AdjustTimeRange(a.clock.Now(), old); err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error adjusting time range")
 		}
 
 		// Check the user hasn't created too many subscriptions in this area.
@@ -119,14 +122,17 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 		if err != nil {
 			a.logger.Error("Error fetching max subscription count", zap.Error(err))
 			return stacktrace.Propagate(err,
-				"failed to fetch subscription count, rejecting request")
+				"Failed to fetch subscription count, rejecting request")
 		}
 		if count >= maxSubscriptionsPerArea {
 			return dsserr.Exhausted(
-				"too many existing subscriptions in this area already")
+				"Too many existing subscriptions in this area already")
 		}
 		sub, err = repo.UpdateSubscription(ctx, s)
-		return err
+		if err != nil {
+			return stacktrace.Propagate(err, "Error updating Subscription in repo")
+		}
+		return nil
 	})
 	return sub, err
 }
@@ -139,7 +145,7 @@ func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dss
 		old, err := repo.GetSubscription(ctx, id)
 		switch {
 		case err != nil:
-			return err
+			return stacktrace.Propagate(err, "Error getting Subscription from repo")
 		case old == nil:
 			return dsserr.NotFound(id.String())
 		case !version.Matches(old.Version):
@@ -149,7 +155,10 @@ func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dss
 		}
 
 		ret, err = repo.DeleteSubscription(ctx, old)
-		return err
+		if err != nil {
+			return stacktrace.Propagate(err, "Error deleting Subscription from repo")
+		}
+		return nil
 	})
 	return ret, err
 }

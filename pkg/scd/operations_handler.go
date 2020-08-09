@@ -32,7 +32,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	var response *scdpb.ChangeOperationReferenceResponse
@@ -40,7 +40,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 		// Delete Operation in Store
 		op, subs, err := r.DeleteOperation(ctx, id, owner)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Unable to delete Operation from repo")
 		}
 		if op == nil {
 			return stacktrace.NewError(fmt.Sprintf("DeleteOperation returned no Operation for ID: %s", id))
@@ -63,7 +63,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil
@@ -85,7 +85,7 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		op, err := r.GetOperation(ctx, id)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Unable to get Operation from repo")
 		}
 
 		if op.Owner != owner {
@@ -106,8 +106,7 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil
@@ -119,7 +118,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	// Retrieve the area of interest parameter
 	aoi := req.GetParams().AreaOfInterest
 	if aoi == nil {
-		return nil, dsserr.BadRequest("missing area_of_interest")
+		return nil, dsserr.BadRequest("Missing area_of_interest")
 	}
 
 	// Parse area of interest to common Volume4D
@@ -131,13 +130,13 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	if aoi.TimeEnd != nil {
 		endTime, _ := ptypes.Timestamp(aoi.TimeEnd.Value)
 		if time.Now().After(endTime) {
-			return nil, dsserr.BadRequest("end time is in the past")
+			return nil, dsserr.BadRequest("End time is in the past")
 		}
 	}
 
@@ -146,7 +145,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 		// Perform search query on Store
 		ops, err := r.SearchOperations(ctx, vol4)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Unable to search for Operations in repo")
 		}
 
 		// Create response for client
@@ -167,8 +166,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil
@@ -184,7 +182,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	var (
@@ -193,32 +191,31 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	)
 
 	if len(params.UssBaseUrl) == 0 {
-		return nil, dsserr.BadRequest("missing required UssBaseUrl")
+		return nil, dsserr.BadRequest("Missing required UssBaseUrl")
 	}
 
-	if err := scdmodels.ValidateUSSBaseURL(
-		params.UssBaseUrl,
-	); err != nil {
+	err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
+	if err != nil {
 		return nil, dsserr.BadRequest(err.Error())
 	}
 
 	for idx, extent := range params.GetExtents() {
 		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)
 		if err != nil {
-			return nil, dsserr.BadRequest(fmt.Sprintf("failed to parse extents: %s", err))
+			return nil, dsserr.BadRequest(fmt.Sprintf("Failed to parse extents: %s", err))
 		}
 		extents[idx] = cExtent
 	}
 	uExtent, err := dssmodels.UnionVolumes4D(extents...)
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("failed to union extents: %s", err))
+		return nil, dsserr.BadRequest(fmt.Sprintf("Failed to union extents: %s", err))
 	}
 
 	if uExtent.StartTime == nil {
-		return nil, dsserr.BadRequest("missing time_start from extents")
+		return nil, dsserr.BadRequest("Missing time_start from extents")
 	}
 	if uExtent.EndTime == nil {
-		return nil, dsserr.BadRequest("missing time_end from extents")
+		return nil, dsserr.BadRequest("Missing time_end from extents")
 	}
 
 	cells, err := uExtent.CalculateSpatialCovering()
@@ -227,15 +224,15 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	}
 
 	if uExtent.EndTime.Before(*uExtent.StartTime) {
-		return nil, dsserr.BadRequest("end time is past the start time")
+		return nil, dsserr.BadRequest("End time is past the start time")
 	}
 
 	if time.Now().After(*uExtent.EndTime) {
-		return nil, dsserr.BadRequest("end time is in the past")
+		return nil, dsserr.BadRequest("End time is in the past")
 	}
 
 	if params.OldVersion == 0 && params.State != "Accepted" {
-		return nil, dsserr.BadRequest("invalid state for version 0")
+		return nil, dsserr.BadRequest("Invalid state for version 0")
 	}
 
 	subscriptionID, err := dssmodels.IDFromOptionalString(params.GetSubscriptionId())
@@ -267,7 +264,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				ImplicitSubscription: true,
 			})
 			if err != nil {
-				return stacktrace.Propagate(err, "failed to create implicit subscription")
+				return stacktrace.Propagate(err, "Failed to create implicit subscription")
 			}
 			subscriptionID = sub.ID
 		} else {
@@ -337,7 +334,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			// information they need
 			ops, err := r.SearchOperations(ctx, uExtent)
 			if err != nil {
-				return err
+				return stacktrace.Propagate(err, "Could not search Operations in repo")
 			}
 
 			for _, op := range ops {
@@ -346,23 +343,23 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				}
 			}
 
-			success, err := scderr.MissingOVNsErrorResponse(ops)
-			if !success {
-				return stacktrace.Propagate(err, "failed to construct missing OVNs error message")
+			p, err := scderr.MissingOVNsErrorResponse(ops)
+			if err != nil {
+				return stacktrace.Propagate(err, "Failed to construct missing OVNs error message")
 			}
-			return err
+			return status.ErrorProto(p)
 		}
 
 		if err != nil {
 			if _, ok := status.FromError(err); ok {
-				return err
+				return err // No need to Propagate this error as Status errors are intended responses to client
 			}
-			return stacktrace.Propagate(err, "failed to upsert operation")
+			return stacktrace.Propagate(err, "Failed to upsert operation in repo")
 		}
 
 		p, err := op.ToProto()
 		if err != nil {
-			return stacktrace.Propagate(err, "could not convert Operation to proto")
+			return stacktrace.Propagate(err, "Could not convert Operation to proto")
 		}
 
 		response = &scdpb.ChangeOperationReferenceResponse{
@@ -375,8 +372,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil

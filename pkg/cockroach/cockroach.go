@@ -3,8 +3,9 @@ package cockroach
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
+
+	"github.com/palantir/stacktrace"
 )
 
 // DB models a connection to a CRDB instance.
@@ -34,19 +35,19 @@ func BuildURI(params map[string]string) (string, error) {
 	}
 	h := params["host"]
 	if h == "" {
-		return "", errors.New("missing crdb hostname")
+		return "", stacktrace.NewError("Missing crdb hostname")
 	}
 	p := params["port"]
 	if p == "" {
-		return "", errors.New("missing crdb port")
+		return "", stacktrace.NewError("Missing crdb port")
 	}
 	u := params["user"]
 	if u == "" {
-		return "", errors.New("missing crdb user")
+		return "", stacktrace.NewError("Missing crdb user")
 	}
 	ssl := params["ssl_mode"]
 	if ssl == "" {
-		return "", errors.New("missing crdb ssl_mode")
+		return "", stacktrace.NewError("Missing crdb ssl_mode")
 	}
 	db := params["db_name"]
 	if db != "" {
@@ -57,7 +58,7 @@ func BuildURI(params map[string]string) (string, error) {
 	}
 	dir := params["ssl_dir"]
 	if dir == "" {
-		return "", errors.New("missing crdb ssl_dir")
+		return "", stacktrace.NewError("Missing crdb ssl_dir")
 	}
 
 	return fmt.Sprintf(
@@ -71,7 +72,7 @@ func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT *
-				FROM information_schema.tables 
+				FROM information_schema.tables
 			WHERE table_name = 'schema_versions'
 			AND table_catalog = $1
 		)
@@ -79,7 +80,7 @@ func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
 	row := db.QueryRowContext(ctx, query, dbName)
 	var ret bool
 	if err := row.Scan(&ret); err != nil {
-		return "", err
+		return "", stacktrace.Propagate(err, "Error scanning table listing row")
 	}
 	if !ret {
 		// Database has not been bootstrapped using DB Schema Manager
@@ -92,7 +93,7 @@ func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
 	row = db.QueryRowContext(ctx, getVersionQuery)
 	var dbVersion string
 	if err := row.Scan(&dbVersion); err != nil {
-		return "", err
+		return "", stacktrace.Propagate(err, "Error scanning version row")
 	}
 	return dbVersion, nil
 }

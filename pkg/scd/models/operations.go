@@ -8,6 +8,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/palantir/stacktrace"
 )
 
 // Aggregates constants for operations.
@@ -53,7 +54,7 @@ func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 	if o.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*o.StartTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
 		}
 		result.TimeStart = &scdpb.Time{
 			Value:  ts,
@@ -64,7 +65,7 @@ func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 	if o.EndTime != nil {
 		ts, err := ptypes.TimestampProto(*o.EndTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
 		}
 		result.TimeEnd = &scdpb.Time{
 			Value:  ts,

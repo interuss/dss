@@ -14,7 +14,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
-	"go.uber.org/multierr"
+	"github.com/palantir/stacktrace"
 )
 
 var (
@@ -64,7 +64,7 @@ func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable
 
 	rows, err := q.QueryContext(ctx, cellsQuery, id)
 	if err != nil {
-		return nil, fmt.Errorf("fetchCellsForSubscription Query error: %s", err)
+		return nil, stacktrace.Propagate(err, "Error in query: %s", cellsQuery)
 	}
 	defer rows.Close()
 
@@ -73,19 +73,22 @@ func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable
 		cidi int64
 	)
 	for rows.Next() {
-		if err := rows.Scan(&cidi); err != nil {
-			return nil, fmt.Errorf("fetchCellsForSubscription row scan error: %s", err)
+		err := rows.Scan(&cidi)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error scanning Subscription cell row")
 		}
 		cu = append(cu, s2.CellID(cidi))
 	}
-
-	return cu, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, stacktrace.Propagate(err, "Error in rows query result")
+	}
+	return cu, nil
 }
 
 func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
 	defer rows.Close()
 
@@ -109,12 +112,12 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 			&updatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
 		payload = append(payload, s)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 	return payload, nil
 }
@@ -133,7 +136,7 @@ func (c *repo) fetchSubscriptionsForNotification(
  				cell_id = ANY($1)`
 	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
 	defer rows.Close()
 
@@ -141,12 +144,12 @@ func (c *repo) fetchSubscriptionsForNotification(
 	for rows.Next() {
 		var id string
 		if err := rows.Scan(&id); err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
 		subscriptionIDs = append(subscriptionIDs, id)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 
 	// Next: update the notification_index of each one and return the rest of the
@@ -175,7 +178,7 @@ func (c *repo) fetchSubscription(ctx context.Context, q dsssql.Queryable, query 
 		return nil, err
 	}
 	if len(subs) > 1 {
-		return nil, multierr.Combine(err, fmt.Errorf("query returned %d subscriptions", len(subs)))
+		return nil, stacktrace.NewError("Query returned %d subscriptions when only 0 or 1 was expected", len(subs))
 	}
 	if len(subs) == 0 {
 		return nil, sql.ErrNoRows
@@ -195,11 +198,11 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 	)
 	result, err := c.fetchSubscription(ctx, q, query, id)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error fetching Subscription")
 	}
 	result.Cells, err = c.fetchCellsForSubscription(ctx, q, id)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error fetching cells for Subscription")
 	}
 	return result, nil
 }
@@ -258,18 +261,18 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		s.StartTime,
 		s.EndTime)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error fetching Subscription")
 	}
 	s.Cells = cells
 
 	for i := range cids {
 		if _, err := q.ExecContext(ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID); err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", subscriptionCellQuery))
 		}
 	}
 
 	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", deleteLeftOverCellsForSubscriptionQuery))
 	}
 
 	return s, nil
@@ -284,7 +287,7 @@ func (c *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels
 	case sql.ErrNoRows:
 		return nil, nil
 	default:
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 }
 
@@ -292,7 +295,7 @@ func (c *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels
 func (c *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
 	newSubscription, err := c.pushSubscription(ctx, c.q, s)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 	newSubscription.Cells = s.Cells
 
@@ -327,16 +330,16 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 
 	res, err := c.q.ExecContext(ctx, query, id)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Could not get RowsAffected")
 	}
 
 	if rows == 0 {
-		return dsserr.BadRequest("failed to delete implicit subscription with active operation")
+		return dsserr.BadRequest("Failed to delete implicit subscription with active operation")
 	}
 	return nil
 }
@@ -371,7 +374,7 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 	// computed once on a particular Volume4D
 	cells, err := v4d.CalculateSpatialCovering()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
 	}
 
 	if len(cells) == 0 {
@@ -386,7 +389,7 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 	subscriptions, err := c.fetchSubscriptions(
 		ctx, c.q, query, pq.Array(cids), v4d.StartTime, v4d.EndTime)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Unable to fetch Subscriptions")
 	}
 
 	return subscriptions, nil
@@ -407,7 +410,7 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 
 	rows, err := c.q.QueryContext(ctx, updateQuery, pq.StringArray(ids))
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", updateQuery))
 	}
 	defer rows.Close()
 
@@ -416,16 +419,16 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 		var notificationIndex int
 		err := rows.Scan(&notificationIndex)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error scanning notification index row")
 		}
 		indices = append(indices, notificationIndex)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 
 	if len(indices) != len(subscriptionIds) {
-		return nil, fmt.Errorf(
+		return nil, stacktrace.NewError(
 			"Expected %d notification_index results when incrementing but got %d instead",
 			len(subscriptionIds), len(indices))
 	}

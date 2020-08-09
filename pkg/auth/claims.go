@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/palantir/stacktrace"
 )
 
 var (
@@ -23,7 +24,7 @@ type ScopeSet map[Scope]struct{}
 func (s *ScopeSet) UnmarshalJSON(data []byte) error {
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
-		return err
+		return stacktrace.Propagate(err, "Unable to unmarshal JSON")
 	}
 
 	*s = map[Scope]struct{}{}

@@ -42,7 +42,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	var response *scdpb.ChangeConstraintReferenceResponse
@@ -53,9 +53,9 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		case err == sql.ErrNoRows:
 			return dsserr.NotFound(id.String())
 		case err != nil:
-			return err
+			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
 		case old.Owner != owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("constraint is owned by %s", old.Owner))
+			return dsserr.PermissionDenied(fmt.Sprintf("Constraint is owned by %s", old.Owner))
 		}
 
 		// Find Subscriptions that may overlap the Constraint's Volume4D
@@ -70,7 +70,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 				}),
 			}})
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Unable to search Subscriptions in repo")
 		}
 
 		// Limit Subscription notifications to only those interested in Constraints
@@ -81,16 +81,16 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 			}
 		}
 
-		// Delete Constraint in Store
+		// Delete Constraint in repo
 		err = r.DeleteConstraint(ctx, id)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Unable to delete Constraint from repo")
 		}
 
 		// Increment notification indices for relevant Subscriptions
 		err = incrementNotificationIndices(ctx, r, subs)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Unable to increment notification indices")
 		}
 
 		// Convert deleted Constraint to proto
@@ -110,7 +110,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil
@@ -125,7 +125,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	var response *scdpb.GetConstraintReferenceResponse
@@ -135,7 +135,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 		case err == sql.ErrNoRows:
 			return dsserr.NotFound(id.String())
 		case err != nil:
-			return err
+			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
 		}
 
 		if constraint.Owner != owner {
@@ -145,7 +145,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 		// Convert retrieved Constraint to proto
 		p, err := constraint.ToProto()
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Could not convert Constraint to proto")
 		}
 
 		// Return response to client
@@ -158,8 +158,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil
@@ -175,7 +174,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 
 	var (
@@ -184,27 +183,27 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 	)
 
 	if len(params.UssBaseUrl) == 0 {
-		return nil, dsserr.BadRequest("missing required UssBaseUrl")
+		return nil, dsserr.BadRequest("Missing required UssBaseUrl")
 	}
 
 	// TODO: factor out logic below into common multi-vol4d parser and reuse with PutOperationReference
 	for idx, extent := range params.GetExtents() {
 		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)
 		if err != nil {
-			return nil, dsserr.BadRequest(fmt.Sprintf("failed to parse extents: %s", err))
+			return nil, dsserr.BadRequest(fmt.Sprintf("Failed to parse extents: %s", err))
 		}
 		extents[idx] = cExtent
 	}
 	uExtent, err := dssmodels.UnionVolumes4D(extents...)
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("failed to union extents: %s", err))
+		return nil, dsserr.BadRequest(fmt.Sprintf("Failed to union extents: %s", err))
 	}
 
 	if uExtent.StartTime == nil {
-		return nil, dsserr.BadRequest("missing time_start from extents")
+		return nil, dsserr.BadRequest("Missing time_start from extents")
 	}
 	if uExtent.EndTime == nil {
-		return nil, dsserr.BadRequest("missing time_end from extents")
+		return nil, dsserr.BadRequest("Missing time_end from extents")
 	}
 
 	cells, err := uExtent.CalculateSpatialCovering()
@@ -220,17 +219,17 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		case err == sql.ErrNoRows:
 			// No existing Constraint; verify that creation was requested
 			if params.OldVersion != 0 {
-				return dsserr.VersionMismatch(fmt.Sprintf("old version %d does not exist", params.OldVersion))
+				return dsserr.VersionMismatch(fmt.Sprintf("Old version %d does not exist", params.OldVersion))
 			}
 		case err != nil:
-			return err
+			return stacktrace.Propagate(err, "Could not get Constraint from repo")
 		}
 		if old != nil {
 			if old.Owner != owner {
-				return dsserr.PermissionDenied(fmt.Sprintf("constraint is owned by %s", old.Owner))
+				return dsserr.PermissionDenied(fmt.Sprintf("Constraint is owned by %s", old.Owner))
 			}
 			if old.Version != scdmodels.Version(params.OldVersion) {
-				return dsserr.VersionMismatch(fmt.Sprintf("version %d is not the current version", params.OldVersion))
+				return dsserr.VersionMismatch(fmt.Sprintf("Version %d is not the current version", params.OldVersion))
 			}
 		}
 
@@ -311,8 +310,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil
@@ -365,8 +363,7 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.Query
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		// TODO: wrap err in dss.Internal?
-		return nil, err
+		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
 	return response, nil
