@@ -11,6 +11,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"go.uber.org/zap"
+	"golang.org/x/mod/semver"
 )
 
 var (
@@ -29,7 +30,7 @@ var (
 )
 
 type repo struct {
-	*isaRepo
+	IISARepo
 	*subscriptionRepo
 }
 
@@ -47,12 +48,13 @@ type Store struct {
 // Interact implements store.Interactor interface.
 func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	logger := logging.WithValuesFromContext(ctx, s.logger)
+	storeVersion, err := s.GetVersion(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	return &repo{
-		isaRepo: &isaRepo{
-			Queryable: s.db,
-			logger:    logger,
-		},
+		IISARepo: NewISARepo(ctx, s.db, storeVersion, logger),
 		subscriptionRepo: &subscriptionRepo{
 			Queryable: s.db,
 			logger:    logger,
@@ -70,15 +72,18 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 	// TODO: we really need to remove the upper cockroach package, and have one
 	// "store" for everything
 	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
+
+	storeVersion, err := s.GetVersion(ctx)
+	if err != nil {
+		return err
+	}
+
 	defer cancel()
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
-			isaRepo: &isaRepo{
-				Queryable: tx,
-				logger:    logger,
-			},
+			IISARepo: NewISARepo(ctx, tx, storeVersion, logger),
 			subscriptionRepo: &subscriptionRepo{
 				Queryable: tx,
 				logger:    logger,
@@ -126,4 +131,8 @@ func (s *Store) CleanUp(ctx context.Context) error {
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (string, error) {
 	return cockroach.GetVersion(ctx, s.db, DatabaseName)
+}
+
+func (c *Store) storeHasAtleastVersion3_1(version string) bool {
+	return semver.Compare(version, "v3.1.0") >= 0
 }

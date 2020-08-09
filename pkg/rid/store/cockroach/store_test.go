@@ -204,11 +204,12 @@ func TestBasicTxn(t *testing.T) {
 
 	tx1, err := store.db.Begin()
 	require.NoError(t, err)
+
+	storeVersion, err := store.GetVersion(ctx)
+	require.NoError(t, err)
+
 	s1 := &repo{
-		isaRepo: &isaRepo{
-			Queryable: tx1,
-			logger:    logging.Logger,
-		},
+		IISARepo: NewISARepo(ctx, tx1, storeVersion, logging.Logger),
 		subscriptionRepo: &subscriptionRepo{
 			Queryable: tx1,
 			logger:    logging.Logger,
@@ -219,10 +220,7 @@ func TestBasicTxn(t *testing.T) {
 	tx2, err := store.db.Begin()
 	require.NoError(t, err)
 	s2 := &repo{
-		isaRepo: &isaRepo{
-			Queryable: tx2,
-			logger:    logging.Logger,
-		},
+		IISARepo: NewISARepo(ctx, tx2, storeVersion, logging.Logger),
 		subscriptionRepo: &subscriptionRepo{
 			Queryable: tx2,
 			logger:    logging.Logger,
