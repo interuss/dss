@@ -29,7 +29,7 @@ var (
 )
 
 type repo struct {
-	*isaRepo
+	IISARepo
 	*subscriptionRepo
 }
 
@@ -49,7 +49,7 @@ func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	logger := logging.WithValuesFromContext(ctx, s.logger)
 
 	return &repo{
-		isaRepo: &isaRepo{
+		IISARepo: &isaRepo{
 			Queryable: s.db,
 			logger:    logger,
 		},
@@ -75,7 +75,7 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
-			isaRepo: &isaRepo{
+			IISARepo: &isaRepo{
 				Queryable: tx,
 				logger:    logger,
 			},

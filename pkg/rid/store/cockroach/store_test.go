@@ -205,7 +205,7 @@ func TestBasicTxn(t *testing.T) {
 	tx1, err := store.db.Begin()
 	require.NoError(t, err)
 	s1 := &repo{
-		isaRepo: &isaRepo{
+		IISARepo: &isaRepo{
 			Queryable: tx1,
 			logger:    logging.Logger,
 		},
@@ -219,7 +219,7 @@ func TestBasicTxn(t *testing.T) {
 	tx2, err := store.db.Begin()
 	require.NoError(t, err)
 	s2 := &repo{
-		isaRepo: &isaRepo{
+		IISARepo: &isaRepo{
 			Queryable: tx2,
 			logger:    logging.Logger,
 		},

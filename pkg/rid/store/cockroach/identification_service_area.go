@@ -23,6 +23,13 @@ const (
 	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
 	updateISAFields   = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
+type IISARepo interface {
+	GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
+	InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error)
+	UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea, version string) (*ridmodels.IdentificationServiceArea, error)
+	DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error)
+	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
+}
 
 // isaRepo is an implementation of the ISARepo for CRDB.
 type isaRepo struct {
