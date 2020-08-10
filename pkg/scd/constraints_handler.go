@@ -207,7 +207,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 
 	cells, err := uExtent.CalculateSpatialCovering()
 	if err != nil {
-		return nil, dssErrorOfAreaError(err)
+		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
 	var response *scdpb.ChangeConstraintReferenceResponse
@@ -250,7 +250,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 				}}
 			notifyVol4, err = dssmodels.UnionVolumes4D(uExtent, oldVol4)
 			if err != nil {
-				return err
+				return stacktrace.Propagate(err, "Error constructing 4D volumes union")
 			}
 		}
 

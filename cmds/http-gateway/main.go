@@ -136,7 +136,7 @@ func myCodeToHTTPStatus(code codes.Code) int {
 		return http.StatusServiceUnavailable
 	case codes.DataLoss:
 		return http.StatusInternalServerError
-	case errors.AreaTooLargeErr:
+	case codes.Code(int32(errors.AreaTooLarge)):
 		return http.StatusRequestEntityTooLarge
 	case errors.MissingOVNs:
 		return http.StatusConflict

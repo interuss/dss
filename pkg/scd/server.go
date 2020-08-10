@@ -7,7 +7,6 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/geo"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	scdstore "github.com/interuss/dss/pkg/scd/store"
 	"github.com/palantir/stacktrace"
@@ -18,15 +17,6 @@ const (
 	constraintManagementScope  = "utm.constraint_management"
 	constraintConsumptionScope = "utm.constraint_consumption"
 )
-
-func dssErrorOfAreaError(err error) error {
-	switch err.(type) {
-	case *geo.ErrAreaTooLarge:
-		return dsserr.AreaTooLarge(err.Error())
-	default:
-		return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Bad area")
-	}
-}
 
 func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []*scdpb.SubscriberToNotify {
 	result := []*scdpb.SubscriberToNotify{}

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/auth"
@@ -59,12 +58,7 @@ func (s *Server) SearchSubscriptions(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		errMsg := fmt.Sprintf("Invalid area: %s", err)
-		switch err.(type) {
-		case *geo.ErrAreaTooLarge:
-			return nil, dsserr.AreaTooLarge(errMsg)
-		}
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
+		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)

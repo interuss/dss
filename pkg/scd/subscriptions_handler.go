@@ -9,6 +9,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
@@ -46,10 +47,10 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Construct requested Subscription model
 	cells, err := extents.CalculateSpatialCovering()
 	switch err {
-	case nil, dssmodels.ErrMissingSpatialVolume, dssmodels.ErrMissingFootprint:
+	case nil, geo.ErrMissingSpatialVolume, geo.ErrMissingFootprint:
 		// We may be able to fill these values from a previous Subscription or via defaults.
 	default:
-		return nil, dssErrorOfAreaError(err)
+		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
 	subreq := &scdmodels.Subscription{
@@ -266,7 +267,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		// Perform search query on Store
 		subs, err := r.SearchSubscriptions(ctx, vol4)
 		if err != nil {
-			return stacktrace.Propagate(err, "Could not search Subscriptions in repo")
+			return stacktrace.Propagate(err, "Error searching Subscriptions in repo")
 		}
 
 		// Return response to client

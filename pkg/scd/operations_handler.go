@@ -220,7 +220,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 	cells, err := uExtent.CalculateSpatialCovering()
 	if err != nil {
-		return nil, dssErrorOfAreaError(err)
+		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
 	if uExtent.EndTime.Before(*uExtent.StartTime) {

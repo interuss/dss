@@ -23,9 +23,10 @@ var (
 )
 
 const (
-	// AreaTooLargeErr is the error that we want to signal to the http gateway
-	// that it should return 413 to client
-	AreaTooLargeErr codes.Code = 18
+	// AreaTooLarge is used when a user tries to create a resource in an area
+	// larger than the max area allowed. See geo/s2.go.  We want to signal to the
+	// http gateway that it should return 413 to client.
+	AreaTooLarge stacktrace.ErrorCode = stacktrace.ErrorCode(18)
 
 	// MissingOVNs is the error to signal that an AirspaceConflictResponse should
 	// be returned rather than the standard error response.
@@ -170,10 +171,4 @@ func Exhausted(msg string) error {
 // or not supplied.
 func Unauthenticated(msg string) error {
 	return status.Error(codes.Unauthenticated, msg)
-}
-
-// AreaTooLarge is used when a user tries to create a resource in an area larger
-// than the max area allowed. See geo/s2.go.
-func AreaTooLarge(msg string) error {
-	return status.Error(AreaTooLargeErr, msg)
 }

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -214,12 +213,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		errMsg := fmt.Sprintf("Invalid area: %s", err)
-		switch err.(type) {
-		case *geo.ErrAreaTooLarge:
-			return nil, dsserr.AreaTooLarge(errMsg)
-		}
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
+		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
 	var (
