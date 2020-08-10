@@ -57,7 +57,7 @@ func (store *isaStore) InsertISA(ctx context.Context, isa *ridmodels.Identificat
 }
 
 // Implements repos.ISA.UpdateISA
-func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea, version string) (*ridmodels.IdentificationServiceArea, error) {
+func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	storedCopy := *isa
 	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
 	store.isas[isa.ID] = &storedCopy

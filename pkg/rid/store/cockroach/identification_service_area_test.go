@@ -150,18 +150,15 @@ func TestBadVersion(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut1)
 
-	storeVersion, err := store.GetVersion(ctx)
-	require.NoError(t, err)
-
 	// Rewriting service area should fail
-	saOut2, err := repo.UpdateISA(ctx, serviceArea, storeVersion)
+	saOut2, err := repo.UpdateISA(ctx, serviceArea)
 	require.NoError(t, err)
 	require.Nil(t, saOut2)
 
 	// Rewriting, but with the correct version should work.
 	newEndTime := saOut1.EndTime.Add(time.Minute)
 	saOut1.EndTime = &newEndTime
-	saOut3, err := repo.UpdateISA(ctx, saOut1, storeVersion)
+	saOut3, err := repo.UpdateISA(ctx, saOut1)
 	require.NoError(t, err)
 	require.NotNil(t, saOut3)
 }

@@ -148,12 +148,8 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		if err := isa.AdjustTimeRange(a.clock.Now(), old); err != nil {
 			return err
 		}
-		storeVersion, err := a.Store.GetVersion(ctx)
-		if err != nil {
-			return err
-		}
 
-		ret, err = repo.UpdateISA(ctx, isa, storeVersion)
+		ret, err = repo.UpdateISA(ctx, isa)
 		if err != nil {
 			return err
 		}

@@ -15,7 +15,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
-	"golang.org/x/mod/semver"
 )
 
 const (
@@ -23,10 +22,11 @@ const (
 	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
 	updateISAFields   = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
+
 type IISARepo interface {
 	GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
 	InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error)
-	UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea, version string) (*ridmodels.IdentificationServiceArea, error)
+	UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error)
 	DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error)
 	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
 }
@@ -136,10 +136,7 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 // by it.
 // TODO: simplify the logic to just update, without the primary query.
 // Returns nil, nil if ID, version not found
-func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea, version string) (*ridmodels.IdentificationServiceArea, error) {
-	if c.storeHasAtleastVersion3_1(version) {
-		return c.updateISAV3_1(ctx, isa)
-	}
+func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	return c.updateISAV3(ctx, isa)
 }
 
@@ -240,8 +237,4 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 	}
 
 	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
-}
-
-func (c *isaRepo) storeHasAtleastVersion3_1(version string) bool {
-	return semver.Compare(version, "v3.1.0") >= 0
 }
