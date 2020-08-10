@@ -10,6 +10,7 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -29,7 +30,7 @@ var (
 )
 
 type repo struct {
-	IISARepo
+	repos.ISA
 	*subscriptionRepo
 }
 
@@ -53,7 +54,7 @@ func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	}
 
 	return &repo{
-		IISARepo: NewISARepo(ctx, s.db, storeVersion, logger),
+		ISA: NewISARepo(ctx, s.db, storeVersion, logger),
 		subscriptionRepo: &subscriptionRepo{
 			Queryable: s.db,
 			logger:    logger,
@@ -75,13 +76,13 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 
 	storeVersion, err := s.GetVersion(ctx)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Error determining database RID schema version")
 	}
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
-			IISARepo: NewISARepo(ctx, tx, storeVersion, logger),
+			ISA: NewISARepo(ctx, tx, storeVersion, logger),
 			subscriptionRepo: &subscriptionRepo{
 				Queryable: tx,
 				logger:    logger,

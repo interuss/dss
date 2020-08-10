@@ -22,7 +22,8 @@ const (
 	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
 )
 
-// isaRepo is an implementation of the ISARepo v3 for CRDB.
+// The purpose od isaRepoV3 is solely to support backwards compatibility
+// It will be deleted from the codebase when all existing production deployments have been upgraded to 3.1.0+.
 type isaRepoV3 struct {
 	dssql.Queryable
 
