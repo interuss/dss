@@ -219,7 +219,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		case err == sql.ErrNoRows:
 			// No existing Constraint; verify that creation was requested
 			if params.OldVersion != 0 {
-				return dsserr.VersionMismatch(fmt.Sprintf("Old version %d does not exist", params.OldVersion))
+				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d does not exist", params.OldVersion)
 			}
 		case err != nil:
 			return stacktrace.Propagate(err, "Could not get Constraint from repo")
@@ -229,7 +229,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 				return dsserr.PermissionDenied(fmt.Sprintf("Constraint is owned by %s", old.Owner))
 			}
 			if old.Version != scdmodels.Version(params.OldVersion) {
-				return dsserr.VersionMismatch(fmt.Sprintf("Version %d is not the current version", params.OldVersion))
+				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d is not the current version", params.OldVersion)
 			}
 		}
 

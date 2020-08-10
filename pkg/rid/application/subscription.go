@@ -108,7 +108,7 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 			return dsserr.NotFound(s.ID.String())
 		case !s.Version.Matches(old.Version):
 			// The user wants to update a subscription but the version doesn't match.
-			return dsserr.VersionMismatch("Old version")
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version")
 		case old.Owner != s.Owner:
 			return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
 		}
@@ -149,7 +149,7 @@ func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dss
 		case old == nil:
 			return dsserr.NotFound(id.String())
 		case !version.Matches(old.Version):
-			return dsserr.VersionMismatch("old version")
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Version %s is not current", version.String())
 		case old.Owner != owner:
 			return dsserr.PermissionDenied(fmt.Sprintf("Sub is owned by %s", old.Owner))
 		}

@@ -32,7 +32,11 @@ const (
 	MissingOVNs codes.Code = 19
 
 	AlreadyExists stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.AlreadyExists))
-	BadRequest stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.InvalidArgument))
+	BadRequest    stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.InvalidArgument))
+
+	// VersionMismatch returns an error used when updating a resource with an old
+	// version.
+	VersionMismatch stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.Aborted))
 )
 
 func init() {
@@ -143,12 +147,6 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 		logger.Info("Just before returning from interceptor", zap.String("Error()", err.Error()), zap.Error(err))
 		return resp, err
 	}
-}
-
-// VersionMismatch returns an error used when updating a resource with an old
-// version.
-func VersionMismatch(msg string) error {
-	return status.Error(codes.Aborted, msg)
 }
 
 // NotFound returns an error used when looking up a resource that doesn't exist.

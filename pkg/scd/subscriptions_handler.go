@@ -100,7 +100,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 				return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Subscription %s already exists", subreq.ID.String())
 			case !subreq.Version.Matches(old.Version):
 				// The user wants to update a Subscription but the version doesn't match.
-				return dsserr.VersionMismatch(fmt.Sprintf("Version %d is not the current version", subreq.Version))
+				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %d is not current", subreq.Version)
 			case old.Owner != subreq.Owner:
 				return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
 			}

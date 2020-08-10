@@ -72,7 +72,7 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		case old == nil:
 			return dsserr.NotFound(id.String())
 		case !version.Matches(old.Version):
-			return dsserr.VersionMismatch(fmt.Sprintf("Old version for ISA %s", id))
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", version.String())
 		case old.Owner != owner:
 			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
 		}
@@ -149,7 +149,7 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		case old.Owner != isa.Owner:
 			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
 		case !old.Version.Matches(isa.Version):
-			return dsserr.VersionMismatch(fmt.Sprintf("Old version for isa: %s", isa.ID))
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", old.Version.String())
 		}
 		// Validate and perhaps correct StartTime and EndTime.
 		if err := isa.AdjustTimeRange(a.clock.Now(), old); err != nil {

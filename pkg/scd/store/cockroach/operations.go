@@ -318,7 +318,7 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 		return nil, nil, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Operation %s already exists", operation.ID.String())
 	case old != nil && !operation.Version.Matches(old.Version):
 		// The user wants to update an Operation but the version doesn't match.
-		return nil, nil, dsserr.VersionMismatch("old version")
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version")
 	case old != nil && old.Owner != operation.Owner:
 		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Operation is owned by %s", old.Owner))
 	}

@@ -201,7 +201,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 		}
 		handled = true
 	} else if len(s.Details()) == 1 {
-	  // Handle explicit error responses
+		// Handle explicit error responses
 		result, ok := s.Details()[0].(*auxpb.StandardErrorResponse)
 		if ok {
 			buf, merr = marshaler.Marshal(result)
