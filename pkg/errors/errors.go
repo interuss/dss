@@ -28,25 +28,28 @@ const (
 	// be returned rather than the standard error response.
 	MissingOVNs stacktrace.ErrorCode = stacktrace.ErrorCode(19)
 
+	// AlreadyExists is used when attempting to create a resource that already
+	// exists.
 	AlreadyExists stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.AlreadyExists))
-	BadRequest    stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.InvalidArgument))
 
-	// VersionMismatch returns an error used when updating a resource with an old
-	// version.
+	// BadRequest is used when a user supplies bad request parameters.
+	BadRequest stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.InvalidArgument))
+
+	// VersionMismatch is used when updating a resource with an old version.
 	VersionMismatch stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.Aborted))
 
-	// NotFound returns an error used when looking up a resource that doesn't exist.
+	// NotFound is used when looking up a resource that doesn't exist.
 	NotFound stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.NotFound))
 
-	// PermissionDenied returns an error representing a bad Oauth token. It can
-	// occur when a user attempts to modify a resource "owned" by a different USS.
+	// PermissionDenied is used to represent a bad OAuth token. It can occur when
+	// PermissionDenied is used to represent a bad OAuth token. It can occur when
+	// a user attempts to modify a resource "owned" by a different USS.
 	PermissionDenied stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.PermissionDenied))
 
 	// Exhausted is used when a USS creates too many resources in a given area.
 	Exhausted stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.ResourceExhausted))
 
-	// Unauthenticated returns an error that is used when an Oauth token is invalid
-	// or not supplied.
+	// Unauthenticated is used when an OAuth token is invalid or not supplied.
 	Unauthenticated stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.Unauthenticated))
 )
 
