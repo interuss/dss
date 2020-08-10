@@ -7,8 +7,10 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/palantir/stacktrace"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -172,7 +174,7 @@ func TestBadOwner(t *testing.T) {
 	// Test changing owner fails
 	sub.Owner = "new bad owner"
 	_, err = app.UpdateSubscription(ctx, sub)
-	require.EqualError(t, err, "rpc error: code = PermissionDenied desc = s is owned by orig Owner")
+	require.Equal(t, stacktrace.GetCode(err), dsserr.PermissionDenied)
 }
 
 func TestSubscriptionUpdateCells(t *testing.T) {
@@ -222,7 +224,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 		updateFromEndTime   time.Time
 		startTime           time.Time
 		endTime             time.Time
-		wantErr             string
+		wantErr             stacktrace.ErrorCode
 		wantStartTime       time.Time
 		wantEndTime         time.Time
 	}{
@@ -241,7 +243,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			name:      "start-time-in-the-past",
 			startTime: fakeClock.Now().Add(-6 * time.Minute),
 			endTime:   fakeClock.Now().Add(time.Hour),
-			wantErr:   "rpc error: code = InvalidArgument desc = subscription time_start must not be in the past",
+			wantErr:   dsserr.BadRequest,
 		},
 		{
 			name:          "start-time-slightly-in-the-past",
@@ -253,7 +255,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			name:      "end-time-before-start-time",
 			startTime: fakeClock.Now().Add(20 * time.Minute),
 			endTime:   fakeClock.Now().Add(10 * time.Minute),
-			wantErr:   "rpc error: code = InvalidArgument desc = subscription time_end must be after time_start",
+			wantErr:   dsserr.BadRequest,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -275,10 +277,10 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			}
 			sub, err := app.InsertSubscription(ctx, s)
 
-			if r.wantErr == "" {
+			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
-				require.EqualError(t, err, r.wantErr)
+				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
 			}
 
 			if !r.wantStartTime.IsZero() {
@@ -304,7 +306,7 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 		updateFromEndTime   time.Time
 		startTime           time.Time
 		endTime             time.Time
-		wantErr             string
+		wantErr             stacktrace.ErrorCode
 		wantStartTime       time.Time
 		wantEndTime         time.Time
 	}{
@@ -320,7 +322,7 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
 			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
 			startTime:           fakeClock.Now().Add(-3 * time.Hour),
-			wantErr:             "rpc error: code = InvalidArgument desc = subscription time_start must not be in the past",
+			wantErr:             dsserr.BadRequest,
 		},
 		{
 			name:                "changing-start-time-to-future",
@@ -343,7 +345,7 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
 			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
 			endTime:             fakeClock.Now().Add(24 * time.Hour),
-			wantErr:             "rpc error: code = InvalidArgument desc = subscription window exceeds 24 hours",
+			wantErr:             dsserr.BadRequest,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -381,10 +383,10 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 			}
 			sub, err := app.UpdateSubscription(ctx, s)
 
-			if r.wantErr == "" {
+			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
-				require.EqualError(t, err, r.wantErr)
+				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
 			}
 
 			if !r.wantStartTime.IsZero() {
@@ -432,7 +434,7 @@ func TestInsertTooManySubscription(t *testing.T) {
 
 	// Inserting the 11th subscription will fail.
 	ret, err := app.InsertSubscription(ctx, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
-	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = Too many existing subscriptions in this area already")
+	require.Equal(t, stacktrace.GetCode(err), dsserr.Exhausted)
 	require.Nil(t, ret)
 
 	// Inserting a subscription in a different cell will succeed.
@@ -442,6 +444,6 @@ func TestInsertTooManySubscription(t *testing.T) {
 
 	// Inserting a subscription that overlaps fail.
 	ret, err = app.InsertSubscription(ctx, makeSubscription([]uint64{12494535935418957824, 12494535866699481088}))
-	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = Too many existing subscriptions in this area already")
+	require.Equal(t, stacktrace.GetCode(err), dsserr.Exhausted)
 	require.Nil(t, ret)
 }

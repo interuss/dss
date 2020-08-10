@@ -7,8 +7,10 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/palantir/stacktrace"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -146,13 +148,13 @@ func TestInsertISA(t *testing.T) {
 		name          string
 		startTime     time.Time
 		endTime       time.Time
-		wantErr       string
+		wantErr       stacktrace.ErrorCode
 		wantStartTime time.Time
 		wantEndTime   time.Time
 	}{
 		{
 			name:    "missing-end-time",
-			wantErr: "rpc error: code = InvalidArgument desc = IdentificationServiceArea must have an time_end",
+			wantErr: dsserr.BadRequest,
 		},
 		{
 			name:          "start-time-defaults-to-now",
@@ -163,7 +165,7 @@ func TestInsertISA(t *testing.T) {
 			name:      "start-time-in-the-past",
 			startTime: fakeClock.Now().Add(-6 * time.Minute),
 			endTime:   fakeClock.Now().Add(time.Hour),
-			wantErr:   "rpc error: code = InvalidArgument desc = IdentificationServiceArea time_start must not be in the past",
+			wantErr:   dsserr.BadRequest,
 		},
 		{
 			name:          "start-time-slightly-in-the-past",
@@ -175,7 +177,7 @@ func TestInsertISA(t *testing.T) {
 			name:      "end-time-before-start-time",
 			startTime: fakeClock.Now().Add(20 * time.Minute),
 			endTime:   fakeClock.Now().Add(10 * time.Minute),
-			wantErr:   "rpc error: code = InvalidArgument desc = IdentificationServiceArea time_end must be after time_start",
+			wantErr:   dsserr.BadRequest,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -192,10 +194,10 @@ func TestInsertISA(t *testing.T) {
 			}
 			isa, _, err := app.InsertISA(ctx, sa)
 
-			if r.wantErr == "" {
+			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
-				require.EqualError(t, err, r.wantErr)
+				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
 			}
 
 			if !r.wantStartTime.IsZero() {
@@ -222,7 +224,7 @@ func TestUpdateISA(t *testing.T) {
 		updateFromEndTime   time.Time
 		startTime           time.Time
 		endTime             time.Time
-		wantErr             string
+		wantErr             stacktrace.ErrorCode
 		wantStartTime       time.Time
 		wantEndTime         time.Time
 	}{
@@ -238,7 +240,7 @@ func TestUpdateISA(t *testing.T) {
 			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
 			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
 			startTime:           fakeClock.Now().Add(-3 * time.Hour),
-			wantErr:             "rpc error: code = InvalidArgument desc = IdentificationServiceArea time_start must not be in the past",
+			wantErr:             dsserr.BadRequest,
 		},
 		{
 			name:                "changing-start-time-to-future",
@@ -286,10 +288,10 @@ func TestUpdateISA(t *testing.T) {
 			}
 			isa, _, err := app.UpdateISA(ctx, sa)
 
-			if r.wantErr == "" {
+			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
-				require.EqualError(t, err, r.wantErr)
+				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
 			}
 
 			if !r.wantStartTime.IsZero() {
