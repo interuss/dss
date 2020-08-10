@@ -101,11 +101,11 @@ func MustSupportScdSchema(ctx context.Context, store *scdc.Store) error {
 		return stacktrace.Propagate(err, "Failed to get database schema version for strategic conflict detection")
 	}
 	if vs == "v0.0.0" {
-		stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
+		return stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
 	if ScdRequiredMajorSchemaVersion != semver.Major(vs) {
-		stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %s.", vs, ScdRequiredMajorSchemaVersion)
+		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %s.", vs, ScdRequiredMajorSchemaVersion)
 	}
 
 	return nil

@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
+	"github.com/interuss/dss/pkg/logging"
 	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
@@ -16,10 +16,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-)
-
-var (
-	obfuscateInternalErrors = true
 )
 
 const (
@@ -55,10 +51,8 @@ const (
 )
 
 func init() {
-	if s, ok := os.LookupEnv("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS"); ok {
-		if b, err := strconv.ParseBool(s); err == nil {
-			obfuscateInternalErrors = b
-		}
+	if _, ok := os.LookupEnv("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS"); ok {
+		logging.Logger.Warn("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS has been deprecated and will be removed in a future version")
 	}
 }
 
