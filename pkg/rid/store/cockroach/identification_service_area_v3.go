@@ -15,43 +15,21 @@ import (
 	"github.com/lib/pq"
 	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
-	"golang.org/x/mod/semver"
 )
 
 const (
-	isaFields       = "id, owner, url, cells, starts_at, ends_at, writer, updated_at"
-	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
+	isaFieldsV3       = "id, owner, url, cells, starts_at, ends_at, updated_at"
+	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
 )
 
-type IISARepo interface {
-	GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
-	InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error)
-	UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error)
-	DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error)
-	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
-}
-
-func NewISARepo(ctx context.Context, db dssql.Queryable, dbVersion string, logger *zap.Logger) IISARepo {
-	if semver.Compare(dbVersion, "v3.1.0") >= 0 {
-		return &isaRepo{
-			Queryable: db,
-			logger:    logger,
-		}
-	}
-	return &isaRepoV3{
-		Queryable: db,
-		logger:    logger,
-	}
-}
-
-// isaRepo is an implementation of the ISARepo for CRDB.
-type isaRepo struct {
+// isaRepo is an implementation of the ISARepo v3 for CRDB.
+type isaRepoV3 struct {
 	dssql.Queryable
 
 	logger *zap.Logger
 }
 
-func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepoV3) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
 	rows, err := c.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -71,7 +49,6 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 			&cids,
 			&i.StartTime,
 			&i.EndTime,
-			&i.Writer,
 			&i.Version,
 		)
 		if err != nil {
@@ -87,7 +64,7 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 	return payload, nil
 }
 
-func (c *isaRepo) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepoV3) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
 	isas, err := c.process(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -103,12 +80,12 @@ func (c *isaRepo) processOne(ctx context.Context, query string, args ...interfac
 
 // GetISA returns the isa identified by "id".
 // Returns nil, nil if not found
-func (c *isaRepo) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepoV3) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
 			identification_service_areas
 		WHERE
-			id = $1`, isaFields)
+			id = $1`, isaFieldsV3)
 	return c.processOne(ctx, query, id)
 }
 
@@ -119,16 +96,16 @@ func (c *isaRepo) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Ident
 // by it.
 // TODO: Simplify the logic to insert without a query, such that the insert fails
 // if there's an existing entity.
-func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepoV3) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		insertAreasQuery = fmt.Sprintf(`
 			INSERT INTO
 				identification_service_areas
 				(%s)
 			VALUES
-				($1, $2, $3, $4, $5, $6, $7, transaction_timestamp())
+				($1, $2, $3, $4, $5, $6, transaction_timestamp())
 			RETURNING
-				%s`, isaFields, isaFields)
+				%s`, isaFieldsV3, isaFieldsV3)
 	)
 
 	cids := make([]int64, len(isa.Cells))
@@ -140,7 +117,7 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Writer)
+	return c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime)
 }
 
 // UpdateISA updates the IdentificationServiceArea identified by "id" and owned
@@ -150,15 +127,15 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 // by it.
 // TODO: simplify the logic to just update, without the primary query.
 // Returns nil, nil if ID, version not found
-func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepoV3) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		updateAreasQuery = fmt.Sprintf(`
 			UPDATE
 				identification_service_areas
-			SET	(%s) = ($1, $2, $3, $4, $5, $7, transaction_timestamp())
+			SET	(%s) = ($1, $2, $3, $4, $5, transaction_timestamp())
 			WHERE id = $1 AND updated_at = $6
 			RETURNING
-				%s`, updateISAFields, isaFields)
+				%s`, updateISAFieldsV3, isaFieldsV3)
 	)
 
 	cids := make([]int64, len(isa.Cells))
@@ -170,13 +147,13 @@ func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationSe
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp(), isa.Writer)
+	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 // Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
 // Returns nil, nil if ID, version not found
-func (c *isaRepo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepoV3) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		deleteQuery = fmt.Sprintf(`
 			DELETE FROM
@@ -185,7 +162,7 @@ func (c *isaRepo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationSe
 				id = $1
 			AND
 				updated_at = $2
-			RETURNING %s`, isaFields)
+			RETURNING %s`, isaFieldsV3)
 	)
 	return c.processOne(ctx, deleteQuery, isa.ID, isa.Version.ToTimestamp())
 }
@@ -193,7 +170,7 @@ func (c *isaRepo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationSe
 // SearchISAs searches IdentificationServiceArea
 // instances that intersect with "cells" and, if set, the temporal volume
 // defined by "earliest" and "latest".
-func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepoV3) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var (
 		// TODO: make earliest and latest required (NOT NULL) and remove coalesce.
 		// Make them real values (not pointers), on the model layer.
@@ -207,7 +184,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 			AND
 				COALESCE(starts_at <= $2, true)
 			AND
-				cells && $3`, isaFields)
+				cells && $3`, isaFieldsV3)
 	)
 
 	if len(cells) == 0 {

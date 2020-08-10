@@ -47,12 +47,13 @@ type Store struct {
 // Interact implements store.Interactor interface.
 func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	logger := logging.WithValuesFromContext(ctx, s.logger)
+	storeVersion, err := s.GetVersion(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	return &repo{
-		IISARepo: &isaRepo{
-			Queryable: s.db,
-			logger:    logger,
-		},
+		IISARepo: NewISARepo(ctx, s.db, storeVersion, logger),
 		subscriptionRepo: &subscriptionRepo{
 			Queryable: s.db,
 			logger:    logger,
@@ -70,15 +71,18 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 	// TODO: we really need to remove the upper cockroach package, and have one
 	// "store" for everything
 	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
+
+	storeVersion, err := s.GetVersion(ctx)
+	if err != nil {
+		return err
+	}
+
 	defer cancel()
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
-			IISARepo: &isaRepo{
-				Queryable: tx,
-				logger:    logger,
-			},
+			IISARepo: NewISARepo(ctx, tx, storeVersion, logger),
 			subscriptionRepo: &subscriptionRepo{
 				Queryable: tx,
 				logger:    logger,
