@@ -83,7 +83,7 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/healthy" {
 			if _, err := w.Write([]byte("ok")); err != nil {
-				logger.Error("error writing to /healthy")
+				logger.Error("Error writing to /healthy")
 			}
 		} else {
 			grpcMux.ServeHTTP(w, r)
@@ -143,7 +143,7 @@ func myCodeToHTTPStatus(code codes.Code) int {
 		return http.StatusConflict
 	}
 
-	grpclog.Infof("Unknown gRPC error code: %v", code)
+	grpclog.Warningf("Unknown gRPC error code: %v", code)
 	return http.StatusInternalServerError
 }
 
@@ -164,7 +164,8 @@ type errorBody struct {
 // is invoked whenever the call to the gRPC backend results in an error (thus returning
 // a Status err).  Because an error has occurred, the normal response body is not returned.
 func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, _ *http.Request, err error) {
-	const fallback = `{"error": "failed to marshal error message"}`
+	errID := errors.MakeErrID()
+	fallback := fmt.Sprintf(`{"error": "Internal server error %s"}`, errID)
 
 	s, ok := status.FromError(err)
 	if !ok {
@@ -219,23 +220,23 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 
 		buf, marshalingErr = marshaler.Marshal(body)
 		if marshalingErr != nil {
-			grpclog.Errorf("Failed to marshal default errorBody message %q: %v", body, marshalingErr)
+			grpclog.Errorf("Error %s: Failed to marshal default errorBody message %q: %v", errID, body, marshalingErr)
 		}
 	} else if marshalingErr != nil {
-		grpclog.Errorf("Failed to marshal response: %v", marshalingErr)
+		grpclog.Errorf("Error %s: Failed to marshal response: %v", errID, marshalingErr)
 	}
 
 	if marshalingErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		if _, err := io.WriteString(w, fallback); err != nil {
-			grpclog.Errorf("Failed to write response: %v", err)
+			grpclog.Errorf("Error %s: Failed to write response: %v", errID, err)
 		}
 		return
 	}
 
 	md, ok := runtime.ServerMetadataFromContext(ctx)
 	if !ok {
-		grpclog.Errorf("Failed to extract ServerMetadata from context")
+		grpclog.Errorf("Error %s: Failed to extract ServerMetadata from context", errID)
 	}
 
 	handleForwardResponseServerMetadata(w, mux, md)
@@ -243,7 +244,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 	st := myCodeToHTTPStatus(s.Code())
 	w.WriteHeader(st)
 	if _, err := w.Write(buf); err != nil {
-		grpclog.Errorf("Failed to write response: %v", err)
+		grpclog.Errorf("Error %s: Failed to write response: %v", errID, err)
 	}
 
 	handleForwardResponseTrailer(w, md)

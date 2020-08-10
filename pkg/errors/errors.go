@@ -59,7 +59,7 @@ func init() {
 	}
 }
 
-func makeErrID() string {
+func MakeErrID() string {
 	errUUID, err := uuid.NewRandom()
 	if err == nil {
 		return fmt.Sprintf("E:%s", errUUID.String())
@@ -99,7 +99,7 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 			return resp, nil
 		}
 
-		errID := makeErrID()
+		errID := MakeErrID()
 
 		// Separate the root cause and code from the stacktrace wrapping.
 		trace := err.Error()
@@ -135,7 +135,7 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 			if constructionErr == nil {
 				err = status.ErrorProto(p)
 			} else {
-				constructionErrID := makeErrID()
+				constructionErrID := MakeErrID()
 				logger.Error(
 					fmt.Sprintf("Error %s constructing StandardErrorResponse from %s", constructionErrID, errID),
 					zap.Error(constructionErr))
