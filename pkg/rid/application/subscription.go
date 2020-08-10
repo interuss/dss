@@ -79,7 +79,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 				"Failed to fetch subscription count, rejecting request")
 		}
 		if count >= maxSubscriptionsPerArea {
-			return dsserr.Exhausted(
+			return stacktrace.NewErrorWithCode(dsserr.Exhausted,
 				"Too many existing subscriptions in this area already")
 		}
 
@@ -124,7 +124,7 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 				"Failed to fetch subscription count, rejecting request")
 		}
 		if count >= maxSubscriptionsPerArea {
-			return dsserr.Exhausted(
+			return stacktrace.NewErrorWithCode(dsserr.Exhausted,
 				"Too many existing subscriptions in this area already")
 		}
 		sub, err = repo.UpdateSubscription(ctx, s)

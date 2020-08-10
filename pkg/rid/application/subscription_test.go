@@ -432,7 +432,7 @@ func TestInsertTooManySubscription(t *testing.T) {
 
 	// Inserting the 11th subscription will fail.
 	ret, err := app.InsertSubscription(ctx, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
-	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = too many existing subscriptions in this area already")
+	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = Too many existing subscriptions in this area already")
 	require.Nil(t, ret)
 
 	// Inserting a subscription in a different cell will succeed.
@@ -442,6 +442,6 @@ func TestInsertTooManySubscription(t *testing.T) {
 
 	// Inserting a subscription that overlaps fail.
 	ret, err = app.InsertSubscription(ctx, makeSubscription([]uint64{12494535935418957824, 12494535866699481088}))
-	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = too many existing subscriptions in this area already")
+	require.EqualError(t, err, "rpc error: code = ResourceExhausted desc = Too many existing subscriptions in this area already")
 	require.Nil(t, ret)
 }

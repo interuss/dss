@@ -45,6 +45,9 @@ const (
 	// PermissionDenied returns an error representing a bad Oauth token. It can
 	// occur when a user attempts to modify a resource "owned" by a different USS.
 	PermissionDenied stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.PermissionDenied))
+
+	// Exhausted is used when a USS creates too many resources in a given area.
+	Exhausted stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.ResourceExhausted))
 )
 
 func init() {
@@ -160,11 +163,6 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 // Internal returns an error that represents an internal DSS error.
 func Internal(msg string) error {
 	return status.Error(codes.Internal, msg)
-}
-
-// Exhausted is used when a USS creates too many resources in a given area.
-func Exhausted(msg string) error {
-	return status.Error(codes.ResourceExhausted, msg)
 }
 
 // Unauthenticated returns an error that is used when an Oauth token is invalid
