@@ -32,7 +32,7 @@ func (s *Server) GetIdentificationServiceArea(
 		return nil, stacktrace.Propagate(err, "Could not get ISA from application layer")
 	}
 	if isa == nil {
-		return nil, dsserr.NotFound(req.GetId())
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", req.GetId())
 	}
 	p, err := isa.ToProto()
 	if err != nil {
@@ -54,7 +54,7 @@ func (s *Server) CreateIdentificationServiceArea(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	if params == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
@@ -118,7 +118,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	// TODO: put the validation logic in the models layer
 	if params == nil {
@@ -175,7 +175,7 @@ func (s *Server) DeleteIdentificationServiceArea(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {

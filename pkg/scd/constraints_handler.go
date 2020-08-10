@@ -3,7 +3,6 @@ package scd
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
@@ -42,7 +41,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var response *scdpb.ChangeConstraintReferenceResponse
@@ -51,11 +50,11 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		old, err := r.GetConstraint(ctx, id)
 		switch {
 		case err == sql.ErrNoRows:
-			return dsserr.NotFound(id.String())
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 		case err != nil:
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
 		case old.Owner != owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("Constraint is owned by %s", old.Owner))
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Constraint is owned by different client")
 		}
 
 		// Find Subscriptions that may overlap the Constraint's Volume4D
@@ -125,7 +124,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var response *scdpb.GetConstraintReferenceResponse
@@ -133,7 +132,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 		constraint, err := r.GetConstraint(ctx, id)
 		switch {
 		case err == sql.ErrNoRows:
-			return dsserr.NotFound(id.String())
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 		case err != nil:
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
 		}
@@ -174,7 +173,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var (
@@ -226,7 +225,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		}
 		if old != nil {
 			if old.Owner != owner {
-				return dsserr.PermissionDenied(fmt.Sprintf("Constraint is owned by %s", old.Owner))
+				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Constraint is owned by different client")
 			}
 			if old.Version != scdmodels.Version(params.OldVersion) {
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d is not the current version", params.OldVersion)
@@ -334,7 +333,7 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.Query
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var response *scdpb.SearchConstraintReferencesResponse

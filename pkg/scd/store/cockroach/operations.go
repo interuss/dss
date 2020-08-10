@@ -228,7 +228,7 @@ func (s *repo) GetOperation(ctx context.Context, id dssmodels.ID) (*scdmodels.Op
 	case nil:
 		return sub, nil
 	case sql.ErrNoRows:
-		return nil, dsserr.NotFound(id.String())
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id.String())
 	default:
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
@@ -270,11 +270,11 @@ func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID, owner dssmo
 	old, err := s.fetchOperationByID(ctx, s.q, id)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, nil, dsserr.NotFound(id.String())
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id.String())
 	case err != nil:
 		return nil, nil, stacktrace.Propagate(err, "Error fetching Operation by ID")
 	case old != nil && old.Owner != owner:
-		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Operation is owned by %s", old.Owner))
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
 	}
 	if err := s.populateOperationCells(ctx, s.q, old); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error populating Operation cells")
@@ -312,7 +312,7 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 	switch {
 	case old == nil && !operation.Version.Empty():
 		// The user wants to update an existing Operation, but one wasn't found.
-		return nil, nil, dsserr.NotFound(operation.ID.String())
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", operation.ID.String())
 	case old != nil && operation.Version.Empty():
 		// The user wants to create a new Operation but it already exists.
 		return nil, nil, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Operation %s already exists", operation.ID.String())
@@ -320,7 +320,7 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 		// The user wants to update an Operation but the version doesn't match.
 		return nil, nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version")
 	case old != nil && old.Owner != operation.Owner:
-		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Operation is owned by %s", old.Owner))
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.

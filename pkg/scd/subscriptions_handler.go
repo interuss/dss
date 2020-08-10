@@ -30,7 +30,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var (
@@ -90,7 +90,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 			// There is no previous Subscription (this is a creation attempt)
 			if !subreq.Version.Empty() {
 				// The user wants to update an existing Subscription, but one wasn't found.
-				return dsserr.NotFound(subreq.ID.String())
+				return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", subreq.ID.String())
 			}
 		} else {
 			// There is a previous Subscription (this is an update attempt)
@@ -102,7 +102,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 				// The user wants to update a Subscription but the version doesn't match.
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %d is not current", subreq.Version)
 			case old.Owner != subreq.Owner:
-				return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
+				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
 			}
 
 			// TODO: validate against DependentOperations when available
@@ -200,7 +200,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var response *scdpb.GetSubscriptionResponse
@@ -211,12 +211,12 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 			return stacktrace.Propagate(err, "Could not get Subscription from repo")
 		}
 		if sub == nil {
-			return dsserr.NotFound(id.String())
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
 		}
 
 		// Check if the client is authorized to view this Subscription
 		if owner != sub.Owner {
-			return dsserr.PermissionDenied("Subscription owned by a different client")
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
 		}
 
 		// Convert Subscription to proto
@@ -258,7 +258,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var response *scdpb.SearchSubscriptionsResponse
@@ -304,7 +304,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var response *scdpb.DeleteSubscriptionResponse
@@ -315,9 +315,9 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 		case err != nil:
 			return stacktrace.Propagate(err, "Could not get Subscription from repo")
 		case old == nil: // Return a 404 here.
-			return dsserr.NotFound(id.String())
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
 		case old.Owner != owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
 		}
 
 		// Delete Subscription in repo

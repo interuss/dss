@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -105,12 +104,12 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 			return stacktrace.Propagate(err, "Error getting Subscription from repo")
 		case old == nil:
 			// The user wants to update an existing subscription, but one wasn't found.
-			return dsserr.NotFound(s.ID.String())
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", s.ID.String())
 		case !s.Version.Matches(old.Version):
 			// The user wants to update a subscription but the version doesn't match.
 			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version")
 		case old.Owner != s.Owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("Subscription is owned by %s", old.Owner))
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
 		}
 		// Validate and perhaps correct StartTime and EndTime.
 		if err := s.AdjustTimeRange(a.clock.Now(), old); err != nil {
@@ -147,11 +146,11 @@ func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dss
 		case err != nil:
 			return stacktrace.Propagate(err, "Error getting Subscription from repo")
 		case old == nil:
-			return dsserr.NotFound(id.String())
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
 		case !version.Matches(old.Version):
 			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Version %s is not current", version.String())
 		case old.Owner != owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("Sub is owned by %s", old.Owner))
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
 		}
 
 		ret, err = repo.DeleteSubscription(ctx, old)

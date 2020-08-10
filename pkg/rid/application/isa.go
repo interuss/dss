@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -70,11 +69,11 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		case err != nil:
 			return stacktrace.Propagate(err, "Error getting ISA")
 		case old == nil:
-			return dsserr.NotFound(id.String())
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", id.String())
 		case !version.Matches(old.Version):
 			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", version.String())
 		case old.Owner != owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "ISA is owned by different client")
 		}
 
 		ret, err = repo.DeleteISA(ctx, old)
@@ -145,9 +144,9 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		case err != nil:
 			return stacktrace.Propagate(err, "Error getting ISA")
 		case old == nil:
-			return dsserr.NotFound(fmt.Sprintf("ISA not found: %s", isa.ID))
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", isa.ID)
 		case old.Owner != isa.Owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "ISA is owned by different client")
 		case !old.Version.Matches(isa.Version):
 			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", old.Version.String())
 		}

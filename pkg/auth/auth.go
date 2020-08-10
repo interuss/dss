@@ -322,7 +322,7 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 	}
 
 	if err := a.validateKeyClaimedScopes(ctx, info, keyClaims.Scopes); err != nil {
-		return nil, dsserr.PermissionDenied("Access token missing scopes")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Access token missing scopes")
 	}
 
 	return handler(ContextWithOwner(ctx, models.Owner(keyClaims.Subject)), req)

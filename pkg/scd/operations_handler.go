@@ -32,7 +32,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var response *scdpb.ChangeOperationReferenceResponse
@@ -78,7 +78,7 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var response *scdpb.GetOperationReferenceResponse
@@ -130,7 +130,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	if aoi.TimeEnd != nil {
@@ -182,7 +182,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	// Retrieve ID of client making call
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	var (

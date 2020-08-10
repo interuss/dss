@@ -21,7 +21,7 @@ func (s *Server) DeleteSubscription(
 	// TODO: simply verify the owner was set in an upper level.
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
@@ -54,7 +54,7 @@ func (s *Server) SearchSubscriptions(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
@@ -103,7 +103,7 @@ func (s *Server) GetSubscription(
 		return nil, stacktrace.Propagate(err, "Could not get Subscription at the application layer")
 	}
 	if subscription == nil {
-		return nil, dsserr.NotFound(req.GetId())
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", req.GetId())
 	}
 	p, err := subscription.ToProto()
 	if err != nil {
@@ -125,7 +125,7 @@ func (s *Server) CreateSubscription(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	if params == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
@@ -203,7 +203,7 @@ func (s *Server) UpdateSubscription(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	if params == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
