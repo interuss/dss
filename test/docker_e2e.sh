@@ -24,17 +24,17 @@ function gather_logs() {
 
 function cleanup() {
 	# ----------- clean up -----------
-	echo "Stopping dummy oauth container"
-	docker rm -f dummy-oauth-for-testing &> /dev/null || true
+	# echo "Stopping dummy oauth container"
+	# docker rm -f dummy-oauth-for-testing &> /dev/null || true
 
-	echo "Stopping http gateway container"
-	docker kill -f http-gateway-for-testing &> /dev/null || true
+	# echo "Stopping http gateway container"
+	# docker kill -f http-gateway-for-testing &> /dev/null || true
 
-	echo "Stopping grpc-backend container"
-	docker kill -f grpc-backend-for-testing &> /dev/null || true
+	# echo "Stopping grpc-backend container"
+	# docker kill -f grpc-backend-for-testing &> /dev/null || true
 
 	echo "Stopping crdb docker"
-	docker rm -f dss-crdb-for-debugging &> /dev/null || true
+	# docker rm -f dss-crdb-for-debugging &> /dev/null || true
 }
 
 function on_exit() {

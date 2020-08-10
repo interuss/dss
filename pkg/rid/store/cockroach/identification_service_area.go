@@ -18,9 +18,8 @@ import (
 )
 
 const (
-	isaFields         = "id, owner, url, cells, starts_at, ends_at, updated_at"
-	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
-	updateISAFields   = "id, url, cells, starts_at, ends_at, writer, updated_at"
+	isaFields       = "id, owner, url, cells, starts_at, ends_at, writer, updated_at"
+	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
 type IISARepo interface {
@@ -58,6 +57,7 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 			&cids,
 			&i.StartTime,
 			&i.EndTime,
+			&i.Writer,
 			&i.Version,
 		)
 		if err != nil {
@@ -112,7 +112,7 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 				identification_service_areas
 				(%s)
 			VALUES
-				($1, $2, $3, $4, $5, $6, transaction_timestamp())
+				($1, $2, $3, $4, $5, $6, $7, transaction_timestamp())
 			RETURNING
 				%s`, isaFields, isaFields)
 	)
@@ -126,7 +126,7 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime)
+	return c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Writer)
 }
 
 // UpdateISA updates the IdentificationServiceArea identified by "id" and owned
@@ -137,33 +137,6 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 // TODO: simplify the logic to just update, without the primary query.
 // Returns nil, nil if ID, version not found
 func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	return c.updateISAV3(ctx, isa)
-}
-
-func (c *isaRepo) updateISAV3(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	var (
-		updateAreasQuery = fmt.Sprintf(`
-			UPDATE
-				identification_service_areas
-			SET	(%s) = ($1, $2, $3, $4, $5, transaction_timestamp())
-			WHERE id = $1 AND updated_at = $6
-			RETURNING
-				%s`, updateISAFieldsV3, isaFields)
-	)
-
-	cids := make([]int64, len(isa.Cells))
-
-	for i, cell := range isa.Cells {
-		if err := geo.ValidateCell(cell); err != nil {
-			return nil, err
-		}
-		cids[i] = int64(cell)
-	}
-
-	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
-}
-
-func (c *isaRepo) updateISAV3_1(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	var (
 		updateAreasQuery = fmt.Sprintf(`
 			UPDATE
