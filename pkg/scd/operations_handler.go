@@ -312,6 +312,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			key = append(key, scdmodels.OVN(ovn))
 		}
 
+		// TODO: Move OVN checking to the application layer here (#277)
 		op, subs, err := r.UpsertOperation(ctx, &scdmodels.Operation{
 			ID:      id,
 			Owner:   owner,
@@ -328,13 +329,16 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			State:          scdmodels.OperationState(params.State),
 		}, key)
 
-		if err == scderr.MissingOVNsInternalError() {
+		if stacktrace.GetCode(err) == dsserr.MissingOVNs {
 			// The client is missing some OVNs; provide the pointers to the
 			// information they need
 			ops, err := r.SearchOperations(ctx, uExtent)
 			if err != nil {
 				return stacktrace.Propagate(err, "Could not search Operations in repo")
 			}
+
+			// TODO: Remove Operations with correctly-supplied OVNs (#344)
+			// TODO: Enumerate missing Constraints when applicable (#391)
 
 			for _, op := range ops {
 				if op.Owner != owner {
@@ -346,7 +350,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			if err != nil {
 				return stacktrace.Propagate(err, "Failed to construct missing OVNs error message")
 			}
-			return status.ErrorProto(p)
+			return stacktrace.Propagate(status.ErrorProto(p), "Missing OVNs")
 		}
 
 		if err != nil {

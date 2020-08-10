@@ -6,13 +6,13 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/palantir/stacktrace"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
-	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
 )
 
-const errMessageMissingOVNs = "At least one current OVN not provided"
+const errMessageMissingOVNs = "Current OVNs not provided for one or more Operations or Constraints"
 
 var (
-	errMissingOVNs = status.Error(dsserrors.MissingOVNs, "Current OVNS not provided for one or more Operations or Constraints")
+	ErrMissingOVNs = stacktrace.NewErrorWithCode(dsserrors.MissingOVNs, errMessageMissingOVNs)
 )
 
 // MissingOVNsErrorResponse is Used to return sufficient information for an
@@ -33,15 +33,9 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (*spb.Status, e
 		detail.EntityConflicts = append(detail.EntityConflicts, entityRef)
 	}
 
-	p, err := dsserrors.MakeStatusProto(dsserrors.MissingOVNs, errMessageMissingOVNs, detail)
+	p, err := dsserrors.MakeStatusProto(codes.Code(uint16(dsserrors.MissingOVNs)), errMessageMissingOVNs, detail)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error adding AirspaceConflictResponse detail to Status")
 	}
 	return p, nil
-}
-
-// MissingOVNsInternalError is a single, consistent error to use internally when
-// the Storage layer detects missing OVNs
-func MissingOVNsInternalError() error {
-	return errMissingOVNs
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -136,9 +137,9 @@ func myCodeToHTTPStatus(code codes.Code) int {
 		return http.StatusServiceUnavailable
 	case codes.DataLoss:
 		return http.StatusInternalServerError
-	case codes.Code(int32(errors.AreaTooLarge)):
+	case codes.Code(uint16(errors.AreaTooLarge)):
 		return http.StatusRequestEntityTooLarge
-	case errors.MissingOVNs:
+	case codes.Code(uint16(errors.MissingOVNs)):
 		return http.StatusConflict
 	}
 
@@ -182,21 +183,20 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 	}
 	w.Header().Set("Content-Type", contentType)
 
+	// Marshal error content into buf
 	var buf []byte
-	var merr error
+	var marshalingErr error
 	handled := false
-	if s.Code() == errors.MissingOVNs {
+	if s.Code() == codes.Code(uint16(errors.MissingOVNs)) {
 		// Handle special return schema for missing OVNs
 		if len(s.Details()) < 1 {
-			grpclog.Infof("Missing Details from Status")
-			merr = errors.Internal("Missing Details from Status")
+			marshalingErr = stacktrace.NewError("Missing Details from Status")
 		} else {
 			body, ok := s.Details()[0].(*scdpb.AirspaceConflictResponse)
 			if ok {
-				buf, merr = marshaler.Marshal(body)
+				buf, marshalingErr = marshaler.Marshal(body)
 			} else {
-				grpclog.Infof("Cast to *scdpb.AirspaceConflictResponse failed from type %s", reflect.TypeOf(s.Details()[0]))
-				merr = errors.Internal("Unable to cast s.Details()[0] to *scdpb.AirspaceConflictResponse")
+				marshalingErr = stacktrace.NewError("Unable to cast s.Details()[0] from %s to *scdpb.AirspaceConflictResponse", reflect.TypeOf(s.Details()[0]))
 			}
 		}
 		handled = true
@@ -204,7 +204,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 		// Handle explicit error responses
 		result, ok := s.Details()[0].(*auxpb.StandardErrorResponse)
 		if ok {
-			buf, merr = marshaler.Marshal(result)
+			buf, marshalingErr = marshaler.Marshal(result)
 			handled = true
 		}
 	}
@@ -217,22 +217,25 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 			Details: s.Proto().GetDetails(),
 		}
 
-		buf, merr = marshaler.Marshal(body)
-		if merr != nil {
-			grpclog.Infof("Failed to marshal error message %q: %v", body, merr)
+		buf, marshalingErr = marshaler.Marshal(body)
+		if marshalingErr != nil {
+			grpclog.Errorf("Failed to marshal default errorBody message %q: %v", body, marshalingErr)
 		}
+	} else if marshalingErr != nil {
+		grpclog.Errorf("Failed to marshal response: %v", marshalingErr)
 	}
-	if merr != nil {
+
+	if marshalingErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		if _, err := io.WriteString(w, fallback); err != nil {
-			grpclog.Infof("Failed to write response: %v", err)
+			grpclog.Errorf("Failed to write response: %v", err)
 		}
 		return
 	}
 
 	md, ok := runtime.ServerMetadataFromContext(ctx)
 	if !ok {
-		grpclog.Infof("Failed to extract ServerMetadata from context")
+		grpclog.Errorf("Failed to extract ServerMetadata from context")
 	}
 
 	handleForwardResponseServerMetadata(w, mux, md)
@@ -240,7 +243,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 	st := myCodeToHTTPStatus(s.Code())
 	w.WriteHeader(st)
 	if _, err := w.Write(buf); err != nil {
-		grpclog.Infof("Failed to write response: %v", err)
+		grpclog.Errorf("Failed to write response: %v", err)
 	}
 
 	handleForwardResponseTrailer(w, md)

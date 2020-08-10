@@ -30,7 +30,7 @@ const (
 
 	// MissingOVNs is the error to signal that an AirspaceConflictResponse should
 	// be returned rather than the standard error response.
-	MissingOVNs codes.Code = 19
+	MissingOVNs stacktrace.ErrorCode = stacktrace.ErrorCode(19)
 
 	AlreadyExists stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.AlreadyExists))
 	BadRequest    stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.InvalidArgument))
@@ -48,6 +48,10 @@ const (
 
 	// Exhausted is used when a USS creates too many resources in a given area.
 	Exhausted stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.ResourceExhausted))
+
+	// Unauthenticated returns an error that is used when an Oauth token is invalid
+	// or not supplied.
+	Unauthenticated stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.Unauthenticated))
 )
 
 func init() {
@@ -61,9 +65,9 @@ func init() {
 func makeErrID() string {
 	errUUID, err := uuid.NewRandom()
 	if err == nil {
-		return errUUID.String()
+		return fmt.Sprintf("E:%s", errUUID.String())
 	}
-	return fmt.Sprintf("<error ID could not be constructed: %s>", err)
+	return fmt.Sprintf("E:<error ID could not be constructed: %s>", err)
 }
 
 // MakeStatusProto adds the content of a proto as a detail to a Status proto
@@ -95,78 +99,60 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 		resp, err := handler(ctx, req)
 
 		if err == nil {
-			return resp, err
+			return resp, nil
 		}
-
-		// Separate the root cause from the stacktrace wrapping.
-		trace := err.Error()
-		rootErr := stacktrace.RootCause(err)
 
 		errID := makeErrID()
 
+		// Separate the root cause and code from the stacktrace wrapping.
+		trace := err.Error()
+		rootErr := stacktrace.RootCause(err)
+		code := stacktrace.GetCode(err)
+
 		statusErr, ok := status.FromError(rootErr)
-		if !ok {
-			stacktraceCode := stacktrace.GetCode(err)
-			if stacktraceCode != stacktrace.NoCode {
-				logger.Error(
-					fmt.Sprintf("stacktrace error %s during unary server call", errID),
-					zap.String("method", info.FullMethod),
-					zap.String("stacktrace", trace),
-					zap.Int("code", int(stacktraceCode)),
-					zap.Error(rootErr))
-				p, constructionErr := MakeStatusProto(codes.Code(uint16(stacktraceCode)), rootErr.Error(), &auxpb.StandardErrorResponse{
-					Error:   rootErr.Error(),
-					Code:    int32(stacktraceCode),
-					Message: rootErr.Error(),
-					ErrorId: errID,
-				})
-				if constructionErr == nil {
-					err = status.ErrorProto(p)
-					logger.Error("Constructed Status from proto", zap.Int("detail_count", len(p.Details)), zap.Error(err))
-				} else {
-					logger.Error(
-						fmt.Sprintf("Error constructing StandardErrorResponse with %s", errID),
-						zap.Error(constructionErr))
-					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s"))
-				}
-			} else {
-				logger.Error(
-					fmt.Sprintf("Non-Status error %s during unary server call", errID),
-					zap.String("method", info.FullMethod),
-					zap.String("stacktrace", trace),
-					zap.Error(rootErr))
-				if obfuscateInternalErrors {
-					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
-				} else {
-					err = status.Error(codes.Internal, err.Error())
-				}
-			}
-		} else {
+		if ok {
+			// The root cause is a Status error; return it exactly as-is.
 			logger.Error(
 				fmt.Sprintf("Status error %s during unary server call", errID),
 				zap.String("method", info.FullMethod),
-				zap.Stringer("code", statusErr.Code()),
-				zap.String("message", statusErr.Message()),
-				zap.Any("details", statusErr.Details()),
 				zap.String("stacktrace", trace),
+				zap.String("grpc_code", statusErr.Code().String()),
 				zap.Error(rootErr))
-			if obfuscateInternalErrors && (statusErr.Code() == codes.Internal || statusErr.Code() == codes.Unknown) {
-				err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
-			}
+			return resp, rootErr
 		}
 
-		logger.Info("Just before returning from interceptor", zap.String("Error()", err.Error()), zap.Error(err))
+		if code != stacktrace.NoCode {
+			logger.Error(
+				fmt.Sprintf("Error %s during unary server call", errID),
+				zap.String("method", info.FullMethod),
+				zap.String("stacktrace", trace),
+				zap.String("grpc_code", codes.Code(uint16(code)).String()),
+				zap.Int("code", int(code)),
+				zap.Error(rootErr))
+			p, constructionErr := MakeStatusProto(codes.Code(uint16(code)), rootErr.Error(), &auxpb.StandardErrorResponse{
+				Error:   rootErr.Error(),
+				Code:    int32(code),
+				Message: rootErr.Error(),
+				ErrorId: errID,
+			})
+			if constructionErr == nil {
+				err = status.ErrorProto(p)
+			} else {
+				constructionErrID := makeErrID()
+				logger.Error(
+					fmt.Sprintf("Error %s constructing StandardErrorResponse from %s", constructionErrID, errID),
+					zap.Error(constructionErr))
+				err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", constructionErrID))
+			}
+		} else {
+			logger.Error(
+				fmt.Sprintf("Uncoded error %s during unary server call", errID),
+				zap.String("method", info.FullMethod),
+				zap.String("stacktrace", trace),
+				zap.Error(rootErr))
+			err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
+		}
+
 		return resp, err
 	}
-}
-
-// Internal returns an error that represents an internal DSS error.
-func Internal(msg string) error {
-	return status.Error(codes.Internal, msg)
-}
-
-// Unauthenticated returns an error that is used when an Oauth token is invalid
-// or not supplied.
-func Unauthenticated(msg string) error {
-	return status.Error(codes.Unauthenticated, msg)
 }

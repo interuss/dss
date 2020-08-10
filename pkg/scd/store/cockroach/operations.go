@@ -355,12 +355,12 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 
 		for _, op := range operations {
 			if _, match := keyIdx[op.OVN]; !match {
-				return nil, nil, scderr.MissingOVNsInternalError()
+				return nil, nil, stacktrace.Propagate(scderr.ErrMissingOVNs, "Missing OVN for Operation %s", op.ID)
 			}
 			delete(keyIdx, op.OVN)
 		}
 	default:
-		// We default to not checking the OVNs for now for all other operation states.
+		// Do not check the OVNs for any other operation states.
 	}
 
 	area, subscribers, err := s.pushOperation(ctx, s.q, operation)

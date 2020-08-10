@@ -290,7 +290,7 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 
 	tknStr, ok := getToken(ctx)
 	if !ok {
-		return nil, dsserr.Unauthenticated("Missing access token")
+		return nil, stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")
 	}
 
 	a.keyGuard.RLock()
@@ -312,13 +312,12 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 		}
 	}
 	if !validated {
-		a.logger.Error("Access token validation failed", zap.Error(err))
-		return nil, dsserr.Unauthenticated(err.Error())
+		return nil, stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")
 	}
 
 	if !a.acceptedAudiences[keyClaims.Audience] {
-		return nil, dsserr.Unauthenticated(
-			fmt.Sprintf("Invalid access token audience: %v", keyClaims.Audience))
+		return nil, stacktrace.NewErrorWithCode(dsserr.Unauthenticated,
+			"Invalid access token audience: %v", keyClaims.Audience)
 	}
 
 	if err := a.validateKeyClaimedScopes(ctx, info, keyClaims.Scopes); err != nil {
