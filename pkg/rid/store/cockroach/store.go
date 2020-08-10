@@ -50,7 +50,7 @@ func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	logger := logging.WithValuesFromContext(ctx, s.logger)
 	storeVersion, err := s.GetVersion(ctx)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error determining database RID schema version")
 	}
 
 	return &repo{
