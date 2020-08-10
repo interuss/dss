@@ -22,7 +22,7 @@ func (s *Server) GetIdentificationServiceArea(
 
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -57,18 +57,18 @@ func (s *Server) CreateIdentificationServiceArea(
 		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 	if params == nil {
-		return nil, dsserr.BadRequest("Params not set")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
 	// TODO: put the validation logic in the models layer
 	if params.FlightsUrl == "" {
-		return nil, dsserr.BadRequest("Missing required flightsURL")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required flightsURL")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("Missing required extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	isa := &ridmodels.IdentificationServiceArea{
@@ -78,7 +78,7 @@ func (s *Server) CreateIdentificationServiceArea(
 	}
 
 	if err := isa.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
 	insertedISA, subscribers, err := s.App.InsertISA(ctx, isa)
@@ -111,7 +111,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid version: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
@@ -122,17 +122,17 @@ func (s *Server) UpdateIdentificationServiceArea(
 	}
 	// TODO: put the validation logic in the models layer
 	if params == nil {
-		return nil, dsserr.BadRequest("Params not set")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
 	if params.FlightsUrl == "" {
-		return nil, dsserr.BadRequest("Missing required flightsURL")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required flightsURL")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("Missing required extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	isa := &ridmodels.IdentificationServiceArea{
@@ -144,7 +144,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 	}
 
 	if err := isa.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
 	insertedISA, subscribers, err := s.App.UpdateISA(ctx, isa)
@@ -179,11 +179,11 @@ func (s *Server) DeleteIdentificationServiceArea(
 	}
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid version: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
@@ -219,7 +219,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 		case *geo.ErrAreaTooLarge:
 			return nil, dsserr.AreaTooLarge(errMsg)
 		}
-		return nil, dsserr.BadRequest(errMsg)
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
 	var (

@@ -78,7 +78,8 @@ def test_get_isa_by_id(session):
 @default_scope(SCOPE_READ)
 def test_get_isa_by_search_missing_params(session):
   resp = session.get('/identification_service_areas')
-  assert resp.status_code == 400
+  print(resp.content)
+  assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_READ)
@@ -151,13 +152,13 @@ def test_get_isa_by_search_huge_area(session):
 @default_scope(SCOPE_WRITE)
 def test_delete_isa_wrong_version(session):
   resp = session.delete('/identification_service_areas/{}/fake_version'.format(ISA_ID))
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_WRITE)
 def test_delete_isa_empty_version(session):
   resp = session.delete('/identification_service_areas/{}/'.format(ISA_ID))
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content
 
 
 def test_delete_isa(session):

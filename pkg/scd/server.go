@@ -2,7 +2,6 @@ package scd
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
@@ -11,6 +10,7 @@ import (
 	"github.com/interuss/dss/pkg/geo"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	scdstore "github.com/interuss/dss/pkg/scd/store"
+	"github.com/palantir/stacktrace"
 )
 
 const (
@@ -24,7 +24,7 @@ func dssErrorOfAreaError(err error) error {
 	case *geo.ErrAreaTooLarge:
 		return dsserr.AreaTooLarge(err.Error())
 	default:
-		return dsserr.BadRequest(fmt.Sprintf("Bad area: %s", err))
+		return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Bad area")
 	}
 }
 
@@ -77,5 +77,5 @@ func (a *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator 
 
 // MakeDssReport creates an error report about a DSS.
 func (a *Server) MakeDssReport(ctx context.Context, req *scdpb.MakeDssReportRequest) (*scdpb.ErrorReport, error) {
-	return nil, dsserr.BadRequest("not yet implemented")
+	return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Not yet implemented")
 }

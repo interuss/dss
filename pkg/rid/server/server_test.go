@@ -187,7 +187,7 @@ func TestCreateSubscription(t *testing.T) {
 			callbacks: &ridpb.SubscriptionCallbacks{
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
-			wantErr: dsserr.BadRequest("missing required extents"),
+			wantErr: stacktrace.NewErrorWithCode(dsserr.BadRequest, "missing required extents"),
 		},
 		{
 			name: "missing-extents-spatial-volume",
@@ -196,7 +196,7 @@ func TestCreateSubscription(t *testing.T) {
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
 			extents: &ridpb.Volume4D{},
-			wantErr: dsserr.BadRequest("bad extents: missing required spatial_volume"),
+			wantErr: stacktrace.NewErrorWithCode(dsserr.BadRequest, "bad extents: missing required spatial_volume"),
 		},
 		{
 			name: "missing-spatial-volume-footprint",
@@ -207,7 +207,7 @@ func TestCreateSubscription(t *testing.T) {
 			extents: &ridpb.Volume4D{
 				SpatialVolume: &ridpb.Volume3D{},
 			},
-			wantErr: dsserr.BadRequest("bad extents: spatial_volume missing required footprint"),
+			wantErr: stacktrace.NewErrorWithCode(dsserr.BadRequest, "bad extents: spatial_volume missing required footprint"),
 		},
 		{
 			name: "missing-spatial-volume-footprint",
@@ -220,13 +220,13 @@ func TestCreateSubscription(t *testing.T) {
 					Footprint: &ridpb.GeoPolygon{},
 				},
 			},
-			wantErr: dsserr.BadRequest("bad extents: not enough points in polygon"),
+			wantErr: stacktrace.NewErrorWithCode(dsserr.BadRequest, "bad extents: not enough points in polygon"),
 		},
 		{
 			name:    "missing-callbacks",
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
-			wantErr: dsserr.BadRequest("missing required callbacks"),
+			wantErr: stacktrace.NewErrorWithCode(dsserr.BadRequest, "missing required callbacks"),
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -439,14 +439,14 @@ func TestCreateISA(t *testing.T) {
 			name:       "missing-extents",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest("missing required extents"),
+			wantErr:    stacktrace.NewErrorWithCode(dsserr.BadRequest, "missing required extents"),
 		},
 		{
 			name:       "missing-extents-spatial-volume",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents:    &ridpb.Volume4D{},
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest("bad extents: missing required spatial_volume"),
+			wantErr:    stacktrace.NewErrorWithCode(dsserr.BadRequest, "bad extents: missing required spatial_volume"),
 		},
 		{
 			name: "missing-spatial-volume-footprint",
@@ -455,7 +455,7 @@ func TestCreateISA(t *testing.T) {
 				SpatialVolume: &ridpb.Volume3D{},
 			},
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest("bad extents: spatial_volume missing required footprint"),
+			wantErr:    stacktrace.NewErrorWithCode(dsserr.BadRequest, "bad extents: spatial_volume missing required footprint"),
 		},
 		{
 			name: "missing-spatial-volume-footprint",
@@ -466,13 +466,13 @@ func TestCreateISA(t *testing.T) {
 				},
 			},
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest("bad extents: not enough points in polygon"),
+			wantErr:    stacktrace.NewErrorWithCode(dsserr.BadRequest, "bad extents: not enough points in polygon"),
 		},
 		{
 			name:    "missing-flights-url",
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
-			wantErr: dsserr.BadRequest("missing required flightsURL"),
+			wantErr: stacktrace.NewErrorWithCode(dsserr.BadRequest, "missing required flightsURL"),
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -534,14 +534,14 @@ func TestUpdateISA(t *testing.T) {
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
 			version: version,
-			wantErr: dsserr.BadRequest("missing required flightsURL"),
+			wantErr: stacktrace.NewErrorWithCode(dsserr.BadRequest, "missing required flightsURL"),
 		},
 		{
 			name:       "missing-extents",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			flightsURL: "https://example.com",
 			version:    version,
-			wantErr:    dsserr.BadRequest("missing required extents"),
+			wantErr:    stacktrace.NewErrorWithCode(dsserr.BadRequest, "missing required extents"),
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {

@@ -36,7 +36,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 	// Retrieve Constraint ID
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -120,7 +120,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConstraintReferenceRequest) (*scdpb.GetConstraintReferenceResponse, error) {
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -168,7 +168,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -183,27 +183,27 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 	)
 
 	if len(params.UssBaseUrl) == 0 {
-		return nil, dsserr.BadRequest("Missing required UssBaseUrl")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
 	}
 
 	// TODO: factor out logic below into common multi-vol4d parser and reuse with PutOperationReference
 	for idx, extent := range params.GetExtents() {
 		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)
 		if err != nil {
-			return nil, dsserr.BadRequest(fmt.Sprintf("Failed to parse extents: %s", err))
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse extents")
 		}
 		extents[idx] = cExtent
 	}
 	uExtent, err := dssmodels.UnionVolumes4D(extents...)
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Failed to union extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to union extents")
 	}
 
 	if uExtent.StartTime == nil {
-		return nil, dsserr.BadRequest("Missing time_start from extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_start from extents")
 	}
 	if uExtent.EndTime == nil {
-		return nil, dsserr.BadRequest("Missing time_end from extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_end from extents")
 	}
 
 	cells, err := uExtent.CalculateSpatialCovering()
@@ -322,7 +322,7 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.Query
 	// Retrieve the area of interest parameter
 	aoi := req.GetParams().AreaOfInterest
 	if aoi == nil {
-		return nil, dsserr.BadRequest("missing area_of_interest")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
 	}
 
 	// Parse area of interest to common Volume4D

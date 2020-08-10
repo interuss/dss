@@ -78,17 +78,17 @@ func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 // ValidateTimeRange validates the time range of o.
 func (o *Operation) ValidateTimeRange() error {
 	if o.StartTime == nil {
-		return dsserr.BadRequest("Operation must have an time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation must have an time_start")
 	}
 
 	// EndTime cannot be omitted for new Operations.
 	if o.EndTime == nil {
-		return dsserr.BadRequest("Operation must have an time_end")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation must have an time_end")
 	}
 
 	// EndTime cannot be before StartTime.
 	if o.EndTime.Sub(*o.StartTime) < 0 {
-		return dsserr.BadRequest("Operation time_end must be after time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation time_end must be after time_start")
 	}
 
 	return nil

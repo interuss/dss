@@ -110,7 +110,7 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 			return stacktrace.Propagate(err, "Error getting ISA")
 		}
 		if old != nil {
-			return dsserr.AlreadyExists(fmt.Sprintf("ISA with ID %s already exists", isa.ID))
+			return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "ISA %s already exists", isa.ID)
 		}
 
 		// UpdateNotificationIdxsInCells is done in a Txn along with insert since

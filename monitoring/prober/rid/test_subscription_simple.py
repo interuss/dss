@@ -33,7 +33,7 @@ def test_ensure_clean_workspace(session):
 def test_sub_does_not_exist(session):
   resp = session.get('/subscriptions/{}'.format(SUB_ID))
   assert resp.status_code == 404
-  assert resp.json()['message'] == 'resource not found: {}'.format(SUB_ID)
+  assert resp.json()['message'] == 'Resource not found: {}'.format(SUB_ID)
 
 
 @default_scope(SCOPE_READ)

@@ -188,7 +188,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 	)
 
 	if len(cells) == 0 {
-		return nil, dsserr.BadRequest("Missing cell IDs for query")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}
 
 	if earliest == nil {

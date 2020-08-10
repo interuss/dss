@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/google/uuid"
+	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
@@ -29,6 +30,9 @@ const (
 	// MissingOVNs is the error to signal that an AirspaceConflictResponse should
 	// be returned rather than the standard error response.
 	MissingOVNs codes.Code = 19
+
+	AlreadyExists stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.AlreadyExists))
+	BadRequest stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.InvalidArgument))
 )
 
 func init() {
@@ -72,11 +76,11 @@ func MakeStatusProto(code codes.Code, message string, detail proto.Message) (*sp
 // errors and logs (to "logger") and replaces errors that are not *status.Status
 // instances or status instances that indicate an internal/unknown error.
 func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		resp, err = handler(ctx, req)
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		resp, err := handler(ctx, req)
 
 		if err == nil {
-			return
+			return resp, err
 		}
 
 		// Separate the root cause from the stacktrace wrapping.
@@ -87,15 +91,40 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 
 		statusErr, ok := status.FromError(rootErr)
 		if !ok {
-			logger.Error(
-				fmt.Sprintf("Non-Status error %s during unary server call", errID),
-				zap.String("method", info.FullMethod),
-				zap.String("stacktrace", trace),
-				zap.Error(rootErr))
-			if obfuscateInternalErrors {
-				err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
+			stacktraceCode := stacktrace.GetCode(err)
+			if stacktraceCode != stacktrace.NoCode {
+				logger.Error(
+					fmt.Sprintf("stacktrace error %s during unary server call", errID),
+					zap.String("method", info.FullMethod),
+					zap.String("stacktrace", trace),
+					zap.Int("code", int(stacktraceCode)),
+					zap.Error(rootErr))
+				p, constructionErr := MakeStatusProto(codes.Code(uint16(stacktraceCode)), rootErr.Error(), &auxpb.StandardErrorResponse{
+					Error:   rootErr.Error(),
+					Code:    int32(stacktraceCode),
+					Message: rootErr.Error(),
+					ErrorId: errID,
+				})
+				if constructionErr == nil {
+					err = status.ErrorProto(p)
+					logger.Error("Constructed Status from proto", zap.Int("detail_count", len(p.Details)), zap.Error(err))
+				} else {
+					logger.Error(
+						fmt.Sprintf("Error constructing StandardErrorResponse with %s", errID),
+						zap.Error(constructionErr))
+					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s"))
+				}
 			} else {
-				err = status.Error(codes.Internal, err.Error())
+				logger.Error(
+					fmt.Sprintf("Non-Status error %s during unary server call", errID),
+					zap.String("method", info.FullMethod),
+					zap.String("stacktrace", trace),
+					zap.Error(rootErr))
+				if obfuscateInternalErrors {
+					err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
+				} else {
+					err = status.Error(codes.Internal, err.Error())
+				}
 			}
 		} else {
 			logger.Error(
@@ -111,14 +140,9 @@ func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 			}
 		}
 
-		return
+		logger.Info("Just before returning from interceptor", zap.String("Error()", err.Error()), zap.Error(err))
+		return resp, err
 	}
-}
-
-// AlreadyExists returns an error used when creating a resource that already
-// exists.
-func AlreadyExists(id string) error {
-	return status.Error(codes.AlreadyExists, "Resource already exists: "+id)
 }
 
 // VersionMismatch returns an error used when updating a resource with an old
@@ -130,12 +154,6 @@ func VersionMismatch(msg string) error {
 // NotFound returns an error used when looking up a resource that doesn't exist.
 func NotFound(id string) error {
 	return status.Error(codes.NotFound, "Resource not found: "+id)
-}
-
-// BadRequest returns an error that is used when a user supplies bad request
-// parameters.
-func BadRequest(msg string) error {
-	return status.Error(codes.InvalidArgument, msg)
 }
 
 // Internal returns an error that represents an internal DSS error.

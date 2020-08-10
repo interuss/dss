@@ -26,7 +26,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 	// Retrieve Operation ID
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -73,7 +73,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperationReferenceRequest) (*scdpb.GetOperationReferenceResponse, error) {
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -118,13 +118,13 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	// Retrieve the area of interest parameter
 	aoi := req.GetParams().AreaOfInterest
 	if aoi == nil {
-		return nil, dsserr.BadRequest("Missing area_of_interest")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
 	}
 
 	// Parse area of interest to common Volume4D
 	vol4, err := dssmodels.Volume4DFromSCDProto(aoi)
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Error parsing geometry: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry")
 	}
 
 	// Retrieve ID of client making call
@@ -136,7 +136,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	if aoi.TimeEnd != nil {
 		endTime, _ := ptypes.Timestamp(aoi.TimeEnd.Value)
 		if time.Now().After(endTime) {
-			return nil, dsserr.BadRequest("End time is in the past")
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is in the past")
 		}
 	}
 
@@ -176,7 +176,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -191,31 +191,31 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	)
 
 	if len(params.UssBaseUrl) == 0 {
-		return nil, dsserr.BadRequest("Missing required UssBaseUrl")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
 	}
 
 	err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
 	if err != nil {
-		return nil, dsserr.BadRequest(err.Error())
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
 	}
 
 	for idx, extent := range params.GetExtents() {
 		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)
 		if err != nil {
-			return nil, dsserr.BadRequest(fmt.Sprintf("Failed to parse extents: %s", err))
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse extents")
 		}
 		extents[idx] = cExtent
 	}
 	uExtent, err := dssmodels.UnionVolumes4D(extents...)
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Failed to union extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to union extents")
 	}
 
 	if uExtent.StartTime == nil {
-		return nil, dsserr.BadRequest("Missing time_start from extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_start from extents")
 	}
 	if uExtent.EndTime == nil {
-		return nil, dsserr.BadRequest("Missing time_end from extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_end from extents")
 	}
 
 	cells, err := uExtent.CalculateSpatialCovering()
@@ -224,29 +224,28 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	}
 
 	if uExtent.EndTime.Before(*uExtent.StartTime) {
-		return nil, dsserr.BadRequest("End time is past the start time")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is past the start time")
 	}
 
 	if time.Now().After(*uExtent.EndTime) {
-		return nil, dsserr.BadRequest("End time is in the past")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is in the past")
 	}
 
 	if params.OldVersion == 0 && params.State != "Accepted" {
-		return nil, dsserr.BadRequest("Invalid state for version 0")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for version 0")
 	}
 
 	subscriptionID, err := dssmodels.IDFromOptionalString(params.GetSubscriptionId())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format for Subscription ID")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format for Subscription ID")
 	}
 
 	var response *scdpb.ChangeOperationReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		if subscriptionID.Empty() {
-			if err := scdmodels.ValidateUSSBaseURL(
-				params.GetNewSubscription().GetUssBaseUrl(),
-			); err != nil {
-				return dsserr.BadRequest(err.Error())
+			err := scdmodels.ValidateUSSBaseURL(params.GetNewSubscription().GetUssBaseUrl())
+			if err != nil {
+				return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
 			}
 
 			sub, err := r.UpsertSubscription(ctx, &scdmodels.Subscription{
@@ -273,7 +272,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				return stacktrace.Propagate(err, "Unable to get Subscription")
 			}
 			if sub == nil {
-				return dsserr.BadRequest("Specified Subscription does not exist")
+				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription does not exist")
 			}
 			updateSub := false
 			if sub.StartTime != nil && sub.StartTime.After(*uExtent.StartTime) {
@@ -281,7 +280,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 					sub.StartTime = uExtent.StartTime
 					updateSub = true
 				} else {
-					return dsserr.BadRequest("Subscription does not begin until after the Operation starts")
+					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the Operation starts")
 				}
 			}
 			if sub.EndTime != nil && sub.EndTime.Before(*uExtent.EndTime) {
@@ -289,7 +288,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 					sub.EndTime = uExtent.EndTime
 					updateSub = true
 				} else {
-					return dsserr.BadRequest("Subscription ends before the Operation ends")
+					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the Operation ends")
 				}
 			}
 			if !sub.Cells.Contains(cells) {
@@ -297,7 +296,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 					sub.Cells = s2.CellUnionFromUnion(sub.Cells, cells)
 					updateSub = true
 				} else {
-					return dsserr.BadRequest("Subscription does not cover entire spatial area of the Operation")
+					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not cover entire spatial area of the Operation")
 				}
 			}
 			if updateSub {

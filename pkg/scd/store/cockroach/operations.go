@@ -315,7 +315,7 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 		return nil, nil, dsserr.NotFound(operation.ID.String())
 	case old != nil && operation.Version.Empty():
 		// The user wants to create a new Operation but it already exists.
-		return nil, nil, dsserr.AlreadyExists(operation.ID.String())
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Operation %s already exists", operation.ID.String())
 	case old != nil && !operation.Version.Matches(old.Version):
 		// The user wants to update an Operation but the version doesn't match.
 		return nil, nil, dsserr.VersionMismatch("old version")
@@ -401,14 +401,14 @@ func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *ds
 	)
 
 	if v4d.SpatialVolume == nil || v4d.SpatialVolume.Footprint == nil {
-		return nil, dsserr.BadRequest("Missing geospatial footprint for query")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing geospatial footprint for query")
 	}
 	cells, err := v4d.SpatialVolume.Footprint.CalculateCovering()
 	if err != nil {
-		return nil, dsserr.BadRequest(err.Error())
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to calculate footprint covering")
 	}
 	if len(cells) == 0 {
-		return nil, dsserr.BadRequest("Missing cell IDs for query")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}
 
 	cids := make([]int64, len(cells))

@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -181,7 +180,7 @@ func (c *repo) fetchSubscription(ctx context.Context, q dsssql.Queryable, query 
 		return nil, stacktrace.NewError("Query returned %d subscriptions when only 0 or 1 was expected", len(subs))
 	}
 	if len(subs) == 0 {
-		return nil, sql.ErrNoRows
+		return nil, nil
 	}
 	return subs[0], nil
 }
@@ -199,6 +198,9 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 	result, err := c.fetchSubscription(ctx, q, query, id)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Subscription")
+	}
+	if result == nil {
+		return nil, nil
 	}
 	result.Cells, err = c.fetchCellsForSubscription(ctx, q, id)
 	if err != nil {
@@ -261,7 +263,10 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		s.StartTime,
 		s.EndTime)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error fetching Subscription")
+		return nil, stacktrace.Propagate(err, "Error fetching Subscription from upsert query")
+	}
+	if s == nil {
+		return nil, stacktrace.NewError("Upsert query did not return a Subscription")
 	}
 	s.Cells = cells
 
@@ -281,14 +286,12 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 // GetSubscription returns the subscription identified by "id".
 func (c *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels.Subscription, error) {
 	sub, err := c.fetchSubscriptionByID(ctx, c.q, id)
-	switch err {
-	case nil:
-		return sub, nil
-	case sql.ErrNoRows:
-		return nil, nil
-	default:
+	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
+	} else if sub == nil {
+		return nil, nil
 	}
+	return sub, nil
 }
 
 // Implements repos.Subscription.UpsertSubscription
@@ -339,7 +342,7 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 	}
 
 	if rows == 0 {
-		return dsserr.BadRequest("Failed to delete implicit subscription with active operation")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Failed to delete implicit subscription with active operation")
 	}
 	return nil
 }

@@ -240,7 +240,7 @@ func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.Cel
 	)
 
 	if len(cells) == 0 {
-		return nil, dsserr.BadRequest("no location provided")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
 	cids := make([]int64, len(cells))
@@ -268,7 +268,7 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 	)
 
 	if len(cells) == 0 {
-		return nil, dsserr.BadRequest("no location provided")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
 	cids := make([]int64, len(cells))

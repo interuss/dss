@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc"
 )
 
@@ -32,7 +33,7 @@ func ValidateUUID(req interface{}) error {
 		return nil
 	}
 	if _, err := uuid.Parse(r.GetId()); err != nil {
-		return dsserr.BadRequest("Invalid uuid")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid UUID format")
 	}
 	return nil
 }

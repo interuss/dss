@@ -42,7 +42,7 @@ lint:
 	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
 	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all  -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
 
-pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto
+pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
 		-I/usr/include \
 		-I/src \
@@ -50,7 +50,7 @@ pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto
 		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
 		--go_out=plugins=grpc:. $<
 
-pkg/api/v1/ridpb/rid.pb.gw.go: pkg/api/v1/ridpb/rid.proto pkg/api/v1/ridpb/rid.pb.go
+pkg/api/v1/ridpb/rid.pb.gw.go: pkg/api/v1/ridpb/rid.proto pkg/api/v1/ridpb/rid.pb.go generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
 		-I/usr/include \
 		-I. \
@@ -65,7 +65,7 @@ pkg/api/v1/ridpb/rid.proto: generator
 		-indent 2 \
 		-package ridpb > $@
 
-pkg/api/v1/auxpb/aux_service.pb.go: pkg/api/v1/auxpb/aux_service.proto
+pkg/api/v1/auxpb/aux_service.pb.go: pkg/api/v1/auxpb/aux_service.proto generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
 		-I/usr/include \
 		-I. \
@@ -73,7 +73,7 @@ pkg/api/v1/auxpb/aux_service.pb.go: pkg/api/v1/auxpb/aux_service.proto
 		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
 		--go_out=plugins=grpc:. $<
 
-pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.proto pkg/api/v1/auxpb/aux_service.pb.go
+pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.proto pkg/api/v1/auxpb/aux_service.pb.go generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
 		-I/usr/include \
 		-I. \
@@ -81,7 +81,7 @@ pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.proto pkg/ap
 		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
 		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
 
-pkg/api/v1/scdpb/scd.pb.go: pkg/api/v1/scdpb/scd.proto
+pkg/api/v1/scdpb/scd.pb.go: pkg/api/v1/scdpb/scd.proto generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
 		-I/usr/include \
 		-I. \
@@ -89,7 +89,7 @@ pkg/api/v1/scdpb/scd.pb.go: pkg/api/v1/scdpb/scd.proto
 		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
 		--go_out=plugins=grpc:. $<
 
-pkg/api/v1/scdpb/scd.pb.gw.go: pkg/api/v1/scdpb/scd.proto pkg/api/v1/scdpb/scd.pb.go
+pkg/api/v1/scdpb/scd.pb.gw.go: pkg/api/v1/scdpb/scd.proto pkg/api/v1/scdpb/scd.pb.go generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
 		-I/usr/include \
 		-I. \

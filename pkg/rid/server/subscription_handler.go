@@ -25,11 +25,11 @@ func (s *Server) DeleteSubscription(
 	}
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid version: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 	//TODO: put the context with timeout into an interceptor so it's always set.
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -64,7 +64,7 @@ func (s *Server) SearchSubscriptions(
 		case *geo.ErrAreaTooLarge:
 			return nil, dsserr.AreaTooLarge(errMsg)
 		}
-		return nil, dsserr.BadRequest(errMsg)
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -93,7 +93,7 @@ func (s *Server) GetSubscription(
 
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -128,17 +128,17 @@ func (s *Server) CreateSubscription(
 		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 	if params == nil {
-		return nil, dsserr.BadRequest("Params not set")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
 	if params.Callbacks == nil {
-		return nil, dsserr.BadRequest("Missing required callbacks")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required callbacks")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("Missing required extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	sub := &ridmodels.Subscription{
@@ -148,7 +148,7 @@ func (s *Server) CreateSubscription(
 	}
 
 	if err := sub.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
 	insertedSub, err := s.App.InsertSubscription(ctx, sub)
@@ -191,11 +191,11 @@ func (s *Server) UpdateSubscription(
 
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid version: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -206,13 +206,13 @@ func (s *Server) UpdateSubscription(
 		return nil, dsserr.PermissionDenied("Missing owner from context")
 	}
 	if params == nil {
-		return nil, dsserr.BadRequest("Params not set")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
 	if params.Callbacks == nil {
-		return nil, dsserr.BadRequest("Missing required callbacks")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required callbacks")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("Missing required extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
 
 	sub := &ridmodels.Subscription{
@@ -223,7 +223,7 @@ func (s *Server) UpdateSubscription(
 	}
 
 	if err := sub.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Invalid extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
 	insertedSub, err := s.App.UpdateSubscription(ctx, sub)

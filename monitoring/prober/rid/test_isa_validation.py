@@ -97,7 +97,7 @@ def test_isa_missing_footprint(session):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400
-  assert 'Missing required footprint' in resp.json()['message']
+  assert 'missing required footprint' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -114,8 +114,8 @@ def test_isa_missing_spatial_volume(session):
           },
           'flights_url': 'https://example.com/uss/flights',
       })
-  assert resp.status_code == 400
-  assert 'missing required spatial_volume' in resp.json()['message']
+  assert resp.status_code == 400, resp.content
+  assert 'Missing required spatial_volume' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)

@@ -69,7 +69,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 			return stacktrace.Propagate(err, "Error getting Subscription from repo")
 		}
 		if old != nil {
-			return dsserr.AlreadyExists(fmt.Sprintf("Subscription with ID %s already exists", s.ID))
+			return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Subscription %s already exists", s.ID)
 		}
 
 		// Check the user hasn't created too many subscriptions in this area.

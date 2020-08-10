@@ -24,7 +24,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -40,7 +40,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Parse extents
 	extents, err := dssmodels.Volume4DFromSCDProto(params.GetExtents())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("Unable to parse extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Unable to parse extents")
 	}
 
 	// Construct requested Subscription model
@@ -70,7 +70,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 
 	// Validate requested Subscription
 	if !subreq.NotifyForOperations && !subreq.NotifyForConstraints {
-		return nil, dsserr.BadRequest("No notification triggers requested for Subscription")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "No notification triggers requested for Subscription")
 	}
 
 	var result *scdpb.PutSubscriptionResponse
@@ -97,7 +97,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 			switch {
 			case subreq.Version.Empty():
 				// The user wants to create a new Subscription but it already exists.
-				return dsserr.AlreadyExists(subreq.ID.String())
+				return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Subscription %s already exists", subreq.ID.String())
 			case !subreq.Version.Matches(old.Version):
 				// The user wants to update a Subscription but the version doesn't match.
 				return dsserr.VersionMismatch(fmt.Sprintf("Version %d is not the current version", subreq.Version))
@@ -194,7 +194,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	// Retrieve ID of client making call
@@ -246,7 +246,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	// Retrieve the area of interest parameter
 	aoi := req.GetParams().AreaOfInterest
 	if aoi == nil {
-		return nil, dsserr.BadRequest("Missing area_of_interest")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
 	}
 
 	// Parse area of interest to common Volume4D
@@ -298,7 +298,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	// Retrieve ID of client making call

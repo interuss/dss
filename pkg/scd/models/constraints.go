@@ -62,17 +62,17 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 // ValidateTimeRange validates the time range of c.
 func (c *Constraint) ValidateTimeRange() error {
 	if c.StartTime == nil {
-		return dsserr.BadRequest("Constraint must have an time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Constraint must have an time_start")
 	}
 
 	// EndTime cannot be omitted for new Constraints.
 	if c.EndTime == nil {
-		return dsserr.BadRequest("Constraint must have an time_end")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Constraint must have an time_end")
 	}
 
 	// EndTime cannot be before StartTime.
 	if c.EndTime.Sub(*c.StartTime) < 0 {
-		return dsserr.BadRequest("Constraint time_end must be after time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Constraint time_end must be after time_start")
 	}
 
 	return nil

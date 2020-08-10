@@ -184,6 +184,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 
 	var buf []byte
 	var merr error
+	handled := false
 	if s.Code() == errors.MissingOVNs {
 		// Handle special return schema for missing OVNs
 		if len(s.Details()) < 1 {
@@ -198,7 +199,16 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 				merr = errors.Internal("Unable to cast s.Details()[0] to *scdpb.AirspaceConflictResponse")
 			}
 		}
-	} else {
+		handled = true
+	} else if len(s.Details()) == 1 {
+	  // Handle explicit error responses
+		result, ok := s.Details()[0].(*auxpb.StandardErrorResponse)
+		if ok {
+			buf, merr = marshaler.Marshal(result)
+			handled = true
+		}
+	}
+	if !handled {
 		// Default error-handling schema
 		body := &errorBody{
 			Error:   s.Message(),
