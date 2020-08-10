@@ -82,7 +82,7 @@ func (s *Server) CreateIdentificationServiceArea(
 
 	insertedISA, subscribers, err := s.App.InsertISA(ctx, isa)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not insert ISA at the application layer")
+		return nil, stacktrace.Propagate(err, "Could not insert ISA")
 	}
 
 	pbISA, err := insertedISA.ToProto()
@@ -148,7 +148,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 	insertedISA, subscribers, err := s.App.UpdateISA(ctx, isa)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not update ISA at the application layer")
+		return nil, stacktrace.Propagate(err, "Could not update ISA")
 	}
 
 	pbISA, err := insertedISA.ToProto()
@@ -188,7 +188,7 @@ func (s *Server) DeleteIdentificationServiceArea(
 	defer cancel()
 	isa, subscribers, err := s.App.DeleteISA(ctx, id, owner, version)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not delete ISA at the application layer")
+		return nil, stacktrace.Propagate(err, "Could not delete ISA")
 	}
 
 	p, err := isa.ToProto()
@@ -241,7 +241,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 	defer cancel()
 	isas, err := s.App.SearchISAs(ctx, cu, earliest, latest)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to search ISAs at the application layer")
+		return nil, stacktrace.Propagate(err, "Unable to search ISAs")
 	}
 
 	areas := make([]*ridpb.IdentificationServiceArea, len(isas))

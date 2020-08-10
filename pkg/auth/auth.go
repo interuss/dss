@@ -138,7 +138,7 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 		// jwks.Key returns a slice of keys.
 		jkeys := jwks.Key(kid)
 		if len(jkeys) == 0 {
-			return nil, stacktrace.NewError("failed to resolve key(s) for ID: %s", kid)
+			return nil, stacktrace.NewError("Failed to resolve key(s) for ID: %s", kid)
 		}
 		webKeys = append(webKeys, jkeys...)
 	}

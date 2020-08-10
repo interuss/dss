@@ -78,7 +78,6 @@ def test_get_isa_by_id(session):
 @default_scope(SCOPE_READ)
 def test_get_isa_by_search_missing_params(session):
   resp = session.get('/identification_service_areas')
-  print(resp.content)
   assert resp.status_code == 400, resp.content
 
 

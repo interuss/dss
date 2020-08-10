@@ -163,7 +163,7 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 
 	ridCrdb, err := ConnectTo(ridc.DatabaseName)
 	if err != nil {
-		logger.Panic("Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas", zap.Error(err))
+		return stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 	ridStore := ridc.NewStore(ridCrdb, logger)
 

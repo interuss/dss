@@ -52,7 +52,7 @@ func init() {
 func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Operation, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
+		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
@@ -201,7 +201,7 @@ func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o
 
 	rows, err := q.QueryContext(ctx, query, o.ID)
 	if err != nil {
-		return stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
+		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
@@ -290,10 +290,10 @@ func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID, owner dssmo
 	}
 
 	if _, err := s.q.ExecContext(ctx, deleteQuery, id, owner); err != nil {
-		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", deleteQuery))
+		return nil, nil, stacktrace.Propagate(err, "Error in query: %s", deleteQuery)
 	}
 	if _, err := s.q.ExecContext(ctx, deleteImplicitSubscriptionQuery, old.SubscriptionID, owner); err != nil {
-		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", deleteImplicitSubscriptionQuery))
+		return nil, nil, stacktrace.Propagate(err, "Error in query: %s", deleteImplicitSubscriptionQuery)
 	}
 
 	return old, subscriptions, nil

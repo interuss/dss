@@ -55,7 +55,7 @@ func init() {
 func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Constraint, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
+		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
@@ -170,7 +170,7 @@ func (c *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
 
 	res, err := c.q.ExecContext(ctx, query, id)
 	if err != nil {
-		return stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
+		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 
 	rows, err := res.RowsAffected()

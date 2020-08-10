@@ -129,9 +129,9 @@ test:
 test-cockroach: cleanup-test-cockroach
 	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v20.1.1 start --insecure > /dev/null
 	go run ./cmds/db-manager/main.go --schemas_dir ./build/deploy/db_schemas/defaultdb --db_version v3.1.0 --cockroach_host localhost
-	DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS=false go test -count=1 -v ./pkg/rid/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
-	DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS=false go test -count=1 -v ./pkg/scd/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
-	DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS=false go test -count=1 -v ./pkg/rid/application -store-uri "postgresql://root@localhost:26257?sslmode=disable"
+	go test -count=1 -v ./pkg/rid/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
+	go test -count=1 -v ./pkg/scd/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
+	go test -count=1 -v ./pkg/rid/application -store-uri "postgresql://root@localhost:26257?sslmode=disable"
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 

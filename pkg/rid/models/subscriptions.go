@@ -147,7 +147,7 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 	} else {
 		// If setting the StartTime explicitly ensure it is not too far in the past.
 		if now.Sub(*s.StartTime) > maxClockSkew {
-			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "subscription time_start must not be in the past")
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription time_start must not be in the past")
 		}
 	}
 
@@ -164,12 +164,12 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 
 	// EndTime cannot be before StartTime.
 	if s.EndTime.Sub(*s.StartTime) < 0 {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "subscription time_end must be after time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription time_end must be after time_start")
 	}
 
 	// EndTime cannot be 24 hrs after StartTime
 	if s.EndTime.Sub(*s.StartTime) > maxSubscriptionDuration {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "subscription window exceeds 24 hours")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription window exceeds 24 hours")
 	}
 
 	return nil

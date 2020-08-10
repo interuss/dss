@@ -87,7 +87,7 @@ func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable
 func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
+		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
@@ -135,7 +135,7 @@ func (c *repo) fetchSubscriptionsForNotification(
  				cell_id = ANY($1)`
 	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
+		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
@@ -272,12 +272,12 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 
 	for i := range cids {
 		if _, err := q.ExecContext(ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID); err != nil {
-			return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", subscriptionCellQuery))
+			return nil, stacktrace.Propagate(err, "Error in query: %s", subscriptionCellQuery)
 		}
 	}
 
 	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
-		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", deleteLeftOverCellsForSubscriptionQuery))
+		return nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForSubscriptionQuery)
 	}
 
 	return s, nil
@@ -333,7 +333,7 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 
 	res, err := c.q.ExecContext(ctx, query, id)
 	if err != nil {
-		return stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
+		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 
 	rows, err := res.RowsAffected()
@@ -413,7 +413,7 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 
 	rows, err := c.q.QueryContext(ctx, updateQuery, pq.StringArray(ids))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", updateQuery))
+		return nil, stacktrace.Propagate(err, "Error in query: %s", updateQuery)
 	}
 	defer rows.Close()
 

@@ -35,7 +35,7 @@ func (s *Server) DeleteSubscription(
 	defer cancel()
 	subscription, err := s.App.DeleteSubscription(ctx, id, owner, version)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not delete Subscription at the application layer")
+		return nil, stacktrace.Propagate(err, "Could not delete Subscription")
 	}
 	p, err := subscription.ToProto()
 	if err != nil {
@@ -94,7 +94,7 @@ func (s *Server) GetSubscription(
 	defer cancel()
 	subscription, err := s.App.GetSubscription(ctx, id)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not get Subscription at the application layer")
+		return nil, stacktrace.Propagate(err, "Could not get Subscription")
 	}
 	if subscription == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", req.GetId())
@@ -147,7 +147,7 @@ func (s *Server) CreateSubscription(
 
 	insertedSub, err := s.App.InsertSubscription(ctx, sub)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not insert Subscription at the application layer")
+		return nil, stacktrace.Propagate(err, "Could not insert Subscription")
 	}
 
 	p, err := insertedSub.ToProto()
@@ -158,7 +158,7 @@ func (s *Server) CreateSubscription(
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not search ISAs at the application layer")
+		return nil, stacktrace.Propagate(err, "Could not search ISAs")
 	}
 
 	// Convert the ISAs to protos.
@@ -222,7 +222,7 @@ func (s *Server) UpdateSubscription(
 
 	insertedSub, err := s.App.UpdateSubscription(ctx, sub)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not update Subscription at the application layer")
+		return nil, stacktrace.Propagate(err, "Could not update Subscription")
 	}
 
 	p, err := insertedSub.ToProto()
@@ -233,7 +233,7 @@ func (s *Server) UpdateSubscription(
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not search ISAs at the application layer")
+		return nil, stacktrace.Propagate(err, "Could not search ISAs")
 	}
 
 	// Convert the ISAs to protos.
