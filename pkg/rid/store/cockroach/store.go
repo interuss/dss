@@ -71,13 +71,12 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 	// TODO: we really need to remove the upper cockroach package, and have one
 	// "store" for everything
 	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
+	defer cancel()
 
 	storeVersion, err := s.GetVersion(ctx)
 	if err != nil {
 		return err
 	}
-
-	defer cancel()
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
