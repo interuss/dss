@@ -71,9 +71,10 @@ func (s *Server) CreateIdentificationServiceArea(
 	}
 
 	isa := &ridmodels.IdentificationServiceArea{
-		ID:    id,
-		URL:   params.GetFlightsUrl(),
-		Owner: owner,
+		ID:     id,
+		URL:    params.GetFlightsUrl(),
+		Owner:  owner,
+		Writer: s.Locality,
 	}
 
 	if err := isa.SetExtents(params.Extents); err != nil {

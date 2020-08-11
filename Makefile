@@ -143,3 +143,8 @@ cleanup-test-cockroach:
 .PHONY: test-e2e
 test-e2e:
 	test/docker_e2e.sh
+
+release: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
+
+release:
+	scripts/release.sh $(VERSION)

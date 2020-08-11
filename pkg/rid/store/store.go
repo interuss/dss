@@ -14,6 +14,9 @@ type Store interface {
 
 	// Close closes the store and releases all of its resources.
 	Close() error
+
+	// Get store version
+	GetVersion(ctx context.Context) (string, error)
 }
 
 // Interactor provides means to get hold of a repos.Repository instance *without* any
