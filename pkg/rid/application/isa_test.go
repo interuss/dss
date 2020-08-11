@@ -65,6 +65,10 @@ func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.Identificat
 	return &returnedCopy, nil
 }
 
+func (store *isaStore) GetVersion(ctx context.Context) (string, error) {
+	return "v3.1.0", nil
+}
+
 // Implements repos.ISA.SearchISA
 func (store *isaStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var isas []*ridmodels.IdentificationServiceArea

@@ -10,6 +10,7 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -29,7 +30,7 @@ var (
 )
 
 type repo struct {
-	*isaRepo
+	repos.ISA
 	*subscriptionRepo
 }
 
@@ -47,12 +48,13 @@ type Store struct {
 // Interact implements store.Interactor interface.
 func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	logger := logging.WithValuesFromContext(ctx, s.logger)
+	storeVersion, err := s.GetVersion(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error determining database RID schema version")
+	}
 
 	return &repo{
-		isaRepo: &isaRepo{
-			Queryable: s.db,
-			logger:    logger,
-		},
+		ISA: NewISARepo(ctx, s.db, storeVersion, logger),
 		subscriptionRepo: &subscriptionRepo{
 			Queryable: s.db,
 			logger:    logger,
@@ -71,14 +73,16 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 	// "store" for everything
 	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
 	defer cancel()
+
+	storeVersion, err := s.GetVersion(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error determining database RID schema version")
+	}
 	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
-			isaRepo: &isaRepo{
-				Queryable: tx,
-				logger:    logger,
-			},
+			ISA: NewISARepo(ctx, tx, storeVersion, logger),
 			subscriptionRepo: &subscriptionRepo{
 				Queryable: tx,
 				logger:    logger,
