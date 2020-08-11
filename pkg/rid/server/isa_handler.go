@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -22,21 +21,21 @@ func (s *Server) GetIdentificationServiceArea(
 
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	isa, err := s.App.GetISA(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not get ISA from application layer")
 	}
 	if isa == nil {
-		return nil, dsserr.NotFound(req.GetId())
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", req.GetId())
 	}
 	p, err := isa.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
 	}
 	return &ridpb.GetIdentificationServiceAreaResponse{
 		ServiceArea: p,
@@ -54,21 +53,21 @@ func (s *Server) CreateIdentificationServiceArea(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	if params == nil {
-		return nil, dsserr.BadRequest("params not set")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
 	// TODO: put the validation logic in the models layer
 	if params.FlightsUrl == "" {
-		return nil, dsserr.BadRequest("missing required flightsURL")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required flightsURL")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("missing required extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	isa := &ridmodels.IdentificationServiceArea{
@@ -79,12 +78,12 @@ func (s *Server) CreateIdentificationServiceArea(
 	}
 
 	if err := isa.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
 	insertedISA, subscribers, err := s.App.InsertISA(ctx, isa)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not insert ISA")
 	}
 
 	pbISA, err := insertedISA.ToProto()
@@ -112,28 +111,28 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	// TODO: put the validation logic in the models layer
 	if params == nil {
-		return nil, dsserr.BadRequest("params not set")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
 	if params.FlightsUrl == "" {
-		return nil, dsserr.BadRequest("missing required flightsURL")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required flightsURL")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("missing required extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	isa := &ridmodels.IdentificationServiceArea{
@@ -145,12 +144,12 @@ func (s *Server) UpdateIdentificationServiceArea(
 	}
 
 	if err := isa.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
 	insertedISA, subscribers, err := s.App.UpdateISA(ctx, isa)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not update ISA")
 	}
 
 	pbISA, err := insertedISA.ToProto()
@@ -176,21 +175,21 @@ func (s *Server) DeleteIdentificationServiceArea(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	isa, subscribers, err := s.App.DeleteISA(ctx, id, owner, version)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not delete ISA")
 	}
 
 	p, err := isa.ToProto()
@@ -215,12 +214,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		errMsg := fmt.Sprintf("bad area: %s", err)
-		switch err.(type) {
-		case *geo.ErrAreaTooLarge:
-			return nil, dsserr.AreaTooLarge(errMsg)
-		}
-		return nil, dsserr.BadRequest(errMsg)
+		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
 	var (
@@ -248,14 +242,14 @@ func (s *Server) SearchIdentificationServiceAreas(
 	defer cancel()
 	isas, err := s.App.SearchISAs(ctx, cu, earliest, latest)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Unable to search ISAs")
 	}
 
 	areas := make([]*ridpb.IdentificationServiceArea, len(isas))
 	for i := range isas {
 		a, err := isas[i].ToProto()
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
 		}
 		areas[i] = a
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/palantir/stacktrace"
 )
 
 // Aggregates constants for operations.
@@ -53,7 +54,7 @@ func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 	if o.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*o.StartTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
 		}
 		result.TimeStart = &scdpb.Time{
 			Value:  ts,
@@ -64,7 +65,7 @@ func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 	if o.EndTime != nil {
 		ts, err := ptypes.TimestampProto(*o.EndTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
 		}
 		result.TimeEnd = &scdpb.Time{
 			Value:  ts,
@@ -77,17 +78,17 @@ func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 // ValidateTimeRange validates the time range of o.
 func (o *Operation) ValidateTimeRange() error {
 	if o.StartTime == nil {
-		return dsserr.BadRequest("Operation must have an time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation must have an time_start")
 	}
 
 	// EndTime cannot be omitted for new Operations.
 	if o.EndTime == nil {
-		return dsserr.BadRequest("Operation must have an time_end")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation must have an time_end")
 	}
 
 	// EndTime cannot be before StartTime.
 	if o.EndTime.Sub(*o.StartTime) < 0 {
-		return dsserr.BadRequest("Operation time_end must be after time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation time_end must be after time_start")
 	}
 
 	return nil

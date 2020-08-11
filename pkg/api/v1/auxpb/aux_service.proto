@@ -30,6 +30,14 @@ message ValidateOauthRequest {
 // Validate Oauth token response
 message ValidateOauthResponse {}
 
+// Error response format for most errors
+message StandardErrorResponse {
+  string error = 1;
+  int32 code = 2;
+  string message = 3;
+  string error_id = 4;
+}
+
 service DSSAuxService {
   // /dss/version
   //

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -10,6 +9,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/palantir/stacktrace"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -49,7 +49,7 @@ func (i *IdentificationServiceArea) ToProto() (*ridpb.IdentificationServiceArea,
 	if i.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*i.StartTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
 		}
 		result.TimeStart = ts
 	}
@@ -57,7 +57,7 @@ func (i *IdentificationServiceArea) ToProto() (*ridpb.IdentificationServiceArea,
 	if i.EndTime != nil {
 		ts, err := ptypes.TimestampProto(*i.EndTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
 		}
 		result.TimeEnd = ts
 	}
@@ -74,7 +74,7 @@ func (i *IdentificationServiceArea) SetExtents(extents *ridpb.Volume4D) error {
 	if startTime := extents.GetTimeStart(); startTime != nil {
 		ts, err := ptypes.Timestamp(startTime)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error converting start time from proto")
 		}
 		i.StartTime = &ts
 	}
@@ -82,23 +82,26 @@ func (i *IdentificationServiceArea) SetExtents(extents *ridpb.Volume4D) error {
 	if endTime := extents.GetTimeEnd(); endTime != nil {
 		ts, err := ptypes.Timestamp(endTime)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error converting end time from proto")
 		}
 		i.EndTime = &ts
 	}
 
 	space := extents.GetSpatialVolume()
 	if space == nil {
-		return errors.New("missing required spatial_volume")
+		return stacktrace.NewError("Missing required spatial_volume")
 	}
 	i.AltitudeHi = proto.Float32(space.GetAltitudeHi())
 	i.AltitudeLo = proto.Float32(space.GetAltitudeLo())
 	footprint := space.GetFootprint()
 	if footprint == nil {
-		return errors.New("spatial_volume missing required footprint")
+		return stacktrace.NewError("spatial_volume missing required footprint")
 	}
 	i.Cells, err = dssmodels.GeoPolygonFromRIDProto(footprint).CalculateCovering()
-	return err
+	if err != nil {
+		return stacktrace.Propagate(err, "Error calculating covering from polygon")
+	}
+	return nil
 }
 
 // AdjustTimeRange adjusts the time range to the max allowed ranges on a
@@ -115,7 +118,7 @@ func (i *IdentificationServiceArea) AdjustTimeRange(now time.Time, old *Identifi
 	} else {
 		// If setting the StartTime explicitly ensure it is not too far in the past.
 		if now.Sub(*i.StartTime) > maxClockSkew {
-			return dsserr.BadRequest("IdentificationServiceArea time_start must not be in the past")
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "IdentificationServiceArea time_start must not be in the past")
 		}
 	}
 
@@ -126,12 +129,12 @@ func (i *IdentificationServiceArea) AdjustTimeRange(now time.Time, old *Identifi
 
 	// EndTime cannot be omitted for new ISAs.
 	if i.EndTime == nil {
-		return dsserr.BadRequest("IdentificationServiceArea must have an time_end")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "IdentificationServiceArea must have an time_end")
 	}
 
 	// EndTime cannot be before StartTime.
 	if i.EndTime.Sub(*i.StartTime) < 0 {
-		return dsserr.BadRequest("IdentificationServiceArea time_end must be after time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "IdentificationServiceArea time_end must be after time_start")
 	}
 
 	return nil

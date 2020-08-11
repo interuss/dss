@@ -13,7 +13,7 @@ import (
 	dsssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/lib/pq"
-	"go.uber.org/multierr"
+	"github.com/palantir/stacktrace"
 )
 
 const (
@@ -55,7 +55,7 @@ func init() {
 func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Constraint, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
@@ -79,14 +79,14 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 			&updatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error scanning Constraint row")
 		}
 		c.Cells = geo.CellUnionFromInt64(cids)
 		c.OVN = scdmodels.NewOVNFromTime(updatedAt, c.ID.String())
 		payload = append(payload, c)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 	return payload, nil
 }
@@ -94,10 +94,10 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 func (c *repo) fetchConstraint(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Constraint, error) {
 	constraints, err := c.fetchConstraints(ctx, q, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 	if len(constraints) > 1 {
-		return nil, multierr.Combine(err, fmt.Errorf("query returned %d constraints", len(constraints)))
+		return nil, stacktrace.NewError("Query returned %d Constraints when only 0 or 1 was expected", len(constraints))
 	}
 	if len(constraints) == 0 {
 		return nil, sql.ErrNoRows
@@ -136,7 +136,7 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 
 	for i, cell := range s.Cells {
 		if err := geo.ValidateCell(cell); err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error validating cell")
 		}
 		cids[i] = int64(cell)
 	}
@@ -152,7 +152,7 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 		s.EndTime,
 		pq.Int64Array(cids))
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error fetching Constraint")
 	}
 
 	return s, nil
@@ -170,12 +170,12 @@ func (c *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
 
 	res, err := c.q.ExecContext(ctx, query, id)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Could not get RowsAffected")
 	}
 	if rows == 0 {
 		return sql.ErrNoRows
@@ -204,7 +204,7 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 	// computed once on a particular Volume4D
 	cells, err := v4d.CalculateSpatialCovering()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
 	}
 
 	if len(cells) == 0 {
@@ -219,7 +219,7 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 	constraints, err := c.fetchConstraints(
 		ctx, c.q, query, pq.Array(cids), v4d.StartTime, v4d.EndTime)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error fetching Constraints")
 	}
 
 	return constraints, nil

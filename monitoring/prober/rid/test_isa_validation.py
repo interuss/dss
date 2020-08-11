@@ -50,7 +50,7 @@ def test_isa_huge_area(session):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400
-  assert 'area is too large' in resp.json()['message']
+  assert 'too large' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -75,7 +75,7 @@ def test_isa_empty_vertices(session):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400
-  assert resp.json()['message'] == 'bad extents: not enough points in polygon'
+  assert 'Not enough points in polygon' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -97,8 +97,7 @@ def test_isa_missing_footprint(session):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400
-  assert resp.json(
-  )['message'] == 'bad extents: spatial_volume missing required footprint'
+  assert 'missing required footprint' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -115,9 +114,8 @@ def test_isa_missing_spatial_volume(session):
           },
           'flights_url': 'https://example.com/uss/flights',
       })
-  assert resp.status_code == 400
-  assert resp.json(
-  )['message'] == 'bad extents: missing required spatial_volume'
+  assert resp.status_code == 400, resp.content
+  assert 'Missing required spatial_volume' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -128,7 +126,7 @@ def test_isa_missing_extents(session):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400
-  assert resp.json()['message'] == 'missing required extents'
+  assert resp.json()['message'] == 'Missing required extents'
 
 
 @default_scope(SCOPE_WRITE)
@@ -152,9 +150,8 @@ def test_isa_start_time_in_past(session):
           },
           'flights_url': 'https://example.com/uss/flights',
       })
-  assert resp.status_code == 400
-  assert resp.json(
-  )['message'] == 'IdentificationServiceArea time_start must not be in the past'
+  assert resp.status_code == 400, resp.content
+  assert resp.json()['message'] == 'IdentificationServiceArea time_start must not be in the past'
 
 
 @default_scope(SCOPE_WRITE)
@@ -178,9 +175,8 @@ def test_isa_start_time_after_time_end(session):
           },
           'flights_url': 'https://example.com/uss/flights',
       })
-  assert resp.status_code == 400
-  assert resp.json(
-  )['message'] == 'IdentificationServiceArea time_end must be after time_start'
+  assert resp.status_code == 400, resp.content
+  assert resp.json()['message'] == 'IdentificationServiceArea time_end must be after time_start'
 
 
 @default_scope(SCOPE_WRITE)
@@ -209,4 +205,4 @@ def test_isa_not_on_earth(session):
           },
           'flights_url': 'https://example.com/uss/flights',
       })
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content

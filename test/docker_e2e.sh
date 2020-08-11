@@ -97,7 +97,6 @@ echo "Starting grpc backend on :8081"
 docker run -d --name grpc-backend-for-testing \
 	--link dss-crdb-for-debugging:crdb \
 	-v $(pwd)/build/test-certs/auth2.pem:/app/test.crt \
-	-e DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS='false' \
 	local-interuss-dss-image \
 	grpc-backend \
 	--cockroach_host crdb \

@@ -7,16 +7,16 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/models"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/palantir/stacktrace"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -92,17 +92,16 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		t.Fatal(err)
 	}
 	var authTests = []struct {
-		ctx          context.Context
-		code         codes.Code
-		errorMessage string
+		ctx  context.Context
+		code stacktrace.ErrorCode
 	}{
-		{ctx, codes.Unauthenticated, "missing token"},
-		{metadata.NewIncomingContext(ctx, metadata.New(nil)), codes.Unauthenticated, "missing token"},
-		{rsaTokenCtx(ctx, badKey, 100, 20), codes.Unauthenticated, "crypto/rsa: verification error"},
-		{rsaTokenCtx(ctx, key, 100, 20), codes.OK, ""},
-		{rsaTokenCtxWithMissingIssuer(ctx, key, 100, 20), codes.Unauthenticated, "missing Issuer"},
-		{rsaTokenCtx(ctx, key, 30, 20), codes.Unauthenticated, "token is expired"},
-		{rsaTokenCtx(ctx, key, 100, 50), codes.Unauthenticated, "token is not valid yet"},
+		{ctx, dsserr.Unauthenticated},
+		{metadata.NewIncomingContext(ctx, metadata.New(nil)), dsserr.Unauthenticated},
+		{rsaTokenCtx(ctx, badKey, 100, 20), dsserr.Unauthenticated},
+		{rsaTokenCtx(ctx, key, 100, 20), stacktrace.NoCode},
+		{rsaTokenCtxWithMissingIssuer(ctx, key, 100, 20), dsserr.Unauthenticated},
+		{rsaTokenCtx(ctx, key, 30, 20), dsserr.Unauthenticated},
+		{rsaTokenCtx(ctx, key, 100, 50), dsserr.Unauthenticated},
 	}
 
 	a, err := NewRSAAuthorizer(ctx, Configuration{
@@ -119,11 +118,8 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},
 				func(ctx context.Context, req interface{}) (interface{}, error) { return nil, nil })
-			if status.Code(err) != test.code {
+			if test.code != stacktrace.ErrorCode(0) && stacktrace.GetCode(err) != test.code {
 				t.Errorf("expected: %v, got: %v, with message %s", test.code, status.Code(err), err.Error())
-			}
-			if err != nil && !strings.Contains(err.Error(), test.errorMessage) {
-				t.Errorf("expected: %v, got: %v", test.errorMessage, err.Error())
 			}
 		})
 	}

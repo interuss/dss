@@ -14,7 +14,7 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/lib/pq"
-	"go.uber.org/multierr"
+	"github.com/palantir/stacktrace"
 )
 
 var (
@@ -52,7 +52,7 @@ func init() {
 func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Operation, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
@@ -62,7 +62,7 @@ func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query st
 			o         = &scdmodels.Operation{}
 			updatedAt time.Time
 		)
-		if err := rows.Scan(
+		err := rows.Scan(
 			&o.ID,
 			&o.Owner,
 			&o.Version,
@@ -73,14 +73,15 @@ func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query st
 			&o.EndTime,
 			&o.SubscriptionID,
 			&updatedAt,
-		); err != nil {
-			return nil, err
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error scanning Operation row")
 		}
 		o.OVN = scdmodels.NewOVNFromTime(updatedAt, o.ID.String())
 		payload = append(payload, o)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 
 	return payload, nil
@@ -92,7 +93,7 @@ func (s *repo) fetchOperation(ctx context.Context, q dsssql.Queryable, query str
 		return nil, err
 	}
 	if len(operations) > 1 {
-		return nil, multierr.Combine(err, fmt.Errorf("query returned %d operations", len(operations)))
+		return nil, stacktrace.NewError("Query returned %d Operations when only 0 or 1 was expected", len(operations))
 	}
 	if len(operations) == 0 {
 		return nil, sql.ErrNoRows
@@ -168,23 +169,23 @@ func (s *repo) pushOperation(ctx context.Context, q dsssql.Queryable, operation 
 		operation.SubscriptionID,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error fetching Operation")
 	}
 	operation.Cells = cells
 
 	for i := range cids {
 		if _, err := q.ExecContext(ctx, upsertCellsForOperationQuery, cids[i], clevels[i], operation.ID); err != nil {
-			return nil, nil, err
+			return nil, nil, stacktrace.Propagate(err, "Error in query: %s", upsertCellsForOperationQuery)
 		}
 	}
 
 	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForOperationQuery, pq.Array(cids), operation.ID); err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForOperationQuery)
 	}
 
 	subscriptions, err := s.fetchSubscriptionsForNotification(ctx, q, cids)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error fetching Subscriptions for notification")
 	}
 
 	return operation, subscriptions, nil
@@ -200,7 +201,7 @@ func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o
 
 	rows, err := q.QueryContext(ctx, query, o.ID)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
@@ -209,12 +210,12 @@ func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o
 
 	for rows.Next() {
 		if err := rows.Scan(&cell); err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error scanning cell ID row")
 		}
 		o.Cells = append(o.Cells, s2.CellID(uint64(cell)))
 	}
 	if err := rows.Err(); err != nil {
-		return err
+		return stacktrace.Propagate(err, "Error in rows query result")
 	}
 
 	return nil
@@ -227,9 +228,9 @@ func (s *repo) GetOperation(ctx context.Context, id dssmodels.ID) (*scdmodels.Op
 	case nil:
 		return sub, nil
 	case sql.ErrNoRows:
-		return nil, dsserr.NotFound(id.String())
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id.String())
 	default:
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 }
 
@@ -269,14 +270,14 @@ func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID, owner dssmo
 	old, err := s.fetchOperationByID(ctx, s.q, id)
 	switch {
 	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, nil, dsserr.NotFound(id.String())
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id.String())
 	case err != nil:
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error fetching Operation by ID")
 	case old != nil && old.Owner != owner:
-		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Operation is owned by %s", old.Owner))
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
 	}
 	if err := s.populateOperationCells(ctx, s.q, old); err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error populating Operation cells")
 	}
 
 	cids := make([]int64, len(old.Cells))
@@ -285,14 +286,14 @@ func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID, owner dssmo
 	}
 	subscriptions, err := s.fetchSubscriptionsForNotification(ctx, s.q, cids)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error fetching Subscriptions for notification")
 	}
 
 	if _, err := s.q.ExecContext(ctx, deleteQuery, id, owner); err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error in query: %s", deleteQuery)
 	}
 	if _, err := s.q.ExecContext(ctx, deleteImplicitSubscriptionQuery, old.SubscriptionID, owner); err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error in query: %s", deleteImplicitSubscriptionQuery)
 	}
 
 	return old, subscriptions, nil
@@ -305,26 +306,26 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 	case err == sql.ErrNoRows:
 		break
 	case err != nil:
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error fetching Operation by ID")
 	}
 
 	switch {
 	case old == nil && !operation.Version.Empty():
 		// The user wants to update an existing Operation, but one wasn't found.
-		return nil, nil, dsserr.NotFound(operation.ID.String())
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", operation.ID.String())
 	case old != nil && operation.Version.Empty():
 		// The user wants to create a new Operation but it already exists.
-		return nil, nil, dsserr.AlreadyExists(operation.ID.String())
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Operation %s already exists", operation.ID.String())
 	case old != nil && !operation.Version.Matches(old.Version):
 		// The user wants to update an Operation but the version doesn't match.
-		return nil, nil, dsserr.VersionMismatch("old version")
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version")
 	case old != nil && old.Owner != operation.Owner:
-		return nil, nil, dsserr.PermissionDenied(fmt.Sprintf("Operation is owned by %s", old.Owner))
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
 	if err := operation.ValidateTimeRange(); err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error validating time range")
 	}
 
 	// TODO(tvoss): Investigate whether we can fold the check for OVNs into the
@@ -344,7 +345,7 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 			},
 		})
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, stacktrace.Propagate(err, "Error searching Operations")
 		}
 
 		keyIdx := map[scdmodels.OVN]struct{}{}
@@ -354,17 +355,17 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 
 		for _, op := range operations {
 			if _, match := keyIdx[op.OVN]; !match {
-				return nil, nil, scderr.MissingOVNsInternalError()
+				return nil, nil, stacktrace.Propagate(scderr.ErrMissingOVNs, "Missing OVN for Operation %s", op.ID)
 			}
 			delete(keyIdx, op.OVN)
 		}
 	default:
-		// We default to not checking the OVNs for now for all other operation states.
+		// Do not check the OVNs for any other operation states.
 	}
 
 	area, subscribers, err := s.pushOperation(ctx, s.q, operation)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error pushing Operation")
 	}
 
 	return area, subscribers, nil
@@ -400,14 +401,14 @@ func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *ds
 	)
 
 	if v4d.SpatialVolume == nil || v4d.SpatialVolume.Footprint == nil {
-		return nil, dsserr.BadRequest("missing geospatial footprint for query")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing geospatial footprint for query")
 	}
 	cells, err := v4d.SpatialVolume.Footprint.CalculateCovering()
 	if err != nil {
-		return nil, dsserr.BadRequest(err.Error())
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to calculate footprint covering")
 	}
 	if len(cells) == 0 {
-		return nil, dsserr.BadRequest("missing cell IDs for query")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}
 
 	cids := make([]int64, len(cells))
@@ -424,7 +425,7 @@ func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *ds
 		v4d.EndTime,
 	)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error fetching Operations")
 	}
 
 	return result, nil
@@ -434,7 +435,7 @@ func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *ds
 func (s *repo) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error) {
 	result, err := s.searchOperations(ctx, s.q, v4d)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 
 	return result, nil

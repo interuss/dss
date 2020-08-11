@@ -26,6 +26,7 @@ import (
 	"github.com/interuss/dss/pkg/scd"
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/validations"
+	"github.com/palantir/stacktrace"
 	"golang.org/x/mod/semver"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -78,38 +79,36 @@ var (
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
-func MustSupportRidSchema(ctx context.Context, store *ridc.Store) {
-	logger := logging.WithValuesFromContext(ctx, logging.Logger)
-
+func MustSupportRidSchema(ctx context.Context, store *ridc.Store) error {
 	vs, err := store.GetVersion(ctx)
 	if err != nil {
-		logger.Panic("Failed to get database schema version for remote ID",
-			zap.Error(err))
+		return stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
 	}
 	if vs == "v0.0.0" {
-		logger.Panic("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
+		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
 	if RidRequiredMajorSchemaVersion != semver.Major(vs) {
-		logger.Panic(fmt.Sprintf("unsupported schema version for remote ID! Got %s, requires major version of %s.", vs, RidRequiredMajorSchemaVersion))
+		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %s.", vs, RidRequiredMajorSchemaVersion)
 	}
+
+	return nil
 }
 
-func MustSupportScdSchema(ctx context.Context, store *scdc.Store) {
-	logger := logging.WithValuesFromContext(ctx, logging.Logger)
-
+func MustSupportScdSchema(ctx context.Context, store *scdc.Store) error {
 	vs, err := store.GetVersion(ctx)
 	if err != nil {
-		logger.Panic("Failed to get database schema version for strategic conflict detection",
-			zap.Error(err))
+		return stacktrace.Propagate(err, "Failed to get database schema version for strategic conflict detection")
 	}
 	if vs == "v0.0.0" {
-		logger.Panic("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
+		return stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
 	if ScdRequiredMajorSchemaVersion != semver.Major(vs) {
-		logger.Panic(fmt.Sprintf("unsupported schema version for strategic conflict detection! Got %s, requires major version of %s.", vs, ScdRequiredMajorSchemaVersion))
+		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %s.", vs, ScdRequiredMajorSchemaVersion)
 	}
+
+	return nil
 }
 
 func ConnectTo(dbName string) (*cockroach.DB, error) {
@@ -124,9 +123,13 @@ func ConnectTo(dbName string) (*cockroach.DB, error) {
 	}
 	uri, err := cockroach.BuildURI(uriParams)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error building URI")
 	}
-	return cockroach.Dial(uri)
+	db, err := cockroach.Dial(uri)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error dialing CockroachDB database at %s", uri)
+	}
+	return db, nil
 }
 
 // RunGRPCServer starts the example gRPC service.
@@ -142,7 +145,7 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 
 	l, err := net.Listen("tcp", address)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Error attempting to listen at %s", address)
 	}
 	defer func() {
 		if err := l.Close(); err != nil {
@@ -160,11 +163,14 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 
 	ridCrdb, err := ConnectTo(ridc.DatabaseName)
 	if err != nil {
-		logger.Panic("Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", zap.Error(err))
+		return stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 	ridStore := ridc.NewStore(ridCrdb, logger)
 
-	MustSupportRidSchema(ctx, ridStore)
+	err = MustSupportRidSchema(ctx, ridStore)
+	if err != nil {
+		return stacktrace.Propagate(err, "Required remote ID schema not supported by database")
+	}
 
 	ridServer = &rid.Server{
 		App:      application.NewFromTransactor(ridStore, logger),
@@ -180,11 +186,14 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 	if *enableSCD {
 		scdCrdb, err := ConnectTo(scdc.DatabaseName)
 		if err != nil {
-			logger.Panic("Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", zap.Error(err))
+			return stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 		}
 		scdStore := scdc.NewStore(scdCrdb, logger)
 
-		MustSupportScdSchema(ctx, scdStore)
+		err = MustSupportScdSchema(ctx, scdStore)
+		if err != nil {
+			return stacktrace.Propagate(err, "Required strategic conflict detection schema not supported by database")
+		}
 
 		scdServer = &scd.Server{
 			Store:   scdStore,
@@ -206,7 +215,7 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 	case *jwksEndpoint != "" && *jwksKeyIDs != "":
 		u, err := url.Parse(*jwksEndpoint)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error parsing JWKS URL")
 		}
 
 		keyResolver = &auth.JWKSResolver{
@@ -226,7 +235,7 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 		},
 	)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Error creating RSA authorizer")
 	}
 
 	// Set up server functionality
@@ -243,7 +252,7 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 
 	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(interceptors...))
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Error creating new gRPC server")
 	}
 	if *reflectAPI {
 		reflection.Register(s)
@@ -268,7 +277,7 @@ func main() {
 	flag.Parse()
 
 	if err := logging.Configure(*logLevel, *logFormat); err != nil {
-		panic(err)
+		panic(fmt.Sprintf("Failed to configure logging: %s", err.Error()))
 	}
 
 	var (

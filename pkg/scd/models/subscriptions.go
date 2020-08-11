@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/palantir/stacktrace"
 )
 
 const (
@@ -59,7 +60,7 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 	if s.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*s.StartTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
 		}
 		result.TimeStart = &scdpb.Time{
 			Value:  ts,
@@ -70,7 +71,7 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 	if s.EndTime != nil {
 		ts, err := ptypes.TimestampProto(*s.EndTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
 		}
 		result.TimeEnd = &scdpb.Time{
 			Value:  ts,
@@ -99,7 +100,7 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 	} else {
 		// If setting the StartTime explicitly ensure it is not too far in the past.
 		if now.Sub(*s.StartTime) > maxClockSkew {
-			return dsserr.BadRequest("subscription time_start must not be in the past")
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription time_start must not be in the past")
 		}
 	}
 
@@ -116,12 +117,12 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 
 	// EndTime cannot be before StartTime.
 	if s.EndTime.Sub(*s.StartTime) < 0 {
-		return dsserr.BadRequest("subscription time_end must be after time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription time_end must be after time_start")
 	}
 
 	// EndTime cannot be 24 hrs after StartTime
 	if s.EndTime.Sub(*s.StartTime) > maxSubscriptionDuration {
-		return dsserr.BadRequest("subscription window exceeds 24 hours")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription window exceeds 24 hours")
 	}
 
 	return nil

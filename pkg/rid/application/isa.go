@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -11,6 +10,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/palantir/stacktrace"
 )
 
 // AppInterface provides the interface to the application logic for ISA entities
@@ -36,7 +36,7 @@ type ISAApp interface {
 func (a *app) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
 	repo, err := a.Store.Interact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 	return repo.GetISA(ctx, id)
 }
@@ -50,7 +50,7 @@ func (a *app) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time
 
 	repo, err := a.Store.Interact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
 	return repo.SearchISAs(ctx, cells, earliest, latest)
@@ -67,31 +67,34 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		old, err := repo.GetISA(ctx, id)
 		switch {
 		case err != nil:
-			return err
+			return stacktrace.Propagate(err, "Error getting ISA")
 		case old == nil:
-			return dsserr.NotFound(id.String())
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", id.String())
 		case !version.Matches(old.Version):
-			return dsserr.VersionMismatch(fmt.Sprintf("old version for isa %s", id))
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", version.String())
 		case old.Owner != owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "ISA is owned by different client")
 		}
 
 		ret, err = repo.DeleteISA(ctx, old)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error deleting ISA")
 		}
 
 		subs, err = repo.UpdateNotificationIdxsInCells(ctx, old.Cells)
-		return err
+		if err != nil {
+			return stacktrace.Propagate(err, "Error updating notification indices")
+		}
+		return nil
 	})
-	return ret, subs, err
+	return ret, subs, err // No need to Propagate this error as this stack layer does not add useful information
 }
 
 // InsertISA implments the AppInterface InsertISA method
 func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	// Validate and perhaps correct StartTime and EndTime.
 	if err := isa.AdjustTimeRange(a.clock.Now(), nil); err != nil {
-		return nil, nil, err
+		return nil, nil, stacktrace.Propagate(err, "Error adjusting time range")
 	}
 	// Update the notification index for both cells removed and added.
 	var (
@@ -103,10 +106,10 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		// ensure it doesn't exist yet
 		old, err := repo.GetISA(ctx, isa.ID)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error getting ISA")
 		}
 		if old != nil {
-			return dsserr.AlreadyExists(fmt.Sprintf("isa with id: %s already exists", isa.ID))
+			return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "ISA %s already exists", isa.ID)
 		}
 
 		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
@@ -114,12 +117,15 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		// not do this, so that does not need to use a txn (in subscription.go).
 		subs, err = repo.UpdateNotificationIdxsInCells(ctx, isa.Cells)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error updating notification indices")
 		}
 		ret, err = repo.InsertISA(ctx, isa)
-		return err
+		if err != nil {
+			return stacktrace.Propagate(err, "Error inserting ISA")
+		}
+		return nil
 	})
-	return ret, subs, err
+	return ret, subs, err // No need to Propagate this error as this stack layer does not add useful information
 }
 
 // UpdateISA implments the AppInterface UpdateISA method
@@ -136,22 +142,22 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		old, err := repo.GetISA(ctx, isa.ID)
 		switch {
 		case err != nil:
-			return err
+			return stacktrace.Propagate(err, "Error getting ISA")
 		case old == nil:
-			return dsserr.NotFound(fmt.Sprintf("isa not found: %s", isa.ID))
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", isa.ID)
 		case old.Owner != isa.Owner:
-			return dsserr.PermissionDenied(fmt.Sprintf("ISA is owned by %s", old.Owner))
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "ISA is owned by different client")
 		case !old.Version.Matches(isa.Version):
-			return dsserr.VersionMismatch(fmt.Sprintf("old version for isa: %s", isa.ID))
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", old.Version.String())
 		}
 		// Validate and perhaps correct StartTime and EndTime.
 		if err := isa.AdjustTimeRange(a.clock.Now(), old); err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error adjusting time range")
 		}
 
 		ret, err = repo.UpdateISA(ctx, isa)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error updating ISA")
 		}
 
 		// TODO steeling, we should change this to a Custom type, to obfuscate
@@ -162,8 +168,11 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		// they are both modifying the db. Insert a susbcription alone does
 		// not do this, so that does not need to use a txn (in subscription.go).
 		subs, err = repo.UpdateNotificationIdxsInCells(ctx, cells)
-		return err
+		if err != nil {
+			return stacktrace.Propagate(err, "Error updating notification indices")
+		}
+		return nil
 	})
 
-	return ret, subs, err
+	return ret, subs, err // No need to Propagate this error as this stack layer does not add useful information
 }

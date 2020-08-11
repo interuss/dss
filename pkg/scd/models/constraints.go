@@ -8,6 +8,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/palantir/stacktrace"
 )
 
 // Constraint models a constraint, as known by the DSS
@@ -37,7 +38,7 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 	if c.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*c.StartTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
 		}
 		result.TimeStart = &scdpb.Time{
 			Value:  ts,
@@ -48,7 +49,7 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 	if c.EndTime != nil {
 		ts, err := ptypes.TimestampProto(*c.EndTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
 		}
 		result.TimeEnd = &scdpb.Time{
 			Value:  ts,
@@ -61,17 +62,17 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 // ValidateTimeRange validates the time range of c.
 func (c *Constraint) ValidateTimeRange() error {
 	if c.StartTime == nil {
-		return dsserr.BadRequest("Constraint must have an time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Constraint must have an time_start")
 	}
 
 	// EndTime cannot be omitted for new Constraints.
 	if c.EndTime == nil {
-		return dsserr.BadRequest("Constraint must have an time_end")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Constraint must have an time_end")
 	}
 
 	// EndTime cannot be before StartTime.
 	if c.EndTime.Sub(*c.StartTime) < 0 {
-		return dsserr.BadRequest("Constraint time_end must be after time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Constraint time_end must be after time_start")
 	}
 
 	return nil

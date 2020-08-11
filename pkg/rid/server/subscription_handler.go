@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/auth"
@@ -21,22 +20,22 @@ func (s *Server) DeleteSubscription(
 	// TODO: simply verify the owner was set in an upper level.
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 	//TODO: put the context with timeout into an interceptor so it's always set.
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	subscription, err := s.App.DeleteSubscription(ctx, id, owner, version)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not delete Subscription")
 	}
 	p, err := subscription.ToProto()
 	if err != nil {
@@ -54,30 +53,25 @@ func (s *Server) SearchSubscriptions(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		errMsg := fmt.Sprintf("bad area: %s", err)
-		switch err.(type) {
-		case *geo.ErrAreaTooLarge:
-			return nil, dsserr.AreaTooLarge(errMsg)
-		}
-		return nil, dsserr.BadRequest(errMsg)
+		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, owner)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not search Subscriptions")
 	}
 	sp := make([]*ridpb.Subscription, len(subscriptions))
 	for i := range subscriptions {
 		sp[i], err = subscriptions[i].ToProto()
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
 		}
 	}
 
@@ -93,21 +87,21 @@ func (s *Server) GetSubscription(
 
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	subscription, err := s.App.GetSubscription(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not get Subscription")
 	}
 	if subscription == nil {
-		return nil, dsserr.NotFound(req.GetId())
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", req.GetId())
 	}
 	p, err := subscription.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
 	}
 	return &ridpb.GetSubscriptionResponse{
 		Subscription: p,
@@ -125,20 +119,20 @@ func (s *Server) CreateSubscription(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	if params == nil {
-		return nil, dsserr.BadRequest("params not set")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
 	if params.Callbacks == nil {
-		return nil, dsserr.BadRequest("missing required callbacks")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required callbacks")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("missing required extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	sub := &ridmodels.Subscription{
@@ -148,23 +142,23 @@ func (s *Server) CreateSubscription(
 	}
 
 	if err := sub.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
 	insertedSub, err := s.App.InsertSubscription(ctx, sub)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not insert Subscription")
 	}
 
 	p, err := insertedSub.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
 	}
 
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not search ISAs")
 	}
 
 	// Convert the ISAs to protos.
@@ -172,7 +166,7 @@ func (s *Server) CreateSubscription(
 	for i, isa := range isas {
 		isaProtos[i], err = isa.ToProto()
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
 		}
 	}
 
@@ -191,11 +185,11 @@ func (s *Server) UpdateSubscription(
 
 	version, err := dssmodels.VersionFromString(req.GetVersion())
 	if err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad version: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
-		return nil, dsserr.BadRequest("Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -203,16 +197,16 @@ func (s *Server) UpdateSubscription(
 
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
-		return nil, dsserr.PermissionDenied("missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 	if params == nil {
-		return nil, dsserr.BadRequest("params not set")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
 	if params.Callbacks == nil {
-		return nil, dsserr.BadRequest("missing required callbacks")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required callbacks")
 	}
 	if params.Extents == nil {
-		return nil, dsserr.BadRequest("missing required extents")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
 
 	sub := &ridmodels.Subscription{
@@ -223,23 +217,23 @@ func (s *Server) UpdateSubscription(
 	}
 
 	if err := sub.SetExtents(params.Extents); err != nil {
-		return nil, dsserr.BadRequest(fmt.Sprintf("bad extents: %s", err))
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
 	insertedSub, err := s.App.UpdateSubscription(ctx, sub)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not update Subscription")
 	}
 
 	p, err := insertedSub.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
 	}
 
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Could not search ISAs")
 	}
 
 	// Convert the ISAs to protos.
@@ -247,7 +241,7 @@ func (s *Server) UpdateSubscription(
 	for i, isa := range isas {
 		isaProtos[i], err = isa.ToProto()
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
 		}
 	}
 

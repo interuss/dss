@@ -4,140 +4,152 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/google/uuid"
+	"github.com/interuss/dss/pkg/api/v1/auxpb"
+	"github.com/interuss/dss/pkg/logging"
 	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
+	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-var (
-	obfuscateInternalErrors = true
+	"google.golang.org/protobuf/proto"
 )
 
 const (
-	// AreaTooLargeErr is the error that we want to signal to the http gateway
-	// that it should return 413 to client
-	AreaTooLargeErr codes.Code = 18
+	// AreaTooLarge is used when a user tries to create a resource in an area
+	// larger than the max area allowed. See geo/s2.go.  We want to signal to the
+	// http gateway that it should return 413 to client.
+	AreaTooLarge stacktrace.ErrorCode = stacktrace.ErrorCode(18)
 
 	// MissingOVNs is the error to signal that an AirspaceConflictResponse should
 	// be returned rather than the standard error response.
-	MissingOVNs codes.Code = 19
+	MissingOVNs stacktrace.ErrorCode = stacktrace.ErrorCode(19)
+
+	// AlreadyExists is used when attempting to create a resource that already
+	// exists.
+	AlreadyExists stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.AlreadyExists))
+
+	// BadRequest is used when a user supplies bad request parameters.
+	BadRequest stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.InvalidArgument))
+
+	// VersionMismatch is used when updating a resource with an old version.
+	VersionMismatch stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.Aborted))
+
+	// NotFound is used when looking up a resource that doesn't exist.
+	NotFound stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.NotFound))
+
+	// PermissionDenied is used to represent a bad OAuth token. It can occur when
+	// PermissionDenied is used to represent a bad OAuth token. It can occur when
+	// a user attempts to modify a resource "owned" by a different USS.
+	PermissionDenied stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.PermissionDenied))
+
+	// Exhausted is used when a USS creates too many resources in a given area.
+	Exhausted stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.ResourceExhausted))
+
+	// Unauthenticated is used when an OAuth token is invalid or not supplied.
+	Unauthenticated stacktrace.ErrorCode = stacktrace.ErrorCode(uint16(codes.Unauthenticated))
 )
 
 func init() {
-	if s, ok := os.LookupEnv("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS"); ok {
-		if b, err := strconv.ParseBool(s); err == nil {
-			obfuscateInternalErrors = b
-		}
+	if _, ok := os.LookupEnv("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS"); ok {
+		logging.Logger.Warn("DSS_ERRORS_OBFUSCATE_INTERNAL_ERRORS has been deprecated and will be removed in a future version")
 	}
 }
 
-func makeErrID() string {
+func MakeErrID() string {
 	errUUID, err := uuid.NewRandom()
 	if err == nil {
-		return errUUID.String()
+		return fmt.Sprintf("E:%s", errUUID.String())
 	}
-	return fmt.Sprintf("<error ID could not be constructed: %s>", err)
+	return fmt.Sprintf("E:<error ID could not be constructed: %s>", err)
+}
+
+// MakeStatusProto adds the content of a proto as a detail to a Status proto
+// consisting of the provided code and message.
+func MakeStatusProto(code codes.Code, message string, detail proto.Message) (*spb.Status, error) {
+	serialized, err := proto.MarshalOptions{Deterministic: true}.Marshal(detail)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error serializing detail proto")
+	}
+
+	p := &spb.Status{
+		Code:    int32(code),
+		Message: message,
+		Details: []*any.Any{
+			{
+				TypeUrl: "github.com/interuss/dss/" + string(detail.ProtoReflect().Descriptor().FullName()),
+				Value:   serialized,
+			},
+		},
+	}
+	return p, nil
 }
 
 // Interceptor returns a grpc.UnaryServerInterceptor that inspects outgoing
 // errors and logs (to "logger") and replaces errors that are not *status.Status
 // instances or status instances that indicate an internal/unknown error.
 func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		resp, err = handler(ctx, req)
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		resp, err := handler(ctx, req)
 
 		if err == nil {
-			return
+			return resp, nil
 		}
 
-		// Separate the root cause from the stacktrace wrapping.
+		errID := MakeErrID()
+
+		// Separate the root cause and code from the stacktrace wrapping.
 		trace := err.Error()
 		rootErr := stacktrace.RootCause(err)
+		code := stacktrace.GetCode(err)
 
 		statusErr, ok := status.FromError(rootErr)
-		switch {
-		case !ok:
-			errID := makeErrID()
+		if ok {
+			// The root cause is a Status error; return it exactly as-is.
 			logger.Error(
-				fmt.Sprintf("encountered non-Status error %s during unary server call", errID),
+				fmt.Sprintf("Status error %s during unary server call", errID),
 				zap.String("method", info.FullMethod),
 				zap.String("stacktrace", trace),
+				zap.String("grpc_code", statusErr.Code().String()),
 				zap.Error(rootErr))
-			if obfuscateInternalErrors {
-				err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
-			} else {
-				err = status.Error(codes.Internal, err.Error())
-			}
-		case statusErr.Code() == codes.Internal, statusErr.Code() == codes.Unknown:
-			errID := makeErrID()
-			logger.Error(
-				fmt.Sprintf("encountered internal Status error %s during unary server call", errID),
-				zap.String("method", info.FullMethod),
-				zap.Stringer("code", statusErr.Code()),
-				zap.String("message", statusErr.Message()),
-				zap.Any("details", statusErr.Details()),
-				zap.String("stacktrace", trace),
-				zap.Error(rootErr))
-			if obfuscateInternalErrors {
-				err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
-			}
+			return resp, rootErr
 		}
-		return
+
+		if code != stacktrace.NoCode {
+			logger.Error(
+				fmt.Sprintf("Error %s during unary server call", errID),
+				zap.String("method", info.FullMethod),
+				zap.String("stacktrace", trace),
+				zap.String("grpc_code", codes.Code(uint16(code)).String()),
+				zap.Int("code", int(code)),
+				zap.Error(rootErr))
+			p, constructionErr := MakeStatusProto(codes.Code(uint16(code)), rootErr.Error(), &auxpb.StandardErrorResponse{
+				Error:   rootErr.Error(),
+				Code:    int32(code),
+				Message: rootErr.Error(),
+				ErrorId: errID,
+			})
+			if constructionErr == nil {
+				err = status.ErrorProto(p)
+			} else {
+				constructionErrID := MakeErrID()
+				logger.Error(
+					fmt.Sprintf("Error %s constructing StandardErrorResponse from %s", constructionErrID, errID),
+					zap.Error(constructionErr))
+				err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", constructionErrID))
+			}
+		} else {
+			logger.Error(
+				fmt.Sprintf("Uncoded error %s during unary server call", errID),
+				zap.String("method", info.FullMethod),
+				zap.String("stacktrace", trace),
+				zap.Error(rootErr))
+			err = status.Error(codes.Internal, fmt.Sprintf("Internal server error %s", errID))
+		}
+
+		return resp, err
 	}
-}
-
-// AlreadyExists returns an error used when creating a resource that already
-// exists.
-func AlreadyExists(id string) error {
-	return status.Error(codes.AlreadyExists, "resource already exists: "+id)
-}
-
-// VersionMismatch returns an error used when updating a resource with an old
-// version.
-func VersionMismatch(msg string) error {
-	return status.Error(codes.Aborted, msg)
-}
-
-// NotFound returns an error used when looking up a resource that doesn't exist.
-func NotFound(id string) error {
-	return status.Error(codes.NotFound, "resource not found: "+id)
-}
-
-// BadRequest returns an error that is used when a user supplies bad request
-// parameters.
-func BadRequest(msg string) error {
-	return status.Error(codes.InvalidArgument, msg)
-}
-
-// Internal returns an error that represents an internal DSS error.
-func Internal(msg string) error {
-	return status.Error(codes.Internal, msg)
-}
-
-// Exhausted is used when a USS creates too many resources in a given area.
-func Exhausted(msg string) error {
-	return status.Error(codes.ResourceExhausted, msg)
-}
-
-// PermissionDenied returns an error representing a bad Oauth token. It can
-// occur when a user attempts to modify a resource "owned" by a different USS.
-func PermissionDenied(msg string) error {
-	return status.Error(codes.PermissionDenied, msg)
-}
-
-// Unauthenticated returns an error that is used when an Oauth token is invalid
-// or not supplied.
-func Unauthenticated(msg string) error {
-	return status.Error(codes.Unauthenticated, msg)
-}
-
-// AreaTooLarge is used when a user tries to create a resource in an area larger
-// than the max area allowed. See geo/s2.go.
-func AreaTooLarge(msg string) error {
-	return status.Error(AreaTooLargeErr, msg)
 }

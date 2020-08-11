@@ -47,7 +47,7 @@ type isaRepo struct {
 func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
 	rows, err := c.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
 	defer rows.Close()
 
@@ -68,13 +68,13 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 			&i.Version,
 		)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error scanning ISA row")
 		}
 		i.SetCells(cids)
 		payload = append(payload, i)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 
 	return payload, nil
@@ -83,10 +83,10 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 func (c *isaRepo) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
 	isas, err := c.process(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 	if len(isas) > 1 {
-		return nil, fmt.Errorf("query returned %d identification_service_areas", len(isas))
+		return nil, stacktrace.NewError("Query returned %d identification_service_areas when only 0 or 1 was expected", len(isas))
 	}
 	if len(isas) == 0 {
 		return nil, nil
@@ -128,7 +128,7 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 
 	for i, cell := range isa.Cells {
 		if err := geo.ValidateCell(cell); err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error validating cell")
 		}
 		cids[i] = int64(cell)
 	}
@@ -158,7 +158,7 @@ func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationSe
 
 	for i, cell := range isa.Cells {
 		if err := geo.ValidateCell(cell); err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error validating cell")
 		}
 		cids[i] = int64(cell)
 	}
@@ -204,7 +204,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 	)
 
 	if len(cells) == 0 {
-		return nil, dsserr.BadRequest("missing cell IDs for query")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}
 
 	if earliest == nil {

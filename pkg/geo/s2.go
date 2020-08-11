@@ -3,14 +3,13 @@ package geo
 import (
 	"bufio"
 	"bytes"
-	"errors"
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
 
 	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
+	"github.com/palantir/stacktrace"
 )
 
 const (
@@ -35,10 +34,6 @@ var (
 	}
 	// RegionCoverer provides an overridable interface to defaultRegionCoverer
 	RegionCoverer = defaultRegionCoverer
-
-	errOddNumberOfCoordinatesInAreaString = errors.New("odd number of coordinates in area string")
-	errNotEnoughPointsInPolygon           = errors.New("not enough points in polygon")
-	errBadCoordSet                        = errors.New("coordinates did not create a well formed area")
 )
 
 // Levelify takes a cell union that might have been normalized and returns to
@@ -51,20 +46,9 @@ func Levelify(cells *s2.CellUnion) {
 
 func ValidateCell(cell s2.CellID) error {
 	if cell.Level() < DefaultMinimumCellLevel || cell.Level() > DefaultMaximumCellLevel {
-		return errors.New("cells must be at level 13 at current implementation")
+		return stacktrace.NewError("Cells must be at level 13 at current implementation")
 	}
 	return nil
-}
-
-// ErrAreaTooLarge is the error passed back when the requested Area is larger
-// than maxAllowedAreaKm2
-type ErrAreaTooLarge struct {
-	msg string
-}
-
-// Error returns the error message for ErrAreaTooLarge.
-func (e *ErrAreaTooLarge) Error() string {
-	return e.msg
 }
 
 func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
@@ -120,9 +104,9 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 	}
 	area2 := loopAreaKm2(loop)
 	if area2 > maxAllowedAreaKm2 {
-		return nil, &ErrAreaTooLarge{
-			msg: fmt.Sprintf("area is too large (%fkm² > %fkm²)", math.Min(area1, area2), maxAllowedAreaKm2),
-		}
+		return nil, stacktrace.Propagate(
+			ErrAreaTooLarge, "Area is too large (%fkm² > %fkm²)",
+			math.Min(area1, area2), maxAllowedAreaKm2)
 	}
 	if area2 <= 0 {
 		// Since the loop has no area, try a PolyLine
@@ -133,7 +117,10 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 }
 
 // AreaToCellIDs parses "area" in the format 'lat0,lon0,lat1,lon1,...'
-// and returns the resulting s2.CellUnion.
+// and returns the resulting s2.CellUnion, or else:
+// * ErrOddNumberOfCoordinatesInAreaString
+// * ErrNotEnoughPointsInPolygon
+// * ErrBadCoordSet
 //
 // TODO(tvoss):
 //   * Agree and implement a maximum number of points in area
@@ -146,10 +133,10 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 	)
 	numCoords := strings.Count(area, ",") + 1
 	if numCoords%2 == 1 {
-		return nil, errOddNumberOfCoordinatesInAreaString
+		return nil, ErrOddNumberOfCoordinatesInAreaString
 	}
 	if numCoords/2 < 3 {
-		return nil, errNotEnoughPointsInPolygon
+		return nil, ErrNotEnoughPointsInPolygon
 	}
 	scanner.Split(splitAtComma)
 
@@ -159,13 +146,13 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 		case 0:
 			f, err := strconv.ParseFloat(trimmed, 64)
 			if err != nil {
-				return nil, errBadCoordSet
+				return nil, stacktrace.Propagate(ErrBadCoordSet, "Unable to parse lat: %s", err.Error())
 			}
 			lat = f
 		case 1:
 			f, err := strconv.ParseFloat(trimmed, 64)
 			if err != nil {
-				return nil, errBadCoordSet
+				return nil, stacktrace.Propagate(ErrBadCoordSet, "Unable to parse lng: %s", err.Error())
 			}
 			lng = f
 			points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(lat, lng)))

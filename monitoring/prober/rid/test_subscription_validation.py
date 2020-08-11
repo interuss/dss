@@ -148,11 +148,10 @@ def test_create_too_many_subs(session):
                 'identification_service_area_url': 'https://example.com/foo'
             },
         })
-    all_resp.append(
-        resp.status_code == (429 if index == common.MAX_SUB_PER_AREA else 200)
-    )
-
-  assert all(all_resp)
+    if index < common.MAX_SUB_PER_AREA:
+      assert resp.status_code == 200, resp.content
+    else:
+      assert resp.status_code == 429, resp.content
 
 
 @default_scope(SCOPE_READ)

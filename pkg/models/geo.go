@@ -1,11 +1,11 @@
 package models
 
 import (
-	"errors"
 	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/geo"
+	"github.com/palantir/stacktrace"
 )
 
 const (
@@ -20,17 +20,6 @@ const (
 )
 
 var (
-	// ErrMissingSpatialVolume indicates that a spatial volume is required but
-	// missing to complete an operation.
-	ErrMissingSpatialVolume = errors.New("missing spatial volume")
-	// ErrMissingFootprint indicates that a geometry footprint is required but
-	// missing to complete an operation.
-	ErrMissingFootprint = errors.New("missing footprint")
-
-	errNotEnoughPointsInPolygon = errors.New("not enough points in polygon")
-	errBadCoordSet              = errors.New("coordinates did not create a well formed area")
-	errRadiusMustBeLargerThan0  = errors.New("radius must be larger than 0")
-
 	unitToMeterMultiplicativeFactors = map[unit]float32{
 		unitMeter: 1,
 	}
@@ -116,7 +105,11 @@ func (pcg precomputedCellGeometry) CalculateCovering() (s2.CellUnion, error) {
 }
 
 // UnionVolumes4D unions volumes and returns a volume that covers all the
-// individual volumes in space and time.
+// individual volumes in space and time, or one of these root causes:
+// * geo.ErrMissingFootprint
+// * geo.ErrNotEnoughPointsInPolygon
+// * geo.ErrBadCoordSet
+// * geo.ErrRadiusMustBeLargerThan0
 func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 	result := &Volume4D{}
 
@@ -169,7 +162,7 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 			if volume.SpatialVolume.Footprint != nil {
 				cells, err := volume.SpatialVolume.Footprint.CalculateCovering()
 				if err != nil {
-					return nil, err
+					return nil, stacktrace.Propagate(err, "Error calculating footprint covering")
 				}
 
 				if result.SpatialVolume.Footprint == nil {
@@ -183,27 +176,39 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 	return result, nil
 }
 
-// CalculateSpatialCovering returns the spatial covering of vol4.
+// CalculateSpatialCovering returns the spatial covering of vol4, or one of:
+// * geo.ErrMissingSpatialVolume
+// * geo.ErrMissingFootprint
+// * geo.ErrNotEnoughPointsInPolygon
+// * geo.ErrBadCoordSet
+// * geo.ErrRadiusMustBeLargerThan0
 func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
 	switch {
 	case vol4.SpatialVolume == nil:
-		return nil, ErrMissingSpatialVolume
+		return nil, geo.ErrMissingSpatialVolume
 	default:
 		return vol4.SpatialVolume.CalculateCovering()
 	}
 }
 
-// CalculateCovering returns the spatial covering of vol3.
+// CalculateCovering returns the spatial covering of vol3, or one of:
+// * geo.ErrMissingFootprint
+// * geo.ErrNotEnoughPointsInPolygon
+// * geo.ErrBadCoordSet
+// * geo.ErrRadiusMustBeLargerThan0
 func (vol3 *Volume3D) CalculateCovering() (s2.CellUnion, error) {
 	switch {
 	case vol3.Footprint == nil:
-		return nil, ErrMissingFootprint
+		return nil, geo.ErrMissingFootprint
 	default:
 		return vol3.Footprint.CalculateCovering()
 	}
 }
 
-// CalculateCovering returns the result of invoking gf.
+// CalculateCovering returns the result of invoking gf, with possible errors:
+// * geo.ErrNotEnoughPointsInPolygon
+// * geo.ErrBadCoordSet
+// * geo.ErrRadiusMustBeLargerThan0
 func (gf GeometryFunc) CalculateCovering() (s2.CellUnion, error) {
 	return gf()
 }
@@ -217,11 +222,11 @@ type GeoCircle struct {
 // CalculateCovering returns the spatial covering of gc.
 func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
 	if (gc.Center.Lat > maxLat) || (gc.Center.Lat < minLat) || (gc.Center.Lng > maxLng) || (gc.Center.Lng < minLng) {
-		return nil, errBadCoordSet
+		return nil, geo.ErrBadCoordSet
 	}
 
 	if !(gc.RadiusMeter > 0) {
-		return nil, errRadiusMustBeLargerThan0
+		return nil, geo.ErrRadiusMustBeLargerThan0
 	}
 
 	// TODO: Use an S2 Cap as an inscribed polygon does not fully cover the defined circle
@@ -246,17 +251,17 @@ type GeoPolygon struct {
 func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 	var points []s2.Point
 	if gp == nil {
-		return nil, errBadCoordSet
+		return nil, geo.ErrBadCoordSet
 	}
 	for _, v := range gp.Vertices {
 		// ensure that coordinates passed are actually on earth
 		if (v.Lat > maxLat) || (v.Lat < minLat) || (v.Lng > maxLng) || (v.Lng < minLng) {
-			return nil, errBadCoordSet
+			return nil, geo.ErrBadCoordSet
 		}
 		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(v.Lat, v.Lng)))
 	}
 	if len(points) < 3 {
-		return nil, errNotEnoughPointsInPolygon
+		return nil, geo.ErrNotEnoughPointsInPolygon
 	}
 	return geo.Covering(points)
 }

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/google/uuid"
+	"github.com/palantir/stacktrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -119,7 +119,7 @@ func TestDeleteSubscription(t *testing.T) {
 		id           dssmodels.ID
 		version      *dssmodels.Version
 		subscription *ridmodels.Subscription
-		err          error
+		wantErr      stacktrace.ErrorCode
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-app",
@@ -131,13 +131,13 @@ func TestDeleteSubscription(t *testing.T) {
 			name:    "error-is-returned-if-returned-from-app",
 			id:      dssmodels.ID(uuid.New().String()),
 			version: version,
-			err:     errors.New("failed to look up subscription for ID"),
+			wantErr: dsserr.NotFound,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			ma := &mockApp{}
 			ma.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, r.version).Return(
-				r.subscription, r.err,
+				r.subscription, stacktrace.NewErrorWithCode(r.wantErr, "Expected error"),
 			)
 			s := &Server{
 				App: ma,
@@ -146,7 +146,9 @@ func TestDeleteSubscription(t *testing.T) {
 			_, err := s.DeleteSubscription(ctx, &ridpb.DeleteSubscriptionRequest{
 				Id: r.id.String(), Version: r.version.String(),
 			})
-			require.Equal(t, r.err, err)
+			if r.wantErr != stacktrace.ErrorCode(0) {
+				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+			}
 			require.True(t, ma.AssertExpectations(t))
 		})
 	}
@@ -161,7 +163,7 @@ func TestCreateSubscription(t *testing.T) {
 		callbacks        *ridpb.SubscriptionCallbacks
 		extents          *ridpb.Volume4D
 		wantSubscription *ridmodels.Subscription
-		wantErr          error
+		wantErr          stacktrace.ErrorCode
 	}{
 		{
 			name: "success",
@@ -187,7 +189,7 @@ func TestCreateSubscription(t *testing.T) {
 			callbacks: &ridpb.SubscriptionCallbacks{
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
-			wantErr: dsserr.BadRequest("missing required extents"),
+			wantErr: dsserr.BadRequest,
 		},
 		{
 			name: "missing-extents-spatial-volume",
@@ -196,7 +198,7 @@ func TestCreateSubscription(t *testing.T) {
 				IdentificationServiceAreaUrl: "https://example.com",
 			},
 			extents: &ridpb.Volume4D{},
-			wantErr: dsserr.BadRequest("bad extents: missing required spatial_volume"),
+			wantErr: dsserr.BadRequest,
 		},
 		{
 			name: "missing-spatial-volume-footprint",
@@ -207,7 +209,7 @@ func TestCreateSubscription(t *testing.T) {
 			extents: &ridpb.Volume4D{
 				SpatialVolume: &ridpb.Volume3D{},
 			},
-			wantErr: dsserr.BadRequest("bad extents: spatial_volume missing required footprint"),
+			wantErr: dsserr.BadRequest,
 		},
 		{
 			name: "missing-spatial-volume-footprint",
@@ -220,18 +222,18 @@ func TestCreateSubscription(t *testing.T) {
 					Footprint: &ridpb.GeoPolygon{},
 				},
 			},
-			wantErr: dsserr.BadRequest("bad extents: not enough points in polygon"),
+			wantErr: dsserr.BadRequest,
 		},
 		{
 			name:    "missing-callbacks",
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
-			wantErr: dsserr.BadRequest("missing required callbacks"),
+			wantErr: dsserr.BadRequest,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			ma := &mockApp{}
-			if r.wantErr == nil {
+			if r.wantErr == stacktrace.ErrorCode(0) {
 				ma.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 					[]*ridmodels.IdentificationServiceArea(nil), nil)
 				ma.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
@@ -247,7 +249,9 @@ func TestCreateSubscription(t *testing.T) {
 					Extents:   r.extents,
 				},
 			})
-			require.Equal(t, r.wantErr, err)
+			if r.wantErr != stacktrace.ErrorCode(0) {
+				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+			}
 			require.True(t, ma.AssertExpectations(t))
 		})
 	}
@@ -310,7 +314,7 @@ func TestGetSubscription(t *testing.T) {
 		name         string
 		id           dssmodels.ID
 		subscription *ridmodels.Subscription
-		err          error
+		err          stacktrace.ErrorCode
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-app",
@@ -320,14 +324,14 @@ func TestGetSubscription(t *testing.T) {
 		{
 			name: "error-is-returned-if-returned-from-app",
 			id:   dssmodels.ID(uuid.New().String()),
-			err:  errors.New("failed to look up subscription for ID"),
+			err:  dsserr.NotFound,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			ma := &mockApp{}
 
 			ma.On("GetSubscription", mock.Anything, r.id).Return(
-				r.subscription, r.err,
+				r.subscription, stacktrace.NewErrorWithCode(r.err, "Expected error"),
 			)
 			s := &Server{
 				App: ma,
@@ -336,7 +340,7 @@ func TestGetSubscription(t *testing.T) {
 			_, err := s.GetSubscription(context.Background(), &ridpb.GetSubscriptionRequest{
 				Id: r.id.String(),
 			})
-			require.Equal(t, r.err, err)
+			require.Equal(t, stacktrace.GetCode(err), r.err)
 			require.True(t, ma.AssertExpectations(t))
 		})
 	}
@@ -417,7 +421,7 @@ func TestCreateISA(t *testing.T) {
 		extents    *ridpb.Volume4D
 		flightsURL string
 		wantISA    *ridmodels.IdentificationServiceArea
-		wantErr    error
+		wantErr    stacktrace.ErrorCode
 	}{
 		{
 			name:       "success",
@@ -439,14 +443,14 @@ func TestCreateISA(t *testing.T) {
 			name:       "missing-extents",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest("missing required extents"),
+			wantErr:    dsserr.BadRequest,
 		},
 		{
 			name:       "missing-extents-spatial-volume",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents:    &ridpb.Volume4D{},
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest("bad extents: missing required spatial_volume"),
+			wantErr:    dsserr.BadRequest,
 		},
 		{
 			name: "missing-spatial-volume-footprint",
@@ -455,7 +459,7 @@ func TestCreateISA(t *testing.T) {
 				SpatialVolume: &ridpb.Volume3D{},
 			},
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest("bad extents: spatial_volume missing required footprint"),
+			wantErr:    dsserr.BadRequest,
 		},
 		{
 			name: "missing-spatial-volume-footprint",
@@ -466,13 +470,13 @@ func TestCreateISA(t *testing.T) {
 				},
 			},
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest("bad extents: not enough points in polygon"),
+			wantErr:    dsserr.BadRequest,
 		},
 		{
 			name:    "missing-flights-url",
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
-			wantErr: dsserr.BadRequest("missing required flightsURL"),
+			wantErr: dsserr.BadRequest,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -492,7 +496,9 @@ func TestCreateISA(t *testing.T) {
 					FlightsUrl: r.flightsURL,
 				},
 			})
-			require.Equal(t, r.wantErr, err)
+			if r.wantErr != stacktrace.ErrorCode(0) {
+				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+			}
 			require.True(t, ma.AssertExpectations(t))
 		})
 	}
@@ -507,7 +513,7 @@ func TestUpdateISA(t *testing.T) {
 		extents    *ridpb.Volume4D
 		flightsURL string
 		wantISA    *ridmodels.IdentificationServiceArea
-		wantErr    error
+		wantErr    stacktrace.ErrorCode
 		version    *dssmodels.Version
 	}{
 		{
@@ -534,14 +540,14 @@ func TestUpdateISA(t *testing.T) {
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
 			version: version,
-			wantErr: dsserr.BadRequest("missing required flightsURL"),
+			wantErr: dsserr.BadRequest,
 		},
 		{
 			name:       "missing-extents",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			flightsURL: "https://example.com",
 			version:    version,
-			wantErr:    dsserr.BadRequest("missing required extents"),
+			wantErr:    dsserr.BadRequest,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -562,7 +568,9 @@ func TestUpdateISA(t *testing.T) {
 					FlightsUrl: r.flightsURL,
 				},
 			})
-			require.Equal(t, r.wantErr, err)
+			if r.wantErr != stacktrace.ErrorCode(0) {
+				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+			}
 			require.True(t, ma.AssertExpectations(t))
 		})
 	}

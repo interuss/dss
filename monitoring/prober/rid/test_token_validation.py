@@ -81,7 +81,7 @@ def test_create_isa(session):
 def test_get_isa_without_token(no_auth_session):
   resp = no_auth_session.get('/identification_service_areas/{}'.format(ISA_ID))
   assert resp.status_code == 401
-  assert resp.json()['message'] == 'missing token'
+  assert resp.json()['message'] == 'Missing access token'
 
 
 def test_get_isa_with_fake_token(no_auth_session):

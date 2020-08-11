@@ -1,18 +1,17 @@
 package models
 
 import (
-	"errors"
-
 	"github.com/golang/protobuf/ptypes"
 
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	"github.com/palantir/stacktrace"
 )
 
 // Volume4DFromSCDProto converts vol4 proto to a Volume4D
 func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 	vol3, err := Volume3DFromSCDProto(vol4.GetVolume())
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 
 	result := &Volume4D{
@@ -23,7 +22,7 @@ func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 		st := startTime.GetValue()
 		ts, err := ptypes.Timestamp(st)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time from proto")
 		}
 		result.StartTime = &ts
 	}
@@ -32,7 +31,7 @@ func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 		et := endTime.GetValue()
 		ts, err := ptypes.Timestamp(et)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time from proto")
 		}
 		result.EndTime = &ts
 	}
@@ -50,10 +49,10 @@ func Volume3DFromSCDProto(vol3 *scdpb.Volume3D) (*Volume3D, error) {
 	var altLo *float32
 	if altitudeLower != nil {
 		if altitudeLower.Units != UnitsM {
-			return nil, errors.New("invalid lower altitude unit")
+			return nil, stacktrace.NewError("Invalid lower altitude unit")
 		}
 		if altitudeLower.Reference != ReferenceW84 {
-			return nil, errors.New("invalid lower altitude reference")
+			return nil, stacktrace.NewError("Invalid lower altitude reference")
 		}
 		altLo = float32p(float32(altitudeLower.GetValue()))
 	}
@@ -62,17 +61,17 @@ func Volume3DFromSCDProto(vol3 *scdpb.Volume3D) (*Volume3D, error) {
 	var altHi *float32
 	if altitudeUpper != nil {
 		if altitudeUpper.Units != UnitsM {
-			return nil, errors.New("invalid upper altitude unit")
+			return nil, stacktrace.NewError("Invalid upper altitude unit")
 		}
 		if altitudeUpper.Reference != ReferenceW84 {
-			return nil, errors.New("invalid upper altitude reference")
+			return nil, stacktrace.NewError("Invalid upper altitude reference")
 		}
 		altHi = float32p(float32(altitudeUpper.GetValue()))
 	}
 
 	switch {
 	case vol3.GetOutlineCircle() != nil && vol3.GetOutlinePolygon() != nil:
-		return nil, errors.New("both circle and polygon specified in outline geometry")
+		return nil, stacktrace.NewError("Both circle and polygon specified in outline geometry")
 	case vol3.GetOutlinePolygon() != nil:
 		return &Volume3D{
 			Footprint:  GeoPolygonFromSCDProto(vol3.GetOutlinePolygon()),
@@ -123,7 +122,7 @@ func LatLngPointFromSCDProto(p *scdpb.LatLngPoint) *LatLngPoint {
 func (vol4 *Volume4D) ToSCDProto() (*scdpb.Volume4D, error) {
 	vol3, err := vol4.SpatialVolume.ToSCDProto()
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 
 	result := &scdpb.Volume4D{
@@ -133,7 +132,7 @@ func (vol4 *Volume4D) ToSCDProto() (*scdpb.Volume4D, error) {
 	if vol4.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*vol4.StartTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
 		}
 		result.TimeStart = &scdpb.Time{
 			Format: TimeFormatRFC3339,
@@ -144,7 +143,7 @@ func (vol4 *Volume4D) ToSCDProto() (*scdpb.Volume4D, error) {
 	if vol4.EndTime != nil {
 		ts, err := ptypes.TimestampProto(*vol4.EndTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
 		}
 		result.TimeEnd = &scdpb.Time{
 			Format: TimeFormatRFC3339,

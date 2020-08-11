@@ -13,6 +13,7 @@ import (
 	"github.com/golang/geo/s2"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/lib/pq"
+	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -33,7 +34,7 @@ type subscriptionRepo struct {
 func (c *subscriptionRepo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
 	rows, err := c.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
 	defer rows.Close()
 
@@ -54,13 +55,13 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 			&s.Version,
 		)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
 		s.SetCells(cids)
 		payload = append(payload, s)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 	return payload, nil
 }
@@ -69,10 +70,10 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 func (c *subscriptionRepo) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.Subscription, error) {
 	subs, err := c.process(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 	if len(subs) > 1 {
-		return nil, fmt.Errorf("query returned %d subscriptions", len(subs))
+		return nil, stacktrace.NewError("Query returned %d subscriptions when only 0 or 1 was expected", len(subs))
 	}
 	if len(subs) == 0 {
 		return nil, nil
@@ -112,7 +113,7 @@ func (c *subscriptionRepo) MaxSubscriptionCountInCellsByOwner(ctx context.Contex
 	row := c.QueryRowContext(ctx, query, owner, c.clock.Now(), pq.Int64Array(cids))
 	var ret int
 	err := row.Scan(&ret)
-	return ret, err
+	return ret, stacktrace.Propagate(err, "Error scanning subscription count row")
 }
 
 // GetSubscription returns the subscription identified by "id".
@@ -142,7 +143,7 @@ func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.
 
 	for i, cell := range s.Cells {
 		if err := geo.ValidateCell(cell); err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error validating cell")
 		}
 		cids[i] = int64(cell)
 	}
@@ -175,7 +176,7 @@ func (c *subscriptionRepo) InsertSubscription(ctx context.Context, s *ridmodels.
 
 	for i, cell := range s.Cells {
 		if err := geo.ValidateCell(cell); err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error validating cell")
 		}
 		cids[i] = int64(cell)
 	}
@@ -239,7 +240,7 @@ func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.Cel
 	)
 
 	if len(cells) == 0 {
-		return nil, dsserr.BadRequest("no location provided")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
 	cids := make([]int64, len(cells))
@@ -267,7 +268,7 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 	)
 
 	if len(cells) == 0 {
-		return nil, dsserr.BadRequest("no location provided")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
 	cids := make([]int64, len(cells))

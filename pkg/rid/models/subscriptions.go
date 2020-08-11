@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"time"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/palantir/stacktrace"
 )
 
 var (
@@ -78,7 +78,7 @@ func (s *Subscription) ToProto() (*ridpb.Subscription, error) {
 	if s.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*s.StartTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
 		}
 		result.TimeStart = ts
 	}
@@ -86,7 +86,7 @@ func (s *Subscription) ToProto() (*ridpb.Subscription, error) {
 	if s.EndTime != nil {
 		ts, err := ptypes.TimestampProto(*s.EndTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
 		}
 		result.TimeEnd = ts
 	}
@@ -103,7 +103,7 @@ func (s *Subscription) SetExtents(extents *ridpb.Volume4D) error {
 	if startTime := extents.GetTimeStart(); startTime != nil {
 		ts, err := ptypes.Timestamp(startTime)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error converting start time from proto")
 		}
 		s.StartTime = &ts
 	}
@@ -111,23 +111,26 @@ func (s *Subscription) SetExtents(extents *ridpb.Volume4D) error {
 	if endTime := extents.GetTimeEnd(); endTime != nil {
 		ts, err := ptypes.Timestamp(endTime)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Error converting end time from proto")
 		}
 		s.EndTime = &ts
 	}
 
 	space := extents.GetSpatialVolume()
 	if space == nil {
-		return errors.New("missing required spatial_volume")
+		return stacktrace.NewError("Missing required spatial_volume")
 	}
 	s.AltitudeHi = proto.Float32(space.GetAltitudeHi())
 	s.AltitudeLo = proto.Float32(space.GetAltitudeLo())
 	footprint := space.GetFootprint()
 	if footprint == nil {
-		return errors.New("spatial_volume missing required footprint")
+		return stacktrace.NewError("spatial_volume missing required footprint")
 	}
 	s.Cells, err = dssmodels.GeoPolygonFromRIDProto(footprint).CalculateCovering()
-	return err
+	if err != nil {
+		return stacktrace.Propagate(err, "Error calculating covering from polygon")
+	}
+	return nil
 }
 
 // AdjustTimeRange adjusts the time range to the max allowed ranges on a
@@ -144,7 +147,7 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 	} else {
 		// If setting the StartTime explicitly ensure it is not too far in the past.
 		if now.Sub(*s.StartTime) > maxClockSkew {
-			return dsserr.BadRequest("subscription time_start must not be in the past")
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription time_start must not be in the past")
 		}
 	}
 
@@ -161,12 +164,12 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 
 	// EndTime cannot be before StartTime.
 	if s.EndTime.Sub(*s.StartTime) < 0 {
-		return dsserr.BadRequest("subscription time_end must be after time_start")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription time_end must be after time_start")
 	}
 
 	// EndTime cannot be 24 hrs after StartTime
 	if s.EndTime.Sub(*s.StartTime) > maxSubscriptionDuration {
-		return dsserr.BadRequest("subscription window exceeds 24 hours")
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription window exceeds 24 hours")
 	}
 
 	return nil

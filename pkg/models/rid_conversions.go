@@ -1,13 +1,11 @@
 package models
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
+	"github.com/palantir/stacktrace"
 )
 
 // === RID -> Business ===
@@ -16,7 +14,7 @@ import (
 func Volume4DFromRIDProto(vol4 *ridpb.Volume4D) (*Volume4D, error) {
 	vol3, err := Volume3DFromRIDProto(vol4.GetSpatialVolume())
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 
 	result := &Volume4D{
@@ -26,7 +24,7 @@ func Volume4DFromRIDProto(vol4 *ridpb.Volume4D) (*Volume4D, error) {
 	if startTime := vol4.GetTimeStart(); startTime != nil {
 		ts, err := ptypes.Timestamp(startTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time from proto")
 		}
 		result.StartTime = &ts
 	}
@@ -34,7 +32,7 @@ func Volume4DFromRIDProto(vol4 *ridpb.Volume4D) (*Volume4D, error) {
 	if endTime := vol4.GetTimeEnd(); endTime != nil {
 		ts, err := ptypes.Timestamp(endTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time from proto")
 		}
 		result.EndTime = &ts
 	}
@@ -46,7 +44,7 @@ func Volume4DFromRIDProto(vol4 *ridpb.Volume4D) (*Volume4D, error) {
 func Volume3DFromRIDProto(vol3 *ridpb.Volume3D) (*Volume3D, error) {
 	footprint := vol3.GetFootprint()
 	if footprint == nil {
-		return nil, errors.New("spatial_volume missing required footprint")
+		return nil, stacktrace.NewError("spatial_volume missing required footprint")
 	}
 	polygonFootprint := GeoPolygonFromRIDProto(footprint)
 
@@ -84,7 +82,7 @@ func PointFromRIDProto(pt *ridpb.LatLngPoint) *LatLngPoint {
 func (vol4 *Volume4D) ToRIDProto() (*ridpb.Volume4D, error) {
 	vol3, err := vol4.SpatialVolume.ToRIDProto()
 	if err != nil {
-		return nil, err
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 
 	result := &ridpb.Volume4D{
@@ -94,7 +92,7 @@ func (vol4 *Volume4D) ToRIDProto() (*ridpb.Volume4D, error) {
 	if vol4.StartTime != nil {
 		ts, err := ptypes.TimestampProto(*vol4.StartTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting start time from proto")
 		}
 		result.TimeStart = ts
 	}
@@ -102,7 +100,7 @@ func (vol4 *Volume4D) ToRIDProto() (*ridpb.Volume4D, error) {
 	if vol4.EndTime != nil {
 		ts, err := ptypes.TimestampProto(*vol4.EndTime)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "Error converting end time from proto")
 		}
 		result.TimeEnd = ts
 	}
@@ -132,7 +130,7 @@ func (vol3 *Volume3D) ToRIDProto() (*ridpb.Volume3D, error) {
 	case *GeoPolygon:
 		result.Footprint = t.ToRIDProto()
 	default:
-		return nil, fmt.Errorf("unsupported geometry type: %T", vol3.Footprint)
+		return nil, stacktrace.NewError("Unsupported geometry type: %T", vol3.Footprint)
 	}
 
 	return result, nil
