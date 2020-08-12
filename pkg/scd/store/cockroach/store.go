@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/coreos/go-semver/semver"
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/scd/repos"
@@ -70,8 +71,12 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
-// GetVersion returns the Version string for the Database.
+// GetVersion returns the semver.Version for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
-func (s *Store) GetVersion(ctx context.Context) (string, error) {
-	return cockroach.GetVersion(ctx, s.db, DatabaseName)
+func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
+	versionStr, err := cockroach.GetVersion(ctx, s.db, DatabaseName)
+	if err != nil {
+		return nil, err
+	}
+	return semver.New(string(versionStr[1:])), nil
 }

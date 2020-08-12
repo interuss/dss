@@ -12,6 +12,7 @@ import (
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/palantir/stacktrace"
 	"github.com/stretchr/testify/require"
+	"github.com/coreos/go-semver/semver"
 	"go.uber.org/zap"
 )
 
@@ -67,8 +68,8 @@ func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.Identificat
 	return &returnedCopy, nil
 }
 
-func (store *isaStore) GetVersion(ctx context.Context) (string, error) {
-	return "v3.1.0", nil
+func (store *isaStore) GetVersion(ctx context.Context) (*semver.Version, error) {
+	return semver.New("3.1.0"), nil
 }
 
 // Implements repos.ISA.SearchISA

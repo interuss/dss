@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/rid/repos"
 )
 
@@ -16,7 +17,7 @@ type Store interface {
 	Close() error
 
 	// Get store version
-	GetVersion(ctx context.Context) (string, error)
+	GetVersion(ctx context.Context) (*semver.Version, error)
 }
 
 // Interactor provides means to get hold of a repos.Repository instance *without* any

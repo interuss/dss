@@ -10,13 +10,13 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/golang/geo/s2"
 	repos "github.com/interuss/dss/pkg/rid/repos"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/lib/pq"
 	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
-	"golang.org/x/mod/semver"
 )
 
 const (
@@ -24,14 +24,14 @@ const (
 	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
-func NewISARepo(ctx context.Context, db dssql.Queryable, dbVersion string, logger *zap.Logger) repos.ISA {
-	if semver.Compare(dbVersion, "v3.1.0") >= 0 {
-		return &isaRepo{
+func NewISARepo(ctx context.Context, db dssql.Queryable, dbVersion *semver.Version, logger *zap.Logger) repos.ISA {
+	if dbVersion.LessThan(*semver.New("3.1.0")) {
+		return &isaRepoV3{
 			Queryable: db,
 			logger:    logger,
 		}
 	}
-	return &isaRepoV3{
+	return &isaRepo{
 		Queryable: db,
 		logger:    logger,
 	}

@@ -27,7 +27,7 @@ import (
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/validations"
 	"github.com/palantir/stacktrace"
-	"golang.org/x/mod/semver"
+	"github.com/coreos/go-semver/semver"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"
@@ -38,11 +38,11 @@ import (
 const (
 	// The code at this version requires a major schema version equal to this
 	// value.
-	RidRequiredMajorSchemaVersion = "v3"
+	RidRequiredMajorSchemaVersion = "3.0.0"
 
 	// The code at this version requires a major schema version equal to this
 	// value.
-	ScdRequiredMajorSchemaVersion = "v1"
+	ScdRequiredMajorSchemaVersion = "1.0.0"
 )
 
 var (
@@ -84,11 +84,11 @@ func MustSupportRidSchema(ctx context.Context, store *ridc.Store) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
 	}
-	if vs == "v0.0.0" {
+	if vs.Equal(*semver.New("0.0.0")) {
 		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
-	if RidRequiredMajorSchemaVersion != semver.Major(vs) {
+	if vs.LessThan(*semver.New(RidRequiredMajorSchemaVersion)) {
 		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %s.", vs, RidRequiredMajorSchemaVersion)
 	}
 
@@ -100,11 +100,11 @@ func MustSupportScdSchema(ctx context.Context, store *scdc.Store) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get database schema version for strategic conflict detection")
 	}
-	if vs == "v0.0.0" {
+	if vs.Equal(*semver.New("0.0.0")) {
 		return stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
-	if ScdRequiredMajorSchemaVersion != semver.Major(vs) {
+	if vs.LessThan(*semver.New(ScdRequiredMajorSchemaVersion)) {
 		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %s.", vs, ScdRequiredMajorSchemaVersion)
 	}
 

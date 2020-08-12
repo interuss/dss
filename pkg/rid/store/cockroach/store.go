@@ -11,6 +11,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/palantir/stacktrace"
+	"github.com/coreos/go-semver/semver"
 	"go.uber.org/zap"
 )
 
@@ -126,8 +127,12 @@ func (s *Store) CleanUp(ctx context.Context) error {
 	return err
 }
 
-// GetVersion returns the Version string for the Database.
+// GetVersion returns the semver.Version for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
-func (s *Store) GetVersion(ctx context.Context) (string, error) {
-	return cockroach.GetVersion(ctx, s.db, DatabaseName)
+func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
+	versionStr, err := cockroach.GetVersion(ctx, s.db, DatabaseName)
+	if err != nil {
+		return nil, err
+	}
+ 	return semver.New(string(versionStr[1:])), nil
 }
