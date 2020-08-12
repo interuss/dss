@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -12,7 +13,6 @@ import (
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/palantir/stacktrace"
 	"github.com/stretchr/testify/require"
-	"github.com/coreos/go-semver/semver"
 	"go.uber.org/zap"
 )
 

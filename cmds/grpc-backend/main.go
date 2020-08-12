@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/profiler"
+	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
@@ -27,7 +28,6 @@ import (
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/validations"
 	"github.com/palantir/stacktrace"
-	"github.com/coreos/go-semver/semver"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"

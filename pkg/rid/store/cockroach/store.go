@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/coreos/go-semver/semver"
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/palantir/stacktrace"
-	"github.com/coreos/go-semver/semver"
 	"go.uber.org/zap"
 )
 
@@ -134,5 +134,5 @@ func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
 	if err != nil {
 		return nil, err
 	}
- 	return semver.New(string(versionStr[1:])), nil
+	return semver.New(string(versionStr[1:])), nil
 }
