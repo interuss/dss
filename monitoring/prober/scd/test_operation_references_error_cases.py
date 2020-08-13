@@ -35,7 +35,11 @@ def test_op_ref_start_end_times_past(scd_session):
   with open('./scd/resources/op_ref_start_end_times_past.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
-  assert resp.status_code == 400, resp.content
+  # It is ok (and useful) to query for past Operations that may not yet have
+  # been explicitly deleted.  This is unlike remote ID where ISAs are
+  # auto-removed from the perspective of the client immediately after their end
+  # time.
+  assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_SC)
@@ -108,6 +112,10 @@ def test_op_already_exists(scd_session):
   # Delete operation
   resp = scd_session.delete('/operation_references/{}'.format(OP_ID))
   assert resp.status_code == 200, resp.content
+
+  # Verify deletion
+  resp = scd_session.get('/operation_references/{}'.format(OP_ID))
+  assert resp.status_code == 404, resp.content
 
 
 @default_scope(SCOPE_SC)

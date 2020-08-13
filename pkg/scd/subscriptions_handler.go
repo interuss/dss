@@ -106,7 +106,9 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
 			}
 
-			// TODO: validate against DependentOperations when available
+			subreq.NotificationIndex = old.NotificationIndex
+
+			// TODO(#386): validate against DependentOperations
 		}
 
 		// Store Subscription model
@@ -138,8 +140,14 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 			relevantOperations = ops
 		}
 
+		// Get dependent Operations
+		dependentOps, err := r.GetDependentOperations(ctx, sub.ID)
+		if err != nil {
+			return stacktrace.Propagate(err, "Could not find dependent Operations")
+		}
+
 		// Convert Subscription to proto
-		p, err := sub.ToProto()
+		p, err := sub.ToProto(dependentOps)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not convert Subscription to proto")
 		}
@@ -220,8 +228,14 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
 		}
 
+		// Get dependent Operations
+		dependentOps, err := r.GetDependentOperations(ctx, id)
+		if err != nil {
+			return stacktrace.Propagate(err, "Could not find dependent Operations")
+		}
+
 		// Convert Subscription to proto
-		p, err := sub.ToProto()
+		p, err := sub.ToProto(dependentOps)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to convert Subscription to proto")
 		}
@@ -274,7 +288,13 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		response = &scdpb.SearchSubscriptionsResponse{}
 		for _, sub := range subs {
 			if sub.Owner == owner {
-				p, err := sub.ToProto()
+				// Get dependent Operations
+				dependentOps, err := r.GetDependentOperations(ctx, sub.ID)
+				if err != nil {
+					return stacktrace.Propagate(err, "Could not find dependent Operations")
+				}
+
+				p, err := sub.ToProto(dependentOps)
 				if err != nil {
 					return stacktrace.Propagate(err, "Error converting Subscription model to proto")
 				}
@@ -321,6 +341,15 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
 		}
 
+		// Get dependent Operations
+		dependentOps, err := r.GetDependentOperations(ctx, id)
+		if err != nil {
+			return stacktrace.Propagate(err, "Could not find dependent Operations")
+		}
+		if len(dependentOps) > 0 {
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscriptions with dependent Operations may not be removed")
+		}
+
 		// Delete Subscription in repo
 		err = r.DeleteSubscription(ctx, id)
 		if err != nil {
@@ -328,7 +357,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 		}
 
 		// Convert deleted Subscription to proto
-		p, err := old.ToProto()
+		p, err := old.ToProto(dependentOps)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error converting Subscription model to proto")
 		}

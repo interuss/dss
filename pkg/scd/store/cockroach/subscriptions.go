@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
@@ -97,7 +96,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 			s         = new(scdmodels.Subscription)
 			updatedAt time.Time
 		)
-		err := rows.Scan(
+		err = rows.Scan(
 			&s.ID,
 			&s.Owner,
 			&s.Version,
@@ -115,60 +114,11 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 		}
 		payload = append(payload, s)
 	}
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
+
 	return payload, nil
-}
-
-func (c *repo) fetchSubscriptionsForNotification(
-	ctx context.Context, q dsssql.Queryable, cells []int64) ([]*scdmodels.Subscription, error) {
-	// TODO(dsansome): upgrade to cockroachdb 19.2.0 and convert this to a single
-	// UPDATE FROM query.
-	// First: get unique subscription IDs.
-	var query = `
- 			SELECT DISTINCT
- 				subscription_id
- 			FROM
- 				scd_cells_subscriptions
- 			WHERE
- 				cell_id = ANY($1)`
-	rows, err := q.QueryContext(ctx, query, pq.Array(cells))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
-	}
-	defer rows.Close()
-
-	var subscriptionIDs []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
-		}
-		subscriptionIDs = append(subscriptionIDs, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, stacktrace.Propagate(err, "Error in rows query result")
-	}
-
-	// Next: update the notification_index of each one and return the rest of the
-	// data.
-	// TODO: Relevant Subscriptions are ones that overlap the old or new
-	//   Operation/Constraint Volume4D, not just any that end after the current
-	//   time.  The query logic below needs to be fixed.
-	var updateQuery = fmt.Sprintf(`
- 			UPDATE
- 				scd_subscriptions
- 			SET
- 				notification_index = notification_index + 1
- 			WHERE
- 				id = ANY($1)
- 			AND
- 				ends_at >= $2
- 			RETURNING
- 				%s`, subscriptionFieldsWithoutPrefix)
-	return c.fetchSubscriptions(
-		ctx, q, updateQuery, pq.Array(subscriptionIDs), c.clock.Now())
 }
 
 func (c *repo) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Subscription, error) {
@@ -313,37 +263,21 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 		DELETE FROM
 			scd_subscriptions
 		WHERE
-			id = $1
-		AND
-			0 = ALL (
-				SELECT
-					COALESCE(COUNT(scd_operations.id), 0)
-				AS
-					counter
-				FROM
-					scd_operations
-				JOIN
-					scd_subscriptions
-				ON
-					scd_operations.subscription_id = scd_subscriptions.id
-				WHERE
-					scd_operations.subscription_id = $1
-			)`
+			id = $1`
 	)
 
 	res, err := c.q.ExecContext(ctx, query, id)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
-
 	rows, err := res.RowsAffected()
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not get RowsAffected")
 	}
-
 	if rows == 0 {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Failed to delete implicit subscription with active operation")
+		return stacktrace.NewError("Attempted to delete non-existent Subscription")
 	}
+
 	return nil
 }
 

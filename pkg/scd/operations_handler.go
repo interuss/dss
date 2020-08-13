@@ -2,10 +2,7 @@ package scd
 
 import (
 	"context"
-	"fmt"
 	"time"
-
-	"github.com/golang/protobuf/ptypes"
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
@@ -37,17 +34,88 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 
 	var response *scdpb.ChangeOperationReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Delete Operation in Store
-		op, subs, err := r.DeleteOperation(ctx, id, owner)
+		// Get Operation to delete
+		old, err := r.GetOperation(ctx, id)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to get Operation from repo")
+		}
+		if old == nil {
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id)
+		}
+
+		// Validate deletion request
+		if old.Owner != owner {
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
+		}
+
+		// Get the Subscription supporting the Operation
+		sub, err := r.GetSubscription(ctx, old.SubscriptionID)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to get Operation's Subscription from repo")
+		}
+		if sub == nil {
+			return stacktrace.NewError("Operation's Subscription missing from repo")
+		}
+
+		removeImplicitSubscription := false
+		if sub.ImplicitSubscription {
+			// Get the Subscription's dependent Operations
+			dependentOps, err := r.GetDependentOperations(ctx, sub.ID)
+			if err != nil {
+				return stacktrace.Propagate(err, "Could not find dependent Operations")
+			}
+			if len(dependentOps) == 0 {
+				return stacktrace.NewError("An implicit Subscription had no dependent Operations")
+			} else if len(dependentOps) == 1 {
+				removeImplicitSubscription = true
+			}
+		}
+
+		// Find Subscriptions that may overlap the Operation's Volume4D
+		allsubs, err := r.SearchSubscriptions(ctx, &dssmodels.Volume4D{
+			StartTime: old.StartTime,
+			EndTime:   old.EndTime,
+			SpatialVolume: &dssmodels.Volume3D{
+				AltitudeHi: old.AltitudeUpper,
+				AltitudeLo: old.AltitudeLower,
+				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+					return old.Cells, nil
+				}),
+			}})
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to search Subscriptions in repo")
+		}
+
+		// Limit Subscription notifications to only those interested in Operations
+		var subs []*scdmodels.Subscription
+		for _, s := range allsubs {
+			if s.NotifyForOperations {
+				subs = append(subs, s)
+			}
+		}
+
+		// Increment notification indices for Subscriptions to be notified
+		err = incrementNotificationIndices(ctx, r, subs)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to increment notification indices")
+		}
+
+		// Delete Operation from repo
+		err = r.DeleteOperation(ctx, id)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to delete Operation from repo")
 		}
-		if op == nil {
-			return stacktrace.NewError(fmt.Sprintf("DeleteOperation returned no Operation for ID: %s", id))
+
+		if removeImplicitSubscription {
+			// Automatically remove a now-unused implicit Subscription
+			err = r.DeleteSubscription(ctx, sub.ID)
+			if err != nil {
+				return stacktrace.Propagate(err, "Unable to delete associated implicit Subscription")
+			}
 		}
 
 		// Convert deleted Operation to proto
-		opProto, err := op.ToProto()
+		opProto, err := old.ToProto()
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not convert Operation to proto")
 		}
@@ -86,6 +154,9 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 		op, err := r.GetOperation(ctx, id)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to get Operation from repo")
+		}
+		if op == nil {
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id)
 		}
 
 		if op.Owner != owner {
@@ -131,13 +202,6 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	owner, ok := auth.OwnerFromContext(ctx)
 	if !ok {
 		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
-	}
-
-	if aoi.TimeEnd != nil {
-		endTime, _ := ptypes.Timestamp(aoi.TimeEnd.Value)
-		if time.Now().After(endTime) {
-			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is in the past")
-		}
 	}
 
 	var response *scdpb.SearchOperationReferenceResponse
@@ -199,6 +263,11 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
 	}
 
+	state := scdmodels.OperationState(params.State)
+	if !state.IsValidInDSS() {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid Operation state: %s", params.State)
+	}
+
 	for idx, extent := range params.GetExtents() {
 		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)
 		if err != nil {
@@ -216,6 +285,10 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	}
 	if uExtent.EndTime == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_end from extents")
+	}
+
+	if time.Now().After(*uExtent.EndTime) {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operations may not end in the past")
 	}
 
 	cells, err := uExtent.CalculateSpatialCovering()
@@ -242,13 +315,33 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 
 	var response *scdpb.ChangeOperationReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
+		// Get existing Operation, if any, and validate request
+		old, err := r.GetOperation(ctx, id)
+		if err != nil {
+			return stacktrace.Propagate(err, "Could not get Operation from repo")
+		}
+		if old != nil {
+			if old.Owner != owner {
+				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
+			}
+			if old.Version != scdmodels.Version(params.OldVersion) {
+				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d is not the current version", params.OldVersion)
+			}
+		} else {
+			if params.OldVersion != 0 {
+				return stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation does not exist and therefore is not version %d", params.OldVersion)
+			}
+		}
+
+		var sub *scdmodels.Subscription
 		if subscriptionID.Empty() {
+			// Create implicit Subscription
 			err := scdmodels.ValidateUSSBaseURL(params.GetNewSubscription().GetUssBaseUrl())
 			if err != nil {
 				return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
 			}
 
-			sub, err := r.UpsertSubscription(ctx, &scdmodels.Subscription{
+			sub, err = r.UpsertSubscription(ctx, &scdmodels.Subscription{
 				ID:         dssmodels.ID(uuid.New().String()),
 				Owner:      owner,
 				StartTime:  uExtent.StartTime,
@@ -267,7 +360,8 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			}
 			subscriptionID = sub.ID
 		} else {
-			sub, err := r.GetSubscription(ctx, subscriptionID)
+			// Use existing Subscription
+			sub, err = r.GetSubscription(ctx, subscriptionID)
 			if err != nil {
 				return stacktrace.Propagate(err, "Unable to get Subscription")
 			}
@@ -300,23 +394,68 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				}
 			}
 			if updateSub {
-				_, err := r.UpsertSubscription(ctx, sub)
+				sub, err = r.UpsertSubscription(ctx, sub)
 				if err != nil {
-					return stacktrace.Propagate(err, "Failed to update implicit Subscription")
+					return stacktrace.Propagate(err, "Failed to update existing Subscription")
 				}
 			}
 		}
 
-		key := []scdmodels.OVN{}
-		for _, ovn := range params.GetKey() {
-			key = append(key, scdmodels.OVN(ovn))
+		if state.RequiresKey() {
+			// Construct a hash set of OVNs as the key
+			key := map[scdmodels.OVN]bool{}
+			for _, ovn := range params.GetKey() {
+				key[scdmodels.OVN(ovn)] = true
+			}
+
+			// Identify Operations missing from the key
+			var missingOps []*scdmodels.Operation
+			relevantOps, err := r.SearchOperations(ctx, uExtent)
+			if err != nil {
+				return stacktrace.Propagate(err, "Unable to SearchOperations")
+			}
+			for _, relevantOp := range relevantOps {
+				if _, ok := key[relevantOp.OVN]; !ok {
+					if relevantOp.Owner != owner {
+						relevantOp.OVN = ""
+					}
+					missingOps = append(missingOps, relevantOp)
+				}
+			}
+
+			// Identify Constraints missing from the key
+			var missingConstraints []*scdmodels.Constraint
+			if sub.NotifyForConstraints {
+				constraints, err := r.SearchConstraints(ctx, uExtent)
+				if err != nil {
+					return stacktrace.Propagate(err, "Unable to SearchConstraints")
+				}
+				for _, relevantConstraint := range constraints {
+					if _, ok := key[relevantConstraint.OVN]; !ok {
+						if relevantConstraint.Owner != owner {
+							relevantConstraint.OVN = ""
+						}
+						missingConstraints = append(missingConstraints, relevantConstraint)
+					}
+				}
+			}
+
+			// If the client is missing some OVNs, provide the pointers to the
+			// information they need
+			if len(missingOps) > 0 || len(missingConstraints) > 0 {
+				p, err := scderr.MissingOVNsErrorResponse(missingOps, missingConstraints)
+				if err != nil {
+					return stacktrace.Propagate(err, "Failed to construct missing OVNs error message")
+				}
+				return stacktrace.Propagate(status.ErrorProto(p), "Missing OVNs")
+			}
 		}
 
-		// TODO: Move OVN checking to the application layer here (#277)
-		op, subs, err := r.UpsertOperation(ctx, &scdmodels.Operation{
+		// Construct the new Operation
+		op := &scdmodels.Operation{
 			ID:      id,
 			Owner:   owner,
-			Version: scdmodels.Version(params.OldVersion),
+			Version: scdmodels.Version(params.OldVersion + 1),
 
 			StartTime:     uExtent.StartTime,
 			EndTime:       uExtent.EndTime,
@@ -325,46 +464,68 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			Cells:         cells,
 
 			USSBaseURL:     params.UssBaseUrl,
-			SubscriptionID: subscriptionID,
-			State:          scdmodels.OperationState(params.State),
-		}, key)
-
-		if stacktrace.GetCode(err) == dsserr.MissingOVNs {
-			// The client is missing some OVNs; provide the pointers to the
-			// information they need
-			ops, err := r.SearchOperations(ctx, uExtent)
-			if err != nil {
-				return stacktrace.Propagate(err, "Could not search Operations in repo")
-			}
-
-			// TODO: Remove Operations with correctly-supplied OVNs (#344)
-			// TODO: Enumerate missing Constraints when applicable (#391)
-
-			for _, op := range ops {
-				if op.Owner != owner {
-					op.OVN = ""
-				}
-			}
-
-			p, err := scderr.MissingOVNsErrorResponse(ops)
-			if err != nil {
-				return stacktrace.Propagate(err, "Failed to construct missing OVNs error message")
-			}
-			return stacktrace.Propagate(status.ErrorProto(p), "Missing OVNs")
+			SubscriptionID: sub.ID,
+			State:          state,
+		}
+		err = op.ValidateTimeRange()
+		if err != nil {
+			return stacktrace.Propagate(err, "Error validating time range")
 		}
 
-		if err != nil {
-			if _, ok := status.FromError(err); ok {
-				return err // No need to Propagate this error as Status errors are intended responses to client
+		// Compute total affected Volume4D for notification purposes
+		var notifyVol4 *dssmodels.Volume4D
+		if old == nil {
+			notifyVol4 = uExtent
+		} else {
+			oldVol4 := &dssmodels.Volume4D{
+				StartTime: old.StartTime,
+				EndTime:   old.EndTime,
+				SpatialVolume: &dssmodels.Volume3D{
+					AltitudeHi: old.AltitudeUpper,
+					AltitudeLo: old.AltitudeLower,
+					Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+						return old.Cells, nil
+					}),
+				}}
+			notifyVol4, err = dssmodels.UnionVolumes4D(uExtent, oldVol4)
+			if err != nil {
+				return stacktrace.Propagate(err, "Error constructing 4D volumes union")
 			}
+		}
+
+		// Upsert the Operation
+		op, err = r.UpsertOperation(ctx, op)
+		if err != nil {
 			return stacktrace.Propagate(err, "Failed to upsert operation in repo")
 		}
 
+		// Find Subscriptions that may need to be notified
+		allsubs, err := r.SearchSubscriptions(ctx, notifyVol4)
+		if err != nil {
+			return err
+		}
+
+		// Limit Subscription notifications to only those interested in Operations
+		var subs []*scdmodels.Subscription
+		for _, sub := range allsubs {
+			if sub.NotifyForOperations {
+				subs = append(subs, sub)
+			}
+		}
+
+		// Increment notification indices for relevant Subscriptions
+		err = incrementNotificationIndices(ctx, r, subs)
+		if err != nil {
+			return err
+		}
+
+		// Convert upserted Operation to proto
 		p, err := op.ToProto()
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not convert Operation to proto")
 		}
 
+		// Return response to client
 		response = &scdpb.ChangeOperationReferenceResponse{
 			OperationReference: p,
 			Subscribers:        makeSubscribersToNotify(subs),

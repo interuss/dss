@@ -14,21 +14,6 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-func incrementNotificationIndices(ctx context.Context, r repos.Repository, subs []*scdmodels.Subscription) error {
-	subIds := make([]dssmodels.ID, len(subs))
-	for i, sub := range subs {
-		subIds[i] = sub.ID
-	}
-	newIndices, err := r.IncrementNotificationIndices(ctx, subIds)
-	if err != nil {
-		return err
-	}
-	for i, newIndex := range newIndices {
-		subs[i].NotificationIndex = newIndex
-	}
-	return nil
-}
-
 // DeleteConstraintReference deletes a single constraint ref for a given ID at
 // the specified version.
 func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.DeleteConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
@@ -233,7 +218,6 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		}
 
 		// Compute total affected Volume4D for notification purposes
-		// TODO: Fix in Operations; Subscriptions should be pulled from both old and new 4D geometries
 		var notifyVol4 *dssmodels.Volume4D
 		if old == nil {
 			notifyVol4 = uExtent

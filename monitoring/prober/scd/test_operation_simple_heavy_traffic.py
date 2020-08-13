@@ -103,8 +103,8 @@ def test_create_ops(scd_session):
     op = data['operation_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
-    assert op['time_start']['value'] == req['extents'][0]['time_start']['value']
-    assert op['time_end']['value'] == req['extents'][0]['time_end']['value']
+    assert common.iso8601_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
+    assert common.iso8601_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
     assert op['version'] == 1
     assert op['ovn']
     assert 'subscription_id' in op

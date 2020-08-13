@@ -7,7 +7,9 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/repos"
 	scdstore "github.com/interuss/dss/pkg/scd/store"
 	"github.com/palantir/stacktrace"
 )
@@ -68,4 +70,19 @@ func (a *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator 
 // MakeDssReport creates an error report about a DSS.
 func (a *Server) MakeDssReport(ctx context.Context, req *scdpb.MakeDssReportRequest) (*scdpb.ErrorReport, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Not yet implemented")
+}
+
+func incrementNotificationIndices(ctx context.Context, r repos.Repository, subs []*scdmodels.Subscription) error {
+	subIds := make([]dssmodels.ID, len(subs))
+	for i, sub := range subs {
+		subIds[i] = sub.ID
+	}
+	newIndices, err := r.IncrementNotificationIndices(ctx, subIds)
+	if err != nil {
+		return err
+	}
+	for i, newIndex := range newIndices {
+		subs[i].NotificationIndex = newIndex
+	}
+	return nil
 }

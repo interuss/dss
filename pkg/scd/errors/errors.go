@@ -18,7 +18,7 @@ var (
 // MissingOVNsErrorResponse is Used to return sufficient information for an
 // appropriate client error response when a client is missing one or more
 // OVNs for relevant Operations or Constraints.
-func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (*spb.Status, error) {
+func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation, missingConstraints []*dssmodels.Constraint) (*spb.Status, error) {
 	detail := &scdpb.AirspaceConflictResponse{
 		Message: errMessageMissingOVNs,
 	}
@@ -29,6 +29,16 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation) (*spb.Status, e
 		}
 		entityRef := &scdpb.EntityReference{
 			OperationReference: opRef,
+		}
+		detail.EntityConflicts = append(detail.EntityConflicts, entityRef)
+	}
+	for _, missingConstraint := range missingConstraints {
+		constraintRef, err := missingConstraint.ToProto()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error converting missing Constraint to proto")
+		}
+		entityRef := &scdpb.EntityReference{
+			ConstraintReference: constraintRef,
 		}
 		detail.EntityConflicts = append(detail.EntityConflicts, entityRef)
 	}

@@ -55,7 +55,7 @@ func (v Version) Matches(w Version) bool {
 func ValidateUSSBaseURL(s string) error {
 	u, err := url.Parse(s)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Error parsing URL")
 	}
 
 	switch u.Scheme {
