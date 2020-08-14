@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/palantir/stacktrace"
 )
 
@@ -68,7 +69,7 @@ func BuildURI(params map[string]string) (string, error) {
 }
 
 // GetVersion returns the Schema Version of the requested DB Name
-func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
+func GetVersion(ctx context.Context, db *DB, dbName string) (*semver.Version, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT *
@@ -80,11 +81,11 @@ func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
 	row := db.QueryRowContext(ctx, query, dbName)
 	var ret bool
 	if err := row.Scan(&ret); err != nil {
-		return "", stacktrace.Propagate(err, "Error scanning table listing row")
+		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
 	if !ret {
 		// Database has not been bootstrapped using DB Schema Manager
-		return "v0.0.0", nil
+		return semver.New("0.0.0"), nil
 	}
 	getVersionQuery := fmt.Sprintf(`
 		SELECT schema_version
@@ -93,7 +94,7 @@ func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
 	row = db.QueryRowContext(ctx, getVersionQuery)
 	var dbVersion string
 	if err := row.Scan(&dbVersion); err != nil {
-		return "", stacktrace.Propagate(err, "Error scanning version row")
+		return nil, stacktrace.Propagate(err, "Error scanning version row")
 	}
-	return dbVersion, nil
+	return semver.New(string(dbVersion[1:])), nil
 }

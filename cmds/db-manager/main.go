@@ -15,12 +15,12 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/cockroachdb"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	dssCockroach "github.com/interuss/dss/pkg/cockroach"
 	"go.uber.org/zap"
-	"golang.org/x/mod/semver"
 )
 
 // MyMigrate is an alias for extending migrate.Migrate
@@ -43,9 +43,9 @@ func (d Direction) String() string {
 }
 
 var (
-	path      = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
-	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: v1.0.0)")
-	step      = flag.Int("migration_step", 0, "the db migration step to go to")
+	path         = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
+	dbVersionStr = flag.String("db_version", "", "the db version to migrate to (ex: v1.0.0)")
+	step         = flag.Int("migration_step", 0, "the db migration step to go to")
 
 	cockroachParams = struct {
 		host    *string
@@ -67,10 +67,12 @@ func main() {
 	if *path == "" {
 		log.Panic("Must specify schemas_dir path")
 	}
-	if (*dbVersion == "" && *step == 0) || (*dbVersion != "" && *step != 0) {
+	if (*dbVersionStr == "" && *step == 0) || (*dbVersionStr != "" && *step != 0) {
 		log.Panic("Must specify a db_version or migration_step to goto")
 	}
-	if *dbVersion != "" && !semver.IsValid(*dbVersion) {
+
+	dbVersion, err := semver.NewVersion(strings.Replace(*dbVersionStr, "v", "", -1))
+	if err != nil {
 		log.Panic("db_version must be in a valid format ex: v1.2.3")
 	}
 	uriParams := map[string]string{
@@ -99,7 +101,7 @@ func main() {
 	if err != migrate.ErrNilVersion && err != nil {
 		log.Panic(err)
 	}
-	totalMoves, err := myMigrater.DoMigrate(*dbVersion, *step)
+	totalMoves, err := myMigrater.DoMigrate(dbVersion, *step)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -121,7 +123,7 @@ func main() {
 }
 
 // DoMigrate performs the migration given the desired state we want to reach
-func (m *MyMigrate) DoMigrate(desiredDBVersion string, desiredStep int) (int, error) {
+func (m *MyMigrate) DoMigrate(desiredDBVersion *semver.Version, desiredStep int) (int, error) {
 	totalMoves := 0
 	migrateDirection, err := m.MigrationDirection(desiredDBVersion, desiredStep)
 	if err != nil {
@@ -206,25 +208,25 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 	return nil
 }
 
-func getCurrentDBVersion(crdbURI string, database string) (string, error) {
+func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, error) {
 	crdb, err := dssCockroach.Dial(crdbURI)
 	defer func() {
 		crdb.Close()
 	}()
 	if err != nil {
-		return "", fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
+		return nil, fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
 	}
 	version, err := dssCockroach.GetVersion(context.Background(), crdb, database)
 	if err != nil {
 		log.Print(err)
-		return "", err
+		return nil, err
 	}
 	return version, nil
 }
 
 // MigrationDirection reads our custom DB version string as well as the Migration Steps from the framework
 // and returns a signed integer value of the Direction and count to migrate the db
-func (m *MyMigrate) MigrationDirection(desiredVersion string, desiredStep int) (Direction, error) {
+func (m *MyMigrate) MigrationDirection(desiredVersion *semver.Version, desiredStep int) (Direction, error) {
 	if desiredStep != 0 {
 		currentStep, dirty, err := m.Version()
 		if err != migrate.ErrNilVersion && err != nil {
@@ -239,8 +241,6 @@ func (m *MyMigrate) MigrationDirection(desiredVersion string, desiredStep int) (
 	if err != nil {
 		return 0, fmt.Errorf("Failed to get current DB version to determine migration direction: %v", err)
 	}
-	if !semver.IsValid(currentVersion) {
-		return 0, fmt.Errorf("The current DB Version format is in valid")
-	}
-	return Direction(semver.Compare(desiredVersion, currentVersion)), nil
+
+	return Direction(desiredVersion.Compare(*currentVersion)), nil
 }

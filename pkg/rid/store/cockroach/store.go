@@ -3,7 +3,6 @@ package cockroach
 import (
 	"context"
 	"database/sql"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
@@ -131,9 +130,5 @@ func (s *Store) CleanUp(ctx context.Context) error {
 // GetVersion returns the semver.Version for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
-	versionStr, err := cockroach.GetVersion(ctx, s.db, DatabaseName)
-	if err != nil {
-		return nil, err
-	}
-	return semver.New(strings.Replace(versionStr, "v", "", -1)), nil
+	return cockroach.GetVersion(ctx, s.db, DatabaseName)
 }
