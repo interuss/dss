@@ -38,11 +38,11 @@ import (
 var (
 	// The code at this version requires a major schema version equal to this
 	// value.
-	RidRequiredMajorSchemaVersion = *semver.New("3.0.0")
+	ridRequiredSchemaVersion = *semver.New("3.0.0")
 
 	// The code at this version requires a major schema version equal to this
 	// value.
-	ScdRequiredMajorSchemaVersion = *semver.New("1.0.0")
+	scdRequiredSchemaVersion = *semver.New("1.0.0")
 
 	address           = flag.String("addr", ":8081", "address")
 	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
@@ -86,8 +86,8 @@ func MustSupportRidSchema(ctx context.Context, store *ridc.Store) error {
 		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
-	if vs.LessThan(RidRequiredMajorSchemaVersion) {
-		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %s.", vs, RidRequiredMajorSchemaVersion)
+	if vs.LessThan(ridRequiredSchemaVersion) {
+		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %s.", vs, ridRequiredSchemaVersion)
 	}
 
 	return nil
@@ -102,8 +102,8 @@ func MustSupportScdSchema(ctx context.Context, store *scdc.Store) error {
 		return stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
-	if vs.LessThan(ScdRequiredMajorSchemaVersion) {
-		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %s.", vs, ScdRequiredMajorSchemaVersion)
+	if vs.LessThan(scdRequiredSchemaVersion) {
+		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %s.", vs, scdRequiredSchemaVersion)
 	}
 
 	return nil
