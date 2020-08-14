@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/coreos/go-semver/semver"
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
@@ -54,7 +55,7 @@ func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	}
 
 	return &repo{
-		ISA: NewISARepo(ctx, s.db, storeVersion, logger),
+		ISA: NewISARepo(ctx, s.db, *storeVersion, logger),
 		subscriptionRepo: &subscriptionRepo{
 			Queryable: s.db,
 			logger:    logger,
@@ -82,7 +83,7 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
-			ISA: NewISARepo(ctx, tx, storeVersion, logger),
+			ISA: NewISARepo(ctx, tx, *storeVersion, logger),
 			subscriptionRepo: &subscriptionRepo{
 				Queryable: tx,
 				logger:    logger,
@@ -128,6 +129,6 @@ func (s *Store) CleanUp(ctx context.Context) error {
 
 // GetVersion returns the Version string for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
-func (s *Store) GetVersion(ctx context.Context) (string, error) {
+func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
 	return cockroach.GetVersion(ctx, s.db, DatabaseName)
 }
