@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/palantir/stacktrace"
@@ -96,5 +97,5 @@ func GetVersion(ctx context.Context, db *DB, dbName string) (*semver.Version, er
 	if err := row.Scan(&dbVersion); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning version row")
 	}
-	return semver.New(string(dbVersion[1:])), nil
+	return semver.New(strings.Replace(dbVersion, "v", "", -1)), nil
 }
