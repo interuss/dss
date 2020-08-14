@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	_ ISAApp = &app{}
+	_                       ISAApp = &app{}
+	currentRidSchemaVersion        = semver.New("3.1.0")
 )
 
 func setUpISAApp(ctx context.Context, t *testing.T) (*app, func()) {
@@ -69,7 +70,7 @@ func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.Identificat
 }
 
 func (store *isaStore) GetVersion(ctx context.Context) (*semver.Version, error) {
-	return semver.New("3.1.0"), nil
+	return currentRidSchemaVersion, nil
 }
 
 // Implements repos.ISA.SearchISA

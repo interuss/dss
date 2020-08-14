@@ -24,8 +24,10 @@ const (
 	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
+var currentRidSchemaVersion = *semver.New("3.1.0")
+
 func NewISARepo(ctx context.Context, db dssql.Queryable, dbVersion *semver.Version, logger *zap.Logger) repos.ISA {
-	if dbVersion.LessThan(*semver.New("3.1.0")) {
+	if dbVersion.LessThan(currentRidSchemaVersion) {
 		return &isaRepoV3{
 			Queryable: db,
 			logger:    logger,
