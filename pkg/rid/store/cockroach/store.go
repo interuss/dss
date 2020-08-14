@@ -3,6 +3,7 @@ package cockroach
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
@@ -134,5 +135,5 @@ func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	return semver.New(string(versionStr[1:])), nil
+	return semver.New(strings.Replace(versionStr, "v", "", -1)), nil
 }
