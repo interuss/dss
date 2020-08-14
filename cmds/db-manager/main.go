@@ -237,6 +237,11 @@ func (m *MyMigrate) MigrationDirection(desiredVersion *semver.Version, desiredSt
 		}
 		return Direction(desiredStep - int(currentStep)), nil
 	}
+
+	if desiredVersion == nil {
+		return Direction(-1), nil
+	}
+
 	currentVersion, err := getCurrentDBVersion(m.postgresURI, m.database)
 	if err != nil {
 		return 0, fmt.Errorf("Failed to get current DB version to determine migration direction: %v", err)
