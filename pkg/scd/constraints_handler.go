@@ -58,7 +58,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		}
 
 		// Limit Subscription notifications to only those interested in Constraints
-		var subs []*scdmodels.Subscription
+		var subs repos.Subscriptions
 		for _, sub := range allsubs {
 			if sub.NotifyForConstraints {
 				subs = append(subs, sub)
@@ -72,7 +72,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		}
 
 		// Increment notification indices for relevant Subscriptions
-		err = incrementNotificationIndices(ctx, r, subs)
+		err = subs.IncrementNotificationIndices(ctx, r)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to increment notification indices")
 		}
@@ -263,7 +263,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		}
 
 		// Limit Subscription notifications to only those interested in Constraints
-		var subs []*scdmodels.Subscription
+		var subs repos.Subscriptions
 		for _, sub := range allsubs {
 			if sub.NotifyForConstraints {
 				subs = append(subs, sub)
@@ -271,7 +271,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		}
 
 		// Increment notification indices for relevant Subscriptions
-		err = incrementNotificationIndices(ctx, r, subs)
+		err = subs.IncrementNotificationIndices(ctx, r)
 		if err != nil {
 			return err
 		}

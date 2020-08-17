@@ -87,7 +87,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 		}
 
 		// Limit Subscription notifications to only those interested in Operations
-		var subs []*scdmodels.Subscription
+		var subs repos.Subscriptions
 		for _, s := range allsubs {
 			if s.NotifyForOperations {
 				subs = append(subs, s)
@@ -95,14 +95,12 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 		}
 
 		// Increment notification indices for Subscriptions to be notified
-		err = incrementNotificationIndices(ctx, r, subs)
-		if err != nil {
+		if err := subs.IncrementNotificationIndices(ctx, r); err != nil {
 			return stacktrace.Propagate(err, "Unable to increment notification indices")
 		}
 
 		// Delete Operation from repo
-		err = r.DeleteOperation(ctx, id)
-		if err != nil {
+		if err := r.DeleteOperation(ctx, id); err != nil {
 			return stacktrace.Propagate(err, "Unable to delete Operation from repo")
 		}
 
@@ -506,7 +504,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		}
 
 		// Limit Subscription notifications to only those interested in Operations
-		var subs []*scdmodels.Subscription
+		var subs repos.Subscriptions
 		for _, sub := range allsubs {
 			if sub.NotifyForOperations {
 				subs = append(subs, sub)
@@ -514,7 +512,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		}
 
 		// Increment notification indices for relevant Subscriptions
-		err = incrementNotificationIndices(ctx, r, subs)
+		err = subs.IncrementNotificationIndices(ctx, r)
 		if err != nil {
 			return err
 		}

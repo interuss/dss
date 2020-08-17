@@ -37,10 +37,9 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.Operation, missingConstrai
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error converting missing Constraint to proto")
 		}
-		entityRef := &scdpb.EntityReference{
+		detail.EntityConflicts = append(detail.EntityConflicts, &scdpb.EntityReference{
 			ConstraintReference: constraintRef,
-		}
-		detail.EntityConflicts = append(detail.EntityConflicts, entityRef)
+		})
 	}
 
 	p, err := dsserrors.MakeStatusProto(codes.Code(uint16(dsserrors.MissingOVNs)), errMessageMissingOVNs, detail)

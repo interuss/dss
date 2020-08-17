@@ -7,6 +7,9 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 )
 
+// Subscriptions enables operations on a list of Subscriptions.
+type Subscriptions []*scdmodels.Subscription
+
 // Operation abstracts operation-specific interactions with the backing repository.
 type Operation interface {
 	// GetOperation returns the operation identified by "id".
@@ -73,4 +76,22 @@ type Repository interface {
 	Operation
 	Subscription
 	Constraint
+}
+
+// IncrementNotificationIndices is a utility function that extracts the IDs from
+// a list of Subscriptions before calling the underlying repo function, and then
+// updates the Subscription objects with the new notification indices.
+func (subs Subscriptions) IncrementNotificationIndices(ctx context.Context, r Repository) error {
+	subIds := make([]dssmodels.ID, len(subs))
+	for i, sub := range subs {
+		subIds[i] = sub.ID
+	}
+	newIndices, err := r.IncrementNotificationIndices(ctx, subIds)
+	if err != nil {
+		return err
+	}
+	for i, newIndex := range newIndices {
+		subs[i].NotificationIndex = newIndex
+	}
+	return nil
 }

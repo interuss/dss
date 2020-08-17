@@ -83,8 +83,7 @@ func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query st
 	}
 
 	for _, op := range payload {
-		err = s.populateOperationCells(ctx, q, op)
-		if err != nil {
+		if err := s.populateOperationCells(ctx, q, op); err != nil {
 			return nil, stacktrace.Propagate(err, "Error populating cells for Operation %s", op.ID)
 		}
 	}
