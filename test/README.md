@@ -8,7 +8,7 @@ Source code is often accompanied by `*_test.go` files which define unit tests
 for the associated code.  All unit tests for the repo may be run with the
 following command from the root folder of the repo:
 ```shell script
-go test -count=1 -v ./...
+make test
 ```
 The above command skips the CockroachDB tests because a `store-uri` argument is
  not provided.  To perform the CockroachDB tests, run the following command
@@ -40,7 +40,7 @@ One of the continuous integration presubmit checks on this repository checks Go
 style with a linter.  To run this check yourself, run the following command in
 the root folder of this repo:
 ```shell script
-docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
+make lint
 ```
 
 ## Interoperability tests

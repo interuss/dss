@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -10,7 +9,6 @@ import (
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/lib/pq"
@@ -84,6 +82,12 @@ func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query st
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 
+	for _, op := range payload {
+		if err := s.populateOperationCells(ctx, q, op); err != nil {
+			return nil, stacktrace.Propagate(err, "Error populating cells for Operation %s", op.ID)
+		}
+	}
+
 	return payload, nil
 }
 
@@ -96,7 +100,7 @@ func (s *repo) fetchOperation(ctx context.Context, q dsssql.Queryable, query str
 		return nil, stacktrace.NewError("Query returned %d Operations when only 0 or 1 was expected", len(operations))
 	}
 	if len(operations) == 0 {
-		return nil, sql.ErrNoRows
+		return nil, nil
 	}
 	return operations[0], nil
 }
@@ -108,87 +112,6 @@ func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id ds
 		WHERE
 			id = $1`, operationFieldsWithoutPrefix)
 	return s.fetchOperation(ctx, q, query, id)
-}
-
-// pushOperation creates/updates the Operation identified by "id" and owned by
-// "owner", affecting "cells" in the time interval ["starts", "ends"].
-//
-// Returns the created/updated Operation and all Subscriptions
-// affected by the operation.
-func (s *repo) pushOperation(ctx context.Context, q dsssql.Queryable, operation *scdmodels.Operation) (
-	*scdmodels.Operation, []*scdmodels.Subscription, error) {
-	var (
-		upsertOperationsQuery = fmt.Sprintf(`
-			WITH v AS (
-				SELECT
-					version
-				FROM
-					scd_operations
-				WHERE
-					id = $1
-			)
-			UPSERT INTO
-				scd_operations
-				(%s)
-			VALUES
-				($1, $2, COALESCE((SELECT version from v), 0) + 1, $3, $4, $5, $6, $7, $8, transaction_timestamp())
-			RETURNING
-				%s`, operationFieldsWithoutPrefix, operationFieldsWithPrefix)
-		upsertCellsForOperationQuery = `
-			UPSERT INTO
-				scd_cells_operations
-				(cell_id, cell_level, operation_id)
-			VALUES
-				($1, $2, $3)`
-		deleteLeftOverCellsForOperationQuery = `
-			DELETE FROM
-				scd_cells_operations
-			WHERE
-				cell_id != ALL($1)
-			AND
-				operation_id = $2`
-	)
-
-	cids := make([]int64, len(operation.Cells))
-	clevels := make([]int, len(operation.Cells))
-
-	for i, cell := range operation.Cells {
-		cids[i] = int64(cell)
-		clevels[i] = cell.Level()
-	}
-
-	cells := operation.Cells
-	operation, err := s.fetchOperation(ctx, q, upsertOperationsQuery,
-		operation.ID,
-		operation.Owner,
-		operation.USSBaseURL,
-		operation.AltitudeLower,
-		operation.AltitudeUpper,
-		operation.StartTime,
-		operation.EndTime,
-		operation.SubscriptionID,
-	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error fetching Operation")
-	}
-	operation.Cells = cells
-
-	for i := range cids {
-		if _, err := q.ExecContext(ctx, upsertCellsForOperationQuery, cids[i], clevels[i], operation.ID); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Error in query: %s", upsertCellsForOperationQuery)
-		}
-	}
-
-	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForOperationQuery, pq.Array(cids), operation.ID); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForOperationQuery)
-	}
-
-	subscriptions, err := s.fetchSubscriptionsForNotification(ctx, q, cids)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error fetching Subscriptions for notification")
-	}
-
-	return operation, subscriptions, nil
 }
 
 func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.Operation) error {
@@ -221,154 +144,99 @@ func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o
 	return nil
 }
 
-// GetOperation returns an operation for the given ID from CockroachDB
+// GetOperation implements repos.Operation.GetOperation.
 func (s *repo) GetOperation(ctx context.Context, id dssmodels.ID) (*scdmodels.Operation, error) {
-	sub, err := s.fetchOperationByID(ctx, s.q, id)
-	switch err {
-	case nil:
-		return sub, nil
-	case sql.ErrNoRows:
-		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id.String())
-	default:
-		return nil, err // No need to Propagate this error as this stack layer does not add useful information
-	}
+	return s.fetchOperationByID(ctx, s.q, id)
 }
 
-// DeleteOperation deletes an operation for the given ID from CockroachDB
-func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
+// DeleteOperation implements repos.Operation.DeleteOperation.
+func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID) error {
 	var (
-		deleteQuery = `
+		deleteOperationQuery = `
 			DELETE FROM
 				scd_operations
 			WHERE
 				id = $1
-			AND
-				owner = $2
-		`
-		deleteImplicitSubscriptionQuery = `
-			DELETE FROM
-				scd_subscriptions
-			WHERE
-				id = $1
-			AND
-				owner = $2
-			AND
-				implicit = true
-			AND
-				0 = ALL (
-					SELECT
-						COALESCE(COUNT(id),0)
-					FROM
-						scd_operations
-					WHERE
-						subscription_id = $1
-				)
 		`
 	)
 
-	// We fetch to know whether to return a concurrency error, or a not found error
-	old, err := s.fetchOperationByID(ctx, s.q, id)
-	switch {
-	case err == sql.ErrNoRows: // Return a 404 here.
-		return nil, nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id.String())
-	case err != nil:
-		return nil, nil, stacktrace.Propagate(err, "Error fetching Operation by ID")
-	case old != nil && old.Owner != owner:
-		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
-	}
-	if err := s.populateOperationCells(ctx, s.q, old); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error populating Operation cells")
-	}
-
-	cids := make([]int64, len(old.Cells))
-	for i, cell := range old.Cells {
-		cids[i] = int64(cell)
-	}
-	subscriptions, err := s.fetchSubscriptionsForNotification(ctx, s.q, cids)
+	res, err := s.q.ExecContext(ctx, deleteOperationQuery, id)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error fetching Subscriptions for notification")
+		return stacktrace.Propagate(err, "Error in query: %s", deleteOperationQuery)
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not get RowsAffected")
+	}
+	if rows == 0 {
+		return stacktrace.NewError("Could not delete Operation that does not exist")
 	}
 
-	if _, err := s.q.ExecContext(ctx, deleteQuery, id, owner); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error in query: %s", deleteQuery)
-	}
-	if _, err := s.q.ExecContext(ctx, deleteImplicitSubscriptionQuery, old.SubscriptionID, owner); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error in query: %s", deleteImplicitSubscriptionQuery)
-	}
-
-	return old, subscriptions, nil
+	return nil
 }
 
-// UpsertOperation inserts or updates an operation in CockroachDB
-func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error) {
-	old, err := s.fetchOperationByID(ctx, s.q, operation.ID)
-	switch {
-	case err == sql.ErrNoRows:
-		break
-	case err != nil:
-		return nil, nil, stacktrace.Propagate(err, "Error fetching Operation by ID")
+// UpsertOperation implements repos.Operation.UpsertOperation.
+func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operation) (*scdmodels.Operation, error) {
+	var (
+		upsertOperationsQuery = fmt.Sprintf(`
+			UPSERT INTO
+				scd_operations
+				(%s)
+			VALUES
+				($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp())
+			RETURNING
+				%s`, operationFieldsWithoutPrefix, operationFieldsWithPrefix)
+		upsertCellsForOperationQuery = `
+			UPSERT INTO
+				scd_cells_operations
+				(cell_id, cell_level, operation_id)
+			VALUES
+				($1, $2, $3)`
+		deleteLeftOverCellsForOperationQuery = `
+			DELETE FROM
+				scd_cells_operations
+			WHERE
+				cell_id != ALL($1)
+			AND
+				operation_id = $2`
+	)
+
+	cids := make([]int64, len(operation.Cells))
+	clevels := make([]int, len(operation.Cells))
+
+	for i, cell := range operation.Cells {
+		cids[i] = int64(cell)
+		clevels[i] = cell.Level()
 	}
 
-	switch {
-	case old == nil && !operation.Version.Empty():
-		// The user wants to update an existing Operation, but one wasn't found.
-		return nil, nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", operation.ID.String())
-	case old != nil && operation.Version.Empty():
-		// The user wants to create a new Operation but it already exists.
-		return nil, nil, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Operation %s already exists", operation.ID.String())
-	case old != nil && !operation.Version.Matches(old.Version):
-		// The user wants to update an Operation but the version doesn't match.
-		return nil, nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version")
-	case old != nil && old.Owner != operation.Owner:
-		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
-	}
-
-	// Validate and perhaps correct StartTime and EndTime.
-	if err := operation.ValidateTimeRange(); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error validating time range")
-	}
-
-	// TODO(tvoss): Investigate whether we can fold the check for OVNs into the
-	// the upsert query by means of a CTE and a coalescing condition testing
-	// whether all affected OVNs are matched.
-	switch operation.State {
-	case scdmodels.OperationStateAccepted, scdmodels.OperationStateActivated:
-		operations, err := s.searchOperations(ctx, s.q, &dssmodels.Volume4D{
-			StartTime: operation.StartTime,
-			EndTime:   operation.EndTime,
-			SpatialVolume: &dssmodels.Volume3D{
-				AltitudeHi: operation.AltitudeUpper,
-				AltitudeLo: operation.AltitudeLower,
-				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-					return operation.Cells, nil
-				}),
-			},
-		})
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Error searching Operations")
-		}
-
-		keyIdx := map[scdmodels.OVN]struct{}{}
-		for _, ovn := range key {
-			keyIdx[ovn] = struct{}{}
-		}
-
-		for _, op := range operations {
-			if _, match := keyIdx[op.OVN]; !match {
-				return nil, nil, stacktrace.Propagate(scderr.ErrMissingOVNs, "Missing OVN for Operation %s", op.ID)
-			}
-			delete(keyIdx, op.OVN)
-		}
-	default:
-		// Do not check the OVNs for any other operation states.
-	}
-
-	area, subscribers, err := s.pushOperation(ctx, s.q, operation)
+	cells := operation.Cells
+	operation, err := s.fetchOperation(ctx, s.q, upsertOperationsQuery,
+		operation.ID,
+		operation.Owner,
+		operation.Version,
+		operation.USSBaseURL,
+		operation.AltitudeLower,
+		operation.AltitudeUpper,
+		operation.StartTime,
+		operation.EndTime,
+		operation.SubscriptionID,
+	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error pushing Operation")
+		return nil, stacktrace.Propagate(err, "Error fetching Operation")
+	}
+	operation.Cells = cells
+
+	for i := range cids {
+		if _, err := s.q.ExecContext(ctx, upsertCellsForOperationQuery, cids[i], clevels[i], operation.ID); err != nil {
+			return nil, stacktrace.Propagate(err, "Error in query: %s", upsertCellsForOperationQuery)
+		}
 	}
 
-	return area, subscribers, nil
+	if _, err := s.q.ExecContext(ctx, deleteLeftOverCellsForOperationQuery, pq.Array(cids), operation.ID); err != nil {
+		return nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForOperationQuery)
+	}
+
+	return operation, nil
 }
 
 func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error) {
@@ -431,12 +299,35 @@ func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *ds
 	return result, nil
 }
 
-// SearchOperations returns operations within the 4D volume from CockroachDB
+// SearchOperations implements repos.Operation.SearchOperations.
 func (s *repo) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error) {
-	result, err := s.searchOperations(ctx, s.q, v4d)
+	return s.searchOperations(ctx, s.q, v4d)
+}
+
+// GetDependentOperations implements repos.Operation.GetDependentOperations.
+func (s *repo) GetDependentOperations(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error) {
+	var dependentOperationsQuery = `
+      SELECT
+        id
+      FROM
+        scd_operations
+      WHERE
+        subscription_id = $1`
+
+	rows, err := s.q.QueryContext(ctx, dependentOperationsQuery, subscriptionID)
 	if err != nil {
-		return nil, err // No need to Propagate this error as this stack layer does not add useful information
+		return nil, stacktrace.Propagate(err, "Error in query: %s", dependentOperationsQuery)
+	}
+	defer rows.Close()
+	var opID dssmodels.ID
+	var dependentOps []dssmodels.ID
+	for rows.Next() {
+		err = rows.Scan(&opID)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error scanning dependent Operation ID")
+		}
+		dependentOps = append(dependentOps, opID)
 	}
 
-	return result, nil
+	return dependentOps, nil
 }

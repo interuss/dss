@@ -243,6 +243,8 @@ def test_create_op2sub(scd_session, scd_session2):
   op = [op for op in ops if op['id'] == OP1_ID][0]
   assert not op.get('ovn', '')
 
+  assert data['subscription']['notification_index'] == 0
+
   resp = scd_session2.get('/subscriptions/{}'.format(SUB2_ID))
   assert resp.status_code == 200, resp.content
 
@@ -296,6 +298,11 @@ def test_create_op2(scd_session, scd_session2):
   subscribers = _parse_subscribers(data.get('subscribers', []))
   assert URL_SUB1 in subscribers, subscribers
   assert implicit_sub_id in subscribers[URL_SUB1], subscribers[URL_SUB1]
+
+  # USS2 should also be instructed to notify USS2's explicit Subscription of the new Operation
+  assert URL_SUB2 in subscribers, subscribers
+  assert SUB2_ID in subscribers[URL_SUB2], subscribers[URL_SUB2]
+  assert subscribers[URL_SUB2][SUB2_ID] == 1
 
   global op2_ovn
   op2_ovn = op['ovn']
@@ -431,6 +438,7 @@ def test_mutate_op1(scd_session, scd_session2):
   subscribers = _parse_subscribers(data.get('subscribers', []))
   assert URL_SUB2 in subscribers, subscribers
   assert SUB2_ID in subscribers[URL_SUB2], subscribers[URL_SUB2]
+  assert subscribers[URL_SUB2][SUB2_ID] == 2
 
   op1_ovn = op['ovn']
 
@@ -479,6 +487,7 @@ def test_mutate_sub2(scd_session, scd_session2):
   assert resp.status_code == 409, resp.content
   req['old_version'] = 1
 
+  # TODO(#386): Uncomment these tests
   # # Attempt mutation with start time that doesn't cover Op2
   # req['extents']['time_start'] = common.make_time(time_now + datetime.timedelta(seconds=5))
   # resp = scd_session2.put('/subscriptions/{}'.format(SUB2_ID), json=req)
@@ -527,6 +536,8 @@ def test_mutate_sub2(scd_session, scd_session2):
   assert not ops[OP1_ID].get('ovn', '')
   assert ops[OP2_ID].get('ovn', '')
 
+  assert data['subscription']['notification_index'] == 2
+
   # Make sure the Subscription is still retrievable specifically
   resp = scd_session2.get('/subscriptions/{}'.format(SUB2_ID))
   assert resp.status_code == 200, resp.content
@@ -549,8 +560,10 @@ def test_delete_op1(scd_session, scd_session2):
   subscribers = _parse_subscribers(data.get('subscribers', []))
   assert URL_SUB2 in subscribers, subscribers
   assert SUB2_ID in subscribers[URL_SUB2], subscribers[URL_SUB2]
+  assert subscribers[URL_SUB2][SUB2_ID] == 3
 
   resp = scd_session.get('/subscriptions/{}'.format(op['subscription_id']))
+  print(resp.content)
   assert resp.status_code == 404, resp.content
 
 
@@ -573,6 +586,7 @@ def test_delete_op2(scd_session, scd_session2):
   subscribers = _parse_subscribers(data.get('subscribers', []))
   assert URL_SUB2 in subscribers, subscribers
   assert SUB2_ID in subscribers[URL_SUB2], subscribers[URL_SUB2]
+  assert subscribers[URL_SUB2][SUB2_ID] == 4
 
   resp = scd_session2.get('/subscriptions/{}'.format(SUB2_ID))
   assert resp.status_code == 200, resp.content

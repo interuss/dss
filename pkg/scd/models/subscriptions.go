@@ -37,12 +37,11 @@ type Subscription struct {
 	NotifyForOperations  bool
 	NotifyForConstraints bool
 	ImplicitSubscription bool
-	DependentOperations  []dssmodels.ID
 	Cells                s2.CellUnion
 }
 
 // ToProto converts the Subscription to its proto API format
-func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
+func (s *Subscription) ToProto(dependentOperations []dssmodels.ID) (*scdpb.Subscription, error) {
 	result := &scdpb.Subscription{
 		Id:                   s.ID.String(),
 		Version:              int32(s.Version),
@@ -51,10 +50,6 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 		NotifyForOperations:  s.NotifyForOperations,
 		NotifyForConstraints: s.NotifyForConstraints,
 		ImplicitSubscription: s.ImplicitSubscription,
-	}
-
-	for i := 0; i < len(s.DependentOperations); i++ {
-		result.DependentOperations = append(result.DependentOperations, s.DependentOperations[i].String())
 	}
 
 	if s.StartTime != nil {
@@ -79,7 +74,7 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 		}
 	}
 
-	for _, op := range s.DependentOperations {
+	for _, op := range dependentOperations {
 		result.DependentOperations = append(result.DependentOperations, op.String())
 	}
 

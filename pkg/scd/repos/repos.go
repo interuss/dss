@@ -7,23 +7,26 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 )
 
+// Subscriptions enables operations on a list of Subscriptions.
+type Subscriptions []*scdmodels.Subscription
+
 // Operation abstracts operation-specific interactions with the backing repository.
 type Operation interface {
 	// GetOperation returns the operation identified by "id".
 	GetOperation(ctx context.Context, id dssmodels.ID) (*scdmodels.Operation, error)
 
-	// DeleteOperation deletes the operation identified by "id" and owned by "owner".
-	// Returns the deleted Operation and all Subscriptions affected by the delete.
-	DeleteOperation(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner) (*scdmodels.Operation, []*scdmodels.Subscription, error)
+	// DeleteOperation deletes the operation identified by "id".
+	DeleteOperation(ctx context.Context, id dssmodels.ID) error
 
-	// UpsertOperation inserts or updates an operation using key as a fencing
-	// token. If operation does not reference an existing subscription, an
-	// implicit subscription with parameters notifySubscriptionForConstraints
-	// and subscriptionBaseURL is created.
-	UpsertOperation(ctx context.Context, operation *scdmodels.Operation, key []scdmodels.OVN) (*scdmodels.Operation, []*scdmodels.Subscription, error)
+	// UpsertOperation inserts or updates an operation into the store.
+	UpsertOperation(ctx context.Context, operation *scdmodels.Operation) (*scdmodels.Operation, error)
 
 	// SearchOperations returns all operations intersecting "v4d".
 	SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error)
+
+	// GetDependentOperations returns IDs of all operations dependent on
+	// subscription identified by "subscriptionID".
+	GetDependentOperations(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error)
 }
 
 // Subscription abstracts subscription-specific interactions with the backing repository.
@@ -73,4 +76,22 @@ type Repository interface {
 	Operation
 	Subscription
 	Constraint
+}
+
+// IncrementNotificationIndices is a utility function that extracts the IDs from
+// a list of Subscriptions before calling the underlying repo function, and then
+// updates the Subscription objects with the new notification indices.
+func (subs Subscriptions) IncrementNotificationIndices(ctx context.Context, r Repository) error {
+	subIds := make([]dssmodels.ID, len(subs))
+	for i, sub := range subs {
+		subIds[i] = sub.ID
+	}
+	newIndices, err := r.IncrementNotificationIndices(ctx, subIds)
+	if err != nil {
+		return err
+	}
+	for i, newIndex := range newIndices {
+		subs[i].NotificationIndex = newIndex
+	}
+	return nil
 }

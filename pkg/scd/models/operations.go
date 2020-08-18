@@ -24,6 +24,34 @@ const (
 // OperationState models the state of an operation.
 type OperationState string
 
+// RequiresKey indicates whether transitioning an Operation to this
+// OperationState requires a valid key.
+func (s OperationState) RequiresKey() bool {
+	switch s {
+	case OperationStateNonConforming:
+		fallthrough
+	case OperationStateContingent:
+		return false
+	}
+	return true
+}
+
+// IsValid indicates whether an Operation may be transitioned to the specified
+// state via a DSS PUT.
+func (s OperationState) IsValidInDSS() bool {
+	switch s {
+	case OperationStateAccepted:
+		fallthrough
+	case OperationStateActivated:
+		fallthrough
+	case OperationStateNonConforming:
+		fallthrough
+	case OperationStateContingent:
+		return true
+	}
+	return false
+}
+
 // Operation models an operation.
 type Operation struct {
 	ID             dssmodels.ID
