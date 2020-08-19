@@ -52,7 +52,7 @@ func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store
 	}
 
 	if err := store.CheckCurrentMajorSchemaVersion(ctx); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to construct store instance for strategic conflict detection")
+		return nil, stacktrace.Propagate(err, "Strategic conflict detection schema version check failed")
 	}
 
 	return store, nil
@@ -69,7 +69,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 	}
 
 	if currentMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d.", vs, currentMajorSchemaVersion)
+		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, currentMajorSchemaVersion)
 	}
 
 	return nil
