@@ -22,6 +22,7 @@ import (
 
 const (
 	isaFields       = "id, owner, url, cells, starts_at, ends_at, writer, updated_at"
+	getISAFields    = "id, owner, url, cells, starts_at, ends_at, IFNULL(writer, ''), updated_at"
 	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
@@ -106,7 +107,7 @@ func (c *isaRepo) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Ident
 		SELECT %s FROM
 			identification_service_areas
 		WHERE
-			id = $1`, isaFields)
+			id = $1`, getISAFields)
 	return c.processOne(ctx, query, id)
 }
 
@@ -205,7 +206,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 			AND
 				COALESCE(starts_at <= $2, true)
 			AND
-				cells && $3`, isaFields)
+				cells && $3`, getISAFields)
 	)
 
 	if len(cells) == 0 {
