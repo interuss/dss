@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/profiler"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
@@ -147,16 +146,6 @@ func myCodeToHTTPStatus(code codes.Code) int {
 	return http.StatusInternalServerError
 }
 
-type errorBody struct {
-	Error string `protobuf:"bytes,100,name=error" json:"error"`
-	// This is to make the error more compatible with users that expect errors to be Status objects:
-	// https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto
-	// It should be the exact same message as the Error field.
-	Code    int32      `protobuf:"varint,1,name=code" json:"code"`
-	Message string     `protobuf:"bytes,2,name=message" json:"message"`
-	Details []*any.Any `protobuf:"bytes,3,rep,name=details" json:"details,omitempty"`
-}
-
 // this method was copied directly from github.com/grpc-ecosystem/grpc-gateway/runtime/errors
 // we initially only needed to add 1 extra Code to handle but since they didn't
 // export HTTPStatusFromCode we had to copy the whole thing.  Since then, we have added
@@ -165,7 +154,9 @@ type errorBody struct {
 // a Status err).  Because an error has occurred, the normal response body is not returned.
 func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, _ *http.Request, err error) {
 	errID := errors.MakeErrID()
-	fallback := fmt.Sprintf(`{"error": "Internal server error %s"}`, errID)
+	fallback := fmt.Sprintf(
+		`{"error": "Internal server error (fallback) %s", "message": "Internal server error (fallback) %s", "error_id": "%s", "code": %d}`,
+		errID, errID, errID, codes.Internal)
 
 	s, ok := status.FromError(err)
 	if !ok {
@@ -211,16 +202,16 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 	}
 	if !handled {
 		// Default error-handling schema
-		body := &errorBody{
+		body := &auxpb.StandardErrorResponse{
 			Error:   s.Message(),
 			Message: s.Message(),
 			Code:    int32(s.Code()),
-			Details: s.Proto().GetDetails(),
+			ErrorId: errID,
 		}
 
 		buf, marshalingErr = marshaler.Marshal(body)
 		if marshalingErr != nil {
-			grpclog.Errorf("Error %s: Failed to marshal default errorBody message %q: %v", errID, body, marshalingErr)
+			grpclog.Errorf("Error %s: Failed to marshal default error response %q: %v", errID, body, marshalingErr)
 		}
 	} else if marshalingErr != nil {
 		grpclog.Errorf("Error %s: Failed to marshal response: %v", errID, marshalingErr)

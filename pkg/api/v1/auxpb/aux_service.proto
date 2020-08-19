@@ -32,9 +32,23 @@ message ValidateOauthResponse {}
 
 // Error response format for most errors
 message StandardErrorResponse {
+  // Human-readable error message; should be identical to `message` content.
   string error = 1;
+
+  // Code for error category; uses standard gRPC response codes*, plus some
+  // additional custom codes defined for this project (see
+  // pkg/errors/errors.go).
+  //
+  // *https://developers.google.com/maps-booking/reference/grpc-api/status_codes
   int32 code = 2;
+
+  // Human-readable error message.  Required by ASTM standards' APIs in most
+  // error responses.
   string message = 3;
+
+  // ID of error in the format E:<UUID> which allows fast lookups in the DSS
+  // logs to relate a client's observed error response from the DSS to the
+  // detailed logs related to that error in the internal DSS logs.
   string error_id = 4;
 }
 
