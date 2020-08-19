@@ -15,6 +15,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// currentMajorSchemaVersion is the current major schema version.
+	currentMajorSchemaVersion = 3
+)
+
 var (
 	// DefaultClock is what is used as the Store's clock, returned from Dial.
 	DefaultClock = clockwork.NewRealClock()
@@ -44,6 +49,38 @@ type Store struct {
 	db     *cockroach.DB
 	logger *zap.Logger
 	clock  clockwork.Clock
+}
+
+// NewStore returns a Store instance connected to a cockroach instance via db.
+func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store, error) {
+	store := &Store{
+		db:     db,
+		logger: logger,
+		clock:  DefaultClock,
+	}
+
+	if err := store.CheckCurrentMajorSchemaVersion(ctx); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to construct store instance for remote ID")
+	}
+
+	return store, nil
+}
+
+// CheckCurrentMajorSchemaVersion checks that store supports the current major schema version.
+func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
+	vs, err := s.GetVersion(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
+	}
+	if vs == cockroach.UnknownVersion {
+		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
+	}
+
+	if currentMajorSchemaVersion != vs.Major {
+		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d.", vs, currentMajorSchemaVersion)
+	}
+
+	return nil
 }
 
 // Interact implements store.Interactor interface.
@@ -105,15 +142,6 @@ func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
 				"failed to rollback transaction", zap.Error(err),
 			)
 		}
-	}
-}
-
-// NewStore returns a Store instance connected to a cockroach instance via db.
-func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
-	return &Store{
-		db:     db,
-		logger: logger,
-		clock:  DefaultClock,
 	}
 }
 

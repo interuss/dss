@@ -34,16 +34,6 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-const (
-	// The code at this version requires a major schema version equal to this
-	// value.
-	RidRequiredMajorSchemaVersion = 3
-
-	// The code at this version requires a major schema version equal to this
-	// value.
-	ScdRequiredMajorSchemaVersion = 1
-)
-
 var (
 	address           = flag.String("addr", ":8081", "address")
 	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
@@ -78,39 +68,7 @@ var (
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
-func MustSupportRidSchema(ctx context.Context, store *ridc.Store) error {
-	vs, err := store.GetVersion(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
-	}
-	if vs == cockroach.UnknownVersion {
-		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
-	}
-
-	if RidRequiredMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d.", vs, RidRequiredMajorSchemaVersion)
-	}
-
-	return nil
-}
-
-func MustSupportScdSchema(ctx context.Context, store *scdc.Store) error {
-	vs, err := store.GetVersion(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get database schema version for strategic conflict detection")
-	}
-	if vs == cockroach.UnknownVersion {
-		return stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
-	}
-
-	if ScdRequiredMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d.", vs, ScdRequiredMajorSchemaVersion)
-	}
-
-	return nil
-}
-
-func ConnectTo(dbName string) (*cockroach.DB, error) {
+func connectTo(dbName string) (*cockroach.DB, error) {
 	uriParams := map[string]string{
 		"host":             *cockroachParams.host,
 		"port":             strconv.Itoa(*cockroachParams.port),
@@ -129,6 +87,62 @@ func ConnectTo(dbName string) (*cockroach.DB, error) {
 		return nil, stacktrace.Propagate(err, "Error dialing CockroachDB database at %s", uri)
 	}
 	return db, nil
+}
+
+func createKeyResolver() (auth.KeyResolver, error) {
+	switch {
+	case *pkFile != "":
+		return &auth.FromFileKeyResolver{
+			KeyFiles: strings.Split(*pkFile, ","),
+		}, nil
+	case *jwksEndpoint != "" && *jwksKeyIDs != "":
+		u, err := url.Parse(*jwksEndpoint)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error parsing JWKS URL")
+		}
+
+		return &auth.JWKSResolver{
+			Endpoint: u,
+			KeyIDs:   strings.Split(*jwksKeyIDs, ","),
+		}, nil
+	default:
+		return nil, nil
+	}
+}
+
+func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid.Server, error) {
+	ridCrdb, err := connectTo(ridc.DatabaseName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
+	}
+
+	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create strategic remote ID server")
+	}
+
+	return &rid.Server{
+		App:      application.NewFromTransactor(ridStore, logger),
+		Timeout:  *timeout,
+		Locality: locality,
+	}, nil
+}
+
+func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
+	scdCrdb, err := connectTo(scdc.DatabaseName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
+	}
+
+	scdStore, err := scdc.NewStore(ctx, scdCrdb, logger)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create strategic conflict detection store")
+	}
+
+	return &scd.Server{
+		Store:   scdStore,
+		Timeout: *timeout,
+	}, nil
 }
 
 // RunGRPCServer starts the example gRPC service.
@@ -159,69 +173,36 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 	)
 
 	// Initialize remote ID
-
-	ridCrdb, err := ConnectTo(ridc.DatabaseName)
+	server, err := createRIDServer(ctx, locality, logger)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
+		return stacktrace.Propagate(err, "Failed to create strategic remote ID server")
 	}
-	ridStore := ridc.NewStore(ridCrdb, logger)
+	ridServer = server
 
-	err = MustSupportRidSchema(ctx, ridStore)
-	if err != nil {
-		return stacktrace.Propagate(err, "Required remote ID schema not supported by database")
-	}
-
-	ridServer = &rid.Server{
-		App:      application.NewFromTransactor(ridStore, logger),
-		Timeout:  *timeout,
-		Locality: locality,
-	}
 	scopesValidators := auth.MergeOperationsAndScopesValidators(
-		rid.AuthScopes(), auxServer.AuthScopes(),
+		ridServer.AuthScopes(), auxServer.AuthScopes(),
 	)
 
 	// Initialize strategic conflict detection
 
 	if *enableSCD {
-		scdCrdb, err := ConnectTo(scdc.DatabaseName)
+		server, err := createSCDServer(ctx, logger)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
+			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}
-		scdStore := scdc.NewStore(scdCrdb, logger)
+		scdServer = server
 
-		err = MustSupportScdSchema(ctx, scdStore)
-		if err != nil {
-			return stacktrace.Propagate(err, "Required strategic conflict detection schema not supported by database")
-		}
-
-		scdServer = &scd.Server{
-			Store:   scdStore,
-			Timeout: *timeout,
-		}
 		scopesValidators = auth.MergeOperationsAndScopesValidators(
 			scopesValidators, scdServer.AuthScopes(),
 		)
 	}
 
 	// Initialize access token validation
-
-	var keyResolver auth.KeyResolver
+	keyResolver, err := createKeyResolver()
 	switch {
-	case *pkFile != "":
-		keyResolver = &auth.FromFileKeyResolver{
-			KeyFiles: strings.Split(*pkFile, ","),
-		}
-	case *jwksEndpoint != "" && *jwksKeyIDs != "":
-		u, err := url.Parse(*jwksEndpoint)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error parsing JWKS URL")
-		}
-
-		keyResolver = &auth.JWKSResolver{
-			Endpoint: u,
-			KeyIDs:   strings.Split(*jwksKeyIDs, ","),
-		}
-	default:
+	case err != nil:
+		return stacktrace.Propagate(err, "Error creating RSA authorizer")
+	case keyResolver == nil:
 		logger.Warn("operating without authorizing interceptor")
 	}
 
@@ -238,7 +219,6 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 	}
 
 	// Set up server functionality
-
 	interceptors := []grpc.UnaryServerInterceptor{
 		uss_errors.Interceptor(logger),
 		logging.Interceptor(logger),
@@ -257,13 +237,14 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 		reflection.Register(s)
 	}
 
+	logger.Info("build", zap.Any("description", build.Describe()))
+
 	ridpb.RegisterDiscoveryAndSynchronizationServiceServer(s, ridServer)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
 	if *enableSCD {
 		logger.Info("config", zap.Any("scd", "enabled"))
 		scdpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, scdServer)
 	}
-	logger.Info("build", zap.Any("description", build.Describe()))
 
 	go func() {
 		defer s.GracefulStop()
@@ -284,9 +265,9 @@ func main() {
 		logger = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
 	if *profServiceName != "" {
-		err := profiler.Start(profiler.Config{
-			Service: *profServiceName})
-		if err != nil {
+		if err := profiler.Start(profiler.Config{
+			Service: *profServiceName,
+		}); err != nil {
 			logger.Panic("Failed to start the profiler ", zap.Error(err))
 		}
 	}

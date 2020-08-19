@@ -65,7 +65,9 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	cdb, err := cockroach.Dial(*storeURI)
 	require.NoError(t, err)
 
-	store := ridcrdb.NewStore(cdb, logger)
+	store, err := ridcrdb.NewStore(ctx, cdb, logger)
+	require.NoError(t, err)
+
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
 		require.NoError(t, store.Close())

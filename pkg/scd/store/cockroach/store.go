@@ -10,7 +10,13 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dsssql "github.com/interuss/dss/pkg/sql"
+	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
+)
+
+const (
+	// currentMajorSchemaVersion is the current major schema version.
+	currentMajorSchemaVersion = 1
 )
 
 var (
@@ -38,12 +44,35 @@ type Store struct {
 }
 
 // NewStore returns a Store instance connected to a cockroach instance via db.
-func NewStore(db *cockroach.DB, logger *zap.Logger) *Store {
-	return &Store{
+func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store, error) {
+	store := &Store{
 		db:     db,
 		logger: logger,
 		clock:  DefaultClock,
 	}
+
+	if err := store.CheckCurrentMajorSchemaVersion(ctx); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to construct store instance for strategic conflict detection")
+	}
+
+	return store, nil
+}
+
+// CheckCurrentMajorSchemaVersion returns nil if s supports the current major schema version.
+func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
+	vs, err := s.GetVersion(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get database schema version for strategic conflict detection")
+	}
+	if vs == cockroach.UnknownVersion {
+		return stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
+	}
+
+	if currentMajorSchemaVersion != vs.Major {
+		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d.", vs, currentMajorSchemaVersion)
+	}
+
+	return nil
 }
 
 // Interact implements store.Interactor interface.
