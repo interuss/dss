@@ -24,7 +24,7 @@ services:
     volumes:
       - $PWD/../deploy/db_schemas/defaultdb:/db-schemas/defaultdb:ro
       - local-dss-data:/var/local-dss-data
-    entrypoint: /bin/sh -c "(ls /var/local-dss-data/rid_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/defaultdb --db_version v3.1.0 --cockroach_host local-dss-crdb && touch /var/local-dss-data/rid_bootstrap)"
+    entrypoint: /bin/sh -c "(ls /var/local-dss-data/rid_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/defaultdb --db_version 3.1.0 --cockroach_host local-dss-crdb && touch /var/local-dss-data/rid_bootstrap)"
     depends_on:
       - local-dss-crdb
 
@@ -36,7 +36,7 @@ services:
     volumes:
       - $PWD/../deploy/db_schemas/scd:/db-schemas/scd:ro
       - local-dss-data:/var/local-dss-data
-    entrypoint: /bin/sh -c "(ls /var/local-dss-data/scd_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/scd --db_version v1.0.0 --cockroach_host local-dss-crdb && touch /var/local-dss-data/scd_bootstrap)"
+    entrypoint: /bin/sh -c "(ls /var/local-dss-data/scd_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/scd --db_version 1.0.0 --cockroach_host local-dss-crdb && touch /var/local-dss-data/scd_bootstrap)"
     depends_on:
       - local-dss-crdb
 

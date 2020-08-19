@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -67,8 +68,8 @@ func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.Identificat
 	return &returnedCopy, nil
 }
 
-func (store *isaStore) GetVersion(ctx context.Context) (string, error) {
-	return "v3.1.0", nil
+func (store *isaStore) GetVersion(ctx context.Context) (*semver.Version, error) {
+	return semver.NewVersion("v3.1.0")
 }
 
 // Implements repos.ISA.SearchISA

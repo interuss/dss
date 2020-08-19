@@ -2,21 +2,21 @@ package store
 
 import (
 	"context"
+	"io"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/rid/repos"
 )
 
 // Store provides the means by which to obtain Repos with which to interact with
 // the remote ID backing store.
 type Store interface {
+	io.Closer
 	Interactor
 	Transactor
 
-	// Close closes the store and releases all of its resources.
-	Close() error
-
 	// Get store version
-	GetVersion(ctx context.Context) (string, error)
+	GetVersion(ctx context.Context) (*semver.Version, error)
 }
 
 // Interactor provides means to get hold of a repos.Repository instance *without* any

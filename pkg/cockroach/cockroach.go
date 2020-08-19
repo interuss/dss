@@ -5,7 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/palantir/stacktrace"
+)
+
+var (
+	UnknownVersion = &semver.Version{}
 )
 
 // DB models a connection to a CRDB instance.
@@ -68,32 +73,47 @@ func BuildURI(params map[string]string) (string, error) {
 }
 
 // GetVersion returns the Schema Version of the requested DB Name
-func GetVersion(ctx context.Context, db *DB, dbName string) (string, error) {
+func GetVersion(ctx context.Context, db *DB, dbName string) (*semver.Version, error) {
 	const query = `
 		SELECT EXISTS (
-			SELECT *
-				FROM information_schema.tables
-			WHERE table_name = 'schema_versions'
-			AND table_catalog = $1
+			SELECT
+				*
+			FROM
+				information_schema.tables
+			WHERE
+				table_name = 'schema_versions'
+			AND
+				table_catalog = $1
 		)
 	`
-	row := db.QueryRowContext(ctx, query, dbName)
-	var ret bool
-	if err := row.Scan(&ret); err != nil {
-		return "", stacktrace.Propagate(err, "Error scanning table listing row")
+
+	var (
+		exists          bool
+		getVersionQuery = fmt.Sprintf(`
+		SELECT
+			schema_version
+		FROM
+			%s.schema_versions
+		WHERE
+			onerow_enforcer = TRUE`, dbName)
+	)
+
+	if err := db.QueryRowContext(ctx, query, dbName).Scan(&exists); err != nil {
+		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
-	if !ret {
+
+	if !exists {
 		// Database has not been bootstrapped using DB Schema Manager
-		return "v0.0.0", nil
+		return UnknownVersion, nil
 	}
-	getVersionQuery := fmt.Sprintf(`
-		SELECT schema_version
-			FROM %s.schema_versions
-		WHERE onerow_enforcer = TRUE`, dbName)
-	row = db.QueryRowContext(ctx, getVersionQuery)
+
 	var dbVersion string
-	if err := row.Scan(&dbVersion); err != nil {
-		return "", stacktrace.Propagate(err, "Error scanning version row")
+	if err := db.QueryRowContext(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
+		return nil, stacktrace.Propagate(err, "Error scanning version row")
 	}
-	return dbVersion, nil
+	if len(dbVersion) > 0 && dbVersion[0] == 'v' {
+		dbVersion = dbVersion[1:]
+	}
+
+	return semver.NewVersion(dbVersion)
 }

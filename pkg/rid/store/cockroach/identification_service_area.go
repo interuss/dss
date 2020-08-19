@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/coreos/go-semver/semver"
+
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -16,7 +18,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
-	"golang.org/x/mod/semver"
 )
 
 const (
@@ -24,8 +25,12 @@ const (
 	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
-func NewISARepo(ctx context.Context, db dssql.Queryable, dbVersion string, logger *zap.Logger) repos.ISA {
-	if semver.Compare(dbVersion, "v3.1.0") >= 0 {
+var (
+	v310 = *semver.New("3.1.0")
+)
+
+func NewISARepo(ctx context.Context, db dssql.Queryable, dbVersion semver.Version, logger *zap.Logger) repos.ISA {
+	if dbVersion.Compare(v310) >= 0 {
 		return &isaRepo{
 			Queryable: db,
 			logger:    logger,

@@ -14,8 +14,8 @@ local metadata = metadataBase {
   },
   schema_manager+: {
     image: 'VAR_SCHEMA_MANAGER_IMAGE_NAME',
-    desired_rid_db_version: 'v3.1.0',
-    desired_scd_db_version: 'v1.0.0',
+    desired_rid_db_version: '3.1.0',
+    desired_scd_db_version: '1.0.0',
   },
 };
 
