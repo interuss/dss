@@ -33,7 +33,7 @@ type Server struct {
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
-func AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
+func (s *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
 	return map[auth.Operation]auth.KeyClaimedScopesValidator{
 		"/ridpb.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ISA.Write),
 		"/ridpb.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ISA.Write),
