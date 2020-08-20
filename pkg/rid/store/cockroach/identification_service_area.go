@@ -184,7 +184,7 @@ func (c *isaRepo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationSe
 				id = $1
 			AND
 				updated_at = $2
-			RETURNING %s`, isaFields)
+			RETURNING %s`, getISAFields)
 	)
 	return c.processOne(ctx, deleteQuery, isa.ID, isa.Version.ToTimestamp())
 }
