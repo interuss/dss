@@ -11,17 +11,17 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/coreos/go-semver/semver"
-
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/cockroachdb"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	dssCockroach "github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/cockroach/flags"
 	"go.uber.org/zap"
+
+	_ "github.com/golang-migrate/migrate/v4/database/cockroachdb" // Force registration of cockroachdb backend
+	_ "github.com/golang-migrate/migrate/v4/source/file"          // Force registration of file source
 )
 
 // MyMigrate is an alias for extending migrate.Migrate
@@ -47,20 +47,6 @@ var (
 	path      = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
 	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0)")
 	step      = flag.Int("migration_step", 0, "the db migration step to go to")
-
-	cockroachParams = struct {
-		host    *string
-		port    *int
-		sslMode *string
-		sslDir  *string
-		user    *string
-	}{
-		host:    flag.String("cockroach_host", "", "cockroach host to connect to"),
-		port:    flag.Int("cockroach_port", 26257, "cockroach port to connect to"),
-		sslMode: flag.String("cockroach_ssl_mode", "disable", "cockroach sslmode"),
-		user:    flag.String("cockroach_user", "root", "cockroach user to authenticate as"),
-		sslDir:  flag.String("cockroach_ssl_dir", "", "directory to ssl certificates. Must contain files: ca.crt, client.<user>.crt, client.<user>.key"),
-	}
 )
 
 func main() {
@@ -84,20 +70,14 @@ func main() {
 		}
 	}
 
-	uriParams := map[string]string{
-		"host":             *cockroachParams.host,
-		"port":             strconv.Itoa(*cockroachParams.port),
-		"user":             *cockroachParams.user,
-		"ssl_mode":         *cockroachParams.sslMode,
-		"ssl_dir":          *cockroachParams.sslDir,
-		"application_name": "SchemaManager",
-		"db_name":          filepath.Base(*path),
-	}
-	postgresURI, err := dssCockroach.BuildURI(uriParams)
+	params := flags.ConnectParameters()
+	params.ApplicationName = "SchemaManager"
+	params.DBName = filepath.Base(*path)
+	postgresURI, err := params.BuildURI()
 	if err != nil {
 		log.Panic("Failed to build URI", zap.Error(err))
 	}
-	myMigrater, err := New(*path, postgresURI, uriParams["db_name"])
+	myMigrater, err := New(*path, postgresURI, params.DBName)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -124,7 +104,7 @@ func main() {
 		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMoves), preMigrationStep, postMigrationStep)
 	}
 
-	currentDBVersion, err := getCurrentDBVersion(postgresURI, uriParams["db_name"])
+	currentDBVersion, err := getCurrentDBVersion(postgresURI, params.DBName)
 	if err != nil {
 		log.Fatal("Failed to get Current DB version for confirmation")
 	}
@@ -185,7 +165,7 @@ func intAbs(x int) int {
 }
 
 func createDatabaseIfNotExists(crdbURI string, database string) error {
-	crdb, err := dssCockroach.Dial(crdbURI)
+	crdb, err := cockroach.Dial(crdbURI)
 	defer func() {
 		crdb.Close()
 	}()
@@ -218,7 +198,7 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 }
 
 func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, error) {
-	crdb, err := dssCockroach.Dial(crdbURI)
+	crdb, err := cockroach.Dial(crdbURI)
 	defer func() {
 		crdb.Close()
 	}()
@@ -226,7 +206,7 @@ func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, erro
 		return nil, fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
 	}
 
-	return dssCockroach.GetVersion(context.Background(), crdb, database)
+	return crdb.GetVersion(context.Background(), database)
 }
 
 // MigrationDirection reads our custom DB version string as well as the Migration Steps from the framework

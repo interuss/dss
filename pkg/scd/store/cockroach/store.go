@@ -103,5 +103,5 @@ func (s *Store) Close() error {
 // GetVersion returns the Version string for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
-	return cockroach.GetVersion(ctx, s.db, DatabaseName)
+	return s.db.GetVersion(ctx, DatabaseName)
 }

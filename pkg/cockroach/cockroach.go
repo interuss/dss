@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/palantir/stacktrace"
@@ -12,6 +13,95 @@ import (
 var (
 	UnknownVersion = &semver.Version{}
 )
+
+type (
+	// Credentials models connect credentials.
+	Credentials struct {
+		Username string
+		Password string
+	}
+
+	// SSL models SSL configuration parameters.
+	SSL struct {
+		Mode string
+		Dir  string
+	}
+
+	// ConnectParameters bundles up parameters used for connecting to a CRDB instance.
+	ConnectParameters struct {
+		ApplicationName string
+		Host            string
+		Port            int
+		DBName          string
+		Credentials     Credentials
+		SSL             SSL
+	}
+)
+
+func parsePortOrDefault(port string, defaultPort int64) int64 {
+	p, err := strconv.ParseInt(port, 10, 16)
+	if err != nil {
+		p = defaultPort
+	}
+	return p
+}
+
+// connectParametersFromMap constructs a ConnectParameters instance from m.
+func connectParametersFromMap(m map[string]string) ConnectParameters {
+	return ConnectParameters{
+		ApplicationName: m["application_name"],
+		DBName:          m["db_name"],
+		Host:            m["host"],
+		Port:            int(parsePortOrDefault(m["port"], 0)),
+		Credentials: Credentials{
+			Username: m["user"],
+		},
+		SSL: SSL{
+			Mode: m["ssl_mode"],
+			Dir:  m["ssl_dir"],
+		},
+	}
+}
+
+// BuildURI returns a URI built from p.
+func (p ConnectParameters) BuildURI() (string, error) {
+	an := p.ApplicationName
+	if an == "" {
+		an = "dss"
+	}
+	h := p.Host
+	if h == "" {
+		return "", stacktrace.NewError("Missing crdb hostname")
+	}
+	port := p.Port
+	if port == 0 {
+		return "", stacktrace.NewError("Missing crdb port")
+	}
+	u := p.Credentials.Username
+	if u == "" {
+		return "", stacktrace.NewError("Missing crdb user")
+	}
+	ssl := p.SSL.Mode
+	if ssl == "" {
+		return "", stacktrace.NewError("Missing crdb ssl_mode")
+	}
+	db := p.DBName
+	if db != "" {
+		db = fmt.Sprintf("/%s", db)
+	}
+	if ssl == "disable" {
+		return fmt.Sprintf("postgresql://%s@%s:%d%s?application_name=%s&sslmode=disable", u, h, port, db, an), nil
+	}
+	dir := p.SSL.Dir
+	if dir == "" {
+		return "", stacktrace.NewError("Missing crdb ssl_dir")
+	}
+
+	return fmt.Sprintf(
+		"postgresql://%s@%s:%d%s?application_name=%s&sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.key",
+		u, h, port, db, an, ssl, dir, dir, u, dir, u,
+	), nil
+}
 
 // DB models a connection to a CRDB instance.
 type DB struct {
@@ -32,48 +122,8 @@ func Dial(uri string) (*DB, error) {
 	}, nil
 }
 
-// BuildURI returns a cockroachdb connection string from a params map.
-func BuildURI(params map[string]string) (string, error) {
-	an := params["application_name"]
-	if an == "" {
-		an = "dss"
-	}
-	h := params["host"]
-	if h == "" {
-		return "", stacktrace.NewError("Missing crdb hostname")
-	}
-	p := params["port"]
-	if p == "" {
-		return "", stacktrace.NewError("Missing crdb port")
-	}
-	u := params["user"]
-	if u == "" {
-		return "", stacktrace.NewError("Missing crdb user")
-	}
-	ssl := params["ssl_mode"]
-	if ssl == "" {
-		return "", stacktrace.NewError("Missing crdb ssl_mode")
-	}
-	db := params["db_name"]
-	if db != "" {
-		db = fmt.Sprintf("/%s", db)
-	}
-	if ssl == "disable" {
-		return fmt.Sprintf("postgresql://%s@%s:%s%s?application_name=%s&sslmode=disable", u, h, p, db, an), nil
-	}
-	dir := params["ssl_dir"]
-	if dir == "" {
-		return "", stacktrace.NewError("Missing crdb ssl_dir")
-	}
-
-	return fmt.Sprintf(
-		"postgresql://%s@%s:%s%s?application_name=%s&sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.key",
-		u, h, p, db, an, ssl, dir, dir, u, dir, u,
-	), nil
-}
-
 // GetVersion returns the Schema Version of the requested DB Name
-func GetVersion(ctx context.Context, db *DB, dbName string) (*semver.Version, error) {
+func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,6 +17,7 @@ import (
 	aux "github.com/interuss/dss/pkg/aux_"
 	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/cockroach/flags" // Force command line flag registration
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	application "github.com/interuss/dss/pkg/rid/application"
@@ -49,36 +49,14 @@ var (
 	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
 	locality          = flag.String("locality", "", "self-identification string used as CRDB table writer column")
 
-	cockroachParams = struct {
-		host            *string
-		port            *int
-		sslMode         *string
-		sslDir          *string
-		user            *string
-		applicationName *string
-	}{
-		host:            flag.String("cockroach_host", "", "cockroach host to connect to"),
-		port:            flag.Int("cockroach_port", 26257, "cockroach port to connect to"),
-		sslMode:         flag.String("cockroach_ssl_mode", "disable", "cockroach sslmode"),
-		user:            flag.String("cockroach_user", "root", "cockroach user to authenticate as"),
-		sslDir:          flag.String("cockroach_ssl_dir", "", "directory to ssl certificates. Must contain files: ca.crt, client.<user>.crt, client.<user>.key"),
-		applicationName: flag.String("cockroach_application_name", "dss", "application name for tagging the connection to cockroach"),
-	}
-
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
 func connectTo(dbName string) (*cockroach.DB, error) {
-	uriParams := map[string]string{
-		"host":             *cockroachParams.host,
-		"port":             strconv.Itoa(*cockroachParams.port),
-		"user":             *cockroachParams.user,
-		"ssl_mode":         *cockroachParams.sslMode,
-		"ssl_dir":          *cockroachParams.sslDir,
-		"application_name": *cockroachParams.applicationName,
-		"db_name":          dbName,
-	}
-	uri, err := cockroach.BuildURI(uriParams)
+	connectParameters := flags.ConnectParameters()
+	connectParameters.DBName = dbName
+
+	uri, err := connectParameters.BuildURI()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building URI")
 	}

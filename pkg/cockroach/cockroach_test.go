@@ -86,7 +86,7 @@ func TestBuildURI(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		got, _ := BuildURI(c.params)
+		got, _ := connectParametersFromMap(c.params).BuildURI()
 		require.Equal(t, c.want, got)
 	}
 }
