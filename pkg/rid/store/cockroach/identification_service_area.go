@@ -2,6 +2,7 @@ package cockroach
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -22,7 +23,6 @@ import (
 
 const (
 	isaFields       = "id, owner, url, cells, starts_at, ends_at, writer, updated_at"
-	getISAFields    = "id, owner, url, cells, starts_at, ends_at, IFNULL(writer, ''), updated_at"
 	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
@@ -60,6 +60,7 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 	var payload []*ridmodels.IdentificationServiceArea
 	cids := pq.Int64Array{}
 
+	var writer sql.NullString
 	for rows.Next() {
 		i := new(ridmodels.IdentificationServiceArea)
 
@@ -70,11 +71,16 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 			&cids,
 			&i.StartTime,
 			&i.EndTime,
-			&i.Writer,
+			&writer,
 			&i.Version,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning ISA row")
+		}
+		if writer.Valid {
+			i.Writer = writer.String
+		} else {
+			i.Writer = ""
 		}
 		i.SetCells(cids)
 		payload = append(payload, i)
@@ -107,7 +113,7 @@ func (c *isaRepo) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Ident
 		SELECT %s FROM
 			identification_service_areas
 		WHERE
-			id = $1`, getISAFields)
+			id = $1`, isaFields)
 	return c.processOne(ctx, query, id)
 }
 
@@ -184,7 +190,7 @@ func (c *isaRepo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationSe
 				id = $1
 			AND
 				updated_at = $2
-			RETURNING %s`, getISAFields)
+			RETURNING %s`, isaFields)
 	)
 	return c.processOne(ctx, deleteQuery, isa.ID, isa.Version.ToTimestamp())
 }
@@ -206,7 +212,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 			AND
 				COALESCE(starts_at <= $2, true)
 			AND
-				cells && $3`, getISAFields)
+				cells && $3`, isaFields)
 	)
 
 	if len(cells) == 0 {
