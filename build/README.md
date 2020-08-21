@@ -425,6 +425,14 @@ You will need to change the values in the `prometheus` fields in your metadata t
 
 ## Troubleshooting
 
+### Check if the CockroachDB service is exposed
+
+Unless specified otherwise in a deployment configuration, CockroachDB
+communicates on port 26257.  To check whether this port is open from Mac or
+Linux, e.g.: `nc -zvw3 0.db.dss.your-region.your-domain.com 26257`.  Or, search
+for a "port checker" web page/app.  Port 26257 will be open on a working
+CockroachDB node.
+
 ### Accessing a CockroachDB SQL terminal
 
 To interact with the CockroachDB database directly via SQL terminal:
