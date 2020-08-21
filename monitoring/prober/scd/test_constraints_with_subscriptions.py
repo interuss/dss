@@ -11,7 +11,7 @@
 import datetime
 from typing import Dict
 
-from ..infrastructure import default_scope
+from monitoring.monitorlib.infrastructure import default_scope
 from . import common
 from .common import SCOPE_CI, SCOPE_CM, SCOPE_SC
 

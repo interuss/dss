@@ -12,7 +12,7 @@
 import datetime
 from typing import Dict, Tuple
 
-from ..infrastructure import default_scope
+from monitoring.monitorlib.infrastructure import default_scope
 from . import common
 from .common import SCOPE_SC
 

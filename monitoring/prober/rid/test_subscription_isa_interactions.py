@@ -9,7 +9,7 @@
 
 import datetime
 
-from ..infrastructure import default_scope
+from monitoring.monitorlib.infrastructure import default_scope
 from . import common
 from .common import SCOPE_READ, SCOPE_WRITE
 

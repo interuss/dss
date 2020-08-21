@@ -2,8 +2,8 @@
 
 import pytest
 
-from ..infrastructure import default_scope
-from ..auth import DummyOAuth
+from monitoring.monitorlib.infrastructure import default_scope
+from monitoring.monitorlib.auth import DummyOAuth
 from ..rid.common import SCOPE_READ as RID_SCOPE_READ
 
 
