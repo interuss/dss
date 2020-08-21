@@ -2,7 +2,7 @@ import argparse
 import sys
 from typing import List
 
-import prober.auth
+from monitoring.monitorlib import auth
 
 
 def parse_args(argv: List[str]):
@@ -20,7 +20,7 @@ def parse_args(argv: List[str]):
 
 
 def get_access_token(spec: str, scopes: str, audience: str):
-  adapter = prober.auth.make_auth_adapter(spec)
+  adapter = auth.make_auth_adapter(spec)
   return adapter.issue_token(audience, scopes.split(' '))
 
 

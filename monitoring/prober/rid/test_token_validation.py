@@ -12,7 +12,7 @@ import datetime
 
 import pytest
 
-from ..auth import DummyOAuth
+from monitoring.monitorlib.auth import DummyOAuth
 from . import common
 from .common import SCOPE_READ, SCOPE_WRITE
 

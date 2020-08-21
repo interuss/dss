@@ -15,6 +15,7 @@ else
 	BASEDIR=$(readlink -e "$(dirname "$0")/..")
 fi
 
+echo "e2e base directory is ${BASEDIR}"
 cd "${BASEDIR}"
 
 function gather_logs() {
@@ -138,7 +139,7 @@ docker run -d --name dummy-oauth-for-testing -p 8085:8085 \
 sleep 1
 echo " -------------- PYTEST -------------- "
 echo "Building Integration Test container"
-docker build -q --rm -f monitoring/prober/Dockerfile monitoring/prober -t e2e-test
+docker build -q --rm -f monitoring/prober/Dockerfile monitoring -t e2e-test
 
 echo "Finally Begin Testing"
 docker run --link dummy-oauth-for-testing:oauth \
