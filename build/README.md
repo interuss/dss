@@ -391,6 +391,23 @@ of this operational overhead.
 
 ## Tools
 
+### Grafana / Prometheus
+
+By default, an instance of Grafana and Prometheus are deployed along with the
+core DSS services; this combination allows you to view (Grafana) CRDB metrics
+(collected by Prometheus).  To view Grafana, first ensure that the appropriate
+cluster context is selected (`kubectl config current-context`).  Then, run the
+following command:
+
+```shell script
+kubectl get pod | grep grafana | awk '{print $1}' | xargs -I {} kubectl port-forward {} 3000
+```
+
+While that command is running, open a browser and navigate to
+[http://localhost:3000](http://localhost:3000).  The default username is `admin`
+with a default password of `admin`.  Click the magnifying glass on the left side
+to select a dashboard to view.
+
 ### Istio
 
 Istio provides better observability by using a sidecar proxy on every binary
