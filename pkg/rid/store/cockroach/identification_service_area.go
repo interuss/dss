@@ -2,6 +2,7 @@ package cockroach
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -59,6 +60,7 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 	var payload []*ridmodels.IdentificationServiceArea
 	cids := pq.Int64Array{}
 
+	var writer sql.NullString
 	for rows.Next() {
 		i := new(ridmodels.IdentificationServiceArea)
 
@@ -69,11 +71,16 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 			&cids,
 			&i.StartTime,
 			&i.EndTime,
-			&i.Writer,
+			&writer,
 			&i.Version,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning ISA row")
+		}
+		if writer.Valid {
+			i.Writer = writer.String
+		} else {
+			i.Writer = ""
 		}
 		i.SetCells(cids)
 		payload = append(payload, i)
