@@ -1,7 +1,7 @@
-import uuid
 from typing import Optional
 
-from . import auth, infrastructure
+from monitoring.monitorlib import infrastructure
+from monitoring.monitorlib import auth
 
 import pytest
 

@@ -14,7 +14,7 @@ import json
 
 from . import common
 from .common import SCOPE_SC
-from ..infrastructure import default_scope
+from monitoring.monitorlib.infrastructure import default_scope
 
 
 def _load_op_ids():

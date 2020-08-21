@@ -12,8 +12,8 @@ import datetime
 import json
 import uuid
 
-from ..infrastructure import default_scope
-from .common import SCOPE_SC, SCOPE_CI, SCOPE_CM
+from monitoring.monitorlib.infrastructure import default_scope
+from .common import SCOPE_SC
 
 OP1_ID = '00000020-b6ee-4082-b6e7-75eb4f000000'
 OP2_ID = '00000000-ee51-4700-873d-e10911000000'

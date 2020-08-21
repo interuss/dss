@@ -1,4 +1,3 @@
-import base64
 import datetime
 import re
 from typing import List, Optional
@@ -16,7 +15,7 @@ import requests
 from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
 
-from .infrastructure import AuthAdapter
+from monitoring.monitorlib.infrastructure import AuthAdapter
 
 
 class DummyOAuth(AuthAdapter):

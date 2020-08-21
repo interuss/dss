@@ -21,7 +21,7 @@ flag to specify how to obtain access tokens in that circumstance:
 
 The value for each of these flags is a specification for how to retrieve access
 tokens.  Each specification takes the form of `AuthAdapter(value1,value2,...)`.
-All available AuthAdapters are defined in [auth.py](auth.py) and the parameters
+All available AuthAdapters are defined in [auth.py](../monitorlib/auth.py) and the parameters
 are those accepted by the particular AuthAdapter's `__init__` constructor.  Both
 ordinal and keyword (e.g., `AuthAdapter(param1=value1,param2=value2)`)
 parameters are accepted.  Notes:
@@ -46,7 +46,7 @@ but it requires no setup and generally obtains more reproducible results than
 running locally.  From the root of this repo:
 
 ```shell script
-docker run --rm $(docker build -q -f monitoring/prober/Dockerfile monitoring/prober) \
+docker run --rm $(docker build -q -f monitoring/prober/Dockerfile monitoring) \
     --dss-endpoint <URL> \
     [--rid-auth <SPEC>] \
     [--scd-auth1 <SPEC>] \
@@ -55,6 +55,7 @@ docker run --rm $(docker build -q -f monitoring/prober/Dockerfile monitoring/pro
 
 Or, execute the two steps separately.  First, build the prober image:
 
+(from [`monitoring`](../) working directory)
 ```shell script
 docker build -f monitoring/prober/Dockerfile monitoring/prober -t local-prober
 ```
@@ -129,7 +130,7 @@ automatically acquire and manage access tokens, but the necessary scope must
 still be specified in each request.  To instruct the session to use the same
 scope for all requests within a test, simply decorate the test with
 `@default_scope(<SCOPE>)` or `@default_scopes(<SCOPE1>, <SCOPE2>)` (located in
-[infrastructure.py](infrastructure.py)).  To specify scope for an individual
+[infrastructure.py](../monitorlib/infrastructure.py)).  To specify scope for an individual
 request (which also overrides the test-default scope), add a `scope=<SCOPE>`
 keyword argument to the request call (e.g.,
 `response = session.get('/resource', scope='read')`).
