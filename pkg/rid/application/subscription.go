@@ -79,8 +79,9 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 				"Failed to fetch subscription count, rejecting request")
 		}
 		if count >= maxSubscriptionsPerArea {
-			return stacktrace.NewErrorWithCode(dsserr.Exhausted,
-				"Too many existing subscriptions in this area already")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.Exhausted, "Too many existing subscriptions in this area already"),
+				"%s had %d subscriptions in the area", s.Owner, count)
 		}
 
 		sub, err = repo.InsertSubscription(ctx, s)
@@ -107,9 +108,13 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", s.ID.String())
 		case !s.Version.Matches(old.Version):
 			// The user wants to update a subscription but the version doesn't match.
-			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", s.Version),
+				"Subscription currently at version %s but client specified %s", old.Version, s.Version)
 		case old.Owner != s.Owner:
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
+				"Subscription owned by %s, but %s attempted to update", old.Owner, s.Owner)
 		}
 		// Validate and perhaps correct StartTime and EndTime.
 		if err := s.AdjustTimeRange(a.clock.Now(), old); err != nil {
@@ -124,8 +129,9 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 				"Failed to fetch subscription count, rejecting request")
 		}
 		if count >= maxSubscriptionsPerArea {
-			return stacktrace.NewErrorWithCode(dsserr.Exhausted,
-				"Too many existing subscriptions in this area already")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.Exhausted, "Too many existing subscriptions in this area already"),
+				"%s had %d subscriptions in the area", s.Owner, count)
 		}
 		sub, err = repo.UpdateSubscription(ctx, s)
 		if err != nil {
@@ -148,9 +154,13 @@ func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dss
 		case old == nil:
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
 		case !version.Matches(old.Version):
-			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Version %s is not current", version.String())
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", version),
+				"Subscription currently at version %s but client specified %s", old.Version, version)
 		case old.Owner != owner:
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
+				"Subscription owned by %s, but %s attempted to delete", old.Owner, owner)
 		}
 
 		ret, err = repo.DeleteSubscription(ctx, old)

@@ -23,7 +23,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 	// Retrieve Operation ID
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
 	}
 
 	// Retrieve ID of client making call
@@ -45,7 +45,9 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 
 		// Validate deletion request
 		if old.Owner != owner {
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client"),
+				"Operation owned by %s, but %s attempted to delete", old.Owner, owner)
 		}
 
 		// Get the Subscription supporting the Operation
@@ -139,7 +141,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperationReferenceRequest) (*scdpb.GetOperationReferenceResponse, error) {
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
 	}
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -238,7 +240,7 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
 	}
 
 	// Retrieve ID of client making call
@@ -298,17 +300,13 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is past the start time")
 	}
 
-	if time.Now().After(*uExtent.EndTime) {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is in the past")
-	}
-
 	if params.OldVersion == 0 && params.State != "Accepted" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for version 0")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for version 0: `%s`", params.State)
 	}
 
 	subscriptionID, err := dssmodels.IDFromOptionalString(params.GetSubscriptionId())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format for Subscription ID")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format for Subscription ID: `%s`", params.GetSubscriptionId())
 	}
 
 	var response *scdpb.ChangeOperationReferenceResponse
@@ -320,10 +318,14 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		}
 		if old != nil {
 			if old.Owner != owner {
-				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client")
+				return stacktrace.Propagate(
+					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client"),
+					"Operation owned by %s, but %s attempted to modify", old.Owner, owner)
 			}
 			if old.Version != scdmodels.Version(params.OldVersion) {
-				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d is not the current version", params.OldVersion)
+				return stacktrace.Propagate(
+					stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d is not the current version", params.OldVersion),
+					"Current version is %d but client specified version %d", old.Version, params.OldVersion)
 			}
 		} else {
 			if params.OldVersion != 0 {
@@ -365,6 +367,11 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			}
 			if sub == nil {
 				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription does not exist")
+			}
+			if sub.Owner != owner {
+				return stacktrace.Propagate(
+					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
+					"Subscription %s owned by %s, but %s attempted to use it for an Operation", subscriptionID, sub.Owner, owner)
 			}
 			updateSub := false
 			if sub.StartTime != nil && sub.StartTime.After(*uExtent.StartTime) {

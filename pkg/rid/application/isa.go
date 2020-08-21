@@ -71,9 +71,13 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		case old == nil:
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", id.String())
 		case !version.Matches(old.Version):
-			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", version.String())
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", version),
+				"ISA currently at version %s but client specified %s", old.Version, version)
 		case old.Owner != owner:
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "ISA is owned by different client")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "ISA is owned by different client"),
+				"ISA owned by %s, but %s attempted to delete", old.Owner, owner)
 		}
 
 		ret, err = repo.DeleteISA(ctx, old)
@@ -146,9 +150,13 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		case old == nil:
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", isa.ID)
 		case old.Owner != isa.Owner:
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "ISA is owned by different client")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "ISA is owned by different client"),
+				"ISA owned by %s, but %s attempted to modify", old.Owner, isa.Owner)
 		case !old.Version.Matches(isa.Version):
-			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", old.Version.String())
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "ISA version %s is not current", isa.Version),
+				"ISA currently at version %s but client specified %s", old.Version, isa.Version)
 		}
 		// Validate and perhaps correct StartTime and EndTime.
 		if err := isa.AdjustTimeRange(a.clock.Now(), old); err != nil {
