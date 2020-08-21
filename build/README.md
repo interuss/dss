@@ -144,17 +144,17 @@ a PR to that effect would be greatly appreciated.
     other clusters.
 
     -  If using Google Cloud, the HTTPS Gateway ingress needs to be created as
-       a "Global" IP address.  IPv4 is recommended as IPv6 has not yet been
-       tested.  Follow
+       a "Global" IP address, but the CRDB ingresses as "Regional" IP addresses.
+       IPv4 is recommended as IPv6 has not yet been tested.  Follow
        [these instructions](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#reserve_new_static)
        to reserve the static IP addresses.  Specifically (replacing
        CLUSTER_NAME as appropriate since static IP addresses are defined at
        the project level rather than the cluster level), e.g.:
        
-         -  `gcloud compute addresses create CLUSTER_NAME-gateway --global --ip-version IPV4`
-         -  `gcloud compute addresses create CLUSTER_NAME-crdb-0 --global --ip-version IPV4`
-         -  `gcloud compute addresses create CLUSTER_NAME-crdb-1 --global --ip-version IPV4`
-         -  `gcloud compute addresses create CLUSTER_NAME-crdb-2 --global --ip-version IPV4`
+         -  `gcloud compute addresses create ${CLUSTER_NAME}-gateway --global --ip-version IPV4`
+         -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-0 --region $REGION`
+         -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-1 --region $REGION`
+         -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-2 --region $REGION`
 
 1.  Link static IP addresses to DNS entries.
 
