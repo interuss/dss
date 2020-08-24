@@ -108,7 +108,11 @@ func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint str
 	}
 
 	go func() {
-		defer server.Shutdown(context.Background())
+		defer func() {
+			if err := server.Shutdown(context.Background()); err != nil {
+				logger.Warn("failed to shut down http server", zap.Error(err))
+			}
+		}()
 
 		for {
 			select {
