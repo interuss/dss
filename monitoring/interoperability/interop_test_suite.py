@@ -1,4 +1,3 @@
-import clients
 import itertools
 import inspect
 import datetime
@@ -6,13 +5,18 @@ import uuid
 import collections
 import time
 import logging
-
 from typing import Dict, Any, List, Callable, Iterable
+
+from monitoring.monitorlib import infrastructure
+
 
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
+SCOPE_READ = "dss.read.identification_service_areas"
+SCOPE_WRITE = "dss.write.identification_service_areas"
 
 VERTICES = [
     {"lng": 130.6205, "lat": -23.6558},
@@ -31,7 +35,7 @@ TestContext = collections.namedtuple("TestContext", ["type", "uuid"])
 
 
 class InterOpTestSuite:
-    def __init__(self, dss_clients: Dict[str, clients.DSSClient]):
+    def __init__(self, dss_clients: Dict[str, infrastructure.DSSTestSession]):
         self.dss_clients = dss_clients
 
     def startTest(self):
@@ -95,15 +99,15 @@ class TestSteps:
                     returned_subs.add(sub["subscription_id"])
         return returned_subs
 
-    def cleanUp(self, dss_map, primary_dss):
+    def cleanUp(self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str):
         dss = dss_map[primary_dss]
         for entity_type, stored_uuid in self.context.values():
             if entity_type == "ISA":
                 version = self.context[stored_uuid].uuid
-                dss.delete(f"/identification_service_areas/{stored_uuid}/{version}")
+                dss.delete(f"/identification_service_areas/{stored_uuid}/{version}", scope=SCOPE_WRITE)
             elif entity_type == "SUB":
                 version = self.context[stored_uuid].uuid
-                dss.delete(f"/subscriptions/{stored_uuid}/{version}")
+                dss.delete(f"/subscriptions/{stored_uuid}/{version}", scope=SCOPE_WRITE)
             elif entity_type == "VERSION":
                 # do nothing
                 continue
@@ -111,7 +115,7 @@ class TestSteps:
                 LOG.warning(f"Unknown Type: {entity_type}")
 
     def testStep1(
-        self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
     ) -> None:
         """Create ISA in Primary DSS with 10 min TTL."""
 
@@ -130,6 +134,7 @@ class TestSteps:
                 },
                 "flights_url": "https://example.com/uss/flights",
             },
+            scope=SCOPE_WRITE
         )
         assert (
             resp.status_code == 200
@@ -143,7 +148,7 @@ class TestSteps:
 
     def testStep2(
         self,
-        dss_map: Dict[str, clients.DSSClient],
+        dss_map: Dict[str, infrastructure.DSSTestSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -168,6 +173,7 @@ class TestSteps:
                         "identification_service_area_url": "https://example.com/uss/identification_service_area"
                     },
                 },
+                scope=SCOPE_WRITE
             )
             assert resp.status_code == 200, f"Failed to Insert Subscription to {dss}"
             data = resp.json()
@@ -184,7 +190,7 @@ class TestSteps:
 
     def testStep3(
         self,
-        dss_map: Dict[str, clients.DSSClient],
+        dss_map: Dict[str, infrastructure.DSSTestSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -192,8 +198,8 @@ class TestSteps:
         from all DSSs."""
         for dss in [primary_dss] + all_other_dss:
             resp = dss_map[dss].get(
-                f"/subscriptions/{self.context['sub_1_0_uuid'].uuid}"
-            )
+                f"/subscriptions/{self.context['sub_1_0_uuid'].uuid}",
+                scope=SCOPE_READ)
             assert resp.status_code == 200, f"{dss} failed to get SUB_1"
 
             data = resp.json()
@@ -203,7 +209,7 @@ class TestSteps:
 
     def testStep4(
         self,
-        dss_map: Dict[str, clients.DSSClient],
+        dss_map: Dict[str, infrastructure.DSSTestSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -213,7 +219,7 @@ class TestSteps:
         for index in range(len(all_dss)):
             all_sub_1.add(self.context[f"sub_1_{index}_uuid"].uuid)
         for index, dss in enumerate(all_dss):
-            resp = dss_map[dss].get(f"/subscriptions?area={GEO_POLYGON_STRING}")
+            resp = dss_map[dss].get(f"/subscriptions?area={GEO_POLYGON_STRING}", scope=SCOPE_READ)
             assert resp.status_code == 200, f"{dss} failed to get SUB_1 by area"
 
             returned_subs = set([x["id"] for x in resp.json()["subscriptions"]])
@@ -224,12 +230,12 @@ class TestSteps:
             ), f"{dss} returned too few Subscriptions, missing: {missing_subs}"
 
     def testStep5(
-        self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
     ) -> None:
-        """Can modify ISA in primary DSS, ISA modification triggers 
+        """Can modify ISA in primary DSS, ISA modification triggers
         subscription notification requests"""
         isa_1_uuid = self.context["isa_1_uuid"].uuid
-        resp = dss_map[primary_dss].get(f"/identification_service_areas/{isa_1_uuid}")
+        resp = dss_map[primary_dss].get(f"/identification_service_areas/{isa_1_uuid}", scope=SCOPE_READ)
         assert (
             resp.status_code == 200
         ), f"Failed to find ISA_1 in Primary DSS: {primary_dss}"
@@ -251,6 +257,7 @@ class TestSteps:
                 },
                 "flights_url": "https://example.com/uss/flights",
             },
+            scope=SCOPE_WRITE
         )
         assert put_resp.status_code == 200, f"Failed to update ISA_1 with new end time"
 
@@ -260,21 +267,21 @@ class TestSteps:
         ), f"Unsuccessful Update; no change to end time"
 
     def testStep6(
-        self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
     ) -> None:
         """Can delete all Subscription in primary DSS"""
         dss = dss_map[primary_dss]
         for name, entity in self.context.items():
             if name.startswith("sub_1_"):
                 version = self.context[entity.uuid].uuid
-                resp = dss.delete(f"/subscriptions/{entity.uuid}/{version}")
+                resp = dss.delete(f"/subscriptions/{entity.uuid}/{version}", scope=SCOPE_READ)
                 assert (
                     resp.status_code == 200
                 ), f"Failed to delete {entity.uuid} from Primary DSS: {primary_dss}"
 
     def testStep7(
         self,
-        dss_map: Dict[str, clients.DSSClient],
+        dss_map: Dict[str, infrastructure.DSSTestSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -283,14 +290,14 @@ class TestSteps:
         for index, dss_name in enumerate(all_dss):
             dss = dss_map[dss_name]
             sub_uuid = self.context[f"sub_1_{index}_uuid"].uuid
-            resp = dss.get(f"/subscriptions/{sub_uuid}")
+            resp = dss.get(f"/subscriptions/{sub_uuid}", scope=SCOPE_READ)
             assert (
                 resp.status_code == 404
             ), f"Expecting code 404, found {resp.status_code}"
 
     def testStep8(
         self,
-        dss_map: Dict[str, clients.DSSClient],
+        dss_map: Dict[str, infrastructure.DSSTestSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -298,7 +305,7 @@ class TestSteps:
         all_sub_1 = [sub for sub in self.context if sub.startswith("sub_1_")]
         all_dss = [primary_dss] + all_other_dss
         for dss in all_dss:
-            resp = dss_map[dss].get(f"/subscriptions?area={GEO_POLYGON_STRING}")
+            resp = dss_map[dss].get(f"/subscriptions?area={GEO_POLYGON_STRING}", scope=SCOPE_READ)
             assert (
                 resp.status_code == 200
             ), f"Expecting code 200, found {resp.status_code}"
@@ -314,7 +321,7 @@ class TestSteps:
 
     def testStep9(
         self,
-        dss_map: Dict[str, clients.DSSClient],
+        dss_map: Dict[str, infrastructure.DSSTestSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -345,6 +352,7 @@ class TestSteps:
                         "identification_service_area_url": "https://example.com/uss/identification_service_area"
                     },
                 },
+                scope=SCOPE_READ
             )
             assert resp.status_code == 200, f"Failed to Insert Subscription to {dss}"
             data = resp.json()
@@ -361,7 +369,7 @@ class TestSteps:
 
 
     def testStep10(
-        self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
     ) -> None:
         """ISA creation triggers subscription notification requests"""
 
@@ -380,6 +388,7 @@ class TestSteps:
                 },
                 "flights_url": "https://example.com/uss/flights",
             },
+            scope=SCOPE_WRITE
         )
         assert (
             resp.status_code == 200
@@ -404,14 +413,14 @@ class TestSteps:
         )
 
     def testStep11(
-        self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
     ) -> None:
         """ISA deletion triggers subscription notification requests"""
         isa_2_uuid = self.context["isa_2_uuid"].uuid
         version = self.context[isa_2_uuid].uuid
         resp = dss_map[primary_dss].delete(
-            f"/identification_service_areas/{isa_2_uuid}/{version}"
-        )
+            f"/identification_service_areas/{isa_2_uuid}/{version}",
+            scope=SCOPE_WRITE)
         assert (
             resp.status_code == 200
         ), f"Failed to delete ISA to {primary_dss}. Error: {resp.json()['error']}"
@@ -429,7 +438,7 @@ class TestSteps:
         ), f"{primary_dss} returned too few Subscriptions, missing: {missing_subs}"
 
     def testStep12(
-        self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
     ) -> None:
         """Expired Subscriptions don’t trigger subscription notification requests"""
         time.sleep(SHORT_WAIT_SEC)
@@ -448,6 +457,7 @@ class TestSteps:
                 },
                 "flights_url": "https://example.com/uss/flights",
             },
+            scope=SCOPE_WRITE
         )
         assert (
             resp.status_code == 200
@@ -469,7 +479,7 @@ class TestSteps:
 
     def testStep13(
         self,
-        dss_map: Dict[str, clients.DSSClient],
+        dss_map: Dict[str, infrastructure.DSSTestSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -479,7 +489,7 @@ class TestSteps:
         for index in range(len(all_dss)):
             all_sub_2.add(self.context[f"sub_2_{index}_uuid"].uuid)
         for index, dss in enumerate(all_dss):
-            resp = dss_map[dss].get(f"/subscriptions?area={GEO_POLYGON_STRING}")
+            resp = dss_map[dss].get(f"/subscriptions?area={GEO_POLYGON_STRING}", scope=SCOPE_READ)
             assert resp.status_code == 200, f"{dss} failed to get SUB_2 by area"
 
             returned_subs = set([x["id"] for x in resp.json()["subscriptions"]])
@@ -491,7 +501,7 @@ class TestSteps:
 
     def testStep14(
         self,
-        dss_map: Dict[str, clients.DSSClient],
+        dss_map: Dict[str, infrastructure.DSSTestSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -499,21 +509,21 @@ class TestSteps:
         all_dss = [primary_dss] + all_other_dss
         for index, dss in enumerate(all_dss):
             sub_2_uuid = self.context[f"sub_2_{index}_uuid"].uuid
-            resp = dss_map[dss].get(f"/subscriptions/{sub_2_uuid}")
+            resp = dss_map[dss].get(f"/subscriptions/{sub_2_uuid}", scope=SCOPE_READ)
             assert (
                 resp.status_code == 404
             ), f"Expecting code 404, found {resp.status_code}"
 
     def testStep15(
-        self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
     ) -> None:
         """ISA deletion does not trigger subscription
         notification requests for expired Subscriptions"""
         isa_3_uuid = self.context["isa_3_uuid"].uuid
         version = self.context[isa_3_uuid].uuid
         resp = dss_map[primary_dss].delete(
-            f"/identification_service_areas/{isa_3_uuid}/{version}"
-        )
+            f"/identification_service_areas/{isa_3_uuid}/{version}",
+            scope=SCOPE_WRITE)
         assert resp.status_code == 200, f"Failed to delete ISA_3 from {primary_dss}"
 
         all_sub_2 = [sub for sub in self.context if sub.startswith("sub_2_")]
@@ -526,7 +536,7 @@ class TestSteps:
 
     def testStep16(
         self,
-        dss_map: Dict[str, clients.DSSClient],
+        dss_map: Dict[str, infrastructure.DSSTestSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -550,6 +560,7 @@ class TestSteps:
                         "identification_service_area_url": "https://example.com/uss/identification_service_area"
                     },
                 },
+                scope=SCOPE_READ
             )
             assert resp.status_code == 200, f"Failed to Insert Subscription to {dss}"
             data = resp.json()
@@ -565,7 +576,7 @@ class TestSteps:
             )
 
     def testStep17(
-        self, dss_map: Dict[str, clients.DSSClient], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
     ) -> None:
         """Clean up SUBS_3"""
         all_sub_3 = set()
@@ -574,5 +585,5 @@ class TestSteps:
                 all_sub_3.add(entity.uuid)
         for sub_3_uuid in all_sub_3:
             version = self.context[sub_3_uuid].uuid
-            resp = dss_map[primary_dss].delete(f"/subscriptions/{sub_3_uuid}/{version}")
+            resp = dss_map[primary_dss].delete(f"/subscriptions/{sub_3_uuid}/{version}", scope=SCOPE_READ)
             assert resp.status_code == 200, "Failed to delete SUB_3 from Primary DSS"
