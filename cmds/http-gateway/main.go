@@ -7,7 +7,10 @@ import (
 	"io"
 	"net/http"
 	"net/textproto"
+	"os"
+	"os/signal"
 	"reflect"
+	"syscall"
 	"time"
 
 	"cloud.google.com/go/profiler"
@@ -37,7 +40,7 @@ var (
 
 // RunHTTPProxy starts the HTTP proxy for the DSS gRPC service on ctx, listening
 // on address, proxying to endpoint.
-func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
+func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint string) error {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger).With(
 		zap.String("address", address), zap.String("endpoint", endpoint),
 	)
@@ -95,8 +98,32 @@ func RunHTTPProxy(ctx context.Context, address, endpoint string) error {
 
 	logger.Info("build", zap.Any("description", build.Describe()))
 
+	signals := make(chan os.Signal)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(signals)
+
+	server := &http.Server{
+		Addr:    address,
+		Handler: handler,
+	}
+
+	go func() {
+		defer server.Shutdown(context.Background())
+
+		for {
+			select {
+			case <-ctx.Done():
+				logger.Info("stopping server due to context having been canceled")
+				return
+			case s := <-signals:
+				logger.Info("received OS signal", zap.Stringer("signal", s))
+				ctxCanceler()
+			}
+		}
+	}()
+
 	// Start HTTP server (and proxy calls to gRPC server endpoint)
-	return http.ListenAndServe(address, handler)
+	return server.ListenAndServe()
 }
 
 func myCodeToHTTPStatus(code codes.Code) int {
@@ -270,9 +297,10 @@ func handleForwardResponseTrailer(w http.ResponseWriter, md runtime.ServerMetada
 func main() {
 	flag.Parse()
 	var (
-		ctx    = context.Background()
-		logger = logging.WithValuesFromContext(ctx, logging.Logger)
+		ctx, cancel = context.WithCancel(context.Background())
+		logger      = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
+	defer cancel()
 
 	if *profServiceName != "" {
 		err := profiler.Start(
@@ -283,9 +311,11 @@ func main() {
 		}
 	}
 
-	if err := RunHTTPProxy(ctx, *address, *grpcBackend); err != nil {
+	switch err := RunHTTPProxy(ctx, cancel, *address, *grpcBackend); err {
+	case nil, context.Canceled, http.ErrServerClosed:
+		logger.Info("Shutting down gracefully")
+	default:
 		logger.Panic("Failed to execute service", zap.Error(err))
 	}
 
-	logger.Info("Shutting down gracefully")
 }
