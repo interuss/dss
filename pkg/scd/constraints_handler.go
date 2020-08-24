@@ -39,8 +39,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		case err != nil:
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
 		case old.Owner != owner:
-			return stacktrace.Propagate(
-				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Constraint is owned by different client"),
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 				"Constraint owned by %s, but %s attempted to delete", old.Owner, owner)
 		}
 
@@ -212,13 +211,11 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		}
 		if old != nil {
 			if old.Owner != owner {
-				return stacktrace.Propagate(
-					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Constraint is owned by different client"),
+				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 					"Constraint owned by %s, but %s attempted to modify", old.Owner, owner)
 			}
 			if old.Version != scdmodels.Version(params.OldVersion) {
-				return stacktrace.Propagate(
-					stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d is not the current version", params.OldVersion),
+				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
 					"Current version is %d but client specified version %d", old.Version, params.OldVersion)
 			}
 		}

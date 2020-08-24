@@ -45,8 +45,7 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 
 		// Validate deletion request
 		if old.Owner != owner {
-			return stacktrace.Propagate(
-				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client"),
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 				"Operation owned by %s, but %s attempted to delete", old.Owner, owner)
 		}
 
@@ -318,13 +317,11 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		}
 		if old != nil {
 			if old.Owner != owner {
-				return stacktrace.Propagate(
-					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Operation is owned by different client"),
+				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 					"Operation owned by %s, but %s attempted to modify", old.Owner, owner)
 			}
 			if old.Version != scdmodels.Version(params.OldVersion) {
-				return stacktrace.Propagate(
-					stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d is not the current version", params.OldVersion),
+				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
 					"Current version is %d but client specified version %d", old.Version, params.OldVersion)
 			}
 		} else {
