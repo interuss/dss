@@ -77,11 +77,7 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
-		if writer.Valid {
-			s.Writer = writer.String
-		} else {
-			s.Writer = ""
-		}
+		s.Writer = writer.String
 		s.SetCells(cids)
 		payload = append(payload, s)
 	}

@@ -73,11 +73,7 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning ISA row")
 		}
-		if writer.Valid {
-			i.Writer = writer.String
-		} else {
-			i.Writer = ""
-		}
+		i.Writer = writer.String
 		i.SetCells(cids)
 		payload = append(payload, i)
 	}
