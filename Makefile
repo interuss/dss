@@ -41,6 +41,7 @@ format:
 lint:
 	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
 	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all  -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
+	find . -name '*.sh' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
 
 pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \

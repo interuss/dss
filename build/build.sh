@@ -8,13 +8,13 @@
 set -e
 
 OS=$(uname)
-if [[ $OS == "Darwin" ]]; then
+if [[ "$OS" == "Darwin" ]]; then
 	# OSX uses BSD readlink
-	BASEDIR="$(dirname $0)/.."
+	BASEDIR="$(dirname "$0")/.."
 else
 	BASEDIR=$(readlink -e "$(dirname "$0")/..")
 fi
-cd ${BASEDIR}
+cd "${BASEDIR}"
 
 VERSION=$(date -u +%Y-%m-%d)-$(bash scripts/git/commit.sh)
 
@@ -30,22 +30,22 @@ if [[ -z "${DOCKER_URL}" ]]; then
 
   echo "DOCKER_URL environment variable was not set; built images to interuss-local/dss and interuss-local/dummy-oauth"
 else
-  echo "Building image $DOCKER_URL/dss:$VERSION"
-  docker image build . -t $DOCKER_URL/dss:$VERSION
+  echo "Building image ${DOCKER_URL}/dss:${VERSION}"
+  docker image build . -t "${DOCKER_URL}/dss:${VERSION}"
 
-  echo "Pushing docker image $DOCKER_URL/dss:$VERSION..."
-  docker image push $DOCKER_URL/dss:$VERSION
+  echo "Pushing docker image ${DOCKER_URL}/dss:${VERSION}..."
+  docker image push "${DOCKER_URL}/dss:${VERSION}"
 
-  echo "Built and pushed docker image $DOCKER_URL/dss:$VERSION"
+  echo "Built and pushed docker image ${DOCKER_URL}/dss:${VERSION}"
 
-  echo "Building image $DOCKER_URL/db-manager:$VERSION"
-  docker image build . --file cmds/db-manager/Dockerfile -t $DOCKER_URL/db-manager:$VERSION
+  echo "Building image ${DOCKER_URL}/db-manager:${VERSION}"
+  docker image build . --file cmds/db-manager/Dockerfile -t "${DOCKER_URL}/db-manager:${VERSION}"
 
-  echo "Pushing docker image $DOCKER_URL/db-manager:$VERSION..."
-  docker image push $DOCKER_URL/db-manager:$VERSION
+  echo "Pushing docker image ${DOCKER_URL}/db-manager:${VERSION}..."
+  docker image push "${DOCKER_URL}/db-manager:${VERSION}"
 
-  echo "Built and pushed docker image $DOCKER_URL/db-manager:$VERSION"
+  echo "Built and pushed docker image ${DOCKER_URL}/db-manager:${VERSION}"
 
-  echo "VAR_DOCKER_IMAGE_NAME: $DOCKER_URL/dss:$VERSION"
-  echo "VAR_SCHEMA_MANAGER_IMAGE_NAME: $DOCKER_URL/db-manager:$VERSION"
+  echo "VAR_DOCKER_IMAGE_NAME: ${DOCKER_URL}/dss:${VERSION}"
+  echo "VAR_SCHEMA_MANAGER_IMAGE_NAME: ${DOCKER_URL}/db-manager:${VERSION}"
 fi
