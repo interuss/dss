@@ -4,13 +4,13 @@ set -eo pipefail
 
 echo "Re/Create e2e_test_result file"
 RESULTFILE="$(pwd)/e2e_test_result"
-touch $RESULTFILE
-cat /dev/null > $RESULTFILE
+touch "${RESULTFILE}"
+cat /dev/null > "${RESULTFILE}"
 
 OS=$(uname)
 if [[ $OS == "Darwin" ]]; then
 	# OSX uses BSD readlink
-	BASEDIR="$(dirname $0)/.."
+	BASEDIR="$(dirname "$0")/.."
 else
 	BASEDIR=$(readlink -e "$(dirname "$0")/..")
 fi
@@ -73,7 +73,7 @@ sleep 1
 echo "Bootstrapping RID Database tables"
 docker run --rm --name rid-db-manager \
 	--link dss-crdb-for-debugging:crdb \
-	-v $(pwd)/build/deploy/db_schemas/defaultdb:/db-schemas/defaultdb \
+	-v "$(pwd)/build/deploy/db_schemas/defaultdb:/db-schemas/defaultdb" \
 	local-db-manager \
 	--schemas_dir db-schemas/defaultdb \
 	--db_version 3.1.0 \
@@ -83,7 +83,7 @@ sleep 1
 echo "Bootstrapping SCD Database tables"
 docker run --rm --name scd-db-manager \
 	--link dss-crdb-for-debugging:crdb \
-	-v $(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd \
+	-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
 	local-db-manager \
 	--schemas_dir db-schemas/scd \
 	--db_version 1.0.0 \
@@ -97,7 +97,7 @@ docker rm -f grpc-backend-for-testing &> /dev/null || echo "No grpc backend to c
 echo "Starting grpc backend on :8081"
 docker run -d --name grpc-backend-for-testing \
 	--link dss-crdb-for-debugging:crdb \
-	-v $(pwd)/build/test-certs/auth2.pem:/app/test.crt \
+	-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
 	local-interuss-dss-image \
 	grpc-backend \
 	--cockroach_host crdb \
@@ -132,7 +132,7 @@ docker rm -f dummy-oauth-for-testing &> /dev/null || echo "No dummy oauth to cle
 
 echo "Starting mock oauth server on :8085"
 docker run -d --name dummy-oauth-for-testing -p 8085:8085 \
-	-v $(pwd)/build/test-certs/auth2.key:/app/test.key \
+	-v "$(pwd)/build/test-certs/auth2.key:/app/test.key" \
 	local-dummy-oauth \
 	-private_key_file /app/test.key
 
@@ -144,9 +144,9 @@ docker build -q --rm -f monitoring/prober/Dockerfile monitoring -t e2e-test
 echo "Finally Begin Testing"
 docker run --link dummy-oauth-for-testing:oauth \
 	--link http-gateway-for-testing:local-gateway \
-	-v $RESULTFILE:/app/test_result \
+	-v "${RESULTFILE}:/app/test_result" \
 	e2e-test \
-	${1:-.} \
+	"${1:-.}" \
 	--junitxml=/app/test_result \
 	--dss-endpoint http://local-gateway:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
