@@ -1,11 +1,12 @@
 #!/bin/bash
 
+set -eo pipefail
+
 # This script will verify basic functionality of a locally-deployed standalone
 # DSS instance using any of the deployment method described in
 # standalone_instance.md.
 
-jq --version > /dev/null
-if [ $? -ne 0 ]; then
+if jq --version > /dev/null; then
   echo "This script requires the jq utility.  On Debian Linux, install with"
   echo "  sudo apt-get install jq"
   echo "With homebrew, install with"
@@ -14,14 +15,14 @@ if [ $? -ne 0 ]; then
 fi
 
 # Retrieve token from dummy OAuth server
-export ACCESS_TOKEN=`curl --silent -X POST \
+ACCESS_TOKEN=$(curl --silent -X POST \
   "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost" \
-  | jq -r '.access_token'`
+  | jq -r '.access_token')
 
 echo "DSS response to [SCD] PUT Subscriptions query:"
 echo "============="
-export TIMESTAMP_NOW=`python -c 'from datetime import datetime; print((datetime.utcnow()).isoformat() + "Z")'`
-export TIMESTAMP_LATER=`python -c 'from datetime import datetime, timedelta; print((datetime.utcnow() + timedelta(minutes=5)).isoformat() + "Z")'`
+TIMESTAMP_NOW=$(python -c 'from datetime import datetime; print((datetime.utcnow()).isoformat() + "Z")')
+TIMESTAMP_LATER=$(python -c 'from datetime import datetime, timedelta; print((datetime.utcnow() + timedelta(minutes=5)).isoformat() + "Z")')
 curl --silent -X PUT \
   "http://localhost:8082/dss/v1/subscriptions/b76c1049-94e3-47e5-900d-94e4004a7188" \
   -H "Authorization: Bearer ${ACCESS_TOKEN}" \

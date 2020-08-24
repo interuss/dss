@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"cloud.google.com/go/profiler"
@@ -125,7 +128,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 
 // RunGRPCServer starts the example gRPC service.
 // "network" and "address" are passed to net.Listen.
-func RunGRPCServer(ctx context.Context, address string, locality string) error {
+func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, locality string) error {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
 	if len(*jwtAudiences) == 0 {
@@ -138,11 +141,8 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Error attempting to listen at %s", address)
 	}
-	defer func() {
-		if err := l.Close(); err != nil {
-			logger.Error("Failed to close listener", zap.String("address", address), zap.Error(err))
-		}
-	}()
+	// l does not need to be closed manually. Instead, the grpc Server instance owning
+	// l will close it on a graceful stop.
 
 	var (
 		ridServer *rid.Server
@@ -224,9 +224,23 @@ func RunGRPCServer(ctx context.Context, address string, locality string) error {
 		scdpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, scdServer)
 	}
 
+	signals := make(chan os.Signal)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(signals)
+
 	go func() {
 		defer s.GracefulStop()
-		<-ctx.Done()
+
+		for {
+			select {
+			case <-ctx.Done():
+				logger.Info("stopping server due to context having been canceled")
+				return
+			case s := <-signals:
+				logger.Info("received OS signal", zap.Stringer("signal", s))
+				ctxCanceler()
+			}
+		}
 	}()
 	return s.Serve(l)
 }
@@ -239,9 +253,11 @@ func main() {
 	}
 
 	var (
-		ctx    = context.Background()
-		logger = logging.WithValuesFromContext(ctx, logging.Logger)
+		ctx, cancel = context.WithCancel(context.Background())
+		logger      = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
+	defer cancel()
+
 	if *profServiceName != "" {
 		if err := profiler.Start(profiler.Config{
 			Service: *profServiceName,
@@ -250,7 +266,7 @@ func main() {
 		}
 	}
 
-	if err := RunGRPCServer(ctx, *address, *locality); err != nil {
+	if err := RunGRPCServer(ctx, cancel, *address, *locality); err != nil {
 		logger.Panic("Failed to execute service", zap.Error(err))
 	}
 
