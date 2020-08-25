@@ -144,17 +144,17 @@ a PR to that effect would be greatly appreciated.
     other clusters.
 
     -  If using Google Cloud, the HTTPS Gateway ingress needs to be created as
-       a "Global" IP address.  IPv4 is recommended as IPv6 has not yet been
-       tested.  Follow
+       a "Global" IP address, but the CRDB ingresses as "Regional" IP addresses.
+       IPv4 is recommended as IPv6 has not yet been tested.  Follow
        [these instructions](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#reserve_new_static)
        to reserve the static IP addresses.  Specifically (replacing
        CLUSTER_NAME as appropriate since static IP addresses are defined at
        the project level rather than the cluster level), e.g.:
        
-         -  `gcloud compute addresses create CLUSTER_NAME-gateway --global --ip-version IPV4`
-         -  `gcloud compute addresses create CLUSTER_NAME-crdb-0 --global --ip-version IPV4`
-         -  `gcloud compute addresses create CLUSTER_NAME-crdb-1 --global --ip-version IPV4`
-         -  `gcloud compute addresses create CLUSTER_NAME-crdb-2 --global --ip-version IPV4`
+         -  `gcloud compute addresses create ${CLUSTER_NAME}-gateway --global --ip-version IPV4`
+         -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-0 --region $REGION`
+         -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-1 --region $REGION`
+         -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-2 --region $REGION`
 
 1.  Link static IP addresses to DNS entries.
 
@@ -186,9 +186,10 @@ a PR to that effect would be greatly appreciated.
         spaces.
 
     1.  If you are joining existing cluster(s) you need their CA public cert,
-        which is concatenated with yours. Set `--ca-cert-to-join` to a `ca.crt`
-        file.  Reach out to existing operators to request their public cert and
-        node hostnames.  If not joining an existing cluster, omit this argument.
+        which will be concatenated with yours. Set `--ca-cert-to-join` to a
+        `ca.crt` file.  Reach out to existing operators to request their public
+        cert and node hostnames.  If not joining an existing cluster, omit this
+        argument.
 
     1.  Note: If you are creating multiple clusters at once, and joining them
         together you likely want to copy the nth cluster's `ca.crt` into the the
@@ -197,11 +198,14 @@ a PR to that effect would be greatly appreciated.
 1.  If joining an existing cluster, share ca.crt with the cluster(s) you are
     trying to join, and have them apply the new ca.crt, which now contains both
     your cluster and the original clusters public certs, to enable secure bi
-    -directional communication.
+    -directional communication.  The original cluster, upon receipt of the
+    combined ca.crt from the joining cluster, should:
     
-    - All of the original clusters must perform a rolling restart of their
-      CockroachDB pods to pick up the new certificates:
-      
+    - Overwrite its existing ca.crt with the new ca.crt provided by the joining
+      cluster.
+    - Upload the new ca.crt to its cluster using
+      `./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE`
+    - Restart their CockroachDB pods to recognize the updated ca.crt:
       `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
 
 1.  Ensure the Docker images are built according to the instructions in the
@@ -391,6 +395,23 @@ of this operational overhead.
 
 ## Tools
 
+### Grafana / Prometheus
+
+By default, an instance of Grafana and Prometheus are deployed along with the
+core DSS services; this combination allows you to view (Grafana) CRDB metrics
+(collected by Prometheus).  To view Grafana, first ensure that the appropriate
+cluster context is selected (`kubectl config current-context`).  Then, run the
+following command:
+
+```shell script
+kubectl get pod | grep grafana | awk '{print $1}' | xargs -I {} kubectl port-forward {} 3000
+```
+
+While that command is running, open a browser and navigate to
+[http://localhost:3000](http://localhost:3000).  The default username is `admin`
+with a default password of `admin`.  Click the magnifying glass on the left side
+to select a dashboard to view.
+
 ### Istio
 
 Istio provides better observability by using a sidecar proxy on every binary
@@ -424,6 +445,14 @@ You will need to change the values in the `prometheus` fields in your metadata t
 2. The scrape rules for this global instance will scrape other prometheus `/federate` endpoint and rather simple, please look at the [example configuration](https://prometheus.io/docs/prometheus/latest/federation/#configuring-federation).
 
 ## Troubleshooting
+
+### Check if the CockroachDB service is exposed
+
+Unless specified otherwise in a deployment configuration, CockroachDB
+communicates on port 26257.  To check whether this port is open from Mac or
+Linux, e.g.: `nc -zvw3 0.db.dss.your-region.your-domain.com 26257`.  Or, search
+for a "port checker" web page/app.  Port 26257 will be open on a working
+CockroachDB node.
 
 ### Accessing a CockroachDB SQL terminal
 
