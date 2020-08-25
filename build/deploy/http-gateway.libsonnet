@@ -72,6 +72,7 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
                 addr: ':' + metadata.gateway.port,
                 'gcp_prof_service_name': metadata.gateway.prof_http_name,
                 enable_scd: metadata.enableScd,
+                'trace-requests': metadata.gateway.traceRequests,
               },
               readinessProbe: {
                 httpGet: {

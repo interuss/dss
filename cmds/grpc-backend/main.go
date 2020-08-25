@@ -222,6 +222,8 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	if *enableSCD {
 		logger.Info("config", zap.Any("scd", "enabled"))
 		scdpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, scdServer)
+	} else {
+		logger.Info("config", zap.Any("scd", "disabled"))
 	}
 
 	signals := make(chan os.Signal)

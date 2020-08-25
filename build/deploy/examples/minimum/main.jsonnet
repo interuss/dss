@@ -21,6 +21,7 @@ local metadata = metadataBase {
     ipName: 'VAR_INGRESS_NAME',
     image: 'VAR_DOCKER_IMAGE_NAME',
     hostname: 'VAR_APP_HOSTNAME',
+    traceRequests: true,
   },
   backend+: {
     image: 'VAR_DOCKER_IMAGE_NAME',

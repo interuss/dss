@@ -199,14 +199,18 @@ a PR to that effect would be greatly appreciated.
     trying to join, and have them apply the new ca.crt, which now contains both
     your cluster and the original clusters public certs, to enable secure bi
     -directional communication.  The original cluster, upon receipt of the
-    combined ca.crt from the joining cluster, should:
+    combined ca.crt from the joining cluster, should perform the actions below.
+    While they are performing those actions, you may continue with the
+    instructions.
     
-    - Overwrite its existing ca.crt with the new ca.crt provided by the joining
-      cluster.
-    - Upload the new ca.crt to its cluster using
-      `./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE`
-    - Restart their CockroachDB pods to recognize the updated ca.crt:
-      `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
+    1. Overwrite its existing ca.crt with the new ca.crt provided by the joining
+       cluster.
+    1. Upload the new ca.crt to its cluster using
+       `./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE`
+    1. Restart their CockroachDB pods to recognize the updated ca.crt:
+       `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
+    1. Inform you when their CockroachDB pods have finished restarting
+       (typically around 10 minutes)
 
 1.  Ensure the Docker images are built according to the instructions in the
     [previous section](#docker-images).
@@ -331,6 +335,10 @@ a PR to that effect would be greatly appreciated.
 
 1.  Run `tk apply workspace/$CLUSTER_CONTEXT` to apply it to the
     cluster.
+    
+    - If you are joining an existing cluster, do not execute this command until
+      the existing cluster confirms that their CockroachDB pods have finished
+      their rolling restarts.
 
 1.  Wait for services to initialize.  Verify that basic services are functioning
     by navigating to https://your-gateway-domain.com/healthy.
@@ -355,7 +363,7 @@ a PR to that effect would be greatly appreciated.
 1.  If joining an existing cluster, share your CRDB node addresses with the
     operator of the existing cluster.  They will add these node addresses to
     JoinExisting where `VAR_CRDB_EXTERNAL_NODEn` is indicated in the minimum
-    example, and then perform a rolling restart of their CockroachDB pods:
+    example, and then perform another rolling restart of their CockroachDB pods:
     
     `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
 

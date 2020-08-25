@@ -26,4 +26,4 @@ else
   DC_OPTIONS=""
 fi
 
-docker-compose -f docker-compose_dss.yaml -p dss_sandbox "$DC_COMMAND" "$DC_OPTIONS"
+docker-compose -f docker-compose_dss.yaml -p dss_sandbox "$DC_COMMAND" ${DC_OPTIONS}

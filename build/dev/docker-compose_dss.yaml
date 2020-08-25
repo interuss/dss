@@ -24,7 +24,8 @@ services:
     volumes:
       - $PWD/../deploy/db_schemas/defaultdb:/db-schemas/defaultdb:ro
       - local-dss-data:/var/local-dss-data
-    entrypoint: /bin/sh -c "(ls /var/local-dss-data/rid_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/defaultdb --db_version 3.1.0 --cockroach_host local-dss-crdb && touch /var/local-dss-data/rid_bootstrap)"
+      - $PWD/startup:/startup:ro
+    entrypoint: /startup/rid_bootstrapper.sh
     depends_on:
       - local-dss-crdb
 
@@ -36,7 +37,8 @@ services:
     volumes:
       - $PWD/../deploy/db_schemas/scd:/db-schemas/scd:ro
       - local-dss-data:/var/local-dss-data
-    entrypoint: /bin/sh -c "(ls /var/local-dss-data/scd_bootstrap > /dev/null 2>&1) || (/usr/bin/db-manager --schemas_dir /db-schemas/scd --db_version 1.0.0 --cockroach_host local-dss-crdb && touch /var/local-dss-data/scd_bootstrap)"
+      - $PWD/startup:/startup:ro
+    entrypoint: /startup/scd_bootstrapper.sh
     depends_on:
       - local-dss-crdb
 
@@ -48,7 +50,8 @@ services:
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
       - local-dss-data:/var/local-dss-data
-    command: /bin/sh -c "while [ ! -e /var/local-dss-data/rid_bootstrap ] || [ ! -e /var/local-dss-data/scd_bootstrap ]; do echo \"waiting on DB bootstrapping...\"; sleep 1; done; echo \"DB bootstrap complete...\"; /usr/bin/grpc-backend -cockroach_host local-dss-crdb -public_key_files /var/test-certs/auth2.pem -reflect_api -log_format console -dump_requests -accepted_jwt_audiences localhost -enable_scd"
+      - $PWD/startup:/startup:ro
+    command: /startup/grpc_backend.sh
     expose:
       - 8081
     depends_on:
@@ -60,7 +63,11 @@ services:
       context: ../..
       dockerfile: Dockerfile
     image: interuss-local/dss
-    command: /usr/bin/http-gateway -grpc-backend local-dss-grpc-backend:8081 -addr :8082 -enable_scd
+    volumes:
+      - local-dss-data:/var/local-dss-data
+      - $PWD/startup:/startup:ro
+    command: /startup/http_gateway.sh
+
     ports:
       - "8082:8082"
     depends_on:

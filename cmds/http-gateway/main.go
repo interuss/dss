@@ -80,6 +80,8 @@ func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint str
 			return err
 		}
 		logger.Info("config", zap.Any("scd", "enabled"))
+	} else {
+		logger.Info("config", zap.Any("scd", "disabled"))
 	}
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -218,6 +220,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 			body, ok := s.Details()[0].(*scdpb.AirspaceConflictResponse)
 			if ok {
 				buf, marshalingErr = marshaler.Marshal(body)
+				grpclog.Errorf("Error %s was an AirspaceConflictResponse from the gRPC backend", errID)
 			} else {
 				marshalingErr = stacktrace.NewError("Unable to cast s.Details()[0] from %s to *scdpb.AirspaceConflictResponse", reflect.TypeOf(s.Details()[0]))
 			}
@@ -228,6 +231,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 		result, ok := s.Details()[0].(*auxpb.StandardErrorResponse)
 		if ok {
 			buf, marshalingErr = marshaler.Marshal(result)
+			grpclog.Errorf("Error %s was a StandardErrorResponse from the gRPC backend", errID)
 			handled = true
 		}
 	}
@@ -239,6 +243,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 			Code:    int32(s.Code()),
 			ErrorId: errID,
 		}
+		grpclog.Errorf("Error %s during a request did not include Details in Status; constructed code %d, message `%s`", errID, body.Code, body.Message)
 
 		buf, marshalingErr = marshaler.Marshal(body)
 		if marshalingErr != nil {

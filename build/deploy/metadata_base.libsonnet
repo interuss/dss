@@ -28,6 +28,7 @@
     image: error 'must specify image',
     prof_http_name: '',
     hostname: error 'must specify hostname',
+    traceRequests: false,
   },
   backend: {
     port: 8081,
