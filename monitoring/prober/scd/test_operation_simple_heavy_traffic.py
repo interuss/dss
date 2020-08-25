@@ -1,4 +1,4 @@
-"""Basic Operation tests with hundreds of operations created in the same area:
+"""Basic Operation tests with hundreds of operations created SEQUENTIALLY in the SAME area:
 
   - make sure operations do not exist with get or query
   - create 100 operations sequentially, with each covers non-overlapping area that are close to others
@@ -18,7 +18,7 @@ from monitoring.monitorlib.infrastructure import default_scope
 
 
 def _load_op_ids():
-  with open('./scd/resources/op_ids_100.json', 'r') as f:
+  with open('./scd/resources/op_ids_100_1.json', 'r') as f:
     return json.load(f)
 
 
