@@ -20,7 +20,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 	// Retrieve Constraint ID
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
 	}
 
 	// Retrieve ID of client making call
@@ -39,7 +39,8 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		case err != nil:
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
 		case old.Owner != owner:
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Constraint is owned by different client")
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
+				"Constraint owned by %s, but %s attempted to delete", old.Owner, owner)
 		}
 
 		// Find Subscriptions that may overlap the Constraint's Volume4D
@@ -104,7 +105,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConstraintReferenceRequest) (*scdpb.GetConstraintReferenceResponse, error) {
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
 	}
 
 	owner, ok := auth.OwnerFromContext(ctx)
@@ -152,7 +153,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
 	id, err := dssmodels.IDFromString(req.GetEntityuuid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
 	}
 
 	// Retrieve ID of client making call
@@ -210,10 +211,12 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		}
 		if old != nil {
 			if old.Owner != owner {
-				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Constraint is owned by different client")
+				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
+					"Constraint owned by %s, but %s attempted to modify", old.Owner, owner)
 			}
 			if old.Version != scdmodels.Version(params.OldVersion) {
-				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d is not the current version", params.OldVersion)
+				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
+					"Current version is %d but client specified version %d", old.Version, params.OldVersion)
 			}
 		}
 

@@ -99,7 +99,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 
 	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create strategic remote ID server")
+		return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
 	}
 
 	return &rid.Server{
@@ -153,7 +153,7 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	// Initialize remote ID
 	server, err := createRIDServer(ctx, locality, logger)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create strategic remote ID server")
+		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
 	ridServer = server
 

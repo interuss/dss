@@ -2,7 +2,6 @@ package scd
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/golang/geo/s2"
@@ -25,7 +24,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetSubscriptionid())
 	}
 
 	// Retrieve ID of client making call
@@ -101,9 +100,13 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 				return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Subscription %s already exists", subreq.ID.String())
 			case !subreq.Version.Matches(old.Version):
 				// The user wants to update a Subscription but the version doesn't match.
-				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %d is not current", subreq.Version)
+				return stacktrace.Propagate(
+					stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %d is not current", subreq.Version),
+					"Current version is %d but client specified version %d", old.Version, subreq.Version)
 			case old.Owner != subreq.Owner:
-				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
+				return stacktrace.Propagate(
+					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
+					"Subscription owned by %s, but %s attempted to modify", old.Owner, subreq.Owner)
 			}
 
 			subreq.NotificationIndex = old.NotificationIndex
@@ -117,7 +120,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 			return stacktrace.Propagate(err, "Could not upsert Subscription into repo")
 		}
 		if sub == nil {
-			return stacktrace.NewError(fmt.Sprintf("UpsertSubscription returned no Subscription for ID: %s", id))
+			return stacktrace.NewError("UpsertSubscription returned no Subscription for ID: %s", id)
 		}
 
 		// Find relevant Operations
@@ -203,7 +206,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetSubscriptionid())
 	}
 
 	// Retrieve ID of client making call
@@ -225,7 +228,9 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 
 		// Check if the client is authorized to view this Subscription
 		if owner != sub.Owner {
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
+				"Subscription owned by %s, but %s attempted to view", sub.Owner, owner)
 		}
 
 		// Get dependent Operations
@@ -313,8 +318,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	return response, nil
 }
 
-// DeleteSubscription deletes a single subscription for a given ID at the
-// specified version.
+// DeleteSubscription deletes a single subscription for a given ID.
 func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscriptionRequest) (*scdpb.DeleteSubscriptionResponse, error) {
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
@@ -338,7 +342,9 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 		case old == nil: // Return a 404 here.
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
 		case old.Owner != owner:
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
+				"Subscription owned by %s, but %s attempted to delete", old.Owner, owner)
 		}
 
 		// Get dependent Operations
@@ -347,7 +353,9 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 			return stacktrace.Propagate(err, "Could not find dependent Operations")
 		}
 		if len(dependentOps) > 0 {
-			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscriptions with dependent Operations may not be removed")
+			return stacktrace.Propagate(
+				stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscriptions with dependent Operations may not be removed"),
+				"Subscription had %d dependent Operations", len(dependentOps))
 		}
 
 		// Delete Subscription in repo
