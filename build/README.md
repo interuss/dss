@@ -186,9 +186,10 @@ a PR to that effect would be greatly appreciated.
         spaces.
 
     1.  If you are joining existing cluster(s) you need their CA public cert,
-        which is concatenated with yours. Set `--ca-cert-to-join` to a `ca.crt`
-        file.  Reach out to existing operators to request their public cert and
-        node hostnames.  If not joining an existing cluster, omit this argument.
+        which will be concatenated with yours. Set `--ca-cert-to-join` to a
+        `ca.crt` file.  Reach out to existing operators to request their public
+        cert and node hostnames.  If not joining an existing cluster, omit this
+        argument.
 
     1.  Note: If you are creating multiple clusters at once, and joining them
         together you likely want to copy the nth cluster's `ca.crt` into the the
@@ -197,11 +198,14 @@ a PR to that effect would be greatly appreciated.
 1.  If joining an existing cluster, share ca.crt with the cluster(s) you are
     trying to join, and have them apply the new ca.crt, which now contains both
     your cluster and the original clusters public certs, to enable secure bi
-    -directional communication.
+    -directional communication.  The original cluster, upon receipt of the
+    combined ca.crt from the joining cluster, should:
     
-    - All of the original clusters must perform a rolling restart of their
-      CockroachDB pods to pick up the new certificates:
-      
+    - Overwrite its existing ca.crt with the new ca.crt provided by the joining
+      cluster.
+    - Upload the new ca.crt to its cluster using
+      `./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE`
+    - Restart their CockroachDB pods to recognize the updated ca.crt:
       `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
 
 1.  Ensure the Docker images are built according to the instructions in the
