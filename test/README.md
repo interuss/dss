@@ -44,6 +44,6 @@ make lint
 ```
 
 ## Interoperability tests
-The [interoperability folder](interoperability) contains a test suite that
+The [interoperability folder](../monitoring/interoperability) contains a test suite that
 verifies interoperability between two DSS instances in the same region; see
-[the README](interoperability/README.md) for more information.
+[the README](../monitoring/interoperability/README.md) for more information.

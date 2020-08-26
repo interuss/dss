@@ -51,7 +51,7 @@ class DSSTestSession(requests.Session):
   def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
     super().__init__()
 
-    self._prefix_url = prefix_url
+    self._prefix_url = prefix_url[0:-1] if prefix_url[-1] == '/' else prefix_url
     self.auth_adapter = auth_adapter
     self.default_scopes = None
 
