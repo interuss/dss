@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -eo pipefail
 
 # This script will verify basic functionality of a locally-deployed standalone
 # DSS instance using any of the deployment methods described in

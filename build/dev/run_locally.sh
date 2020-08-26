@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -eo pipefail
 
 # This script will deploy a standalone DSS instance with docker-compose.  See
 # standalone_instance.md for more information.

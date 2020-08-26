@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 DIR_IN="$(cd "$(dirname "$1")" || exit; pwd -P)/$(basename "$1")"
 DIR_OUT="$(cd "$(dirname "$2")" || exit; pwd -P)/$(basename "$2")"
