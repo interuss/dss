@@ -209,7 +209,7 @@ func TestBasicTxn(t *testing.T) {
 			Queryable: tx1,
 			logger:    logging.Logger,
 		},
-		subscriptionRepo: &subscriptionRepo{
+		Subscription: &subscriptionRepo{
 			Queryable: tx1,
 			logger:    logging.Logger,
 			clock:     DefaultClock,
@@ -223,7 +223,7 @@ func TestBasicTxn(t *testing.T) {
 			Queryable: tx2,
 			logger:    logging.Logger,
 		},
-		subscriptionRepo: &subscriptionRepo{
+		Subscription: &subscriptionRepo{
 			Queryable: tx2,
 			logger:    logging.Logger,
 			clock:     DefaultClock,
