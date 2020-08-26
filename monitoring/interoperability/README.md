@@ -12,9 +12,9 @@ InterUSS Project implementation.
 From the [`root folder of this repo`](../..) folder:
 ```shell script
 docker run --rm $(docker build -q -f monitoring/interoperability/Dockerfile monitoring) \
+    --auth <SPEC> \
     --dss https://example.com/v1/dss \
-    --dss https://example2.com/v1/dss \
-    --auth <SPEC>
+    --dss https://example2.com/v1/dss
 ```
 
 The auth SPEC defines how to obtain access tokens to access the DSS instances.
