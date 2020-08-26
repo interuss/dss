@@ -65,6 +65,41 @@ def test_create_isa(session):
   assert re.match(r'[a-z0-9]{10,}$', data['service_area']['version'])
   assert 'subscribers' in data
 
+@default_scope(SCOPE_WRITE)
+def test_update_isa(session):
+  time_start = datetime.datetime.utcnow()
+  time_end = time_start + datetime.timedelta(minutes=120)
+  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
+  version = resp.json()['service_area']['version']
+
+  resp = session.put(
+    '/identification_service_areas/{}/{}'.format(ISA_ID, version),
+      json={
+          'extents': {
+              'spatial_volume': {
+                  'footprint': {
+                      'vertices': common.VERTICES,
+                  },
+                  'altitude_lo': 20,
+                  'altitude_hi': 400,
+              },
+              'time_start': time_start.strftime(common.DATE_FORMAT),
+              'time_end': time_end.strftime(common.DATE_FORMAT),
+          },
+          'flights_url': 'https://example.com/dss',
+      })
+  assert resp.status_code == 200
+
+  data = resp.json()
+  assert data['service_area']['id'] == ISA_ID
+  assert data['service_area']['flights_url'] == 'https://example.com/dss'
+  assert data['service_area']['time_start'] == time_start.strftime(
+      common.DATE_FORMAT)
+  assert data['service_area']['time_end'] == time_end.strftime(
+      common.DATE_FORMAT)
+  assert re.match(r'[a-z0-9]{10,}$', data['service_area']['version'])
+  assert 'subscribers' in data
+
 
 @default_scope(SCOPE_READ)
 def test_get_isa_by_id(session):
