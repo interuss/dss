@@ -2,11 +2,11 @@
 
 import datetime
 import uuid
-from locust import User, task, between
+from locust import HttpUser, task, between
 from monitoring.monitorlib import auth
-from monitoring.prober import common
+from monitoring.prober.rid import common
 
-class ISA(User):
+class ISA(HttpUser):
   wait_time = between(1, 5)
   oauth = None
 
@@ -15,8 +15,8 @@ class ISA(User):
     time_start = datetime.datetime.utcnow()
     time_end = time_start + datetime.timedelta(minutes=60)
 
-    resp = self.client.put(
-      '/identification_service_areas/{}'.format(str(uuid.uuid4())),
+    self.client.put(
+      '/v1/dss/identification_service_areas/{}'.format(str(uuid.uuid4())),
       json={
           'extents': {
               'spatial_volume': {
@@ -31,8 +31,8 @@ class ISA(User):
           },
           'flights_url': 'https://example.com/dss',
         },
-      header=oauth.get_header(self.host, [common.SCOPE_READ, common.SCOPE_WRITE])
+      headers=self.oauth.get_headers(self.host, [common.SCOPE_READ, common.SCOPE_WRITE])
     )
 
   def on_start(self):
-    self.oauth = auth.DummyOAuth("localhost:5000/token", "fake_uss")
+    self.oauth = auth.DummyOAuth("http://localhost:8085/token", "fake_uss")
