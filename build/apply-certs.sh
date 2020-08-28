@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -eo pipefail
 
 if [ "$1" == "" ]; then
   echo "usage: ./apply-certs.sh <CLUSTER_CONTEXT> <NAMESPACE>"

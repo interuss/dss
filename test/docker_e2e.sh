@@ -155,8 +155,8 @@ docker run --link dummy-oauth-for-testing:oauth \
 
 echo "Cleaning up http-gateway container"
 docker stop http-gateway-for-testing > /dev/null
-test $(docker inspect http-gateway-for-testing --format='{{.State.ExitCode}}') = 0
+test "$(docker inspect http-gateway-for-testing --format='{{.State.ExitCode}}')" = 0
 
 echo "Cleaning up grpc-backend container"
 docker stop grpc-backend-for-testing > /dev/null
-test $(docker inspect grpc-backend-for-testing --format='{{.State.ExitCode}}') = 0
+test "$(docker inspect grpc-backend-for-testing --format='{{.State.ExitCode}}')" = 0

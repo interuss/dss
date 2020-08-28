@@ -26,10 +26,6 @@ const (
 	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
-var (
-	v310 = *semver.New("3.1.0")
-)
-
 func NewISARepo(ctx context.Context, db dssql.Queryable, dbVersion semver.Version, logger *zap.Logger) repos.ISA {
 	if dbVersion.Compare(v310) >= 0 {
 		return &isaRepo{
@@ -77,11 +73,7 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning ISA row")
 		}
-		if writer.Valid {
-			i.Writer = writer.String
-		} else {
-			i.Writer = ""
-		}
+		i.Writer = writer.String
 		i.SetCells(cids)
 		payload = append(payload, i)
 	}

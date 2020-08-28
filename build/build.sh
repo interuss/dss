@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script builds InterUSS docker images and may be run from any working
 # directory.  If run without a DOCKER_URL environment variable, it will just
 # build images named interuss-local/*.  If DOCKER_URL is present, it will both
 # build the versioned dss image and push it to the DOCKER_URL remote.
 
-set -e
+set -eo pipefail
 
 OS=$(uname)
 if [[ "$OS" == "Darwin" ]]; then

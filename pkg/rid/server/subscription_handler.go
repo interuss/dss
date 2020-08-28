@@ -136,9 +136,10 @@ func (s *Server) CreateSubscription(
 	}
 
 	sub := &ridmodels.Subscription{
-		ID:    id,
-		Owner: owner,
-		URL:   params.Callbacks.IdentificationServiceAreaUrl,
+		ID:     id,
+		Owner:  owner,
+		URL:    params.Callbacks.IdentificationServiceAreaUrl,
+		Writer: s.Locality,
 	}
 
 	if err := sub.SetExtents(params.Extents); err != nil {
@@ -214,6 +215,7 @@ func (s *Server) UpdateSubscription(
 		Owner:   owner,
 		URL:     params.Callbacks.IdentificationServiceAreaUrl,
 		Version: version,
+		Writer:  s.Locality,
 	}
 
 	if err := sub.SetExtents(params.Extents); err != nil {

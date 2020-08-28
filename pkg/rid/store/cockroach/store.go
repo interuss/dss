@@ -33,11 +33,13 @@ var (
 
 	// DatabaseName is the name of database storing remote ID data.
 	DatabaseName = "defaultdb"
+
+	v310 = *semver.New("3.1.0")
 )
 
 type repo struct {
 	repos.ISA
-	*subscriptionRepo
+	repos.Subscription
 }
 
 // Store is an implementation of store.Store using Cockroach DB as its backend
@@ -92,12 +94,8 @@ func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	}
 
 	return &repo{
-		ISA: NewISARepo(ctx, s.db, *storeVersion, logger),
-		subscriptionRepo: &subscriptionRepo{
-			Queryable: s.db,
-			logger:    logger,
-			clock:     s.clock,
-		},
+		ISA:          NewISARepo(ctx, s.db, *storeVersion, logger),
+		Subscription: NewISASubscriptionRepo(ctx, s.db, *storeVersion, logger, s.clock),
 	}, nil
 }
 
@@ -120,12 +118,8 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
-			ISA: NewISARepo(ctx, tx, *storeVersion, logger),
-			subscriptionRepo: &subscriptionRepo{
-				Queryable: tx,
-				logger:    logger,
-				clock:     s.clock,
-			},
+			ISA:          NewISARepo(ctx, tx, *storeVersion, logger),
+			Subscription: NewISASubscriptionRepo(ctx, tx, *storeVersion, logger, s.clock),
 		})
 	})
 }
