@@ -22,7 +22,7 @@ from .common import SCOPE_SC
 
 
 def _load_op_ids():
-  with open('./scd/resources/op_ids_100_2.json', 'r') as f:
+  with open('./scd/resources/op_ids_heavy_traffic_concurrent.json', 'r') as f:
     return json.load(f)
 
 
@@ -178,33 +178,6 @@ def test_ensure_clean_workspace(scd_session):
 
 
 # Preconditions: None
-# Mutations: None
-@default_scope(SCOPE_SC)
-def test_ops_do_not_exist_get(scd_session):
-  for op_id in OP_IDS:
-    resp = scd_session.get('/operation_references/{}'.format(op_id))
-    assert resp.status_code == 404, resp.content
-
-
-# Preconditions: None
-# Mutations: None
-@default_scope(SCOPE_SC)
-def test_ops_do_not_exist_query(scd_session):
-  time_now = datetime.datetime.utcnow()
-  end_time = time_now + datetime.timedelta(hours=18)
-
-  for idx in range(len(OP_IDS)):
-    lat = _calculate_lat(idx)
-    resp = scd_session.post('/operation_references/query', json={
-      'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(lat, 178, 12000))
-    }, scope=SCOPE_SC)
-
-    assert resp.status_code == 200, resp.content
-    found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
-    assert not _intersection(OP_IDS, found_ids)
-
-
-# Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
 def test_create_ops_concurrent(scd_session):
   assert len(ovn_map) == 0
@@ -339,27 +312,3 @@ def test_delete_op_concurrent(scd_session):
 
   for resp in op_resp_map.values():
     assert resp.status_code == 200, resp.content
-
-
-# Preconditions: None
-# Mutations: None
-@default_scope(SCOPE_SC)
-def test_ops_do_not_exist_get(scd_session):
-  for op_id in OP_IDS:
-    resp = scd_session.get('/operation_references/{}'.format(op_id))
-    assert resp.status_code == 404, resp.content
-
-
-# Preconditions: None
-# Mutations: None
-@default_scope(SCOPE_SC)
-def test_ops_do_not_exist_query(scd_session):
-  for idx in range(len(OP_IDS)):
-    lat = _calculate_lat(idx)
-    resp = scd_session.post('/operation_references/query', json={
-      'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(lat, 178, 12000))
-    }, scope=SCOPE_SC)
-
-    assert resp.status_code == 200, resp.content
-    found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
-    assert not _intersection(OP_IDS, found_ids)

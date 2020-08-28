@@ -18,7 +18,7 @@ from monitoring.monitorlib.infrastructure import default_scope
 
 
 def _load_op_ids():
-  with open('./scd/resources/op_ids_100_1.json', 'r') as f:
+  with open('./scd/resources/op_ids_heavy_traffic_sequential.json', 'r') as f:
     return json.load(f)
 
 
