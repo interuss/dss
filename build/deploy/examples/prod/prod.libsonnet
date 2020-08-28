@@ -16,6 +16,7 @@ local metadataBase = import '../../../deploy/metadata_base.libsonnet';
     },
     backend+: {
       image: 'your_image_name',
+      traceRequests: false,
     },
   },
 
