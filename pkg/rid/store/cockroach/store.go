@@ -48,20 +48,27 @@ type repo struct {
 // TODO: Add the SCD interfaces here, and collapse this store with the
 // outer pkg/cockroach
 type Store struct {
-	db     *cockroach.DB
-	logger *zap.Logger
-	clock  clockwork.Clock
+	db      *cockroach.DB
+	logger  *zap.Logger
+	clock   clockwork.Clock
+	version *semver.Version
 }
 
 // NewStore returns a Store instance connected to a cockroach instance via db.
 func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store, error) {
-	store := &Store{
-		db:     db,
-		logger: logger,
-		clock:  DefaultClock,
+	vs, err := db.GetVersion(ctx, DatabaseName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
 	}
 
-	if err := store.CheckCurrentMajorSchemaVersion(ctx); err != nil {
+	store := &Store{
+		db:      db,
+		logger:  logger,
+		clock:   DefaultClock,
+		version: vs,
+	}
+
+	if err := store.checkCurrentMajorSchemaVersion(*vs); err != nil {
 		return nil, stacktrace.Propagate(err, "Remote ID schema version check failed")
 	}
 
@@ -69,12 +76,9 @@ func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store
 }
 
 // CheckCurrentMajorSchemaVersion checks that store supports the current major schema version.
-func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
-	vs, err := s.GetVersion(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
-	}
-	if vs == cockroach.UnknownVersion {
+func (s *Store) checkCurrentMajorSchemaVersion(vs semver.Version) error {
+
+	if vs == *cockroach.UnknownVersion {
 		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
@@ -152,5 +156,8 @@ func (s *Store) CleanUp(ctx context.Context) error {
 // GetVersion returns the Version string for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
+	if s.version != nil {
+		return s.version, nil
+	}
 	return s.db.GetVersion(ctx, DatabaseName)
 }
