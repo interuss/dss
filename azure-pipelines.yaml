@@ -9,7 +9,7 @@ jobs:
     strategy:
       parallel: 1
     pool:
-      vmImage: "ubuntu-16.04"
+      vmImage: "ubuntu-18.04"
     steps:
       - checkout: self
         clean: true
@@ -38,6 +38,28 @@ jobs:
           set -exo pipefail
           export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
           make && make test && make test-cockroach && make test-e2e
+        name: "build_and_test"
+        displayName: "build_and_test"
+  - job: "run_locally"
+    strategy:
+      parallel: 1
+    pool:
+      vmImage: "ubuntu-18.04"
+    steps:
+      - checkout: self
+        clean: true
+        lfs: true
+        submodules: recursive
+        persistCredentials: true
+      - task: GoTool@0
+        inputs:
+          version: '1.14'
+      - bash: |
+          set -exo pipefail
+          export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
+          make start-locally &
+          while ! nc -z localhost 8082; do sleep 0.1; done
+          make stop-locally
         name: "build_and_test"
         displayName: "build_and_test"
         
