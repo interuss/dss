@@ -55,10 +55,10 @@ jobs:
         inputs:
           version: '1.14'
       - bash: |
-          set -exo pipefail
+          set -eo pipefail
           export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
           make start-locally &
-          while ! nc -z localhost 8082; do sleep 0.1; done
+          while ! nc -z localhost 8082; do sleep 0.5; done
           make stop-locally
         name: "build_and_test"
         displayName: "build_and_test"
