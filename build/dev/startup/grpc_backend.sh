@@ -11,5 +11,5 @@
   -reflect_api \
   -log_format console \
   -dump_requests \
-  -accepted_jwt_audiences localhost \
+  -accepted_jwt_audiences localhost,local-dss-http-gateway \
   -enable_scd

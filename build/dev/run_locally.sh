@@ -23,9 +23,9 @@ cd "${BASEDIR}" || exit 1
 DC_COMMAND=${1:-up}
 
 if [[ "$DC_COMMAND" == "down" ]]; then
-  DC_OPTIONS="--volumes --remove-orphans"
+  DC_OPTIONS="--volumes --remove-orphans ${@:2}"
 else
-  DC_OPTIONS=""
+  DC_OPTIONS="${@:2}"
 fi
 
 docker-compose -f docker-compose_dss.yaml -p dss_sandbox "$DC_COMMAND" ${DC_OPTIONS}

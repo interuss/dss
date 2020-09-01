@@ -19,8 +19,7 @@ make test-cockroach
 
 ## Integration tests
 For tests that benefit from being run in a fully-constructed environment, the
-[`docker_e2e.sh`](docker_e2e.sh) script in this folder sets up a full
-environment and runs a set of tests in that environment.  Docker is the only
+`make` targets `start-locally`, `stop-locally` and `watch-locally` provide means to start, stop and watch a complete local test setup. Docker and `docker-compose` are the only
 prerequisite to running this end-to-end test on your local system.
 
 ### Running a subset of tests
@@ -32,7 +31,7 @@ simply add its name as the first argument to `docker_e2e.sh`.  For example:
 ```
 
 ### Examining gRPC backend logs
-After a `docker_e2e.sh` run, the gRPC backend logs are automatically captured
+After a `make test-e2e` run, the gRPC backend logs are automatically captured
 to [grpc-backend-for-testing.log](../grpc-backend-for-testing.log).
 
 ## Lint checks

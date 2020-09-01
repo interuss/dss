@@ -67,7 +67,6 @@ services:
       - local-dss-data:/var/local-dss-data
       - $PWD/startup:/startup:ro
     command: /startup/http_gateway.sh
-
     ports:
       - "8082:8082"
     depends_on:
@@ -81,6 +80,15 @@ services:
     command: -private_key_file /var/test-certs/auth2.key
     ports:
       - "8085:8085"
+
+  local-dss-e2e-tests:
+    build:
+      context: ../../monitoring
+      dockerfile: prober/Dockerfile
+    image: interuss-local/test-e2e
+    command: /bin/true
+    depends_on:
+      - local-dss-http-gateway
 
 volumes:
   local-dss-data:

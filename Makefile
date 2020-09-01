@@ -142,17 +142,26 @@ cleanup-test-cockroach:
 	@docker rm dss-crdb-for-testing > /dev/null 2>&1 || true
 
 .PHONY: test-e2e
-test-e2e:
-	test/docker_e2e.sh
+test-e2e: start-locally
+	true > "$(CURDIR)/e2e_test_result"
+	true > "$(CURDIR)/grpc-backend-for-testing.log"
+	true > "$(CURDIR)/http-gateway-for-testing.log"
+	sleep 10
+	build/dev/run_locally.sh run --rm -v "$(CURDIR)/e2e_test_result:/app/test_result" local-dss-e2e-tests . --junitxml=/app/test_result --dss-endpoint http://local-dss-http-gateway:8082 --rid-auth "DummyOAuth(http://local-dss-dummy-oauth:8085/token,sub=fake_uss)" --scd-auth1 "DummyOAuth(http://local-dss-dummy-oauth:8085/token,sub=fake_uss)" --scd-auth2 "DummyOAuth(http://local-dss-dummy-oauth:8085/token,sub=fake_uss2)"
+	build/dev/run_locally.sh logs -t --no-color local-dss-grpc-backend > "$(CURDIR)/grpc-backend-for-testing.log"
+	build/dev/run_locally.sh logs -t --no-color local-dss-http-gateway > "$(CURDIR)/http-gateway-for-testing.log"
 
 release: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
 
 release:
-	scripts/release.sh $(VERSION)
+		scripts/release.sh $(VERSION)
 
 start-locally:
 	build/dev/run_locally.sh build
-	build/dev/run_locally.sh up
+	build/dev/run_locally.sh up --detach
 
 stop-locally:
-	build/dev/run_locally.sh stop
+	build/dev/run_locally.sh down
+
+watch-locally:
+	build/dev/run_locally.sh logs -t -f
