@@ -146,7 +146,7 @@ test-e2e: start-locally
 	true > "$(CURDIR)/e2e_test_result"
 	true > "$(CURDIR)/grpc-backend-for-testing.log"
 	true > "$(CURDIR)/http-gateway-for-testing.log"
-	sleep 10
+	sleep 10 # This provides time for the system to come up.  TODO: Replace when health status is reliably available
 	build/dev/run_locally.sh run --rm -v "$(CURDIR)/e2e_test_result:/app/test_result" local-dss-e2e-tests . --junitxml=/app/test_result --dss-endpoint http://local-dss-http-gateway:8082 --rid-auth "DummyOAuth(http://local-dss-dummy-oauth:8085/token,sub=fake_uss)" --scd-auth1 "DummyOAuth(http://local-dss-dummy-oauth:8085/token,sub=fake_uss)" --scd-auth2 "DummyOAuth(http://local-dss-dummy-oauth:8085/token,sub=fake_uss2)"
 	build/dev/run_locally.sh logs -t --no-color local-dss-grpc-backend > "$(CURDIR)/grpc-backend-for-testing.log"
 	build/dev/run_locally.sh logs -t --no-color local-dss-http-gateway > "$(CURDIR)/http-gateway-for-testing.log"
@@ -159,6 +159,7 @@ release:
 start-locally:
 	build/dev/run_locally.sh build
 	build/dev/run_locally.sh up --detach
+	echo "Local DSS instance started; run 'make watch-locally' to view current status"
 
 stop-locally:
 	build/dev/run_locally.sh down
