@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 type (

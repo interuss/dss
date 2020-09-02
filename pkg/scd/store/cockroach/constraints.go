@@ -13,7 +13,7 @@ import (
 	dsssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/lib/pq"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 const (

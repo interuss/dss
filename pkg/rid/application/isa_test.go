@@ -11,7 +11,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )

@@ -2,7 +2,7 @@ package geo
 
 import (
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 var (

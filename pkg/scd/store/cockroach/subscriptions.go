@@ -12,7 +12,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/lib/pq"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 var (

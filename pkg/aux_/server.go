@@ -8,7 +8,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	ridserver "github.com/interuss/dss/pkg/rid/server"
 	"github.com/interuss/dss/pkg/version"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 // Server implements auxpb.DSSAuxService.

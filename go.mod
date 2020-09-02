@@ -3,8 +3,6 @@ module github.com/interuss/dss
 // This forked version of openapi2proto has limited support for Open API v3.
 replace github.com/NYTimes/openapi2proto => github.com/davidsansome/openapi2proto v0.2.3-0.20190826092301-b98d13b38dab
 
-replace github.com/palantir/stacktrace => github.com/interuss/stacktrace v0.0.0-20200827180054-b2e58cf48818
-
 go 1.14
 
 require (
@@ -21,7 +19,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.14.3
 	github.com/lib/pq v1.5.2
-	github.com/palantir/stacktrace v0.0.0-00010101000000-000000000000
+	github.com/interuss/stacktrace v0.0.0-20200827180054-b2e58cf48818
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0

@@ -22,7 +22,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

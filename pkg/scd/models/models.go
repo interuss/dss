@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 type (

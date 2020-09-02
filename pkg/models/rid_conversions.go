@@ -5,7 +5,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 // === RID -> Business ===
