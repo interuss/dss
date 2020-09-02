@@ -8,15 +8,12 @@ import logging
 from typing import Dict, Any, List, Callable, Iterable
 
 from monitoring.monitorlib import infrastructure
+from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE, DATE_FORMAT
 
 
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-
-SCOPE_READ = "dss.read.identification_service_areas"
-SCOPE_WRITE = "dss.write.identification_service_areas"
 
 VERTICES = [
     {"lng": 130.6205, "lat": -23.6558},

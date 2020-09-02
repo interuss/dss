@@ -17,8 +17,8 @@ import json
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from monitoring.monitorlib.infrastructure import default_scope
-from . import common
-from .common import SCOPE_SC
+from monitoring.monitorlib import scd
+from monitoring.monitorlib.scd import SCOPE_SC
 
 
 def _load_op_ids():
@@ -76,7 +76,7 @@ def _make_op_request_differ_in_2d(idx):
   time_end = time_start + datetime.timedelta(minutes=60)
   lat = _calculate_lat(idx)
 
-  vol4 = common.make_vol4(time_start, time_end, 0, 120, common.make_circle(lat, 178, 50))
+  vol4 = scd.make_vol4(time_start, time_end, 0, 120, scd.make_circle(lat, 178, 50))
   return _make_op_request_with_extents(vol4)
 
 
@@ -90,7 +90,7 @@ def _make_op_request_differ_in_altitude(idx):
   alt0 = delta * idx
   alt1 = alt0 + delta - 1
 
-  vol4 = common.make_vol4(time_start, time_end, alt0, alt1, common.make_circle(-56, 178, 50))
+  vol4 = scd.make_vol4(time_start, time_end, alt0, alt1, scd.make_circle(-56, 178, 50))
   return _make_op_request_with_extents(vol4)
 
 
@@ -102,7 +102,7 @@ def _make_op_request_differ_in_time(idx):
   time_start = datetime.datetime.utcnow() + datetime.timedelta(minutes=20) + datetime.timedelta(minutes=delta * idx)
   time_end = time_start + datetime.timedelta(minutes=delta - 1)
 
-  vol4 = common.make_vol4(time_start, time_end, 0, 120, common.make_circle(-56, 178, 50))
+  vol4 = scd.make_vol4(time_start, time_end, 0, 120, scd.make_circle(-56, 178, 50))
   return _make_op_request_with_extents(vol4)
 
 
@@ -132,7 +132,7 @@ def _get_operation(op_id, scd_session):
 def _query_operation(idx, scd_session):
   lat = _calculate_lat(idx)
   return scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(lat, 178, 12000))
+    'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
   }, scope=SCOPE_SC)
 
 
@@ -202,8 +202,8 @@ def test_create_ops_concurrent(scd_session):
     op = data['operation_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
-    assert common.iso8601_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
-    assert common.iso8601_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
+    assert scd.iso8601_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
+    assert scd.iso8601_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
     assert op['version'] == 1
     assert op['ovn']
     assert 'subscription_id' in op

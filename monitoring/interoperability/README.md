@@ -18,5 +18,5 @@ docker run --rm $(docker build -q -f monitoring/interoperability/Dockerfile moni
 ```
 
 The auth SPEC defines how to obtain access tokens to access the DSS instances.
-See [the prober documentation](../prober/README.md) for examples and more
+See [the auth spec documentation](../monitorlib/README.md#Auth_specs) for examples and more
 information.

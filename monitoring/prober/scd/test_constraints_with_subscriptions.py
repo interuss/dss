@@ -12,8 +12,8 @@ import datetime
 from typing import Dict
 
 from monitoring.monitorlib.infrastructure import default_scope
-from . import common
-from .common import SCOPE_CI, SCOPE_CM, SCOPE_SC
+from monitoring.monitorlib import scd
+from monitoring.monitorlib.scd import SCOPE_CI, SCOPE_CM, SCOPE_SC
 
 
 CONSTRAINT_BASE_URL_1 = 'https://example.com/con1/uss'
@@ -31,7 +31,7 @@ def _make_c1_request():
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
   return {
-    'extents': [common.make_vol4(time_start, time_end, 0, 120, common.make_circle(-12.00001, 33.99999, 50))],
+    'extents': [scd.make_vol4(time_start, time_end, 0, 120, scd.make_circle(-12.00001, 33.99999, 50))],
     'old_version': 0,
     'uss_base_url': CONSTRAINT_BASE_URL_1,
   }
@@ -41,7 +41,7 @@ def _make_sub_req(base_url: str, notify_ops: bool, notify_constraints: bool) -> 
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
   return {
-    "extents": common.make_vol4(time_start, time_end, 0, 1000, common.make_circle(-12, 34, 300)),
+    "extents": scd.make_vol4(time_start, time_end, 0, 1000, scd.make_circle(-12, 34, 300)),
     "old_version": 0,
     "uss_base_url": base_url,
     "notify_for_operations": notify_ops,

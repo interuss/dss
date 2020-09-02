@@ -13,8 +13,9 @@ import datetime
 import pytest
 
 from monitoring.monitorlib.auth import DummyOAuth
+from monitoring.monitorlib import rid
+from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
 from . import common
-from .common import SCOPE_READ, SCOPE_WRITE
 
 ISA_ID = '000000cc-e2e1-49e6-9102-b2a544000000'
 
@@ -47,8 +48,8 @@ def test_put_isa_with_read_only_scope_token(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       }, scope=SCOPE_READ)
@@ -70,8 +71,8 @@ def test_create_isa(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       }, scope=SCOPE_WRITE)

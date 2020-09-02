@@ -4,8 +4,9 @@ import datetime
 import time
 
 from monitoring.monitorlib.infrastructure import default_scope
+from monitoring.monitorlib import rid
+from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
 from . import common
-from .common import SCOPE_READ, SCOPE_WRITE
 
 ISA_ID = '00000098-ba6d-4c20-a575-6e412e000000'
 
@@ -39,8 +40,8 @@ def test_create(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       })

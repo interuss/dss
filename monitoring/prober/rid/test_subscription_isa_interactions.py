@@ -10,8 +10,9 @@
 import datetime
 
 from monitoring.monitorlib.infrastructure import default_scope
+from monitoring.monitorlib import rid
+from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
 from . import common
-from .common import SCOPE_READ, SCOPE_WRITE
 
 ISA_ID = '000000d5-aa3d-46b8-b2ec-dd22e7000000'
 SUB_ID = '000000ee-85c7-4bc6-8995-aa5f81000000'
@@ -57,8 +58,8 @@ def test_create_isa(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       })
@@ -81,8 +82,8 @@ def test_create_subscription(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'callbacks': {
               'identification_service_area_url': 'https://example.com/foo'
@@ -116,7 +117,7 @@ def test_modify_isa(session):
                   'altitude_hi': 67890,
               },
 
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       }, scope=SCOPE_WRITE)

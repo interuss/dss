@@ -6,10 +6,10 @@ instance.  These integration tests are also run as part of
 integration test suite.
 
 ## Authorization
-When running this prober pytest suite, you must provide information regarding
-how to obtain access tokens during the tests.  There are three different
-circumstances under which an access token is needed, each with a command line
-flag to specify how to obtain access tokens in that circumstance:
+When running this prober pytest suite, you must describe how to obtain access
+tokens during the tests.  There are three different circumstances under which an
+access token is needed, each with a command line flag to specify how to obtain
+access tokens in that circumstance:
 
 * Performing remote ID operations (`rid-auth` flag).  This user should have
   permission to be granted all remote ID scopes.
@@ -20,25 +20,12 @@ flag to specify how to obtain access tokens in that circumstance:
   and the credentials must be different than those for `scd-auth1`.
 
 The value for each of these flags is a specification for how to retrieve access
-tokens.  Each specification takes the form of `AuthAdapter(value1,value2,...)`.
-All available AuthAdapters are defined in [auth.py](../monitorlib/auth.py) and the parameters
-are those accepted by the particular AuthAdapter's `__init__` constructor.  Both
-ordinal and keyword (e.g., `AuthAdapter(param1=value1,param2=value2)`)
-parameters are accepted.  Notes:
-1. The spec must be a singular shell string unbroken by spaces and so should
-   probably be wrapped in quotes on the command line.
-1. All parameter types are strings.
-1. String values are not delimited by any quote-like characters.
-1. If an authorization spec is omitted, the tests that depend on that
-   authorization will be skipped. 
+tokens.  See [the auth spec documentation](../monitorlib/README.md#Auth_specs)
+for the format of these values.  Note that if an authorization spec is omitted,
+the tests that depend on that authorization will be skipped. 
 
-### Examples
-
-* `--rid-auth "UsernamePassword(https://example.com/token, username=uss1,
-   password=uss1, client_id=uss1)"`
-* `--rid-auth "ServiceAccount(https://example.com/token,
-   ~/credentials/account.json)"`
-* `--rid-auth "DummyOAuth(http://localhost:8085/token, sub=fake_uss)"`
+Example: `--rid-auth "UsernamePassword(https://example.com/token, username=uss1,
+password=uss1, client_id=uss1)"`
 
 ## Running pytest via Docker
 This approach takes slightly longer to execute due to building the prober image,
