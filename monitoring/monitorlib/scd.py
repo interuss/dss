@@ -1,5 +1,4 @@
 from datetime import datetime
-import functools
 from typing import Dict, List, Optional, Tuple
 
 

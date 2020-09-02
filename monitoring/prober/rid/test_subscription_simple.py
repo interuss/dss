@@ -10,8 +10,9 @@ import datetime
 import re
 
 from monitoring.monitorlib.infrastructure import default_scope
+from monitoring.monitorlib import rid
+from monitoring.monitorlib.rid import SCOPE_READ
 from . import common
-from .common import SCOPE_READ
 
 SUB_ID = '000000e0-cf69-456a-91fb-fc9532000000'
 
@@ -53,8 +54,8 @@ def test_create_sub(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'callbacks': {
               'identification_service_area_url': 'https://example.com/foo'
@@ -69,9 +70,9 @@ def test_create_sub(session):
       'identification_service_area_url': 'https://example.com/foo'
   }
   assert data['subscription']['time_start'] == time_start.strftime(
-      common.DATE_FORMAT)
+      rid.DATE_FORMAT)
   assert data['subscription']['time_end'] == time_end.strftime(
-      common.DATE_FORMAT)
+      rid.DATE_FORMAT)
   assert re.match(r'[a-z0-9]{10,}$', data['subscription']['version'])
   assert 'service_areas' in data
 

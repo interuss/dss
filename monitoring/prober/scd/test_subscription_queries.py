@@ -7,8 +7,8 @@
 import datetime
 
 from monitoring.monitorlib.infrastructure import default_scope
-from . import common
-from .common import SCOPE_SC
+from monitoring.monitorlib import scd
+from monitoring.monitorlib.scd import SCOPE_SC
 
 SUB1_ID = '00000088-b268-481c-a32d-6be442000000'
 SUB2_ID = '00000017-a3fe-42d6-9f3b-83dec2000000'
@@ -26,9 +26,9 @@ FOOTPRINT_SPACING_M = 10000
 def _make_sub1_req():
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
-  lat = LAT0 - common.latitude_degrees(FOOTPRINT_SPACING_M)
+  lat = LAT0 - scd.latitude_degrees(FOOTPRINT_SPACING_M)
   return {
-    "extents": common.make_vol4(None, time_end, 0, 300, common.make_circle(lat, LNG0, 100)),
+    "extents": scd.make_vol4(None, time_end, 0, 300, scd.make_circle(lat, LNG0, 100)),
     "old_version": 0,
     "uss_base_url": "https://example.com/foo",
     "notify_for_operations": True,
@@ -40,7 +40,7 @@ def _make_sub2_req():
   time_start = datetime.datetime.utcnow() + datetime.timedelta(hours=2)
   time_end = time_start + datetime.timedelta(minutes=60)
   return {
-    "extents": common.make_vol4(time_start, time_end, 350, 650, common.make_circle(LAT0, LNG0, 100)),
+    "extents": scd.make_vol4(time_start, time_end, 350, 650, scd.make_circle(LAT0, LNG0, 100)),
     "old_version": 0,
     "uss_base_url": "https://example.com/foo",
     "notify_for_operations": True,
@@ -51,9 +51,9 @@ def _make_sub2_req():
 def _make_sub3_req():
   time_start = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
   time_end = time_start + datetime.timedelta(minutes=60)
-  lat = LAT0 + common.latitude_degrees(FOOTPRINT_SPACING_M)
+  lat = LAT0 + scd.latitude_degrees(FOOTPRINT_SPACING_M)
   return {
-    "extents": common.make_vol4(time_start, time_end, 700, 1000, common.make_circle(lat, LNG0, 100)),
+    "extents": scd.make_vol4(time_start, time_end, 700, 1000, scd.make_circle(lat, LNG0, 100)),
     "old_version": 0,
     "uss_base_url": "https://example.com/foo",
     "notify_for_operations": True,
@@ -88,7 +88,7 @@ def test_subs_do_not_exist_get(scd_session):
 @default_scope(SCOPE_SC)
 def test_subs_do_not_exist_query(scd_session):
   resp = scd_session.post('/subscriptions/query', json={
-    'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
+    'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
   })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
@@ -117,8 +117,8 @@ def test_search_find_all_subs(scd_session):
   resp = scd_session.post(
       '/subscriptions/query',
       json={
-        "area_of_interest": common.make_vol4(None, None, 0, 3000,
-                                             common.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
+        "area_of_interest": scd.make_vol4(None, None, 0, 3000,
+                                          scd.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
       })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
@@ -130,13 +130,13 @@ def test_search_find_all_subs(scd_session):
 # Mutations: None
 @default_scope(SCOPE_SC)
 def test_search_footprint(scd_session):
-  lat = LAT0 - common.latitude_degrees(FOOTPRINT_SPACING_M)
+  lat = LAT0 - scd.latitude_degrees(FOOTPRINT_SPACING_M)
   print(lat)
   resp = scd_session.post(
     '/subscriptions/query',
     json={
-      "area_of_interest": common.make_vol4(None, None, 0, 3000,
-                                           common.make_circle(lat, LNG0, 50))
+      "area_of_interest": scd.make_vol4(None, None, 0, 3000,
+                                        scd.make_circle(lat, LNG0, 50))
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
@@ -147,8 +147,8 @@ def test_search_footprint(scd_session):
   resp = scd_session.post(
     '/subscriptions/query',
     json={
-      "area_of_interest": common.make_vol4(None, None, 0, 3000,
-                                           common.make_circle(LAT0, LNG0, 50))
+      "area_of_interest": scd.make_vol4(None, None, 0, 3000,
+                                        scd.make_circle(LAT0, LNG0, 50))
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
@@ -167,8 +167,8 @@ def test_search_time(scd_session):
   resp = scd_session.post(
     '/subscriptions/query',
     json={
-      "area_of_interest": common.make_vol4(time_start, time_end, 0, 3000,
-                                           common.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
+      "area_of_interest": scd.make_vol4(time_start, time_end, 0, 3000,
+                                        scd.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
@@ -179,8 +179,8 @@ def test_search_time(scd_session):
   resp = scd_session.post(
     '/subscriptions/query',
     json={
-      "area_of_interest": common.make_vol4(None, time_end, 0, 3000,
-                                           common.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
+      "area_of_interest": scd.make_vol4(None, time_end, 0, 3000,
+                                        scd.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
@@ -194,8 +194,8 @@ def test_search_time(scd_session):
   resp = scd_session.post(
     '/subscriptions/query',
     json={
-      "area_of_interest": common.make_vol4(time_start, time_end, 0, 3000,
-                                           common.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
+      "area_of_interest": scd.make_vol4(time_start, time_end, 0, 3000,
+                                        scd.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
@@ -206,8 +206,8 @@ def test_search_time(scd_session):
   resp = scd_session.post(
     '/subscriptions/query',
     json={
-      "area_of_interest": common.make_vol4(time_start, None, 0, 3000,
-                                           common.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
+      "area_of_interest": scd.make_vol4(time_start, None, 0, 3000,
+                                        scd.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
@@ -222,12 +222,12 @@ def test_search_time(scd_session):
 def test_search_time_footprint(scd_session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(hours=2.5)
-  lat = LAT0 + common.latitude_degrees(FOOTPRINT_SPACING_M)
+  lat = LAT0 + scd.latitude_degrees(FOOTPRINT_SPACING_M)
   resp = scd_session.post(
     '/subscriptions/query',
     json={
-      "area_of_interest": common.make_vol4(time_start, time_end, 0, 3000,
-                                           common.make_circle(lat, LNG0, FOOTPRINT_SPACING_M))
+      "area_of_interest": scd.make_vol4(time_start, time_end, 0, 3000,
+                                        scd.make_circle(lat, LNG0, FOOTPRINT_SPACING_M))
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
