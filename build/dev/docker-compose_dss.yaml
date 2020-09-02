@@ -30,9 +30,6 @@ services:
       - local-dss-crdb
 
   local-dss-scd-bootstrapper:
-    build:
-      context: ../..
-      dockerfile: cmds/db-manager/Dockerfile
     image: interuss-local/db-manager
     volumes:
       - $PWD/../deploy/db_schemas/scd:/db-schemas/scd:ro
@@ -41,6 +38,7 @@ services:
     entrypoint: /startup/scd_bootstrapper.sh
     depends_on:
       - local-dss-crdb
+      - local-dss-rid-bootstrapper
 
   local-dss-grpc-backend:
     build:
@@ -59,9 +57,6 @@ services:
       - local-dss-scd-bootstrapper
 
   local-dss-http-gateway:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     volumes:
       - local-dss-data:/var/local-dss-data
