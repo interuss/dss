@@ -12,8 +12,8 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 
+	"github.com/interuss/stacktrace"
 	"github.com/lib/pq"
-	"github.com/palantir/stacktrace"
 )
 
 const (

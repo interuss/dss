@@ -11,8 +11,8 @@ import (
 	dsssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/golang/geo/s2"
+	"github.com/interuss/stacktrace"
 	"github.com/lib/pq"
-	"github.com/palantir/stacktrace"
 )
 
 var (

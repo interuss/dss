@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 var (

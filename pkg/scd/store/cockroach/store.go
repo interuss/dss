@@ -10,7 +10,7 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dsssql "github.com/interuss/dss/pkg/sql"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 

@@ -9,7 +9,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	scdstore "github.com/interuss/dss/pkg/scd/store"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 const (

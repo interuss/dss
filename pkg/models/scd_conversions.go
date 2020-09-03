@@ -4,7 +4,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 // Volume4DFromSCDProto converts vol4 proto to a Volume4D

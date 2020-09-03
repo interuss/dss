@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 const (

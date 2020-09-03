@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 var (
