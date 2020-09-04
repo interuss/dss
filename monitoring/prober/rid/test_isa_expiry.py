@@ -45,14 +45,14 @@ def test_create(session):
           },
           'flights_url': 'https://example.com/dss',
       })
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_READ)
 def test_valid_immediately(session):
   # The ISA is still valid immediately after we create it.
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 def test_sleep_5_seconds():
@@ -64,7 +64,7 @@ def test_sleep_5_seconds():
 def test_returned_by_id(session):
   # We can get it explicitly by ID
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_READ)
@@ -72,7 +72,7 @@ def test_not_returned_by_search(session):
   # ...but it's not included in a search.
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]
 
 

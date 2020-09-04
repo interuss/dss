@@ -26,7 +26,7 @@ def test_ensure_clean_workspace(scd_session):
       resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
       assert resp.status_code == 200, resp.content
       resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-      assert resp.status_code == 404
+      assert resp.status_code == 404, resp.content
     elif resp.status_code == 404:
       # As expected.
       pass

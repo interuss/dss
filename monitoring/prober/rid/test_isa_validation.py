@@ -50,7 +50,7 @@ def test_isa_huge_area(session):
           },
           'flights_url': 'https://example.com/uss/flights',
       })
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content
   assert 'too large' in resp.json()['message']
 
 
@@ -75,7 +75,7 @@ def test_isa_empty_vertices(session):
           },
           'flights_url': 'https://example.com/uss/flights',
       })
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content
   assert 'Not enough points in polygon' in resp.json()['message']
 
 
@@ -97,7 +97,7 @@ def test_isa_missing_footprint(session):
           },
           'flights_url': 'https://example.com/uss/flights',
       })
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content
   assert 'missing required footprint' in resp.json()['message']
 
 
@@ -126,7 +126,7 @@ def test_isa_missing_extents(session):
       json={
           'flights_url': 'https://example.com/uss/flights',
       })
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content
   assert resp.json()['message'] == 'Missing required extents'
 
 

@@ -53,7 +53,7 @@ def test_create_isa(session):
           },
           'flights_url': 'https://example.com/dss',
       })
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
   data = resp.json()
   assert data['service_area']['id'] == ISA_ID
@@ -69,7 +69,7 @@ def test_create_isa(session):
 @default_scope(SCOPE_READ)
 def test_get_isa_by_id(session):
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
   data = resp.json()
   assert data['service_area']['id'] == ISA_ID
@@ -86,7 +86,7 @@ def test_get_isa_by_search_missing_params(session):
 def test_get_isa_by_search(session):
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -97,7 +97,7 @@ def test_get_isa_by_search_earliest_time_included(session):
                      '?area={}&earliest_time={}'.format(
                          common.GEO_POLYGON_STRING,
                          earliest_time.strftime(rid.DATE_FORMAT)))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -108,7 +108,7 @@ def test_get_isa_by_search_earliest_time_excluded(session):
                      '?area={}&earliest_time={}'.format(
                          common.GEO_POLYGON_STRING,
                          earliest_time.strftime(rid.DATE_FORMAT)))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -119,7 +119,7 @@ def test_get_isa_by_search_latest_time_included(session):
                      '?area={}&latest_time={}'.format(
                          common.GEO_POLYGON_STRING,
                          latest_time.strftime(rid.DATE_FORMAT)))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -130,7 +130,7 @@ def test_get_isa_by_search_latest_time_excluded(session):
                      '?area={}&latest_time={}'.format(
                          common.GEO_POLYGON_STRING,
                          latest_time.strftime(rid.DATE_FORMAT)))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -138,7 +138,7 @@ def test_get_isa_by_search_latest_time_excluded(session):
 def test_get_isa_by_search_area_only(session):
   resp = session.get('/identification_service_areas'
                      '?area={}'.format(common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -146,7 +146,7 @@ def test_get_isa_by_search_area_only(session):
 def test_get_isa_by_search_huge_area(session):
   resp = session.get('/identification_service_areas'
                      '?area={}'.format(common.HUGE_GEO_POLYGON_STRING))
-  assert resp.status_code == 413
+  assert resp.status_code == 413, resp.content
 
 
 @default_scope(SCOPE_WRITE)
@@ -165,23 +165,23 @@ def test_delete_isa(session):
   """ASTM Compliance Test: DSS0030_B_DELETE_ISA."""
   # GET the ISA first to find its version.
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   version = resp.json()['service_area']['version']
 
   # Then delete it.
   resp = session.delete('/identification_service_areas/{}/{}'.format(ISA_ID, version), scope=SCOPE_WRITE)
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_READ)
 def test_get_deleted_isa_by_id(session):
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 404
+  assert resp.status_code == 404, resp.content
 
 
 @default_scope(SCOPE_READ)
 def test_get_deleted_isa_by_search(session):
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]
