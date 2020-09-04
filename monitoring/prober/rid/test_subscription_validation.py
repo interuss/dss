@@ -53,7 +53,7 @@ def test_create_sub_empty_vertices(session):
               'identification_service_area_url': 'https://example.com/foo'
           },
       })
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_READ)
@@ -76,7 +76,7 @@ def test_create_sub_missing_footprint(session):
               'identification_service_area_url': 'https://example.com/foo'
           },
       })
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_READ)
@@ -102,7 +102,7 @@ def test_create_sub_with_huge_area(session):
               'identification_service_area_url': 'https://example.com/foo'
           },
       })
-  assert resp.status_code == 400
+  assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_READ)
@@ -176,7 +176,7 @@ def test_create_sub_with_too_long_end_time(session):
             "callbacks": {"identification_service_area_url": "https://example.com/foo"},
         },
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_READ)
@@ -200,7 +200,7 @@ def test_update_sub_with_too_long_end_time(session):
             "callbacks": {"identification_service_area_url": "https://example.com/foo"},
         },
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.content
 
     time_end = time_start + datetime.timedelta(hours=(rid.MAX_SUB_TIME_HRS + 1))
     resp = session.put(
@@ -218,4 +218,4 @@ def test_update_sub_with_too_long_end_time(session):
             "callbacks": {"identification_service_area_url": "https://example.com/foo"},
         },
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 400, resp.content

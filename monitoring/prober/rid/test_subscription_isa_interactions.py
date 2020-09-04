@@ -63,7 +63,7 @@ def test_create_isa(session):
           },
           'flights_url': 'https://example.com/dss',
       })
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_READ)
@@ -89,7 +89,7 @@ def test_create_subscription(session):
               'identification_service_area_url': 'https://example.com/foo'
           },
       })
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
   # The response should include our ISA.
   data = resp.json()
@@ -100,7 +100,7 @@ def test_create_subscription(session):
 def test_modify_isa(session):
   # GET the ISA first to find its version.
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   version = resp.json()['service_area']['version']
 
   # Then modify it.
@@ -121,7 +121,7 @@ def test_modify_isa(session):
           },
           'flights_url': 'https://example.com/dss',
       }, scope=SCOPE_WRITE)
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
   # The response should include our subscription.
   data = resp.json()
@@ -138,13 +138,13 @@ def test_modify_isa(session):
 def test_delete_isa(session):
   # GET the ISA first to find its version.
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   version = resp.json()['service_area']['version']
 
   # Then delete it.
   resp = session.delete('/identification_service_areas/{}/{}'.format(
       ISA_ID, version), scope=SCOPE_WRITE)
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
   # The response should include our subscription.
   data = resp.json()
@@ -162,7 +162,7 @@ def test_delete_isa(session):
 def test_delete_subscription(session):
   # GET the sub first to find its version.
   resp = session.get('/subscriptions/{}'.format(SUB_ID))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
   data = resp.json()
   version = data['subscription']['version']
@@ -170,4 +170,4 @@ def test_delete_subscription(session):
 
   # Then delete it.
   resp = session.delete('/subscriptions/{}/{}'.format(SUB_ID, version))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
