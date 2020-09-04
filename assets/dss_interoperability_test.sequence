@@ -1,0 +1,98 @@
+Title: DSS Compliance Test Visualized [fontcolor="Black", color="red"]
+
+participant USS1 as u1 [fillcolor="green", fontcolor="white"]
+participant Primary DSS as d1 [color="red"]
+participant All Other DSS as d2 [color="orange"]
+participant USS2 as u2 [fillcolor="lightblue"]
+
+Note left of u1: S1: Can create ISA in\n  primary DSS
+u1 -> d1: PUT ISA_1 ttl: 10 min
+d1 --> u1: Status: 200 [color="green"]
+
+Note right of u2: S2: Can create Subscription in \n primary DSS, \n ISA accessible from all \n non-primary DSSs
+u2 -> d1: PUT SUB_1_0 with \n area over ISA_1 [fillcolor="white]
+d1 --> u2: Status: 200 \n with ISA_1 in body [fillcolor="white", color="green"]
+u2 -> d2: PUT SUB_1_{1..N} with \n area over ISA_1 [fillcolor="white]
+d2 --> u2: Status: 200 \n with ISA_1 in body [fillcolor="white", color="green"]
+
+Note right of d1: In the background
+d2 -->> d1: Data replicated via CRDB
+d1 -->> d2: between DSSs
+
+Note right of u2: S3: Can retrieve specific \n Subscription emplaced in \n primary DSS from all DSSs
+u2 -> d1: GET SUB_1_0 by ID [fillcolor="white"]
+d1 --> u2: Status: 200 \n with SUB_1_0information and ISA_1 [fillcolor="white", color="green"]
+u2 -> d2: GET SUB_1_0 by ID [fillcolor="white"]
+d2 --> u2: Status: 200 \n with SUB_1_0 information and ISA_1 [fillcolor="white", color="green"]
+
+Note right of u2: S4: Can query all Subscriptions \n in area from all DSSs
+u2 -> d1: GET ALL SUB_1 \n by Area [fillcolor="white"]
+d1 --> u2: Status: 200 \n with SUB_1 [fillcolor="white", color="green"]
+u2 -> d2: GET ALL SUB_1 \n by Area [fillcolor="white"]
+d2 --> u2: Status: 200 \n with SUB_1 [fillcolor="white", color="green"]
+
+Note left of u1: S5: Can modify ISA in primary DSS, \n ISA modification triggers \n subscription notification requests
+u1 -> d1: PUT (update) ISA_1 with \n ttl: X seconds [fillcolor="white"]
+d1 --> u1: Status: 200 with SUB_1_{0..N} and \n updated ISA_1 information [fillcolor="white", color="green"]
+
+Note right of u2: S6: Can delete Subscription \n in primary DSS
+u2 -> d1: DELETE SUB_1_{0..N} [fillcolor="white"]
+d1 --> u2: Status: 200 \n with ISA_1 [fillcolor="white", color="green"]
+
+Note right of u2: S7: Subscription deletion from ID index \n was effective on primary DSS
+u2 -> d1: GET SUB_1_0 by ID [fillcolor="white"]
+d1 --> u2: Status: 404 Not found [fillcolor="white", color="red"]
+u2 -> d2: GET SUB_1_{1..N} by ID [fillcolor="white"]
+d2 --> u2: Status: 404 Not found [fillcolor="white", color="red"]
+
+Note right of u2: S8: Subscription deletion from \n geographic index was effective \n on primary DSS
+u2 -> d1: GET ALL SUB_1 by ISA_1's Area [fillcolor="white"]
+d1 --> u2: Status: 200 Return Empty Subscription list [fillcolor="white", color="green"]
+u2 -> d2: GET ALL SUB_1 by ISA_1's Area [fillcolor="white"]
+d2 --> u2: Status: 200 Return Empty Subscription list [fillcolor="white", color="green"]
+
+Note right of u2: S9: Expired ISA automatically removed, \n ISA modifications accessible \n from all non-primary DSSs
+u2 -->> u2: Wait X Seconds for \n ISA_1 to expire [color="orange"]
+u2 -> d1: PUT SUB_2_0 with \n area over ISA_1 & ttl: K seconds [fillcolor="white"]
+d1 --> u2: Status: 200 Created successfully but \n does not return ISA_1 [fillcolor="white", color="green"]
+u2 -> d2: PUT SUB_2_{1..N} with \n area over ISA_1 & ttl: K seconds [fillcolor="white"]
+d2 --> u2: Status: 200 Created successfully but \n does not return ISA_1 [fillcolor="white", color="green"]
+
+Note left of u1: S10: ISA creation triggers \n subscription notification requests
+u1 -> d1: PUT ISA_2 ttl: 10 min [fillcolor="white"]
+d1 --> u1: Status: 200 with SUB_2_{0..N} [fillcolor="white", color="green"]
+
+Note left of u1: S11: ISA deletion triggers \n subscription notification requests
+u1 -> d1: DELETE ISA_2 [fillcolor="white"]
+d1 --> u1: Status: 200 with SUB_2_{0..N} [fillcolor="white", color="green"]
+
+Note left of u1: S12: Expired Subscriptions \n don’t trigger subscription notification requests
+u1 -->> u1: Wait K Seconds for \n SUB_2 to expire [color="orange"]
+u1 -> d1: PUT ISA_3 ttl: 10 min [fillcolor="white"]
+d1 --> u1: Status: 200 with \n empty Subscription list [fillcolor="white", color="green"]
+
+Note right of u2: S13: Expired Subscription removed from \n geographic index on primary DSS
+u2 -> d1: GET ALL SUB_2 by Area [fillcolor="white"]
+d1 --> u2: Status: 200 with empty Subscription list [fillcolor="white", color="green"]
+u2 -> d2: GET ALL SUB_2 by Area [fillcolor="white"]
+d2 --> u2: Status: 200 with empty Subscription list [fillcolor="white", color="green"]
+
+Note right of u2: S14: Expired Subscription removed \n from ID index on primary DSS
+u2 -> d1: GET SUB_2_0 by ID [fillcolor="white"]
+d1 --> u2: Status: 404 Not Found [fillcolor="white", color="red"]
+u2 -> d2: GET SUB_2_{1..N} by ID [fillcolor="white"]
+d2 --> u2: Status: 404 Not Found [fillcolor="white", color="red"]
+
+Note left of u1: S15: ISA deletion triggers does not \n trigger subscription notification requests \n for expired Subscriptions
+u1 -> d1: DELETE ISA_3 [fillcolor="white"]
+d1 --> u1: Status: 200 with empty Subscription list [fillcolor="white", color="green"]
+
+Note right of u2: S16: Deleted ISA removed from all DSSs
+u2 -> d1: PUT SUB_3_0 with \n area over ISA_3 [fillcolor="white"]
+d1 --> u2: Status: 200 with empty ISA list [fillcolor="white", color="green"]
+u2 -> d2: PUT SUB_3_{1..N} with \n area over ISA_3 [fillcolor="white"]
+d2 --> u2: Status: 200 with empty ISA list [fillcolor="white", color="green"]
+
+Note right of u2: S17 Nothing. \n Action is a cleanup from test
+u2 -> d1: DELETE SUB_3_{0..N} [fillcolor="white"]
+d1 --> u2: Status: 200 [fillcolor="white", color="green"]
