@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/logging"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"

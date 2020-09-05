@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/geo"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 const (

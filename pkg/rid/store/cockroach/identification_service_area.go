@@ -16,8 +16,8 @@ import (
 	"github.com/golang/geo/s2"
 	repos "github.com/interuss/dss/pkg/rid/repos"
 	dssql "github.com/interuss/dss/pkg/sql"
+	"github.com/interuss/stacktrace"
 	"github.com/lib/pq"
-	"github.com/palantir/stacktrace"
 	"go.uber.org/zap"
 )
 

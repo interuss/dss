@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/assert"
 )
 

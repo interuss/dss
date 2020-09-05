@@ -9,7 +9,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"google.golang.org/protobuf/proto"
 )
 
