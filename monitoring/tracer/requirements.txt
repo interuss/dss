@@ -1,1 +1,3 @@
+pyyaml==5.3.1
+termcolor==1.1.0
 -r ../monitorlib/requirements.txt
