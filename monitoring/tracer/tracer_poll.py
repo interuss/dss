@@ -20,6 +20,8 @@ def parseArgs() -> argparse.Namespace:
     parser.add_argument('--auth', help='Auth spec for obtaining authorization to DSS and USSs; see README.md')
     parser.add_argument('--dss', help='Base URL of DSS instance to query')
     parser.add_argument('--area', help='`lat,lng,lat,lng` for box containing the area to trace interactions for')
+    parser.add_argument('--start-time', default=datetime.datetime.utcnow().isoformat(), help='ISO8601 UTC datetime at which to start polling')
+    parser.add_argument('--poll-hours', type=float, default=18, help='Number of hours to poll for')
     parser.add_argument('--output-folder', help='Path of folder in which to write logs')
 
     # Feature arguments
@@ -44,8 +46,10 @@ def main() -> int:
     adapter: auth.AuthAdapter = auth.make_auth_adapter(args.auth)
     dss_client = infrastructure.DSSTestSession(args.dss, adapter)
     area: s2sphere.LatLngRect = geo.make_latlng_rect(args.area)
+    start_time = datetime.datetime.fromisoformat(args.start_time)
+    end_time = start_time + datetime.timedelta(hours=args.poll_hours)
     logger = tracerlog.Logger(args.output_folder)
-    resources = polling.ResourceSet(dss_client, area, logger)
+    resources = polling.ResourceSet(dss_client, area, logger, start_time, end_time)
 
     config = vars(args)
     config['code_version'] = versioning.get_code_version()
@@ -65,7 +69,11 @@ def main() -> int:
       raise NotImplementedError('RID Subscription polling not yet implemented')
 
     if args.scd_operation_poll_interval > 0:
-      raise NotImplementedError('SCD Operation polling not yet implemented')
+      pollers.append(polling.Poller(
+        name='scdop',
+        object_diff_text=formatting.op_diff_text,
+        interval=datetime.timedelta(seconds=args.scd_operation_poll_interval),
+        poll=lambda: polling.poll_scd_operations(resources)))
 
     if args.scd_constraint_poll_interval > 0:
       raise NotImplementedError('SCD Constraint polling not yet implemented')
