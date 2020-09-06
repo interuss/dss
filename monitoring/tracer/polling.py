@@ -108,7 +108,7 @@ class PollResult(object):
       lines = [colored('{} {}'.format(name, e.description), 'white', 'on_red')]
       lines.append('  {} ({} s) {}\n'.format(colored(str(e.code), 'red'), dt_seconds, e.url))
       if e.json:
-        lines.extend('    ' + colored(line, 'red') for line in yaml.dump(e.json, indent=2).split('\n'))
+        lines.extend('    ' + colored(line, 'red') for line in yaml.dump(e.json, indent=2).strip().split('\n'))
       else:
         lines.extend('    ' + colored(line, 'red') for line in e.body.replace('\r\n', '\n').split('\n'))
       return '\n'.join(lines)

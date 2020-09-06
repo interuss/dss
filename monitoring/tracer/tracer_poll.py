@@ -61,12 +61,25 @@ def main() -> int:
         interval=datetime.timedelta(seconds=args.rid_isa_poll_interval),
         poll=lambda: polling.poll_rid_isas(resources)))
 
+    if args.rid_subscription_poll_interval > 0:
+      raise NotImplementedError('RID Subscription polling not yet implemented')
+
+    if args.scd_operation_poll_interval > 0:
+      raise NotImplementedError('SCD Operation polling not yet implemented')
+
+    if args.scd_constraint_poll_interval > 0:
+      raise NotImplementedError('SCD Constraint polling not yet implemented')
+
+    if args.scd_subscription_poll_interval > 0:
+      raise NotImplementedError('SCD Subscription polling not yet implemented')
+
     if len(pollers) == 0:
       sys.stderr.write('Bad arguments: No data types had polling requests')
       return os.EX_USAGE
 
     # Execute the polling loop
     abort = False
+    need_line_break = False
     while not abort:
       try:
         most_urgent_dt = datetime.timedelta(days=999999999)
@@ -84,11 +97,15 @@ def main() -> int:
 
         if result.has_different_content_than(most_urgent_poller.last_result):
           logger.log(result.initiated_at, most_urgent_poller.name, result.to_json())
+          if need_line_break:
+            print()
           print(most_urgent_poller.diff_text(result))
+          need_line_break = False
           most_urgent_poller.last_result = result
         else:
           logger.log(result.initiated_at, most_urgent_poller.name, None)
           print_no_newline('.')
+          need_line_break = True
       except KeyboardInterrupt:
         abort = True
 

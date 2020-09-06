@@ -6,9 +6,9 @@ import yaml
 
 def isa_diff_text(a: Optional[Dict], b: Optional[Dict]) -> str:
   if a and not b:
-    return colored(yaml.dump(a), 'red')
+    return colored(yaml.dump(a).strip(), 'red')
   elif b and not a:
-    return colored(yaml.dump(b), 'green')
+    return colored(yaml.dump(b).strip(), 'green')
 
   lines = []
   for k1, v1 in b.items():

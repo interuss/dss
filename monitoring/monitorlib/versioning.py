@@ -3,9 +3,9 @@ import subprocess
 
 
 def get_code_version() -> str:
-  if os.path.exists('VERSION'):
-    with open('VERSION', 'r') as f:
-      return f.read()
+  env_version = os.environ.get('CODE_VERSION', '')
+  if env_version:
+    return env_version
 
   process = subprocess.Popen(['git', 'rev-parse', '--short', 'HEAD'],
                              stdout=subprocess.PIPE,
