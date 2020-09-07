@@ -26,10 +26,8 @@ def parseArgs() -> argparse.Namespace:
 
     # Feature arguments
     parser.add_argument('--rid-isa-poll-interval', type=float, default=0, help='Seconds beteween each poll of the DSS for ISAs, 0 to disable DSS polling for ISAs')
-    parser.add_argument('--rid-subscription-poll-interval', type=float, default=0, help='Seconds beteween each poll of the DSS for RID Subscriptions, 0 to disable DSS polling for RID Subscriptions')
     parser.add_argument('--scd-operation-poll-interval', type=float, default=0, help='Seconds between each poll of the DSS for Operations, 0 to disable DSS polling for Operations')
     parser.add_argument('--scd-constraint-poll-interval', type=float, default=0, help='Seconds between each poll of the DSS for Constraints, 0 to disable DSS polling for Constraints')
-    parser.add_argument('--scd-subscription-poll-interval', type=float, default=0, help='Seconds beteween each poll of the DSS for SCD Subscriptions, 0 to disable DSS polling for SCD Subscriptions')
 
     return parser.parse_args()
 
@@ -65,21 +63,19 @@ def main() -> int:
         interval=datetime.timedelta(seconds=args.rid_isa_poll_interval),
         poll=lambda: polling.poll_rid_isas(resources)))
 
-    if args.rid_subscription_poll_interval > 0:
-      raise NotImplementedError('RID Subscription polling not yet implemented')
-
     if args.scd_operation_poll_interval > 0:
       pollers.append(polling.Poller(
         name='scdop',
-        object_diff_text=formatting.op_diff_text,
+        object_diff_text=formatting.entity_diff_text,
         interval=datetime.timedelta(seconds=args.scd_operation_poll_interval),
         poll=lambda: polling.poll_scd_operations(resources)))
 
     if args.scd_constraint_poll_interval > 0:
-      raise NotImplementedError('SCD Constraint polling not yet implemented')
-
-    if args.scd_subscription_poll_interval > 0:
-      raise NotImplementedError('SCD Subscription polling not yet implemented')
+      pollers.append(polling.Poller(
+        name='scdconstraint',
+        object_diff_text=formatting.entity_diff_text,
+        interval=datetime.timedelta(seconds=args.scd_constraint_poll_interval),
+        poll=lambda: polling.poll_scd_constraints(resources)))
 
     if len(pollers) == 0:
       sys.stderr.write('Bad arguments: No data types had polling requests')
@@ -104,14 +100,14 @@ def main() -> int:
         result = most_urgent_poller.poll()
 
         if result.has_different_content_than(most_urgent_poller.last_result):
-          logger.log(result.initiated_at, most_urgent_poller.name, result.to_json())
+          logger.log_new(most_urgent_poller.name, result.to_json())
           if need_line_break:
             print()
           print(most_urgent_poller.diff_text(result))
           need_line_break = False
           most_urgent_poller.last_result = result
         else:
-          logger.log(result.initiated_at, most_urgent_poller.name, None)
+          logger.log_same(result.initiated_at, result.completed_at, most_urgent_poller.name)
           print_no_newline('.')
           need_line_break = True
       except KeyboardInterrupt:

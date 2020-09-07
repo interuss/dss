@@ -123,12 +123,12 @@ def isa_diff_text(a: Optional[Dict], b: Optional[Dict]) -> str:
   return '\n'.join(diff_lines(values, changes))
 
 
-def _abbreviated_operation(op: Dict) -> Dict:
-  op_lite = copy.deepcopy(op)
+def _abbreviated_entity(entity: Dict) -> Dict:
+  entity_lite = copy.deepcopy(entity)
 
-  if 'uss' in op_lite:
+  if 'uss' in entity_lite:
     try:
-      details = op_lite['uss']['details']
+      details = entity_lite['uss']['details']
       volumes = details['volumes']
       n_circles = sum(1 if v['volume'].get('outline_circle', None) else 0 for v in volumes)
       n_polygons = sum(1 if v['volume'].get('outline_polygon', None) else 0 for v in volumes)
@@ -145,8 +145,8 @@ def _abbreviated_operation(op: Dict) -> Dict:
         'end': t_end.isoformat(),
       }
 
-      uss_ref = op_lite['uss']['reference']
-      dss_ref = op_lite['dss']['reference']
+      uss_ref = entity_lite['uss']['reference']
+      dss_ref = entity_lite['dss']['reference']
       to_remove = []
       for key in uss_ref:
         if key in dss_ref and dss_ref[key] == uss_ref[key]:
@@ -154,25 +154,25 @@ def _abbreviated_operation(op: Dict) -> Dict:
       for key in to_remove:
         del uss_ref[key]
     except KeyError as e:
-      op_lite['uss'] = 'Response format error: {}'.format(e)
+      entity_lite['uss'] = 'Response format error: {}'.format(e)
 
-  return op_lite
+  return entity_lite
 
 
-def op_diff_test(a: Optional[Dict], b: Optional[Dict]) -> str:
-  """Create text to display to a real-time user describing a change in Operations.
+def entity_diff_text(a: Optional[Dict], b: Optional[Dict]) -> str:
+  """Create text to display to a real-time user describing a change in an Entity.
 
-  The parameters a and b are Operation "objects" produced by
-  polling.poll_scd_operations in a PollingSuccess; a is the previous one, b is
-  the new one.  This function should generate text to be printed to a console
-  that summarizes the difference between a and b.
+  The parameters a and b are Operation or Constraint "objects" produced by
+  polling.poll_scd_operations or polling.poll_scd_constraints in a
+  PollingSuccess; a is the previous one, b is the new one.  This function should
+  generate text to be printed to a console that summarizes the difference
+  between a and b.
   """
   if a is None:
     a = {}
   if b is None:
     b = {}
-  a = _abbreviated_operation(a)
-  b = _abbreviated_operation(b)
+  a = _abbreviated_entity(a)
+  b = _abbreviated_entity(b)
   values, changes, _ = dict_changes(a, b)
   return '\n'.join(diff_lines(values, changes))
-

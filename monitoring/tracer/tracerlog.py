@@ -23,20 +23,21 @@ class Logger(object):
     with open(os.path.join(self._log_path, 'config.yaml'), 'w') as f:
       f.write(yaml.dump(config, indent=2))
 
-  def log(self, timestamp: datetime.datetime, code: str, content: Optional[Dict]) -> None:
-    if not content:
-      with open(os.path.join(self._log_path, 'nochange_queries.yaml'), 'a') as f:
-        body = {
-          't': timestamp.isoformat(),
-          'code': code
-        }
-        f.write(yaml.dump(body, explicit_start=True))
-    else:
-      for suffix in suffixes:
-        logname = '{}{}_{}.yaml'.format(datetime.datetime.now().strftime('%H%M%S'), suffix, code)
-        fullname = os.path.join(self._log_path, logname)
-        if not os.path.exists(fullname):
-          break
+  def log_same(self, t0: datetime.datetime, t1: datetime.datetime, code: str) -> None:
+    with open(os.path.join(self._log_path, 'nochange_queries.yaml'), 'a') as f:
+      body = {
+        't0': t0.isoformat(),
+        't1': t1.isoformat(),
+        'code': code
+      }
+      f.write(yaml.dump(body, explicit_start=True))
 
-      with open(fullname, 'w') as f:
-        f.write(yaml.dump(content, indent=2))
+  def log_new(self, code: str, content: Dict) -> None:
+    for suffix in suffixes:
+      logname = '{}{}_{}.yaml'.format(datetime.datetime.now().strftime('%H%M%S'), suffix, code)
+      fullname = os.path.join(self._log_path, logname)
+      if not os.path.exists(fullname):
+        break
+
+    with open(fullname, 'w') as f:
+      f.write(yaml.dump(content, indent=2))

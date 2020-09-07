@@ -27,7 +27,7 @@ class ResourceSet(object):
     self.start_time = start_time
     self.end_time = end_time
 
-    self.scd_op_cache = {}
+    self.scd_cache = {}
 
 
 class PollError(object):
@@ -194,51 +194,65 @@ def poll_rid_isas(resources: ResourceSet) -> PollResult:
 
 
 def poll_scd_operations(resources: ResourceSet) -> PollResult:
-  # Query DSS for Operations in 4D volume of interest
+  return poll_scd_entities(resources, 'Operation', 'operation_references', 'operations')
+
+
+def poll_scd_constraints(resources: ResourceSet) -> PollResult:
+  return poll_scd_entities(resources, 'Constraint', 'constraint_references', 'constraints')
+
+
+def poll_scd_entities(resources: ResourceSet,
+                      resource_name: str,
+                      dss_resource_name: str,
+                      uss_resource_name: str) -> PollResult:
+  # Query DSS for Entities in 4D volume of interest
   request_body = {
     'area_of_interest': scd.make_vol4(
       resources.start_time, resources.end_time, 0, 3048,
       polygon=scd.make_polygon(latlngrect=resources.area)
     )
   }
-  url = '/dss/v1/operation_references/query'
+  url = '/dss/v1/{}/query'.format(dss_resource_name)
   t0 = datetime.datetime.utcnow()
   resp = resources.dss_client.post(url, json=request_body, scope=scd.SCOPE_SC)
   t1 = datetime.datetime.utcnow()
 
   # Handle any errors
   if resp.status_code != 200:
-    return PollResult(t0, t1, error=PollError(resp, 'Failed to search Operations in DSS'))
+    return PollResult(t0, t1, error=PollError(resp, 'Failed to search {}s in DSS'.format(resource_name)))
   try:
     ref_json = resp.json()
   except ValueError:
-    return PollResult(t0, t1, error=PollError(resp, 'DSS response to search Operations was not valid JSON'))
-  op_ref_list = ref_json.get('operation_references', [])
-  for op_ref in op_ref_list:
-    if 'id' not in op_ref:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search Operations included Operation without id'))
-    if 'owner' not in op_ref:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search Operations included ISA without owner'))
-    if 'uss_base_url' not in op_ref:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search Operations included ISA without uss_base_url'))
+    return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {}s was not valid JSON'.format(resource_name)))
+  entity_ref_list = ref_json.get(dss_resource_name, [])
+  for entity_ref in entity_ref_list:
+    if 'id' not in entity_ref:
+      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {}s included {} without id'.format(resource_name, resource_name)))
+    if 'owner' not in entity_ref:
+      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {} included {} without owner'.format(resource_name, resource_name)))
+    if 'uss_base_url' not in entity_ref:
+      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {} included {} without uss_base_url'.format(resource_name, resource_name)))
 
-  # Obtain details for all Operations (using cache when appropriate)
-  ops = {}
-  for op_ref in op_ref_list:
-    op_key = '{} ({})'.format(op_ref['id'], op_ref['owner'])
+  # Obtain details for all Entities (using cache when appropriate)
+  if resource_name not in resources.scd_cache:
+    resources.scd_cache[resource_name] = {}
+  cache = resources.scd_cache[resource_name]
+  entities = {}
+  for entity_ref in entity_ref_list:
+    entity_key = '{} ({})'.format(entity_ref['id'], entity_ref['owner'])
 
-    if (op_key in resources.scd_op_cache and
-        resources.scd_op_cache[op_key]['dss']['reference'] == op_ref and
-        'error' not in resources.scd_op_cache[op_key]['uss']):
-      # Operation reference data in DSS is identical to the cached reference; do
-      # not re-retrieve Operation details from USS
-      ops[op_key] = resources.scd_op_cache[op_key]
+    if (entity_key in cache and
+        cache[entity_key]['dss']['reference'] == entity_ref and
+        'error' not in cache[entity_key]['uss']):
+      # Entity reference data in DSS is identical to the cached reference; do
+      # not re-retrieve Entity details from USS
+      entities[entity_key] = cache[entity_key]
       continue
 
-    ops[op_key] = {'dss': {'reference': op_ref}}
+    entities[entity_key] = {'dss': {'reference': entity_ref}}
 
-    # Query the USS for Operation details
-    details_url = op_ref['uss_base_url'] + '/uss/v1/operations/{}'.format(op_ref['id'])
+    # Query the USS for Entity details
+    details_url = entity_ref['uss_base_url'] + '/uss/v1/{}/{}'.format(uss_resource_name, entity_ref['id'])
     t2 = datetime.datetime.utcnow()
     details_resp = resources.dss_client.get(details_url, scope=scd.SCOPE_SC)
     t3 = datetime.datetime.utcnow()
@@ -258,24 +272,24 @@ def poll_scd_operations(resources: ResourceSet) -> PollResult:
       if 'details' not in details_json:
         details_error_condition = 'did not contain details field'
     if details_error_condition:
-      ops[op_key]['uss']['error'] = {
-        'description': 'USS query for Operation details ' + details_error_condition,
+      entities[entity_key]['uss']['error'] = {
+        'description': 'USS query for {} details {}'.format(resource_name, details_error_condition),
         'url': details_url,
         'code': resp.status_code,
       }
       if details_json is not None:
-        ops[op_key]['uss']['error']['json'] = details_json
+        entities[entity_key]['uss']['error']['json'] = details_json
       else:
-        ops[op_key]['uss']['error']['body'] = details_resp.content
+        entities[entity_key]['uss']['error']['body'] = details_resp.content
       continue
 
     # Record details, and information about querying details, in the result
-    ops[op_key]['uss'] = details_json
-    ops[op_key]['uss']['tracer'] = {
+    entities[entity_key]['uss'] = details_json
+    entities[entity_key]['uss']['tracer'] = {
       'time_queried': t2.isoformat(),
       'dt_s': round((t3 - t2).total_seconds(), 2),
     }
 
-    # Cache the full result for this Operation
-    resources.scd_op_cache[op_key] = ops[op_key]
-  return PollResult(t0, t1, success=PollSuccess(ops))
+    # Cache the full result for this Entity
+    cache[entity_key] = entities[entity_key]
+  return PollResult(t0, t1, success=PollSuccess(entities))
