@@ -68,7 +68,7 @@ func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store
 		version: vs,
 	}
 
-	if err := store.checkCurrentMajorSchemaVersion(*vs); err != nil {
+	if err := store.CheckCurrentMajorSchemaVersion(*vs); err != nil {
 		return nil, stacktrace.Propagate(err, "Remote ID schema version check failed")
 	}
 
@@ -76,7 +76,7 @@ func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store
 }
 
 // CheckCurrentMajorSchemaVersion checks that store supports the current major schema version.
-func (s *Store) checkCurrentMajorSchemaVersion(vs semver.Version) error {
+func (s *Store) CheckCurrentMajorSchemaVersion(vs semver.Version) error {
 
 	if vs == *cockroach.UnknownVersion {
 		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")

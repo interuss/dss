@@ -51,7 +51,7 @@ func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store
 		clock:  DefaultClock,
 	}
 
-	if err := store.checkCurrentMajorSchemaVersion(ctx); err != nil {
+	if err := store.CheckCurrentMajorSchemaVersion(ctx); err != nil {
 		return nil, stacktrace.Propagate(err, "Strategic conflict detection schema version check failed")
 	}
 
@@ -59,7 +59,7 @@ func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store
 }
 
 // CheckCurrentMajorSchemaVersion returns nil if s supports the current major schema version.
-func (s *Store) checkCurrentMajorSchemaVersion(ctx context.Context) error {
+func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 	vs, err := s.GetVersion(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get database schema version for strategic conflict detection")
