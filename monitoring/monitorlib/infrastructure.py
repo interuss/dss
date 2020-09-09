@@ -1,7 +1,9 @@
+import datetime
 import functools
 from typing import Dict, List, Optional
 import urllib.parse
 
+import jwt
 import requests
 
 ALL_SCOPES = [
@@ -11,6 +13,9 @@ ALL_SCOPES = [
   'utm.constraint_management',
   'utm.constraint_consumption'
 ]
+
+EPOCH = datetime.datetime.utcfromtimestamp(0)
+TOKEN_REFRESH = datetime.timedelta(seconds=10)
 
 
 class AuthAdapter(object):
@@ -32,8 +37,14 @@ class AuthAdapter(object):
     if intended_audience not in self._tokens:
       self._tokens[intended_audience] = {}
     if scope_string not in self._tokens[intended_audience]:
-      self._tokens[intended_audience][scope_string] = self.issue_token(intended_audience, scopes)
-    token = self._tokens[intended_audience][scope_string]
+      token = self.issue_token(intended_audience, scopes)
+    else:
+      token = self._tokens[intended_audience][scope_string]
+    payload = jwt.decode(token, verify=False)
+    expires = EPOCH + datetime.timedelta(milliseconds=payload['exp'])
+    if expires < datetime.datetime.utcnow() - TOKEN_REFRESH:
+      token = self.issue_token(intended_audience, scopes)
+    self._tokens[intended_audience][scope_string] = token
     return {'Authorization': 'Bearer ' + token}
 
   def add_headers(self, request: requests.PreparedRequest, scopes: List[str]):
