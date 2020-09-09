@@ -10,8 +10,9 @@ import datetime
 import re
 
 from monitoring.monitorlib.infrastructure import default_scope
+from monitoring.monitorlib import rid
+from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
 from . import common
-from .common import SCOPE_READ, SCOPE_WRITE
 
 
 ISA_ID = '00000007-cd0d-420b-b259-293b3c000000'
@@ -47,20 +48,20 @@ def test_create_isa(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       })
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
   data = resp.json()
   assert data['service_area']['id'] == ISA_ID
   assert data['service_area']['flights_url'] == 'https://example.com/dss'
   assert data['service_area']['time_start'] == time_start.strftime(
-      common.DATE_FORMAT)
+      rid.DATE_FORMAT)
   assert data['service_area']['time_end'] == time_end.strftime(
-      common.DATE_FORMAT)
+      rid.DATE_FORMAT)
   assert re.match(r'[a-z0-9]{10,}$', data['service_area']['version'])
   assert 'subscribers' in data
 
@@ -68,7 +69,7 @@ def test_create_isa(session):
 @default_scope(SCOPE_READ)
 def test_get_isa_by_id(session):
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
   data = resp.json()
   assert data['service_area']['id'] == ISA_ID
@@ -85,7 +86,7 @@ def test_get_isa_by_search_missing_params(session):
 def test_get_isa_by_search(session):
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -95,8 +96,8 @@ def test_get_isa_by_search_earliest_time_included(session):
   resp = session.get('/identification_service_areas'
                      '?area={}&earliest_time={}'.format(
                          common.GEO_POLYGON_STRING,
-                         earliest_time.strftime(common.DATE_FORMAT)))
-  assert resp.status_code == 200
+                         earliest_time.strftime(rid.DATE_FORMAT)))
+  assert resp.status_code == 200, resp.content
   assert ISA_ID in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -106,8 +107,8 @@ def test_get_isa_by_search_earliest_time_excluded(session):
   resp = session.get('/identification_service_areas'
                      '?area={}&earliest_time={}'.format(
                          common.GEO_POLYGON_STRING,
-                         earliest_time.strftime(common.DATE_FORMAT)))
-  assert resp.status_code == 200
+                         earliest_time.strftime(rid.DATE_FORMAT)))
+  assert resp.status_code == 200, resp.content
   assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -117,8 +118,8 @@ def test_get_isa_by_search_latest_time_included(session):
   resp = session.get('/identification_service_areas'
                      '?area={}&latest_time={}'.format(
                          common.GEO_POLYGON_STRING,
-                         latest_time.strftime(common.DATE_FORMAT)))
-  assert resp.status_code == 200
+                         latest_time.strftime(rid.DATE_FORMAT)))
+  assert resp.status_code == 200, resp.content
   assert ISA_ID in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -128,8 +129,8 @@ def test_get_isa_by_search_latest_time_excluded(session):
   resp = session.get('/identification_service_areas'
                      '?area={}&latest_time={}'.format(
                          common.GEO_POLYGON_STRING,
-                         latest_time.strftime(common.DATE_FORMAT)))
-  assert resp.status_code == 200
+                         latest_time.strftime(rid.DATE_FORMAT)))
+  assert resp.status_code == 200, resp.content
   assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -137,7 +138,7 @@ def test_get_isa_by_search_latest_time_excluded(session):
 def test_get_isa_by_search_area_only(session):
   resp = session.get('/identification_service_areas'
                      '?area={}'.format(common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID in [x['id'] for x in resp.json()['service_areas']]
 
 
@@ -145,7 +146,7 @@ def test_get_isa_by_search_area_only(session):
 def test_get_isa_by_search_huge_area(session):
   resp = session.get('/identification_service_areas'
                      '?area={}'.format(common.HUGE_GEO_POLYGON_STRING))
-  assert resp.status_code == 413
+  assert resp.status_code == 413, resp.content
 
 
 @default_scope(SCOPE_WRITE)
@@ -164,23 +165,23 @@ def test_delete_isa(session):
   """ASTM Compliance Test: DSS0030_B_DELETE_ISA."""
   # GET the ISA first to find its version.
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   version = resp.json()['service_area']['version']
 
   # Then delete it.
   resp = session.delete('/identification_service_areas/{}/{}'.format(ISA_ID, version), scope=SCOPE_WRITE)
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_READ)
 def test_get_deleted_isa_by_id(session):
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 404
+  assert resp.status_code == 404, resp.content
 
 
 @default_scope(SCOPE_READ)
 def test_get_deleted_isa_by_search(session):
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]

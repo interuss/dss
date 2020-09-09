@@ -11,7 +11,7 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 

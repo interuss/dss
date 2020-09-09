@@ -1,4 +1,4 @@
-GOPATH := $(shell go env GOPATH)
+GOPATH := $(shell go env GOPATH 2> /dev/null)
 GOBIN := $(GOPATH)/bin
 COMMIT := $(shell scripts/git/commit.sh)
 # LAST_RELEASE_TAG determines the version of the DSS and is baked into
@@ -149,3 +149,10 @@ release: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
 
 release:
 	scripts/release.sh $(VERSION)
+
+start-locally:
+	build/dev/run_locally.sh build
+	build/dev/run_locally.sh up
+
+stop-locally:
+	build/dev/run_locally.sh stop

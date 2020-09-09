@@ -29,7 +29,7 @@ import (
 	"github.com/interuss/dss/pkg/scd"
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/validations"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"

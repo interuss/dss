@@ -5,7 +5,7 @@ import json
 import uuid
 
 from monitoring.monitorlib.infrastructure import default_scope
-from .common import SCOPE_SC
+from monitoring.monitorlib.scd import SCOPE_SC
 
 OP_ID = '00000028-728d-40c4-8eb2-20d19c000000'
 

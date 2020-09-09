@@ -17,7 +17,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/google/uuid"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )

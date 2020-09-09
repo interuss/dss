@@ -13,8 +13,8 @@ import datetime
 from typing import Dict, Tuple
 
 from monitoring.monitorlib.infrastructure import default_scope
-from . import common
-from .common import SCOPE_SC
+from monitoring.monitorlib import scd
+from monitoring.monitorlib.scd import SCOPE_SC
 
 URL_OP1 = 'https://example.com/op1/dss'
 URL_SUB1 = 'https://example.com/subs1/dss'
@@ -34,7 +34,7 @@ def _make_op1_request():
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
   return {
-    'extents': [common.make_vol4(time_start, time_end, 0, 120, common.make_circle(90, 0, 200))],
+    'extents': [scd.make_vol4(time_start, time_end, 0, 120, scd.make_circle(90, 0, 200))],
     'old_version': 0,
     'state': 'Accepted',
     'uss_base_url': URL_OP1,
@@ -49,7 +49,7 @@ def _make_op2_request():
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
   return {
-    'extents': [common.make_vol4(time_start, time_end, 0, 120, common.make_circle(89.999, 0, 200))],
+    'extents': [scd.make_vol4(time_start, time_end, 0, 120, scd.make_circle(89.999, 0, 200))],
     'old_version': 0,
     'state': 'Accepted',
     'uss_base_url': URL_OP2,
@@ -133,7 +133,7 @@ def test_op1_does_not_exist_query_1(scd_session, scd_session2):
   time_now = datetime.datetime.utcnow()
   end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(89.999, 180, 300))
+    'area_of_interest': scd.make_vol4(time_now, end_time, 0, 5000, scd.make_circle(89.999, 180, 300))
   })
   assert resp.status_code == 200, resp.content
   assert OP1_ID not in [op['id'] for op in resp.json().get('operation_references', [])]
@@ -149,7 +149,7 @@ def test_op1_does_not_exist_query_2(scd_session, scd_session2):
   time_now = datetime.datetime.utcnow()
   end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session2.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(89.999, 180, 300))
+    'area_of_interest': scd.make_vol4(time_now, end_time, 0, 5000, scd.make_circle(89.999, 180, 300))
   })
   assert resp.status_code == 200, resp.content
   assert OP1_ID not in [op['id'] for op in resp.json().get('operation_references', [])]
@@ -227,7 +227,7 @@ def test_create_op2sub(scd_session, scd_session2):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=70)
   req = {
-    "extents": common.make_vol4(time_start, time_end, 0, 1000, common.make_circle(89.999, 0, 250)),
+    "extents": scd.make_vol4(time_start, time_end, 0, 1000, scd.make_circle(89.999, 0, 250)),
     "old_version": 0,
     "uss_base_url": URL_SUB2,
     "notify_for_operations": True,
@@ -320,7 +320,7 @@ def test_read_ops_from_uss1(scd_session, scd_session2):
   time_now = datetime.datetime.utcnow()
   end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(89.999, 180, 300))
+    'area_of_interest': scd.make_vol4(time_now, end_time, 0, 5000, scd.make_circle(89.999, 180, 300))
   })
   assert resp.status_code == 200, resp.content
 
@@ -344,7 +344,7 @@ def test_read_ops_from_uss2(scd_session, scd_session2):
   time_now = datetime.datetime.utcnow()
   end_time = time_now + datetime.timedelta(hours=1)
   resp = scd_session2.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(89.999, 180, 300))
+    'area_of_interest': scd.make_vol4(time_now, end_time, 0, 5000, scd.make_circle(89.999, 180, 300))
   })
   assert resp.status_code == 200, resp.content
 
@@ -478,8 +478,8 @@ def test_mutate_sub2(scd_session, scd_session2):
   req['old_version'] = 1
   req['notify_for_operations'] = True
   req['notify_for_constraints'] = False
-  req['extents']['time_start'] = common.make_time(time_start)
-  req['extents']['time_end'] = common.make_time(time_end)
+  req['extents']['time_start'] = scd.make_time(time_start)
+  req['extents']['time_end'] = scd.make_time(time_end)
 
   # Attempt mutation with wrong version
   req['old_version'] = 0

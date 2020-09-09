@@ -14,7 +14,7 @@ import (
 	"github.com/interuss/dss/pkg/models"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"

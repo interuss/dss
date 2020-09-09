@@ -13,7 +13,7 @@ import (
 	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"google.golang.org/grpc/status"
 )
 

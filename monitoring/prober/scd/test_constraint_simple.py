@@ -11,8 +11,8 @@
 import datetime
 
 from monitoring.monitorlib.infrastructure import default_scope
-from . import common
-from .common import SCOPE_SC, SCOPE_CI, SCOPE_CM
+from monitoring.monitorlib import scd
+from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM
 
 
 BASE_URL = 'https://example.com/uss'
@@ -23,7 +23,7 @@ def _make_c1_request():
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
   return {
-    'extents': [common.make_vol4(time_start, time_end, 0, 120, common.make_circle(-56, 178, 50))],
+    'extents': [scd.make_vol4(time_start, time_end, 0, 120, scd.make_circle(-56, 178, 50))],
     'old_version': 0,
     'uss_base_url': BASE_URL,
   }
@@ -57,7 +57,7 @@ def test_constraint_does_not_exist_query(scd_session):
   time_now = datetime.datetime.utcnow()
   for scope in (SCOPE_SC, SCOPE_CI, SCOPE_CM):
     resp = scd_session.post('/constraint_references/query', json={
-      'area_of_interest': common.make_vol4(time_now, time_now, 0, 5000, common.make_circle(-56, 178, 300))
+      'area_of_interest': scd.make_vol4(time_now, time_now, 0, 5000, scd.make_circle(-56, 178, 300))
     }, scope=scope)
     assert resp.status_code == 200, resp.content
     assert CONSTRAINT_ID not in [constraint['id'] for constraint in resp.json().get('constraint_references', [])]
@@ -143,7 +143,7 @@ def test_get_constraint_by_search_missing_params(scd_session):
 def test_get_constraint_by_search(scd_session):
   for scope in (SCOPE_SC, SCOPE_CI, SCOPE_CM):
     resp = scd_session.post('/constraint_references/query', json={
-      'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(-56, 178, 300))
+      'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 300))
     }, scope=scope)
     assert resp.status_code == 200, resp.content
     assert CONSTRAINT_ID in [x['id'] for x in resp.json().get('constraint_references', [])]
@@ -155,7 +155,7 @@ def test_get_constraint_by_search(scd_session):
 def test_get_constraint_by_search_earliest_time_included(scd_session):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=59)
   resp = scd_session.post('/constraint_references/query', json={
-    'area_of_interest': common.make_vol4(earliest_time, None, 0, 5000, common.make_circle(-56, 178, 300))
+    'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 300))
   })
   assert resp.status_code == 200, resp.content
   assert CONSTRAINT_ID in [x['id'] for x in resp.json()['constraint_references']]
@@ -167,7 +167,7 @@ def test_get_constraint_by_search_earliest_time_included(scd_session):
 def test_get_constraint_by_search_earliest_time_excluded(scd_session):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=61)
   resp = scd_session.post('/constraint_references/query', json={
-    'area_of_interest': common.make_vol4(earliest_time, None, 0, 5000, common.make_circle(-56, 178, 300))
+    'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 300))
   })
   assert resp.status_code == 200, resp.content
   assert CONSTRAINT_ID not in [x['id'] for x in resp.json()['constraint_references']]
@@ -179,7 +179,7 @@ def test_get_constraint_by_search_earliest_time_excluded(scd_session):
 def test_get_constraint_by_search_latest_time_included(scd_session):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
   resp = scd_session.post('/constraint_references/query', json={
-    'area_of_interest': common.make_vol4(None, latest_time, 0, 5000, common.make_circle(-56, 178, 300))
+    'area_of_interest': scd.make_vol4(None, latest_time, 0, 5000, scd.make_circle(-56, 178, 300))
   })
   assert resp.status_code == 200, resp.content
   assert CONSTRAINT_ID in [x['id'] for x in resp.json()['constraint_references']]
@@ -191,7 +191,7 @@ def test_get_constraint_by_search_latest_time_included(scd_session):
 def test_get_constraint_by_search_latest_time_excluded(scd_session):
   latest_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
   resp = scd_session.post('/constraint_references/query', json={
-    'area_of_interest': common.make_vol4(None, latest_time, 0, 5000, common.make_circle(-56, 178, 300))
+    'area_of_interest': scd.make_vol4(None, latest_time, 0, 5000, scd.make_circle(-56, 178, 300))
   })
   assert resp.status_code == 200, resp.content
   assert CONSTRAINT_ID not in [x['id'] for x in resp.json()['constraint_references']]
@@ -256,7 +256,7 @@ def test_get_deleted_constraint_by_id(scd_session):
 @default_scope(SCOPE_SC)
 def test_get_deleted_constraint_by_search(scd_session):
   resp = scd_session.post('/constraint_references/query', json={
-    'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(-56, 178, 300))
+    'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 300))
   })
   assert resp.status_code == 200, resp.content
   assert CONSTRAINT_ID not in [x['id'] for x in resp.json()['constraint_references']]

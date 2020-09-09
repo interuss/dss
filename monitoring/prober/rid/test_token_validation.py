@@ -13,8 +13,9 @@ import datetime
 import pytest
 
 from monitoring.monitorlib.auth import DummyOAuth
+from monitoring.monitorlib import rid
+from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
 from . import common
-from .common import SCOPE_READ, SCOPE_WRITE
 
 ISA_ID = '000000cc-e2e1-49e6-9102-b2a544000000'
 
@@ -47,12 +48,12 @@ def test_put_isa_with_read_only_scope_token(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       }, scope=SCOPE_READ)
-  assert resp.status_code == 403
+  assert resp.status_code == 403, resp.content
 
 
 def test_create_isa(session):
@@ -70,24 +71,24 @@ def test_create_isa(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       }, scope=SCOPE_WRITE)
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 def test_get_isa_without_token(no_auth_session):
   resp = no_auth_session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 401
+  assert resp.status_code == 401, resp.content
   assert resp.json()['message'] == 'Missing access token'
 
 
 def test_get_isa_with_fake_token(no_auth_session):
   no_auth_session.headers['Authorization'] = 'Bearer fake_token'
   resp = no_auth_session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 401
+  assert resp.status_code == 401, resp.content
   assert resp.json()['message'] == 'token contains an invalid number of segments'
 
 
@@ -95,4 +96,4 @@ def test_get_isa_without_scope(session):
   if not isinstance(session.auth_adapter, DummyOAuth):
     pytest.skip('General auth providers will not usually grant tokens without any scopes')
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope='')
-  assert resp.status_code == 403
+  assert resp.status_code == 403, resp.content

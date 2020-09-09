@@ -8,7 +8,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 // Aggregates constants for operations.

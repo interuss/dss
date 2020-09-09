@@ -4,7 +4,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserrors "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/scd/models"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 )

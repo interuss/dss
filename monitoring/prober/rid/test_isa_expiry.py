@@ -4,8 +4,9 @@ import datetime
 import time
 
 from monitoring.monitorlib.infrastructure import default_scope
+from monitoring.monitorlib import rid
+from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
 from . import common
-from .common import SCOPE_READ, SCOPE_WRITE
 
 ISA_ID = '00000098-ba6d-4c20-a575-6e412e000000'
 
@@ -39,19 +40,19 @@ def test_create(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       })
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_READ)
 def test_valid_immediately(session):
   # The ISA is still valid immediately after we create it.
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 def test_sleep_5_seconds():
@@ -63,7 +64,7 @@ def test_sleep_5_seconds():
 def test_returned_by_id(session):
   # We can get it explicitly by ID
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_READ)
@@ -71,7 +72,7 @@ def test_not_returned_by_search(session):
   # ...but it's not included in a search.
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))
-  assert resp.status_code == 200
+  assert resp.status_code == 200, resp.content
   assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]
 
 

@@ -13,7 +13,7 @@ import json
 import uuid
 
 from monitoring.monitorlib.infrastructure import default_scope
-from .common import SCOPE_SC
+from monitoring.monitorlib.scd import SCOPE_SC
 
 OP1_ID = '00000020-b6ee-4082-b6e7-75eb4f000000'
 OP2_ID = '00000000-ee51-4700-873d-e10911000000'
@@ -26,7 +26,7 @@ def test_ensure_clean_workspace(scd_session):
       resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
       assert resp.status_code == 200, resp.content
       resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-      assert resp.status_code == 404
+      assert resp.status_code == 404, resp.content
     elif resp.status_code == 404:
       # As expected.
       pass

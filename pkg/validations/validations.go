@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 	"google.golang.org/grpc"
 )
 

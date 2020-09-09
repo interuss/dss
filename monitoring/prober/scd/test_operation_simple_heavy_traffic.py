@@ -1,4 +1,4 @@
-"""Basic Operation tests with hundreds of operations created in the same area:
+"""Basic Operation tests with hundreds of operations created SEQUENTIALLY in the SAME area:
 
   - make sure operations do not exist with get or query
   - create 100 operations sequentially, with each covers non-overlapping area that are close to others
@@ -12,13 +12,13 @@
 import datetime
 import json
 
-from . import common
-from .common import SCOPE_SC
+from monitoring.monitorlib import scd
+from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.infrastructure import default_scope
 
 
 def _load_op_ids():
-  with open('./scd/resources/op_ids_100.json', 'r') as f:
+  with open('./scd/resources/op_ids_heavy_traffic_sequential.json', 'r') as f:
     return json.load(f)
 
 
@@ -35,7 +35,7 @@ def _make_op_request(idx):
   time_end = time_start + datetime.timedelta(minutes=60)
   lat = -56 - 0.001 * idx
   return {
-    'extents': [common.make_vol4(time_start, time_end, 0, 120, common.make_circle(lat, 178, 50))],
+    'extents': [scd.make_vol4(time_start, time_end, 0, 120, scd.make_circle(lat, 178, 50))],
     'old_version': 0,
     'state': 'Accepted',
     'uss_base_url': BASE_URL,
@@ -80,7 +80,7 @@ def test_ops_do_not_exist_query(scd_session):
   end_time = time_now + datetime.timedelta(hours=1)
 
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(time_now, end_time, 0, 5000, common.make_circle(-56, 178, 12000))
+    'area_of_interest': scd.make_vol4(time_now, end_time, 0, 5000, scd.make_circle(-56, 178, 12000))
   }, scope=SCOPE_SC)
   assert resp.status_code == 200, resp.content
   found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
@@ -103,8 +103,8 @@ def test_create_ops(scd_session):
     op = data['operation_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
-    assert common.iso8601_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
-    assert common.iso8601_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
+    assert scd.iso8601_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
+    assert scd.iso8601_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
     assert op['version'] == 1
     assert op['ovn']
     assert 'subscription_id' in op
@@ -135,7 +135,7 @@ def test_get_ops_by_ids(scd_session):
 @default_scope(SCOPE_SC)
 def test_get_ops_by_search(scd_session):
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(-56, 178, 12000))
+    'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
   found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
@@ -148,7 +148,7 @@ def test_get_ops_by_search(scd_session):
 def test_get_ops_by_search_earliest_time_included(scd_session):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=59)
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(earliest_time, None, 0, 5000, common.make_circle(-56, 178, 12000))
+    'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
   found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
@@ -161,7 +161,7 @@ def test_get_ops_by_search_earliest_time_included(scd_session):
 def test_get_ops_by_search_earliest_time_excluded(scd_session):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=81)
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(earliest_time, None, 0, 5000, common.make_circle(-56, 178, 12000))
+    'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
   found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
@@ -174,7 +174,7 @@ def test_get_ops_by_search_earliest_time_excluded(scd_session):
 def test_get_ops_by_search_latest_time_included(scd_session):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=20)
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(None, latest_time, 0, 5000, common.make_circle(-56, 178, 12000))
+    'area_of_interest': scd.make_vol4(None, latest_time, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
   found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
@@ -187,7 +187,7 @@ def test_get_ops_by_search_latest_time_included(scd_session):
 def test_get_ops_by_search_latest_time_excluded(scd_session):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(None, latest_time, 0, 5000, common.make_circle(-56, 178, 12000))
+    'area_of_interest': scd.make_vol4(None, latest_time, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
   found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
@@ -261,7 +261,7 @@ def test_get_deleted_ops_by_ids(scd_session):
 @default_scope(SCOPE_SC)
 def test_get_deleted_ops_by_search(scd_session):
   resp = scd_session.post('/operation_references/query', json={
-    'area_of_interest': common.make_vol4(None, None, 0, 5000, common.make_circle(-56, 178, 12000))
+    'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
   found_ids = [op['id'] for op in resp.json().get('operation_references', [])]

@@ -9,7 +9,7 @@ import (
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/palantir/stacktrace"
+	"github.com/interuss/stacktrace"
 )
 
 // DeleteSubscription deletes an existing subscription.
