@@ -59,9 +59,10 @@ def dict_changes(a: Dict, b: Dict) -> Tuple[Dict, Dict, Change]:
         changes[k] = field_changes
         changes[k]['__self__'] = change
       elif len(field_values) == 1:
-        k = k + '.' + next(iter(values[k].keys()))
-        values[k] = field_values
-        changes[k] = field_changes
+        field_k = next(iter(field_values.keys()))
+        k = k + '.' + field_k
+        values[k] = field_values[field_k]
+        changes[k] = field_changes[field_k]
     else:
       if v0 == v1:
         change = Change.NOCHANGE

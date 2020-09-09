@@ -42,3 +42,22 @@ The auth SPEC defines how to obtain access tokens to access the DSS instances
 and USSs in the network. See
 [the auth spec documentation](../monitorlib/README.md#Auth_specs) for examples
 and more information.
+
+## Subscribe mode
+Subscribe mode emplaces Subscriptions in the DSS and listens for incoming
+notifications of changes from other USSs.  The two primary advantages to this
+mode are that no ongoing polling is necessary and details of Entities are
+delivered automatically -- the only outgoing requests happen at initialization
+and shutdown.  The disadvantages include requiring an external route to this,
+probably with TLS unless the TLS check is disabled in the DSS, and that
+information logging is dependent on USSs behaving correctly and sending
+notifications upon DSS prompting.
+
+### Invocation
+Make a copy of [`run_subscribe.sh`](run_subscribe.sh) and edit the arguments as
+desired.  Then simply run your copy of that script (`./run_subscribe.sh`).
+
+### External route
+One important argument in subscribe mode is `--base-url`.  This should be the
+URL at which the tracer container can be reached externally.  Note that this URL
+will probably need to use https (to satisfy DSS validation), but 

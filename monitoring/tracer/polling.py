@@ -105,10 +105,10 @@ class PollResult(object):
         lines.extend('    ' + colored(line, 'red') for line in e.body.replace('\r\n', '\n').split('\n'))
       return '\n'.join(lines)
 
-    if other is None or other._success is None:
+    if other is None or other.success is None:
       other = {}
     else:
-      other = {name + ' ' + k: v for k, v in other._success.objects.items()}
+      other = {name + ' ' + k: v for k, v in other.success.objects.items()}
     this = {name + ' ' + k: v for k, v in self.success.objects.items()}
     values, changes, _ = formatting.dict_changes(other, this)
     return '\n'.join(formatting.diff_lines(values, changes))
@@ -250,12 +250,16 @@ def poll_scd_entities(resources: ResourceSet,
       details_error_condition = 'did not return valid JSON'
     if resp.status_code != 200:
       details_error_condition = 'indicated failure'
-    if not details_error_condition:
-      if 'reference' not in details_json:
-        details_error_condition = 'did not contain reference field'
-      if 'details' not in details_json:
-        details_error_condition = 'did not contain details field'
+    if 'operation' in details_json:
+      if not details_error_condition:
+        if 'reference' not in details_json['operation']:
+          details_error_condition = 'did not contain reference field'
+        if 'details' not in details_json['operation']:
+          details_error_condition = 'did not contain details field'
+    else:
+      details_error_condition = 'did not contain operation field'
     if details_error_condition:
+      entities[entity_key]['uss'] = {}
       entities[entity_key]['uss']['error'] = {
         'description': 'USS query for {} details {}'.format(resource_name, details_error_condition),
         'url': details_url,
