@@ -19,9 +19,11 @@ def make_id(code: str) -> uuid.UUID:
   Returns:
     Pseudorandom test ID in UUIDv4 format.
   """
-  digest = hashlib.sha1('{} {}'.format(mac, code).encode('utf-8')).digest()[-16:]
-  digest[0:2] = 0
+  digest = bytearray(hashlib.sha1('{} {}'.format(mac, code).encode('utf-8')).digest()[-16:])
+  digest[0] = 0
+  digest[1] = 0
   digest[2] = 0xFF
   digest[-3] = 0xFF
-  digest[-2:] = 0
-  return uuid.UUID(bytes=digest, version=4)
+  digest[-2] = 0
+  digest[-1] = 0
+  return uuid.UUID(bytes=bytes(digest), version=4)

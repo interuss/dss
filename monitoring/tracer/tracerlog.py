@@ -1,23 +1,23 @@
 import datetime
+import logging
 import os
-from typing import Dict, Optional
+from typing import Dict
 
 import yaml
 
 
-suffixes = ['']
-for c in 'bcdefghijklmnopqrstuvwxyz':
-  suffixes.append(c)
-for c1 in 'abcdefghijklmnopqrstuvwxyz':
-  for c2 in 'abcdefghijklmnopqrstuvwxyz':
-    suffixes.append(c1 + c2)
+logging.basicConfig()
+_logger = logging.getLogger('tracer.logging')
+_logger.setLevel(logging.DEBUG)
 
 
 class Logger(object):
   def __init__(self, log_path: str):
     session = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     self._log_path = os.path.join(log_path, session)
+    _logger.info('Log path: {}'.format(self._log_path))
     os.makedirs(self._log_path, exist_ok=True)
+    self.index = 0
 
   def logconfig(self, config: Dict) -> None:
     with open(os.path.join(self._log_path, 'config.yaml'), 'w') as f:
@@ -32,12 +32,12 @@ class Logger(object):
       }
       f.write(yaml.dump(body, explicit_start=True))
 
-  def log_new(self, code: str, content: Dict) -> None:
-    for suffix in suffixes:
-      logname = '{}{}_{}.yaml'.format(datetime.datetime.now().strftime('%H%M%S'), suffix, code)
-      fullname = os.path.join(self._log_path, logname)
-      if not os.path.exists(fullname):
-        break
+  def log_new(self, code: str, content: Dict) -> str:
+    logname = '{}_{:03}_{}.yaml'.format(datetime.datetime.now().strftime('%H%M%S'), self.index % 1000, code)
+    fullname = os.path.join(self._log_path, logname)
+    self.index += 1
 
     with open(fullname, 'w') as f:
       f.write(yaml.dump(content, indent=2))
+
+    return logname

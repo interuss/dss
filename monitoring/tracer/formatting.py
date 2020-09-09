@@ -176,3 +176,31 @@ def entity_diff_text(a: Optional[Dict], b: Optional[Dict]) -> str:
   b = _abbreviated_entity(b)
   values, changes, _ = dict_changes(a, b)
   return '\n'.join(diff_lines(values, changes))
+
+
+def format_timedelta(td: datetime.timedelta) -> str:
+  """Produce a human-readable string describing a timedelta.
+  Args:
+    td: datetime.timedelta to format.
+  Return:
+    Formatted timedelta that looks like HH:MM:SS or XXXdHH:MM:SS where XXX is
+    number of days, with or without a leading negative sign.
+  """
+  seconds = int(td.total_seconds())
+  if seconds < 0:
+    seconds = -seconds
+    sign = '-'
+  else:
+    sign = ''
+  periods = (('%d', 60*60*24), ('%02d', 60*60), ('%02d', 60), ('%02d', 1))
+  has_days = seconds >= periods[0][1]
+
+  segments = []
+  for format_string, period_seconds in periods:
+    period_value, seconds = divmod(seconds, period_seconds)
+    segments.append(format_string % period_value)
+
+  if has_days:
+    return sign + '{:s}d{:s}:{:s}:{:s}'.format(*segments)
+  else:
+    return sign + '{:s}:{:s}:{:s}'.format(*segments[1:])

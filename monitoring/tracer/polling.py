@@ -2,32 +2,16 @@ import datetime
 from typing import Callable, Dict, Optional
 
 import requests
-import s2sphere
 from termcolor import colored
 import yaml
 
-from monitoring.monitorlib import infrastructure, rid, scd
-from monitoring.tracer import formatting, tracerlog
+from monitoring.monitorlib import rid, scd
+from monitoring.tracer import formatting
+from monitoring.tracer.resources import ResourceSet
 
 
 def indent(s: str, level: int) -> str:
   return '\n'.join(' ' * level + line for line in s.split('\n'))
-
-
-class ResourceSet(object):
-  def __init__(self,
-               dss_client: infrastructure.DSSTestSession,
-               area: s2sphere.LatLngRect,
-               logger: tracerlog.Logger,
-               start_time: datetime.datetime,
-               end_time: datetime.datetime):
-    self.dss_client = dss_client
-    self.area = area
-    self.logger = logger
-    self.start_time = start_time
-    self.end_time = end_time
-
-    self.scd_cache = {}
 
 
 class PollError(object):

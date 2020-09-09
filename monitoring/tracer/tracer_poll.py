@@ -5,24 +5,17 @@ import datetime
 import os
 import sys
 import time
-from typing import Callable, Dict, List, Optional
+from typing import List
 
-import s2sphere
-
-from monitoring.monitorlib import auth, infrastructure, versioning
-from monitoring.tracer import formatting, geo, tracerlog, polling
+from monitoring.monitorlib import versioning
+from monitoring.tracer import formatting, polling
+from monitoring.tracer.resources import ResourceSet
 
 
 def parseArgs() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Test Interoperability of DSSs")
+    parser = argparse.ArgumentParser(description="Poll for changes in DSS-tracked Entity status")
 
-    # Required arguments
-    parser.add_argument('--auth', help='Auth spec for obtaining authorization to DSS and USSs; see README.md')
-    parser.add_argument('--dss', help='Base URL of DSS instance to query')
-    parser.add_argument('--area', help='`lat,lng,lat,lng` for box containing the area to trace interactions for')
-    parser.add_argument('--start-time', default=datetime.datetime.utcnow().isoformat(), help='ISO8601 UTC datetime at which to start polling')
-    parser.add_argument('--poll-hours', type=float, default=18, help='Number of hours to poll for')
-    parser.add_argument('--output-folder', help='Path of folder in which to write logs')
+    ResourceSet.add_arguments(parser)
 
     # Feature arguments
     parser.add_argument('--rid-isa-poll-interval', type=float, default=0, help='Seconds beteween each poll of the DSS for ISAs, 0 to disable DSS polling for ISAs')
@@ -41,17 +34,11 @@ def main() -> int:
     args = parseArgs()
 
     # Required resources
-    adapter: auth.AuthAdapter = auth.make_auth_adapter(args.auth)
-    dss_client = infrastructure.DSSTestSession(args.dss, adapter)
-    area: s2sphere.LatLngRect = geo.make_latlng_rect(args.area)
-    start_time = datetime.datetime.fromisoformat(args.start_time)
-    end_time = start_time + datetime.timedelta(hours=args.poll_hours)
-    logger = tracerlog.Logger(args.output_folder)
-    resources = polling.ResourceSet(dss_client, area, logger, start_time, end_time)
+    resources = ResourceSet.from_arguments(args)
 
     config = vars(args)
     config['code_version'] = versioning.get_code_version()
-    logger.logconfig(config)
+    resources.logger.logconfig(config)
 
     # Prepare pollers
     pollers: List[polling.Poller] = []
@@ -100,14 +87,14 @@ def main() -> int:
         result = most_urgent_poller.poll()
 
         if result.has_different_content_than(most_urgent_poller.last_result):
-          logger.log_new(most_urgent_poller.name, result.to_json())
+          resources.logger.log_new(most_urgent_poller.name, result.to_json())
           if need_line_break:
             print()
           print(most_urgent_poller.diff_text(result))
           need_line_break = False
           most_urgent_poller.last_result = result
         else:
-          logger.log_same(result.initiated_at, result.completed_at, most_urgent_poller.name)
+          resources.logger.log_same(result.initiated_at, result.completed_at, most_urgent_poller.name)
           print_no_newline('.')
           need_line_break = True
       except KeyboardInterrupt:
