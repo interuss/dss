@@ -529,4 +529,4 @@ Changes in v3.1.0
 * Added a new writer field to identification_service_areas and subscriptions table. 
 * Read the database version and cache it in memory. 
 
-If you start server with database v3.0.0. and migrate database to v3.1.0 without restart server, the service will work fine, just the writer field gets ignored. However, if you start the server with database v3.1.0 and you downgrade the database to 3.0.0, the service will fail because the server tries to update the writer field.
+If you start server with database v3.0.0. and migrate database to v3.1.0 without restarting the server, the service will work, the writer field will be ignored. However, if you start the server with database v3.1.0 and you downgrade the database to 3.0.0, the service will fail because the server will try to write/update the writer field
