@@ -70,13 +70,13 @@ class PollResult(object):
       raise ValueError('A poll result must indicate either success or error')
     if success is not None and error is not None:
       raise ValueError('A poll result may not indicate both success and error')
-    self._success = success
+    self.success = success
     self._error = error
     self.completed_at = completed_at
 
   def __str__(self):
-    if self._success is not None:
-      return 'Success {}'.format(self._success)
+    if self.success is not None:
+      return 'Success {}'.format(self.success)
     return 'Error {}'.format(self._error)
 
   def to_json(self) -> Dict:
@@ -84,13 +84,13 @@ class PollResult(object):
       't0': self.initiated_at.isoformat(),
       't1': self.completed_at.isoformat(),
       'error': self._error.to_json() if self._error else None,
-      'success': self._success.to_json() if self._success else None,
+      'success': self.success.to_json() if self.success else None,
     }
 
   def has_different_content_than(self, other) -> bool:
     if other is None:
       return True
-    return self._error != other._error or self._success != other._success
+    return self._error != other._error or self.success != other.success
 
   def diff_text(self, other, name: str, object_diff_text: Callable[[Optional[Dict], Optional[Dict]], str]) -> str:
     dt_seconds = round((self.completed_at - self.initiated_at).total_seconds(), 2)
@@ -109,7 +109,7 @@ class PollResult(object):
       other = {}
     else:
       other = {name + ' ' + k: v for k, v in other._success.objects.items()}
-    this = {name + ' ' + k: v for k, v in self._success.objects.items()}
+    this = {name + ' ' + k: v for k, v in self.success.objects.items()}
     values, changes, _ = formatting.dict_changes(other, this)
     return '\n'.join(formatting.diff_lines(values, changes))
 
