@@ -30,12 +30,14 @@ a single polling period, this tool would not create an record of that ISA.
 ### Invocation
 ```shell script
 docker run --rm -v `pwd`/logs:/logs interuss/dss/tracer \
-    tracer_poll.py \
+    python tracer_poll.py \
     --auth=<SPEC> \
     --dss=https://example.com \
     --area=34.1234,-123.4567,34.4567,-123.1234 \
     --output-folder=/logs \
-    --rid-isa-poll-interval=15
+    --rid-isa-poll-interval=15 \
+    --scd-operation-poll-interval=15 \
+    --scd-constraint-poll-interval=15
 ```
 
 The auth SPEC defines how to obtain access tokens to access the DSS instances
@@ -55,9 +57,12 @@ notifications upon DSS prompting.
 
 ### Invocation
 Make a copy of [`run_subscribe.sh`](run_subscribe.sh) and edit the arguments as
-desired.  Then simply run your copy of that script (`./run_subscribe.sh`).
+appropriate.  Then simply run your copy of that script (`./run_subscribe.sh`).
 
 ### External route
 One important argument in subscribe mode is `--base-url`.  This should be the
 URL at which the tracer container can be reached externally.  Note that this URL
-will probably need to use https (to satisfy DSS validation), but 
+will probably need to use https (to satisfy DSS validation), but the tracer
+container only serves via http.  This means a user will need to provide their
+own TLS termination for the external endpoint and forward traffic to the tracer
+container in order to use tracer in subscribe mode.

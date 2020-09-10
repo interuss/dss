@@ -13,4 +13,4 @@ ENV PYTHONPATH /app
 ARG version
 ENV CODE_VERSION=$version
 
-ENTRYPOINT ["python"]
+ENTRYPOINT []

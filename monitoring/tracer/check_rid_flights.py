@@ -26,18 +26,23 @@ def _json_or_error(resp: requests.Response) -> Dict:
     return json
   else:
     info = {
-      'url': resp.url,
-      'code': resp.status_code,
-      'token': resp.request.headers.get('Authorization', '<None>')
+      'request': {
+        'url': resp.request.url,
+        'token': resp.request.headers.get('Authorization', '<None>'),
+      },
+      'response': {
+        'code': resp.status_code,
+        'elapsed': resp.elapsed.total_seconds()
+      }
     }
     if json is None:
-      info['body'] = resp.content
+      info['response']['body'] = resp.content
     else:
-      info['json'] = json
+      info['response']['json'] = json
     return info
 
 
-def get_flights(resources: ResourceSet, flights_url: str) -> Dict:
+def get_flights(resources: ResourceSet, flights_url: str, include_recent_positions: bool) -> Dict:
   resp = resources.dss_client.get(flights_url, params={
     'view': '{},{},{},{}'.format(
       resources.area.lat_lo().degrees,
@@ -45,7 +50,7 @@ def get_flights(resources: ResourceSet, flights_url: str) -> Dict:
       resources.area.lat_hi().degrees,
       resources.area.lng_hi().degrees,
     ),
-    'include_recent_positions': 'true',
+    'include_recent_positions': 'true' if include_recent_positions else 'false',
   }, scope=rid.SCOPE_READ)
   return _json_or_error(resp)
 
@@ -58,6 +63,7 @@ def get_flight_details(resources: ResourceSet, flights_url: str, id: str) -> Dic
 def main():
   parser = argparse.ArgumentParser()
   ResourceSet.add_arguments(parser)
+  parser.add_argument('--include-recent-positions', action='store_true', default=False, help='If set, request recent positions when polling for flight data')
   args = parser.parse_args()
   resources = ResourceSet.from_arguments(args)
 
@@ -75,17 +81,18 @@ def main():
     if flights_url is None:
       result[isa_id] = {'error': 'Missing flights_url'}
       continue
-    isa_flights = get_flights(resources, flights_url)
-    if 'flights' not in isa_flights:
+    isa_flights = get_flights(resources, flights_url, args.include_recent_positions)
+    if 'flights' not in isa_flights['response'].get('json', {}):
       isa_flights['description'] = 'Missing flights field'
       result[isa_id] = {'error': isa_flights}
       continue
-    for flight in isa_flights['flights']:
+    for flight in isa_flights['response']['json']['flights']:
       flight_id = flight.get('id', None)
       if flight_id is None:
-        flight['details'] = {'error': 'Missing id field'}
+        flight['details'] = {'error': {'description': 'Missing id field'}}
         continue
       flight['details'] = get_flight_details(resources, flights_url, flight['id'])
+    result[isa_id] = isa_flights
 
   print(yaml.dump(result))
 
