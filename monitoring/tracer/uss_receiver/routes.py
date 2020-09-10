@@ -195,6 +195,11 @@ def logs(log):
   return flask.render_template('log.html', log=obj, title=logfile)
 
 
+@webapp.route('/favicon.ico')
+def favicon():
+  flask.abort(404)
+
+
 @webapp.route('/<path:u_path>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 def catch_all(u_path) -> Tuple[str, int]:
   log_name = context.resources.logger.log_new('badroute', _get_request_info(flask.request))
