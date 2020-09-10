@@ -14,17 +14,17 @@ _logger.setLevel(logging.DEBUG)
 class Logger(object):
   def __init__(self, log_path: str):
     session = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    self._log_path = os.path.join(log_path, session)
-    _logger.info('Log path: {}'.format(self._log_path))
-    os.makedirs(self._log_path, exist_ok=True)
+    self.log_path = os.path.join(log_path, session)
+    _logger.info('Log path: {}'.format(self.log_path))
+    os.makedirs(self.log_path, exist_ok=True)
     self.index = 0
 
   def logconfig(self, config: Dict) -> None:
-    with open(os.path.join(self._log_path, 'config.yaml'), 'w') as f:
+    with open(os.path.join(self.log_path, 'config.yaml'), 'w') as f:
       f.write(yaml.dump(config, indent=2))
 
   def log_same(self, t0: datetime.datetime, t1: datetime.datetime, code: str) -> None:
-    with open(os.path.join(self._log_path, 'nochange_queries.yaml'), 'a') as f:
+    with open(os.path.join(self.log_path, 'nochange_queries.yaml'), 'a') as f:
       body = {
         't0': t0.isoformat(),
         't1': t1.isoformat(),
@@ -34,7 +34,7 @@ class Logger(object):
 
   def log_new(self, code: str, content: Dict) -> str:
     logname = '{}_{:03}_{}.yaml'.format(datetime.datetime.now().strftime('%H%M%S'), self.index % 1000, code)
-    fullname = os.path.join(self._log_path, logname)
+    fullname = os.path.join(self.log_path, logname)
     self.index += 1
 
     with open(fullname, 'w') as f:

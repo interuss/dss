@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  {% if title %}
+    <title>{{ title }} - Tracer</title>
+  {% else %}
+    <title>Tracer (InterUSS Project)</title>
+  {% endif %}
+</head>
+<body>
+  <div>
+    Tracer:
+    <a href="{{ url_for('list_logs') }}">Home</a>
+  </div>
+  <hr>
+  <div>
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

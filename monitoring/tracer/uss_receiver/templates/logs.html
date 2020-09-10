@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<ul>
+  {% for log in logs %}
+    <li>
+      <a href="{{ url_for('logs', log=log) }}">{{ log }}</a>
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

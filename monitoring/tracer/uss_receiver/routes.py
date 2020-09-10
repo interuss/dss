@@ -1,10 +1,12 @@
 import datetime
 import logging
+import os
 from typing import Dict, Optional, Tuple
 
 import flask
 import jwt
 from termcolor import colored
+import yaml
 
 from monitoring.tracer import formatting
 from . import webapp, context
@@ -168,6 +170,29 @@ def scd_constraint_notification() -> Tuple[str, int]:
     _logger.error('{} ({}) unable to decode JSON: {} -> {}'.format(label, owner, e, log_name))
 
   return RESULT
+
+
+@webapp.route('/logs')
+def list_logs():
+  logs = sorted(os.listdir(context.resources.logger.log_path))
+  response = flask.make_response(flask.render_template('logs.html', logs=logs))
+  response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+  response.headers['Pragma'] = 'no-cache'
+  return response
+
+
+@webapp.route('/logs/<log>')
+def logs(log):
+  logfile = os.path.join(context.resources.logger.log_path, log)
+  if not os.path.exists:
+    flask.abort(404)
+  with open(logfile, 'r') as f:
+    objs = [obj for obj in yaml.full_load_all(f)]
+  if len(objs) == 1:
+    obj = objs[0]
+  else:
+    obj = {'entries': objs}
+  return flask.render_template('log.html', log=obj, title=logfile)
 
 
 @webapp.route('/<path:u_path>', methods=['GET', 'PUT', 'POST', 'DELETE'])
