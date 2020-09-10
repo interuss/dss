@@ -173,6 +173,7 @@ def scd_constraint_notification() -> Tuple[str, int]:
 
 
 @webapp.route('/logs')
+@webapp.route('/')
 def list_logs():
   logs = sorted(os.listdir(context.resources.logger.log_path))
   response = flask.make_response(flask.render_template('logs.html', logs=logs))
