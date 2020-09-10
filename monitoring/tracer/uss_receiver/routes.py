@@ -8,8 +8,8 @@ import jwt
 from termcolor import colored
 import yaml
 
-from monitoring.tracer import formatting
-from . import webapp, context
+from monitoring.tracer import check_rid_flights, formatting, geo
+from . import context, webapp
 
 
 logging.basicConfig()
@@ -182,6 +182,23 @@ def list_logs():
   return response
 
 
+def _redact_log(obj):
+  if isinstance(obj, dict):
+    result = {}
+    for k, v in obj.items():
+      if k.lower() == 'authorization' and isinstance(v, str):
+        result[k] = '.'.join(v.split('.')[0:-1]) + '.REDACTED'
+      else:
+        result[k] = _redact_log(v)
+    return result
+  elif isinstance(obj, str):
+    return obj
+  elif isinstance(obj, list):
+    return [_redact_log(item) for item in obj]
+  else:
+    return obj
+
+
 @webapp.route('/logs/<log>')
 def logs(log):
   logfile = os.path.join(context.resources.logger.log_path, log)
@@ -193,7 +210,27 @@ def logs(log):
     obj = objs[0]
   else:
     obj = {'entries': objs}
-  return flask.render_template('log.html', log=obj, title=logfile)
+  return flask.render_template('log.html', log=_redact_log(obj), title=logfile)
+
+
+@webapp.route('/rid_poll', methods=['GET'])
+def get_rid_poll():
+  return flask.render_template('rid_poll.html')
+
+
+@webapp.route('/rid_poll', methods=['POST'])
+def request_rid_poll():
+  if 'area' not in flask.request.form:
+    flask.abort(400, 'Missing area')
+
+  try:
+    area = geo.make_latlng_rect(flask.request.form['area'])
+  except ValueError as e:
+    flask.abort(400, str(e))
+
+  result = check_rid_flights.get_all_flights(context.resources, area, flask.request.form.get('include_recent_positions'))
+  log_name = context.resources.logger.log_new('getflights', result)
+  return flask.redirect(flask.url_for('logs', log=log_name))
 
 
 @webapp.route('/favicon.ico')

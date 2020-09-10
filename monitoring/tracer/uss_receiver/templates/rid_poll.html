@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form action="{{ url_for('request_rid_poll') }}" method="POST">
+  <p>
+    <label for="area">Area (lat,lng,lat,lng):</label>
+    <input type="text" id="area" name="area" size="40">
+  </p>
+  <p>
+    <label for="include_recent_positions">Include recent positions</label>
+    <input type="checkbox" id="include_recent_positions" name="include_recent_positions">
+  </p>
+  <input type="submit" value="Query">
+</form>
+{% endblock %}

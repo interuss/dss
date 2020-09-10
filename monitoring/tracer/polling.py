@@ -2,6 +2,7 @@ import datetime
 from typing import Callable, Dict, Optional
 
 import requests
+import s2sphere
 from termcolor import colored
 import yaml
 
@@ -145,9 +146,9 @@ class Poller(object):
     return new_result.diff_text(self.last_result, self.name, self._object_diff_text)
 
 
-def poll_rid_isas(resources: ResourceSet) -> PollResult:
+def poll_rid_isas(resources: ResourceSet, box: s2sphere.LatLngRect) -> PollResult:
   # Query DSS for ISAs in 2D+time area of interest
-  area = rid.geo_polygon_string(rid.vertices_from_latlng_rect(resources.area))
+  area = rid.geo_polygon_string(rid.vertices_from_latlng_rect(box))
   url = '/v1/dss/identification_service_areas?area={}&earliest_time={}&latest_time={}'.format(
     area, resources.start_time.strftime(rid.DATE_FORMAT), resources.end_time.strftime(rid.DATE_FORMAT))
   t0 = datetime.datetime.utcnow()

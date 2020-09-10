@@ -48,7 +48,7 @@ def main() -> int:
         name='ridisa',
         object_diff_text=formatting.isa_diff_text,
         interval=datetime.timedelta(seconds=args.rid_isa_poll_interval),
-        poll=lambda: polling.poll_rid_isas(resources)))
+        poll=lambda: polling.poll_rid_isas(resources, resources.area)))
 
     if args.scd_operation_poll_interval > 0:
       pollers.append(polling.Poller(
