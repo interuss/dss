@@ -1,3 +1,6 @@
+from monitoring.monitorlib import rid
+
+
 VERTICES = [
     {
         'lng': 130.6205,
@@ -17,8 +20,7 @@ VERTICES = [
     },
 ]
 
-GEO_POLYGON_STRING = ','.join(
-    '{},{}'.format(x['lat'], x['lng']) for x in VERTICES)
+GEO_POLYGON_STRING = rid.geo_polygon_string(VERTICES)
 
 HUGE_VERTICES = [
     {
@@ -39,5 +41,4 @@ HUGE_VERTICES = [
     },
 ]
 
-HUGE_GEO_POLYGON_STRING = ','.join(
-    '{},{}'.format(x['lat'], x['lng']) for x in HUGE_VERTICES)
+HUGE_GEO_POLYGON_STRING = rid.geo_polygon_string(HUGE_VERTICES)

@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
+import s2sphere
+
 
 TIME_FORMAT_CODE = 'RFC3339'
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -62,11 +64,19 @@ def make_circle(lat: float, lng: float, radius: float) -> Dict:
   }
 
 
-def make_polygon(coords: List[Tuple[float, float]]) -> Dict:
-  full_coords = coords.copy()
-  full_coords.append(coords[0])
+def make_polygon(coords: List[Tuple[float, float]]=None, latlngrect: s2sphere.LatLngRect=None) -> Dict:
+  if coords is not None:
+    return {
+      "vertices": [ {'lat': lat, 'lng': lng} for (lat, lng) in coords]
+    }
+
   return {
-    "vertices": [ {'lat': lat, 'lng': lng} for (lat, lng) in full_coords]
+    "vertices": [
+      {'lat': latlngrect.lat_lo().degrees, 'lng': latlngrect.lng_lo().degrees},
+      {'lat': latlngrect.lat_lo().degrees, 'lng': latlngrect.lng_hi().degrees},
+      {'lat': latlngrect.lat_hi().degrees, 'lng': latlngrect.lng_hi().degrees},
+      {'lat': latlngrect.lat_hi().degrees, 'lng': latlngrect.lng_lo().degrees},
+    ]
   }
 
 
