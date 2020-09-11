@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% macro collapseable(v) %}
+{% if v is mapping or (v is iterable and v is not string) %} collapseable{% endif %}
+{% endmacro %}
+
+{% macro draw_value(v) %}
+  {% if v is mapping %}
+    {{ draw_node(v) }}
+  {% elif v is string %}
+    {{ v }}
+  {% elif v is iterable %}
+    {{ draw_list(v) }}
+  {% else %}
+    {{ v }}
+  {% endif %}
+{% endmacro %}
+
+{% macro draw_node(node) %}
+  <ul>
+    {% for k, v in node.items() %}
+      <li>
+        <span class="node_key {{ collapseable(v) }}">{{ k }}</span>:
+        <span class="node_value">{{ draw_value(v) }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endmacro %}
+
+{% macro draw_list(items) %}
+  <ul>
+    {% for v in items %}
+      <li>
+        <span class="node_key {{ collapseable(v) }}">item_{{ loop.index }}</span>:
+        <span class="node_value">{{ draw_value(v) }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endmacro %}
+
+{% block content %}
+  <style>
+    ul, ul ul, ul li {
+      margin: 0;
+      padding: 0;
+      list-style-type: none;
+    }
+    ul ul { padding-left: 0.3em; }
+    ul li {
+      padding-left: 14px;
+    }
+    .collapseable:hover {
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .collapsed {
+      color: red;
+    }
+    .node_key {
+      font-weight: bold;
+    }
+  </style>
+  <div id="top_node">
+    {{ draw_node(log) }}
+  </div>
+  <script>
+    function showHide(node) {
+      var key = node.querySelector(".collapseable");
+      if (key.classList.contains("collapsed")) {
+        key.classList.remove("collapsed");
+        for (var i = 1; i < node.children.length; i++) {
+          node.children[i].style.display = "block";
+        }
+      } else {
+        key.classList.add("collapsed");
+        for (var i = 1; i < node.children.length; i++) {
+          node.children[i].style.display = "none";
+        }
+      }
+    }
+
+    function addShowHide(node) {
+      if (node.classList.contains("collapseable")) {
+        let nodeToToggle = node.parentElement;
+        node.addEventListener("click", function () { showHide(nodeToToggle); });
+      }
+      for (var i = 0; i < node.children.length; i++) {
+        addShowHide(node.children[i]);
+      }
+    }
+
+    addShowHide(document.getElementById("top_node"));
+  </script>
+{% endblock %}
