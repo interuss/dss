@@ -156,8 +156,12 @@ func (s *Store) CleanUp(ctx context.Context) error {
 // GetVersion returns the Version string for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
-	if s.version != nil {
-		return s.version, nil
+	if s.version == nil {
+		vs, err := s.db.GetVersion(ctx, DatabaseName)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
+		}
+		s.version = vs
 	}
-	return s.db.GetVersion(ctx, DatabaseName)
+	return s.version, nil
 }
