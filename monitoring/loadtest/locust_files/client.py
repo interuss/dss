@@ -50,14 +50,16 @@ class DSSClient(infrastructure.DSSTestSession):
         )
 
 class USS(User):
+    # Suggested by Locust 1.2.2 API Docs https://docs.locust.io/en/stable/api.html#locust.User.abstract
     abstract = True
     isa_dict: typing.Dict[str, str] = {}
     sub_dict: typing.Dict[str, str] = {}
-    host = conf.DSS_ENDPOINT
 
     def __init__(self, *args, **kwargs):
         super(USS, self).__init__(*args, **kwargs)
         oauth_adapter = auth.DummyOAuth(conf.OAUTH_HOST, "fake_uss")
         self.client = DSSClient(self.host, oauth_adapter)
         self.client._locust_environment = self.environment
+        # This is a load tester its acceptable to have all the scopes required to operate anything.
+        # We are not testing if the scope is incorrect. We are testing if it can handle the load.
         self.client.default_scopes = [common.SCOPE_WRITE, common.SCOPE_READ]
