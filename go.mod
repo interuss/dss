@@ -20,7 +20,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.14.3
 	github.com/interuss/stacktrace v0.0.0-20200827180054-b2e58cf48818
 	github.com/lib/pq v1.5.2
-	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177 // indirect
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0
