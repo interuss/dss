@@ -181,3 +181,29 @@ def test_op_invalid_id(scd_session):
     req = json.load(f)
   resp = scd_session.put('/operation_references/not_uuid_format', json=req)
   assert resp.status_code == 400, resp.content
+
+@default_scope(SCOPE_SC)
+def test_op_ovn_unchange(scd_session):
+  with open('./scd/resources/op_request_1.json', 'r') as f:
+      req = json.load(f)
+  resp1 = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
+  assert resp1.status_code == 200, resp1.content
+  ovn1 = resp1.json()['operation_reference']['ovn']
+  existing_op = resp1.json().get('operation_reference', None)
+
+  with open('./scd/resources/op_request_1.json', 'r') as f:
+      req = json.load(f)
+      req['state'] = 'Activated'
+      req['old_version'] = 1
+      req['key'] = [existing_op["ovn"]]
+  resp2 = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
+  assert resp2.status_code == 200, resp2.content
+  ovn2 = resp2.json()['operation_reference']['ovn']
+
+  resp3 = scd_session.delete('/operation_references/{}'.format(OP_ID), json=req)
+  assert resp3.status_code == 200, resp3.content
+  ovn3 = resp3.json()['operation_reference']['ovn']
+  assert ovn1 == ovn3 == ovn2
+
+
+
