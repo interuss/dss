@@ -58,6 +58,8 @@ notifications upon DSS prompting.
 ### Invocation
 Make a copy of [`run_subscribe.sh`](run_subscribe.sh) and edit the arguments as
 appropriate.  Then simply run your copy of that script (`./run_subscribe.sh`).
+To stop this container gracefully (so that Subscriptions are removed):
+`docker container kill --signal=INT tracer_subscribe`
 
 ### External route
 One important argument in subscribe mode is `--base-url`.  This should be the
