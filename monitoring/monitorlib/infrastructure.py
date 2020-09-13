@@ -149,3 +149,20 @@ def default_scope(scope: str):
       decorated test.
     """
   return default_scopes([scope])
+
+
+def get_token_claims(headers: Dict) -> Dict:
+  auth_key = [key for key in headers if key.lower() == 'authorization']
+  if len(auth_key) == 0:
+    return {'error': 'Missing Authorization header'}
+  if len(auth_key) > 1:
+    return {'error': 'Multiple Authorization headers: ' + ', '.join(auth_key)}
+  token: str = headers[auth_key[0]]
+  if token.lower().startswith('bearer '):
+    token = token[len('bearer '):]
+  try:
+    return jwt.decode(token, verify=False)
+  except ValueError as e:
+    return {'error': 'ValueError: ' + str(e)}
+  except jwt.exceptions.DecodeError as e:
+    return {'error': 'DecodeError: ' + str(e)}

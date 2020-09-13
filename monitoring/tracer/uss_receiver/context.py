@@ -1,6 +1,7 @@
 import argparse
 import atexit
 import datetime
+import json
 import logging
 import os
 import shlex
@@ -13,6 +14,7 @@ from typing import Dict, Optional
 import requests
 
 from monitoring.monitorlib import ids, rid, scd, versioning
+from monitoring.tracer import formatting
 from monitoring.tracer.resources import ResourceSet
 
 
@@ -51,7 +53,7 @@ def init() -> None:
 
   config = vars(args)
   config['code_version'] = versioning.get_code_version()
-  resources.logger.logconfig(config)
+  resources.logger.log_new('subscribe_start', config)
 
   try:
     _logger.info('Establishing Subscriptions from PID {} at {}...'.format(os.getpid(), datetime.datetime.utcnow()))
@@ -75,6 +77,10 @@ def init() -> None:
       _unsubscribe(resources, args.monitor_rid, args.monitor_scd)
       _logger.info('Subscription cleanup complete.')
       cleanup['complete'] = True
+      resources.logger.log_new('subscribe_stop', {
+        'timestamp': datetime.datetime.utcnow(),
+        'signal_number': signal_number,
+      })
   atexit.register(shutdown, None, None)
   for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGTERM):
     signal.signal(sig, shutdown)
@@ -103,16 +109,12 @@ def _unsubscribe(resources: ResourceSet, monitor_rid: bool, monitor_scd: bool) -
     _clear_existing_scd_subscription(resources, 'cleanup')
 
 
-def _describe_response(resp: requests.Response, description: str) -> Dict:
+def _describe_response(resp: requests.Response, initiated_at: datetime.datetime, description: str) -> Dict:
   info = {
     'description': description,
-    'url': resp.url,
-    'code': resp.status_code,
+    'request': formatting.describe_request(resp.request, initiated_at),
+    'response': formatting.describe_response(resp),
   }
-  try:
-    info['json'] = resp.json()
-  except ValueError:
-    info['body'] = resp.content
   return info
 
 
@@ -120,6 +122,8 @@ def _rid_subscription_url():
   sub_id = ids.make_id(RID_SUBSCRIPTION_ID_CODE)
   return '/v1/dss/subscriptions/{}'.format(sub_id)
 
+
+RID_SUBSCRIPTION_KEY = 'subscribe_ridsubscription'
 
 def _subscribe_rid(resources: ResourceSet, callback_url: str) -> None:
   _clear_existing_rid_subscription(resources, 'old')
@@ -140,19 +144,21 @@ def _subscribe_rid(resources: ResourceSet, callback_url: str) -> None:
       'identification_service_area_url': callback_url
     },
   }
+  t0 = datetime.datetime.utcnow()
   resp = resources.dss_client.put(_rid_subscription_url(), json=body, scope=rid.SCOPE_READ)
   if resp.status_code != 200:
     msg = 'Failed to create RID Subscription'
-    msg += ' -> ' + resources.logger.log_new('ridsubscription', _describe_response(resp, msg))
+    msg += ' -> ' + resources.logger.log_new(RID_SUBSCRIPTION_KEY, _describe_response(resp, t0, msg))
     raise SubscriptionManagementError(msg)
 
   msg = 'Created RID Subscription successfully'
-  resources.logger.log_new('ridsubscription', _describe_response(resp, msg))
+  resources.logger.log_new(RID_SUBSCRIPTION_KEY, _describe_response(resp, t0, msg))
 
 
 def _clear_existing_rid_subscription(resources: ResourceSet, suffix: str):
   url = _rid_subscription_url()
 
+  t0 = datetime.datetime.utcnow()
   resp = resources.dss_client.get(url, scope=rid.SCOPE_READ)
   if resp.status_code == 404:
     return # This is the expected condition (no pre-existing Subscription)
@@ -162,30 +168,33 @@ def _clear_existing_rid_subscription(resources: ResourceSet, suffix: str):
       resp_json = resp.json()
     except ValueError:
       msg = 'Response to get existing RID Subscription did not return valid JSON'
-      msg += ' -> ' + resources.logger.log_new('ridsubscription_{}'.format(suffix), _describe_response(resp, msg))
+      msg += ' -> ' + resources.logger.log_new('{}_{}_get'.format(RID_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, msg))
       raise SubscriptionManagementError(msg)
     version = resp_json.get('subscription', {}).get('version', None)
     if not version:
       msg = 'Response to get existing RID Subscription did not include a version'
-      msg += ' -> ' + resources.logger.log_new('ridsubscription_old', _describe_response(resp, msg))
+      msg += ' -> ' + resources.logger.log_new('{}_{}_get'.format(RID_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, msg))
       raise SubscriptionManagementError(msg)
 
-    resources.logger.log_new('ridsubscription_{}'.format(suffix), _describe_response(resp, 'RID Subscription retrieved successfully'))
+    resources.logger.log_new('{}_{}_get'.format(RID_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, 'RID Subscription retrieved successfully'))
 
     del_url = url + '/{}'.format(resp_json['subscription']['version'])
+    t0 = datetime.datetime.utcnow()
     resp = resources.dss_client.delete(del_url, scope=rid.SCOPE_READ)
     if resp.status_code != 200:
       msg = 'Response to delete existing RID Subscription indicated {}'.format(resp.status_code)
-      msg += ' -> ' + resources.logger.log_new('ridsubscription_{}_del'.format(suffix), _describe_response(resp, msg))
+      msg += ' -> ' + resources.logger.log_new('{}_{}_del'.format(RID_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, msg))
       raise SubscriptionManagementError(msg)
 
-    resources.logger.log_new('ridsubscription_{}_del'.format(suffix), _describe_response(resp, 'RID Subscription deleted successfully'))
+    resources.logger.log_new('{}_{}_del'.format(RID_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, 'RID Subscription deleted successfully'))
   else:
     # We expected to get a 200 or 404 but got something else instead
     msg = 'Response to get existing RID Subscription did not return 200 or 404'
-    msg += ' -> ' + resources.logger.log_new('ridsubscription_{}'.format(suffix), _describe_response(resp, msg))
+    msg += ' -> ' + resources.logger.log_new('{}_{}_get'.format(RID_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, msg))
     raise SubscriptionManagementError(msg)
 
+
+SCD_SUBSCRIPTION_KEY = 'subscribe_scdsubscription'
 
 def _scd_subscription_url():
   sub_id = ids.make_id(SCD_SUBSCRIPTION_ID_CODE)
@@ -204,19 +213,21 @@ def _subscribe_scd(resources: ResourceSet, base_url: str) -> None:
     'notify_for_operations': True,
     'notify_for_constraints': True,
   }
+  t0 = datetime.datetime.utcnow()
   resp = resources.dss_client.put(_scd_subscription_url(), json=body, scope=scd.SCOPE_SC)
   if resp.status_code != 200:
     msg = 'Failed to create SCD Subscription'
-    msg += ' -> ' + resources.logger.log_new('scdsubscription', _describe_response(resp, msg))
+    msg += ' -> ' + resources.logger.log_new(SCD_SUBSCRIPTION_KEY, _describe_response(resp, t0, msg))
     raise SubscriptionManagementError(msg)
 
   msg = 'Created SCD Subscription successfully'
-  resources.logger.log_new('scdsubscription', _describe_response(resp, msg))
+  resources.logger.log_new(SCD_SUBSCRIPTION_KEY, _describe_response(resp, t0, msg))
 
 
 def _clear_existing_scd_subscription(resources: ResourceSet, suffix: str):
   url = _scd_subscription_url()
 
+  t0 = datetime.datetime.utcnow()
   resp = resources.dss_client.get(url, scope=scd.SCOPE_SC)
   if resp.status_code == 404:
     return # This is the expected condition (no pre-existing Subscription)
@@ -226,25 +237,26 @@ def _clear_existing_scd_subscription(resources: ResourceSet, suffix: str):
       resp_json = resp.json()
     except ValueError:
       msg = 'Response to get existing SCD Subscription did not return valid JSON'
-      msg += ' -> ' + resources.logger.log_new('scdsubscription_{}'.format(suffix), _describe_response(resp, msg))
+      msg += ' -> ' + resources.logger.log_new('{}_{}_get'.format(SCD_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, msg))
       raise SubscriptionManagementError(msg)
     version = resp_json.get('subscription', {}).get('version', None)
     if version is None:
       msg = 'Response to get existing SCD Subscription did not include a version'
-      msg += ' -> ' + resources.logger.log_new('scdsubscription_old', _describe_response(resp, msg))
+      msg += ' -> ' + resources.logger.log_new('{}_{}_get}'.format(SCD_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, msg))
       raise SubscriptionManagementError(msg)
 
-    resources.logger.log_new('scdsubscription_{}'.format(suffix), _describe_response(resp, 'SCD Subscription retrieved successfully'))
+    resources.logger.log_new('{}_{}_get'.format(SCD_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, 'SCD Subscription retrieved successfully'))
 
+    t0 = datetime.datetime.utcnow()
     resp = resources.dss_client.delete(url, scope=scd.SCOPE_SC)
     if resp.status_code != 200:
       msg = 'Response to delete existing SCD Subscription indicated {}'.format(resp.status_code)
-      msg += ' -> ' + resources.logger.log_new('scdsubscription_{}_del'.format(suffix), _describe_response(resp, msg))
+      msg += ' -> ' + resources.logger.log_new('{}_{}_del'.format(SCD_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, msg))
       raise SubscriptionManagementError(msg)
 
-    resources.logger.log_new('scdsubscription_{}_del'.format(suffix), _describe_response(resp, 'SCD Subscription deleted successfully'))
+    resources.logger.log_new('{}_{}_del'.format(SCD_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, 'SCD Subscription deleted successfully'))
   else:
     # We expected to get a 200 or 404 but got something else instead
     msg = 'Response to get existing SCD Subscription did not return 200 or 404'
-    msg += ' -> ' + resources.logger.log_new('scdsubscription_{}'.format(suffix), _describe_response(resp, msg))
+    msg += ' -> ' + resources.logger.log_new('{}_{}'.format(SCD_SUBSCRIPTION_KEY, suffix), _describe_response(resp, t0, msg))
     raise SubscriptionManagementError(msg)

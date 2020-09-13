@@ -29,7 +29,7 @@ a single polling period, this tool would not create an record of that ISA.
 
 ### Invocation
 ```shell script
-docker run --rm -v `pwd`/logs:/logs interuss/dss/tracer \
+docker run --name tracer_run --rm -v `pwd`/logs:/logs interuss/dss/tracer \
     python python tracer_poll.py \
     --auth=<SPEC> \
     --dss=https://example.com \

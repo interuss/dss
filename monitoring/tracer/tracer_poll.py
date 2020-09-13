@@ -38,28 +38,28 @@ def main() -> int:
 
     config = vars(args)
     config['code_version'] = versioning.get_code_version()
-    resources.logger.logconfig(config)
+    resources.logger.log_new('poll_start', config)
 
     # Prepare pollers
     pollers: List[polling.Poller] = []
 
     if args.rid_isa_poll_interval > 0:
       pollers.append(polling.Poller(
-        name='ridisa',
+        name='poll_isas',
         object_diff_text=formatting.isa_diff_text,
         interval=datetime.timedelta(seconds=args.rid_isa_poll_interval),
         poll=lambda: polling.poll_rid_isas(resources, resources.area)))
 
     if args.scd_operation_poll_interval > 0:
       pollers.append(polling.Poller(
-        name='scdop',
+        name='poll_ops',
         object_diff_text=formatting.entity_diff_text,
         interval=datetime.timedelta(seconds=args.scd_operation_poll_interval),
         poll=lambda: polling.poll_scd_operations(resources)))
 
     if args.scd_constraint_poll_interval > 0:
       pollers.append(polling.Poller(
-        name='scdconstraint',
+        name='poll_constraints',
         object_diff_text=formatting.entity_diff_text,
         interval=datetime.timedelta(seconds=args.scd_constraint_poll_interval),
         poll=lambda: polling.poll_scd_constraints(resources)))
@@ -99,6 +99,10 @@ def main() -> int:
           need_line_break = True
       except KeyboardInterrupt:
         abort = True
+
+    resources.logger.log_new('poll_stop', {
+      'timestamp': datetime.datetime.utcnow().isoformat(),
+    })
 
     return os.EX_OK
 

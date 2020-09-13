@@ -1,4 +1,5 @@
 import datetime
+import json
 from typing import Callable, Dict, Optional
 
 import requests
@@ -16,16 +17,10 @@ def indent(s: str, level: int) -> str:
 
 
 class PollError(object):
-  def __init__(self, resp: requests.Response, description: str):
+  def __init__(self, resp: requests.Response, initiated_at: datetime.datetime, description: str):
     self.description = description
-    self.url = resp.url
-    self.code = resp.status_code
-    try:
-      self.json = resp.json()
-      self.body = None
-    except ValueError:
-      self.body = resp.content.decode('utf-8')
-      self.json = None
+    self.request = formatting.describe_request(resp.request, initiated_at)
+    self.response = formatting.describe_response(resp)
 
   def __eq__(self, other):
     return isinstance(other, PollError) and self.to_json() == other.to_json()
@@ -34,16 +29,15 @@ class PollError(object):
     return not self == other
 
   def __str__(self) -> str:
-    return '{} after {} at {}'.format(self.description, self.code, self.url)
+    return '{} after {} at {}'.format(self.description, self.response['code'], self.request['url'])
 
   def to_json(self) -> Dict:
     return {
       'description': self.description,
-      'url': self.url,
-      'code': self.code,
-      'json': self.json,
-      'body': self.body,
+      'request': self.request,
+      'response': self.response,
     }
+
 
 class PollSuccess(object):
   def __init__(self, objects: Dict):
@@ -157,20 +151,20 @@ def poll_rid_isas(resources: ResourceSet, box: s2sphere.LatLngRect) -> PollResul
 
   # Handle overall errors
   if resp.status_code != 200:
-    return PollResult(t0, t1, error=PollError(resp, 'Failed to search ISAs in DSS'))
+    return PollResult(t0, t1, error=PollError(resp, t0, 'Failed to search ISAs in DSS'))
   try:
-    json = resp.json()
+    resp_json = resp.json()
   except ValueError:
-    return PollResult(t0, t1, error=PollError(resp, 'DSS response to search ISAs was not valid JSON'))
+    return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search ISAs was not valid JSON'))
 
   # Extract ISAs from response
-  isa_list = json.get('service_areas', [])
+  isa_list = resp_json.get('service_areas', [])
   isas = {}
   for isa in isa_list:
     if 'id' not in isa:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search ISAs included ISA without id'))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search ISAs included ISA without id'))
     if 'owner' not in isa:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search ISAs included ISA without owner'))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search ISAs included ISA without owner'))
     isa_id = '{} ({})'.format(isa['id'], isa['owner'])
     del isa['id']
     del isa['owner']
@@ -204,19 +198,19 @@ def poll_scd_entities(resources: ResourceSet,
 
   # Handle any errors
   if resp.status_code != 200:
-    return PollResult(t0, t1, error=PollError(resp, 'Failed to search {}s in DSS'.format(resource_name)))
+    return PollResult(t0, t1, error=PollError(resp, t0, 'Failed to search {}s in DSS'.format(resource_name)))
   try:
     ref_json = resp.json()
   except ValueError:
-    return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {}s was not valid JSON'.format(resource_name)))
+    return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search {}s was not valid JSON'.format(resource_name)))
   entity_ref_list = ref_json.get(dss_resource_name, [])
   for entity_ref in entity_ref_list:
     if 'id' not in entity_ref:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {}s included {} without id'.format(resource_name, resource_name)))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search {}s included {} without id'.format(resource_name, resource_name)))
     if 'owner' not in entity_ref:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {} included {} without owner'.format(resource_name, resource_name)))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search {} included {} without owner'.format(resource_name, resource_name)))
     if 'uss_base_url' not in entity_ref:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {} included {} without uss_base_url'.format(resource_name, resource_name)))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search {} included {} without uss_base_url'.format(resource_name, resource_name)))
 
   # Obtain details for all Entities (using cache when appropriate)
   if resource_name not in resources.scd_cache:
@@ -263,17 +257,13 @@ def poll_scd_entities(resources: ResourceSet,
       entities[entity_key]['uss'] = {}
       entities[entity_key]['uss']['error'] = {
         'description': 'USS query for {} details {}'.format(resource_name, details_error_condition),
-        'url': details_url,
-        'code': resp.status_code,
+        'request': formatting.describe_request(resp.request, t2),
+        'response': formatting.describe_response(resp),
       }
-      if details_json is not None:
-        entities[entity_key]['uss']['error']['json'] = details_json
-      else:
-        entities[entity_key]['uss']['error']['body'] = details_resp.content
       continue
 
     # Record details, and information about querying details, in the result
-    entities[entity_key]['uss'] = details_json
+    entities[entity_key]['uss']['details'] = details_json
     entities[entity_key]['uss']['tracer'] = {
       'time_queried': t2.isoformat(),
       'dt_s': round((t3 - t2).total_seconds(), 2),
