@@ -1,4 +1,5 @@
 import datetime
+import json
 from typing import Callable, Dict, Optional
 
 import requests
@@ -16,16 +17,10 @@ def indent(s: str, level: int) -> str:
 
 
 class PollError(object):
-  def __init__(self, resp: requests.Response, description: str):
+  def __init__(self, resp: requests.Response, initiated_at: datetime.datetime, description: str):
     self.description = description
-    self.url = resp.url
-    self.code = resp.status_code
-    try:
-      self.json = resp.json()
-      self.body = None
-    except ValueError:
-      self.body = resp.content.decode('utf-8')
-      self.json = None
+    self.request = formatting.describe_request(resp.request, initiated_at)
+    self.response = formatting.describe_response(resp)
 
   def __eq__(self, other):
     return isinstance(other, PollError) and self.to_json() == other.to_json()
@@ -34,16 +29,15 @@ class PollError(object):
     return not self == other
 
   def __str__(self) -> str:
-    return '{} after {} at {}'.format(self.description, self.code, self.url)
+    return '{} after {} at {}'.format(self.description, self.response['code'], self.request['url'])
 
   def to_json(self) -> Dict:
     return {
       'description': self.description,
-      'url': self.url,
-      'code': self.code,
-      'json': self.json,
-      'body': self.body,
+      'request': self.request,
+      'response': self.response,
     }
+
 
 class PollSuccess(object):
   def __init__(self, objects: Dict):
@@ -99,11 +93,11 @@ class PollResult(object):
     if self._error and not other._error:
       e = self._error
       lines = [colored('{} {}'.format(name, e.description), 'white', 'on_red')]
-      lines.append('  {} ({} s) {}\n'.format(colored(str(e.code), 'red'), dt_seconds, e.url))
-      if e.json:
-        lines.extend('    ' + colored(line, 'red') for line in yaml.dump(e.json, indent=2).strip().split('\n'))
+      lines.append('  {} ({} s) {}\n'.format(colored(str(e.response['code']), 'red'), dt_seconds, e.request['url']))
+      if 'json' in e.response:
+        lines.extend('    ' + colored(line, 'red') for line in yaml.dump(e.response['json'], indent=2).strip().split('\n'))
       else:
-        lines.extend('    ' + colored(line, 'red') for line in e.body.replace('\r\n', '\n').split('\n'))
+        lines.extend('    ' + colored(line, 'red') for line in e.response['body'].replace('\r\n', '\n').split('\n'))
       return '\n'.join(lines)
 
     if other is None or other.success is None:
@@ -157,20 +151,20 @@ def poll_rid_isas(resources: ResourceSet, box: s2sphere.LatLngRect) -> PollResul
 
   # Handle overall errors
   if resp.status_code != 200:
-    return PollResult(t0, t1, error=PollError(resp, 'Failed to search ISAs in DSS'))
+    return PollResult(t0, t1, error=PollError(resp, t0, 'Failed to search ISAs in DSS'))
   try:
-    json = resp.json()
+    resp_json = resp.json()
   except ValueError:
-    return PollResult(t0, t1, error=PollError(resp, 'DSS response to search ISAs was not valid JSON'))
+    return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search ISAs was not valid JSON'))
 
   # Extract ISAs from response
-  isa_list = json.get('service_areas', [])
+  isa_list = resp_json.get('service_areas', [])
   isas = {}
   for isa in isa_list:
     if 'id' not in isa:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search ISAs included ISA without id'))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search ISAs included ISA without id'))
     if 'owner' not in isa:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search ISAs included ISA without owner'))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search ISAs included ISA without owner'))
     isa_id = '{} ({})'.format(isa['id'], isa['owner'])
     del isa['id']
     del isa['owner']
@@ -179,11 +173,11 @@ def poll_rid_isas(resources: ResourceSet, box: s2sphere.LatLngRect) -> PollResul
 
 
 def poll_scd_operations(resources: ResourceSet) -> PollResult:
-  return poll_scd_entities(resources, 'Operation', 'operation_references', 'operations')
+  return poll_scd_entities(resources, 'Operation', 'operation_references', 'operation')
 
 
 def poll_scd_constraints(resources: ResourceSet) -> PollResult:
-  return poll_scd_entities(resources, 'Constraint', 'constraint_references', 'constraints')
+  return poll_scd_entities(resources, 'Constraint', 'constraint_references', 'constraint')
 
 
 def poll_scd_entities(resources: ResourceSet,
@@ -204,24 +198,24 @@ def poll_scd_entities(resources: ResourceSet,
 
   # Handle any errors
   if resp.status_code != 200:
-    return PollResult(t0, t1, error=PollError(resp, 'Failed to search {}s in DSS'.format(resource_name)))
+    return PollResult(t0, t1, error=PollError(resp, t0, 'Failed to search {}s in DSS'.format(resource_name)))
   try:
     ref_json = resp.json()
   except ValueError:
-    return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {}s was not valid JSON'.format(resource_name)))
+    return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search {}s was not valid JSON'.format(resource_name)))
   entity_ref_list = ref_json.get(dss_resource_name, [])
   for entity_ref in entity_ref_list:
     if 'id' not in entity_ref:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {}s included {} without id'.format(resource_name, resource_name)))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search {}s included {} without id'.format(resource_name, resource_name)))
     if 'owner' not in entity_ref:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {} included {} without owner'.format(resource_name, resource_name)))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search {}s included {} without owner'.format(resource_name, resource_name)))
     if 'uss_base_url' not in entity_ref:
-      return PollResult(t0, t1, error=PollError(resp, 'DSS response to search {} included {} without uss_base_url'.format(resource_name, resource_name)))
+      return PollResult(t0, t1, error=PollError(resp, t0, 'DSS response to search {}s included {} without uss_base_url'.format(resource_name, resource_name)))
 
   # Obtain details for all Entities (using cache when appropriate)
-  if resource_name not in resources.scd_cache:
-    resources.scd_cache[resource_name] = {}
-  cache = resources.scd_cache[resource_name]
+  if uss_resource_name not in resources.scd_cache:
+    resources.scd_cache[uss_resource_name] = {}
+  cache = resources.scd_cache[uss_resource_name]
   entities = {}
   for entity_ref in entity_ref_list:
     entity_key = '{} ({})'.format(entity_ref['id'], entity_ref['owner'])
@@ -237,7 +231,7 @@ def poll_scd_entities(resources: ResourceSet,
     entities[entity_key] = {'dss': {'reference': entity_ref}}
 
     # Query the USS for Entity details
-    details_url = entity_ref['uss_base_url'] + '/uss/v1/{}/{}'.format(uss_resource_name, entity_ref['id'])
+    details_url = entity_ref['uss_base_url'] + '/uss/v1/{}s/{}'.format(uss_resource_name, entity_ref['id'])
     t2 = datetime.datetime.utcnow()
     details_resp = resources.dss_client.get(details_url, scope=scd.SCOPE_SC)
     t3 = datetime.datetime.utcnow()
@@ -251,32 +245,34 @@ def poll_scd_entities(resources: ResourceSet,
       details_error_condition = 'did not return valid JSON'
     if resp.status_code != 200:
       details_error_condition = 'indicated failure'
-    if 'operation' in details_json:
+    if details_json is not None and uss_resource_name in details_json:
       if not details_error_condition:
-        if 'reference' not in details_json['operation']:
+        if 'reference' not in details_json[uss_resource_name]:
           details_error_condition = 'did not contain reference field'
-        if 'details' not in details_json['operation']:
+        if 'details' not in details_json[uss_resource_name]:
           details_error_condition = 'did not contain details field'
     else:
-      details_error_condition = 'did not contain operation field'
+      details_error_condition = 'did not contain {} field'.format(uss_resource_name)
     if details_error_condition:
       entities[entity_key]['uss'] = {}
       entities[entity_key]['uss']['error'] = {
         'description': 'USS query for {} details {}'.format(resource_name, details_error_condition),
-        'url': details_url,
-        'code': resp.status_code,
+        'request': formatting.describe_request(details_resp.request, t2),
+        'response': formatting.describe_response(details_resp),
       }
-      if details_json is not None:
-        entities[entity_key]['uss']['error']['json'] = details_json
-      else:
-        entities[entity_key]['uss']['error']['body'] = details_resp.content
+      if entity_key in cache and entities[entity_key]['uss']['error'] == cache[entity_key]['uss']['error']:
+        # Use the old cache if the error hasn't changed to avoid repeated logs
+        entities[entity_key] = cache[entity_key]
+      cache[entity_key] = entities[entity_key]
       continue
 
     # Record details, and information about querying details, in the result
-    entities[entity_key]['uss'] = details_json
-    entities[entity_key]['uss']['tracer'] = {
-      'time_queried': t2.isoformat(),
-      'dt_s': round((t3 - t2).total_seconds(), 2),
+    entities[entity_key]['uss'] = {
+      'details': details_json,
+      'tracer': {
+        'time_queried': t2.isoformat(),
+        'dt_s': round((t3 - t2).total_seconds(), 2),
+      },
     }
 
     # Cache the full result for this Entity

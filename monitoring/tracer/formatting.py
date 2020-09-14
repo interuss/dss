@@ -5,7 +5,10 @@ import hashlib
 import json
 from typing import Dict, List, Optional, Tuple
 
+import requests
 from termcolor import colored
+
+from monitoring.monitorlib import infrastructure
 
 
 class Change(enum.Enum):
@@ -205,3 +208,38 @@ def format_timedelta(td: datetime.timedelta) -> str:
     return sign + '{:s}d{:s}:{:s}:{:s}'.format(*segments)
   else:
     return sign + '{:s}:{:s}:{:s}'.format(*segments[1:])
+
+
+def describe_request(req: requests.PreparedRequest, initiated_at: datetime.datetime) -> Dict:
+  headers = {k: v for k, v in req.headers.items()}
+  info = {
+    'method': req.method,
+    'url': req.url,
+    'initiated_at': initiated_at.isoformat(),
+    'token': infrastructure.get_token_claims(headers),
+    'headers': headers,
+  }
+  body = req.body.decode('utf-8') if req.body else None
+  try:
+    if body:
+      info['json'] = json.loads(body)
+    else:
+      info['body'] = body
+  except ValueError:
+    info['body'] = body
+  return info
+
+
+def describe_response(resp: requests.Response):
+  headers = {k: v for k, v in resp.headers.items()}
+  info = {
+    'code': resp.status_code,
+    'headers': headers,
+    'elapsed_s': resp.elapsed.total_seconds(),
+    'reported': datetime.datetime.utcnow().isoformat(),
+  }
+  try:
+    info['json'] = resp.json()
+  except ValueError:
+    info['body'] = resp.content.decode('utf-8')
+  return info

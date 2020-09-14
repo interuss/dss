@@ -8,6 +8,7 @@ import jwt
 from termcolor import colored
 import yaml
 
+from monitoring.monitorlib import infrastructure, versioning
 from monitoring.tracer import check_rid_flights, formatting, geo
 from . import context, webapp
 
@@ -19,25 +20,14 @@ _logger.setLevel(logging.DEBUG)
 RESULT = ('', 204)
 
 
-def _get_token_claims(request: flask.Request) -> Dict:
-  if not request.headers.has_key('Authorization'):
-    return {}
-  token: str = request.headers.get('Authorization')
-  if token.lower().startswith('bearer '):
-    token = token[len('bearer '):]
-  try:
-    return jwt.decode(token, verify=False)
-  except (ValueError, jwt.exceptions.DecodeError):
-    return {}
-
-
 def _get_request_info(request: flask.Request) -> Dict:
+  headers = {k: v for k, v in request.headers}
   info = {
+    'method': request.method,
     'url': request.url,
-    'verb': request.method,
-    'headers': {k: v for k, v in request.headers.items()},
     'timestamp': datetime.datetime.utcnow().isoformat(),
-    'token': _get_token_claims(request),
+    'token': infrastructure.get_token_claims(headers),
+    'headers': headers,
   }
   try:
     info['json'] = request.json
@@ -66,9 +56,9 @@ def _print_time_range(t0: str, t1: str) -> str:
 @webapp.route('/v1/uss/identification_service_areas/<id>', methods=['POST'])
 def rid_isa_notification(id: str) -> Tuple[str, int]:
   """Implements RID ISA notification receiver."""
-  log_name = context.resources.logger.log_new('isa', _get_request_info(flask.request))
+  log_name = context.resources.logger.log_new('notify_isa', _get_request_info(flask.request))
 
-  claims = _get_token_claims(flask.request)
+  claims = infrastructure.get_token_claims({k: v for k, v in flask.request.headers})
   owner = claims.get('sub', '<No owner in token>')
   label = colored('ISA', 'cyan')
   try:
@@ -92,9 +82,9 @@ def rid_isa_notification(id: str) -> Tuple[str, int]:
 @webapp.route('/uss/v1/operations', methods=['POST'])
 def scd_operation_notification() -> Tuple[str, int]:
   """Implements SCD Operation notification receiver."""
-  log_name = context.resources.logger.log_new('op', _get_request_info(flask.request))
+  log_name = context.resources.logger.log_new('notify_op', _get_request_info(flask.request))
 
-  claims = _get_token_claims(flask.request)
+  claims = infrastructure.get_token_claims({k: v for k, v in flask.request.headers})
   owner = claims.get('sub', '<No owner in token>')
   label = colored('Operation', 'blue')
   try:
@@ -135,9 +125,9 @@ def scd_operation_notification() -> Tuple[str, int]:
 @webapp.route('/uss/v1/constraints', methods=['POST'])
 def scd_constraint_notification() -> Tuple[str, int]:
   """Implements SCD Constraint notification receiver."""
-  log_name = context.resources.logger.log_new('constraint', _get_request_info(flask.request))
+  log_name = context.resources.logger.log_new('notify_constraint', _get_request_info(flask.request))
 
-  claims = _get_token_claims(flask.request)
+  claims = infrastructure.get_token_claims({k: v for k, v in flask.request.headers})
   owner = claims.get('sub', '<No owner in token>')
   label = colored('Constraint', 'magenta')
   try:
@@ -172,10 +162,15 @@ def scd_constraint_notification() -> Tuple[str, int]:
   return RESULT
 
 
+@webapp.route('/status')
+def status():
+  return 'Ok {}'.format(versioning.get_code_version())
+
+
 @webapp.route('/logs')
 @webapp.route('/')
 def list_logs():
-  logs = sorted(os.listdir(context.resources.logger.log_path))
+  logs = list(reversed(sorted(os.listdir(context.resources.logger.log_path))))
   response = flask.make_response(flask.render_template('logs.html', logs=logs))
   response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
   response.headers['Pragma'] = 'no-cache'
@@ -229,7 +224,7 @@ def request_rid_poll():
     flask.abort(400, str(e))
 
   result = check_rid_flights.get_all_flights(context.resources, area, flask.request.form.get('include_recent_positions'))
-  log_name = context.resources.logger.log_new('getflights', result)
+  log_name = context.resources.logger.log_new('clientrequest_getflights', result)
   return flask.redirect(flask.url_for('logs', log=log_name))
 
 
@@ -240,9 +235,9 @@ def favicon():
 
 @webapp.route('/<path:u_path>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 def catch_all(u_path) -> Tuple[str, int]:
-  log_name = context.resources.logger.log_new('badroute', _get_request_info(flask.request))
+  log_name = context.resources.logger.log_new('uss_badroute', _get_request_info(flask.request))
 
-  claims = _get_token_claims(flask.request)
+  claims = infrastructure.get_token_claims({k: v for k, v in flask.request.headers})
   owner = claims.get('sub', '<No owner in token>')
   label = colored('Bad route', 'red')
   _logger.error('{} to {} ({}): {}'.format(label, u_path, owner, log_name))
