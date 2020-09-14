@@ -281,6 +281,6 @@ func (c *subscriptionRepoV3) SearchSubscriptionsByOwner(ctx context.Context, cel
 }
 
 // ListExpiredSubscriptions returns empty. We don't support ListExpiredSubscriptions iin store v3.0 because db doesn't have 'writer' field.
-func (c *subscriptionRepoV3) ListExpiredSubscriptions(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.Subscription, error) {
+func (c *subscriptionRepoV3) ListExpiredSubscriptions(ctx context.Context, writer string, expiredTime *time.Time) ([]*ridmodels.Subscription, error) {
 	return make([]*ridmodels.Subscription, 0), nil
 }

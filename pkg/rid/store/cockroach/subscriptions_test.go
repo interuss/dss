@@ -310,26 +310,26 @@ func TestListExpiredSubscriptions(t *testing.T) {
 	require.NoError(t, err)
 
 	// Insert Subscription with endtime 1 day from now
-	validSubscription := *subscriptionsPool[0].input
+	subscripiton1 := *subscriptionsPool[0].input
 	endTime := fakeClock.Now().Add(24 * time.Hour)
-	validSubscription.EndTime = &endTime
-	saOut, err := repo.InsertSubscription(ctx, &validSubscription)
+	subscripiton1.EndTime = &endTime
+	subOut1, err := repo.InsertSubscription(ctx, &subscripiton1)
 	require.NoError(t, err)
-	require.NotNil(t, saOut)
+	require.NotNil(t, subOut1)
 
 	// Insert Subscription with endtime 30 minutes from now
-	copy := *subscriptionsPool[0].input
+	subscripiton2 := *subscriptionsPool[0].input
 	endTime = fakeClock.Now().Add(30 * time.Minute)
-	copy.EndTime = &endTime
-	copy.ID = dssmodels.ID(uuid.New().String())
-	isa, err := repo.InsertSubscription(ctx, &copy)
+	subscripiton2.EndTime = &endTime
+	subscripiton2.ID = dssmodels.ID(uuid.New().String())
+	subOut2, err := repo.InsertSubscription(ctx, &subscripiton2)
 	require.NoError(t, err)
-	require.NotNil(t, isa)
+	require.NotNil(t, subOut2)
 
 	// Set Subscription's deleted time to 30 minutes from endTime.
 	expiredTime := fakeClock.Now().Add(1 * time.Hour)
 
-	subscriptions, err := repo.ListExpiredSubscriptions(ctx, serviceArea.Cells, writer, &expiredTime)
+	subscriptions, err := repo.ListExpiredSubscriptions(ctx, writer, &expiredTime)
 	require.NoError(t, err)
 	require.Len(t, subscriptions, 1)
 }

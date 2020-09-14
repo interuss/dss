@@ -40,5 +40,5 @@ type Subscription interface {
 	MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error)
 
 	// ListExpiredRecords returns all expried subscription records
-	ListExpiredSubscriptions(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.Subscription, error)
+	ListExpiredSubscriptions(ctx context.Context, writer string, expiredTime *time.Time) ([]*ridmodels.Subscription, error)
 }

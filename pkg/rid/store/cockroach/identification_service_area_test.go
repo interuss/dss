@@ -259,23 +259,23 @@ func TestListExpiredISAs(t *testing.T) {
 	isa1 := *serviceArea
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	isa1.EndTime = &endTime
-	saOut, err := repo.InsertISA(ctx, &isa1)
+	saOut1, err := repo.InsertISA(ctx, &isa1)
 	require.NoError(t, err)
-	require.NotNil(t, saOut)
+	require.NotNil(t, saOut1)
 
 	// Insert ISA with endtime 30 minutes from now
 	isa2 := *serviceArea
 	endTime = fakeClock.Now().Add(30 * time.Minute)
 	isa2.EndTime = &endTime
 	isa2.ID = dssmodels.ID(uuid.New().String())
-	isa, err := repo.InsertISA(ctx, &isa2)
+	saOut2, err := repo.InsertISA(ctx, &isa2)
 	require.NoError(t, err)
-	require.NotNil(t, isa)
+	require.NotNil(t, saOut2)
 
 	// Set ISA's deleted time to 30 minutes from endTime.
 	expiredTime := fakeClock.Now().Add(1 * time.Hour)
 
-	serviceAreas, err := repo.ListExpiredISAs(ctx, serviceArea.Cells, writer, &expiredTime)
+	serviceAreas, err := repo.ListExpiredISAs(ctx, writer, &expiredTime)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 }

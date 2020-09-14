@@ -205,6 +205,6 @@ func (c *isaRepoV3) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest
 }
 
 // ListExpiredISAs returns empty. We don't support listExpiredISAs in store v3.0 because db doesn't have 'writer' field.
-func (c *isaRepoV3) ListExpiredISAs(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepoV3) ListExpiredISAs(ctx context.Context, writer string, expiredTime *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	return make([]*ridmodels.IdentificationServiceArea, 0), nil
 }
