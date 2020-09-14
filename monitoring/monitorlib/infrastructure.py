@@ -41,7 +41,7 @@ class AuthAdapter(object):
     else:
       token = self._tokens[intended_audience][scope_string]
     payload = jwt.decode(token, verify=False)
-    expires = EPOCH + datetime.timedelta(milliseconds=payload['exp'])
+    expires = EPOCH + datetime.timedelta(seconds=payload['exp'])
     if expires < datetime.datetime.utcnow() - TOKEN_REFRESH:
       token = self.issue_token(intended_audience, scopes)
     self._tokens[intended_audience][scope_string] = token
