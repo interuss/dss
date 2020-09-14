@@ -240,10 +240,5 @@ func (c *isaRepo) ListExpiredISAs(ctx context.Context, cells s2.CellUnion, write
 		return nil, stacktrace.NewError("Writer is required")
 	}
 
-	cids := make([]int64, len(cells))
-	for i, cid := range cells {
-		cids[i] = int64(cid)
-	}
-
 	return c.process(ctx, isasInCellsQuery, expiredTime, writer)
 }

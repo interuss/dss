@@ -320,10 +320,5 @@ func (c *subscriptionRepo) ListExpiredSubscriptions(ctx context.Context, cells s
 		return nil, stacktrace.NewError("Writer is required")
 	}
 
-	cids := make([]int64, len(cells))
-	for i, cid := range cells {
-		cids[i] = int64(cid)
-	}
-
 	return c.process(ctx, query, expiredTime, writer)
 }
