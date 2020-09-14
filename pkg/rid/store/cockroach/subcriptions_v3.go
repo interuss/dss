@@ -3,6 +3,7 @@ package cockroach
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/dpjacques/clockwork"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -277,4 +278,8 @@ func (c *subscriptionRepoV3) SearchSubscriptionsByOwner(ctx context.Context, cel
 	}
 
 	return c.process(ctx, query, pq.Int64Array(cids), owner, c.clock.Now())
+}
+
+func (c *subscriptionRepoV3) ListExpiredSubscriptions(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.Subscription, error) {
+	return make([]*ridmodels.Subscription, 0), nil
 }

@@ -222,3 +222,28 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 
 	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
 }
+
+func (c *isaRepo) ListExpiredISAs(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	var (
+		isasInCellsQuery = fmt.Sprintf(`
+	SELECT
+		%s
+	FROM
+		identification_service_areas
+	WHERE
+		ends_at > $1
+	AND
+		writer = $2`, isaFields)
+	)
+
+	if len(writer) == 0 {
+		return nil, stacktrace.NewError("Writer is required")
+	}
+
+	cids := make([]int64, len(cells))
+	for i, cid := range cells {
+		cids[i] = int64(cid)
+	}
+
+	return c.process(ctx, isasInCellsQuery, expiredTime, writer)
+}

@@ -84,6 +84,17 @@ func (store *isaStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earli
 	return isas, nil
 }
 
+func (store *isaStore) ListExpiredISAs(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	var isas []*ridmodels.IdentificationServiceArea
+
+	for _, isa := range store.isas {
+		if isa.Cells.Intersects(cells) {
+			isas = append(isas, isa)
+		}
+	}
+	return isas, nil
+}
+
 func TestISAUpdateIdxCells(t *testing.T) {
 	ctx := context.Background()
 	app, cleanup := setUpISAApp(ctx, t)

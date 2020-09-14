@@ -158,6 +158,27 @@ func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s
 	return subs, nil
 }
 
+func (store *subscriptionStore) ListExpiredSubscriptions(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.Subscription, error) {
+	var subs []*ridmodels.Subscription
+	for _, s := range store.subs {
+		// Don't call Intersects, since that's smarter code than we implement in the DB.
+		appended := false
+		for _, c1 := range s.Cells {
+			for _, c2 := range cells {
+				if c1 == c2 {
+					subs = append(subs, s)
+					appended = true
+					break
+				}
+			}
+			if appended {
+				break
+			}
+		}
+	}
+	return subs, nil
+}
+
 func TestBadOwner(t *testing.T) {
 	ctx := context.Background()
 	app, cleanup := setUpSubApp(ctx, t)

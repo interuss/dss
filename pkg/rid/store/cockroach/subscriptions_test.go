@@ -29,6 +29,7 @@ var (
 				StartTime:         &startTime,
 				EndTime:           &endTime,
 				NotificationIndex: 42,
+				Writer:            writer,
 				Cells: s2.CellUnion{
 					s2.CellID(uint64(overflow)),
 					12494535935418957824,
@@ -298,4 +299,37 @@ func TestMaxSubscriptionCountInCellsByOwner(t *testing.T) {
 	count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, s2.CellUnion{12494535935418957824}, "myself")
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
+}
+
+func TestListExpiredSubscriptions(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer tearDownStore()
+
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	// Insert Subscription with endtime 1 day from now
+	validSubscription := *subscriptionsPool[0].input
+	endTime := fakeClock.Now().Add(24 * time.Hour)
+	validSubscription.EndTime = &endTime
+	saOut, err := repo.InsertSubscription(ctx, &validSubscription)
+	require.NoError(t, err)
+	require.NotNil(t, saOut)
+
+	// Insert Subscription with endtime 30 minutes from now
+	copy := *subscriptionsPool[0].input
+	endTime = fakeClock.Now().Add(30 * time.Minute)
+	copy.EndTime = &endTime
+	copy.ID = dssmodels.ID(uuid.New().String())
+	isa, err := repo.InsertSubscription(ctx, &copy)
+	require.NoError(t, err)
+	require.NotNil(t, isa)
+
+	// Set Subscription's deleted time to 30 minutes from endTime.
+	expiredTime := fakeClock.Now().Add(1 * time.Hour)
+
+	subscriptions, err := repo.ListExpiredSubscriptions(ctx, serviceArea.Cells, writer, &expiredTime)
+	require.NoError(t, err)
+	require.Len(t, subscriptions, 1)
 }

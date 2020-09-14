@@ -23,6 +23,7 @@ var (
 		URL:       "https://no/place/like/home/for/flights",
 		StartTime: &startTime,
 		EndTime:   &endTime,
+		Writer:    writer,
 		Cells: s2.CellUnion{
 			s2.CellID(uint64(overflow)),
 			s2.CellID(17106221850767130624),
@@ -244,4 +245,37 @@ func TestStoreISAWithNoGeoData(t *testing.T) {
 	}
 	_, err = repo.InsertISA(ctx, sub)
 	require.Error(t, err)
+}
+
+func TestListExpiredISAs(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer tearDownStore()
+
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	// Insert ISA with endtime 1 day from now
+	isa1 := *serviceArea
+	endTime := fakeClock.Now().Add(24 * time.Hour)
+	isa1.EndTime = &endTime
+	saOut, err := repo.InsertISA(ctx, &isa1)
+	require.NoError(t, err)
+	require.NotNil(t, saOut)
+
+	// Insert ISA with endtime 30 minutes from now
+	isa2 := *serviceArea
+	endTime = fakeClock.Now().Add(30 * time.Minute)
+	isa2.EndTime = &endTime
+	isa2.ID = dssmodels.ID(uuid.New().String())
+	isa, err := repo.InsertISA(ctx, &isa2)
+	require.NoError(t, err)
+	require.NotNil(t, isa)
+
+	// Set ISA's deleted time to 30 minutes from endTime.
+	expiredTime := fakeClock.Now().Add(1 * time.Hour)
+
+	serviceAreas, err := repo.ListExpiredISAs(ctx, serviceArea.Cells, writer, &expiredTime)
+	require.NoError(t, err)
+	require.Len(t, serviceAreas, 1)
 }

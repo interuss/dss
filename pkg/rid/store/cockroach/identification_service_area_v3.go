@@ -203,3 +203,7 @@ func (c *isaRepoV3) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest
 
 	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
 }
+
+func (c *isaRepoV3) ListExpiredISAs(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	return make([]*ridmodels.IdentificationServiceArea, 0), nil
+}
