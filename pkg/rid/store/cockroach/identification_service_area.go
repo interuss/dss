@@ -223,6 +223,8 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
 }
 
+// ListExpiredISAs lists all expired ISAs based on expiredTime and writer
+// expiredTime is compared with ISA.endTime
 func (c *isaRepo) ListExpiredISAs(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	var (
 		isasInCellsQuery = fmt.Sprintf(`

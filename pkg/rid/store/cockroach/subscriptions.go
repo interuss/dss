@@ -303,6 +303,8 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 	return c.process(ctx, query, pq.Int64Array(cids), owner, c.clock.Now())
 }
 
+// ListExpiredSubscriptions lists all expired Subscriptions based on expiredTime and writer
+// expiredTime is compared with Subscription.endTime
 func (c *subscriptionRepo) ListExpiredSubscriptions(ctx context.Context, cells s2.CellUnion, writer string, expiredTime *time.Time) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
