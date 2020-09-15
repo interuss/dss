@@ -53,7 +53,7 @@ class FetchedEntityReferences(fetch.Query):
         if id not in my_refs:
           return True
       for id, r in my_refs.items():
-        if id not in other_refs or r != other_refs['id']:
+        if id not in other_refs or r != other_refs[id]:
           return True
     return False
 yaml.add_representer(FetchedEntityReferences, Representer.represent_dict)
@@ -167,22 +167,22 @@ class FetchedEntities(dict):
 
   @property
   def dss_query(self) -> FetchedEntityReferences:
-    return self['dss_query']
+    return fetch.coerce(self['dss_query'], FetchedEntityReferences)
 
   @property
   def entities_by_id(self) -> Dict[str, FetchedEntity]:
-    entities = self.cached_entities_by_id.copy()
+    entities = {k: fetch.coerce(v, FetchedEntity) for k, v in self.cached_entities_by_id.items()}
     for k, v in self.new_entities_by_id.items():
-      entities[k] = v
+      entities[k] = fetch.coerce(v, FetchedEntity)
     return entities
 
   @property
   def new_entities_by_id(self) -> Dict[str, FetchedEntity]:
-    return self['uss_queries'].copy()
+    return fetch.coerce(self['uss_queries'].copy(), FetchedEntity)
 
   @property
   def cached_entities_by_id(self) -> Dict[str, FetchedEntity]:
-    return self['cached_uss_queries']
+    return fetch.coerce(self['cached_uss_queries'], FetchedEntity)
 
   def has_different_content_than(self, other):
     if not isinstance(other, FetchedEntities):
@@ -278,7 +278,7 @@ def constraints(utm_client: infrastructure.DSSTestSession,
                 alt_max_m: float=3048,
                 constraint_cache: Optional[Dict[str, FetchedEntity]]=None) -> FetchedEntities:
   return _entities(
-    'constraint_references', 'constraints',
+    'constraint_references', 'constraint',
     utm_client, area, start_time, end_time, alt_min_m, alt_max_m, constraint_cache)
 
 

@@ -1,7 +1,24 @@
 import copy
-from typing import Dict
+from typing import Dict, Optional
 
 from . import rid, scd
+
+
+def limit_long_arrays(obj, limit: int):
+  if isinstance(obj, dict):
+    result = {}
+    for k, v in obj.items():
+      result[k] = limit_long_arrays(v, limit)
+    return result
+  elif isinstance(obj, str):
+    return obj
+  elif isinstance(obj, list):
+    if len(obj) > limit:
+      return '<list of {} items>'.format(len(obj))
+    else:
+      return [limit_long_arrays(item, limit) for item in obj]
+  else:
+    return obj
 
 
 def isas(fetched: rid.FetchedISAs) -> Dict:
@@ -38,12 +55,17 @@ def _entity(fetched: scd.FetchedEntities, id: str) -> Dict:
     }
 
 
-def entities(fetched: scd.FetchedEntities) -> Dict:
+def entities(fetched: scd.FetchedEntities, entity_type: Optional[str]=None) -> Dict:
   if fetched.success:
-    return {
-      'new': {id: _entity(fetched, id) for id in fetched.new_entities_by_id},
-      'cached': {id: _entity(fetched, id) for id in fetched.cached_entities_by_id},
-    }
+    if entity_type is not None:
+      return {
+        entity_type: {id: _entity(fetched, id) for id in fetched.entities_by_id},
+      }
+    else:
+      return {
+        'new': {id: _entity(fetched, id) for id in fetched.new_entities_by_id},
+        'cached': {id: _entity(fetched, id) for id in fetched.cached_entities_by_id},
+      }
   else:
     return {
       'error': fetched.error,
