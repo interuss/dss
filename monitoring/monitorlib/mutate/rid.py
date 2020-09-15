@@ -9,7 +9,7 @@ from monitoring.monitorlib import infrastructure, rid
 from monitoring.monitorlib import fetch
 
 
-class MutatedSubscription(fetch.Interaction):
+class MutatedSubscription(fetch.Query):
   @property
   def success(self) -> bool:
     return not self.errors
@@ -68,7 +68,7 @@ def put_subscription(utm_client: infrastructure.DSSTestSession,
     url = '/v1/dss/subscriptions/{}/{}'.format(subscription_id, subscription_version)
   t0 = datetime.datetime.utcnow()
   resp = utm_client.put(url, json=body, scope=rid.SCOPE_READ)
-  result = MutatedSubscription(fetch.describe_interaction(resp, t0))
+  result = MutatedSubscription(fetch.describe_query(resp, t0))
   result['mutation'] = 'create' if subscription_version is None else 'update'
   return result
 
@@ -79,6 +79,6 @@ def delete_subscription(utm_client: infrastructure.DSSTestSession,
   url = '/v1/dss/subscriptions/{}/{}'.format(subscription_id, subscription_version)
   t0 = datetime.datetime.utcnow()
   resp = utm_client.delete(url, scope=rid.SCOPE_READ)
-  result = MutatedSubscription(fetch.describe_interaction(resp, t0))
+  result = MutatedSubscription(fetch.describe_query(resp, t0))
   result['mutation'] = 'delete'
   return result

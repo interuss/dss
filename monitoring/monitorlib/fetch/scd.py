@@ -8,7 +8,7 @@ from yaml.representer import Representer
 from monitoring.monitorlib import fetch, infrastructure, scd
 
 
-class FetchedEntityReferences(fetch.Interaction):
+class FetchedEntityReferences(fetch.Query):
   """Wrapper to interpret a DSS Entity query as a set of Entities."""
 
   @property
@@ -77,12 +77,12 @@ def _entity_references(dss_resource_name: str,
   t0 = datetime.datetime.utcnow()
   resp = utm_client.post(url, json=request_body, scope=scd.SCOPE_SC)
 
-  entity_references = FetchedEntityReferences(fetch.describe_interaction(resp, t0))
+  entity_references = FetchedEntityReferences(fetch.describe_query(resp, t0))
   entity_references['entity_type'] = dss_resource_name
   return entity_references
 
 
-class FetchedEntity(fetch.Interaction):
+class FetchedEntity(fetch.Query):
   @property
   def success(self) -> bool:
     return self.error is None
@@ -147,7 +147,7 @@ def _full_entity(uss_resource_name: str,
   t0 = datetime.datetime.utcnow()
   resp = utm_client.get(uss_entity_url, scope=scd.SCOPE_SC)
 
-  entity = FetchedEntity(fetch.describe_interaction(resp, t0))
+  entity = FetchedEntity(fetch.describe_query(resp, t0))
   entity['id_requested'] = entity_id
   entity['entity_type'] = uss_resource_name
   return entity
@@ -214,7 +214,7 @@ class CachedEntity(dict):
 
   @property
   def fetched_entity(self) -> FetchedEntity:
-    return self['uss_interaction']
+    return self['uss_query']
 
 
 def _entities(dss_resource_name: str,
@@ -248,7 +248,7 @@ def _entities(dss_resource_name: str,
       uss_queries[entity_id] = fetched_entity
       entity_cache[entity_id] = CachedEntity({
         'reference': entity_ref,
-        'uss_interaction': fetched_entity,
+        'uss_query': fetched_entity,
       })
 
   return FetchedEntities({
@@ -282,7 +282,7 @@ def constraints(utm_client: infrastructure.DSSTestSession,
     utm_client, area, start_time, end_time, alt_min_m, alt_max_m, constraint_cache)
 
 
-class FetchedSubscription(fetch.Interaction):
+class FetchedSubscription(fetch.Query):
   @property
   def success(self) -> bool:
     return not self.errors
@@ -317,4 +317,4 @@ def subscription(utm_client: infrastructure.DSSTestSession,
   url = '/dss/v1/subscriptions/{}'.format(subscription_id)
   t0 = datetime.datetime.utcnow()
   resp = utm_client.get(url, scope=scd.SCOPE_SC)
-  return FetchedSubscription(fetch.describe_interaction(resp, t0))
+  return FetchedSubscription(fetch.describe_query(resp, t0))

@@ -81,7 +81,7 @@ def describe_response(resp: requests.Response) -> ResponseDescription:
   return ResponseDescription(info)
 
 
-class Interaction(dict):
+class Query(dict):
   @property
   def response(self) -> ResponseDescription:
     return coerce(self['response'], ResponseDescription)
@@ -93,12 +93,12 @@ class Interaction(dict):
   @property
   def json_result(self) -> Optional[Dict]:
     return self.response.get('json', None)
-yaml.add_representer(Interaction, Representer.represent_dict)
+yaml.add_representer(Query, Representer.represent_dict)
 
 
-def describe_interaction(resp: requests.Response,
-                         initiated_at: datetime.datetime) -> Interaction:
-  return Interaction({
+def describe_query(resp: requests.Response,
+                   initiated_at: datetime.datetime) -> Query:
+  return Query({
     'request': describe_request(resp.request, initiated_at),
     'response': describe_response(resp),
   })

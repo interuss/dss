@@ -8,7 +8,7 @@ from yaml.representer import Representer
 from monitoring.monitorlib import fetch, infrastructure, rid
 
 
-class FetchedISAs(fetch.Interaction):
+class FetchedISAs(fetch.Query):
   """Wrapper to interpret a DSS ISA query as a set of ISAs."""
 
   @property
@@ -76,10 +76,10 @@ def isas(utm_client: infrastructure.DSSTestSession,
   t0 = datetime.datetime.utcnow()
   resp = utm_client.get(url, scope=rid.SCOPE_READ)
 
-  return FetchedISAs(fetch.describe_interaction(resp, t0))
+  return FetchedISAs(fetch.describe_query(resp, t0))
 
 
-class FetchedUSSFlights(fetch.Interaction):
+class FetchedUSSFlights(fetch.Query):
   @property
   def success(self) -> bool:
     return not self.errors
@@ -112,10 +112,10 @@ def flights(utm_client: infrastructure.DSSTestSession,
     ),
     'include_recent_positions': 'true' if include_recent_positions else 'false',
   }, scope=rid.SCOPE_READ)
-  return FetchedUSSFlights(fetch.describe_interaction(resp, t0))
+  return FetchedUSSFlights(fetch.describe_query(resp, t0))
 
 
-class FetchedUSSFlightDetails(fetch.Interaction):
+class FetchedUSSFlightDetails(fetch.Query):
   @property
   def success(self) -> bool:
     return not self.errors
@@ -139,12 +139,12 @@ yaml.add_representer(FetchedUSSFlightDetails, Representer.represent_dict)
 def flight_details(utm_client: infrastructure.DSSTestSession, flights_url: str, id: str) -> FetchedUSSFlightDetails:
   t0 = datetime.datetime.utcnow()
   resp = utm_client.get(flights_url + '/{}/details'.format(id), scope=rid.SCOPE_READ)
-  result = FetchedUSSFlightDetails(fetch.describe_interaction(resp, t0))
+  result = FetchedUSSFlightDetails(fetch.describe_query(resp, t0))
   result['requested_id'] = id
   return result
 
 
-class FetchedFlights(fetch.Interaction):
+class FetchedFlights(fetch.Query):
   @property
   def success(self):
     return not self.errors
@@ -194,7 +194,7 @@ def all_flights(utm_client: infrastructure.DSSTestSession,
   })
 
 
-class FetchedSubscription(fetch.Interaction):
+class FetchedSubscription(fetch.Query):
   @property
   def success(self) -> bool:
     return not self.errors
@@ -229,4 +229,4 @@ def subscription(utm_client: infrastructure.DSSTestSession,
   url = '/v1/dss/subscriptions/{}'.format(subscription_id)
   t0 = datetime.datetime.utcnow()
   resp = utm_client.get(url, scope=rid.SCOPE_READ)
-  return FetchedSubscription(fetch.describe_interaction(resp, t0))
+  return FetchedSubscription(fetch.describe_query(resp, t0))
