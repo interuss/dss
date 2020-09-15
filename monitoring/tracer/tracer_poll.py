@@ -8,7 +8,7 @@ import time
 from typing import List
 
 from monitoring.monitorlib import versioning
-from monitoring.tracer import formatting, polling
+from monitoring.tracer import diff, polling
 from monitoring.tracer.resources import ResourceSet
 
 
@@ -46,21 +46,21 @@ def main() -> int:
     if args.rid_isa_poll_interval > 0:
       pollers.append(polling.Poller(
         name='poll_isas',
-        object_diff_text=formatting.isa_diff_text,
+        object_diff_text=diff.isa_diff_text,
         interval=datetime.timedelta(seconds=args.rid_isa_poll_interval),
         poll=lambda: polling.poll_rid_isas(resources, resources.area)))
 
     if args.scd_operation_poll_interval > 0:
       pollers.append(polling.Poller(
         name='poll_ops',
-        object_diff_text=formatting.entity_diff_text,
+        object_diff_text=diff.entity_diff_text,
         interval=datetime.timedelta(seconds=args.scd_operation_poll_interval),
         poll=lambda: polling.poll_scd_operations(resources)))
 
     if args.scd_constraint_poll_interval > 0:
       pollers.append(polling.Poller(
         name='poll_constraints',
-        object_diff_text=formatting.entity_diff_text,
+        object_diff_text=diff.entity_diff_text,
         interval=datetime.timedelta(seconds=args.scd_constraint_poll_interval),
         poll=lambda: polling.poll_scd_constraints(resources)))
 
@@ -84,17 +84,19 @@ def main() -> int:
         if most_urgent_dt.total_seconds() > 0:
           time.sleep(most_urgent_dt.total_seconds())
 
+        t0 = datetime.datetime.utcnow()
         result = most_urgent_poller.poll()
+        t1 = datetime.datetime.utcnow()
 
         if result.has_different_content_than(most_urgent_poller.last_result):
-          resources.logger.log_new(most_urgent_poller.name, result.to_json())
+          resources.logger.log_new(most_urgent_poller.name, result)
           if need_line_break:
             print()
           print(most_urgent_poller.diff_text(result))
           need_line_break = False
           most_urgent_poller.last_result = result
         else:
-          resources.logger.log_same(result.initiated_at, result.completed_at, most_urgent_poller.name)
+          resources.logger.log_same(t0, t1, most_urgent_poller.name)
           print_no_newline('.')
           need_line_break = True
       except KeyboardInterrupt:
