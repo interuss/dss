@@ -88,3 +88,15 @@ def iso8601_equal(dts1: str, dts2: str) -> bool:
 
 def latitude_degrees(distance_meters: float) -> float:
   return 360 * distance_meters / EARTH_CIRCUMFERENCE_M
+
+
+class Subscription(dict):
+  @property
+  def valid(self) -> bool:
+    if self.version is None:
+      return False
+    return True
+
+  @property
+  def version(self) -> Optional[int]:
+    return self.get('version', None)

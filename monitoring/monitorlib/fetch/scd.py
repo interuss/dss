@@ -1,5 +1,5 @@
 import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import s2sphere
 import yaml
@@ -280,3 +280,41 @@ def constraints(utm_client: infrastructure.DSSTestSession,
   return _entities(
     'constraint_references', 'constraints',
     utm_client, area, start_time, end_time, alt_min_m, alt_max_m, constraint_cache)
+
+
+class FetchedSubscription(fetch.Interaction):
+  @property
+  def success(self) -> bool:
+    return not self.errors
+
+  @property
+  def errors(self) -> List[str]:
+    if self.status_code == 404:
+      return []
+    if self.status_code != 200:
+      return ['Request to get Subscription failed ({})'.format(self.status_code)]
+    if self.json_result is None:
+      return ['Request to get Subscription did not return valid JSON']
+    if not self._subscription.valid:
+      return ['Invalid Subscription data']
+    return []
+
+  @property
+  def _subscription(self) -> scd.Subscription:
+    return scd.Subscription(self.json_result.get('subscription', {}))
+
+  @property
+  def subscription(self) -> Optional[scd.Subscription]:
+    if not self.success or self.status_code == 404:
+      return None
+    else:
+      return self._subscription
+yaml.add_representer(FetchedSubscription, Representer.represent_dict)
+
+
+def subscription(utm_client: infrastructure.DSSTestSession,
+                 subscription_id: str) -> FetchedSubscription:
+  url = '/dss/v1/subscriptions/{}'.format(subscription_id)
+  t0 = datetime.datetime.utcnow()
+  resp = utm_client.get(url, scope=scd.SCOPE_SC)
+  return FetchedSubscription(fetch.describe_interaction(resp, t0))

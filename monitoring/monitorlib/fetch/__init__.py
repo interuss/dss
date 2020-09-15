@@ -2,6 +2,7 @@ import datetime
 import json
 from typing import Dict, Optional
 
+import flask
 import requests
 import yaml
 from yaml.representer import Representer
@@ -9,11 +10,33 @@ from yaml.representer import Representer
 from monitoring.monitorlib import infrastructure
 
 
+def coerce(obj: Dict, desired_type: type):
+  if isinstance(obj, desired_type):
+    return obj
+  else:
+    return desired_type(obj)
+
+
 class RequestDescription(dict):
   @property
   def token(self) -> Dict:
     return infrastructure.get_token_claims(self.get('headers', {}))
 yaml.add_representer(RequestDescription, Representer.represent_dict)
+
+
+def describe_flask_request(request: flask.Request) -> RequestDescription:
+  headers = {k: v for k, v in request.headers}
+  info = {
+    'method': request.method,
+    'url': request.url,
+    'received_at': datetime.datetime.utcnow().isoformat(),
+    'headers': headers,
+  }
+  try:
+    info['json'] = request.json
+  except ValueError:
+    info['body'] = request.data.encode('utf-8')
+  return RequestDescription(info)
 
 
 def describe_request(req: requests.PreparedRequest,
@@ -60,20 +83,16 @@ def describe_response(resp: requests.Response) -> ResponseDescription:
 
 class Interaction(dict):
   @property
+  def response(self) -> ResponseDescription:
+    return coerce(self['response'], ResponseDescription)
+
+  @property
   def status_code(self) -> int:
-    return self['response'].status_code
+    return self.response.status_code
 
   @property
   def json_result(self) -> Optional[Dict]:
-    return self['response'].get('json', None)
-
-  @property
-  def initiated_at(self) -> datetime.datetime:
-    return self['request']['initiated_at']
-
-  @property
-  def completed_at(self) -> datetime.datetime:
-    return self['response']['reported']
+    return self.response.get('json', None)
 yaml.add_representer(Interaction, Representer.represent_dict)
 
 

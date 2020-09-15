@@ -57,3 +57,19 @@ class Flight(dict):
   @property
   def id(self) -> str:
     return self.get('id', None)
+
+
+class FlightDetails(dict):
+  pass
+
+
+class Subscription(dict):
+  @property
+  def valid(self) -> bool:
+    if self.version is None:
+      return False
+    return True
+
+  @property
+  def version(self) -> Optional[str]:
+    return self.get('version', None)

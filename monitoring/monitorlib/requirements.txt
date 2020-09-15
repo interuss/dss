@@ -1,4 +1,5 @@
 cryptography==2.9.2
+flask==1.1.2
 google-auth==1.6.3
 jwcrypto==0.7
 pyjwt==1.7.1

@@ -127,6 +127,12 @@ class FetchedUSSFlightDetails(fetch.Interaction):
     if self.json_result is None:
       return ['Flight details response did not include valid JSON']
     return []
+
+  @property
+  def details(self) -> Optional[rid.FlightDetails]:
+    if self.json_result is None or 'details' not in self.json_result:
+      return None
+    return rid.FlightDetails(self.json_result['details'])
 yaml.add_representer(FetchedUSSFlightDetails, Representer.represent_dict)
 
 
@@ -140,14 +146,26 @@ def flight_details(utm_client: infrastructure.DSSTestSession, flights_url: str, 
 
 class FetchedFlights(fetch.Interaction):
   @property
+  def success(self):
+    return not self.errors
+
+  @property
   def errors(self) -> List[str]:
-    if not self.isas.success:
-      return ['Failed to obtain ISAs: ' + self.isas.error]
+    if not self.dss_isa_query.success:
+      return ['Failed to obtain ISAs: ' + self.dss_isa_query.error]
     return []
 
   @property
-  def isas(self) -> FetchedISAs:
-    return self['dss_interaction']
+  def dss_isa_query(self) -> FetchedISAs:
+    return fetch.coerce(self['dss_isa_query'], FetchedISAs)
+
+  @property
+  def uss_flight_queries(self) -> Dict[str, FetchedUSSFlights]:
+    return {k: fetch.coerce(v, FetchedUSSFlights) for k, v in self.get('uss_flight_queries', {}).items()}
+
+  @property
+  def uss_flight_details_queries(self) -> Dict[str, FetchedUSSFlightDetails]:
+    return {k: fetch.coerce(v, FetchedUSSFlightDetails) for k, v in self.get('uss_flight_details_queries', {}).items()}
 yaml.add_representer(FetchedFlights, Representer.represent_dict)
 
 
@@ -174,3 +192,41 @@ def all_flights(utm_client: infrastructure.DSSTestSession,
     'uss_flight_queries': uss_flight_queries,
     'uss_flight_details_queries': uss_flight_details_queries,
   })
+
+
+class FetchedSubscription(fetch.Interaction):
+  @property
+  def success(self) -> bool:
+    return not self.errors
+
+  @property
+  def errors(self) -> List[str]:
+    if self.status_code == 404:
+      return []
+    if self.status_code != 200:
+      return ['Request to get Subscription failed ({})'.format(self.status_code)]
+    if self.json_result is None:
+      return ['Request to get Subscription did not return valid JSON']
+    if not self._subscription.valid:
+      return ['Invalid Subscription data']
+    return []
+
+  @property
+  def _subscription(self) -> rid.Subscription:
+    return rid.Subscription(self.json_result.get('subscription', {}))
+
+  @property
+  def subscription(self) -> Optional[rid.Subscription]:
+    if not self.success or self.status_code == 404:
+      return None
+    else:
+      return self._subscription
+yaml.add_representer(FetchedSubscription, Representer.represent_dict)
+
+
+def subscription(utm_client: infrastructure.DSSTestSession,
+                 subscription_id: str) -> FetchedSubscription:
+  url = '/v1/dss/subscriptions/{}'.format(subscription_id)
+  t0 = datetime.datetime.utcnow()
+  resp = utm_client.get(url, scope=rid.SCOPE_READ)
+  return FetchedSubscription(fetch.describe_interaction(resp, t0))

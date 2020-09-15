@@ -1,3 +1,4 @@
+import copy
 import datetime
 import logging
 import os
@@ -31,7 +32,9 @@ class Logger(object):
     logname = '{:06d}_{}_{}.yaml'.format(n, datetime.datetime.now().strftime('%H%M%S_%f'), code)
     fullname = os.path.join(self.log_path, logname)
 
+    dump = copy.deepcopy(content)
+    dump['object_type'] = type(content).__name__
     with open(fullname, 'w') as f:
-      f.write(yaml.dump(content, indent=2))
+      f.write(yaml.dump(dump, indent=2))
 
     return logname

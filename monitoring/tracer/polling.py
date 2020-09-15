@@ -47,26 +47,20 @@ class Poller(object):
 
 
 def poll_rid_isas(resources: ResourceSet, box: s2sphere.LatLngRect) -> Any:
-  result = fetch.rid.isas(resources.dss_client, box, resources.start_time, resources.end_time)
-  result['log_type'] = 'poll_isas'
-  return result
+  return fetch.rid.isas(resources.dss_client, box, resources.start_time, resources.end_time)
 
 
 def poll_scd_operations(resources: ResourceSet) -> Any:
   if 'operations' not in resources.scd_cache:
     resources.scd_cache['operations']: Dict[str, fetch.scd.FetchedEntity] = {}
-  result = fetch.scd.operations(
+  return fetch.scd.operations(
     resources.dss_client, resources.area, resources.start_time,
     resources.end_time, operation_cache=resources.scd_cache['operations'])
-  result['log_type'] = 'poll_operations'
-  return result
 
 
 def poll_scd_constraints(resources: ResourceSet) -> Any:
   if 'constraints' not in resources.scd_cache:
     resources.scd_cache['constraints']: Dict[str, fetch.scd.FetchedEntity] = {}
-  result = fetch.scd.constraints(
+  return fetch.scd.constraints(
     resources.dss_client, resources.area, resources.start_time,
     resources.end_time, constraint_cache=resources.scd_cache['constraints'])
-  result['log_type'] = 'poll_constraints'
-  return result
