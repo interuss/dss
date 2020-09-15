@@ -136,9 +136,13 @@ class FetchedUSSFlightDetails(fetch.Query):
 yaml.add_representer(FetchedUSSFlightDetails, Representer.represent_dict)
 
 
-def flight_details(utm_client: infrastructure.DSSTestSession, flights_url: str, id: str) -> FetchedUSSFlightDetails:
+def flight_details(utm_client: infrastructure.DSSTestSession,
+                   flights_url: str, id: str,
+                   enhanced_details: bool=False) -> FetchedUSSFlightDetails:
+  suffix = '?enhanced=true' if enhanced_details else ''
+  scope = ' '.join([rid.SCOPE_READ, rid.UPP2_SCOPE_ENHANCED_DETAILS]) if enhanced_details else rid.SCOPE_READ
   t0 = datetime.datetime.utcnow()
-  resp = utm_client.get(flights_url + '/{}/details'.format(id), scope=rid.SCOPE_READ)
+  resp = utm_client.get(flights_url + '/{}/details{}'.format(id, suffix), scope=scope)
   result = FetchedUSSFlightDetails(fetch.describe_query(resp, t0))
   result['requested_id'] = id
   return result
@@ -172,7 +176,8 @@ yaml.add_representer(FetchedFlights, Representer.represent_dict)
 def all_flights(utm_client: infrastructure.DSSTestSession,
                 area: s2sphere.LatLngRect,
                 include_recent_positions: bool,
-                get_details: bool) -> Dict:
+                get_details: bool,
+                enhanced_details: bool=False) -> Dict:
   isa_query = isas(utm_client, area, datetime.datetime.utcnow(), datetime.datetime.utcnow())
 
   uss_flight_queries: Dict[str, FetchedUSSFlights] = {}
@@ -184,7 +189,7 @@ def all_flights(utm_client: infrastructure.DSSTestSession,
     if get_details and flights_for_url.success:
       for flight in flights_for_url.flights:
         if flight.valid:
-          details = flight_details(utm_client, flights_url, flight.id)
+          details = flight_details(utm_client, flights_url, flight.id, enhanced_details)
           uss_flight_details_queries[flight.id] = details
 
   return FetchedFlights({

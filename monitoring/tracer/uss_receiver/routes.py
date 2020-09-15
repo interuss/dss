@@ -238,7 +238,8 @@ def request_rid_poll():
   flights_result = fetch.rid.all_flights(
     context.resources.dss_client, area,
     flask.request.form.get('include_recent_positions'),
-    flask.request.form.get('get_details'))
+    flask.request.form.get('get_details'),
+    flask.request.form.get('enhanced_details'))
   log_name = context.resources.logger.log_new('clientrequest_getflights', flights_result)
   return flask.redirect(flask.url_for('logs', log=log_name))
 
