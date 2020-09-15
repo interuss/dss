@@ -14,7 +14,7 @@ from typing import Dict, Optional
 import requests
 
 from monitoring.monitorlib import ids, rid, scd, versioning
-from monitoring.tracer import formatting
+from monitoring.tracer import diff
 from monitoring.tracer.resources import ResourceSet
 
 
@@ -112,8 +112,8 @@ def _unsubscribe(resources: ResourceSet, monitor_rid: bool, monitor_scd: bool) -
 def _describe_response(resp: requests.Response, initiated_at: datetime.datetime, description: str) -> Dict:
   info = {
     'description': description,
-    'request': formatting.describe_request(resp.request, initiated_at),
-    'response': formatting.describe_response(resp),
+    'request': diff.describe_request(resp.request, initiated_at),
+    'response': diff.describe_response(resp),
   }
   return info
 

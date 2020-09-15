@@ -1,15 +1,14 @@
 import datetime
 import logging
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 import flask
-import jwt
 from termcolor import colored
 import yaml
 
-from monitoring.monitorlib import infrastructure, versioning
-from monitoring.tracer import check_rid_flights, formatting, geo
+from monitoring.monitorlib import infrastructure, versioning, geo
+from monitoring.tracer import check_rid_flights, diff
 from . import context, webapp
 
 
@@ -47,8 +46,8 @@ def _print_time_range(t0: str, t1: str) -> str:
   try:
     t0dt = datetime.datetime.fromisoformat(t0) - now
     t1dt = datetime.datetime.fromisoformat(t1) - now
-    return ' {} to {}'.format(formatting.format_timedelta(t0dt),
-                              formatting.format_timedelta(t1dt))
+    return ' {} to {}'.format(diff.format_timedelta(t0dt),
+                              diff.format_timedelta(t1dt))
   except ValueError as e:
     return ''
 
