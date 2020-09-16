@@ -66,9 +66,8 @@ def put_subscription(utm_client: infrastructure.DSSTestSession,
     url = '/v1/dss/subscriptions/{}'.format(subscription_id)
   else:
     url = '/v1/dss/subscriptions/{}/{}'.format(subscription_id, subscription_version)
-  t0 = datetime.datetime.utcnow()
-  resp = utm_client.put(url, json=body, scope=rid.SCOPE_READ)
-  result = MutatedSubscription(fetch.describe_query(resp, t0))
+  result = MutatedSubscription(fetch.query_and_describe(
+    utm_client, 'PUT', url, json=body, scope=rid.SCOPE_READ))
   result['mutation'] = 'create' if subscription_version is None else 'update'
   return result
 
@@ -77,8 +76,7 @@ def delete_subscription(utm_client: infrastructure.DSSTestSession,
                         subscription_id: str,
                         subscription_version: str) -> MutatedSubscription:
   url = '/v1/dss/subscriptions/{}/{}'.format(subscription_id, subscription_version)
-  t0 = datetime.datetime.utcnow()
-  resp = utm_client.delete(url, scope=rid.SCOPE_READ)
-  result = MutatedSubscription(fetch.describe_query(resp, t0))
+  result = MutatedSubscription(fetch.query_and_describe(
+    utm_client, 'DELETE', url, scope=rid.SCOPE_READ))
   result['mutation'] = 'delete'
   return result

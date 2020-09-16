@@ -1,6 +1,7 @@
 import datetime
 from typing import Dict, List, Optional
 
+import requests
 import s2sphere
 import yaml
 from yaml.representer import Representer
@@ -73,10 +74,8 @@ def isas(utm_client: infrastructure.DSSTestSession,
   area = rid.geo_polygon_string(rid.vertices_from_latlng_rect(box))
   url = '/v1/dss/identification_service_areas?area={}&earliest_time={}&latest_time={}'.format(
     area, start_time.strftime(rid.DATE_FORMAT), end_time.strftime(rid.DATE_FORMAT))
-  t0 = datetime.datetime.utcnow()
-  resp = utm_client.get(url, scope=rid.SCOPE_READ)
-
-  return FetchedISAs(fetch.describe_query(resp, t0))
+  return FetchedISAs(fetch.query_and_describe(
+    utm_client, 'GET', url, scope=rid.SCOPE_READ))
 
 
 class FetchedUSSFlights(fetch.Query):
@@ -102,17 +101,17 @@ def flights(utm_client: infrastructure.DSSTestSession,
             flights_url: str,
             area: s2sphere.LatLngRect,
             include_recent_positions: bool) -> FetchedUSSFlights:
-  t0 = datetime.datetime.utcnow()
-  resp = utm_client.get(flights_url, params={
-    'view': '{},{},{},{}'.format(
-      area.lat_lo().degrees,
-      area.lng_lo().degrees,
-      area.lat_hi().degrees,
-      area.lng_hi().degrees,
-    ),
-    'include_recent_positions': 'true' if include_recent_positions else 'false',
-  }, scope=rid.SCOPE_READ)
-  return FetchedUSSFlights(fetch.describe_query(resp, t0))
+  result = fetch.query_and_describe(
+    utm_client, 'GET', flights_url, params={
+      'view': '{},{},{},{}'.format(
+        area.lat_lo().degrees,
+        area.lng_lo().degrees,
+        area.lat_hi().degrees,
+        area.lng_hi().degrees,
+      ),
+      'include_recent_positions': 'true' if include_recent_positions else 'false',
+    }, scope=rid.SCOPE_READ)
+  return FetchedUSSFlights(result)
 
 
 class FetchedUSSFlightDetails(fetch.Query):
@@ -141,9 +140,8 @@ def flight_details(utm_client: infrastructure.DSSTestSession,
                    enhanced_details: bool=False) -> FetchedUSSFlightDetails:
   suffix = '?enhanced=true' if enhanced_details else ''
   scope = ' '.join([rid.SCOPE_READ, rid.UPP2_SCOPE_ENHANCED_DETAILS]) if enhanced_details else rid.SCOPE_READ
-  t0 = datetime.datetime.utcnow()
-  resp = utm_client.get(flights_url + '/{}/details{}'.format(id, suffix), scope=scope)
-  result = FetchedUSSFlightDetails(fetch.describe_query(resp, t0))
+  result = FetchedUSSFlightDetails(fetch.query_and_describe(
+    utm_client, 'GET', flights_url + '/{}/details{}'.format(id, suffix), scope=scope))
   result['requested_id'] = id
   return result
 
@@ -232,6 +230,6 @@ yaml.add_representer(FetchedSubscription, Representer.represent_dict)
 def subscription(utm_client: infrastructure.DSSTestSession,
                  subscription_id: str) -> FetchedSubscription:
   url = '/v1/dss/subscriptions/{}'.format(subscription_id)
-  t0 = datetime.datetime.utcnow()
-  resp = utm_client.get(url, scope=rid.SCOPE_READ)
-  return FetchedSubscription(fetch.describe_query(resp, t0))
+  result = fetch.query_and_describe(
+    utm_client, 'GET', url, scope=rid.SCOPE_READ)
+  return FetchedSubscription(result)
