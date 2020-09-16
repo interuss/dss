@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
 import s2sphere
@@ -88,6 +88,24 @@ def iso8601_equal(dts1: str, dts2: str) -> bool:
 
 def latitude_degrees(distance_meters: float) -> float:
   return 360 * distance_meters / EARTH_CIRCUMFERENCE_M
+
+
+def parse_time(time: Dict) -> datetime:
+  t_str = time['value']
+  if t_str[-1] == 'Z':
+    t_str = t_str[0:-1]
+  return datetime.fromisoformat(t_str)
+
+
+def start_of(vol4s: List[Dict]) -> datetime:
+  return min([parse_time(vol4['time_start']) for vol4 in vol4s])
+
+
+def offset_time(vol4s: List[Dict], dt: timedelta) -> List[Dict]:
+  for vol4 in vol4s:
+    vol4['time_start'] = make_time(parse_time(vol4['time_start']) + dt)
+    vol4['time_end'] = make_time(parse_time(vol4['time_end']) + dt)
+  return vol4s
 
 
 class Subscription(dict):
