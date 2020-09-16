@@ -7,20 +7,18 @@ In each files every action has a weight declared in the `@task(n)` decorator. Yo
 
 # Run Locally without Docker
 1. Go to the repository's root directory. We have to execute from root directory due to our directory structure choice.
-1. Create vitrual environment `virtualenv --python python3 ./monitoring/loadtest/env`
-1. Install dependencies `pip install -r ./monitoring/loadtest/requirements.txt`
-1. Configure your OAuth Server Endpoint in `./monitoring/loadtest/locust_files/conf.py`
-
-    a. Currently it only supports Dummy OAuth Server, if there is a request to support other Auth mechaisms, we can implement them.
-
+1. Create virtrual environment `virtualenv --python python3 ./monitoring/loadtest/env`
 1. Activate virtual environment `. ./monitoring/loadtest/env/bin/activate`
+1. Install dependencies `pip install -r ./monitoring/loadtest/requirements.txt`
+1. Set OAuth Spec with environment variable `AUTH_SPEC`. See [the auth spec documentation](../monitorlib/README.md#Auth_specs)
+for the format of these values.  Ommiting this step will result in Client Initialization failure.
 1. You have 2 options of load testing the ISA or Subscription workflow
     
-    a. For ISA run: `locust -f ./monitoring/loadtest/locust_files/ISA.py -H <DSS Endpoint URL>`
+    a. For ISA run: `AUTH_SPEC="<auth spec>" locust -f ./monitoring/loadtest/locust_files/ISA.py -H <DSS Endpoint URL>`
 
-    b. For Subscription run: `locust -f ./monitoring/loadtest/locust_files/Sub.py -H <DSS Endpoint URL>`
+    b. For Subscription run: `AUTH_SPEC="<auth spec>" locust -f ./monitoring/loadtest/locust_files/Sub.py -H <DSS Endpoint URL>`
 
-1. Navigate to http://localhost:8080
+1. Navigate to http://localhost:8089
 1. Start new test with number of Users to spawn and the rate to spawn them. 
 
 
@@ -30,6 +28,6 @@ Simply build the Docker container with the Dockerfile from the root directory. A
 1. Build command `docker build -f monitoring/loadtest/Dockerfile . -t loadtest`
 1. Run Docker container
 
-    a. For ISA run: `docker run loadtest locust -f locust_files/ISA.py`
+    a. For ISA run: `docker run -e AUTH_SPEC="<auth spec>" loadtest locust -f locust_files/ISA.py`
 
-    b. For Sub run: `docker run loadtest locust -f locust_files/Sub.py`
+    b. For Sub run: `docker run -e AUTH_SPEC="<auth spec>" loadtest locust -f locust_files/Sub.py`

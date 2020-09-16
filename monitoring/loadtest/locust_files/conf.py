@@ -1,1 +1,1 @@
-OAUTH_HOST = "http://localhost:8085/token"
+OAUTH_HOST = "DummyOAuth(http://localhost:8085/token,fake_uss)"

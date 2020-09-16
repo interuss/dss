@@ -7,6 +7,7 @@ import threading
 import time
 import typing
 import uuid
+from monitoring.monitorlib import rid
 from monitoring.prober.rid import common
 from locust import task, between
 
@@ -54,8 +55,8 @@ class Sub(client.USS):
                         "altitude_lo": 20,
                         "altitude_hi": 400,
                     },
-                    "time_start": time_start.strftime(common.DATE_FORMAT),
-                    "time_end": time_end.strftime(common.DATE_FORMAT),
+                    "time_start": time_start.strftime(rid.DATE_FORMAT),
+                    "time_end": time_end.strftime(rid.DATE_FORMAT),
                 },
                 "callbacks": {
                     "identification_service_area_url": "https://example.com/foo"
@@ -93,8 +94,8 @@ class Sub(client.USS):
                         "altitude_lo": 20,
                         "altitude_hi": 400,
                     },
-                    "time_start": time_start.strftime(common.DATE_FORMAT),
-                    "time_end": time_end.strftime(common.DATE_FORMAT),
+                    "time_start": time_start.strftime(rid.DATE_FORMAT),
+                    "time_end": time_end.strftime(rid.DATE_FORMAT),
                 },
                 "callbacks": {
                     "identification_service_area_url": "https://example.com/foo"

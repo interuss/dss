@@ -83,8 +83,8 @@ def test_update_isa(session):
                   'altitude_lo': 20,
                   'altitude_hi': 400,
               },
-              'time_start': time_start.strftime(common.DATE_FORMAT),
-              'time_end': time_end.strftime(common.DATE_FORMAT),
+              'time_start': time_start.strftime(rid.DATE_FORMAT),
+              'time_end': time_end.strftime(rid.DATE_FORMAT),
           },
           'flights_url': 'https://example.com/dss',
       })
@@ -94,9 +94,9 @@ def test_update_isa(session):
   assert data['service_area']['id'] == ISA_ID
   assert data['service_area']['flights_url'] == 'https://example.com/dss'
   assert data['service_area']['time_start'] == time_start.strftime(
-      common.DATE_FORMAT)
+      rid.DATE_FORMAT)
   assert data['service_area']['time_end'] == time_end.strftime(
-      common.DATE_FORMAT)
+      rid.DATE_FORMAT)
   assert re.match(r'[a-z0-9]{10,}$', data['service_area']['version'])
   assert 'subscribers' in data
 

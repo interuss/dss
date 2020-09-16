@@ -1,11 +1,11 @@
 #!env/bin/python3
 
+import os
 import conf
 import time
 import typing
 from locust import User 
-from monitoring.monitorlib import auth, infrastructure
-from monitoring.prober.rid import common
+from monitoring.monitorlib import auth, infrastructure, rid
 
 class DSSClient(infrastructure.DSSTestSession):
     _locust_environment = None
@@ -57,9 +57,16 @@ class USS(User):
 
     def __init__(self, *args, **kwargs):
         super(USS, self).__init__(*args, **kwargs)
-        oauth_adapter = auth.DummyOAuth(conf.OAUTH_HOST, "fake_uss")
+        auth_spec = os.environ.get("AUTH_SPEC")
+        oauth_adapter = auth.make_auth_adapter(auth_spec) if auth_spec else None
         self.client = DSSClient(self.host, oauth_adapter)
         self.client._locust_environment = self.environment
+        if not auth_spec:
+            # logging after creation of client so that we surface the error in the UI
+            e = Exception("Missing AUTH_SPEC environment variable, please check README")
+            self.client.log_exception("Initialization", "Create DSS Client", time.time(), e)
+            # raising exception to not allow things to proceed further
+            raise e
         # This is a load tester its acceptable to have all the scopes required to operate anything.
         # We are not testing if the scope is incorrect. We are testing if it can handle the load.
-        self.client.default_scopes = [common.SCOPE_WRITE, common.SCOPE_READ]
+        self.client.default_scopes = [rid.SCOPE_WRITE, rid.SCOPE_READ]

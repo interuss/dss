@@ -1,6 +1,6 @@
 FROM python:3.7
 # Not -alpine because: https://stackoverflow.com/a/58028091/651139
-# The context for this image should be monitoring
+# The context for this image should be the repo's root directory
 RUN mkdir /monitoring
 RUN mkdir /monitoring/prober
 RUN mkdir /monitoring/monitorlib
