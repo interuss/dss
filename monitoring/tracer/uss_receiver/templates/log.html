@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 
-{% macro collapseable(v) %}
-{% if v is mapping or (v is iterable and v is not string) %} collapseable{% endif %}
-{% endmacro %}
+{% macro collapseable(v) %}{% if v is mapping or (v is iterable and v is not string) %}collapseable{% else %}not_collapseable{% endif %}{% endmacro %}
 
 {% macro draw_value(v) %}
   {% if v is mapping %}
@@ -19,9 +17,9 @@
 {% macro draw_node(node) %}
   <ul>
     {% for k, v in node.items() %}
-      <li>
-        <span class="node_key {{ collapseable(v) }}">{{ k }}</span>:
-        <span class="node_value">{{ draw_value(v) }}</span>
+      <li class="{{ collapseable(v) }}">
+        <div class="node_key">{{ k }}</div>:
+        <div class="node_value">{{ draw_value(v) }}</div>
       </li>
     {% endfor %}
   </ul>
@@ -30,9 +28,9 @@
 {% macro draw_list(items) %}
   <ul>
     {% for v in items %}
-      <li>
-        <span class="node_key {{ collapseable(v) }}">item_{{ loop.index }}</span>:
-        <span class="node_value">{{ draw_value(v) }}</span>
+      <li class="{{ collapseable(v) }}">
+        <div class="node_key">item_{{ loop.index }}</div>:
+        <div class="node_value">{{ draw_value(v) }}</div>
       </li>
     {% endfor %}
   </ul>
@@ -49,11 +47,14 @@
     ul li {
       padding-left: 14px;
     }
-    .collapseable:hover {
+    li div {
+      display: inline;
+    }
+    .collapseable>.node_key:hover {
       text-decoration: underline;
       cursor: pointer;
     }
-    .collapsed {
+    .collapsed>.node_key {
       color: red;
     }
     .node_key {
@@ -65,24 +66,28 @@
   </div>
   <script>
     function showHide(node) {
-      var key = node.querySelector(".collapseable");
-      if (key.classList.contains("collapsed")) {
-        key.classList.remove("collapsed");
-        for (var i = 1; i < node.children.length; i++) {
-          node.children[i].style.display = "block";
+      var value = node.querySelector(".node_value");
+      if (node.classList.contains("collapsed")) {
+        node.classList.remove("collapsed");
+        for (var i = 0; i < value.children.length; i++) {
+          value.children[i].style.display = "block";
         }
       } else {
-        key.classList.add("collapsed");
-        for (var i = 1; i < node.children.length; i++) {
-          node.children[i].style.display = "none";
+        node.classList.add("collapsed");
+        for (var i = 0; i < value.children.length; i++) {
+          value.children[i].style.display = "none";
         }
       }
     }
 
     function addShowHide(node) {
       if (node.classList.contains("collapseable")) {
-        let nodeToToggle = node.parentElement;
-        node.addEventListener("click", function () { showHide(nodeToToggle); });
+        let key = node.querySelector(".node_key");
+        key.addEventListener("click", function () { showHide(node); });
+        let values = node.querySelector(".node_value ul");
+        if (values.children.length > 3) {
+          showHide(node);
+        }
       }
       for (var i = 0; i < node.children.length; i++) {
         addShowHide(node.children[i]);

@@ -29,7 +29,7 @@ a single polling period, this tool would not create an record of that ISA.
 
 ### Invocation
 ```shell script
-docker run --rm -v `pwd`/logs:/logs interuss/dss/tracer \
+docker run --name tracer_run --rm -v `pwd`/logs:/logs interuss/dss/tracer \
     python python tracer_poll.py \
     --auth=<SPEC> \
     --dss=https://example.com \
@@ -58,6 +58,8 @@ notifications upon DSS prompting.
 ### Invocation
 Make a copy of [`run_subscribe.sh`](run_subscribe.sh) and edit the arguments as
 appropriate.  Then simply run your copy of that script (`./run_subscribe.sh`).
+To stop this container gracefully (so that Subscriptions are removed):
+`docker container kill --signal=INT tracer_subscribe`
 
 ### External route
 One important argument in subscribe mode is `--base-url`.  This should be the

@@ -1,14 +1,16 @@
 import datetime
 import logging
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 import flask
-import jwt
 from termcolor import colored
 import yaml
 
-from monitoring.tracer import check_rid_flights, formatting, geo
+from monitoring.monitorlib import fetch, formatting, geo, infrastructure, versioning
+from monitoring.monitorlib.fetch import summarize
+import monitoring.monitorlib.fetch.rid
+import monitoring.monitorlib.fetch.scd
 from . import context, webapp
 
 
@@ -17,33 +19,6 @@ _logger = logging.getLogger('tracer.notifications')
 _logger.setLevel(logging.DEBUG)
 
 RESULT = ('', 204)
-
-
-def _get_token_claims(request: flask.Request) -> Dict:
-  if not request.headers.has_key('Authorization'):
-    return {}
-  token: str = request.headers.get('Authorization')
-  if token.lower().startswith('bearer '):
-    token = token[len('bearer '):]
-  try:
-    return jwt.decode(token, verify=False)
-  except (ValueError, jwt.exceptions.DecodeError):
-    return {}
-
-
-def _get_request_info(request: flask.Request) -> Dict:
-  info = {
-    'url': request.url,
-    'verb': request.method,
-    'headers': {k: v for k, v in request.headers.items()},
-    'timestamp': datetime.datetime.utcnow().isoformat(),
-    'token': _get_token_claims(request),
-  }
-  try:
-    info['json'] = request.json
-  except ValueError:
-    info['body'] = request.data.encode('utf-8')
-  return info
 
 
 def _print_time_range(t0: str, t1: str) -> str:
@@ -66,9 +41,11 @@ def _print_time_range(t0: str, t1: str) -> str:
 @webapp.route('/v1/uss/identification_service_areas/<id>', methods=['POST'])
 def rid_isa_notification(id: str) -> Tuple[str, int]:
   """Implements RID ISA notification receiver."""
-  log_name = context.resources.logger.log_new('isa', _get_request_info(flask.request))
+  req = fetch.describe_flask_request(flask.request)
+  req['endpoint'] = 'identification_service_areas'
+  log_name = context.resources.logger.log_new('notify_isa', req)
 
-  claims = _get_token_claims(flask.request)
+  claims = req.token
   owner = claims.get('sub', '<No owner in token>')
   label = colored('ISA', 'cyan')
   try:
@@ -92,9 +69,11 @@ def rid_isa_notification(id: str) -> Tuple[str, int]:
 @webapp.route('/uss/v1/operations', methods=['POST'])
 def scd_operation_notification() -> Tuple[str, int]:
   """Implements SCD Operation notification receiver."""
-  log_name = context.resources.logger.log_new('op', _get_request_info(flask.request))
+  req = fetch.describe_flask_request(flask.request)
+  req['endpoint'] = 'operations'
+  log_name = context.resources.logger.log_new('notify_op', req)
 
-  claims = _get_token_claims(flask.request)
+  claims = req.token
   owner = claims.get('sub', '<No owner in token>')
   label = colored('Operation', 'blue')
   try:
@@ -135,9 +114,11 @@ def scd_operation_notification() -> Tuple[str, int]:
 @webapp.route('/uss/v1/constraints', methods=['POST'])
 def scd_constraint_notification() -> Tuple[str, int]:
   """Implements SCD Constraint notification receiver."""
-  log_name = context.resources.logger.log_new('constraint', _get_request_info(flask.request))
+  req = fetch.describe_flask_request(flask.request)
+  req['endpoint'] = 'constraints'
+  log_name = context.resources.logger.log_new('notify_constraint', req)
 
-  claims = _get_token_claims(flask.request)
+  claims = infrastructure.get_token_claims({k: v for k, v in flask.request.headers})
   owner = claims.get('sub', '<No owner in token>')
   label = colored('Constraint', 'magenta')
   try:
@@ -172,29 +153,37 @@ def scd_constraint_notification() -> Tuple[str, int]:
   return RESULT
 
 
+@webapp.route('/status')
+def status():
+  return 'Ok {}'.format(versioning.get_code_version())
+
+
 @webapp.route('/logs')
 @webapp.route('/')
 def list_logs():
-  logs = sorted(os.listdir(context.resources.logger.log_path))
+  logs = list(reversed(sorted(os.listdir(context.resources.logger.log_path))))
   response = flask.make_response(flask.render_template('logs.html', logs=logs))
   response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
   response.headers['Pragma'] = 'no-cache'
   return response
 
 
-def _redact_log(obj):
+def _redact_and_augment_log(obj):
   if isinstance(obj, dict):
     result = {}
     for k, v in obj.items():
       if k.lower() == 'authorization' and isinstance(v, str):
-        result[k] = '.'.join(v.split('.')[0:-1]) + '.REDACTED'
+        result[k] = {
+          'value': '.'.join(v.split('.')[0:-1]) + '.REDACTED',
+          'claims': infrastructure.get_token_claims(obj),
+        }
       else:
-        result[k] = _redact_log(v)
+        result[k] = _redact_and_augment_log(v)
     return result
   elif isinstance(obj, str):
     return obj
   elif isinstance(obj, list):
-    return [_redact_log(item) for item in obj]
+    return [_redact_and_augment_log(item) for item in obj]
   else:
     return obj
 
@@ -210,7 +199,25 @@ def logs(log):
     obj = objs[0]
   else:
     obj = {'entries': objs}
-  return flask.render_template('log.html', log=_redact_log(obj), title=logfile)
+
+  object_type = obj.get('object_type', None)
+  if object_type == fetch.rid.FetchedISAs.__name__:
+    obj = {
+      'summary': summarize.isas(fetch.rid.FetchedISAs(obj)),
+      'details': obj,
+    }
+  elif object_type == fetch.scd.FetchedEntities.__name__:
+    obj = {
+      'summary': summarize.entities(fetch.scd.FetchedEntities(obj)),
+      'details': obj,
+    }
+  elif object_type == fetch.rid.FetchedFlights.__name__:
+    obj = {
+      'summary': summarize.flights(fetch.rid.FetchedFlights(obj)),
+      'details': obj,
+    }
+
+  return flask.render_template('log.html', log=_redact_and_augment_log(obj), title=logfile)
 
 
 @webapp.route('/rid_poll', methods=['GET'])
@@ -228,8 +235,11 @@ def request_rid_poll():
   except ValueError as e:
     flask.abort(400, str(e))
 
-  result = check_rid_flights.get_all_flights(context.resources, area, flask.request.form.get('include_recent_positions'))
-  log_name = context.resources.logger.log_new('getflights', result)
+  flights_result = fetch.rid.all_flights(
+    context.resources.dss_client, area,
+    flask.request.form.get('include_recent_positions'),
+    flask.request.form.get('get_details'))
+  log_name = context.resources.logger.log_new('clientrequest_getflights', flights_result)
   return flask.redirect(flask.url_for('logs', log=log_name))
 
 
@@ -240,9 +250,11 @@ def favicon():
 
 @webapp.route('/<path:u_path>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 def catch_all(u_path) -> Tuple[str, int]:
-  log_name = context.resources.logger.log_new('badroute', _get_request_info(flask.request))
+  req = fetch.describe_flask_request(flask.request)
+  req['endpoint'] = 'catch_all'
+  log_name = context.resources.logger.log_new('uss_badroute', req)
 
-  claims = _get_token_claims(flask.request)
+  claims = req.token
   owner = claims.get('sub', '<No owner in token>')
   label = colored('Bad route', 'red')
   _logger.error('{} to {} ({}): {}'.format(label, u_path, owner, log_name))

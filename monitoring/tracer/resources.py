@@ -3,8 +3,8 @@ import datetime
 
 import s2sphere
 
-from monitoring.monitorlib import auth, infrastructure
-from monitoring.tracer import geo, tracerlog
+from monitoring.monitorlib import auth, infrastructure, geo
+from monitoring.tracer import tracerlog
 
 
 class ResourceSet(object):
