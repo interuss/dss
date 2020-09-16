@@ -225,7 +225,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 
 // ListExpiredISAs lists all expired ISAs based on expiredTime and writer
 // expiredTime is compared with ISA.endTime
-func (c *isaRepo) ListExpiredISAs(ctx context.Context, writer string, expiredTime *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels.IdentificationServiceArea, error) {
 	var (
 		isasInCellsQuery = fmt.Sprintf(`
 	SELECT
@@ -233,14 +233,14 @@ func (c *isaRepo) ListExpiredISAs(ctx context.Context, writer string, expiredTim
 	FROM
 		identification_service_areas
 	WHERE
-		ends_at > $1
+		ends_at + INTERVAL '30' MINUTE <= CURRENT_TIMESTAMP
 	AND
-		writer = $2`, isaFields)
+		writer = $1`, isaFields)
 	)
 
 	if len(writer) == 0 {
 		return nil, stacktrace.NewError("Writer is required")
 	}
 
-	return c.process(ctx, isasInCellsQuery, expiredTime, writer)
+	return c.process(ctx, isasInCellsQuery, writer)
 }

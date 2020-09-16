@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dpjacques/clockwork"
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -272,10 +273,11 @@ func TestListExpiredISAs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut2)
 
-	// Set ISA's deleted time to 30 minutes from endTime.
-	expiredTime := fakeClock.Now().Add(1 * time.Hour)
+	dbClock := clockwork.NewFakeClock()
+	dbClock.Advance(1 * time.Hour);
+	store.clock = dbClock;
 
-	serviceAreas, err := repo.ListExpiredISAs(ctx, writer, &expiredTime)
+	serviceAreas, err := repo.ListExpiredISAs(ctx, writer)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 }
