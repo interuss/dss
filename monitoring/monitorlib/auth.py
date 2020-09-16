@@ -33,8 +33,10 @@ class DummyOAuth(AuthAdapter):
     url = '{}?grant_type=client_credentials&scope={}&intended_audience={}&issuer=dummy&sub={}'.format(
       self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
       urllib.parse.quote(intended_audience), self._sub)
-    response = self._oauth_session.post(url).json()
-    return response['access_token']
+    response = self._oauth_session.post(url)
+    if response.status_code != 200:
+      raise AccessTokenError('Request to get access token returned {} {}'.format(response.status_code, response.content.decode('utf-8')))
+    return response.json()['access_token']
 
 
 class ServiceAccount(AuthAdapter):
@@ -55,8 +57,10 @@ class ServiceAccount(AuthAdapter):
     url = '{}?grant_type=client_credentials&scope={}&intended_audience={}'.format(
       self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
       urllib.parse.quote(intended_audience))
-    response = self._oauth_session.post(url).json()
-    return response['access_token']
+    response = self._oauth_session.post(url)
+    if response.status_code != 200:
+      raise AccessTokenError('Request to get access token returned {} {}'.format(response.status_code, response.content.decode('utf-8')))
+    return response.json()['access_token']
 
 
 class UsernamePassword(AuthAdapter):
@@ -79,8 +83,10 @@ class UsernamePassword(AuthAdapter):
       'password': self._password,
       'client_id': self._client_id,
       'scope': ' '.join(scopes),
-    }).json()
-    return response['access_token']
+    })
+    if response.status_code != 200:
+      raise AccessTokenError('Request to get access token returned {} {}'.format(response.status_code, response.content.decode('utf-8')))
+    return response.json()['access_token']
 
 
 class SignedRequest(AuthAdapter):
@@ -116,7 +122,7 @@ class SignedRequest(AuthAdapter):
     elif cert_url[-4:].lower() == '.crt':
       cert = cryptography.x509.load_pem_x509_certificate(response.content, self._backend)
     else:
-      raise ValueError('cert_url must end with .der or .crt')
+      raise AccessTokenError('cert_url must end with .der or .crt')
     cert_public_key = cert.public_key().public_bytes(
       cryptography.hazmat.primitives.serialization.Encoding.PEM,
       cryptography.hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo)
@@ -129,13 +135,13 @@ class SignedRequest(AuthAdapter):
         key_content, password=None, backend=self._backend)
       private_key_bytes = key_content
     else:
-      raise ValueError('key_path must end with .key or .pem')
+      raise AccessTokenError('key_path must end with .key or .pem')
     public_key = private_key.public_key().public_bytes(
       cryptography.hazmat.primitives.serialization.Encoding.PEM,
       cryptography.hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo)
 
     if cert_public_key != public_key:
-      raise ValueError('Public key in certificate does not match private key provided')
+      raise AccessTokenError('Public key in certificate does not match private key provided')
 
     self._private_jwk = jwcrypto.jwk.JWK.from_pem(private_key_bytes)
     self._public_jwk = jwcrypto.jwk.JWK.from_pem(public_key)
@@ -175,7 +181,7 @@ class SignedRequest(AuthAdapter):
     try:
       jws_check.verify(self._public_jwk, 'RS256')
     except jwcrypto.jws.InvalidJWSSignature:
-      raise ValueError('Could not construct a valid cryptographic signature for JWS')
+      raise AccessTokenError('Could not construct a valid cryptographic signature for JWS')
 
     # Construct signature
     signature = re.sub(r'\.[^.]*\.', '..', signed)
@@ -187,7 +193,7 @@ class SignedRequest(AuthAdapter):
     }
     response = requests.post(self._token_endpoint, data=payload, headers=request_headers)
     if response.status_code != 200:
-      raise ValueError('Unable to retrieve access token:\n' + response.content.decode('utf-8'))
+      raise AccessTokenError('Unable to retrieve access token:\n' + response.content.decode('utf-8'))
     return response.json()['access_token']
 
 
@@ -211,8 +217,13 @@ class ClientIdClientSecret(AuthAdapter):
       'scope': ' '.join(scopes),
     })
     if response.status_code != 200:
-      raise ValueError('Unable to retrieve access token:\n' + response.content.decode('utf-8'))
+      raise AccessTokenError('Unable to retrieve access token:\n' + response.content.decode('utf-8'))
     return response.json()['access_token']
+
+
+class AccessTokenError(RuntimeError):
+  def __init__(self, msg):
+    super(AccessTokenError, self).__init__(msg)
 
 
 def make_auth_adapter(spec: str) -> AuthAdapter:
