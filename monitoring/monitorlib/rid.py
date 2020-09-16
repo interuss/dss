@@ -12,6 +12,9 @@ DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 SCOPE_READ = 'dss.read.identification_service_areas'
 SCOPE_WRITE = 'dss.write.identification_service_areas'
 
+# This scope is used only for experimentation during UPP2
+UPP2_SCOPE_ENHANCED_DETAILS = 'rid.read.enhanced_details'
+
 
 def geo_polygon_string(vertices: List[Dict[str, float]]) -> str:
   return ','.join('{},{}'.format(v['lat'], v['lng']) for v in vertices)
