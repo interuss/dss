@@ -79,7 +79,7 @@ def scd_operation_notification() -> Tuple[str, int]:
   try:
     json = flask.request.json
     id = json.get('operation_id', '<Unknown ID>')
-    if 'operation' in json:
+    if 'operation' in json and json['operation']:
       op = json['operation']
       version = '<Unknown version>'
       ovn = '<Unknown OVN>'
@@ -96,7 +96,7 @@ def scd_operation_notification() -> Tuple[str, int]:
           op_ref.get('time_end', {}).get('value', None))
       state = '<Unknown state>'
       vlos = False
-      if 'details' in op:
+      if 'details' in op and op['details']:
         op_details = op['details']
         state = op_details.get('state')
         vlos = op_details.get('vlos', vlos)
@@ -129,7 +129,7 @@ def scd_constraint_notification() -> Tuple[str, int]:
       version = '<Unknown version>'
       ovn = '<Unknown OVN>'
       time_range = ''
-      if 'reference' in constraint:
+      if 'reference' in constraint and constraint['reference']:
         constraint_ref = constraint['reference']
         owner_body = constraint_ref.get('owner', None)
         if owner_body and owner_body != owner:
@@ -140,7 +140,7 @@ def scd_constraint_notification() -> Tuple[str, int]:
           constraint_ref.get('time_start', {}).get('value', None),
           constraint_ref.get('time_end', {}).get('value', None))
       type = '<Unspecified type>'
-      if 'details' in constraint:
+      if 'details' in constraint and constraint['details']:
         constraint_details = constraint['details']
         type = constraint_details.get('type')
       _logger.info('{} {} {} v{} ({}) OVN[{}] updated{} -> {}'.format(
