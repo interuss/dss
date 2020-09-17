@@ -50,7 +50,7 @@ def rid_isa_notification(id: str) -> Tuple[str, int]:
   label = colored('ISA', 'cyan')
   try:
     json = flask.request.json
-    if 'service_area' in json:
+    if 'service_area' in json and json['service_area']:
       isa = json['service_area']
       owner_body = isa.get('owner', None)
       if owner_body and owner_body != owner:
@@ -84,7 +84,7 @@ def scd_operation_notification() -> Tuple[str, int]:
       version = '<Unknown version>'
       ovn = '<Unknown OVN>'
       time_range = ''
-      if 'reference' in op:
+      if 'reference' in op and op['reference']:
         op_ref = op['reference']
         owner_body = op_ref.get('owner', None)
         if owner_body and owner_body != owner:
@@ -124,7 +124,7 @@ def scd_constraint_notification() -> Tuple[str, int]:
   try:
     json = flask.request.json
     id = json.get('constraint_id', '<Unknown ID>')
-    if 'constraint' in json:
+    if 'constraint' in json and json['constraint']:
       constraint = json['constraint']
       version = '<Unknown version>'
       ovn = '<Unknown OVN>'
