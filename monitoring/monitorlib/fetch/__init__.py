@@ -10,7 +10,7 @@ from yaml.representer import Representer
 from monitoring.monitorlib import infrastructure
 
 
-TIMEOUTS = (5, 0.08)  # Timeouts of `connect` and `read` in seconds
+TIMEOUTS = (5, 25)  # Timeouts of `connect` and `read` in seconds
 
 
 def coerce(obj: Dict, desired_type: type):
