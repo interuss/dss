@@ -7,7 +7,6 @@ go 1.14
 
 require (
 	cloud.google.com/go v0.57.0
-	github.com/blang/semver v3.5.1+incompatible
 	github.com/cockroachdb/cockroach-go v0.0.0-20200504194139-73ffeee90b62
 	github.com/coreos/go-semver v0.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -21,9 +20,7 @@ require (
 	github.com/interuss/stacktrace v0.0.0-20200827180054-b2e58cf48818
 	github.com/lib/pq v1.5.2
 	github.com/stretchr/testify v1.5.1
-	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0
-	golang.org/x/mod v0.2.0
 	google.golang.org/genproto v0.0.0-20200519141106-08726f379972
 	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.23.0
