@@ -525,8 +525,11 @@ existing clusters you will need to:
 Current version: 3.1.0
 Minimum support version: 3.0.0
 
+#### Important: Server version should NEVER be behind Database Version ####
+
 Changes in v3.1.0
-* Added a new writer field to identification_service_areas and subscriptions table. 
+* Added a new `writer` field to identification_service_areas and subscriptions table for the purposes of automatic Garbage Collection 
 * Read the database version and cache it in memory. 
 
-If you start server with database v3.0.0. and migrate database to v3.1.0 without restarting the server, the service will work, the writer field will be ignored. However, if you start the server with database v3.1.0 and you downgrade the database to 3.0.0, the service will fail because the server will try to write/update the writer field
+The `writer` column was added to facilitate automatic Garbage Collection, recording the instance that added the record to Database.
+The presence `writer` column in the Database will not cause failure in basic functionality of the DSS, as long as you keep the version of the Server ahead of the Database version. When running Server v3.1.0 with Database v3.0.0, the `writer` column will simply be ignored and that record will not be automatically Garbage collected. You will need to manually remove expired records either with the existing Delete API ro manual SQL commands.
