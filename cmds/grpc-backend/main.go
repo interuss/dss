@@ -110,7 +110,9 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
 	// schedule pinging every minute for the underlying storage for RID Server
-	ridCron.AddFunc("@every 1m", func() { pingDB(ctx, ridCrdb, ridc.DatabaseName) })
+	if _, err := ridCron.AddFunc("@every 1m", func() { pingDB(ctx, ridCrdb, ridc.DatabaseName) }); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
+	}
 	ridCron.Start()
 
 	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
@@ -133,7 +135,10 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	// schedule period tasks for SCD Server
 	scdCron := cron.New()
 	// schedule pinging every minute for the underlying storage for SCD Server
-	scdCron.AddFunc("@every 1m", func() { pingDB(ctx, scdCrdb, scdc.DatabaseName) })
+	if _, err := scdCron.AddFunc("@every 1m", func() { pingDB(ctx, scdCrdb, scdc.DatabaseName) }); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", scdc.DatabaseName)
+	}
+
 	scdCron.Start()
 
 	scdStore, err := scdc.NewStore(ctx, scdCrdb, logger)
