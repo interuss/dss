@@ -105,6 +105,16 @@ def test_update_isa(session):
 
 
 @default_scope(SCOPE_READ)
+def test_get_isa_by_id_after_update(session):
+  resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
+  assert resp.status_code == 200, resp.content
+
+  data = resp.json()
+  assert data['service_area']['id'] == ISA_ID
+  assert data['service_area']['flights_url'] == 'https://example.com/dss/v2'
+
+
+@default_scope(SCOPE_READ)
 def test_get_isa_by_search_missing_params(session):
   resp = session.get('/identification_service_areas')
   assert resp.status_code == 400, resp.content
