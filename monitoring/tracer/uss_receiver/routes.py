@@ -191,7 +191,7 @@ def _redact_and_augment_log(obj):
 @webapp.route('/logs/<log>')
 def logs(log):
   logfile = os.path.join(context.resources.logger.log_path, log)
-  if not os.path.exists:
+  if not os.path.exists(logfile):
     flask.abort(404)
   with open(logfile, 'r') as f:
     objs = [obj for obj in yaml.full_load_all(f)]
