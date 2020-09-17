@@ -131,10 +131,10 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 	// schedule period tasks for SCD Server
-	ridCron := cron.New()
+	scdCron := cron.New()
 	// schedule pinging every minute for the underlying storage for SCD Server
-	ridCron.AddFunc("@every 1m", func() { pingDB(ctx, scdCrdb, scdc.DatabaseName) })
-	ridCron.Start()
+	scdCron.AddFunc("@every 1m", func() { pingDB(ctx, scdCrdb, scdc.DatabaseName) })
+	scdCron.Start()
 
 	scdStore, err := scdc.NewStore(ctx, scdCrdb, logger)
 	if err != nil {
