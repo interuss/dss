@@ -256,26 +256,28 @@ func TestListExpiredISAs(t *testing.T) {
 	repo, err := store.Interact(ctx)
 	require.NoError(t, err)
 
+	fakeClock := clockwork.NewFakeClockAt(time.Now())
+
 	// Insert ISA with endtime 1 day from now
 	isa1 := *serviceArea
+	startTime := fakeClock.Now()
+	isa1.StartTime = &startTime
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	isa1.EndTime = &endTime
 	saOut1, err := repo.InsertISA(ctx, &isa1)
 	require.NoError(t, err)
 	require.NotNil(t, saOut1)
 
-	// Insert ISA with endtime 30 minutes from now
+	// Insert ISA with endtime to 30 minutes ago
 	isa2 := *serviceArea
-	endTime = fakeClock.Now().Add(30 * time.Minute)
+	startTime = fakeClock.Now().Add(-1 * time.Hour)
+	isa2.StartTime = &startTime
+	endTime = fakeClock.Now().Add(-30 * time.Minute)
 	isa2.EndTime = &endTime
 	isa2.ID = dssmodels.ID(uuid.New().String())
 	saOut2, err := repo.InsertISA(ctx, &isa2)
 	require.NoError(t, err)
 	require.NotNil(t, saOut2)
-
-	dbClock := clockwork.NewFakeClock()
-	dbClock.Advance(1 * time.Hour);
-	store.clock = dbClock;
 
 	serviceAreas, err := repo.ListExpiredISAs(ctx, writer)
 	require.NoError(t, err)

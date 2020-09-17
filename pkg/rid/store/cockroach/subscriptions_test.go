@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dpjacques/clockwork"
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -309,27 +310,30 @@ func TestListExpiredSubscriptions(t *testing.T) {
 	repo, err := store.Interact(ctx)
 	require.NoError(t, err)
 
+	fakeClock := clockwork.NewFakeClockAt(time.Now())
+
 	// Insert Subscription with endtime 1 day from now
 	subscripiton1 := *subscriptionsPool[0].input
+	startTime := fakeClock.Now()
+	subscripiton1.StartTime = &startTime
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	subscripiton1.EndTime = &endTime
 	subOut1, err := repo.InsertSubscription(ctx, &subscripiton1)
 	require.NoError(t, err)
 	require.NotNil(t, subOut1)
 
-	// Insert Subscription with endtime 30 minutes from now
+	// Insert Subscription with endtime to 30 minutes ago
 	subscripiton2 := *subscriptionsPool[0].input
-	endTime = fakeClock.Now().Add(30 * time.Minute)
+	startTime = fakeClock.Now().Add(-1 * time.Hour)
+	subscripiton2.StartTime = &startTime
+	endTime = fakeClock.Now().Add(-30 * time.Minute)
 	subscripiton2.EndTime = &endTime
 	subscripiton2.ID = dssmodels.ID(uuid.New().String())
 	subOut2, err := repo.InsertSubscription(ctx, &subscripiton2)
 	require.NoError(t, err)
 	require.NotNil(t, subOut2)
 
-	// Set Subscription's deleted time to 30 minutes from endTime.
-	expiredTime := fakeClock.Now().Add(1 * time.Hour)
-
-	subscriptions, err := repo.ListExpiredSubscriptions(ctx, writer, &expiredTime)
+	subscriptions, err := repo.ListExpiredSubscriptions(ctx, writer)
 	require.NoError(t, err)
 	require.Len(t, subscriptions, 1)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/dpjacques/clockwork"
@@ -305,22 +304,22 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 
 // ListExpiredSubscriptions lists all expired Subscriptions based on expiredTime and writer
 // expiredTime is compared with Subscription.endTime
-func (c *subscriptionRepo) ListExpiredSubscriptions(ctx context.Context, writer string, expiredTime *time.Time) ([]*ridmodels.Subscription, error) {
+func (c *subscriptionRepo) ListExpiredSubscriptions(ctx context.Context, writer string) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 	SELECT
 		%s
 	FROM
-	subscriptions
+		subscriptions
 	WHERE
-		ends_at > $1
+		ends_at + INTERVAL '30' MINUTE <= CURRENT_TIMESTAMP
 	AND
-		writer = $2`, subscriptionFields)
+		writer = $1`, subscriptionFields)
 	)
 
 	if len(writer) == 0 {
 		return nil, stacktrace.NewError("Writer is required")
 	}
 
-	return c.process(ctx, query, expiredTime, writer)
+	return c.process(ctx, query, writer)
 }
