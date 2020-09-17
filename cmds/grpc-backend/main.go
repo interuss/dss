@@ -30,6 +30,7 @@ import (
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/validations"
 	"github.com/interuss/stacktrace"
+	"github.com/robfig/cron/v3"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"
@@ -70,6 +71,15 @@ func connectTo(dbName string) (*cockroach.DB, error) {
 	return db, nil
 }
 
+func pingDB(ctx context.Context, db *cockroach.DB, databaseName string) {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+	if err := db.PingContext(ctx); err != nil {
+		logger.Panic("Failed periodic DB Ping, panic to force restart", zap.String("Database", databaseName))
+	} else {
+		logger.Info("Successful periodic DB Ping ", zap.String("Database", databaseName))
+	}
+}
+
 func createKeyResolver() (auth.KeyResolver, error) {
 	switch {
 	case *pkFile != "":
@@ -97,6 +107,12 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
+	// schedule period tasks for RID Server
+	ridCron := cron.New()
+	// schedule pinging every minute for the underlying storage for RID Server
+	ridCron.AddFunc("@every 1m", func() { pingDB(ctx, ridCrdb, ridc.DatabaseName) })
+	ridCron.Start()
+
 	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
@@ -114,6 +130,11 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
+	// schedule period tasks for SCD Server
+	ridCron := cron.New()
+	// schedule pinging every minute for the underlying storage for SCD Server
+	ridCron.AddFunc("@every 1m", func() { pingDB(ctx, scdCrdb, scdc.DatabaseName) })
+	ridCron.Start()
 
 	scdStore, err := scdc.NewStore(ctx, scdCrdb, logger)
 	if err != nil {
