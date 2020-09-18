@@ -99,7 +99,7 @@ def _subscribe(resources: ResourceSet, base_url: str, monitor_rid: bool, monitor
   if base_url.endswith('/'):
     base_url = base_url[0:-1]
   if monitor_rid:
-    _subscribe_rid(resources, base_url)
+    _subscribe_rid(resources, base_url + '/v1/uss/identification_service_areas')
   if monitor_scd:
     _subscribe_scd(resources, base_url)
 

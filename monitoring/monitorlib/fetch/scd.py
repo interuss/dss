@@ -74,10 +74,8 @@ def _entity_references(dss_resource_name: str,
     )
   }
   url = '/dss/v1/{}/query'.format(dss_resource_name)
-  t0 = datetime.datetime.utcnow()
-  resp = utm_client.post(url, json=request_body, scope=scd.SCOPE_SC)
-
-  entity_references = FetchedEntityReferences(fetch.describe_query(resp, t0))
+  entity_references = FetchedEntityReferences(fetch.query_and_describe(
+    utm_client, 'POST', url, json=request_body, scope=scd.SCOPE_SC))
   entity_references['entity_type'] = dss_resource_name
   return entity_references
 
@@ -144,10 +142,8 @@ def _full_entity(uss_resource_name: str,
   uss_entity_url = uss_base_url + '/uss/v1/{}s/{}'.format(uss_resource_name, entity_id)
 
   # Query the USS for Entity details
-  t0 = datetime.datetime.utcnow()
-  resp = utm_client.get(uss_entity_url, scope=scd.SCOPE_SC)
-
-  entity = FetchedEntity(fetch.describe_query(resp, t0))
+  entity = FetchedEntity(fetch.query_and_describe(
+    utm_client, 'GET', uss_entity_url, scope=scd.SCOPE_SC))
   entity['id_requested'] = entity_id
   entity['entity_type'] = uss_resource_name
   return entity
@@ -156,7 +152,7 @@ def _full_entity(uss_resource_name: str,
 class FetchedEntities(dict):
   @property
   def success(self) -> bool:
-    return not self.get('error', None)
+    return not self.error
 
   @property
   def error(self) -> Optional[str]:
@@ -315,6 +311,5 @@ yaml.add_representer(FetchedSubscription, Representer.represent_dict)
 def subscription(utm_client: infrastructure.DSSTestSession,
                  subscription_id: str) -> FetchedSubscription:
   url = '/dss/v1/subscriptions/{}'.format(subscription_id)
-  t0 = datetime.datetime.utcnow()
-  resp = utm_client.get(url, scope=scd.SCOPE_SC)
-  return FetchedSubscription(fetch.describe_query(resp, t0))
+  result = fetch.query_and_describe(utm_client, 'GET', url, scope=scd.SCOPE_SC)
+  return FetchedSubscription(result)
