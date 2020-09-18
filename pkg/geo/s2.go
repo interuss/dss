@@ -89,10 +89,71 @@ func loopAreaKm2(loop *s2.Loop) float64 {
 	return (loop.Area() * earthAreaKm2) / (4.0 * math.Pi)
 }
 
+func chordSegmentsIntersect(p1a s2.Point, p1b s2.Point, p2a s2.Point, p2b s2.Point) bool {
+  // Normal of plane containing great circle connecting p1a to p1b
+  n1 := p1a.Cross(p1b.Vector)
+
+  // Normal of plane containing great circle connecting p1a to p1b
+  n2 := p2a.Cross(p2b.Vector)
+
+  // Possible chord intersection point (other one is ip.Mul(-1))
+  ip := n1.Cross(n2)
+
+  // Chord segments can't intersect if they're both on the same side of the
+  // great circle planar intersection points
+  rp1a := p1a.Cross(ip)
+  rp1b := p1b.Cross(ip)
+  if rp1a.Dot(rp1b) > 0 {
+    return false
+  }
+
+  rp2a := p2a.Cross(ip)
+  rp2b := p2b.Cross(ip)
+  if rp2a.Dot(rp2b) > 0 {
+    return false
+  }
+
+  // Chord segments only intersect if they both have their shortest segments
+  // along their great circle intersect the same possible intersection point
+
+  // Length of chord connecting p1a-ip-p1b
+  l1p := p1a.Angle(ip) + ip.Angle(p1b.Vector)
+
+  // Length of chord connecting p2a-ip-p2b
+  l2p := p2a.Angle(ip) + ip.Angle(p2b.Vector)
+
+  if l1p.Radians() <= math.Pi && l2p.Radians() <= math.Pi {
+    return true
+  } else if l1p.Radians() >= math.Pi && l2p.Radians() >= math.Pi {
+    return true
+  }
+  return false
+}
+
+func validateLoop(points []s2.Point) error {
+  n := len(points)
+  for i := 0; i < n - 1; i++ {
+    for j := i + 1; j < n; j++ {
+      if chordSegmentsIntersect(points[i], points[i+1], points[j], points[(j + 1) % n]) {
+        return stacktrace.NewError("Intersection found between edge %d and %d", i, j)
+      }
+    }
+  }
+  return nil
+}
+
 // Covering calculates the S2 covering of a set of S2 points. Will try the loop
 // in both clockwise and counter clockwise.
 func Covering(points []s2.Point) (s2.CellUnion, error) {
+  err := validateLoop(points)
+  if err != nil {
+    return nil, stacktrace.Propagate(err, "Error validating polygon")
+  }
 	loop := s2.LoopFromPoints(points)
+	err = loop.Validate()
+	if err != nil {
+	  return nil, stacktrace.Propagate(err, "Error validating loop")
+	}
 	area1 := loopAreaKm2(loop)
 	if area1 > maxAllowedAreaKm2 {
 		// This may have happened because the vertices were not ordered counter-clockwise.
