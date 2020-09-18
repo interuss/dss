@@ -175,7 +175,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 	for idx, extent := range params.GetExtents() {
 		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)
 		if err != nil {
-			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse extents")
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse extent %d", idx)
 		}
 		extents[idx] = cExtent
 	}
@@ -193,7 +193,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 
 	cells, err := uExtent.CalculateSpatialCovering()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Invalid area")
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
 	var response *scdpb.ChangeConstraintReferenceResponse

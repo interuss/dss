@@ -252,4 +252,4 @@ def test_big_operation_search(scd_session):
   dt = datetime.datetime.utcnow() - scd.start_of([req['area_of_interest']])
   req['area_of_interest'] = scd.offset_time([req['area_of_interest']], dt)[0]
   resp = scd_session.post('/operation_references/query', json=req)
-  assert  resp.status_code == 200, resp.content
+  assert  resp.status_code == 400, resp.content
