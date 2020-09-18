@@ -65,7 +65,7 @@ def describe_request(req: requests.PreparedRequest,
 class ResponseDescription(dict):
   @property
   def status_code(self) -> int:
-    return self['code'] if self['code'] is not None else 999
+    return self['code'] if self.get('code') is not None else 999
 yaml.add_representer(ResponseDescription, Representer.represent_dict)
 
 

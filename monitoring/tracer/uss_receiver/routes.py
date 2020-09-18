@@ -50,13 +50,13 @@ def rid_isa_notification(id: str) -> Tuple[str, int]:
   label = colored('ISA', 'cyan')
   try:
     json = flask.request.json
-    if 'service_area' in json and json['service_area']:
+    if json.get('service_area'):
       isa = json['service_area']
-      owner_body = isa.get('owner', None)
+      owner_body = isa.get('owner')
       if owner_body and owner_body != owner:
         owner = '{} token|{} body'.format(owner, owner_body)
       version = isa.get('version', '<Unknown version>')
-      time_range = _print_time_range(isa.get('time_start', None), isa.get('time_end', None))
+      time_range = _print_time_range(isa.get('time_start'), isa.get('time_end'))
       _logger.info('{} {} v{} ({}) updated{} -> {}'.format(label, id, version, owner, time_range, log_name))
     else:
       _logger.info('{} {} ({}) deleted -> {}'.format(label, id, owner, log_name))
@@ -79,24 +79,24 @@ def scd_operation_notification() -> Tuple[str, int]:
   try:
     json = flask.request.json
     id = json.get('operation_id', '<Unknown ID>')
-    if 'operation' in json and json['operation']:
+    if json.get('operation'):
       op = json['operation']
       version = '<Unknown version>'
       ovn = '<Unknown OVN>'
       time_range = ''
-      if 'reference' in op and op['reference']:
+      if op.get('reference'):
         op_ref = op['reference']
-        owner_body = op_ref.get('owner', None)
+        owner_body = op_ref.get('owner')
         if owner_body and owner_body != owner:
           owner = '{} token|{} body'.format(owner, owner_body)
         version = op_ref.get('version', version)
         ovn = op_ref.get('ovn', ovn)
         time_range = _print_time_range(
-          op_ref.get('time_start', {}).get('value', None),
-          op_ref.get('time_end', {}).get('value', None))
+          op_ref.get('time_start', {}).get('value'),
+          op_ref.get('time_end', {}).get('value'))
       state = '<Unknown state>'
       vlos = False
-      if 'details' in op and op['details']:
+      if op.get('details'):
         op_details = op['details']
         state = op_details.get('state')
         vlos = op_details.get('vlos', vlos)
@@ -124,23 +124,23 @@ def scd_constraint_notification() -> Tuple[str, int]:
   try:
     json = flask.request.json
     id = json.get('constraint_id', '<Unknown ID>')
-    if 'constraint' in json and json['constraint']:
+    if json.get('constraint'):
       constraint = json['constraint']
       version = '<Unknown version>'
       ovn = '<Unknown OVN>'
       time_range = ''
-      if 'reference' in constraint and constraint['reference']:
+      if constraint.get('reference'):
         constraint_ref = constraint['reference']
-        owner_body = constraint_ref.get('owner', None)
+        owner_body = constraint_ref.get('owner')
         if owner_body and owner_body != owner:
           owner = '{} token|{} body'.format(owner, owner_body)
         version = constraint_ref.get('version', version)
         ovn = constraint_ref.get('ovn', ovn)
         time_range = _print_time_range(
-          constraint_ref.get('time_start', {}).get('value', None),
-          constraint_ref.get('time_end', {}).get('value', None))
+          constraint_ref.get('time_start', {}).get('value'),
+          constraint_ref.get('time_end', {}).get('value'))
       type = '<Unspecified type>'
-      if 'details' in constraint and constraint['details']:
+      if constraint.get('details'):
         constraint_details = constraint['details']
         type = constraint_details.get('type')
       _logger.info('{} {} {} v{} ({}) OVN[{}] updated{} -> {}'.format(
