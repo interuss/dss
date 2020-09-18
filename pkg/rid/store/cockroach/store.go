@@ -48,17 +48,24 @@ type repo struct {
 // TODO: Add the SCD interfaces here, and collapse this store with the
 // outer pkg/cockroach
 type Store struct {
-	db     *cockroach.DB
-	logger *zap.Logger
-	clock  clockwork.Clock
+	db      *cockroach.DB
+	logger  *zap.Logger
+	clock   clockwork.Clock
+	version *semver.Version
 }
 
 // NewStore returns a Store instance connected to a cockroach instance via db.
 func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store, error) {
+	vs, err := db.GetVersion(ctx, DatabaseName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
+	}
+
 	store := &Store{
-		db:     db,
-		logger: logger,
-		clock:  DefaultClock,
+		db:      db,
+		logger:  logger,
+		clock:   DefaultClock,
+		version: vs,
 	}
 
 	if err := store.CheckCurrentMajorSchemaVersion(ctx); err != nil {
@@ -152,5 +159,12 @@ func (s *Store) CleanUp(ctx context.Context) error {
 // GetVersion returns the Version string for the Database.
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
-	return s.db.GetVersion(ctx, DatabaseName)
+	if s.version == nil {
+		vs, err := s.db.GetVersion(ctx, DatabaseName)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
+		}
+		s.version = vs
+	}
+	return s.version, nil
 }

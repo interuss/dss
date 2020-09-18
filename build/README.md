@@ -520,3 +520,16 @@ existing clusters you will need to:
     instances with appropriate values where applicable as explained in the above section.
 
 1.  Run `tk apply workspace/$CLUSTER_CONTEXT_schema_manager`
+
+### Database version and server cache
+Current version: 3.1.0
+Minimum support version: 3.0.0
+
+#### Important: Server version should NEVER be behind Database Version ####
+
+Changes in v3.1.0
+* Added a new `writer` field to identification_service_areas and subscriptions table for the purposes of automatic Garbage Collection 
+* Read the database version and cache it in memory. 
+
+The `writer` column was added to facilitate automatic Garbage Collection, recording the instance that added the record to Database.
+The presence `writer` column in the Database will not cause failure in basic functionality of the DSS, as long as you keep the version of the Server ahead of the Database version. When running Server v3.1.0 with Database v3.0.0, the `writer` column will simply be ignored and that record will not be automatically Garbage collected. You will need to manually remove expired records either with the existing Delete API ro manual SQL commands.
