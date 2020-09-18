@@ -235,4 +235,21 @@ def test_missing_conflicted_operation(scd_session):
   assert  resp.status_code == 200, resp.content
   ops = [op['id'] for op in resp.json()['operation_references']]
   assert OP_ID in ops, resp.content
-  assert OP_ID2 in ops, resp.content
+
+  # OP_ID2 not expected here because its ceiling is <575m whereas query floor is
+  # >591m.
+  assert OP_ID2 not in ops, resp.content
+
+
+@default_scope(SCOPE_SC)
+def test_big_operation_search(scd_session):
+  """
+  This test reproduces a case where a search resulted in 503 because the
+  underlying gRPC backend had crashed.
+  """
+  with open('./scd/resources/op_big_operation.json', 'r') as f:
+    req = json.load(f)
+  dt = datetime.datetime.utcnow() - scd.start_of([req['area_of_interest']])
+  req['area_of_interest'] = scd.offset_time([req['area_of_interest']], dt)[0]
+  resp = scd_session.post('/operation_references/query', json=req)
+  assert  resp.status_code == 200, resp.content
