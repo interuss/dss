@@ -224,7 +224,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 }
 
 // ListExpiredISAs lists all expired ISAs based and writer.
-// Records expire if current time is 30 minutes more than records' endTime.
+// Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
 func (c *isaRepo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels.IdentificationServiceArea, error) {
 	var (
 		isasInCellsQuery = fmt.Sprintf(`
@@ -233,9 +233,9 @@ func (c *isaRepo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmod
 	FROM
 		identification_service_areas
 	WHERE
-		ends_at + INTERVAL '30' MINUTE <= CURRENT_TIMESTAMP
+		ends_at + INTERVAL '%d' MINUTE <= CURRENT_TIMESTAMP
 	AND
-		writer = $1`, isaFields)
+		writer = $1`, isaFields, expiredDurationInMin)
 	)
 
 	if len(writer) == 0 {
