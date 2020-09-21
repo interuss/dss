@@ -10,6 +10,9 @@ from yaml.representer import Representer
 from monitoring.monitorlib import infrastructure
 
 
+TIMEOUTS = (5, 25)  # Timeouts of `connect` and `read` in seconds
+
+
 def coerce(obj: Dict, desired_type: type):
   if isinstance(obj, desired_type):
     return obj
@@ -62,7 +65,7 @@ def describe_request(req: requests.PreparedRequest,
 class ResponseDescription(dict):
   @property
   def status_code(self) -> int:
-    return self['code']
+    return self['code'] if self.get('code') is not None else 999
 yaml.add_representer(ResponseDescription, Representer.represent_dict)
 
 
@@ -101,4 +104,31 @@ def describe_query(resp: requests.Response,
   return Query({
     'request': describe_request(resp.request, initiated_at),
     'response': describe_response(resp),
+  })
+
+
+def query_and_describe(client: infrastructure.DSSTestSession, method: str, url: str, **kwargs) -> Query:
+  req_kwargs = kwargs.copy()
+  req_kwargs['timeout'] = TIMEOUTS
+  t0 = datetime.datetime.utcnow()
+  try:
+    return describe_query(client.request(method, url, **req_kwargs), t0)
+  except requests.RequestException as e:
+    msg = '{}: {}'.format(type(e).__name__, str(e))
+  t1 = datetime.datetime.utcnow()
+
+  # Reconstruct request similar to the one in the query (which is not
+  # accessible at this point)
+  del req_kwargs['timeout']
+  req_kwargs = client.adjust_request_kwargs(req_kwargs)
+  req = requests.Request(method, url, **req_kwargs)
+  prepped_req = client.prepare_request(req)
+  return Query({
+    'request': describe_request(prepped_req, t0),
+    'response': ResponseDescription({
+      'code': None,
+      'failure': msg,
+      'elapsed_s': (t1 - t0).total_seconds(),
+      'reported': t1,
+    }),
   })

@@ -74,8 +74,8 @@ class DSSTestSession(requests.Session):
 
     return super().prepare_request(request, **kwargs)
 
-  def request(self, method, url, **kwargs):
-    if 'auth' not in kwargs and self.auth_adapter:
+  def adjust_request_kwargs(self, kwargs):
+    if self.auth_adapter:
       scopes = None
       if 'scopes' in kwargs:
         scopes = kwargs['scopes']
@@ -91,6 +91,11 @@ class DSSTestSession(requests.Session):
         self.auth_adapter.add_headers(prepared_request, scopes)
         return prepared_request
       kwargs['auth'] = auth
+    return kwargs
+
+  def request(self, method, url, **kwargs):
+    if 'auth' not in kwargs:
+      kwargs = self.adjust_request_kwargs(kwargs)
 
     return super().request(method, url, **kwargs)
 
