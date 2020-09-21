@@ -61,13 +61,9 @@ func connectTo(dbName string) (*cockroach.DB, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = dbName
 
-	uri, err := connectParameters.BuildURI()
+	db, err := cockroach.Dial(connectParameters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error building URI")
-	}
-	db, err := cockroach.Dial(uri)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error dialing CockroachDB database at %s", uri)
+		return nil, stacktrace.Propagate(err, "Error dialing CockroachDB database %s", connectParameters.DBName)
 	}
 	return db, nil
 }

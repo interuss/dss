@@ -130,9 +130,9 @@ test:
 test-cockroach: cleanup-test-cockroach
 	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v20.1.1 start --insecure > /dev/null
 	go run ./cmds/db-manager/main.go --schemas_dir ./build/deploy/db_schemas/defaultdb --db_version latest --cockroach_host localhost
-	go test -count=1 -v ./pkg/rid/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
-	go test -count=1 -v ./pkg/scd/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
-	go test -count=1 -v ./pkg/rid/application -store-uri "postgresql://root@localhost:26257?sslmode=disable"
+	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_db_name defaultdb
+	go test -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_db_name scd
+	go test -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_db_name defaultdb
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 

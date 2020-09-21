@@ -2,12 +2,12 @@ package application
 
 import (
 	"context"
-	"flag"
 	"testing"
 	"time"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/cockroach/flags"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
@@ -20,10 +20,10 @@ import (
 )
 
 var (
-	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
-	fakeClock = clockwork.NewFakeClock()
-	startTime = fakeClock.Now().Add(-time.Minute)
-	endTime   = fakeClock.Now().Add(time.Hour)
+	fakeClock     = clockwork.NewFakeClock()
+	startTime     = fakeClock.Now().Add(-time.Minute)
+	endTime       = fakeClock.Now().Add(time.Hour)
+	connectParams = flags.ConnectParameters()
 )
 
 type mockRepo struct {
@@ -47,7 +47,7 @@ func (s *mockRepo) Close() error {
 func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.Store, func()) {
 	DefaultClock = fakeClock
 
-	if len(*storeURI) == 0 {
+	if connectParams.Host == "" {
 		logger.Info("using the stubbed in memory store.")
 		return &mockRepo{
 			isaStore: &isaStore{
@@ -57,12 +57,15 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 				subs: make(map[dssmodels.ID]*ridmodels.Subscription),
 			},
 		}, func() {}
+	} else {
+		_, err := connectParams.BuildURI()
+		require.NoError(t, err)
 	}
 	ridcrdb.DefaultClock = fakeClock
 	logger.Info("using cockroachDB.")
 
 	// Use a real store.
-	cdb, err := cockroach.Dial(*storeURI)
+	cdb, err := cockroach.Dial(connectParams)
 	require.NoError(t, err)
 
 	store, err := ridcrdb.NewStore(ctx, cdb, logger)

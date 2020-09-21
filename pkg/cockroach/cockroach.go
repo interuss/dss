@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/stacktrace"
@@ -29,12 +30,15 @@ type (
 
 	// ConnectParameters bundles up parameters used for connecting to a CRDB instance.
 	ConnectParameters struct {
-		ApplicationName string
-		Host            string
-		Port            int
-		DBName          string
-		Credentials     Credentials
-		SSL             SSL
+		ApplicationName    string
+		Host               string
+		Port               int
+		DBName             string
+		Credentials        Credentials
+		SSL                SSL
+		MaxOpenConns       int
+		MaxIdleConns       int
+		MaxConnLifeMinutes int
 	}
 )
 
@@ -49,10 +53,13 @@ func parsePortOrDefault(port string, defaultPort int64) int64 {
 // connectParametersFromMap constructs a ConnectParameters instance from m.
 func connectParametersFromMap(m map[string]string) ConnectParameters {
 	return ConnectParameters{
-		ApplicationName: m["application_name"],
-		DBName:          m["db_name"],
-		Host:            m["host"],
-		Port:            int(parsePortOrDefault(m["port"], 0)),
+		ApplicationName:    m["application_name"],
+		DBName:             m["db_name"],
+		Host:               m["host"],
+		Port:               int(parsePortOrDefault(m["port"], 0)),
+		MaxOpenConns:       int(parsePortOrDefault(m["max_open_conns"], 0)),
+		MaxIdleConns:       int(parsePortOrDefault(m["max_idle_conns"], 2)),
+		MaxConnLifeMinutes: int(parsePortOrDefault(m["max_conn_life_minutes"], 15)),
 		Credentials: Credentials{
 			Username: m["user"],
 		},
@@ -111,11 +118,19 @@ type DB struct {
 // Dial returns a DB instance connected to a cockroach instance available at
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html
-func Dial(uri string) (*DB, error) {
+func Dial(connParams ConnectParameters) (*DB, error) {
+	uri, err := connParams.BuildURI()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error building URI")
+	}
 	db, err := sql.Open("postgres", uri)
 	if err != nil {
 		return nil, err
 	}
+
+	db.SetMaxOpenConns(connParams.MaxOpenConns)
+	db.SetMaxIdleConns(connParams.MaxIdleConns)
+	db.SetConnMaxLifetime(time.Duration(connParams.MaxConnLifeMinutes) * time.Minute)
 
 	return &DB{
 		DB: db,

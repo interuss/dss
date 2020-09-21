@@ -28,7 +28,7 @@ import (
 type MyMigrate struct {
 	*migrate.Migrate
 	postgresURI string
-	database    string
+	params      cockroach.ConnectParameters
 }
 
 // Direction is an alias for int indicating the direction and steps of migration
@@ -78,7 +78,7 @@ func main() {
 	if err != nil {
 		log.Panic("Failed to build URI", zap.Error(err))
 	}
-	myMigrater, err := New(*path, postgresURI, params.DBName)
+	myMigrater, err := New(*path, postgresURI, params)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -111,7 +111,7 @@ func main() {
 		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMoves), preMigrationStep, postMigrationStep)
 	}
 
-	currentDBVersion, err := getCurrentDBVersion(postgresURI, params.DBName)
+	currentDBVersion, err := myMigrater.getCurrentDBVersion()
 	if err != nil {
 		log.Fatal("Failed to get Current DB version for confirmation")
 	}
@@ -139,19 +139,20 @@ func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int) 
 }
 
 // New instantiates a new migrate object
-func New(path string, dbURI string, database string) (*MyMigrate, error) {
-	noDbPostgres := strings.Replace(dbURI, fmt.Sprintf("/%s", database), "", 1)
-	err := createDatabaseIfNotExists(noDbPostgres, database)
+func New(path string, dbURI string, params cockroach.ConnectParameters) (*MyMigrate, error) {
+	// noDbPostgres := strings.Replace(dbURI, fmt.Sprintf("/%s", params.DBName), "", 1)
+	err := createDatabaseIfNotExists(params)
 	if err != nil {
 		return nil, err
 	}
 	path = fmt.Sprintf("file://%v", path)
+	// need to replace postgresql with cockroachdb to tell migrate library to use cockroachdb adapter.
 	crdbURI := strings.Replace(dbURI, "postgresql", "cockroachdb", 1)
 	migrater, err := migrate.New(path, crdbURI)
 	if err != nil {
 		return nil, err
 	}
-	myMigrater := &MyMigrate{migrater, dbURI, database}
+	myMigrater := &MyMigrate{migrater, dbURI, params}
 	// handle Ctrl+c
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT)
@@ -169,8 +170,10 @@ func intAbs(x int) int {
 	return int(math.Abs(float64(x)))
 }
 
-func createDatabaseIfNotExists(crdbURI string, database string) error {
-	crdb, err := cockroach.Dial(crdbURI)
+func createDatabaseIfNotExists(params cockroach.ConnectParameters) error {
+	dupeParams := params
+	dupeParams.DBName = ""
+	crdb, err := cockroach.Dial(dupeParams)
 	if err != nil {
 		return fmt.Errorf("Failed to dial CRDB to check DB exists: %v", err)
 	}
@@ -187,13 +190,13 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 
 	var exists bool
 
-	if err := crdb.QueryRow(checkDbQuery, database).Scan(&exists); err != nil {
+	if err := crdb.QueryRow(checkDbQuery, params.DBName).Scan(&exists); err != nil {
 		return err
 	}
 
 	if !exists {
-		log.Printf("Database \"%s\" doesn't exist, attempting to create", database)
-		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", database)
+		log.Printf("Database \"%s\" doesn't exist, attempting to create", params.DBName)
+		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", params.DBName)
 		_, err := crdb.Exec(createDB)
 		if err != nil {
 			return fmt.Errorf("Failed to Create Database: %v", err)
@@ -202,8 +205,8 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 	return nil
 }
 
-func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, error) {
-	crdb, err := cockroach.Dial(crdbURI)
+func (m *MyMigrate) getCurrentDBVersion() (*semver.Version, error) {
+	crdb, err := cockroach.Dial(m.params)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
 	}
@@ -211,7 +214,7 @@ func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, erro
 		crdb.Close()
 	}()
 
-	return crdb.GetVersion(context.Background(), database)
+	return crdb.GetVersion(context.Background(), m.params.DBName)
 }
 
 // MigrationDirection reads our custom DB version string as well as the Migration Steps from the framework
@@ -227,7 +230,7 @@ func (m *MyMigrate) MigrationDirection(desiredVersion semver.Version, desiredSte
 		}
 		return Direction(desiredStep - int(currentStep)), nil
 	}
-	currentVersion, err := getCurrentDBVersion(m.postgresURI, m.database)
+	currentVersion, err := m.getCurrentDBVersion()
 	if err != nil {
 		return 0, fmt.Errorf("Failed to get current DB version to determine migration direction: %v", err)
 	}

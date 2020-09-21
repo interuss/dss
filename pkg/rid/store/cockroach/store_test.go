@@ -3,13 +3,13 @@ package cockroach
 import (
 	"context"
 	"errors"
-	"flag"
 	"testing"
 	"time"
 
 	"github.com/dpjacques/clockwork"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/cockroach/flags"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -19,7 +19,6 @@ import (
 )
 
 var (
-	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	fakeClock = clockwork.NewFakeClock()
 	startTime = fakeClock.Now().Add(-time.Minute)
 	endTime   = fakeClock.Now().Add(time.Hour)
@@ -31,13 +30,17 @@ func init() {
 }
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
-	if len(*storeURI) == 0 {
+	connectParams := flags.ConnectParameters()
+	if connectParams.Host == "" {
 		t.Skip()
+	} else {
+		_, err := connectParams.BuildURI()
+		require.NoError(t, err)
 	}
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
-	store, err := newStore()
+	store, err := newStore(connectParams)
 	require.NoError(t, err)
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
@@ -45,8 +48,8 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newStore() (*Store, error) {
-	cdb, err := cockroach.Dial(*storeURI)
+func newStore(connectParams cockroach.ConnectParameters) (*Store, error) {
+	cdb, err := cockroach.Dial(connectParams)
 	if err != nil {
 		return nil, err
 	}
