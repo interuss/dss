@@ -1,6 +1,5 @@
 #!env/bin/python3
 import client
-import conf
 import datetime
 import random
 import threading
