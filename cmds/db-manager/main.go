@@ -45,9 +45,8 @@ func (d Direction) String() string {
 
 var (
 	path      = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
-	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0)")
+	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version")
 	step      = flag.Int("migration_step", 0, "the db migration step to go to")
-	latest    = flag.Bool("latest", false, "migrate db to the latest available step in path specified")
 )
 
 func main() {
@@ -55,9 +54,10 @@ func main() {
 	if *path == "" {
 		log.Panic("Must specify schemas_dir path")
 	}
-	if (*dbVersion == "" && *step == 0 && !*latest) || (*dbVersion != "" && *step != 0 && *latest == true) {
-		log.Panic("Must specify one of [db_version, migration_step, latest] to goto")
+	if (*dbVersion == "" && *step == 0) || (*dbVersion != "" && *step != 0) {
+		log.Panic("Must specify one of [db_version, migration_step] to goto, use --help to see options")
 	}
+	latest := strings.ToLower(*dbVersion) == "latest"
 
 	var (
 		desiredVersion *semver.Version
@@ -91,7 +91,7 @@ func main() {
 	if err != migrate.ErrNilVersion && err != nil {
 		log.Panic(err)
 	}
-	if *latest {
+	if latest {
 		if err := myMigrater.Up(); err != nil {
 			log.Panic(err)
 		}
@@ -105,7 +105,7 @@ func main() {
 		log.Fatal("Failed to get Migration Step for confirmation")
 	}
 	totalMoves := int(postMigrationStep - preMigrationStep)
-	if totalMoves == 0 && !*latest {
+	if totalMoves == 0 && !latest {
 		log.Println("No Changes")
 	} else {
 		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMoves), preMigrationStep, postMigrationStep)
