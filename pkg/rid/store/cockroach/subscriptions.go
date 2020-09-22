@@ -302,7 +302,7 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 	return c.process(ctx, query, pq.Int64Array(cids), owner, c.clock.Now())
 }
 
-// ListExpiredSubscriptions lists all expired Subscriptions based and writer.
+// ListExpiredSubscriptions lists all expired Subscriptions based on writer.
 // Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
 func (c *subscriptionRepo) ListExpiredSubscriptions(ctx context.Context, writer string) ([]*ridmodels.Subscription, error) {
 	var (
