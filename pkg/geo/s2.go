@@ -99,7 +99,7 @@ func chordSegmentsIntersect(p1a s2.Point, p1b s2.Point, p2a s2.Point, p2b s2.Poi
 	n2 := p2a.Cross(p2b.Vector)
 
 	// Possible chord intersection point (other one is ip.Mul(-1))
-	ip := n1.Cross(n2)
+	ip := n1.Cross(n2).Normalize()
 
 	// Chord segments can't intersect if they're both on the same side of the
 	// great circle planar intersection points
