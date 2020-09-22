@@ -89,6 +89,10 @@ func (store *isaStore) ListExpiredISAs(ctx context.Context, writer string) ([]*r
 	return make([]*ridmodels.IdentificationServiceArea, 0), nil
 }
 
+func (store *isaStore) ListExpiredISAsWithNullWriter(ctx context.Context) ([]*ridmodels.IdentificationServiceArea, error) {
+	return make([]*ridmodels.IdentificationServiceArea, 0), nil
+}
+
 func TestISAUpdateIdxCells(t *testing.T) {
 	ctx := context.Background()
 	app, cleanup := setUpISAApp(ctx, t)

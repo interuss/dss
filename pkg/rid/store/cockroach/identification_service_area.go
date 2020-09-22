@@ -238,9 +238,23 @@ func (c *isaRepo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmod
 		writer = $1`, isaFields, expiredDurationInMin)
 	)
 
-	if len(writer) == 0 {
-		return nil, stacktrace.NewError("Writer is required")
-	}
-
 	return c.process(ctx, isasInCellsQuery, writer)
+}
+
+// ListExpiredISAsWithNullWriter lists all expired ISAs which has null writer value.
+// Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
+func (c *isaRepo) ListExpiredISAsWithNullWriter(ctx context.Context) ([]*ridmodels.IdentificationServiceArea, error) {
+	var (
+		isasInCellsQuery = fmt.Sprintf(`
+	SELECT
+		%s
+	FROM
+		identification_service_areas
+	WHERE
+		ends_at + INTERVAL '%d' MINUTE <= CURRENT_TIMESTAMP
+	AND
+		writer = NULL`, isaFields, expiredDurationInMin)
+	)
+
+	return c.process(ctx, isasInCellsQuery)
 }

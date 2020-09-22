@@ -204,7 +204,12 @@ func (c *isaRepoV3) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest
 	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
 }
 
-// ListExpiredISAs returns empty. We don't support listExpiredISAs in store v3.0 because db doesn't have 'writer' field.
+// ListExpiredISAs returns empty. We don't support thi function in store v3.0 because db doesn't have 'writer' field.
 func (c *isaRepoV3) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels.IdentificationServiceArea, error) {
+	return make([]*ridmodels.IdentificationServiceArea, 0), nil
+}
+
+// ListExpiredISAsWithNullWriter returns empty. We don't support this function in store v3.0 because db doesn't have 'writer' field.
+func (c *isaRepoV3) ListExpiredISAsWithNullWriter(ctx context.Context) ([]*ridmodels.IdentificationServiceArea, error) {
 	return make([]*ridmodels.IdentificationServiceArea, 0), nil
 }

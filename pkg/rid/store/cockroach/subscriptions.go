@@ -317,9 +317,22 @@ func (c *subscriptionRepo) ListExpiredSubscriptions(ctx context.Context, writer 
 		writer = $1`, subscriptionFields, expiredDurationInMin)
 	)
 
-	if len(writer) == 0 {
-		return nil, stacktrace.NewError("Writer is required")
-	}
-
 	return c.process(ctx, query, writer)
+}
+
+// ListExpiredSubscriptions lists all expired Subscriptions which has null writer value.
+// Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
+func (c *subscriptionRepo) ListExpiredSubscriptionsWithNullWriter(ctx context.Context) ([]*ridmodels.Subscription, error) {
+	var (
+		query = fmt.Sprintf(`
+	SELECT
+		%s
+	FROM
+		subscriptions
+	WHERE
+		ends_at + INTERVAL '%d' MINUTE <= CURRENT_TIMESTAMP
+	AND
+		writer = NULL`, subscriptionFields, expiredDurationInMin)
+	)
+	return c.process(ctx, query)
 }

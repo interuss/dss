@@ -29,6 +29,9 @@ type ISA interface {
 	// SearchISAs returns all subscriptions ownded by "owner" in "cells".
 	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
 
-	// ListExpiredRecords returns all expried ISA records
+	// ListExpiredISAs lists all expired ISAs based on writer
 	ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels.IdentificationServiceArea, error)
+
+	// ListExpiredISAs lists all expired ISAs which has null writer value.
+	ListExpiredISAsWithNullWriter(ctx context.Context) ([]*ridmodels.IdentificationServiceArea, error)
 }

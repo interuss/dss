@@ -162,6 +162,10 @@ func (store *subscriptionStore) ListExpiredSubscriptions(ctx context.Context, wr
 	return make([]*ridmodels.Subscription, 0), nil
 }
 
+func (store *subscriptionStore) ListExpiredSubscriptionsWithNullWriter(ctx context.Context) ([]*ridmodels.Subscription, error) {
+	return make([]*ridmodels.Subscription, 0), nil
+}
+
 func TestBadOwner(t *testing.T) {
 	ctx := context.Background()
 	app, cleanup := setUpSubApp(ctx, t)
