@@ -279,7 +279,7 @@ func TestListExpiredISAs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut2)
 
-	serviceAreas, err := repo.ListExpiredISAs(ctx, writer)
+	serviceAreas, err := repo.ListExpiredISAs(ctx, &writer)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 }

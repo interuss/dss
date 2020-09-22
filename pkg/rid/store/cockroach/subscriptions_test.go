@@ -333,7 +333,7 @@ func TestListExpiredSubscriptions(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, subOut2)
 
-	subscriptions, err := repo.ListExpiredSubscriptions(ctx, writer)
+	subscriptions, err := repo.ListExpiredSubscriptions(ctx, &writer)
 	require.NoError(t, err)
 	require.Len(t, subscriptions, 1)
 }

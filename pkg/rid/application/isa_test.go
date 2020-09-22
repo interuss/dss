@@ -85,11 +85,7 @@ func (store *isaStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earli
 }
 
 // Implements repos.ISA.ListExpiredISAs
-func (store *isaStore) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels.IdentificationServiceArea, error) {
-	return make([]*ridmodels.IdentificationServiceArea, 0), nil
-}
-
-func (store *isaStore) ListExpiredISAsWithNullWriter(ctx context.Context) ([]*ridmodels.IdentificationServiceArea, error) {
+func (store *isaStore) ListExpiredISAs(ctx context.Context, writer *string) ([]*ridmodels.IdentificationServiceArea, error) {
 	return make([]*ridmodels.IdentificationServiceArea, 0), nil
 }
 
