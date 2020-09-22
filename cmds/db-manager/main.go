@@ -63,7 +63,7 @@ func main() {
 		desiredVersion *semver.Version
 	)
 
-	if *dbVersion != "" {
+	if *dbVersion != "" && !latest {
 		if v, err := semver.NewVersion(*dbVersion); err == nil {
 			desiredVersion = v
 		} else {
