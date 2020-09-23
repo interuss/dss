@@ -218,7 +218,7 @@ a PR to that effect would be greatly appreciated.
 1.  From this working directory,
     `cp -r deploy/examples/minimum/* workspace/$CLUSTER_CONTEXT`.  Note that
     the `workspace/$CLUSTER_CONTEXT` folder should have already been created
-    by the `make_certs.py` script.
+    by the `make-certs.py` script.
 
 1.  If providing a .pem file directly as the public key to validate incoming
     access tokens, copy it to [dss/build/jwt-public-certs](./jwt-public-certs).

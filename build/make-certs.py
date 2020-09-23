@@ -63,6 +63,8 @@ def parse_args():
                         default=[], help='extra addresses to add to the node certificate')
     parser.add_argument('--ca-cert-to-join', metavar='FILENAME',
                         help='file containing an existing CA cert of a cluster to join.')
+    parser.add_argument('--keep-ca-cert', action='store_true', default=False,
+                        help='True to use the existing CA, false to generate a new one')
     return parser.parse_args()
 
 
@@ -75,12 +77,13 @@ def main():
     os.makedirs('workspace', exist_ok=True)
     os.makedirs(cr.directory, exist_ok=True)
 
-    # Create a new CA.
-    # Delete and recreate the ca_certs_dir.
-    shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
-    shutil.rmtree(cr.ca_key_dir, ignore_errors=True)
-    os.mkdir(cr.ca_certs_dir)
-    os.mkdir(cr.ca_key_dir)
+    if not args.keep_ca_cert:
+      # Create a new CA.
+      # Delete and recreate the ca_certs_dir.
+      shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
+      shutil.rmtree(cr.ca_key_dir, ignore_errors=True)
+      os.mkdir(cr.ca_certs_dir)
+      os.mkdir(cr.ca_key_dir)
 
     # Build node and client certs.
     # Delete and recreate the directories.
@@ -89,13 +92,14 @@ def main():
     os.mkdir(cr.client_certs_dir)
     os.mkdir(cr.node_certs_dir)
 
-    # Create the CA.
-    subprocess.check_call([
-        'cockroach', 'cert', 'create-ca',
-        '--certs-dir', cr.ca_certs_dir,
-        '--ca-key', cr.ca_key_file])
+    if not args.keep_ca_cert:
+      # Create the CA.
+      subprocess.check_call([
+          'cockroach', 'cert', 'create-ca',
+          '--certs-dir', cr.ca_certs_dir,
+          '--ca-key', cr.ca_key_file])
 
-    # Copy out the CA cert for generation, we delete these copy later.
+    # Copy out the CA cert for generation, we delete these copies later.
     shutil.copy(cr.ca_certs_file, cr.client_certs_dir)
     shutil.copy(cr.ca_certs_file, cr.node_certs_dir)
 
@@ -107,7 +111,8 @@ def main():
                 new_certs_fh.write(join_ca_cert_fh.read())
                 new_certs_fh.write('\n')
 
-    print('Created new CA certificate in {}'.format(cr.ca_certs_dir))
+    if cr.ca_cert_to_join or not args.keep_ca_cert:
+      print('Created new CA certificate in {}'.format(cr.ca_certs_dir))
 
     subprocess.check_call([
         'cockroach', 'cert', 'create-client', 'root',
