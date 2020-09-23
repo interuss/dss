@@ -45,7 +45,7 @@ func (d Direction) String() string {
 
 var (
 	path      = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
-	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0)")
+	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version")
 	step      = flag.Int("migration_step", 0, "the db migration step to go to")
 )
 
@@ -55,14 +55,15 @@ func main() {
 		log.Panic("Must specify schemas_dir path")
 	}
 	if (*dbVersion == "" && *step == 0) || (*dbVersion != "" && *step != 0) {
-		log.Panic("Must specify a db_version or migration_step to goto")
+		log.Panic("Must specify one of [db_version, migration_step] to goto, use --help to see options")
 	}
+	latest := strings.ToLower(*dbVersion) == "latest"
 
 	var (
 		desiredVersion *semver.Version
 	)
 
-	if *dbVersion != "" {
+	if *dbVersion != "" && !latest {
 		if v, err := semver.NewVersion(*dbVersion); err == nil {
 			desiredVersion = v
 		} else {
@@ -90,15 +91,21 @@ func main() {
 	if err != migrate.ErrNilVersion && err != nil {
 		log.Panic(err)
 	}
-	totalMoves, err := myMigrater.DoMigrate(*desiredVersion, *step)
-	if err != nil {
-		log.Panic(err)
+	if latest {
+		if err := myMigrater.Up(); err != nil {
+			log.Panic(err)
+		}
+	} else {
+		if err := myMigrater.DoMigrate(*desiredVersion, *step); err != nil {
+			log.Panic(err)
+		}
 	}
 	postMigrationStep, dirty, err := myMigrater.Version()
 	if err != nil {
 		log.Fatal("Failed to get Migration Step for confirmation")
 	}
-	if totalMoves == 0 {
+	totalMoves := int(postMigrationStep - preMigrationStep)
+	if totalMoves == 0 && !latest {
 		log.Println("No Changes")
 	} else {
 		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMoves), preMigrationStep, postMigrationStep)
@@ -112,25 +119,23 @@ func main() {
 }
 
 // DoMigrate performs the migration given the desired state we want to reach
-func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int) (int, error) {
-	totalMoves := 0
+func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int) error {
 	migrateDirection, err := m.MigrationDirection(desiredDBVersion, desiredStep)
 	if err != nil {
-		return totalMoves, err
+		return err
 	}
 	for migrateDirection != 0 {
 		err = m.Steps(int(migrateDirection))
 		if err != nil {
-			return totalMoves, err
+			return err
 		}
-		totalMoves += int(migrateDirection)
 		log.Printf("Migrated %s by %d step", migrateDirection.String(), intAbs(int(migrateDirection)))
 		migrateDirection, err = m.MigrationDirection(desiredDBVersion, *step)
 		if err != nil {
-			return totalMoves, err
+			return err
 		}
 	}
-	return totalMoves, nil
+	return nil
 }
 
 // New instantiates a new migrate object
