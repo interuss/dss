@@ -18,6 +18,9 @@ import (
 const (
 	// currentMajorSchemaVersion is the current major schema version.
 	currentMajorSchemaVersion = 3
+
+	//  Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
+	expiredDurationInMin = 30
 )
 
 var (

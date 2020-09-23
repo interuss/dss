@@ -278,3 +278,8 @@ func (c *subscriptionRepoV3) SearchSubscriptionsByOwner(ctx context.Context, cel
 
 	return c.process(ctx, query, pq.Int64Array(cids), owner, c.clock.Now())
 }
+
+// ListExpiredSubscriptions returns empty. We don't support this function in store v3.0 because db doesn't have 'writer' field.
+func (c *subscriptionRepoV3) ListExpiredSubscriptions(ctx context.Context, writer string) ([]*ridmodels.Subscription, error) {
+	return make([]*ridmodels.Subscription, 0), nil
+}

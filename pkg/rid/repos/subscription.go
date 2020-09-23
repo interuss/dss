@@ -37,4 +37,7 @@ type Subscription interface {
 	// MaxSubscriptionCountInCellsByOwner finds, out of a set of cells, the cell with the most subscriptions
 	// belonging to the given owner, and returns that number.
 	MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error)
+
+	// ListExpiredSubscriptions lists all expired Subscriptions based on writer.
+	ListExpiredSubscriptions(ctx context.Context, writer string) ([]*ridmodels.Subscription, error)
 }

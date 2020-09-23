@@ -23,6 +23,7 @@ var (
 	fakeClock = clockwork.NewFakeClock()
 	startTime = fakeClock.Now().Add(-time.Minute)
 	endTime   = fakeClock.Now().Add(time.Hour)
+	writer    = "writer"
 )
 
 func init() {
