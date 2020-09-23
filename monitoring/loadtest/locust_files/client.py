@@ -1,7 +1,6 @@
 #!env/bin/python3
 
 import os
-import conf
 import time
 import typing
 from locust import User 
