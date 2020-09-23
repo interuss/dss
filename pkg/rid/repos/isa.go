@@ -30,5 +30,5 @@ type ISA interface {
 	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
 
 	// ListExpiredISAs lists all expired ISAs based on writer
-	ListExpiredISAs(ctx context.Context, writer *string) ([]*ridmodels.IdentificationServiceArea, error)
+	ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels.IdentificationServiceArea, error)
 }

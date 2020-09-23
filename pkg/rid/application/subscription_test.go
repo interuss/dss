@@ -158,7 +158,7 @@ func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s
 	return subs, nil
 }
 
-func (store *subscriptionStore) ListExpiredSubscriptions(ctx context.Context, writer *string) ([]*ridmodels.Subscription, error) {
+func (store *subscriptionStore) ListExpiredSubscriptions(ctx context.Context, writer string) ([]*ridmodels.Subscription, error) {
 	return make([]*ridmodels.Subscription, 0), nil
 }
 
