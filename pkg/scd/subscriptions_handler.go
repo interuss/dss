@@ -49,7 +49,7 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 	case nil, geo.ErrMissingSpatialVolume, geo.ErrMissingFootprint:
 		// We may be able to fill these values from a previous Subscription or via defaults.
 	default:
-		return nil, stacktrace.Propagate(err, "Invalid area")
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
 	subreq := &scdmodels.Subscription{
@@ -272,7 +272,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	// Parse area of interest to common Volume4D
 	vol4, err := dssmodels.Volume4DFromSCDProto(aoi)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert to internal geometry model")
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model")
 	}
 
 	// Retrieve ID of client making call
