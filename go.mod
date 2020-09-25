@@ -17,6 +17,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.14.3
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/interuss/stacktrace v0.0.0-20200827180054-b2e58cf48818
 	github.com/lib/pq v1.5.2
 	github.com/stretchr/testify v1.5.1
