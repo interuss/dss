@@ -86,6 +86,8 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 			return stacktrace.Propagate(err, "Error adjusting time range of Subscription")
 		}
 
+		var dependentOpIds []dssmodels.ID
+
 		if old == nil {
 			// There is no previous Subscription (this is a creation attempt)
 			if !subreq.Version.Empty() {
@@ -111,7 +113,20 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 
 			subreq.NotificationIndex = old.NotificationIndex
 
-			// TODO(#386): validate against DependentOperations
+			// Validate Subscription against DependentOperations
+			dependentOpIds, err = r.GetDependentOperations(ctx, subreq.ID)
+			if err != nil {
+				return stacktrace.Propagate(err, "Could not find dependent Operation Ids")
+			}
+
+			operations, err := GetOperations(ctx, r, dependentOpIds)
+			if err != nil {
+				return stacktrace.Propagate(err, "Could not get all dependent Operations")
+			}
+			if err := subreq.ValidateDependentOps(operations); err != nil {
+				// The provided subscription does not cover all its dependent operations
+				return err
+			}
 		}
 
 		// Store Subscription model
@@ -143,14 +158,8 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 			relevantOperations = ops
 		}
 
-		// Get dependent Operations
-		dependentOps, err := r.GetDependentOperations(ctx, sub.ID)
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not find dependent Operations")
-		}
-
 		// Convert Subscription to proto
-		p, err := sub.ToProto(dependentOps)
+		p, err := sub.ToProto(dependentOpIds)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not convert Subscription to proto")
 		}
@@ -384,4 +393,17 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	}
 
 	return response, nil
+}
+
+// GetOperations gets operations by given ids
+func GetOperations(ctx context.Context, r repos.Repository, opIDs []dssmodels.ID) ([]*scdmodels.Operation, error) {
+	var res []*scdmodels.Operation
+	for _, opID := range opIDs {
+		operation, err := r.GetOperation(ctx, opID)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Could not retrieve dependent Operation %s", opID)
+		}
+		res = append(res, operation)
+	}
+	return res, nil
 }

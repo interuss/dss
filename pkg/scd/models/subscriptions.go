@@ -122,3 +122,31 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 
 	return nil
 }
+
+// ValidateDependentOps validates subscription against given operations in all 4 dimensions
+func (s *Subscription) ValidateDependentOps(operations []*Operation) error {
+	for _, op := range operations {
+		if err := s.ValidateDependentOp(op); err != nil {
+			return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Subscription does not cover dependent operations")
+		}
+	}
+	return nil
+}
+
+// ValidateDependentOp validates subscription against single operation in all 4 dimensions
+func (s *Subscription) ValidateDependentOp(operation *Operation) error {
+	// validate 2d area
+	if !s.Cells.Contains(operation.Cells) {
+		return stacktrace.NewError("Subscription does not cover dependent operation 2d area, %s", operation.ID)
+	}
+	// validate altitudes
+	if *operation.AltitudeLower < *s.AltitudeLo || *operation.AltitudeUpper > *s.AltitudeHi {
+		return stacktrace.NewError("Subscription does not cover dependent operation altitude, %s", operation.ID)
+	}
+	// validate time range
+	// Skip checking start time since subscription's start time cannot be in the past while its dependent operation can
+	if (*operation.EndTime).After(*s.EndTime) {
+		return stacktrace.NewError("Subscription does not cover dependent operation time range, %s", operation.ID)
+	}
+	return nil
+}
