@@ -42,7 +42,6 @@ func TestDeleteExpiredISAs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 
-	// A get should work even if it is expired.
 	ret, err := repo.GetISA(ctx, serviceArea.ID)
 	require.NoError(t, err)
 	require.NotNil(t, ret)
@@ -50,7 +49,6 @@ func TestDeleteExpiredISAs(t *testing.T) {
 	gc := NewGarbageCollector(repo, writer)
 	gc.DeleteExpiredRecords(ctx)
 
-	// A get should work even if it is expired.
 	ret, err = repo.GetISA(ctx, serviceArea.ID)
 	require.NoError(t, err)
 	require.Nil(t, ret)
@@ -87,7 +85,6 @@ func TestDeleteExpiredSubscriptions(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, subOut)
 
-	// A get should work even if it is expired.
 	ret, err := repo.GetSubscription(ctx, subscription.ID)
 	require.NoError(t, err)
 	require.NotNil(t, ret)
@@ -95,7 +92,6 @@ func TestDeleteExpiredSubscriptions(t *testing.T) {
 	gc := NewGarbageCollector(repo, writer)
 	gc.DeleteExpiredRecords(ctx)
 
-	// A get should work even if it is expired.
 	ret, err = repo.GetSubscription(ctx, subscription.ID)
 	require.NoError(t, err)
 	require.Nil(t, ret)
