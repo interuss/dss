@@ -64,7 +64,7 @@ def test_op_query_degenerate_polygon(scd_session):
   with open('./scd/resources/op_request_3.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 400, resp.content
 
 
 # Preconditions: None
@@ -93,8 +93,7 @@ def test_id_conversion_bug(scd_session):
             { "lng": -91.49723052978516, "lat": 41.70085834502109 },
             { "lng": -91.50341033935547, "lat": 41.6770148220322 },
             { "lng": -91.47989273071289, "lat": 41.67509157220958 },
-            { "lng": -91.4663314819336, "lat": 41.69329603398001 },
-            { "lng": -91.49723052978516, "lat": 41.70085834502109 }
+            { "lng": -91.4663314819336, "lat": 41.69329603398001 }
           ]
         },
         "altitude_upper": {"units": "M", "reference": "W84", "value": 764.79037},

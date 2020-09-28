@@ -22,7 +22,7 @@ func TestParseAreaSuccessForOppositeWindingOrder(t *testing.T) {
 }
 
 func TestParseAreaSuccessForEvenNumberOfPoints(t *testing.T) {
-	cells, err := geo.AreaToCellIDs(`37.4047,-122.1474,37.4037,-122.1485,37.4035,-122.1466,37.4035,-122.1466`)
+	cells, err := geo.AreaToCellIDs(`37.4047,-122.1474,37.4037,-122.1485,37.4035,-122.1466,37.4043,-122.146`)
 	require.NoError(t, err)
 	require.NotNil(t, cells)
 }
