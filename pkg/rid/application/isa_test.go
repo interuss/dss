@@ -69,7 +69,7 @@ func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.Identificat
 }
 
 func (store *isaStore) GetVersion(ctx context.Context) (*semver.Version, error) {
-	return semver.NewVersion("v3.1.0")
+	return semver.NewVersion("v3.1.1")
 }
 
 // Implements repos.ISA.SearchISA
