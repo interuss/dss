@@ -482,9 +482,9 @@ your local machine using kubectl:
 
 Pick a username and create an account:
 
-    kubectl -n $NAMESPACE exec cockroachdb-0 -ti -- \
-        ./cockroach --certs-dir ./cockroach-certs \
-        user set $USERNAME --password
+Access the [CockrachDB SQL terminal](#Accessing-a-CockroachDB-SQL-terminal) then create user with sql command
+
+    root@:26257/defaultdb> CREATE USER foo WITH PASSWORD 'foobar';
 
 #### Access the web UI
 
