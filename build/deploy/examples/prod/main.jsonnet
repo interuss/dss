@@ -16,7 +16,7 @@ local metadata = prod.metadata {
   },
   schema_manager+: {
     image: 'your_schema_manager_image_name',
-    desired_rid_db_version: '3.1.0',
+    desired_rid_db_version: '3.1.1',
   },
 };
 
