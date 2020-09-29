@@ -521,15 +521,4 @@ existing clusters you will need to:
 
 1.  Run `tk apply workspace/$CLUSTER_CONTEXT_schema_manager`
 
-### Database version and server cache
-Current version: 3.1.0
-Minimum support version: 3.0.0
-
-#### Important: Server version should NEVER be behind Database Version ####
-
-Changes in v3.1.0
-* Added a new `writer` field to identification_service_areas and subscriptions table for the purposes of automatic Garbage Collection 
-* Read the database version and cache it in memory. 
-
-The `writer` column was added to facilitate automatic Garbage Collection, recording the instance that added the record to Database.
-The presence `writer` column in the Database will not cause failure in basic functionality of the DSS, as long as you keep the version of the Server ahead of the Database version. When running Server v3.1.0 with Database v3.0.0, the `writer` column will simply be ignored and that record will not be automatically Garbage collected. You will need to manually remove expired records either with the existing Delete API ro manual SQL commands.
+Only since commit [c789b2b](https://github.com/interuss/dss/commit/c789b2b4a9fa5fb651d202da0a3abc02a03c15d2) on Aug 25, 2020 will the DSS enable automatic garbage collection of records by tracking which DSS instance is responsible for garbage collection of the record. Expired records added with a DSS deployment running code earlier than this must be manually removed.
