@@ -3,9 +3,8 @@ package cockroach
 import (
 	"context"
 
-	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
-	"go.uber.org/zap"
+	"github.com/interuss/stacktrace"
 )
 
 type GarbageCollector struct {
@@ -20,45 +19,62 @@ func NewGarbageCollector(repos repos.Repository, writer string) *GarbageCollecto
 	}
 }
 
-func (gc *GarbageCollector) DeleteExpiredRecords(ctx context.Context) {
-	gc.DeleteExpiredISAs(ctx)
-	gc.DeleteExpiredSubscriptions(ctx)
+func (gc *GarbageCollector) DeleteExpiredRecords(ctx context.Context) error {
+	err := gc.DeleteExpiredISAs(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err,
+			"Failed to DeleteExpiredRecords")
+
+	}
+	err = gc.DeleteExpiredSubscriptions(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err,
+			"Failed to DeleteExpiredRecords")
+
+	}
+
+	return nil
 }
 
-func (gc *GarbageCollector) DeleteExpiredISAs(ctx context.Context) {
-	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+func (gc *GarbageCollector) DeleteExpiredISAs(ctx context.Context) error {
 	expiredISAs, err := gc.repos.ListExpiredISAs(ctx, gc.writer)
 	if err != nil {
-		logger.Panic("Failed to list expired ISAs", zap.Error(err))
-		return
+		return stacktrace.Propagate(err,
+			"Failed to list expired ISAs")
 	}
 
 	for _, isa := range expiredISAs {
-		saOut, err := gc.repos.DeleteISA(ctx, isa)
-		if saOut != nil {
-			logger.Info("Deleted ISA", zap.Any("ISA", saOut))
+		isaOut, err := gc.repos.DeleteISA(ctx, isa)
+		if isaOut != nil {
+			return stacktrace.Propagate(err,
+				"Deleted ISA")
 		}
 		if err != nil {
-			logger.Panic("Failed to delete ISAs", zap.Error(err))
+			return stacktrace.Propagate(err,
+				"Failed to delete ISAs")
 		}
 	}
+
+	return nil
 }
 
-func (gc *GarbageCollector) DeleteExpiredSubscriptions(ctx context.Context) {
-	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+func (gc *GarbageCollector) DeleteExpiredSubscriptions(ctx context.Context) error {
 	expiredSubscriptions, err := gc.repos.ListExpiredSubscriptions(ctx, gc.writer)
 	if err != nil {
-		logger.Panic("Failed to list expired Subscriptions", zap.Error(err))
-		return
+		return stacktrace.Propagate(err,
+			"Failed to list expired Subscriptions")
 	}
 
 	for _, sub := range expiredSubscriptions {
 		subOut, err := gc.repos.DeleteSubscription(ctx, sub)
 		if subOut != nil {
-			logger.Info("Deleted Subscription", zap.Any("Subscription", subOut))
+			return stacktrace.Propagate(err,
+				"Deleted Subscription")
 		}
 		if err != nil {
-			logger.Panic("Failed to delete Subscription", zap.Error(err))
+			return stacktrace.Propagate(err,
+				"Failed to delete Subscription")
 		}
 	}
+	return nil
 }
