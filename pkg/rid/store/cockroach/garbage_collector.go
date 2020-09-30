@@ -19,18 +19,16 @@ func NewGarbageCollector(repos repos.Repository, writer string) *GarbageCollecto
 	}
 }
 
-func (gc *GarbageCollector) DeleteExpiredRecords(ctx context.Context) error {
+func (gc *GarbageCollector) DeleteRIDExpiredRecords(ctx context.Context) error {
 	err := gc.DeleteExpiredISAs(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err,
-			"Failed to DeleteExpiredRecords")
-
+			"Failed to delete RID expired records")
 	}
 	err = gc.DeleteExpiredSubscriptions(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err,
-			"Failed to DeleteExpiredRecords")
-
+			"Failed to delete RID expired records")
 	}
 
 	return nil

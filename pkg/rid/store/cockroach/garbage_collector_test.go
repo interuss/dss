@@ -47,7 +47,7 @@ func TestDeleteExpiredISAs(t *testing.T) {
 	require.NotNil(t, ret)
 
 	gc := NewGarbageCollector(repo, writer)
-	gc.DeleteExpiredRecords(ctx)
+	gc.DeleteRIDExpiredRecords(ctx)
 
 	ret, err = repo.GetISA(ctx, serviceArea.ID)
 	require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestDeleteExpiredSubscriptions(t *testing.T) {
 	require.NotNil(t, ret)
 
 	gc := NewGarbageCollector(repo, writer)
-	gc.DeleteExpiredRecords(ctx)
+	gc.DeleteRIDExpiredRecords(ctx)
 
 	ret, err = repo.GetSubscription(ctx, subscription.ID)
 	require.NoError(t, err)
