@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -107,18 +108,27 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
+	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
+	}
+
+	repo, err := ridStore.Interact(ctx)
+	gc := ridc.NewGarbageCollector(repo, locality)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
 	// schedule pinging every minute for the underlying storage for RID Server
 	if _, err := ridCron.AddFunc("@every 1m", func() { pingDB(ctx, ridCrdb, ridc.DatabaseName) }); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
 	}
-	ridCron.Start()
 
-	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
+	if _, err = ridCron.AddJob("@every 30m", GarbageCollectorJob{wg, "delete rid expired records", *gc, ctx}); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
 	}
+	ridCron.Start()
 
 	return &rid.Server{
 		App:      application.NewFromTransactor(ridStore, logger),
@@ -271,6 +281,18 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 		}
 	}()
 	return s.Serve(l)
+}
+
+type GarbageCollectorJob struct {
+	wg   *sync.WaitGroup
+	name string
+	gc   ridc.GarbageCollector
+	ctx  context.Context
+}
+
+func (gcj GarbageCollectorJob) Run() {
+	gcj.gc.DeleteRIDExpiredRecords(gcj.ctx)
+	gcj.wg.Done()
 }
 
 func main() {
