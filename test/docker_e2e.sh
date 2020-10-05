@@ -26,16 +26,16 @@ function gather_logs() {
 function cleanup() {
 	# ----------- clean up -----------
 	echo "Stopping dummy oauth container"
-	# docker rm -f dummy-oauth-for-testing &> /dev/null || true
+	docker rm -f dummy-oauth-for-testing &> /dev/null || true
 
-	# echo "Stopping http gateway container"
-	# docker kill -f http-gateway-for-testing &> /dev/null || true
+	echo "Stopping http gateway container"
+	docker kill -f http-gateway-for-testing &> /dev/null || true
 
-	# echo "Stopping grpc-backend container"
-	# docker kill -f grpc-backend-for-testing &> /dev/null || true
+	echo "Stopping grpc-backend container"
+	docker kill -f grpc-backend-for-testing &> /dev/null || true
 
-	# echo "Stopping crdb docker"
-	# docker rm -f dss-crdb-for-debugging &> /dev/null || true
+	echo "Stopping crdb docker"
+	docker rm -f dss-crdb-for-debugging &> /dev/null || true
 }
 
 function on_exit() {
@@ -153,10 +153,10 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"
 
-# echo "Cleaning up http-gateway container"
-# docker stop http-gateway-for-testing > /dev/null
-# test "$(docker inspect http-gateway-for-testing --format='{{.State.ExitCode}}')" = 0
+echo "Cleaning up http-gateway container"
+docker stop http-gateway-for-testing > /dev/null
+test "$(docker inspect http-gateway-for-testing --format='{{.State.ExitCode}}')" = 0
 
-# echo "Cleaning up grpc-backend container"
-# docker stop grpc-backend-for-testing > /dev/null
-# test "$(docker inspect grpc-backend-for-testing --format='{{.State.ExitCode}}')" = 0
+echo "Cleaning up grpc-backend container"
+docker stop grpc-backend-for-testing > /dev/null
+test "$(docker inspect grpc-backend-for-testing --format='{{.State.ExitCode}}')" = 0
