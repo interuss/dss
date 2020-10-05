@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -118,8 +117,6 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 	gc := ridc.NewGarbageCollector(repo, locality)
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
@@ -128,7 +125,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
 	}
 
-	if _, err = ridCron.AddJob("@every 30m", GarbageCollectorJob{wg, "delete rid expired records", *gc, ctx}); err != nil {
+	if _, err = ridCron.AddJob("@every 1m", GarbageCollectorJob{"delete rid expired records", *gc, ctx}); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
 	}
 	ridCron.Start()
@@ -287,19 +284,19 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 }
 
 type GarbageCollectorJob struct {
-	wg   *sync.WaitGroup
 	name string
 	gc   ridc.GarbageCollector
 	ctx  context.Context
 }
 
 func (gcj GarbageCollectorJob) Run() {
+	logger := logging.WithValuesFromContext(gcj.ctx, logging.Logger)
 	err := gcj.gc.DeleteRIDExpiredRecords(gcj.ctx)
 	if err != nil {
-		logger := logging.WithValuesFromContext(gcj.ctx, logging.Logger)
-		logger.Warn("Fail to delte expired records", zap.Error(err))
+		logger.Warn("Fail to delete expired records", zap.Error(err))
+	} else {
+		logger.Info("Successful delete expired records")
 	}
-	gcj.wg.Done()
 }
 
 func main() {
