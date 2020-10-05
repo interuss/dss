@@ -20,7 +20,7 @@ const (
 	currentMajorSchemaVersion = 3
 
 	//  Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
-	expiredDurationInMin = 3
+	expiredDurationInMin = 30
 )
 
 var (
