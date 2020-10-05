@@ -125,7 +125,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
 	}
 
-	if _, err = ridCron.AddJob("@every 1m", GarbageCollectorJob{"delete rid expired records", *gc, ctx}); err != nil {
+	if _, err = ridCron.AddJob("@every 30m", GarbageCollectorJob{"delete rid expired records", *gc, ctx}); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
 	}
 	ridCron.Start()
