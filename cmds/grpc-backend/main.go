@@ -114,6 +114,9 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	}
 
 	repo, err := ridStore.Interact(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to interact with store")
+	}
 	gc := ridc.NewGarbageCollector(repo, locality)
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -291,7 +294,11 @@ type GarbageCollectorJob struct {
 }
 
 func (gcj GarbageCollectorJob) Run() {
-	gcj.gc.DeleteRIDExpiredRecords(gcj.ctx)
+	err := gcj.gc.DeleteRIDExpiredRecords(gcj.ctx)
+	if err != nil {
+		logger := logging.WithValuesFromContext(gcj.ctx, logging.Logger)
+		logger.Warn("Fail to delte expired records", zap.Error(err))
+	}
 	gcj.wg.Done()
 }
 
