@@ -12,5 +12,7 @@
     "000005_bump_version.up.sql": importstr "defaultdb/000005_bump_version.up.sql",
     "000006_add_writer_column.down.sql": importstr "defaultdb/000006_add_writer_column.down.sql",
     "000006_add_writer_column.up.sql": importstr "defaultdb/000006_add_writer_column.up.sql",
+    "000007_add_index_by_time_subscriptions.down.sql": importstr "defaultdb/000007_add_index_by_time_subscriptions.down.sql",
+    "000007_add_index_by_time_subscriptions.up.sql": importstr "defaultdb/000007_add_index_by_time_subscriptions.up.sql",
   },
 }
