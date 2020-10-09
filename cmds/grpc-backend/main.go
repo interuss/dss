@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"net/url"
 	"os"
@@ -125,7 +126,8 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
 	}
 
-	if _, err = ridCron.AddJob("@every 30m", GarbageCollectorJob{"delete rid expired records", *gc, ctx}); err != nil {
+	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "cron: ", log.LstdFlags))
+	if _, err = ridCron.AddJob("@every 30m", cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
 	}
 	ridCron.Start()
@@ -283,13 +285,13 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	return s.Serve(l)
 }
 
-type GarbageCollectorJob struct {
+type RIDGarbageCollectorJob struct {
 	name string
 	gc   ridc.GarbageCollector
 	ctx  context.Context
 }
 
-func (gcj GarbageCollectorJob) Run() {
+func (gcj RIDGarbageCollectorJob) Run() {
 	logger := logging.WithValuesFromContext(gcj.ctx, logging.Logger)
 	err := gcj.gc.DeleteRIDExpiredRecords(gcj.ctx)
 	if err != nil {
