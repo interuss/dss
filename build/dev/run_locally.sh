@@ -24,6 +24,9 @@ DC_COMMAND=${1:-up}
 
 if [[ "$DC_COMMAND" == "down" ]]; then
   DC_OPTIONS="--volumes --remove-orphans"
+elif [[ "$DC_COMMAND" == "debug" ]]; then
+  DC_COMMAND=up
+  export DEBUG_ON=1
 else
   DC_OPTIONS=""
 fi
