@@ -126,7 +126,8 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
 	}
 
-	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "cron: ", log.LstdFlags))
+	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
+	// TODO(supicha): make the 30m configurable
 	if _, err = ridCron.AddJob("@every 30m", cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
 	}
