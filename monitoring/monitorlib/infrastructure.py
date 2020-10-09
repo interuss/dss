@@ -15,7 +15,7 @@ ALL_SCOPES = [
 ]
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
-TOKEN_REFRESH = datetime.timedelta(seconds=10)
+TOKEN_REFRESH_MARGIN = datetime.timedelta(seconds=15)
 
 
 class AuthAdapter(object):
@@ -42,7 +42,7 @@ class AuthAdapter(object):
       token = self._tokens[intended_audience][scope_string]
     payload = jwt.decode(token, verify=False)
     expires = EPOCH + datetime.timedelta(seconds=payload['exp'])
-    if expires < datetime.datetime.utcnow() - TOKEN_REFRESH:
+    if datetime.datetime.utcnow() > expires - TOKEN_REFRESH_MARGIN:
       token = self.issue_token(intended_audience, scopes)
     self._tokens[intended_audience][scope_string] = token
     return {'Authorization': 'Bearer ' + token}

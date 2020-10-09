@@ -171,12 +171,12 @@ func intAbs(x int) int {
 
 func createDatabaseIfNotExists(crdbURI string, database string) error {
 	crdb, err := cockroach.Dial(crdbURI)
-	defer func() {
-		crdb.Close()
-	}()
 	if err != nil {
 		return fmt.Errorf("Failed to dial CRDB to check DB exists: %v", err)
 	}
+	defer func() {
+		crdb.Close()
+	}()
 	const checkDbQuery = `
 		SELECT EXISTS (
 			SELECT *
@@ -204,12 +204,12 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 
 func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, error) {
 	crdb, err := cockroach.Dial(crdbURI)
-	defer func() {
-		crdb.Close()
-	}()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
 	}
+	defer func() {
+		crdb.Close()
+	}()
 
 	return crdb.GetVersion(context.Background(), database)
 }
