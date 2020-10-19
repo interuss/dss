@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"net/url"
 	"os"
@@ -107,18 +108,30 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
+	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
+	}
+
+	repo, err := ridStore.Interact(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to interact with store")
+	}
+	gc := ridc.NewGarbageCollector(repo, locality)
+
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
 	// schedule pinging every minute for the underlying storage for RID Server
 	if _, err := ridCron.AddFunc("@every 1m", func() { pingDB(ctx, ridCrdb, ridc.DatabaseName) }); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
 	}
-	ridCron.Start()
 
-	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
+	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
+	// TODO(supicha): make the 30m configurable
+	if _, err = ridCron.AddJob("@every 30m", cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
 	}
+	ridCron.Start()
 
 	return &rid.Server{
 		App:      application.NewFromTransactor(ridStore, logger),
@@ -271,6 +284,22 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 		}
 	}()
 	return s.Serve(l)
+}
+
+type RIDGarbageCollectorJob struct {
+	name string
+	gc   ridc.GarbageCollector
+	ctx  context.Context
+}
+
+func (gcj RIDGarbageCollectorJob) Run() {
+	logger := logging.WithValuesFromContext(gcj.ctx, logging.Logger)
+	err := gcj.gc.DeleteRIDExpiredRecords(gcj.ctx)
+	if err != nil {
+		logger.Warn("Fail to delete expired records", zap.Error(err))
+	} else {
+		logger.Info("Successful delete expired records")
+	}
 }
 
 func main() {

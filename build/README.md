@@ -521,4 +521,7 @@ existing clusters you will need to:
 
 1.  Run `tk apply workspace/$CLUSTER_CONTEXT_schema_manager`
 
+### Garbadge collector job ###
 Only since commit [c789b2b](https://github.com/interuss/dss/commit/c789b2b4a9fa5fb651d202da0a3abc02a03c15d2) on Aug 25, 2020 will the DSS enable automatic garbage collection of records by tracking which DSS instance is responsible for garbage collection of the record. Expired records added with a DSS deployment running code earlier than this must be manually removed.
+
+The Garbage collector job runs every 30 minute to delete records in RID tables that records' endtime is 30 minutes less than current time. If the event takes a long time and takes longer than 30 minutes (previous job is still running), the job will skip a run until the previous job completes.
