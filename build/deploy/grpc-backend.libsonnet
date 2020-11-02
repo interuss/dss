@@ -38,6 +38,7 @@ local volumes = import 'volumes.libsonnet';
                 cockroach_ssl_mode: 'verify-full',
                 cockroach_user: 'root',
                 cockroach_ssl_dir: '/cockroach/cockroach-certs',
+                garbage_collector_spec: '@every 30m',
                 public_key_files: std.join(",", metadata.backend.pubKeys),
                 jwks_endpoint: metadata.backend.jwksEndpoint,
                 jwks_key_ids: std.join(",", metadata.backend.jwksKeyIds),

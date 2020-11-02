@@ -53,7 +53,8 @@ var (
 	profServiceName   = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
 	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
 	locality          = flag.String("locality", "", "self-identification string used as CRDB table writer column")
-
+	garbageColletorSpec = flag.String("garbage_collector_spec", "@every 30m", "garbage collector schedule")
+	
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
@@ -102,7 +103,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid.Server, error) {
+func createRIDServer(ctx context.Context, locality string, logger *zap.Logger, garbageColletorSpec string) (*rid.Server, error) {
 	ridCrdb, err := connectTo(ridc.DatabaseName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
@@ -127,8 +128,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	}
 
 	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
-	// TODO(supicha): make the 30m configurable
-	if _, err = ridCron.AddJob("@every 30m", cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
+	if _, err = ridCron.AddJob(garbageColletorSpec, cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
 	}
 	ridCron.Start()
@@ -167,7 +167,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 
 // RunGRPCServer starts the example gRPC service.
 // "network" and "address" are passed to net.Listen.
-func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, locality string) error {
+func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, locality string, garbageColletorSpec string) error {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
 	if len(*jwtAudiences) == 0 {
@@ -190,7 +190,7 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	)
 
 	// Initialize remote ID
-	server, err := createRIDServer(ctx, locality, logger)
+	server, err := createRIDServer(ctx, locality, logger, garbageColletorSpec)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
@@ -323,7 +323,7 @@ func main() {
 		}
 	}
 
-	if err := RunGRPCServer(ctx, cancel, *address, *locality); err != nil {
+	if err := RunGRPCServer(ctx, cancel, *address, *locality, *garbageColletorSpec); err != nil {
 		logger.Panic("Failed to execute service", zap.Error(err))
 	}
 
