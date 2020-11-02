@@ -57,10 +57,11 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 				subs: make(map[dssmodels.ID]*ridmodels.Subscription),
 			},
 		}, func() {}
-	} else {
-		_, err := connectParams.BuildURI()
-		require.NoError(t, err)
 	}
+
+	_, err := connectParams.BuildURI()
+	require.NoError(t, err)
+
 	ridcrdb.DefaultClock = fakeClock
 	logger.Info("using cockroachDB.")
 
