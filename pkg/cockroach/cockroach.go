@@ -38,7 +38,7 @@ type (
 		SSL                SSL
 		MaxOpenConns       int
 		MaxIdleConns       int
-		MaxConnLifeMinutes int
+		MaxConnLifeSeconds int
 	}
 )
 
@@ -59,7 +59,7 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 		Port:               int(parsePortOrDefault(m["port"], 0)),
 		MaxOpenConns:       int(parsePortOrDefault(m["max_open_conns"], 0)),
 		MaxIdleConns:       int(parsePortOrDefault(m["max_idle_conns"], 2)),
-		MaxConnLifeMinutes: int(parsePortOrDefault(m["max_conn_life_minutes"], 15)),
+		MaxConnLifeSeconds: int(parsePortOrDefault(m["max_conn_life_secs"], 15)),
 		Credentials: Credentials{
 			Username: m["user"],
 		},
@@ -130,7 +130,7 @@ func Dial(connParams ConnectParameters) (*DB, error) {
 
 	db.SetMaxOpenConns(connParams.MaxOpenConns)
 	db.SetMaxIdleConns(connParams.MaxIdleConns)
-	db.SetConnMaxLifetime(time.Duration(connParams.MaxConnLifeMinutes) * time.Minute)
+	db.SetConnMaxLifetime(time.Duration(connParams.MaxConnLifeSeconds) * time.Second)
 
 	return &DB{
 		DB: db,

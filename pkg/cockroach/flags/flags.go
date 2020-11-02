@@ -24,6 +24,6 @@ func init() {
 	flag.StringVar(&connectParameters.SSL.Dir, "cockroach_ssl_dir", "", "directory to ssl certificates. Must contain files: ca.crt, client.<user>.crt, client.<user>.key")
 	flag.StringVar(&connectParameters.Credentials.Username, "cockroach_user", "root", "cockroach user to authenticate as")
 	flag.IntVar(&connectParameters.MaxOpenConns, "max_open_conns", 0, "maximum number of open connections to the database,  default is 0 (unlimited)")
-	flag.IntVar(&connectParameters.MaxIdleConns, "max_idle_conns", 2, "maximum number of connections in the idle connection pool")
-	flag.IntVar(&connectParameters.MaxConnLifeMinutes, "max_conn_life_minutes", 15, "maximum amount of time in minutes a connection may be reused, default is 15 minute")
+	flag.IntVar(&connectParameters.MaxIdleConns, "max_idle_conns", 1, "maximum number of connections in the idle connection pool")
+	flag.IntVar(&connectParameters.MaxConnLifeSeconds, "max_conn_life_secs", 15, "maximum amount of time in seconds a connection may be reused, default is 15 seconds")
 }
