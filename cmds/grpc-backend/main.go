@@ -53,7 +53,7 @@ var (
 	profServiceName     = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
 	enableSCD           = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
 	locality            = flag.String("locality", "", "self-identification string used as CRDB table writer column")
-	garbageColletorSpec = flag.String("garbage_collector_spec", "@every 30m", "garbage collector schedule")
+	garbageColletorSpec = flag.String("garbage_collector_spec", "@every 30m", "Garbage collector schedule")
 
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
