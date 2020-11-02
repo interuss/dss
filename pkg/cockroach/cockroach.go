@@ -58,7 +58,7 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 		Host:               m["host"],
 		Port:               int(parsePortOrDefault(m["port"], 0)),
 		MaxOpenConns:       int(parsePortOrDefault(m["max_open_conns"], 0)),
-		MaxIdleConns:       int(parsePortOrDefault(m["max_idle_conns"], 2)),
+		MaxIdleConns:       int(parsePortOrDefault(m["max_idle_conns"], -1)),
 		MaxConnLifeSeconds: int(parsePortOrDefault(m["max_conn_life_secs"], 15)),
 		Credentials: Credentials{
 			Username: m["user"],
