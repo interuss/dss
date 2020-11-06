@@ -136,7 +136,8 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 
 // Close closes the underlying DB connection.
 func (s *Store) Close() error {
-	return s.db.Close(context.Background())
+	s.db.Close()
+	return nil
 }
 
 func recoverRollbackRepanic(ctx context.Context, tx pgx.Tx) {

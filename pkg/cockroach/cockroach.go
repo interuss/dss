@@ -8,7 +8,7 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 var (
@@ -106,8 +106,7 @@ func (p ConnectParameters) BuildURI() (string, error) {
 
 // DB models a connection to a CRDB instance.
 type DB struct {
-	// *pgxpool.Pool
-	*pgx.Conn
+	*pgxpool.Pool
 }
 
 // Dial returns a DB instance connected to a cockroach instance available at
@@ -118,28 +117,20 @@ func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building URI")
 	}
-	// config, err := pgxpool.ParseConfig(uri)
-	// if err != nil {
-	// 	log.Fatal("error configuring the database: ", err)
-	// }
-	// log.Info(config)
 
-	// if connParams.SSL.Mode == "enable" {
-	// 	config.ConnConfig.TLSConfig.ServerName = connParams.Host
-	// }
-	// db, err := pgxpool.ConnectConfig(ctx, config)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	config, err := pgx.ParseConfig(uri)
+	config, err := pgxpool.ParseConfig(uri)
 	if err != nil {
 		log.Fatal("error configuring the database: ", err)
 	}
 
-	// config.TLSConfig.ServerName = "localhost"
+	if connParams.SSL.Mode == "enable" {
+		config.ConnConfig.TLSConfig.ServerName = connParams.Host
+	}
 
-	// Connect to the "bank" database.
-	db, err := pgx.ConnectConfig(ctx, config)
+	db, err := pgxpool.ConnectConfig(ctx, config)
+	if err != nil {
+		return nil, err
+	}
 
 	return &DB{
 		db,

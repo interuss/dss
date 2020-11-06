@@ -97,7 +97,8 @@ func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repo
 
 // Close closes the underlying DB connection.
 func (s *Store) Close() error {
-	return s.db.Close(context.Background())
+	s.db.Close()
+	return nil
 }
 
 // GetVersion returns the Version string for the Database.
