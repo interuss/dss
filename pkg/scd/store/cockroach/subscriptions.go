@@ -9,10 +9,10 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
+	"github.com/jackc/pgtype"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/stacktrace"
-	"github.com/lib/pq"
 )
 
 var (
@@ -60,7 +60,7 @@ func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable
 		`
 	)
 
-	rows, err := q.QueryContext(ctx, cellsQuery, id)
+	rows, err := q.Query(ctx, cellsQuery, id.PgUUID())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", cellsQuery)
 	}
@@ -84,7 +84,7 @@ func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable
 }
 
 func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
-	rows, err := q.QueryContext(ctx, query, args...)
+	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
@@ -145,7 +145,7 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 			WHERE
 				id = $1`, subscriptionFieldsWithPrefix)
 	)
-	result, err := c.fetchSubscription(ctx, q, query, id)
+	result, err := c.fetchSubscription(ctx, q, query, id.PgUUID())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Subscription")
 	}
@@ -203,7 +203,7 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 
 	cells := s.Cells
 	s, err := c.fetchSubscription(ctx, q, upsertQuery,
-		s.ID,
+		s.ID.PgUUID(),
 		s.Owner,
 		s.BaseURL,
 		s.NotificationIndex,
@@ -221,12 +221,18 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 	s.Cells = cells
 
 	for i := range cids {
-		if _, err := q.ExecContext(ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID); err != nil {
+		if _, err := q.Exec(ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID.PgUUID()); err != nil {
 			return nil, stacktrace.Propagate(err, "Error in query: %s", subscriptionCellQuery)
 		}
 	}
 
-	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
+	var pgCids pgtype.Int8Array
+
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	if _, err := q.Exec(ctx, deleteLeftOverCellsForSubscriptionQuery, pgCids, s.ID.PgUUID()); err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForSubscriptionQuery)
 	}
 
@@ -266,15 +272,11 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 			id = $1`
 	)
 
-	res, err := c.q.ExecContext(ctx, query, id)
+	res, err := c.q.Exec(ctx, query, id.PgUUID())
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not get RowsAffected")
-	}
-	if rows == 0 {
+	if res.RowsAffected() == 0 {
 		return stacktrace.NewError("Attempted to delete non-existent Subscription")
 	}
 
@@ -323,8 +325,14 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 		cids[i] = int64(cell)
 	}
 
+	var pgCids pgtype.Int8Array
+
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
 	subscriptions, err := c.fetchSubscriptions(
-		ctx, c.q, query, pq.Array(cids), v4d.StartTime, v4d.EndTime)
+		ctx, c.q, query, pgCids, v4d.StartTime, v4d.EndTime)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to fetch Subscriptions")
 	}
@@ -345,7 +353,13 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 		ids[i] = id.String()
 	}
 
-	rows, err := c.q.QueryContext(ctx, updateQuery, pq.StringArray(ids))
+	var pgIds pgtype.UUIDArray
+	err := pgIds.Set(ids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	rows, err := c.q.Query(ctx, updateQuery, pgIds)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", updateQuery)
 	}

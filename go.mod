@@ -18,10 +18,10 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.14.3
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/interuss/stacktrace v0.0.0-20200827180054-b2e58cf48818
-	github.com/lib/pq v1.5.2
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/zap v1.15.0
+	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
+	golang.org/x/text v0.3.4 // indirect
 	google.golang.org/genproto v0.0.0-20200519141106-08726f379972
 	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.23.0

@@ -57,7 +57,7 @@ var (
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
-func connectTo(dbName string) (*cockroach.DB, error) {
+func connectTo(ctx context.Context, dbName string) (*cockroach.DB, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = dbName
 
@@ -65,21 +65,22 @@ func connectTo(dbName string) (*cockroach.DB, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building URI")
 	}
-	db, err := cockroach.Dial(uri)
+
+	db, err := cockroach.Dial(ctx, connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error dialing CockroachDB database at %s", uri)
 	}
 	return db, nil
 }
 
-func pingDB(ctx context.Context, db *cockroach.DB, databaseName string) {
-	logger := logging.WithValuesFromContext(ctx, logging.Logger)
-	if err := db.PingContext(ctx); err != nil {
-		logger.Panic("Failed periodic DB Ping, panic to force restart", zap.String("Database", databaseName))
-	} else {
-		logger.Info("Successful periodic DB Ping ", zap.String("Database", databaseName))
-	}
-}
+// func pingDB(ctx context.Context, db *cockroach.DB, databaseName string) {
+// 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+// 	if err := db.PingContext(ctx); err != nil {
+// 		logger.Panic("Failed periodic DB Ping, panic to force restart", zap.String("Database", databaseName))
+// 	} else {
+// 		logger.Info("Successful periodic DB Ping ", zap.String("Database", databaseName))
+// 	}
+// }
 
 func createKeyResolver() (auth.KeyResolver, error) {
 	switch {
@@ -103,7 +104,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 }
 
 func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid.Server, error) {
-	ridCrdb, err := connectTo(ridc.DatabaseName)
+	ridCrdb, err := connectTo(ctx, ridc.DatabaseName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
@@ -122,9 +123,9 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
 	// schedule pinging every minute for the underlying storage for RID Server
-	if _, err := ridCron.AddFunc("@every 1m", func() { pingDB(ctx, ridCrdb, ridc.DatabaseName) }); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
-	}
+	// if _, err := ridCron.AddFunc("@every 1m", func() { pingDB(ctx, ridCrdb, ridc.DatabaseName) }); err != nil {
+	// 	return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
+	// }
 
 	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
 	// TODO(supicha): make the 30m configurable
@@ -141,16 +142,16 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 }
 
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
-	scdCrdb, err := connectTo(scdc.DatabaseName)
+	scdCrdb, err := connectTo(ctx, scdc.DatabaseName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 	// schedule period tasks for SCD Server
 	scdCron := cron.New()
 	// schedule pinging every minute for the underlying storage for SCD Server
-	if _, err := scdCron.AddFunc("@every 1m", func() { pingDB(ctx, scdCrdb, scdc.DatabaseName) }); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", scdc.DatabaseName)
-	}
+	// if _, err := scdCron.AddFunc("@every 1m", func() { pingDB(ctx, scdCrdb, scdc.DatabaseName) }); err != nil {
+	// 	return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", scdc.DatabaseName)
+	// }
 
 	scdCron.Start()
 

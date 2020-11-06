@@ -2,12 +2,13 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v4"
 )
 
 var (
@@ -105,20 +106,43 @@ func (p ConnectParameters) BuildURI() (string, error) {
 
 // DB models a connection to a CRDB instance.
 type DB struct {
-	*sql.DB
+	// *pgxpool.Pool
+	*pgx.Conn
 }
 
 // Dial returns a DB instance connected to a cockroach instance available at
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html
-func Dial(uri string) (*DB, error) {
-	db, err := sql.Open("postgres", uri)
+func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
+	uri, err := connParams.BuildURI()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Error building URI")
+	}
+	// config, err := pgxpool.ParseConfig(uri)
+	// if err != nil {
+	// 	log.Fatal("error configuring the database: ", err)
+	// }
+	// log.Info(config)
+
+	// if connParams.SSL.Mode == "enable" {
+	// 	config.ConnConfig.TLSConfig.ServerName = connParams.Host
+	// }
+	// db, err := pgxpool.ConnectConfig(ctx, config)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	config, err := pgx.ParseConfig(uri)
+	if err != nil {
+		log.Fatal("error configuring the database: ", err)
 	}
 
+	// config.TLSConfig.ServerName = "localhost"
+
+	// Connect to the "bank" database.
+	db, err := pgx.ConnectConfig(ctx, config)
+
 	return &DB{
-		DB: db,
+		db,
 	}, nil
 }
 
@@ -148,7 +172,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 			onerow_enforcer = TRUE`, dbName)
 	)
 
-	if err := db.QueryRowContext(ctx, query, dbName).Scan(&exists); err != nil {
+	if err := db.QueryRow(ctx, query, dbName).Scan(&exists); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
 
@@ -158,7 +182,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 	}
 
 	var dbVersion string
-	if err := db.QueryRowContext(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
+	if err := db.QueryRow(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning version row")
 	}
 	if len(dbVersion) > 0 && dbVersion[0] == 'v' {

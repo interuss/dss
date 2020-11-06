@@ -14,7 +14,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
 	"github.com/stretchr/testify/require"
 )
 
@@ -63,7 +63,7 @@ func CleanUp(ctx context.Context, s *Store) error {
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.db.ExecContext(ctx, query)
+	_, err := s.db.Exec(ctx, query)
 	return err
 }
 
@@ -126,7 +126,7 @@ func TestTxnRetrier(t *testing.T) {
 		// can query within this
 		count++
 		// Postgre retryable error
-		return &pq.Error{Code: "40001"}
+		return &pgtype.Error{Code: "40001"}
 	})
 	require.Error(t, err)
 	// Ensure it was retried.

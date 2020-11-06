@@ -12,7 +12,7 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
 )
 
 var (
@@ -48,7 +48,7 @@ func init() {
 }
 
 func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Operation, error) {
-	rows, err := q.QueryContext(ctx, query, args...)
+	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
@@ -111,7 +111,7 @@ func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id ds
 			scd_operations
 		WHERE
 			id = $1`, operationFieldsWithoutPrefix)
-	return s.fetchOperation(ctx, q, query, id)
+	return s.fetchOperation(ctx, q, query, id.PgUUID())
 }
 
 func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.Operation) error {
@@ -122,7 +122,7 @@ func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o
 		scd_cells_operations
 	WHERE operation_id = $1`
 
-	rows, err := q.QueryContext(ctx, query, o.ID)
+	rows, err := q.Query(ctx, query, o.ID.PgUUID())
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
@@ -160,15 +160,11 @@ func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID) error {
 		`
 	)
 
-	res, err := s.q.ExecContext(ctx, deleteOperationQuery, id)
+	res, err := s.q.Exec(ctx, deleteOperationQuery, id.PgUUID())
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", deleteOperationQuery)
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not get RowsAffected")
-	}
-	if rows == 0 {
+	if res.RowsAffected() == 0 {
 		return stacktrace.NewError("Could not delete Operation that does not exist")
 	}
 
@@ -211,7 +207,7 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 
 	cells := operation.Cells
 	operation, err := s.fetchOperation(ctx, s.q, upsertOperationsQuery,
-		operation.ID,
+		operation.ID.PgUUID(),
 		operation.Owner,
 		operation.Version,
 		operation.USSBaseURL,
@@ -227,12 +223,16 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 	operation.Cells = cells
 
 	for i := range cids {
-		if _, err := s.q.ExecContext(ctx, upsertCellsForOperationQuery, cids[i], clevels[i], operation.ID); err != nil {
+		if _, err := s.q.Exec(ctx, upsertCellsForOperationQuery, cids[i], clevels[i], operation.ID.PgUUID()); err != nil {
 			return nil, stacktrace.Propagate(err, "Error in query: %s", upsertCellsForOperationQuery)
 		}
 	}
 
-	if _, err := s.q.ExecContext(ctx, deleteLeftOverCellsForOperationQuery, pq.Array(cids), operation.ID); err != nil {
+	var pgCids pgtype.Int8Array
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+	if _, err := s.q.Exec(ctx, deleteLeftOverCellsForOperationQuery, pgCids, operation.ID.PgUUID()); err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForOperationQuery)
 	}
 
@@ -284,9 +284,14 @@ func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *ds
 		cids[i] = int64(cid)
 	}
 
+	var pgCids pgtype.Int8Array
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
 	result, err := s.fetchOperations(
 		ctx, q, operationsIntersectingVolumeQuery,
-		pq.Array(cids),
+		pgCids,
 		v4d.SpatialVolume.AltitudeLo,
 		v4d.SpatialVolume.AltitudeHi,
 		v4d.StartTime,
@@ -314,7 +319,7 @@ func (s *repo) GetDependentOperations(ctx context.Context, subscriptionID dssmod
       WHERE
         subscription_id = $1`
 
-	rows, err := s.q.QueryContext(ctx, dependentOperationsQuery, subscriptionID)
+	rows, err := s.q.Query(ctx, dependentOperationsQuery, subscriptionID.PgUUID())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", dependentOperationsQuery)
 	}

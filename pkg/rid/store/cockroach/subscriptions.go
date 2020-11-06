@@ -2,8 +2,8 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/dpjacques/clockwork"
@@ -16,7 +16,7 @@ import (
 	repos "github.com/interuss/dss/pkg/rid/repos"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
 	"go.uber.org/zap"
 )
 
@@ -50,35 +50,44 @@ type subscriptionRepo struct {
 
 // process a query that should return one or many subscriptions.
 func (c *subscriptionRepo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
-	rows, err := c.QueryContext(ctx, query, args...)
+	rows, err := c.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
 	defer rows.Close()
 
 	var payload []*ridmodels.Subscription
-	cids := pq.Int64Array{}
+	pgCids := pgtype.Int8Array{}
 
-	var writer sql.NullString
+	var writer pgtype.Varchar
 	for rows.Next() {
 		s := new(ridmodels.Subscription)
+
+		var updateTime time.Time
 
 		err := rows.Scan(
 			&s.ID,
 			&s.Owner,
 			&s.URL,
 			&s.NotificationIndex,
-			&cids,
+			&pgCids,
 			&s.StartTime,
 			&s.EndTime,
 			&writer,
-			&s.Version,
+			&updateTime,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
 		s.Writer = writer.String
+		var cids []int64
+		if err := pgCids.AssignTo(&cids); err != nil {
+			return nil, stacktrace.Propagate(err, "Error Converting jackc/pgtype to array")
+		}
 		s.SetCells(cids)
+
+		s.Version = dssmodels.VersionFromTime(updateTime)
+
 		payload = append(payload, s)
 	}
 	if err := rows.Err(); err != nil {
@@ -131,7 +140,13 @@ func (c *subscriptionRepo) MaxSubscriptionCountInCellsByOwner(ctx context.Contex
 		cids[i] = int64(cell)
 	}
 
-	row := c.QueryRowContext(ctx, query, owner, c.clock.Now(), pq.Int64Array(cids))
+	var pgCids pgtype.Int8Array
+
+	if err := pgCids.Set(cids); err != nil {
+		return 0, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	row := c.QueryRow(ctx, query, owner, c.clock.Now(), pgCids)
 	var ret int
 	err := row.Scan(&ret)
 	return ret, stacktrace.Propagate(err, "Error scanning subscription count row")
@@ -144,7 +159,8 @@ func (c *subscriptionRepo) GetSubscription(ctx context.Context, id dssmodels.ID)
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
 		WHERE id = $1`, subscriptionFields)
-	return c.processOne(ctx, query, id)
+
+	return c.processOne(ctx, query, id.PgUUID())
 }
 
 // UpdateSubscription updates the Subscription.. not yet implemented.
@@ -168,12 +184,17 @@ func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.
 		}
 		cids[i] = int64(cell)
 	}
+	var pgCids pgtype.Int8Array
+
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
 
 	return c.processOne(ctx, updateQuery,
-		s.ID,
+		s.ID.PgUUID(),
 		s.URL,
 		s.NotificationIndex,
-		pq.Int64Array(cids),
+		pgCids,
 		s.StartTime,
 		s.EndTime,
 		s.Writer,
@@ -203,12 +224,18 @@ func (c *subscriptionRepo) InsertSubscription(ctx context.Context, s *ridmodels.
 		cids[i] = int64(cell)
 	}
 
+	var pgCids pgtype.Int8Array
+
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
 	return c.processOne(ctx, insertQuery,
-		s.ID,
+		s.ID.PgUUID(),
 		s.Owner,
 		s.URL,
 		s.NotificationIndex,
-		pq.Int64Array(cids),
+		pgCids,
 		s.StartTime,
 		s.EndTime,
 		s.Writer)
@@ -227,7 +254,7 @@ func (c *subscriptionRepo) DeleteSubscription(ctx context.Context, s *ridmodels.
 			AND updated_at = $2
 		RETURNING %s`, subscriptionFields)
 	)
-	return c.processOne(ctx, query, s.ID, s.Version.ToTimestamp())
+	return c.processOne(ctx, query, s.ID.PgUUID(), s.Version.ToTimestamp())
 }
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.
@@ -244,8 +271,15 @@ func (c *subscriptionRepo) UpdateNotificationIdxsInCells(ctx context.Context, ce
 	for i, cell := range cells {
 		cids[i] = int64(cell)
 	}
+
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
 	return c.process(
-		ctx, updateQuery, pq.Int64Array(cids), c.clock.Now())
+		ctx, updateQuery, pgCids, c.clock.Now())
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
@@ -271,7 +305,13 @@ func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.Cel
 		cids[i] = int64(cell)
 	}
 
-	return c.process(ctx, query, pq.Int64Array(cids), c.clock.Now())
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	return c.process(ctx, query, pgCids, c.clock.Now())
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
@@ -299,7 +339,13 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 		cids[i] = int64(cell)
 	}
 
-	return c.process(ctx, query, pq.Int64Array(cids), owner, c.clock.Now())
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	return c.process(ctx, query, pgCids, owner, c.clock.Now())
 }
 
 // ListExpiredSubscriptions lists all expired Subscriptions based on writer.
