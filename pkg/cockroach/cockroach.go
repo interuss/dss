@@ -3,8 +3,8 @@ package cockroach
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
+	"time"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/stacktrace"
@@ -30,12 +30,14 @@ type (
 
 	// ConnectParameters bundles up parameters used for connecting to a CRDB instance.
 	ConnectParameters struct {
-		ApplicationName string
-		Host            string
-		Port            int
-		DBName          string
-		Credentials     Credentials
-		SSL             SSL
+		ApplicationName    string
+		Host               string
+		Port               int
+		DBName             string
+		Credentials        Credentials
+		SSL                SSL
+		MaxOpenConns       int
+		MaxConnIdleSeconds int
 	}
 )
 
@@ -61,6 +63,8 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 			Mode: m["ssl_mode"],
 			Dir:  m["ssl_dir"],
 		},
+		MaxOpenConns:       int(parsePortOrDefault(m["max_open_conns"], 4)),
+		MaxConnIdleSeconds: int(parsePortOrDefault(m["max_conn_idle_secs"], 40)),
 	}
 }
 
@@ -120,12 +124,16 @@ func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
 
 	config, err := pgxpool.ParseConfig(uri)
 	if err != nil {
-		log.Fatal("error configuring the database: ", err)
+		return nil, stacktrace.Propagate(err, "Failed to parse connection config for pgx")
 	}
 
 	if connParams.SSL.Mode == "enable" {
 		config.ConnConfig.TLSConfig.ServerName = connParams.Host
 	}
+	config.MaxConns = int32(connParams.MaxOpenConns)
+	config.MaxConnIdleTime = (time.Duration(connParams.MaxConnIdleSeconds) * time.Second)
+	config.HealthCheckPeriod = (1 * time.Second)
+	config.MinConns = 1
 
 	db, err := pgxpool.ConnectConfig(ctx, config)
 	if err != nil {
