@@ -5,7 +5,12 @@
 
 /startup/wait_for_bootstrapping.sh
 
-/usr/bin/grpc-backend \
+DEBUG_ON=${1:-0}
+
+if [[ $DEBUG_ON == 1 ]]; then
+  echo "Debug Mode: on"
+
+  dlv --headless --listen=:4000 --api-version=2 --accept-multiclient exec --continue /usr/bin/grpc-backend -- \
   -cockroach_host local-dss-crdb \
   -public_key_files /var/test-certs/auth2.pem \
   -reflect_api \
@@ -13,3 +18,15 @@
   -dump_requests \
   -accepted_jwt_audiences localhost \
   -enable_scd
+else
+  echo "Debug Mode: off"
+
+  /usr/bin/grpc-backend \
+  -cockroach_host local-dss-crdb \
+  -public_key_files /var/test-certs/auth2.pem \
+  -reflect_api \
+  -log_format console \
+  -dump_requests \
+  -accepted_jwt_audiences localhost \
+  -enable_scd
+fi
