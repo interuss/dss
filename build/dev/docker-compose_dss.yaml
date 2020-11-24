@@ -51,9 +51,11 @@ services:
       - $PWD/../test-certs:/var/test-certs:ro
       - local-dss-data:/var/local-dss-data
       - $PWD/startup:/startup:ro
-    command: /startup/grpc_backend.sh
+    command: /startup/grpc_backend.sh ${DEBUG_ON:-0}
     expose:
       - 8081
+    ports:
+      - "4000:4000"
     depends_on:
       - local-dss-rid-bootstrapper
       - local-dss-scd-bootstrapper

@@ -51,6 +51,48 @@ To perform more complicated actions manually, see
 
 To stop the system, just press ctrl-c or cmd-c.
 
+## Debugging Mode
+
+[`run_locally.sh`](run_locally.sh) can also run in debugging mode, which enables
+debugging the gRPC backend code line by line with your favorite IDE. It is a very
+straightforward process with just 2 steps:
+
+**Step 1**
+
+Run `run_locally.sh debug`, we will see the local-dss-grpc-backend starts with the
+DEBUG MODE: **on**, and the API server is listening at port : **4000**.
+
+-  `local-dss-grpc-backend_1      | Debug Mode: on`
+-  `local-dss-scd-bootstrapper_1  | Allowing time for CRDB node to come up...`
+-  `local-dss-grpc-backend_1      | API server listening at: [::]:4000`
+
+**Step 2 (One Time Effort)**
+
+Add a remote debug configuration with your favorite IDE. Here we use IntelliJ / GoLand
+as an example:
+
+- Click `Edit Configuration` in the dropdown list right next to the 'bug' icon.
+
+    ![Add_remote_configuration_1](../../assets/debug/debug_add_remote_1.png)
+- Add a new `Go Remote` configuration.
+
+    ![Add_remote_configuration_2](../../assets/debug/debug_add_remote_2.png)
+- Set the Host as `localhost` and Port as `4000`, click `OK`.
+
+    ![Add_remote_configuration_3](../../assets/debug/debug_add_remote_3.png)
+
+**Enjoy!**
+
+All Set, let's start the debug configuration created in the step 1 and we are able
+to debug any request sent to the local DSS endpoints hosted at `localhost:8082`.
+ 
+- Drop breakpoints and diagnose in real time
+
+    ![Debug_result_1](../../assets/debug/debug_result_1.png)
+
+- Access variables
+
+    ![Debug_result_2](../../assets/debug/debug_result_2.png)
 ## Advanced
 
 [`run_locally.sh`](run_locally.sh) is a thin wrapper around a `docker-compose`
