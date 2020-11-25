@@ -333,6 +333,13 @@
           action: 'replace',
           target_label: 'kubernetes_name',
         },
+        {
+          source_labels: [
+            '__meta_kubernetes_service_name',
+          ],
+          action: 'drop',
+          regex: 'cockroachdb',
+        },
       ],
     },
     {
