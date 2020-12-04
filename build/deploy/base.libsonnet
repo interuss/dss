@@ -80,10 +80,15 @@ local util = import 'util.libsonnet';
 
   },
 
-  Deployment(metadata, name): $._Object('apps/v1beta1', 'Deployment', metadata, name) {
+  Deployment(metadata, name): $._Object('apps/v1', 'Deployment', metadata, name) {
     local deployment = self,
 
     spec: {
+      selector: {
+        matchLabels: {
+          app: name,
+        },
+      },
       template: {
         metadata+: {
           labels+: {
