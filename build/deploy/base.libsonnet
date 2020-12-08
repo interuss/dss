@@ -76,7 +76,7 @@ local util = import 'util.libsonnet';
 
   },
 
-  Ingress(metadata, name): $._Object('extensions/v1beta1', 'Ingress', metadata, name) {
+  Ingress(metadata, name): $._Object('networking.k8s.io/v1beta1', 'Ingress', metadata, name) {
 
   },
 
