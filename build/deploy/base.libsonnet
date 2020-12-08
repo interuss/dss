@@ -76,14 +76,19 @@ local util = import 'util.libsonnet';
 
   },
 
-  Ingress(metadata, name): $._Object('extensions/v1beta1', 'Ingress', metadata, name) {
+  Ingress(metadata, name): $._Object('networking.k8s.io/v1beta1', 'Ingress', metadata, name) {
 
   },
 
-  Deployment(metadata, name): $._Object('apps/v1beta1', 'Deployment', metadata, name) {
+  Deployment(metadata, name): $._Object('apps/v1', 'Deployment', metadata, name) {
     local deployment = self,
 
     spec: {
+      selector: {
+        matchLabels: {
+          app: name,
+        },
+      },
       template: {
         metadata+: {
           labels+: {
