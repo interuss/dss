@@ -140,8 +140,8 @@ a PR to that effect would be greatly appreciated.
     variable for convenience: `export NAMESPACE=<your namespace>`.
     
 1.  Create static IP addresses: one for the HTTPS Gateway's ingress, and one
-    for each CockroachDB node (minimum of 3) if you want to be able to join
-    other clusters.
+    for each CockroachDB node if you want to be able to interact with other
+    DSS instances.
 
     -  If using Google Cloud, the HTTPS Gateway ingress needs to be created as
        a "Global" IP address, but the CRDB ingresses as "Regional" IP addresses.
@@ -367,69 +367,9 @@ a PR to that effect would be greatly appreciated.
     
     `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
 
-## CockroachDB requirements
-These requirements must be met by every DSS instance joining a DSS Region.  The
-Kubernetes deployment instructions above produce a system that complies with all
-these requirements, so this section may be ignored if following those
-instructions.
+## Pooling
 
-- Every CockroachDB node must advertise a unique and routable address.
-  - The use of domain names with unique prefixes and homogenous suffixes, e.g.:
-    0.c.dss.interussplatform.com, is preferred as this allows wildcard usage in
-    the CRDB certificates.
-- Every DSS instance should run a minimum of 3 CockroachDB nodes, which
-  ensures enough nodes are always available to support failovers and gradual
-  rollouts.
-- At least 3 CockroacbDB addresses must be shared with all participants.
-  - If not using the recommended hostname prefix above, every CockroachDB
-    hostname must be shared with every participant.
-- Every DSS instance must supply and share their CockroachDB public
-  certificate.
-- All CockroachDB nodes must be run in secure mode, by supplying the
-  `--certs-dir` and `--ca-key` flags.
-  - Do not specify `--insecure`
-- The ordering of the `--locality` flag keys must be the same across all
-  CockroachDB nodes in the cluster.
-- All sharing must currently happen out of band.
-- All DSS instances in the same cluster must point their ntpd at the same NTP
-  Servers.
-  [CockroachDB recommends](https://www.cockroachlabs.com/docs/stable/recommended-production-settings.html#considerations)
-  using
-  [Google's Public NTP](https://developers.google.com/time/) when running in a
-  multi-cloud environment.
-
-Note: we are investigating the use of service mesh frameworks to alleviate some
-of this operational overhead.
-
-### De-pooling/Leaving Pool
-
-In the event that requires removing Cockroach DB nodes we need to properly and safely decommission to reduce risks of outages.
-It is never a good idea to take down more than half the number of nodes availiable in your cluster as it would break quorum. If you need to take down that many nodes please do it in smaller steps.
-
-Note: If you are removing a specific node in a statefulset, please know that kubernetes does not support removal of specific node it automatically re-creates the node if you delete it with `kubectl delete pod`, you will have to scale down the Statefulset and that removes the last node first (ex: `cockroachdb-n` where `n` is the `size of statefulset - 1`, `n` starts at 0)
-
-1. Check if all nodes are healthy and does not have any under-replicated/unavailable ranges
-`kubectl exec -it cockroachdb-0 -- cockroach node status --ranges --certs-dir=cockroach-certs/`
-    
-    a. If there are under-replicated ranges changes are it is because of a node failure. If all nodes are healthy then it should auto recover.
-
-    b. If there are unhealthy nodes please investigate and fix them so that the ranges can return to a healthy state
-
-1. Identify the node id we intend to decommission from the previous commands then decommission them. The following command assumes that `cockroachdb-0` is not targetted for decommission other wise select a different instance to connect to
-`kubectl exec -it cockroachdb-0 -- cockroach node decommission <node id 1> [<node id 2> ...] --certs-dir=cockroach-certs/`
-
-1. If the command executes successfully all targetted nodes should not host any ranges. Repeat step one to verify
-
-    a. In the event of a hung decommission please recommission the nodes and repleat the above step with smaller number of nodes to decommission
-    `kubectl exec -it cockroachdb-0 -- cockroach node recommission <node id 1> [<node id 2> ...] --certs-dir=cockroach-certs/`
-
-1. Power down the pods or delete the statefulset which ever is applicable
-
-    a. Again Statefulsets does not support deleting specific pods, as it will restart it immediately you will need to scale down understanding that it will remove node `cockroachdb-n` first; where `n` is the `size of statefulset - 1`.
-    To proceed `kubectl scale statefulset cockroachdb --replicas=<X>`
-
-    b. To remove the entire Statefulset
-    `kubectl delete statefulset cockroachdb`
+See [the pooling documentation](pooling.md).
 
 ## Tools
 
@@ -491,6 +431,10 @@ communicates on port 26257.  To check whether this port is open from Mac or
 Linux, e.g.: `nc -zvw3 0.db.dss.your-region.your-domain.com 26257`.  Or, search
 for a "port checker" web page/app.  Port 26257 will be open on a working
 CockroachDB node.
+
+A standard TLS diagnostic may also be run on this hostname:port combination and
+all results should be valid except Trust.  Certificates are signed by
+"Cockroach CA" which is not a generally-trusted CA, but this is ok.
 
 ### Accessing a CockroachDB SQL terminal
 
