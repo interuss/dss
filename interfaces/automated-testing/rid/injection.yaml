@@ -1,0 +1,159 @@
+openapi: 3.0.2
+info:
+  title: Remote ID Test Data Injection
+  version: 0.0.1
+  description: >-
+    This interface is implemented by every Service Provider wishing to be tested by the automated testing framework.
+    The automated testing suite calls this interface to inject flight-related test data into the Service Provider system under test.
+paths:
+  /tests/{test_id}:
+    parameters:
+      -
+        examples:
+          default:
+            value: '2979bd18-7f06-441c-bda6-e82c841c35d6'
+        name: test_id
+        description: >-
+          The ID of the test.
+        schema:
+          type: string
+        in: query
+        required: true
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTestParameters'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeTestResponse'
+          description: Requested test was created successfully.
+        '409':
+          description: Test already exists.
+      operationId: createTest
+      summary: Create test
+      description: >-
+        Request the creation of one or more logical flights based on injection of the provided test data.
+        The host Service Provider's test data injector may modify fields, such as `details.id`, as necessary to work with their system.
+        The host Service Provider's test data injector should modify as few fields as practical, and change modified fields as little as practical.
+        The `injection_id` fields may not be modified.
+  /tests/{test_id}/{version}:
+    parameters:
+      -
+        examples:
+          default:
+            value: '2979bd18-7f06-441c-bda6-e82c841c35d6'
+        name: test_id
+        description: >-
+          The ID of the test.
+        schema:
+          type: string
+        in: query
+        required: true
+      -
+        name: version
+        description: >-
+          Current version of the test.
+        schema:
+          type: string
+        in: query
+        required: true
+    delete:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteTestResponse'
+          description: Requested test was deleted successfully.
+      operationId: deleteTest
+      summary: Delete test
+      description: Remove all injected test data associated with this test from the host Service Provider's system under test.
+components:
+  schemas:
+    CreateTestParameters:
+      description: 'A complete set of data to be injected into a Service Provider system under test.'
+      required:
+        - requested_flights
+      type: object
+      properties:
+        requested_flights:
+          description: >-
+            One or more logical flights, each containing test data to inject into the system.
+            Elements should be sorted in ascending order of `timestamp`.
+          type: array
+          items:
+            $ref: '#/components/schemas/TestFlight'
+    ChangeTestResponse:
+      description: ''
+      required:
+        - injected_flights
+        - version
+      type: object
+      properties:
+        injected_flights:
+          description: 'The complete set of test data actually injected into the Service Provider system under test.'
+          type: array
+          items:
+            $ref: '#/components/schemas/TestFlight'
+        version:
+          description: Version of test.  Used to delete test.
+          type: string
+          example: 1
+    DeleteTestResponse:
+      description: ''
+      required:
+        - injected_flights
+      type: object
+      properties:
+        injected_flights:
+          description: 'The complete set of test data deleted.'
+          type: array
+          items:
+            $ref: '#/components/schemas/TestFlight'
+    TestFlight:
+      description: 'The set of data to be injected into a Service Provider system under test for a single flight.'
+      required:
+        - injection_id
+        - telemetry
+        - details_responses
+      type: object
+      properties:
+        injection_id:
+          description: 'ID of the injected test flight.  Remains the same regardless of the flight ID/UTM ID reported in the system.'
+          type: string
+          example: 'edb7695f-8737-4b9f-91f8-e2afbb333f41'
+        telemetry:
+          description: >-
+            The set of telemetry data that should be injected into the system for this flight.
+            Each element follows the RIDAircraftState schema from the ASTM remote ID standard.
+          type: array
+          items:
+            $ref: 'https://raw.githubusercontent.com/uastech/standards/astm_rid_1.0/remoteid/canonical.yaml#/components/schemas/RIDAircraftState'
+        details_responses:
+          description: The details of the flight as a function of time.
+          type: array
+          items:
+            $ref: '#/components/schemas/TestFlightDetails'
+    TestFlightDetails:
+      description: The set of data with which the Service Provider system under test should respond when queried for the details of a test flight.
+      required:
+        - effective_after
+        - details
+      type: object
+      properties:
+        effective_after:
+          description: >-
+            The time after which the Service Provider system under test should respond with `details`, unless other `details` with a more recent `effective_after` time (before the current time) are available.
+          type: string
+          format: datetime
+        details:
+          description: >-
+            The details of the flight.
+            Follows the RIDFlightDetails schema from the ASTM remote ID standard.
+          $ref: 'https://raw.githubusercontent.com/uastech/standards/astm_rid_1.0/remoteid/canonical.yaml#/components/schemas/RIDFlightDetails'
