@@ -123,6 +123,7 @@ def main():
 
     node_addresses = ['localhost']
     node_addresses.extend(args.node_address)
+    # Hard coding in values, since they'll always be the same
     node_addresses.extend([
         'cockroachdb-balanced',
         'cockroachdb-balanced.%s' % cr.namespace,
@@ -130,7 +131,10 @@ def main():
         '*.cockroachdb',
         '*.cockroachdb.%s' % cr.namespace,
         'cockroachdb.%s' % cr.namespace,
-        '*.cockroachdb.%s.svc.cluster.local' % cr.namespace
+        '*.cockroachdb.%s.svc.cluster.local' % cr.namespace,
+        '0.cockroach.dss-ohio.oneskysystems.com',
+        '1.cockroach.dss-ohio.oneskysystems.com',
+        '2.cockroach.dss-ohio.oneskysystems.com'
     ])
 
     subprocess.check_call([

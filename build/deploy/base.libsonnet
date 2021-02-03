@@ -72,14 +72,6 @@ local util = import 'util.libsonnet';
     },
   },
 
-  ManagedCert(metadata, name): $._Object('networking.gke.io/v1beta1', 'ManagedCertificate', metadata, name) {
-
-  },
-
-  Ingress(metadata, name): $._Object('networking.k8s.io/v1beta1', 'Ingress', metadata, name) {
-
-  },
-
   Deployment(metadata, name): $._Object('apps/v1', 'Deployment', metadata, name) {
     local deployment = self,
 

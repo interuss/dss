@@ -1,6 +1,6 @@
 // This file shows the mimimum information required to get a DSS instance running in Kubernetes.
 local prod = import 'prod.libsonnet';
-local gateway = import '../../../deploy/http-gateway.libsonnet';
+// local gateway = import '../../../deploy/http-gateway.libsonnet';
 
 local metadata = prod.metadata {
   namespace: 'dss-main',

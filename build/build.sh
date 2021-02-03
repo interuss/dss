@@ -35,6 +35,8 @@ else
 
   echo "Pushing docker image ${DOCKER_URL}/dss:${VERSION}..."
   docker image push "${DOCKER_URL}/dss:${VERSION}"
+  docker image tag "${DOCKER_URL}/dss:${VERSION}" "${DOCKER_URL}/dss:latest"
+  docker image push "${DOCKER_URL}/ddss:latest"
 
   echo "Built and pushed docker image ${DOCKER_URL}/dss:${VERSION}"
 
@@ -43,6 +45,8 @@ else
 
   echo "Pushing docker image ${DOCKER_URL}/db-manager:${VERSION}..."
   docker image push "${DOCKER_URL}/db-manager:${VERSION}"
+  docker image tag "${DOCKER_URL}/db-manager:${VERSION}" "${DOCKER_URL}/db-manager:latest"
+  docker image push "${DOCKER_URL}/db-manager:latest"
 
   echo "Built and pushed docker image ${DOCKER_URL}/db-manager:${VERSION}"
 
