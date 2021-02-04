@@ -1,7 +1,7 @@
 {
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
-  enable_istio: false,
+  enable_istio: true,
   release: 'config',
   environment: 'dev',
   // Set this field if you don't intend to ever join this instance with others.

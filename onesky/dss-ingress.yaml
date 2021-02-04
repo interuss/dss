@@ -4,7 +4,6 @@ metadata:
   name: onesky-http-gateway-ingress
   namespace: default
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
@@ -17,7 +16,7 @@ spec:
     - host: dss-ohio.oneskysystems.com
       http:
         paths:
-          - path: /dss(/|$)(.*)
+          - path: /
             pathType: Prefix
             backend:
               serviceName: "http-gateway"
