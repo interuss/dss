@@ -112,6 +112,26 @@ Exec into one of the cockroach containers using `kubectl exec -it cockroachdb-1 
 
 From there you can use the ./cockroach command based on the documentation to query cockroachdb.
 
+You can also port-forward into a cockroachdb container and review the UI at http://localhost:8080 after executing `kubectl port-forward cockroachdb-1 8080:8080`. Having a created non-root user is required to get UI access, so we can execute the following to create this basic user.
+
+        kubectl exec -it cockroachdb-1 bash
+        ./cockroach --certs-dir=/cockroach/cockroach-certs/ sql
+        CREATE USER "test" WITH PASSWORD "Dr0ne$";
+
 #### Cockroach notable issues
 
 If one of the cockroachDBs has issues, sometimes you need to delete the pod AS WELL as the PVC to fully destroy the existing CRDB instance and configuration.
+
+#### Recover a dead CockroachDB Instance
+
+If one of the nodes dies, the DSS configuration is not sufficient for easy recovery. These operations below will recover the cluster.
+
+Please review the disaster-recovery page for cockroachdb for background on what might cause an instance to become "DEAD": https://www.cockroachlabs.com/docs/v21.1/disaster-recovery.html
+
+0. This method is spotty and unreliable, disaster recovery should be investigated further.
+
+1. Review the cluster status: `./cockroach node status --certs-dir=/cockroach/cockroach-certs/`
+
+2. Locate the damaged node ID and execute the following command `./cockroach node decommission <damaged-node-id-integer> --certs-dir=/cockroach/cockroach-certs/`
+
+3. Once this is finished executing (you can verify this through the CockroachDB UI mentioned above), you can re-execute `tk apply .` in the workspace/\<context> directory to trigger an reconfigure of cockroachDB.

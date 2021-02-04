@@ -10,11 +10,6 @@ local volumes = import 'volumes.libsonnet';
     spec+: {
       serviceName: 'cockroachdb',
       template+: {
-        metadata+: {
-              annotations+: {
-                "sidecar.istio.io/inject": "true",
-              },
-            },
         spec+: {
           serviceAccountName: 'cockroachdb',
           volumes: volumes.cockroachVolumes,
