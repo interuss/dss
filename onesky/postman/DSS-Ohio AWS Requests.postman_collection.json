@@ -1,0 +1,1906 @@
+{
+	"info": {
+		"_postman_id": "5ac07f5c-3617-4404-815c-508998d80a9e",
+		"name": "DSS-Ohio AWS Requests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Tokens",
+			"item": [
+				{
+					"name": "Get read token (keycloak)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var clientId = pm.collectionVariables.get('CLIENT_ID');\r",
+									"var clientSecret = pm.collectionVariables.get('CLIENT_SECRET');\r",
+									"var encrypted = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(`${clientId}:${clientSecret}`));\r",
+									"\r",
+									"pm.environment.set(\"AUTH_HEADER\", encrypted);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var generated = responseCode.code === 200;\r",
+									"tests[\"Status code is 200\"] = generated;\r",
+									"\r",
+									"if (generated) {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.environment.set(\"read_access_token\", jsonData.access_token);\r",
+									"};"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "Authorization",
+								"value": "Basic  {{AUTH_HEADER}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "dss.read.identification_service_areas",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://{{KEYCLOAK_HOST}}/auth/realms/{{REALM_NAME}}/protocol/openid-connect/token",
+							"protocol": "https",
+							"host": [
+								"{{KEYCLOAK_HOST}}"
+							],
+							"path": [
+								"auth",
+								"realms",
+								"{{REALM_NAME}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get write token (keycloak)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var clientId = pm.collectionVariables.get('CLIENT_ID');\r",
+									"var clientSecret = pm.collectionVariables.get('CLIENT_SECRET');\r",
+									"var encrypted = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(`${clientId}:${clientSecret}`));\r",
+									"\r",
+									"pm.environment.set(\"AUTH_HEADER\", encrypted);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var generated = responseCode.code === 200;\r",
+									"tests[\"Status code is 200\"] = generated;\r",
+									"\r",
+									"if (generated) {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.environment.set(\"write_access_token\", jsonData.access_token);\r",
+									"};"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Basic  {{AUTH_HEADER}}"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "dss.write.identification_service_areas",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://{{KEYCLOAK_HOST}}/auth/realms/{{REALM_NAME}}/protocol/openid-connect/token",
+							"protocol": "https",
+							"host": [
+								"{{KEYCLOAK_HOST}}"
+							],
+							"path": [
+								"auth",
+								"realms",
+								"{{REALM_NAME}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get strategic coordination token (keycloak)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var clientId = pm.collectionVariables.get('CLIENT_ID');\r",
+									"var clientSecret = pm.collectionVariables.get('CLIENT_SECRET');\r",
+									"var encrypted = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(`${clientId}:${clientSecret}`));\r",
+									"\r",
+									"pm.environment.set(\"AUTH_HEADER\", encrypted);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var data = JSON.parse(responseBody);\r",
+									"pm.environment.set(\"strategic_coordination_access_token\", data.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Basic  {{AUTH_HEADER}}"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "utm.strategic_coordination",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://{{KEYCLOAK_HOST}}/auth/realms/{{REALM_NAME}}/protocol/openid-connect/token",
+							"protocol": "https",
+							"host": [
+								"{{KEYCLOAK_HOST}}"
+							],
+							"path": [
+								"auth",
+								"realms",
+								"{{REALM_NAME}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get constraint_management token (keycloak)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var clientId = pm.collectionVariables.get('CLIENT_ID');\r",
+									"var clientSecret = pm.collectionVariables.get('CLIENT_SECRET');\r",
+									"var encrypted = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(`${clientId}:${clientSecret}`));\r",
+									"\r",
+									"pm.environment.set(\"AUTH_HEADER\", encrypted);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var data = JSON.parse(responseBody);\r",
+									"pm.environment.set(\"constraint_management_access_token\", data.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Basic  {{AUTH_HEADER}}"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "utm.constraint_management",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://{{KEYCLOAK_HOST}}/auth/realms/{{REALM_NAME}}/protocol/openid-connect/token",
+							"protocol": "https",
+							"host": [
+								"{{KEYCLOAK_HOST}}"
+							],
+							"path": [
+								"auth",
+								"realms",
+								"{{REALM_NAME}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Remote ID",
+			"item": [
+				{
+					"name": "Local ISA cycle",
+					"item": [
+						{
+							"name": "ISA (new)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.environment.set(\"timestamp_start\", moment().add(5, 'seconds').toISOString());",
+											"pm.environment.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											"",
+											"const uuid = require('uuid');",
+											"pm.environment.set(\"id\", uuid.v4());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"isa_version\", data.service_area.version);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{write_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"extents\": {\n    \"spatial_volume\": {\n      \"footprint\": {\n        \"vertices\": [\n          {\n            \"lng\": -75.62269449234009,\n            \"lat\": 40.03062943751799\n          },\n          {\n            \"lng\": -75.62201857566833,\n            \"lat\": 40.030522641428426\n          },\n          {\n            \"lng\": -75.62197029590607,\n            \"lat\": 40.031019652577396\n          }\n        ]\n      },\n      \"altitude_lo\": 0,\n      \"altitude_hi\": 122\n    },\n    \"time_start\": \"{{timestamp_start}}\",\n    \"time_end\": \"{{timestamp_end}}\"\n  },\n  \"flights_url\": \"https://2d91ac43-5cc7-4e53-a7ae-08a96e7a2222.mock.pstmn.io/flights\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/identification_service_areas/{{id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"identification_service_areas",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ISA",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var isOk = responseCode.code === 200;\r",
+											"tests[\"Status code is 200\"] = isOk;\r",
+											"\r",
+											"if (isOk) {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    pm.environment.set(\"isa_version\", jsonData.service_area.version);\r",
+											"};"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{read_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/identification_service_areas/{{id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"identification_service_areas",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ISAs",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var latitude = 40.03062943751799;",
+											"var longitude = -75.62269449234009;",
+											"          ",
+											"const moment = require('moment');",
+											"pm.environment.set(\"timestamp_now\", moment().toISOString());",
+											"pm.environment.set(\"timestamp_end\", moment().add(60, 'days').toISOString());",
+											"",
+											"var offset = 0.001;",
+											"var minLat = latitude - offset;",
+											"var maxLat = latitude + offset;",
+											"var minLon = longitude - offset;",
+											"var maxLon = longitude + offset;",
+											"pm.environment.set(\"area\", \"\".concat(minLat,\",\",minLon,\",\",maxLat,\",\",minLon,\",\",maxLat,\",\",maxLon,\",\",minLat,\",\",maxLon));"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{read_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/identification_service_areas?area={{area}}&earliest_time={{timestamp_now}}&latest_time={{timestamp_end}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"identification_service_areas"
+									],
+									"query": [
+										{
+											"key": "area",
+											"value": "{{area}}"
+										},
+										{
+											"key": "earliest_time",
+											"value": "{{timestamp_now}}"
+										},
+										{
+											"key": "latest_time",
+											"value": "{{timestamp_end}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ISA (update)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.globals.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"isa_version\", data.service_area.version);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{write_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"extents\": {\n    \"spatial_volume\": {\n      \"footprint\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lo\": 0,\n      \"altitude_hi\": 122\n    },\n    \"time_start\": \"{{timestamp_start}}\",\n    \"time_end\": \"{{timestamp_end}}\"\n  },\n  \"flights_url\": \"https://example.com/flights\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/identification_service_areas/{{id}}/{{isa_version}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"identification_service_areas",
+										"{{id}}",
+										"{{isa_version}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ISA (update)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{write_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/identification_service_areas/{{id}}/{{isa_version}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"identification_service_areas",
+										"{{id}}",
+										"{{isa_version}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Local Subscription cycle",
+					"item": [
+						{
+							"name": "Subscription (new)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.environment.set(\"timestamp_start\", moment().add(5, 'seconds').toISOString());",
+											"pm.environment.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											"",
+											"const uuid = require('uuid');",
+											"pm.environment.set(\"subscription_id\", uuid.v4());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"subscription_version\", data.subscription.version);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{read_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"extents\": {\r\n    \"spatial_volume\": {\r\n      \"footprint\": {\r\n        \"vertices\": [\r\n          {\r\n            \"lng\": -75.62269449234009,\r\n            \"lat\": 40.03062943751799\r\n          },\r\n          {\r\n            \"lng\": -75.62201857566833,\r\n            \"lat\": 40.030522641428426\r\n          },\r\n          {\r\n            \"lng\": -75.62197029590607,\r\n            \"lat\": 40.031019652577396\r\n          }\r\n        ]\r\n      },\r\n      \"altitude_lo\": 0,\r\n      \"altitude_hi\": 122\r\n    },\r\n    \"time_start\": \"{{timestamp_start}}\",\r\n    \"time_end\": \"{{timestamp_end}}\"\r\n  },\r\n  \"callbacks\": {\r\n    \"identification_service_area_url\": \"https://example.com/flights\"\r\n  }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/subscriptions/{{subscription_id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"subscriptions",
+										"{{subscription_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Subscription",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var isOk = responseCode.code === 200;\r",
+											"tests[\"Status code is 200\"] = isOk;\r",
+											"\r",
+											"if (isOk) {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    pm.environment.set(\"subscription_version\", jsonData.subscription.version);\r",
+											"};"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{read_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/subscriptions/{{subscription_id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"subscriptions",
+										"{{subscription_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Subscriptions",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{read_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/subscriptions?area={{area}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"subscriptions"
+									],
+									"query": [
+										{
+											"key": "area",
+											"value": "{{area}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Subscription (update)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.globals.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+											"pm.globals.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"subscription_version\", data.subscription.version);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{read_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"extents\": {\r\n    \"spatial_volume\": {\r\n      \"footprint\": {\r\n        \"vertices\": [\r\n          {\r\n            \"lng\": -155.6043,\r\n            \"lat\": 19.4763\r\n          },\r\n          {\r\n            \"lng\": -155.5746,\r\n            \"lat\": 19.4884\r\n          },\r\n          {\r\n            \"lng\": -155.5941,\r\n            \"lat\": 19.4516\r\n          }\r\n        ]\r\n      },\r\n      \"altitude_lo\": 19.5,\r\n      \"altitude_hi\": 19.5\r\n    },\r\n    \"time_start\": \"{{timestamp_start}}\",\r\n    \"time_end\": \"{{timestamp_end}}\"\r\n  },\r\n  \"callbacks\": {\r\n    \"identification_service_area_url\": \"https://example.com/identification_service_areas/a4c6f8c0-ad77-4d93-9cc2-ec8601383f96\"\r\n  }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/subscriptions/{{subscription_id}}/{{subscription_version}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"subscriptions",
+										"{{subscription_id}}",
+										"{{subscription_version}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Subscription (update)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.globals.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+											"pm.globals.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"subscription_version\", data.subscription.version);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{read_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{DSS_URL}}/v1/dss/subscriptions/{{subscription_id}}/{{subscription_version}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"v1",
+										"dss",
+										"subscriptions",
+										"{{subscription_id}}",
+										"{{subscription_version}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "UTM - Strategic conflict detection",
+			"item": [
+				{
+					"name": "Operation cycle",
+					"item": [
+						{
+							"name": "Query Operations",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable(\"area\", \"19.4763,-155.6043,19.4884,-155.5746,19.4516,-155.5941\");",
+											"const moment = require('moment');",
+											"pm.globals.set(\"timestamp_now\", moment().toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{strategic_coordination_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"area_of_interest\": {\n    \"volume\": {\n      \"outline_polygon\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lower\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        },\n        \"altitude_upper\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        }\n    },\n    \"time_start\": {\n    \t\"value\": \"{{timestamp_start}}\",\n    \t\"format\": \"RFC3339\"\n    },\n    \"time_end\": {\n    \t\"value\": \"{{timestamp_end}}\",\n    \t\"format\": \"RFC3339\"\n    }\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/operation_references/query",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"operation_references",
+										"query"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Operation (new)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.environment.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+											"pm.environment.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"op_version\", data.operation_reference.version);",
+											"pm.environment.set(\"op_subscription_id\", data.operation_reference.subscription_id)",
+											"pm.environment.set(\"op_ovn\", data.operation_reference.ovn)",
+											"pm.environment.set(\"operation_id\", data.operation_reference.id);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{strategic_coordination_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"extents\": [{\n    \"volume\": {\n      \"outline_polygon\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lower\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        },\n        \"altitude_upper\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        }\n    },\n    \"time_start\": {\n    \t\"value\": \"{{timestamp_start}}\",\n    \t\"format\": \"RFC3339\"\n    },\n    \"time_end\": {\n    \t\"value\": \"{{timestamp_end}}\",\n    \t\"format\": \"RFC3339\"\n    }\n  }],\n  \"uss_base_url\": \"https://example.com\",\n  \"state\": \"Accepted\",\n  \"new_subscription\": {\n  \t\"uss_base_url\": \"https://example.com\"\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/operation_references/{{$guid}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"operation_references",
+										"{{$guid}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Operation (update)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.globals.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+											"pm.globals.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"op_version\", data.operation_reference.version);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{strategic_coordination_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"old_version\": {{op_version}},\n  \"key\": [\"{{op_ovn}}\"],\n  \"extents\": [{\n    \"volume\": {\n      \"outline_polygon\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lower\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        },\n        \"altitude_upper\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        }\n    },\n    \"time_start\": {\n    \t\"value\": \"{{timestamp_start}}\",\n    \t\"format\": \"RFC3339\"\n    },\n    \"time_end\": {\n    \t\"value\": \"{{timestamp_end}}\",\n    \t\"format\": \"RFC3339\"\n    }\n  }],\n  \"uss_base_url\": \"https://example.com\",\n  \"state\": \"Activated\",\n  \"subscription_id\": \"{{op_subscription_id}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/operation_references/{{operation_id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"operation_references",
+										"{{operation_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Operation",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{strategic_coordination_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/operation_references/{{operation_id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"operation_references",
+										"{{operation_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Constraint cycle",
+					"item": [
+						{
+							"name": "Query Constraints",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"postman.setEnvironmentVariable(\"area\", \"19.4763,-155.6043,19.4884,-155.5746,19.4516,-155.5941\");",
+											"const moment = require('moment');",
+											"pm.globals.set(\"timestamp_now\", moment().toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{constraint_management_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"area_of_interest\": {\n    \"volume\": {\n      \"outline_polygon\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lower\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        },\n        \"altitude_upper\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        }\n    },\n    \"time_start\": {\n    \t\"value\": \"{{timestamp_start}}\",\n    \t\"format\": \"RFC3339\"\n    },\n    \"time_end\": {\n    \t\"value\": \"{{timestamp_end}}\",\n    \t\"format\": \"RFC3339\"\n    }\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/constraint_references/query",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"constraint_references",
+										"query"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Constraint (new)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.environment.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+											"pm.environment.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"constraint_version\", data.constraint_reference.version);",
+											"pm.environment.set(\"constraint_subscription_id\", data.constraint_reference.subscription_id)",
+											"pm.environment.set(\"constraint_ovn\", data.constraint_reference.ovn)",
+											"pm.environment.set(\"constraint_id\", data.constraint_reference.id);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{constraint_management_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"extents\": [{\n    \"volume\": {\n      \"outline_polygon\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lower\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        },\n        \"altitude_upper\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        }\n    },\n    \"time_start\": {\n    \t\"value\": \"{{timestamp_start}}\",\n    \t\"format\": \"RFC3339\"\n    },\n    \"time_end\": {\n    \t\"value\": \"{{timestamp_end}}\",\n    \t\"format\": \"RFC3339\"\n    }\n  }],\n  \"uss_base_url\": \"https://example.com\",\n  \"state\": \"Accepted\",\n  \"new_subscription\": {\n  \t\"uss_base_url\": \"https://example.com\"\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/constraint_references/{{$guid}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"constraint_references",
+										"{{$guid}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Constraint (update)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.globals.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+											"pm.globals.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"constraint_version\", data.constraint_reference.version);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{constraint_management_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"old_version\": {{constraint_version}},\n  \"key\": [\"{{constraint_ovn}}\"],\n  \"extents\": [{\n    \"volume\": {\n      \"outline_polygon\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lower\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        },\n        \"altitude_upper\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        }\n    },\n    \"time_start\": {\n    \t\"value\": \"{{timestamp_start}}\",\n    \t\"format\": \"RFC3339\"\n    },\n    \"time_end\": {\n    \t\"value\": \"{{timestamp_end}}\",\n    \t\"format\": \"RFC3339\"\n    }\n  }],\n  \"uss_base_url\": \"https://example.com\",\n  \"state\": \"Activated\",\n  \"subscription_id\": \"{{constraint_subscription_id}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/constraint_references/{{constraint_id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"constraint_references",
+										"{{constraint_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Constraint",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{constraint_management_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/constraint_references/{{constraint_id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"constraint_references",
+										"{{constraint_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Subscription cycle",
+					"item": [
+						{
+							"name": "Query Subscriptions",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.environment.set(\"area\", \"19.4763,-155.6043,19.4884,-155.5746,19.4516,-155.5941\");",
+											"const moment = require('moment');",
+											"pm.environment.set(\"timestamp_now\", moment().toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{strategic_coordination_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"area_of_interest\": {\n    \"volume\": {\n      \"outline_polygon\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lower\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        },\n        \"altitude_upper\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        }\n    },\n    \"time_start\": {\n    \t\"value\": \"{{timestamp_start}}\",\n    \t\"format\": \"RFC3339\"\n    },\n    \"time_end\": {\n    \t\"value\": \"{{timestamp_end}}\",\n    \t\"format\": \"RFC3339\"\n    }\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/subscriptions/quer",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"subscriptions",
+										"quer"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Subscription (new)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.environment.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+											"pm.environment.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"subscription_id\", data.subscription.id);",
+											"pm.environment.set(\"subscription_version\", data.subscription.version);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{strategic_coordination_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"extents\": {\n    \"volume\": {\n      \"outline_polygon\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lower\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        },\n        \"altitude_upper\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        }\n    },\n    \"time_start\": {\n    \t\"value\": \"{{timestamp_start}}\",\n    \t\"format\": \"RFC3339\"\n    },\n    \"time_end\": {\n    \t\"value\": \"{{timestamp_end}}\",\n    \t\"format\": \"RFC3339\"\n    }\n  },\n  \"old_version\": 0,\n  \"uss_base_url\": \"https://utm_uss.com/utm\",\n  \"notify_for_operations\": true,\n  \"notify_for_constraints\": false\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/subscriptions/{{$guid}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"subscriptions",
+										"{{$guid}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Subscription (update)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');",
+											"pm.environment.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+											"pm.environment.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;",
+											"",
+											"var data = JSON.parse(responseBody);",
+											"pm.environment.set(\"subscription_version\", data.subscription.version);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{strategic_coordination_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"extents\": {\n    \"volume\": {\n      \"outline_polygon\": {\n        \"vertices\": [\n          {\n            \"lng\": -155.6043,\n            \"lat\": 19.4763\n          },\n          {\n            \"lng\": -155.5746,\n            \"lat\": 19.4884\n          },\n          {\n            \"lng\": -155.5941,\n            \"lat\": 19.4516\n          }\n        ]\n      },\n      \"altitude_lower\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        },\n        \"altitude_upper\": {\n        \"value\": -8000,\n        \"reference\": \"W84\",\n        \"units\": \"M\"\n        }\n    },\n    \"time_start\": {\n    \t\"value\": \"{{timestamp_start}}\",\n    \t\"format\": \"RFC3339\"\n    },\n    \"time_end\": {\n    \t\"value\": \"{{timestamp_end}}\",\n    \t\"format\": \"RFC3339\"\n    }\n  },\n  \"old_version\": {{subscription_version}},\n  \"uss_base_url\": \"https://utm_uss.com/utm\",\n  \"notify_for_operations\": true,\n  \"notify_for_constraints\": false\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/subscriptions/{{subscription_id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"subscriptions",
+										"{{subscription_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Subscription",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"tests[\"Status code is 200\"] = responseCode.code === 200;"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{strategic_coordination_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/subscriptions/{{subscription_id}}",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"subscriptions",
+										"{{subscription_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Reports",
+					"item": [
+						{
+							"name": "Report Issue to DSS",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{strategic_coordination_access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-utm-message-signature",
+										"type": "text",
+										"value": "eyJraWQiOiJiNGM2Y2ZkMi1mMDE0LTRmNjAtOGI5NS04MjRkYTlmN2NhYTQiLCJ4NXUiOiJodHRwczpcL1wvdWFzLWFwaS5mYWEuZ292XC9maW1zQXV0aFNlcnZlclwvb2F1dGhcLy53ZWxsLWtub3duXC9vbmVza3kuZGVyIiwidHlwIjoiSk9TRSIsImFsZyI6IlJTMjU2In0..SFpW4agIQ3tXKpa2fvauzZXCkrfHvUJi_wQnbs421j6pT49p8SvxCEHX_2KELNwhVhxxd0AcP5akxUSfSvf3lfMA_marAUlOn_FAbFnsaPyX5kB9VaFeTFDaWf8Y2b0GF6jtswJQWAM7auTWqKuBWbihgVo6dbceyCpAfPvYaCVIeuJeknNgLoIk7jDKLSvvijmIymACGppmpIjfH19kf4seOd88fdZ7yuxCZHowvnJaazlEt2ZJMaulgtwzS8YAn1x6n7CsZwbE9gLnenLPTuqDaJ7dTVJU_6Q8vUwj6ZsW9bb-n59FOTvl87JgqhucUCvT6qL1XDS4nq0uX-V3PQ"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"url\": \"string\",\r\n  \"headers\": [],\r\n  \"body\": \"string\",\r\n  \"response_code\": 0,\r\n  \"response_body\": \"string\",\r\n  \"problem\": \"string\",\r\n  \"time_request\": {\r\n    \"value\": \"1985-04-12T23:20:50.52Z\",\r\n    \"format\": \"RFC3339\"\r\n  },\r\n  \"time_response\": {\r\n    \"value\": \"1985-04-12T23:20:50.52Z\",\r\n    \"format\": \"RFC3339\"\r\n  },\r\n  \"report_id\": \"string\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{DSS_URL}}/dss/v1/reports",
+									"host": [
+										"{{DSS_URL}}"
+									],
+									"path": [
+										"dss",
+										"v1",
+										"reports"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "DSS Healthcheck",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{DSS_URL}}/healthy",
+					"host": [
+						"{{DSS_URL}}"
+					],
+					"path": [
+						"healthy"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "DSS_URL",
+			"value": "https://dss-ohio.oneskysystems.com"
+		},
+		{
+			"key": "CLIENT_ID",
+			"value": "onesky-dss"
+		},
+		{
+			"key": "CLIENT_SECRET",
+			"value": "addefdb1-bdef-458b-a3c7-3f1243ef6e4f"
+		},
+		{
+			"key": "KEYCLOAK_HOST",
+			"value": "devlogin.onesky.xyz"
+		},
+		{
+			"key": "REALM_NAME",
+			"value": "dss"
+		},
+		{
+			"key": "timestamp_end",
+			"value": ""
+		},
+		{
+			"key": "timestamp_start",
+			"value": ""
+		}
+	]
+}

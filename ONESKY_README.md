@@ -20,6 +20,8 @@ Required components in the cluster are nginx-ingress-controller, metrics server 
 
     - The docker images may need to be updated, search for the ECR URL to find the image locations. The new images will be the result of the build in the previous step. This step is only necessary when updating the version of the DSS.
 
+    - If the audience configuration is no longer "localhost" or needs to be updated, locate the `accepted_jwt_audiences` field and make the relevant updates
+
 - Execute make-certs.py using the following command. Note, inside make-certs.py are the list of certificate SANS that are available. Depending on what the main.jsonnet file has configured for `hostnameSuffix`, you want to make sure the hostname is included in the list of SANS. This will generate the certs that will be deployed to kubernetes.
 
         python3 make-certs.py --cluster arn:aws:eks:us-east-2:169922227793:cluster/dss-ohio --namespace default
@@ -69,6 +71,8 @@ One of the more useful containers to annotate and track is the nginx-ingress-con
 
 Unfortunately this would need to be done each time the nginx-ingress-controller is updated or altered in any way, but it's not a required addition. Once this is completed, we'll need to scale or otherwise restart the ingress controller. This can be done with zero downtime by scaling up to N>1 pods, and destroying the original pod.
 
+If the DSS components do not start up with the istio sidecar container, you must either scale or restart each pod individually. On recreation, it will deploy the sidecar successfully. This can be done by scaling the deployment, or killing the pods one at a time. NOTE, do not do this on the cockroachDB pods as they are dependent on quorum to continue functioning.
+
 ### Accessing the DSS
 
 All URLs and data can be retrieved using the Kubernetes CLI. For example, to find the URL that is being exposed via ingress, run the following command (example output included):
@@ -101,3 +105,13 @@ This is not accessible outside of the cluster or a port-forward.
 Grafana currently is set up with non-standard credentials, but can be updated to connect into Github or have dedicated accounts (among other auth/authn methods).
 
 Grafana is available at https://dss-ohio.oneskysystems.com/grafana/ with onesky/\<password-available on request>.
+
+### Debugging Cockroach DB
+
+Exec into one of the cockroach containers using `kubectl exec -it cockroachdb-1 bash`.
+
+From there you can use the ./cockroach command based on the documentation to query cockroachdb.
+
+#### Cockroach notable issues
+
+If one of the cockroachDBs has issues, sometimes you need to delete the pod AS WELL as the PVC to fully destroy the existing CRDB instance and configuration.
