@@ -45,6 +45,11 @@ local alertmanagerConfig(metadata) = {
       spec+: {
 				replicas: 1,
         template+: {
+          metadata+: {
+            annotations+: {
+              "sidecar.istio.io/inject": "true",
+            },
+          },
           spec+: {
             containers: [
               {

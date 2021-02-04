@@ -100,6 +100,11 @@ local notifierConfig(metadata) = {
           },
         },
         template+: {
+          metadata+: {
+              annotations+: {
+                "sidecar.istio.io/inject": "true",
+              },
+            },
           spec: {
             containers: [
               {

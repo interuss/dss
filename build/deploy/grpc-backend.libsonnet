@@ -17,6 +17,11 @@ local volumes = import 'volumes.libsonnet';
       },
       spec+: {
         template+: {
+          metadata+: {
+              annotations+: {
+                "sidecar.istio.io/inject": "true",
+              },
+            },
           spec+: {
             volumes: volumes.backendVolumes,
             soloContainer:: base.Container('grpc-backend') {

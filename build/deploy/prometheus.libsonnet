@@ -101,6 +101,11 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
         serviceName: 'prometheus-service',
         replicas: 1,
         template+: {
+          metadata+: {
+              annotations+: {
+                "sidecar.istio.io/inject": "true",
+              },
+            },
           spec+: {
             volumes: [
               {

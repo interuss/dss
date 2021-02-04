@@ -16,6 +16,11 @@ local base = import 'base.libsonnet';
       },
       spec+: {
         template+: {
+          metadata+: {
+            annotations+: {
+              "sidecar.istio.io/inject": "true",
+            },
+          },
           spec+: {
             soloContainer:: base.Container('http-gateway') {
               image: metadata.gateway.image,
