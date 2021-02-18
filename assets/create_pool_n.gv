@@ -1,0 +1,54 @@
+// To render:
+//   dot -Tpng -ogenerated/create_pool_n.png create_pool_n.gv
+digraph {
+  node [shape=box]
+
+  Legendn [label="Instance n",color=red]
+  PS1 [label="Pool verified with\nn-1 instances",shape=note]
+  Legend1 [label="Instance 1",color=green]
+  Legend2 [label="Instance i",color=blue]
+  Legendnm1 [label="Instance n-1",color=yellow]
+  USSn_1a [label="Request ca.crt and\nCRDB node addresses\nfrom all USSs",color=red]
+  USSn_1b [label="Follow instructions\nto make-certs.py",color=red]
+  PS1 -> USSn_1a
+  PS1 -> USSn_1b -> USSn_2
+  USS1_1 [label="Provide ca.crt and\nCRDB node addresses",color=green]
+  USS2_1 [label="Provide ca.crt and\nCRDB node addresses",color=blue]
+  USSnm1_1 [label="Provide ca.crt and\nCRDB node addresses",color=yellow]
+  USSn_1a -> USS1_1
+  USSn_1a -> USS2_1
+  USSn_1a -> USSnm1_1
+  USSn_2 [label="Run make-certs.py",color=red]
+  USSn_3 [label="Provide combined ca.crt\nto all USSs",color=red]
+  USS2_1 -> USSn_2 -> USSn_3
+  USS1_2 [label="Restart CRDB\nnodes with\ncombined ca.crt",color=green]
+  USS2_2 [label="Restart CRDB\nnodes with\ncombined ca.crt",color=blue]
+  USSnm1_2 [label="Restart CRDB\nnodes with\ncombined ca.crt",color=yellow]
+  USSn_4 [label="Follow instructions\nto `tk apply`",color=red]
+  USSn_2 -> USSn_4
+  USS1_1 -> USSn_4
+  USS2_1 -> USSn_4
+  USSnm1_1 -> USSn_4 -> USSn_5
+  USSn_3 -> USS1_2 -> USSn_5
+  USSn_3 -> USS2_2 -> USSn_5
+  USSn_3 -> USSnm1_2 -> USSn_5
+  USSn_5 [label="`tk apply` to deploy\nDSS instance",color=red]
+  USSn_6 [label="Run prober on DSS\ninstance to\nverify functionality",color=red]
+  USS1_4 [label="Run prober on DSS\ninstance to\nverify no regression",color=green]
+  USS2_4 [label="Run prober on DSS\ninstance to\nverify no regression",color=blue]
+  USSnm1_4 [label="Run prober on DSS\ninstance to\nverify no regression",color=yellow]
+  USSn_5 -> USSn_6 -> USS_1 -> PS4
+  USSn_5 -> USS1_4 -> USS_1 -> USSn_7
+  USSn_5 -> USS2_4 -> USS_1
+  USSn_5 -> USSnm1_4 -> USS_1
+  USS_1 [label="Any USS run\ninterop test on DSS instances\nto verify functionality",color=magenta]
+  PS4 [label="Pool verified with\nn instances",shape=note]
+  USSn_7 [label="Provide CRDB node\naddresses to all USSs",color=red]
+  USS1_6 [label="Update JoinExisting\nnode list",color=green]
+  USS2_6 [label="Update JoinExisting\nnode list",color=blue]
+  USSnm1_6 [label="Update JoinExisting\nnode list",color=yellow]
+  USSn_7 -> USS1_6 -> PS5
+  USSn_7 -> USS2_6 -> PS5
+  USSn_7 -> USSnm1_6 -> PS5
+  PS5 [label="All instances will automatically\nrejoin pool upon restart",shape=note]
+}
