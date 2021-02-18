@@ -41,6 +41,11 @@ local scd_schema_mount = {
     RIDSchemaManager: if metadata.cockroach.shouldInit then base.Job(metadata, 'rid-schema-manager') {
       spec+: {
         template+: {
+          metadata+: {
+              annotations+: {
+                "sidecar.istio.io/inject": "true",
+              },
+            },
           spec+: {
             volumes_: {
               client_certs: volumes.volumes.client_certs,

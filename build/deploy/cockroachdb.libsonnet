@@ -104,7 +104,7 @@ local volumes = import 'volumes.libsonnet';
             name: 'datadir',
           },
           spec: {
-            storageClassName: 'standard',
+            storageClassName: 'gp2',
             accessModes: [
               'ReadWriteOnce',
             ],

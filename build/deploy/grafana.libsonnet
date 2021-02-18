@@ -18,6 +18,23 @@ local dashboardConfig = {
   ],
 };
 
+local grafanaConfig = {
+  main: {
+    app_mode: "production",
+  },
+  sections: {
+    server: {
+      domain: "dss-ohio.oneskysystems.com",
+      serve_from_sub_path: true,
+      root_url: "https://dss-ohio.oneskysystems.com/grafana/"
+    },
+    security: {
+      admin_user: "onesky",
+      admin_password: "Dr0ne$"
+    },
+  }
+};
+
 local datasourcePrometheus(metadata) = {
   apiVersion: 1,
   datasources: [
@@ -62,6 +79,11 @@ local notifierConfig(metadata) = {
         'dashboards.yaml': std.manifestYamlDoc(dashboardConfig)
       },
     },
+    configMap3: base.ConfigMap(metadata, 'grafana-config') {
+      data: {
+        'grafana.ini': std.manifestIni(grafanaConfig),
+      },
+    },
     grafDashboards: dashboard.all(metadata).config,
     notifierConfig: base.ConfigMap(metadata, 'grafana-notifier-provisioning') {
       data: {
@@ -78,6 +100,11 @@ local notifierConfig(metadata) = {
           },
         },
         template+: {
+          metadata+: {
+              annotations+: {
+                "sidecar.istio.io/inject": "true",
+              },
+            },
           spec: {
             containers: [
               {
@@ -115,6 +142,12 @@ local notifierConfig(metadata) = {
                     readOnly: false,
                   },
                   {
+                    mountPath: '/etc/grafana/grafana.ini',
+                    subPath: 'grafana.ini',
+                    name: 'grafana-config',
+                    readOnly: true,
+                  },
+                  {
                     mountPath: '/etc/grafana/provisioning/notifiers',
                     name: 'grafana-notifier-provisioning',
                     readOnly: false,
@@ -139,6 +172,13 @@ local notifierConfig(metadata) = {
                 configMap: {
                   defaultMode: 420,
                   name: 'grafana-dash-provisioning',
+                },
+              },
+              {
+                name: 'grafana-config',
+                configMap: {
+                  defaultMode: 420,
+                  name: 'grafana-config',
                 },
               },
               {

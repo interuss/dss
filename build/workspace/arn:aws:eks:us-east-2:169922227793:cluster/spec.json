@@ -1,0 +1,11 @@
+{
+  "apiVersion": "tanka.dev/v1alpha1",
+  "kind": "Environment",
+  "metadata": {
+    "name": "dss"
+  },
+  "spec": {
+    "apiServer": "https://1057D6EF0AC46E82231F3B02EF2CBB13.gr7.us-east-2.eks.amazonaws.com",
+    "namespace": "default"
+  }
+}

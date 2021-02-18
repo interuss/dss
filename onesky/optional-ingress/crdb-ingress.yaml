@@ -1,0 +1,79 @@
+# NOT EXPLICITLY NEEDED
+## Ingress for cockroach-0-service
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: onesky-cockroach-0-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - 0.cockroach.dss-ohio.oneskysystems.com
+      secretName: dss-tls
+  rules:
+    - host: 0.cockroach.dss-ohio.oneskysystems.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              serviceName: "cockroach-db-external-node-0"
+              servicePort: 26257
+---
+## Ingress for cockroach-1-service
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: onesky-cockroach-1-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - 1.cockroach.dss-ohio.oneskysystems.com
+      secretName: dss-tls
+  rules:
+    - host: 1.cockroach.dss-ohio.oneskysystems.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              serviceName: "cockroach-db-external-node-1"
+              servicePort: 26257
+---
+## Ingress for cockroach-2-service
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: onesky-cockroach-2-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - 2.cockroach.dss-ohio.oneskysystems.com
+      secretName: dss-tls
+  rules:
+    - host: 2.cockroach.dss-ohio.oneskysystems.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              serviceName: "cockroach-db-external-node-2"
+              servicePort: 26257
+
