@@ -31,6 +31,9 @@ paths:
       operationId: getDisplayData
       summary: Poll display data
       description: Request current remote ID display data as would be visualized by a Display Application.
+      security:
+        - RIDAuth:
+            - dss.read.identification_service_areas
   /display_data/{id}:
     get:
       parameters:
@@ -57,6 +60,9 @@ paths:
       operationId: getDetails
       summary: Get flight details
       description: Get the details of a flight identified in `/display_data`.
+      security:
+        - RIDAuth:
+            - dss.read.identification_service_areas
 components:
   schemas:
     GetDisplayDataResponse:
@@ -160,3 +166,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Position'
+  securitySchemes:
+    RIDAuth:
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            dss.read.identification_service_areas: Client may read current remote ID information.
+      type: oauth2
+      description: |-
+        Authorization from, or on behalf of, an authorization authority, matching standard remote ID authorization.
+
+security:
+  - RIDAuth:
+      - dss.read.identification_service_areas

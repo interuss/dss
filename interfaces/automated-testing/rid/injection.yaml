@@ -42,6 +42,9 @@ paths:
         The host Service Provider's test data injector may modify fields, such as `details.id`, as necessary to work with their system.
         The host Service Provider's test data injector should modify as few fields as practical, and change modified fields as little as practical.
         The `injection_id` fields may not be modified.
+      security:
+        - TestAuth:
+            - rid.inject_test_data
   /tests/{test_id}/{version}:
     parameters:
       -
@@ -74,6 +77,9 @@ paths:
       operationId: deleteTest
       summary: Delete test
       description: Remove all injected test data associated with this test from the host Service Provider's system under test.
+      security:
+        - TestAuth:
+            - rid.inject_test_data
 components:
   schemas:
     CreateTestParameters:
@@ -157,3 +163,18 @@ components:
             The details of the flight.
             Follows the RIDFlightDetails schema from the ASTM remote ID standard.
           $ref: 'https://raw.githubusercontent.com/uastech/standards/astm_rid_1.0/remoteid/canonical.yaml#/components/schemas/RIDFlightDetails'
+  securitySchemes:
+    TestAuth:
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            rid.inject_test_data: >-
+                Client may inject test data into a Service Provider for the purpose of conducting automated tests.
+      type: oauth2
+      description: |-
+        Authorization from, or on behalf of, an authorization authority, augmenting standard remote ID authorization for the purpose of automated testing.
+
+security:
+  - TestAuth:
+      - rid.inject_test_data
