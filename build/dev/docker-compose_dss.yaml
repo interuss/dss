@@ -8,8 +8,8 @@ version: '3.8'
 services:
 
   local-dss-crdb:
-    image: cockroachdb/cockroach:v20.1.1
-    command: start --insecure
+    image: cockroachdb/cockroach:v20.2.0
+    command: start-single-node --insecure
     expose:
       - 26257
     ports:
