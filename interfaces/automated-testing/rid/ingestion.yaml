@@ -84,7 +84,6 @@ components:
       description: ''
       required:
         - id
-        - most_recent_position
       type: object
       properties:
         id:
