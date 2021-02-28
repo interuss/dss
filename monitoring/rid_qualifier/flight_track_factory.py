@@ -1,8 +1,8 @@
+from binascii import b2a_base64
 import numpy as np
 from shapely.geometry import Point, Polygon
 import shapely.geometry
 from pyproj import Geod, Transformer
-import geopandas
 import json
 import time
 
@@ -16,14 +16,13 @@ class FlightPathGenerator():
     flight_grid  = []
     query_bboxes = []
 
-    def __init__(self, minx, miny, maxx, maxy, max_cols = 2, create_geojson = False): 
+    def __init__(self, minx, miny, maxx, maxy, max_cols = 4): 
         # By default reference geojsons will not be created but by using the crate_geojson flag you can output Geojsons, in the geojson directory.
         self.minx = minx
         self.miny = miny
         self.maxx = maxx
         self.maxy = maxy                
         self.max_cols = max_cols
-        self.create_geojson = create_geojson
 
     def input_extents_valid(self):
 
@@ -68,11 +67,7 @@ class FlightPathGenerator():
             # Get the bounds of the buffered box, this is the one that will will be fed to the remote ID display provider to query
             buffered_box_bounds = buffered_box.bounds
             self.query_bboxes.append(buffered_box_bounds)
-            if self.create_geojson:
-                features = json.dumps({'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(buffered_box)})
-                with open('outputs/box_%s.geojson'% box_id,'w') as f:
-                    f.write(features)
-
+            
 
     def generate_flight_grid(self):
         ''' Generate a series of boxes within the bounding box to have areas for different flights '''
@@ -110,22 +105,30 @@ class FlightPathGenerator():
             buffered_path = Polygon(proj_buffer_points)
 
             self.flight_paths.append(buffered_path)
-            if self.create_geojson:
-                cell = geopandas.GeoDataFrame(self.flight_paths, columns=['geometry'], crs=self.crs)
-                cell.to_file("geojson/flight_paths.geojson", driver='GeoJSON')
+            
             # Build a list of points so that they can be fed to the sim and outputted. 
             self.flight_points.append(list(zip(*buffered_path.exterior.coords.xy)))
 
 
-class FlightSim():
+class TrackWriter():
     ''' A basic simulator to loop through flight paths and output to console, or CSV or HTTP requests positions of flights ''' 
 
-    def __init__(self, path_points):
+    def __init__(self, path_points, bboxes):
         self.flight_path_points = path_points
+        self.bboxes = bboxes
         self.loop_counter = 0
 
-
-    def build_payload(self, duration = 180):
+    def write_bboxes(self):
+        for box_id, buffered_bbox in enumerate(self.bboxes): 
+            features = json.dumps({'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(buffered_bbox)})
+            with open('outputs/box_%s.geojson'% box_id,'w') as f:
+                f.write(features)
+                
+    def write_tracks(self):
+        ''' This module writes tracks as a GeoJSON / KML for use in other software ''' 
+        pass
+                    
+    def write_track_payload(self, duration = 180):
         ''' This starts the simulation for 3 minutes and prints flight positions that can be send to the harness every 3 seconds '''        
         # Get the length of flight each paths, this is useful to loop back the index at the end of lists, so that at the end of the path, it goes back to the beginning of the list while timestep is counted down.
         flight_point_lenghts = {}
@@ -149,7 +152,7 @@ class FlightSim():
 
 if __name__ == '__main__':
     
-    my_path_generator = FlightPathGenerator(minx = 7.4735784530639648, miny = 46.9746744128218410, maxx = 7.4786210060119620, maxy= 46.9776318195799121, create_geojson = False)
+    my_path_generator = FlightPathGenerator(minx = 7.4735784530639648, miny = 46.9746744128218410, maxx = 7.4786210060119620, maxy= 46.9776318195799121)
     flight_points = []
     query_bboxes = []
     try:
@@ -163,8 +166,10 @@ if __name__ == '__main__':
         my_path_generator.generate_query_bboxes()
         query_bboxes= my_path_generator.query_bboxes
     # Start the flight simulator    
-    my_flight_sim = FlightSim(flight_points)
-    my_flight_sim.build_payload()
+    my_track_writer = TrackWriter(flight_points)
+    my_track_writer.write_bboxes(query_bboxes)
+    my_track_writer.write_track_payload(query_bboxes)
+    my_track_writer.write_tracks(query_bboxes)
     
 
         
