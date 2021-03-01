@@ -1,17 +1,16 @@
-from binascii import b2a_base64
 import numpy as np
 from shapely.geometry import Point, Polygon
 import shapely.geometry
 from pyproj import Geod, Transformer
 import json
-import time
+from pathlib import Path
 
 class FlightPathGenerator():
 
     ''' A class to generate Flight Paths given a bounding box, this is the main module to generate flight path datasets, the data is generated as latitude / longitude pairs with assoiated with the flights. Additional flight metadata e.g. flight id, altitude, registration number can also be generated '''
 
     crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"    
-    flight_paths = []
+    
     flight_points = []
     flight_grid  = []
     query_bboxes = []
@@ -66,7 +65,7 @@ class FlightPathGenerator():
             buffered_box = Polygon(proj_buffer_points)
             # Get the bounds of the buffered box, this is the one that will will be fed to the remote ID display provider to query
             buffered_box_bounds = buffered_box.bounds
-            self.query_bboxes.append(buffered_box_bounds)
+            self.query_bboxes.append({'bounds':buffered_box_bounds,'shape':buffered_box})
             
 
     def generate_flight_grid(self):
@@ -104,8 +103,6 @@ class FlightPathGenerator():
                 proj_buffer_points.append((x, y))
             buffered_path = Polygon(proj_buffer_points)
 
-            self.flight_paths.append(buffered_path)
-            
             # Build a list of points so that they can be fed to the sim and outputted. 
             self.flight_points.append(list(zip(*buffered_path.exterior.coords.xy)))
 
@@ -117,38 +114,29 @@ class TrackWriter():
         self.flight_path_points = path_points
         self.bboxes = bboxes
         self.loop_counter = 0
+        
+        output_directory = Path('outputs').mkdir(parents=True, exist_ok=True)
 
     def write_bboxes(self):
-        for box_id, buffered_bbox in enumerate(self.bboxes): 
-            features = json.dumps({'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(buffered_bbox)})
-            with open('outputs/box_%s.geojson'% box_id,'w') as f:
+        for box_id, buffered_bbox in enumerate(self.bboxes):             
+            features = json.dumps({'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(buffered_bbox['shape'])})
+            with open('outputs/box_%s.geojson'% str(box_id + 1),'w') as f:
                 f.write(features)
+
                 
     def write_tracks(self):
         ''' This module writes tracks as a GeoJSON / KML for use in other software ''' 
-        pass
-                    
-    def write_track_payload(self, duration = 180):
-        ''' This starts the simulation for 3 minutes and prints flight positions that can be send to the harness every 3 seconds '''        
-        # Get the length of flight each paths, this is useful to loop back the index at the end of lists, so that at the end of the path, it goes back to the beginning of the list while timestep is counted down.
-        flight_point_lenghts = {}
-        flight_point_current_index = {}
-        num_flights = len(self.flight_path_points)
-        for i in range(num_flights):
-            flight_point_lenghts[i]= len(self.flight_path_points[i])
-            flight_point_current_index[i] = 0
         
-        for j in range(duration):
-            for k in range(num_flights):
-                list_end = flight_point_lenghts[k] - flight_point_current_index[k]            
-                if list_end != 1:             
-                    print("Flight %s, timestep %s"% (k, j))   
-                    print(self.flight_path_points[k][flight_point_current_index[k]])
-                    flight_point_current_index[k]+= 1
-                else:
-                    flight_point_current_index[k] = 0
-            time.sleep(2)
-                    
+        for track_id, flight_track in enumerate(self.flight_path_points):
+            feature_collection = {"type":"FeatureCollection", "features": []}
+            for cur_track_point in flight_track:                
+                p = Point(cur_track_point)
+                point_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(p)}                
+                feature_collection['features'].append(point_feature)
+
+            with open('outputs/track_%s.geojson'% str(track_id+1),'w') as f:
+                f.write(json.dumps(feature_collection))
+
 
 if __name__ == '__main__':
     
@@ -165,11 +153,13 @@ if __name__ == '__main__':
         flight_points = my_path_generator.flight_points        
         my_path_generator.generate_query_bboxes()
         query_bboxes= my_path_generator.query_bboxes
-    # Start the flight simulator    
-    my_track_writer = TrackWriter(flight_points)
-    my_track_writer.write_bboxes(query_bboxes)
-    my_track_writer.write_track_payload(query_bboxes)
-    my_track_writer.write_tracks(query_bboxes)
+
+        # Write track data in the output folder
+        my_track_writer = TrackWriter(path_points = flight_points,bboxes=query_bboxes)
+        my_track_writer.write_bboxes()
+        my_track_writer.write_tracks()
+
+
     
 
         
