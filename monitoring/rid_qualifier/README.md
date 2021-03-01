@@ -1,11 +1,11 @@
 # RID Qualifier Tests
 
-This directory contains a series of tests for qualifying Network Remote ID compliance. It contains four things:
+This directory contains a series of tests for qualifying Network Remote ID compliance. It will contain four things:
 
 1. **Flight track dataset generator** (`flight_track_factory.py`): An API to generate multiple flight paths and patterns within a specified bounding box. You can specify a bounding box in any part of the world the generator will create a grid for flights for the bounds provided. In addition, circular flight paths will be generated within that grid. The flights will follow a circular path and these are generated in the form of latitude / longitude co-ordinates within the bounding box.
 
-2. **Test payload generator** (`position_generator.py`): Once the flight tracks are generated, we simulate flights and "fly" them emitting positions to be fed to the test harness, a file is generated that can be submitted by the test harness to the API. You can specify how many minutes (in seconds) you want the flights to "loop" over the flight paths. Specific details metadata about the flights are generated and added in preparation for submission to the API.
+2. **Test payload generator** (`aircraft_state_replayer.py`): Once the flight tracks are generated, we simulate flights and "fly" them emitting positions to be fed to the test harness, a file is generated that can be submitted by the test harness to the API, this way the aircraft state can be replayed. Specific details metadata about the flights are generated and added in preparation for submission to the API.
 
-3. **Test executor**: The test executor runs the test suite and generates flight paths and submits them to the test harness which in turn submits to the DSS.
+3. **Test executor**:  The test executor is  the main routine of `rid_qualifier`: it instructs the `aircraft_state_replayer` to send test data into each SP's injection harness, and then asks the `display_data_evaluator` to query the RID system for expected data and evaluate the query results against expectations to produce qualification results.
 
-4. **Remote ID Display Verifier**: Once the flights trajectories are sent to the DSS appropriate tests have to be carried on the Display provider side to check the compliance. We point `Flight Blender` a open-source Remote ID Display to test compliance.
+4. **Display Data Evaluator**: Once test aircraft state data is sent to each Remote ID Service Provider's injection test harness to be injected into their systems, the state of the RID system must be queried and then the results of those queries compared against expected results.  This module performs the latter tasks of querying the RID system through each specified Remote ID Display Provider's ingestion test harness, and comparing those query results against expectations. [Flight Blender](https://github.com/openskies-sh/flight-blender) is an open-source Remote ID Display Provider that will implement an ingestion test harness, and therefore can be used to test compliance.
