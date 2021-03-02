@@ -51,7 +51,6 @@ Individual CockroachDB nodes hosting sharded data of the DAR. More information a
 Component responsible for performing orderly database schema migrations, including database bootstrapping. Invoked automatically on first run along with the CRDB cluster-init job, or when requested manually by a user.
 
 ## Directories of Interest:
-
 *   [`build/`](build) has all of the configuration required to build and
     deploy a DSS instance. The README in that directory contains more
     information.
@@ -61,10 +60,6 @@ Component responsible for performing orderly database schema migrations, includi
     actual binaries (the `http-gateway` and `grpc-backend`)
 *   [`test/`](test) contains some tests; see [the README](test/README.md)
     for more information about testing.
-
-## Detailed introduction to the repository
-
-If you are new to the project, read this document to get a long form introduction [about repository structure](introduction_to_repository.md)
 
 ## Notes
 
