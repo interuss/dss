@@ -10,21 +10,33 @@ class AdjacentCircularFlightPathsGenerator():
     ''' A class to generate Flight Paths given a bounding box, this is the main module to generate flight path datasets, the data is generated as latitude / longitude pairs with assoiated with the flights. Additional flight metadata e.g. flight id, altitude, registration number can also be generated '''
 
 
-    flight_points: ClassVar[List] = []   # This is a object that containts multiple lists of flight tracks as points, in the latitude, longitude, altitude in tuple format. Depending on how the grid is generated in this case 3 columns and 2 rows with six flight tracks there will be six lists in this object
-    flight_grid: ClassVar[List] = [] # This object holds the polygon objects for the different grid cells within the bounding box. 
-    query_bboxes: ClassVar[List] = [] # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
-
     def __init__(self, minx: float, miny: float, maxx: float, maxy: float) -> None: 
-        # A bounding box (extents) is necessary, here the minx and miny detail the SE corner where minx is the longitude and miny is the latitude and maxx and maxy is the NW corner and maxx is the longitude and maxy is the latitude. Once these extents are specified, a grid needs to be created with two rows. The max_cols parameter specifies the desired columns inside the extents. The idea is that multiple flights will be created within the extents
+        """ Create an AdjacentCircularFlightPathsGenerator with the specified bounding box.
+
+            Once these extents are specified, a grid will be created with two rows.  The idea is that multiple flights tracks will be created within the extents.
+            Args:
+            minx: Western edge of bounding box (degrees longitude)
+            maxx: Eastern edge of bounding box (degrees longitude)
+            miny: Southern edge of bounding box (degrees latitude)
+            maxy: Northern edge of bounding box (degrees latitude)
+
+            Raises:
+            ValueError: If bounding box has more area than a 500m x 500m square.
+        """
+
         self.minx = minx 
         self.miny = miny
         self.maxx = maxx
         self.maxy = maxy                
         
-        if not self.input_extents_valid():
-            raise ValueError
+        self.flight_points: ClassVar[List] = []   # This is a object that containts multiple lists of flight tracks as points, in the latitude, longitude, altitude in tuple format. Depending on how the grid is generated in this case 3 columns and 2 rows with six flight tracks there will be six lists in this object
+        self.flight_grid: ClassVar[List] = [] # This object holds the polygon objects for the different grid cells within the bounding box. 
+        self.query_bboxes: ClassVar[List] = [] # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
 
-    def input_extents_valid(self) :
+        self.input_extents_valid()
+        
+
+    def input_extents_valid(self) -> None:
 
         ''' This method checks if the input extents are valid i.e. small enough, if the extent is too large, we reject them, at the moment it checks for extents less than 500m x 500m square but can be changed as necessary.''' 
 
@@ -34,7 +46,8 @@ class AdjacentCircularFlightPathsGenerator():
         if (area) < 250000: # Have a area less than 500m x 500m square
             return True
         else: 
-            return False
+
+            raise ValueError("The extents provided are too large, please provide extents that are less than 500m x 500m square")
         
     def generate_query_bboxes(self):
         ''' For the differnet Remote ID checks: No, we need to generate three bounding boxes for the display provider, this method generates the 1 km diagonal length bounding box '''
@@ -71,13 +84,14 @@ class AdjacentCircularFlightPathsGenerator():
     def generate_flight_grid(self):
         ''' Generate a series of boxes within the bounding box to have areas for different flights '''
         # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid. 
-
-        cell_size_x = (self.maxx - self.minx)/(3) # create three columns
-        cell_size_y = (self.maxy - self.miny)/(2) # create two rows
+        N_COLS = 3
+        N_ROWS = 2
+        cell_size_x = (self.maxx - self.minx)/(N_COLS) # create three columns
+        cell_size_y = (self.maxy - self.miny)/(N_ROWS) # create two rows
         grid_cells = [] 
-        for u0 in range(0, 3):  # 3 columns           
+        for u0 in range(0, N_COLS):  # 3 columns           
             x0 =  self.minx + (u0 * cell_size_x)            
-            for v0 in range(0,2): # 2 rows
+            for v0 in range(0,N_ROWS): # 2 rows
                 y0 = self.miny + (v0 *cell_size_y)
                 x1 = x0 + cell_size_x
                 y1 = y0 + cell_size_y
@@ -87,11 +101,11 @@ class AdjacentCircularFlightPathsGenerator():
         
 
     def generate_flight_paths_points(self):
-        ''' For each of the boxes allocated to the operator, get the centroid and buffer to get a flight path. A 75 m radius is provided to have flight paths within each of the boxes '''
+        ''' For each of the boxes allocated to the operator, get the centroid and buffer to get a flight path. A 70 m radius is provided to have flight paths within each of the boxes '''
         # Iterate over the flight_grid
         for grid_cell in self.flight_grid:
             center = grid_cell.centroid
-            ## Transfrom to buffer 100 m diameter circle on which the drone will fly            
+            ## Transfrom to buffer 140 m diameter circle on which the drone will fly            
             transformer = Transformer.from_crs("epsg:4326", "epsg:3857")
             transformed_x,transformed_y = transformer.transform(center.x, center.y)
             pt = Point(transformed_x,transformed_y)
@@ -117,25 +131,41 @@ class AdjacentCircularFlightPathsGenerator():
 
 
 class TrackWriter():
-    ''' A class to write data geometry as files in geographical data format''' 
+    """
+        Write the tracks created by AdjacentCircularFlightPathsGenerator into disk (in the outputs directory) as GeoJSON FeatureCollection 
+        Args:
+        flight_path_points: A set of flight path points generated by generate_flight_paths_points method in the AdjacentCircularFlightPathsGenerator class
+        bboxes: A set of bounding boxes generated by generate_query_bboxes method in the AdjacentCircularFlightPathsGenerator class
+        country_code: An ISO 3166-1 alpha-3 code for a country
 
-    def __init__(self, path_points, bboxes) -> None:
+
+        Outputs: 
+        GeoJSON files for bboxes created in the `test_definitions` folder and the apporpriate country_code subfolder 
+        
+        
+    """
+    def __init__(self, path_points, bboxes, country_code='CHE') -> None:
 
         self.flight_path_points = path_points
         self.bboxes = bboxes
-        self.loop_counter = 0
+        self.country_code = country_code
         
-        output_directory = Path('outputs').mkdir(parents=True, exist_ok=True) # Create outputs directory if it does not exist
+        self.output_directory = Path('test_definitions', self.country_code)
+        self.output_directory.mkdir(parents=True, exist_ok=True) # Create test_definition directory if it does not exist
 
     def write_bboxes(self):
+        ''' This module writes the bboxes as a GeoJSON FeatureCollection '''
         for buffered_bbox_details in self.bboxes:
             
             features = json.dumps({'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(buffered_bbox_details['shape'])})
-            with open('outputs/box_%s.geojson'% buffered_bbox_details['name'],'w') as f:
+            bbox_file_name = 'box_%s.geojson'% buffered_bbox_details['name']
+            bbox_output_path = self.output_directory / bbox_file_name
+
+            with open(bbox_output_path,'w') as f:
                 f.write(features)
                 
     def write_tracks(self):
-        ''' This module writes tracks as a GeoJSON / KML for use in other software '''       
+        ''' This module writes tracks as a GeoJSON FeatureCollection (of Point Feature) for use in other software '''       
         
         flight_point_lenghts = {}
         flight_point_current_index = {}
@@ -151,7 +181,9 @@ class TrackWriter():
                 point_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(p)}                
                 feature_collection['features'].append(point_feature)
 
-            with open('outputs/track_%s.geojson'% str(track_id+1),'w') as f:
+            path_file_name = 'track_%s.geojson'% str(track_id+1)
+            tracks_file_path = self.output_directory / path_file_name
+            with open(tracks_file_path,'w') as f:
                 f.write(json.dumps(feature_collection))
 
             
@@ -159,20 +191,19 @@ class TrackWriter():
 if __name__ == '__main__':
     #TODO: accept these parameters as values so that other locations can be supplied
     my_path_generator = AdjacentCircularFlightPathsGenerator(minx = 7.4735784530639648, miny = 46.9746744128218410, maxx = 7.4786210060119620, maxy= 46.9776318195799121)
+
     flight_points = []
     query_bboxes = []
-    try:
-        assert my_path_generator.input_extents_valid()
-    except AssertionError as ae:
-        print("Extents are too large, please have extents less than 500m x 500m square")
-    else:
-        my_path_generator.generate_flight_grid()
-        my_path_generator.generate_flight_paths_points()
-        flight_points = my_path_generator.flight_points        
-        my_path_generator.generate_query_bboxes()
-        query_bboxes= my_path_generator.query_bboxes
-    # Start the flight simulator    
-    my_track_writer = TrackWriter(path_points = flight_points,bboxes=query_bboxes)
+
+    my_path_generator.generate_flight_grid()
+    my_path_generator.generate_flight_paths_points()    
+    my_path_generator.generate_query_bboxes()
+
+    flight_points = my_path_generator.flight_points    
+    query_bboxes= my_path_generator.query_bboxes
+
+    
+    my_track_writer = TrackWriter(path_points = flight_points,bboxes=query_bboxes, country_code = 'che')
     my_track_writer.write_bboxes()
     my_track_writer.write_tracks()
 
