@@ -3,14 +3,40 @@ import shapely.geometry
 from pyproj import Geod, Transformer
 import json
 from pathlib import Path
-from typing import List, ClassVar
+from typing import List, ClassVar, NamedTuple
+import datetime
+from datetime import datetime, timedelta
+
+class QueryBoundingBox(NamedTuple):
+    ''' This is the object that stores details of query bounding box '''
+    name: str
+    shape: Polygon
+    time_step_after: int    
+    time_step_before: int
+    
+class FlightPoint(NamedTuple):
+    ''' This is the object that stores details of query bounding box '''
+    lat: float
+    lng: float
+    alt: float
+
+class AircraftPosition(NamedTuple):
+    ''' A object to hold AircraftPosition for Remote ID purposes. For more information see, the definition in the standard: https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1091'''
+
+    lat : float
+    lng : float
+    alt : float
+    accuracy_h : str
+    accuacy_v : str
+    extrapolated: int
+    pressure_altitude : int
 
 class AdjacentCircularFlightPathsGenerator():
 
     ''' A class to generate Flight Paths given a bounding box, this is the main module to generate flight path datasets, the data is generated as latitude / longitude pairs with assoiated with the flights. Additional flight metadata e.g. flight id, altitude, registration number can also be generated '''
 
-
     def __init__(self, minx: float, miny: float, maxx: float, maxy: float) -> None: 
+
         """ Create an AdjacentCircularFlightPathsGenerator with the specified bounding box.
 
             Once these extents are specified, a grid will be created with two rows.  The idea is that multiple flights tracks will be created within the extents.
@@ -29,9 +55,9 @@ class AdjacentCircularFlightPathsGenerator():
         self.maxx = maxx
         self.maxy = maxy                
         
-        self.flight_points: ClassVar[List] = []   # This is a object that containts multiple lists of flight tracks as points, in the latitude, longitude, altitude in tuple format. Depending on how the grid is generated in this case 3 columns and 2 rows with six flight tracks there will be six lists in this object
-        self.flight_grid: ClassVar[List] = [] # This object holds the polygon objects for the different grid cells within the bounding box. 
-        self.query_bboxes: ClassVar[List] = [] # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
+        self.flight_points: List[FlightPoint] = []   # This is a object that containts multiple lists of flight tracks as points, in the latitude, longitude, altitude in tuple format. Depending on how the grid is generated in this case 3 columns and 2 rows with six flight tracks there will be six lists in this object
+        self.flight_grid: List[shapely.geometry.polygon.Polygon] = [] # This object holds the polygon objects for the different grid cells within the bounding box. 
+        self.query_bboxes: List[QueryBoundingBox] = [] # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
 
         self.input_extents_valid()
         
@@ -46,10 +72,10 @@ class AdjacentCircularFlightPathsGenerator():
         if (area) < 250000: # Have a area less than 500m x 500m square
             return True
         else: 
-
             raise ValueError("The extents provided are too large, please provide extents that are less than 500m x 500m square")
         
     def generate_query_bboxes(self):
+
         ''' For the differnet Remote ID checks: No, we need to generate three bounding boxes for the display provider, this method generates the 1 km diagonal length bounding box '''
         # Get center of of the bounding box that is inputted into the generator
         box = shapely.geometry.box(self.minx, self.miny, self.maxx, self.maxy)
@@ -59,7 +85,7 @@ class AdjacentCircularFlightPathsGenerator():
         transformed_x,transformed_y = transformer.transform(center.x, center.y)
         pt = Point(transformed_x,transformed_y)
         # Now we have a point, we can buffer the point and create bounding boxes of the buffer to get the appropriate polygons, more than three boxes can be created, for the tests three will suffice.
-        box_diagonals = {1:{'length':150, 'name':'zoomed_in_detail'},2:{'length':380, 'name':"whole_flight_area"},3:{'length':3000, 'name':'too_large_query'}}
+        box_diagonals = {1:{'length':150, 'name':'zoomed_in_detail', 'time_step_after':50,'time_step_before':70},2:{'length':380, 'name':"whole_flight_area",'time_step_after':20,'time_step_before':50},3:{'length':3000, 'name':'too_large_query','time_step_after':10,'time_step_before':20}}
 
         for box_id, box_diagonal in box_diagonals.items():
             # Buffer the point with the appropriate length
@@ -77,11 +103,12 @@ class AdjacentCircularFlightPathsGenerator():
                 proj_buffer_points.append((x, y))
             
             buffered_box = Polygon(proj_buffer_points)
-            # Get the bounds of the buffered box, this is the one that will will be fed to the remote ID display provider to query
-            self.query_bboxes.append({'name':box_diagonals[box_id]['name'], 'shape': buffered_box})
+            # Get the bounds of the buffered box, this is the one that will will be fed to the remote ID display provider to query            
+            self.query_bboxes.append(QueryBoundingBox(name=box_diagonals[box_id]['name'], shape=buffered_box, time_step_after = box_diagonals[box_id]['time_step_after'], time_step_before = box_diagonals[box_id]['time_step_before']))
             
 
     def generate_flight_grid(self):
+
         ''' Generate a series of boxes within the bounding box to have areas for different flights '''
         # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid. 
         N_COLS = 3
@@ -101,7 +128,9 @@ class AdjacentCircularFlightPathsGenerator():
         
 
     def generate_flight_paths_points(self):
+
         ''' For each of the boxes allocated to the operator, get the centroid and buffer to get a flight path. A 70 m radius is provided to have flight paths within each of the boxes '''
+
         # Iterate over the flight_grid
         for grid_cell in self.flight_grid:
             center = grid_cell.centroid
@@ -124,13 +153,14 @@ class AdjacentCircularFlightPathsGenerator():
             flight_points_with_altitude = []
             x, y = buffered_path.exterior.coords.xy
             for coord in range(0,len(x)):
-                flight_points_with_altitude.append((x[coord], y[coord], altitude))
+                flight_points_with_altitude.append(FlightPoint(lat = x[coord],lng = y[coord],alt= altitude))
 
             # Build a list of points so that they can be fed to the sim and outputted. 
             self.flight_points.append(flight_points_with_altitude)
 
 
 class TrackWriter():
+
     """
         Write the tracks created by AdjacentCircularFlightPathsGenerator into disk (in the outputs directory) as GeoJSON FeatureCollection 
         Args:
@@ -138,33 +168,34 @@ class TrackWriter():
         bboxes: A set of bounding boxes generated by generate_query_bboxes method in the AdjacentCircularFlightPathsGenerator class
         country_code: An ISO 3166-1 alpha-3 code for a country
 
-
         Outputs: 
-        GeoJSON files for bboxes created in the `test_definitions` folder and the apporpriate country_code subfolder 
+        GeoJSON files for bboxes created in the `test_definitions/{country_code}` folder 
         
         
     """
+
     def __init__(self, path_points, bboxes, country_code='CHE') -> None:
 
         self.flight_path_points = path_points
         self.bboxes = bboxes
-        self.country_code = country_code
-        
+        self.country_code = country_code        
         self.output_directory = Path('test_definitions', self.country_code)
         self.output_directory.mkdir(parents=True, exist_ok=True) # Create test_definition directory if it does not exist
 
     def write_bboxes(self):
+
         ''' This module writes the bboxes as a GeoJSON FeatureCollection '''
         for buffered_bbox_details in self.bboxes:
             
-            features = json.dumps({'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(buffered_bbox_details['shape'])})
-            bbox_file_name = 'box_%s.geojson'% buffered_bbox_details['name']
+            features = json.dumps({'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(buffered_bbox_details.shape)})
+            bbox_file_name = 'box_%s.geojson'% buffered_bbox_details.name
             bbox_output_path = self.output_directory / bbox_file_name
 
             with open(bbox_output_path,'w') as f:
                 f.write(features)
                 
     def write_tracks(self):
+
         ''' This module writes tracks as a GeoJSON FeatureCollection (of Point Feature) for use in other software '''       
         
         flight_point_lenghts = {}
@@ -177,7 +208,7 @@ class TrackWriter():
         for track_id, flight_track in enumerate(self.flight_path_points):
             feature_collection = {"type":"FeatureCollection", "features": []}
             for cur_track_point in flight_track:                
-                p = Point(cur_track_point)
+                p = Point((cur_track_point.lat, cur_track_point.lng, cur_track_point.alt))
                 point_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(p)}                
                 feature_collection['features'].append(point_feature)
 
@@ -186,12 +217,80 @@ class TrackWriter():
             with open(tracks_file_path,'w') as f:
                 f.write(json.dumps(feature_collection))
 
+class RIDAircraftStateWriter():
+
+    """Convert the tracks created by AdjacentCircularFlightPathsGenerator into RIDAircraftState object (refer. https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604)
+
+        Args:
+        flight_points: A list of flight points each in FlightPoint format, generated from generate_flight_paths_points method in the AdjacentCircularFlightPathsGenerator method.
+        
+        Outputs: 
+        A JSON datastructure stored in a .json format. This is similar to the format defined in the Remote ID standard (http://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/uastech/standards/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#tag/p2p_rid/paths/~1v1~1uss~1flights/get) 
+       
+
+    """
+
+    def __init__(self, flight_points, country_code='che') -> None:
+
+        """ Create a RID state based on flight points """
+
+        self.flight_points = flight_points
+        self.country_code = country_code
+        self.flight_points_check()
+
+
+    def flight_points_check(self) -> None:
+
+        ''' Check if atleast one track is provided, if no tracks are provided, then RIDAircraftState cannot be generated.''' 
+
+        if (self.flight_points): # Empty flight points cannot be converted to a Aircraft State, check if the list has atleast one value
+            return True
+        else: 
+            raise ValueError("At least one Flight track is necessary to create a AircraftState, please generate the tracks first")
+
+    def write_rid_state(self, duration = 180):
+
+        ''' This method iterates over flight tracks and geneates AircraftState JSON objects and writes to disk in the test_definitions folder '''
+        # all_aircraft_states = []
+        # for flight_point in flight_points:
+        #     aircraft_state = AircraftState(position = flight_point,)
             
+        flight_lenghts = {}
+        flight_current_index = {}
+        num_flights = len(self.flight_points)
+        time_step_time = datetime.now() 
+
+        for i in range(num_flights):
+            flight_lenghts[i]= len(self.flight_points[i])
+            flight_current_index[i] = 0
+        
+        for j in range(duration):
+            next_time_step = time_step_time + timedelta(seconds=3)
+
+            timestamp = now + timedelta(seconds=3)
+            for k in range(num_flights):
+                list_end = flight_lenghts[k] - flight_current_index[k]            
+                if list_end != 1:             
+                    # print("Flight %s, timestep %s"% (k, j))
+                    flight_point = self.flight_points[k][flight_current_index[k]]
+                    aircraft_position = AircraftPosition(lat = flight_point.lat, lng = flight_point.lng, alt = flight_point.alt, timestamp = timestamp, timestamp_accuracy = 0, accuracy_h= "HAUnkown", accuracy_v = "VAUnknown", extrapolated = 1, pressure_altitude = 0)
+
+                    rid_aircraft_state = {'id':k, "aircraft_type":"NotDeclared", "current_state":{"timestamp": "2019-08-24T14:15:22Z","operational_status":"Undeclared", "position":{"lat":aircraft_position.lat, "lng":aircraft_position.lng, "alt":aircraft_position.alt}, "track":0,"speed":1.9, "speed_accuracy":"SAUnknown", "vertical_speed":0.2,"group_radius":0, "group_ceiling": 0, "group_floor": 0, "group_count": 1, "group_time_start": "2019-08-24T14:15:22Z", "group_time_end": "2019-08-24T14:15:22Z"}}
+                    print(rid_aircraft_state)
+                    
+                    flight_current_index[k]+= 1
+                else:
+                    flight_current_index[k] = 0
+
+                    
+
+
+
 
 if __name__ == '__main__':
     #TODO: accept these parameters as values so that other locations can be supplied
     my_path_generator = AdjacentCircularFlightPathsGenerator(minx = 7.4735784530639648, miny = 46.9746744128218410, maxx = 7.4786210060119620, maxy= 46.9776318195799121)
-
+    COUNTRY_CODE = 'che'
     flight_points = []
     query_bboxes = []
 
@@ -200,10 +299,11 @@ if __name__ == '__main__':
     my_path_generator.generate_query_bboxes()
 
     flight_points = my_path_generator.flight_points    
-    query_bboxes= my_path_generator.query_bboxes
-
-    
-    my_track_writer = TrackWriter(path_points = flight_points,bboxes=query_bboxes, country_code = 'che')
+    query_bboxes = my_path_generator.query_bboxes
+  
+    my_track_writer = TrackWriter(path_points = flight_points,bboxes=query_bboxes, country_code = COUNTRY_CODE)
     my_track_writer.write_bboxes()
     my_track_writer.write_tracks()
 
+    my_state_generator = RIDAircraftStateWriter(flight_points = flight_points, country_code= COUNTRY_CODE)
+    my_state_generator.write_rid_state()
