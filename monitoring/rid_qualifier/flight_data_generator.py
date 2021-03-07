@@ -3,9 +3,10 @@ import shapely.geometry
 from pyproj import Geod, Transformer
 import json
 from pathlib import Path
-from typing import List, ClassVar, NamedTuple
+from typing import List, NamedTuple
 import datetime
 from datetime import datetime, timedelta
+import uuid
 
 class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
@@ -27,7 +28,7 @@ class AircraftPosition(NamedTuple):
     lng : float
     alt : float
     accuracy_h : str
-    accuacy_v : str
+    accuracy_v : str
     extrapolated: int
     pressure_altitude : int
 
@@ -238,6 +239,9 @@ class RIDAircraftStateWriter():
         self.country_code = country_code
         self.flight_points_check()
 
+        self.output_directory = Path('test_definitions', self.country_code)
+        self.output_directory.mkdir(parents=True, exist_ok=True) # Create test_definition directory if it does not exist
+
 
     def flight_points_check(self) -> None:
 
@@ -258,33 +262,44 @@ class RIDAircraftStateWriter():
         flight_lenghts = {}
         flight_current_index = {}
         num_flights = len(self.flight_points)
-        time_step_time = datetime.now() 
-
+        now = datetime.now() 
+        flight_telemetry = {}
         for i in range(num_flights):
             flight_lenghts[i]= len(self.flight_points[i])
             flight_current_index[i] = 0
+            flight_telemetry[i] = []
+        
         
         for j in range(duration):
-            next_time_step = time_step_time + timedelta(seconds=3)
-
-            timestamp = now + timedelta(seconds=3)
+            if j == 0:
+                timestamp = now + timedelta(seconds=3)
+            else:
+                timestamp = timestamp + timedelta(seconds=3)
             for k in range(num_flights):
                 list_end = flight_lenghts[k] - flight_current_index[k]            
                 if list_end != 1:             
                     # print("Flight %s, timestep %s"% (k, j))
                     flight_point = self.flight_points[k][flight_current_index[k]]
-                    aircraft_position = AircraftPosition(lat = flight_point.lat, lng = flight_point.lng, alt = flight_point.alt, timestamp = timestamp, timestamp_accuracy = 0, accuracy_h= "HAUnkown", accuracy_v = "VAUnknown", extrapolated = 1, pressure_altitude = 0)
+                    aircraft_position = AircraftPosition(lat = flight_point.lat, lng = flight_point.lng, alt = flight_point.alt, accuracy_h= "HAUnkown", accuracy_v = "VAUnknown", extrapolated = 1, pressure_altitude = 0)
 
-                    rid_aircraft_state = {'id':k, "aircraft_type":"NotDeclared", "current_state":{"timestamp": "2019-08-24T14:15:22Z","operational_status":"Undeclared", "position":{"lat":aircraft_position.lat, "lng":aircraft_position.lng, "alt":aircraft_position.alt}, "track":0,"speed":1.9, "speed_accuracy":"SAUnknown", "vertical_speed":0.2,"group_radius":0, "group_ceiling": 0, "group_floor": 0, "group_count": 1, "group_time_start": "2019-08-24T14:15:22Z", "group_time_end": "2019-08-24T14:15:22Z"}}
-                    print(rid_aircraft_state)
+                    rid_aircraft_state = {'id':k, "aircraft_type":"NotDeclared", "current_state":{"timestamp": timestamp.isoformat(),"operational_status":"Undeclared", "position":{"lat":aircraft_position.lat, "lng":aircraft_position.lng, "alt":aircraft_position.alt, "accuracy_h": aircraft_position.accuracy_h, "accuracy_v":aircraft_position.accuracy_v, "extrapolated":aircraft_position.extrapolated, "pressure_altitude": aircraft_position.pressure_altitude}, "height":{"distance":0,"reference": "TakeoffLocation" },"track":0,"speed":1.9, "speed_accuracy":"SAUnknown", "vertical_speed":0.2,"group_radius":0, "group_ceiling": 0, "group_floor": 0, "group_count": 1, "group_time_start": "2019-08-24T14:15:22Z", "group_time_end": "2019-08-24T14:15:22Z"}}
+                    flight_telemetry[k].append(rid_aircraft_state)
+                    
                     
                     flight_current_index[k]+= 1
                 else:
                     flight_current_index[k] = 0
 
-                    
-
-
+        # To begin with, write the first flight
+        first_flight_id = list(flight_telemetry.keys())[0] 
+        first_flight_telemetry_data = flight_telemetry[first_flight_id]
+        
+        ingestion_id = str(uuid.uuid4())
+        rid_test_data = {"requested_flights" : [{"injection_id":str(uuid.uuid4()), "telemetry":first_flight_telemetry_data, "details_respnses":{ "effective_date":now.isoformat(), "details":{"id":ingestion_id, "operator_id":"","operator_location":{"lat":"-118.456", "lng":"34.123"}, "operation_description":"SafeFlightDrone", "serial_number":"INTCJ123-4567-890","registration_number": "FA12345897" } }}]}
+        rid_test_file_name = ingestion_id + '.json'
+        rid_test_file_path = self.output_directory / rid_test_file_name
+        with open(rid_test_file_path,'w') as f:
+            f.write(json.dumps(rid_test_data))
 
 
 if __name__ == '__main__':
