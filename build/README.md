@@ -171,7 +171,7 @@ a PR to that effect would be greatly appreciated.
 1.  Use [`make-certs.py` script](./make-certs.py) to create certificates for
     the new CockroachDB cluster:
 
-        python3 ./make-certs.py --cluster $CLUSTCONTEXT --namespace $NAMESPACE
+        ./make-certs.py --cluster $CLUSTER_CONTEXT --namespace $NAMESPACE
             [--node-address <ADDRESS> <ADDRESS> <ADDRESS> ...]
             [--ca-cert-to-join <CA_CERT_FILE>]
 
