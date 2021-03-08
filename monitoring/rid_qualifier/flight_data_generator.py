@@ -4,6 +4,7 @@ from pyproj import Geod, Transformer
 import json
 from pathlib import Path
 from typing import List, NamedTuple
+import arrow
 import datetime
 from datetime import datetime, timedelta
 import uuid
@@ -222,18 +223,20 @@ class RIDAircraftStateWriter():
 
     """Convert the tracks created by AdjacentCircularFlightPathsGenerator into RIDAircraftState object (refer. https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604)
 
-        Args:
-        flight_points: A list of flight points each in FlightPoint format, generated from generate_flight_paths_points method in the AdjacentCircularFlightPathsGenerator method.
-        
-        Outputs: 
-        A JSON datastructure stored in a .json format. This is similar to the format defined in the Remote ID standard (http://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/uastech/standards/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#tag/p2p_rid/paths/~1v1~1uss~1flights/get) 
        
-
     """
 
     def __init__(self, flight_points, country_code='che') -> None:
 
-        """ Create a RID state based on flight points """
+        """ Atleast single flight points array is necessary and a ouptut directory  
+        Args:
+        flight_points: A list of flight points each in FlightPoint format, generated from generate_flight_paths_points method in the AdjacentCircularFlightPathsGenerator method.
+        country_code: An ISO 3166-1 alpha-3 code for a country, this is used to create a sub-directory to store output.
+        
+        Outputs: 
+        A JSON datastructure as a file that can be submitted as a part of the test harness to a USS that implements the automatic remote id testing interface. 
+        
+        """
 
         self.flight_points = flight_points
         self.country_code = country_code
@@ -245,63 +248,60 @@ class RIDAircraftStateWriter():
 
     def flight_points_check(self) -> None:
 
-        ''' Check if atleast one track is provided, if no tracks are provided, then RIDAircraftState cannot be generated.''' 
+        ''' Check if atleast one track is provided, if no tracks are provided, then RIDAircraftState and Test JSON cannot be generated.''' 
 
         if (self.flight_points): # Empty flight points cannot be converted to a Aircraft State, check if the list has atleast one value
             return True
         else: 
-            raise ValueError("At least one Flight track is necessary to create a AircraftState, please generate the tracks first")
+            raise ValueError("At least one flight track is necessary to create a AircraftState and a test JSON, please generate the tracks first using AdjacentCircularFlightPathsGenerator class")
 
     def write_rid_state(self, duration = 180):
 
-        ''' This method iterates over flight tracks and geneates AircraftState JSON objects and writes to disk in the test_definitions folder '''
-        # all_aircraft_states = []
-        # for flight_point in flight_points:
-        #     aircraft_state = AircraftState(position = flight_point,)
-            
-        flight_lenghts = {}
-        flight_current_index = {}
-        num_flights = len(self.flight_points)
-        now = datetime.now() 
+        ''' This method iterates over flight tracks and geneates AircraftState JSON objects and writes to disk in the test_definitions folder, these files can be used to submit the data in the test harness '''
+
+        flight_lenghts = {} # Develop a index of flight length and their index
+        flight_current_index = {} # Store where on the track the current index is, since the tracks are circular, once the end of the track is reached, the index is reset to 0 to indicate beginning of the track again. 
+        num_flights = len(self.flight_points) # Get the number of flights 
+        now = arrow.now() 
         flight_telemetry = {}
         for i in range(num_flights):
             flight_lenghts[i]= len(self.flight_points[i])
             flight_current_index[i] = 0
             flight_telemetry[i] = []
         
-        
         for j in range(duration):
             if j == 0:
-                timestamp = now + timedelta(seconds=3)
+                timestamp = now.shift(seconds = 2)
             else:
-                timestamp = timestamp + timedelta(seconds=3)
+                timestamp = timestamp.shift(seconds = 2)
+            seconds_diff = (now - timestamp).total_seconds()
+            
             for k in range(num_flights):
                 list_end = flight_lenghts[k] - flight_current_index[k]            
                 if list_end != 1:             
-                    # print("Flight %s, timestep %s"% (k, j))
                     flight_point = self.flight_points[k][flight_current_index[k]]
                     aircraft_position = AircraftPosition(lat = flight_point.lat, lng = flight_point.lng, alt = flight_point.alt, accuracy_h= "HAUnkown", accuracy_v = "VAUnknown", extrapolated = 1, pressure_altitude = 0)
 
-                    rid_aircraft_state = {'id':k, "aircraft_type":"NotDeclared", "current_state":{"timestamp": timestamp.isoformat(),"operational_status":"Undeclared", "position":{"lat":aircraft_position.lat, "lng":aircraft_position.lng, "alt":aircraft_position.alt, "accuracy_h": aircraft_position.accuracy_h, "accuracy_v":aircraft_position.accuracy_v, "extrapolated":aircraft_position.extrapolated, "pressure_altitude": aircraft_position.pressure_altitude}, "height":{"distance":0,"reference": "TakeoffLocation" },"track":0,"speed":1.9, "speed_accuracy":"SAUnknown", "vertical_speed":0.2,"group_radius":0, "group_ceiling": 0, "group_floor": 0, "group_count": 1, "group_time_start": "2019-08-24T14:15:22Z", "group_time_end": "2019-08-24T14:15:22Z"}}
+                    rid_aircraft_state = {'id':k, "aircraft_type":"NotDeclared", "current_state":{"timestamp": seconds_diff,"operational_status":"Undeclared", "position":{"lat":aircraft_position.lat, "lng":aircraft_position.lng, "alt":aircraft_position.alt, "accuracy_h": aircraft_position.accuracy_h, "accuracy_v":aircraft_position.accuracy_v, "extrapolated":aircraft_position.extrapolated, "pressure_altitude": aircraft_position.pressure_altitude}, "height":{"distance":0,"reference": "TakeoffLocation" },"track":0,"speed":1.9, "speed_accuracy":"SAUnknown", "vertical_speed":0.2,"group_radius":0, "group_ceiling": 0, "group_floor": 0, "group_count": 1, "group_time_start": seconds_diff, "group_time_end": seconds_diff}} # In the RID Aircraft state object the only object to update is the "seconds_diff" in the rid_aircraft_state
                     flight_telemetry[k].append(rid_aircraft_state)
-                    
-                    
+        
                     flight_current_index[k]+= 1
                 else:
                     flight_current_index[k] = 0
 
-        # To begin with, write the first flight
-        first_flight_id = list(flight_telemetry.keys())[0] 
-        first_flight_telemetry_data = flight_telemetry[first_flight_id]
+
+        for flight_id, single_flight_telemetry in flight_telemetry.items():
+            
+            flight_telemetry_data = single_flight_telemetry[flight_id]
+            
+            rid_test_file_name = 'flight_' + str(flight_id) + '_rid_aircraft_state' + '.json'
+            rid_test_file_path = self.output_directory / rid_test_file_name
+            
+            with open(rid_test_file_path,'w') as f:
+                f.write(json.dumps(flight_telemetry_data))
+
+
         
-        ingestion_id = str(uuid.uuid4())
-        rid_test_data = {"requested_flights" : [{"injection_id":str(uuid.uuid4()), "telemetry":first_flight_telemetry_data, "details_respnses":{ "effective_date":now.isoformat(), "details":{"id":ingestion_id, "operator_id":"","operator_location":{"lat":"-118.456", "lng":"34.123"}, "operation_description":"SafeFlightDrone", "serial_number":"INTCJ123-4567-890","registration_number": "FA12345897" } }}]}
-        rid_test_file_name = ingestion_id + '.json'
-        rid_test_file_path = self.output_directory / rid_test_file_name
-        with open(rid_test_file_path,'w') as f:
-            f.write(json.dumps(rid_test_data))
-
-
 if __name__ == '__main__':
     #TODO: accept these parameters as values so that other locations can be supplied
     my_path_generator = AdjacentCircularFlightPathsGenerator(minx = 7.4735784530639648, miny = 46.9746744128218410, maxx = 7.4786210060119620, maxy= 46.9776318195799121)
