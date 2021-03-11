@@ -46,7 +46,7 @@ Required components in the cluster are nginx-ingress-controller, metrics server 
 
     - Note: Sometimes if something does not update from a configuration change, it will need to be destroyed and recreated to force the change.
 
-- Execute the following kubernetes configuration files to set up networking on the cluster. These configuration files are onesky and cluster-specific, they may need to be updated to point to a different location.
+- Execute the following kubernetes configuration files to set up networking on the cluster. These configuration files are onesky and cluster-specific, they may need to be updated to point to a different location. If you are not using default namespace, edit the namespace in the two ingress.yml's.
 
         cd dss/onesky
         kubectl apply -f .
