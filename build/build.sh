@@ -36,7 +36,7 @@ else
   echo "Pushing docker image ${DOCKER_URL}/dss:${VERSION}..."
   docker image push "${DOCKER_URL}/dss:${VERSION}"
   docker image tag "${DOCKER_URL}/dss:${VERSION}" "${DOCKER_URL}/dss:latest"
-  docker image push "${DOCKER_URL}/ddss:latest"
+  docker image push "${DOCKER_URL}/dss:latest"
 
   echo "Built and pushed docker image ${DOCKER_URL}/dss:${VERSION}"
 
