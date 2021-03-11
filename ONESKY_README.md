@@ -14,7 +14,7 @@ Required components in the cluster are nginx-ingress-controller, metrics server 
 
     - Execute the following Jenkins job with the latest code pulled from the interuss/dss fork: https://build.onesky.xyz/job/EP_Migration/job/build_dss_image_main/
 
-- Edit main.jsonnet in the dss/build/workspace/$CLUSTER_CONTEXT folder. If the workspace folder already exists, the VAR_* values should be set. Any missing VAR_* values should be updated and set to their correct value.
+- Edit main.jsonnet and spec.json in the dss/build/workspace/$CLUSTER_CONTEXT folder. If the workspace folder already exists, the VAR_* values should be set. Any missing VAR_* values should be updated and set to their correct value.
 
     - Note, this shouldn't need to be updated for an update or redeployment, but please review the values to make sure they are correct.
 
