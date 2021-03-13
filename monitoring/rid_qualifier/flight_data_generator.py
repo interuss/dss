@@ -13,8 +13,8 @@ class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
     name: str
     shape: Polygon
-    time_step_after: int    
-    time_step_before: int
+    timestamp_before: timedelta
+    timestamp_after: timedelta
     
 class FlightPoint(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
@@ -72,7 +72,7 @@ class AdjacentCircularFlightPathsGenerator():
         geod = Geod(ellps="WGS84")
         area = abs(geod.geometry_area_perimeter(box)[0])
         if (area) < 250000: # Have a area less than 500m x 500m square
-            return True
+            return
         else: 
             raise ValueError("The extents provided are too large, please provide extents that are less than 500m x 500m square")
         
@@ -87,9 +87,15 @@ class AdjacentCircularFlightPathsGenerator():
         transformed_x,transformed_y = transformer.transform(center.x, center.y)
         pt = Point(transformed_x,transformed_y)
         # Now we have a point, we can buffer the point and create bounding boxes of the buffer to get the appropriate polygons, more than three boxes can be created, for the tests three will suffice.
-        box_diagonals = {1:{'length':150, 'name':'zoomed_in_detail', 'time_step_after':50,'time_step_before':70},2:{'length':380, 'name':"whole_flight_area",'time_step_after':20,'time_step_before':50},3:{'length':3000, 'name':'too_large_query','time_step_after':10,'time_step_before':20}}
+        now = datetime.now()
+        
+        box_diagonals = [
+            {'length':150, 'name':'zoomed_in_detail', 'timestamp_after':now + timedelta(seconds=60),'timestamp_before':now + timedelta(seconds=90)},
+            {'length':380, 'name':"whole_flight_area",'timestamp_after':now + timedelta(seconds=30),'timestamp_before':now + timedelta(seconds=60)},
+            {'length':3000, 'name':'too_large_query','timestamp_after':now + timedelta(seconds=10),'timestamp_before':now + timedelta(seconds=30)}
+            ]
 
-        for box_id, box_diagonal in box_diagonals.items():
+        for box_id, box_diagonal in enumerate(box_diagonals):
             # Buffer the point with the appropriate length
             buffer = pt.buffer(box_diagonal['length'])                   
             buffer_bounds = buffer.bounds
@@ -106,7 +112,7 @@ class AdjacentCircularFlightPathsGenerator():
             
             buffered_box = Polygon(proj_buffer_points)
             # Get the bounds of the buffered box, this is the one that will will be fed to the remote ID display provider to query            
-            self.query_bboxes.append(QueryBoundingBox(name=box_diagonals[box_id]['name'], shape=buffered_box, time_step_after = box_diagonals[box_id]['time_step_after'], time_step_before = box_diagonals[box_id]['time_step_before']))
+            self.query_bboxes.append(QueryBoundingBox(name=box_diagonals[box_id]['name'], shape=buffered_box, timestamp_after = box_diagonals[box_id]['timestamp_after'], timestamp_before = box_diagonals[box_id]['timestamp_before']))
             
 
     def generate_flight_grid(self):
@@ -176,8 +182,11 @@ class TrackWriter():
         
     """
 
-    def __init__(self, path_points, bboxes, country_code='CHE') -> None:
+    def __init__(self, path_points:  List[List[FlightPoint]], bboxes: List[QueryBoundingBox], country_code='CHE') -> None:
+        ''' This class uses the same output directory as the AdjacentCircularFlightPathsGenerator class and requires the path points (Tracks) and the bounding boxes from that class.
 
+        '''
+        
         self.flight_path_points = path_points
         self.bboxes = bboxes
         self.country_code = country_code        
@@ -189,7 +198,7 @@ class TrackWriter():
         ''' This module writes the bboxes as a GeoJSON FeatureCollection '''
         for buffered_bbox_details in self.bboxes:
             
-            features = json.dumps({'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(buffered_bbox_details.shape)})
+            features = json.dumps({'type': 'Feature', 'properties': {"timestamp_before":buffered_bbox_details.timestamp_before.isoformat(), "timestamp_after":buffered_bbox_details.timestamp_after.isoformat()}, 'geometry': shapely.geometry.mapping(buffered_bbox_details.shape)})
             bbox_file_name = 'box_%s.geojson'% buffered_bbox_details.name
             bbox_output_path = self.output_directory / bbox_file_name
 
@@ -250,9 +259,9 @@ class RIDAircraftStateWriter():
 
         ''' Check if atleast one track is provided, if no tracks are provided, then RIDAircraftState and Test JSON cannot be generated.''' 
 
-        if (self.flight_points): # Empty flight points cannot be converted to a Aircraft State, check if the list has atleast one value
-            return True
-        else: 
+        if (self.flight_points): # Empty flight points cannot be converted to a Aircraft State, check if the list has 
+            return
+        else:
             raise ValueError("At least one flight track is necessary to create a AircraftState and a test JSON, please generate the tracks first using AdjacentCircularFlightPathsGenerator class")
 
     def write_rid_state(self, duration = 180):
@@ -280,20 +289,47 @@ class RIDAircraftStateWriter():
                 list_end = flight_lenghts[k] - flight_current_index[k]            
                 if list_end != 1:             
                     flight_point = self.flight_points[k][flight_current_index[k]]
-                    aircraft_position = AircraftPosition(lat = flight_point.lat, lng = flight_point.lng, alt = flight_point.alt, accuracy_h= "HAUnkown", accuracy_v = "VAUnknown", extrapolated = 1, pressure_altitude = 0)
+                    aircraft_position = AircraftPosition(lat = flight_point.lat, 
+                                                         lng = flight_point.lng, 
+                                                         alt = flight_point.alt, 
+                                                         accuracy_h= "HAUnkown", 
+                                                         accuracy_v = "VAUnknown", 
+                                                         extrapolated = 1, 
+                                                         pressure_altitude = 0)
 
-                    rid_aircraft_state = {'id':k, "aircraft_type":"NotDeclared", "current_state":{"timestamp": seconds_diff,"operational_status":"Undeclared", "position":{"lat":aircraft_position.lat, "lng":aircraft_position.lng, "alt":aircraft_position.alt, "accuracy_h": aircraft_position.accuracy_h, "accuracy_v":aircraft_position.accuracy_v, "extrapolated":aircraft_position.extrapolated, "pressure_altitude": aircraft_position.pressure_altitude}, "height":{"distance":0,"reference": "TakeoffLocation" },"track":0,"speed":1.9, "speed_accuracy":"SAUnknown", "vertical_speed":0.2,"group_radius":0, "group_ceiling": 0, "group_floor": 0, "group_count": 1, "group_time_start": seconds_diff, "group_time_end": seconds_diff}} # In the RID Aircraft state object the only object to update is the "seconds_diff" in the rid_aircraft_state
+                    rid_aircraft_state = {'id':k, 
+                                          "aircraft_type":"NotDeclared", 
+                                          "current_state":
+                                              {"timestamp": seconds_diff,
+                                               "operational_status":"Undeclared", 
+                                               "position":
+                                                   {"lat":aircraft_position.lat, 
+                                                    "lng":aircraft_position.lng, 
+                                                    "alt":aircraft_position.alt, 
+                                                    "accuracy_h": aircraft_position.accuracy_h, "accuracy_v":aircraft_position.accuracy_v, "extrapolated":aircraft_position.extrapolated, 
+                                                    "pressure_altitude": aircraft_position.pressure_altitude
+                                                    }, 
+                                                "height": {"distance":70, "reference": "TakeoffLocation"},
+                                                "track":45,
+                                                "speed":1.9, 
+                                                "speed_accuracy":"SA3mps", 
+                                                "vertical_speed":0.2,
+                                                "group_radius":20, 
+                                                "group_ceiling": 80, 
+                                                "group_floor": 10, 
+                                                "group_count": 1, 
+                                                "group_time_start": seconds_diff, 
+                                                "group_time_end": seconds_diff
+                                                }
+                                            } # In the RID Aircraft state object the only object to update is the "seconds_diff" in the rid_aircraft_state
                     flight_telemetry[k].append(rid_aircraft_state)
-        
                     flight_current_index[k]+= 1
                 else:
                     flight_current_index[k] = 0
 
 
         for flight_id, single_flight_telemetry in flight_telemetry.items():
-            
             flight_telemetry_data = single_flight_telemetry[flight_id]
-            
             rid_test_file_name = 'flight_' + str(flight_id) + '_rid_aircraft_state' + '.json'
             rid_test_file_path = self.output_directory / rid_test_file_name
             
