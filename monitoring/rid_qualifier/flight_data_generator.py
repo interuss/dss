@@ -17,7 +17,7 @@ class QueryBoundingBox(NamedTuple):
     timestamp_after: timedelta
     
 class FlightPoint(NamedTuple):
-    ''' This is the object that stores details of query bounding box '''
+    ''' This class holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum '''
     lat: float
     lng: float
     alt: float
@@ -30,8 +30,8 @@ class AircraftPosition(NamedTuple):
     alt : float
     accuracy_h : str
     accuracy_v : str
-    extrapolated: int
-    pressure_altitude : int
+    extrapolated: bool
+    pressure_altitude : float
 
 class AdjacentCircularFlightPathsGenerator():
 
@@ -57,7 +57,7 @@ class AdjacentCircularFlightPathsGenerator():
         self.maxx = maxx
         self.maxy = maxy                
         
-        self.flight_points: List[FlightPoint] = []   # This is a object that containts multiple lists of flight tracks as points, in the latitude, longitude, altitude in tuple format. Depending on how the grid is generated in this case 3 columns and 2 rows with six flight tracks there will be six lists in this object
+        self.flight_points: List[List[FlightPoint]] = []   # This is a object that containts multiple lists of flight tracks as points, in the latitude, longitude, altitude in tuple format. Depending on how the grid is generated in this case 3 columns and 2 rows with six flight tracks there will be six lists in this object
         self.flight_grid: List[shapely.geometry.polygon.Polygon] = [] # This object holds the polygon objects for the different grid cells within the bounding box. 
         self.query_bboxes: List[QueryBoundingBox] = [] # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
 
@@ -209,11 +209,9 @@ class TrackWriter():
 
         ''' This module writes tracks as a GeoJSON FeatureCollection (of Point Feature) for use in other software '''       
         
-        flight_point_lenghts = {}
         flight_point_current_index = {}
         num_flights = len(self.flight_path_points)
         for i in range(num_flights):
-            flight_point_lenghts[i]= len(self.flight_path_points[i])
             flight_point_current_index[i] = 0
             
         for track_id, flight_track in enumerate(self.flight_path_points):
@@ -280,9 +278,9 @@ class RIDAircraftStateWriter():
         
         for j in range(duration):
             if j == 0:
-                timestamp = now.shift(seconds = 2)
+                timestamp = now.shift(seconds = 1)
             else:
-                timestamp = timestamp.shift(seconds = 2)
+                timestamp = timestamp.shift(seconds = 1)
             seconds_diff = (now - timestamp).total_seconds()
             
             for k in range(num_flights):
