@@ -33,6 +33,11 @@ class AircraftPosition(NamedTuple):
     extrapolated: bool
     pressure_altitude : float
 
+class GridCellFlight(NamedTuple):
+    ''' A object to hold details of a grid location and the track within it '''
+    bounds: shapely.geometry.polygon.Polygon
+    track: List[FlightPoint]
+
 class AdjacentCircularFlightPathsGenerator():
 
     ''' A class to generate Flight Paths given a bounding box, this is the main module to generate flight path datasets, the data is generated as latitude / longitude pairs with assoiated with the flights. Additional flight metadata e.g. flight id, altitude, registration number can also be generated '''
@@ -55,12 +60,16 @@ class AdjacentCircularFlightPathsGenerator():
         self.minx = minx 
         self.miny = miny
         self.maxx = maxx
-        self.maxy = maxy                
+        self.maxy = maxy   
         
+        self.grid_cells_flight_tracks: List[GridCellFlight] = []
+
+        # to remove
         self.flight_points: List[List[FlightPoint]] = []   # This is a object that containts multiple lists of flight tracks as points, in the latitude, longitude, altitude in tuple format. Depending on how the grid is generated in this case 3 columns and 2 rows with six flight tracks there will be six lists in this object
         self.flight_grid: List[shapely.geometry.polygon.Polygon] = [] # This object holds the polygon objects for the different grid cells within the bounding box. 
+        
         self.query_bboxes: List[QueryBoundingBox] = [] # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
-
+        
         self.input_extents_valid()
         
 
@@ -115,9 +124,10 @@ class AdjacentCircularFlightPathsGenerator():
             self.query_bboxes.append(QueryBoundingBox(name=box_diagonals[box_id]['name'], shape=buffered_box, timestamp_after = box_diagonals[box_id]['timestamp_after'], timestamp_before = box_diagonals[box_id]['timestamp_before']))
             
 
-    def generate_flight_grid(self):
+    
+    def generate_flight_grid_and_path_points(self):
 
-        ''' Generate a series of boxes within the bounding box to have areas for different flights '''
+        ''' Generate a series of boxes (grid) within the given bounding box to have areas for different flight tracks within each box '''
         # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid. 
         N_COLS = 3
         N_ROWS = 2
@@ -131,16 +141,14 @@ class AdjacentCircularFlightPathsGenerator():
                 x1 = x0 + cell_size_x
                 y1 = y0 + cell_size_y
                 grid_cells.append(shapely.geometry.box(x0, y0, x1, y1))                
+                           
         
         self.flight_grid = grid_cells
-        
-
-    def generate_flight_paths_points(self):
-
-        ''' For each of the boxes allocated to the operator, get the centroid and buffer to get a flight path. A 70 m radius is provided to have flight paths within each of the boxes '''
+        all_grid_cell_tracks =[]
+        ''' For each of the boxes (grid) allocated to the operator, get the centroid and buffer to generate a flight path. A 70 m radius is provided to have flight paths within each of the boxes '''
 
         # Iterate over the flight_grid
-        for grid_cell in self.flight_grid:
+        for grid_cell in grid_cells:
             center = grid_cell.centroid
             ## Transfrom to buffer 140 m diameter circle on which the drone will fly            
             transformer = Transformer.from_crs("epsg:4326", "epsg:3857")
@@ -162,9 +170,15 @@ class AdjacentCircularFlightPathsGenerator():
             x, y = buffered_path.exterior.coords.xy
             for coord in range(0,len(x)):
                 flight_points_with_altitude.append(FlightPoint(lat = x[coord],lng = y[coord],alt= altitude))
-
-            # Build a list of points so that they can be fed to the sim and outputted. 
+            
+            # Build a list of points so that they can be fed to the sim and outputted.             
             self.flight_points.append(flight_points_with_altitude)
+            all_grid_cell_tracks.append(GridCellFlight(bounds = grid_cell, track = flight_points_with_altitude))
+
+        self.grid_cells_flight_tracks = all_grid_cell_tracks
+
+
+
 
 
 class TrackWriter():
@@ -182,12 +196,12 @@ class TrackWriter():
         
     """
 
-    def __init__(self, path_points:  List[List[FlightPoint]], bboxes: List[QueryBoundingBox], country_code='CHE') -> None:
+    def __init__(self, grid_tracks: List[GridCellFlight], bboxes: List[QueryBoundingBox], country_code='CHE') -> None:
         ''' This class uses the same output directory as the AdjacentCircularFlightPathsGenerator class and requires the path points (Tracks) and the bounding boxes from that class.
 
         '''
         
-        self.flight_path_points = path_points
+        self.grid_cells_flight_tracks = grid_tracks
         self.bboxes = bboxes
         self.country_code = country_code        
         self.output_directory = Path('test_definitions', self.country_code)
@@ -210,13 +224,13 @@ class TrackWriter():
         ''' This module writes tracks as a GeoJSON FeatureCollection (of Point Feature) for use in other software '''       
         
         flight_point_current_index = {}
-        num_flights = len(self.flight_path_points)
+        num_flights = len(self.grid_cells_flight_tracks)
         for i in range(num_flights):
             flight_point_current_index[i] = 0
             
-        for track_id, flight_track in enumerate(self.flight_path_points):
+        for track_id, grid_cell_flight_track in enumerate(self.grid_cells_flight_tracks):
             feature_collection = {"type":"FeatureCollection", "features": []}
-            for cur_track_point in flight_track:                
+            for cur_track_point in grid_cell_flight_track.track:                
                 p = Point((cur_track_point.lat, cur_track_point.lng, cur_track_point.alt))
                 point_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(p)}                
                 feature_collection['features'].append(point_feature)
@@ -233,7 +247,7 @@ class RIDAircraftStateWriter():
        
     """
 
-    def __init__(self, flight_points, country_code='che') -> None:
+    def __init__(self, grid_tracks, country_code='che') -> None:
 
         """ Atleast single flight points array is necessary and a ouptut directory  
         Args:
@@ -245,19 +259,19 @@ class RIDAircraftStateWriter():
         
         """
 
-        self.flight_points = flight_points
+        self.grid_tracks = grid_tracks
         self.country_code = country_code
-        self.flight_points_check()
+        self.grid_tracks_check()
 
         self.output_directory = Path('test_definitions', self.country_code)
         self.output_directory.mkdir(parents=True, exist_ok=True) # Create test_definition directory if it does not exist
 
 
-    def flight_points_check(self) -> None:
+    def grid_tracks_check(self) -> None:
 
         ''' Check if atleast one track is provided, if no tracks are provided, then RIDAircraftState and Test JSON cannot be generated.''' 
 
-        if (self.flight_points): # Empty flight points cannot be converted to a Aircraft State, check if the list has 
+        if (self.grid_tracks): # Empty flight points cannot be converted to a Aircraft State, check if the list has 
             return
         else:
             raise ValueError("At least one flight track is necessary to create a AircraftState and a test JSON, please generate the tracks first using AdjacentCircularFlightPathsGenerator class")
@@ -268,11 +282,11 @@ class RIDAircraftStateWriter():
 
         flight_lenghts = {} # Develop a index of flight length and their index
         flight_current_index = {} # Store where on the track the current index is, since the tracks are circular, once the end of the track is reached, the index is reset to 0 to indicate beginning of the track again. 
-        num_flights = len(self.flight_points) # Get the number of flights 
+        num_flights = len(self.grid_tracks) # Get the number of flights 
         now = arrow.now() 
         flight_telemetry = {}
         for i in range(num_flights):
-            flight_lenghts[i]= len(self.flight_points[i])
+            flight_lenghts[i]= len(self.grid_tracks[i].track)
             flight_current_index[i] = 0
             flight_telemetry[i] = []
         
@@ -286,7 +300,7 @@ class RIDAircraftStateWriter():
             for k in range(num_flights):
                 list_end = flight_lenghts[k] - flight_current_index[k]            
                 if list_end != 1:             
-                    flight_point = self.flight_points[k][flight_current_index[k]]
+                    flight_point = self.grid_tracks[k].track[flight_current_index[k]]
                     aircraft_position = AircraftPosition(lat = flight_point.lat, 
                                                          lng = flight_point.lng, 
                                                          alt = flight_point.alt, 
@@ -343,16 +357,18 @@ if __name__ == '__main__':
     flight_points = []
     query_bboxes = []
 
-    my_path_generator.generate_flight_grid()
-    my_path_generator.generate_flight_paths_points()    
+
+    my_path_generator.generate_flight_grid_and_path_points()
     my_path_generator.generate_query_bboxes()
 
-    flight_points = my_path_generator.flight_points    
+    grid_tracks = my_path_generator.grid_cells_flight_tracks    
+
     query_bboxes = my_path_generator.query_bboxes
+    
   
-    my_track_writer = TrackWriter(path_points = flight_points,bboxes=query_bboxes, country_code = COUNTRY_CODE)
+    my_track_writer = TrackWriter(grid_tracks = grid_tracks,bboxes=query_bboxes, country_code = COUNTRY_CODE)
     my_track_writer.write_bboxes()
     my_track_writer.write_tracks()
 
-    my_state_generator = RIDAircraftStateWriter(flight_points = flight_points, country_code= COUNTRY_CODE)
+    my_state_generator = RIDAircraftStateWriter(grid_tracks = grid_tracks, country_code= COUNTRY_CODE)
     my_state_generator.write_rid_state()
