@@ -227,7 +227,7 @@ class AdjacentCircularFlightsSimulator():
     def generate_rid_state(self, duration = 180):
         '''
         
-        flight_points: A list of flight points each in FlightPoint format, generated from generate_flight_paths_points method in the AdjacentCircularFlightsSimulator method.
+        flight_points: A list of flight points each in FlightPoint format, generated from generate_flight_paths_points method in the AdjacentCircularFlightsSimulator method. This method generates a RIDState object from flight tracks and adds time stamp and other information
 
 
         '''
@@ -357,7 +357,7 @@ class TrackWriter():
 
 class RIDAircraftStateWriter():
 
-    """Convert the tracks created by AdjacentCircularFlightsSimulator into RIDAircraftState object (refer. https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604)
+    """Write tracks in RIDAircraftState object to disk (refer. https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604)
 
        
     """
