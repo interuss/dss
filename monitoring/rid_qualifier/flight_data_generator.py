@@ -3,7 +3,7 @@ import shapely.geometry
 from pyproj import Geod, Transformer
 import json
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Any
 import arrow
 import datetime
 from datetime import datetime, timedelta
@@ -18,15 +18,15 @@ class QueryBoundingBox(NamedTuple):
     
 class FlightPoint(NamedTuple):
     ''' This class holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum '''
-    lat: float
-    lng: float
+    lat: float # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/astm-utm/Protocol/blob/master/utm.yaml#L216
+    lng: float # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/astm-utm/Protocol/blob/master/utm.yaml#L227
     alt: float
 
 class AircraftPosition(NamedTuple):
     ''' A object to hold AircraftPosition for Remote ID purposes. For more information see, the definition in the standard: https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1091'''
 
-    lat : float
-    lng : float
+    lat : float 
+    lng : float 
     alt : float
     accuracy_h : str
     accuracy_v : str
@@ -80,7 +80,7 @@ class AdjacentCircularFlightPathsGenerator():
         box = shapely.geometry.box(self.minx, self.miny, self.maxx, self.maxy)
         geod = Geod(ellps="WGS84")
         area = abs(geod.geometry_area_perimeter(box)[0])
-        if (area) < 250000: # Have a area less than 500m x 500m square
+        if (area) < 250000 and (area) > 202500: # Have a area less than 500m x 500m square and more than 450m x 450m square to ensure a 70 m diameter tracks
             return
         else: 
             raise ValueError("The extents provided are too large, please provide extents that are less than 500m x 500m square")
@@ -179,8 +179,6 @@ class AdjacentCircularFlightPathsGenerator():
 
 
 
-
-
 class TrackWriter():
 
     """
@@ -266,6 +264,17 @@ class RIDAircraftStateWriter():
         self.output_directory = Path('test_definitions', self.country_code)
         self.output_directory.mkdir(parents=True, exist_ok=True) # Create test_definition directory if it does not exist
 
+    def make_json_compatible(self, struct: Any) -> Any:
+        if isinstance(struct, tuple) and hasattr(struct, '_asdict'):
+            return {k: self.make_json_compatible(v) for k, v in struct._asdict().items()}
+        elif isinstance(struct, dict):
+            return {k: self.make_json_compatible(v) for k, v in struct.items()}
+        elif isinstance(struct, str):
+            return struct
+        try:
+            return [self.make_json_compatible(v) for v in struct]
+        except TypeError:
+            return struct
 
     def grid_tracks_check(self) -> None:
 
@@ -284,6 +293,7 @@ class RIDAircraftStateWriter():
         flight_current_index = {} # Store where on the track the current index is, since the tracks are circular, once the end of the track is reached, the index is reset to 0 to indicate beginning of the track again. 
         num_flights = len(self.grid_tracks) # Get the number of flights 
         now = arrow.now() 
+        now_isoformat = now.isoformat()
         flight_telemetry = {}
         for i in range(num_flights):
             flight_lenghts[i]= len(self.grid_tracks[i].track)
@@ -295,6 +305,7 @@ class RIDAircraftStateWriter():
                 timestamp = now.shift(seconds = 1)
             else:
                 timestamp = timestamp.shift(seconds = 1)
+            timestamp_isoformat = timestamp.isoformat()
             seconds_diff = (now - timestamp).total_seconds()
             
             for k in range(num_flights):
@@ -312,15 +323,10 @@ class RIDAircraftStateWriter():
                     rid_aircraft_state = {'id':k, 
                                           "aircraft_type":"NotDeclared", 
                                           "current_state":
-                                              {"timestamp": seconds_diff,
-                                               "operational_status":"Undeclared", 
-                                               "position":
-                                                   {"lat":aircraft_position.lat, 
-                                                    "lng":aircraft_position.lng, 
-                                                    "alt":aircraft_position.alt, 
-                                                    "accuracy_h": aircraft_position.accuracy_h, "accuracy_v":aircraft_position.accuracy_v, "extrapolated":aircraft_position.extrapolated, 
-                                                    "pressure_altitude": aircraft_position.pressure_altitude
-                                                    }, 
+                                              { "reference_time": now_isoformat,
+                                                "timestamp": timestamp_isoformat,
+                                                "operational_status":"Undeclared", 
+                                                "position":aircraft_position , 
                                                 "height": {"distance":70, "reference": "TakeoffLocation"},
                                                 "track":45,
                                                 "speed":1.9, 
@@ -334,7 +340,8 @@ class RIDAircraftStateWriter():
                                                 "group_time_end": seconds_diff
                                                 }
                                             } # In the RID Aircraft state object the only object to update is the "seconds_diff" in the rid_aircraft_state
-                    flight_telemetry[k].append(rid_aircraft_state)
+                    rid_aircraft_state_deserialized = self.make_json_compatible(rid_aircraft_state)
+                    flight_telemetry[k].append(rid_aircraft_state_deserialized)
                     flight_current_index[k]+= 1
                 else:
                     flight_current_index[k] = 0
