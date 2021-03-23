@@ -1,0 +1,182 @@
+openapi: 3.0.2
+info:
+  title: Remote ID Display Data Ingestion
+  version: 0.0.1
+  description: >-
+    This interface is implemented by every Display Provider wishing to be tested by the automated testing framework.
+    The automated testing suite calls this interface to obtain current remote ID information from the perspective of the Display Provider.
+paths:
+  /display_data:
+    get:
+      parameters:
+        -
+          examples:
+            pyramids:
+              value: '29.97816,31.13296,29.98025,31.13535'
+          name: view
+          description: >-
+            The area of this view: lat1,lng1,lat2,lng2.  The view is the smallest box bounded by
+            the provided corner points.
+          schema:
+            type: string
+          in: query
+          required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDisplayDataResponse'
+          description: Current remote ID display data was retrieved successfully.
+      operationId: getDisplayData
+      summary: Poll display data
+      description: Request current remote ID display data as would be visualized by a Display Application.
+      security:
+        - RIDAuth:
+            - dss.read.identification_service_areas
+  /display_data/{id}:
+    get:
+      parameters:
+        -
+          examples:
+            default:
+              value: '1e3adb99-acc9-424f-a04e-a0743538849a'
+          name: id
+          description: >-
+            ID of flight identified in `/display_data`.
+          schema:
+            type: string
+          in: path
+          required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDetailsResponse'
+          description: Details about the requested flight were retrieved successfully.
+        '404':
+          description: Requested flight was not found.
+      operationId: getDetails
+      summary: Get flight details
+      description: Get the details of a flight identified in `/display_data`.
+      security:
+        - RIDAuth:
+            - dss.read.identification_service_areas
+components:
+  schemas:
+    GetDisplayDataResponse:
+      description: Response to a request for current data that would be visualized by a Display Application.
+      type: object
+      properties:
+        flights:
+          description: Current information for set of discovered flights whose precise locations are known.
+          type: array
+          items:
+            $ref: '#/components/schemas/Flight'
+          default: []
+        clusters:
+          description: >-
+            Current information for sets of discovered flights whose precise locations are not
+            known.
+          type: array
+          items:
+            $ref: '#/components/schemas/Cluster'
+          default: []
+    GetDetailsResponse:
+      description: Response to a request to get details about a flight.
+      type: object
+    Flight:
+      description: ''
+      required:
+        - id
+      type: object
+      properties:
+        id:
+          description: >-
+            Identifier of flight that may be used to obtain details about the flight.
+            This is not necessarily the UTM/flight ID in the remote ID system.
+          type: string
+        most_recent_position:
+          description: Most recent position known for the flight.
+          allOf:
+            - $ref: '#/components/schemas/Position'
+        recent_paths:
+          description: Paths the flight recently traveled, if available.
+          type: array
+          items:
+            $ref: '#/components/schemas/Path'
+    Cluster:
+      description: 'A general area containing one or more flight.'
+      type: object
+      required:
+        - corners
+        - area_sqm
+        - number_of_flights
+      properties:
+        corners:
+          description: Two opposite corners of a rectangular lat-lng box bounding the cluster.
+          type: array
+          items:
+            $ref: '#/components/schemas/Position'
+          minItems: 2
+          maxItems: 2
+        area_sqm:
+          description: Area of the cluster in square meters.
+          type: number
+          format: double
+        number_of_flights:
+          description: Number of flights within the cluster.
+          type: number
+          format: int32
+          minValue: 1
+    Position:
+      description: 'A position on Earth.'
+      required:
+        - lat
+        - lng
+      type: object
+      properties:
+        lat:
+          format: double
+          description: >-
+            Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid.
+          type: number
+        lng:
+          format: double
+          description: >-
+            Degrees of longitude east of the Prime Meridian, with reference to the WGS84
+            ellipsoid.
+          type: number
+        alt:
+          format: double
+          description: >-
+            Geodetic altitude (NOT altitude above launch, altitude above ground, or EGM96):
+            aircraft distance above the WGS84 ellipsoid as measured along a line that passes
+            through the aircraft and is normal to the surface of the WGS84 ellipsoid.
+          type: number
+    Path:
+      description: Path followed by a flight.
+      required:
+        - positions
+      type: object
+      properties:
+        positions:
+          description: Sequential positions available for a flight.
+          type: array
+          items:
+            $ref: '#/components/schemas/Position'
+  securitySchemes:
+    RIDAuth:
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            dss.read.identification_service_areas: Client may read current remote ID information.
+      type: oauth2
+      description: |-
+        Authorization from, or on behalf of, an authorization authority, matching standard remote ID authorization.
+
+security:
+  - RIDAuth:
+      - dss.read.identification_service_areas
