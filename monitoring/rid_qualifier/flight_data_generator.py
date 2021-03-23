@@ -200,7 +200,9 @@ class AdjacentCircularFlightsSimulator():
                 x, y = transformer2.transform(x, y)
                 proj_buffer_points.append((x, y))
             buffered_path = Polygon(proj_buffer_points)
-            altitude = 70.0
+            altitude_agl = 50.0
+            altitude_of_ground_level_wgs_84 = 48.73 #  height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit 
+            altitude = altitude_of_ground_level_wgs_84 + altitude_agl # meters WGS 84
             flight_points_with_altitude = []
             x, y = buffered_path.exterior.coords.xy
             for coord in range(0,len(x)):
