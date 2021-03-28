@@ -261,7 +261,7 @@ class AdjacentCircularFlightsSimulator():
                                                          alt = flight_point.alt, 
                                                          accuracy_h= "HAUnkown", 
                                                          accuracy_v = "VAUnknown", 
-                                                         extrapolated = 1, 
+                                                         extrapolated = 0, 
                                                          pressure_altitude = 0)
                     aircraft_height = AircraftHeight(distance =70, reference="TakeoffLocation")
                     rid_aircraft_state = AircraftState(
@@ -273,7 +273,7 @@ class AdjacentCircularFlightsSimulator():
                         track=45.0,
                         speed=1.9, 
                         speed_accuracy="SA3mps",
-                        vertical_speed= 0.2,
+                        vertical_speed= 0.0,
                         group_radius=20.0, 
                         group_ceiling= 80.0, 
                         group_floor= 10.0, 
