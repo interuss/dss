@@ -20,8 +20,8 @@ class QueryBoundingBox(NamedTuple):
 class FlightPoint(NamedTuple):
     ''' This object holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum '''
 
-    lat: float # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/astm-utm/Protocol/blob/master/utm.yaml#L216
-    lng: float # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/astm-utm/Protocol/blob/master/utm.yaml#L227
+    lat: float # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
+    lng: float # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
     alt: float
 
 class AircraftPosition(NamedTuple):
