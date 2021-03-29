@@ -20,8 +20,8 @@ class QueryBoundingBox(NamedTuple):
 class FlightPoint(NamedTuple):
     ''' This object holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum '''
 
-    lat: float # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/astm-utm/Protocol/blob/master/utm.yaml#L216
-    lng: float # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/astm-utm/Protocol/blob/master/utm.yaml#L227
+    lat: float # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
+    lng: float # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
     alt: float
 
 class AircraftPosition(NamedTuple):
@@ -261,7 +261,7 @@ class AdjacentCircularFlightsSimulator():
                                                          alt = flight_point.alt, 
                                                          accuracy_h= "HAUnkown", 
                                                          accuracy_v = "VAUnknown", 
-                                                         extrapolated = 1, 
+                                                         extrapolated = 0, 
                                                          pressure_altitude = 0)
                     aircraft_height = AircraftHeight(distance =70, reference="TakeoffLocation")
                     rid_aircraft_state = AircraftState(
@@ -273,7 +273,7 @@ class AdjacentCircularFlightsSimulator():
                         track=45.0,
                         speed=1.9, 
                         speed_accuracy="SA3mps",
-                        vertical_speed= 0.2,
+                        vertical_speed= 0.0,
                         group_radius=20.0, 
                         group_ceiling= 80.0, 
                         group_floor= 10.0, 
