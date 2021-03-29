@@ -102,7 +102,7 @@ class AdjacentCircularFlightsSimulator():
         
         self.query_bboxes: List[QueryBoundingBox] = [] # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
 
-        self.flight_telemetry: List[List[RIDAircraftState]] = []
+        self.flight_telemetry: List[List[AircraftState]] = []
         
         self.input_extents_valid()
         
