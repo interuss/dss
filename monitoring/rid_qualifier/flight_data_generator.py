@@ -90,6 +90,8 @@ class AdjacentCircularFlightsSimulator():
         self.miny = miny
         self.maxx = maxx
         self.maxy = maxy   
+
+        self.altitude_agl = 50.0 
         
         self.grid_cells_flight_tracks: List[GridCellFlight] = []
 
@@ -194,8 +196,8 @@ class AdjacentCircularFlightsSimulator():
                 x, y = transformer2.transform(x, y)
                 proj_buffer_points.append((x, y))
             buffered_path = Polygon(proj_buffer_points)
-            altitude_agl = 50.0 
-            altitude = altitude_of_ground_level_wgs_84 + altitude_agl # meters WGS 84
+            
+            altitude = altitude_of_ground_level_wgs_84 + self.altitude_agl # meters WGS 84
             flight_points_with_altitude = []
             x, y = buffered_path.exterior.coords.xy
             for coord in range(0,len(x)):
@@ -271,14 +273,14 @@ class AdjacentCircularFlightsSimulator():
                                                          accuracy_v = "VAUnknown", 
                                                          extrapolated = 0, 
                                                          pressure_altitude = 0)
-                    aircraft_height = AircraftHeight(distance = 70, reference = "TakeoffLocation")
+                    aircraft_height = AircraftHeight(distance = self.altitude_agl, reference = "TakeoffLocation")
                     rid_aircraft_state = AircraftState( 
                         timestamp = timestamp_isoformat,
                         operational_status = "Airborne", 
                         position = aircraft_position, 
                         height = aircraft_height,
                         track = track_angle,
-                        speed = 1.9, 
+                        speed = 5.2, 
                         speed_accuracy = "SA3mps",
                         vertical_speed = 0.0)
 
@@ -294,8 +296,6 @@ class AdjacentCircularFlightsSimulator():
         telemetry_data = all_flight_telemetry.values()
         telemetery_data_list = list(telemetry_data)
         self.flight_telemetry = {"telemetery_data_list": telemetery_data_list, "reference_time": now_isoformat}
-
- 
 
 
 
