@@ -22,11 +22,11 @@ class FlightPoint(NamedTuple):
 
     lat: float # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
     lng: float # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
-    alt: float 
+    alt: float # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
     
 
 class AircraftPosition(NamedTuple):
-    ''' A object to hold AircraftPosition details for Remote ID purposes, it mataches the RIDAircraftPosition  '''
+    ''' A object to hold AircraftPosition details for Remote ID purposes, it mataches the RIDAircraftPosition  per the RID standard, for more information see https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1091'''
 
     lat : float 
     lng : float 
@@ -44,8 +44,7 @@ class AircraftHeight(NamedTuple):
 
 class AircraftState(NamedTuple):
     ''' A object to hold Aircraft state details for remote ID purposes. For more information see the published standard API specification at https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604 '''
-
-    reference_time : datetime 
+    
     timestamp: datetime 
     operational_status: str 
     position: AircraftPosition # See the definition above 
@@ -223,53 +222,67 @@ class AdjacentCircularFlightsSimulator():
     def generate_rid_state(self, duration = 180):
         '''
         
-        flight_points: A list of flight points each in FlightPoint format, generated from generate_flight_paths_points method in the AdjacentCircularFlightsSimulator method. This method generates a RIDState object from flight tracks and adds time stamp and other information
+        flight_points: A list of flight points each in FlightPoint format, generated from generate_flight_paths_points method in the AdjacentCircularFlightsSimulator method. This method generates a RIDState object from flight tracks and adds time stamp and other information, additionally a reference_time is provided in the output
 
 
         '''
         all_flight_telemetry = {}
-        flight_lenghts = {} # Develop a index of flight length and their index
+        flight_track_details = {} # Develop a index of flight length and their index
         flight_current_index = {} # Store where on the track the current index is, since the tracks are circular, once the end of the track is reached, the index is reset to 0 to indicate beginning of the track again. 
         num_flights = len(self.grid_cells_flight_tracks) # Get the number of flights 
+
         now = arrow.now() 
         now_isoformat = now.isoformat()
-        for i in range(num_flights):
-            flight_lenghts[i]= len(self.grid_cells_flight_tracks[i].track)
+        for i in range(num_flights):           
+            flight_positions_len = len(self.grid_cells_flight_tracks[i].track) 
+            angle_increment = int(360 / flight_positions_len) # in a circular flight pattern increment direction 
+            angle_increment = 1 if angle_increment == 0 else angle_increment # the resolution of track is 1 degree minimum
+            
+            if i not in flight_track_details:
+                flight_track_details[i] = {}
+            flight_track_details[i]['track_length'] = flight_positions_len
+
             flight_current_index[i] = 0
             all_flight_telemetry[i] = []
         
         for j in range(duration):
             if j == 0:
+                track_angle = 90
                 timestamp = now.shift(seconds = 1)
             else:
                 timestamp = timestamp.shift(seconds = 1)
             timestamp_isoformat = timestamp.isoformat()
-            seconds_diff = (now - timestamp).total_seconds()
+
+            if track_angle >= 360:
+                track_angle = 0
+            else:
+                track_angle = track_angle + angle_increment
             
             for k in range(num_flights):
-                list_end = flight_lenghts[k] - flight_current_index[k]            
-                if list_end != 1:             
+                list_end = flight_track_details[k]['track_length'] - flight_current_index[k]       
+
+                if list_end != 1:
+
                     flight_point = self.grid_cells_flight_tracks[k].track[flight_current_index[k]]
                     aircraft_position = AircraftPosition(lat = flight_point.lat, 
                                                          lng = flight_point.lng, 
                                                          alt = flight_point.alt, 
-                                                         accuracy_h= "HAUnkown", 
+                                                         accuracy_h = "HAUnkown", 
                                                          accuracy_v = "VAUnknown", 
                                                          extrapolated = 0, 
                                                          pressure_altitude = 0)
-                    aircraft_height = AircraftHeight(distance =70, reference="TakeoffLocation")
-                    rid_aircraft_state = AircraftState(
-                        reference_time = now_isoformat, 
-                        timestamp= timestamp_isoformat,
-                        operational_status="Airborne", 
-                        position=aircraft_position, 
-                        height= aircraft_height,
-                        track=45.0,
-                        speed=1.9, 
-                        speed_accuracy="SA3mps",
-                        vertical_speed= 0.0)
+                    aircraft_height = AircraftHeight(distance = 70, reference = "TakeoffLocation")
+                    rid_aircraft_state = AircraftState( 
+                        timestamp = timestamp_isoformat,
+                        operational_status = "Airborne", 
+                        position = aircraft_position, 
+                        height = aircraft_height,
+                        track = track_angle,
+                        speed = 1.9, 
+                        speed_accuracy = "SA3mps",
+                        vertical_speed = 0.0)
 
-                    rid_aircraft_flight = RIDFlight(id=k, aircraft_type = "Other", current_state = rid_aircraft_state)
+                    rid_aircraft_flight = RIDFlight(id = k, aircraft_type = "Other", current_state = rid_aircraft_state)
 
 
                     rid_aircraft_state_deserialized = self.make_json_compatible(rid_aircraft_flight)
@@ -280,7 +293,7 @@ class AdjacentCircularFlightsSimulator():
                 
         telemetry_data = all_flight_telemetry.values()
         telemetery_data_list = list(telemetry_data)
-        self.flight_telemetry = telemetery_data_list
+        self.flight_telemetry = {"telemetery_data_list": telemetery_data_list, "reference_time": now_isoformat}
 
  
 
@@ -374,7 +387,7 @@ class RIDAircraftStateWriter():
 
         ''' Check if atleast one track is provided, if no tracks are provided, then RIDAircraftState and Test JSON cannot be generated.''' 
 
-        if (self.flight_telemetry): # Empty flight points cannot be converted to a Aircraft State, check if the list has 
+        if (self.flight_telemetry['telemetery_data_list']): # Empty flight points cannot be converted to a Aircraft State, check if the list has 
             return
         else:
             raise ValueError("At least one flight track is necessary to create a AircraftState and a test JSON, please generate the tracks first using AdjacentCircularFlightsSimulator class")
@@ -383,16 +396,16 @@ class RIDAircraftStateWriter():
 
         ''' This method iterates over flight tracks and geneates AircraftState JSON objects and writes to disk in the test_definitions folder, these files can be used to submit the data in the test harness '''
         
+        reference_time = self.flight_telemetry['reference_time']
 
-        for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry):
+        for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry['telemetery_data_list']):
             
             
             rid_test_file_name = 'flight_' + str(flight_id) + '_rid_aircraft_state' + '.json'
             rid_test_file_path = self.output_directory / rid_test_file_name
-            
-            with open(rid_test_file_path,'w') as f:
-                f.write(json.dumps(single_flight_telemetry_data))
-
+            flight_telemetry_data = {'reference_time':reference_time, 'flight_telemetry':single_flight_telemetry_data}
+            with open(rid_test_file_path,'w') as f:                
+                f.write(json.dumps(flight_telemetry_data))
 
         
 if __name__ == '__main__':
