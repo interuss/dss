@@ -324,6 +324,10 @@ class TrackWriter():
         self.country_code = country_code        
         self.output_directory = Path('test_definitions', self.country_code)
         self.output_directory.mkdir(parents=True, exist_ok=True) # Create test_definition directory if it does not exist
+        self.output_subdirectories = (Path(self.output_directory, 'tracks'), Path(self.output_directory, 'query_bboxes'),)
+                                      
+        for output_subdirectory in self.output_subdirectories:
+            output_subdirectory.mkdir(parents=True, exist_ok=True) 
 
     def write_bboxes(self):
 
@@ -332,7 +336,8 @@ class TrackWriter():
             
             features = json.dumps({'type': 'Feature', 'properties': {"timestamp_before":buffered_bbox_details.timestamp_before.isoformat(), "timestamp_after":buffered_bbox_details.timestamp_after.isoformat()}, 'geometry': shapely.geometry.mapping(buffered_bbox_details.shape)})
             bbox_file_name = 'box_%s.geojson'% buffered_bbox_details.name
-            bbox_output_path = self.output_directory / bbox_file_name
+            output_subdirectory = Path(self.output_directory , 'query_bboxes')
+            bbox_output_path = output_subdirectory / bbox_file_name
 
             with open(bbox_output_path,'w') as f:
                 f.write(features)
@@ -354,7 +359,8 @@ class TrackWriter():
                 feature_collection['features'].append(point_feature)
 
             path_file_name = 'track_%s.geojson'% str(track_id+1)
-            tracks_file_path = self.output_directory / path_file_name
+            output_subdirectory = Path(self.output_directory , 'tracks')
+            tracks_file_path = output_subdirectory / path_file_name
             with open(tracks_file_path,'w') as f:
                 f.write(json.dumps(feature_collection))
 
@@ -382,6 +388,9 @@ class RIDAircraftStateWriter():
 
         self.output_directory = Path('test_definitions', self.country_code)
         self.output_directory.mkdir(parents=True, exist_ok=True) # Create test_definition directory if it does not exist
+        self.output_subdirectories = (Path(self.output_directory, 'aircraft_states'),)
+        for output_subdirectory in self.output_subdirectories:
+            output_subdirectory.mkdir(parents=True, exist_ok=True) 
 
     def flight_telemetry_check(self) -> None:
 
@@ -402,7 +411,9 @@ class RIDAircraftStateWriter():
             
             
             rid_test_file_name = 'flight_' + str(flight_id) + '_rid_aircraft_state' + '.json'
-            rid_test_file_path = self.output_directory / rid_test_file_name
+            
+            output_subdirectory = Path(self.output_directory , 'aircraft_states')
+            rid_test_file_path = output_subdirectory / rid_test_file_name
             flight_telemetry_data = {'reference_time':reference_time, 'flight_telemetry':single_flight_telemetry_data}
             with open(rid_test_file_path,'w') as f:                
                 f.write(json.dumps(flight_telemetry_data))
