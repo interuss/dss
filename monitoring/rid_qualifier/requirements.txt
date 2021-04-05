@@ -1,3 +1,4 @@
 pyproj==3.0.0
 shapely==1.7.1
 arrow==1.0.3
+requests===2.25.1
