@@ -42,6 +42,10 @@ class TestSubmitter():
 
     pass
 
+class RIDDataValidator():
+    ''' A class to check the output from UTMSP in Flight Blender and produce a text report and write on disk '''
+    pass
+
 
 if __name__ == '__main__':
     pass
