@@ -1,8 +1,11 @@
 import requests
 
 class TestHarnessSubmitter():
-    ''' A class to read Aircraft RID State files from disk and submit flight tracks to the test harness / endpoint of individual UTM SP '''
+    ''' A class to submit Aircraft RID State tgo test harness / endpoint of individual UTM SP '''
 
+    def __init__(self):
+        pass
 
-if __name__ == '__main__':
-    pass
+    def submit_test(self):
+        pass
+
