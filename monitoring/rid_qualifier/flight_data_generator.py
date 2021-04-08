@@ -358,7 +358,7 @@ class TrackWriter():
                 point_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(p)}                
                 feature_collection['features'].append(point_feature)
 
-            path_file_name = 'track_%s.geojson'% str(track_id+1)
+            path_file_name = 'track_%s.geojson'% str(track_id + 1) # Avoid Zero based numbering
             output_subdirectory = Path(self.output_directory , 'tracks')
             tracks_file_path = output_subdirectory / path_file_name
             with open(tracks_file_path,'w') as f:
@@ -410,7 +410,7 @@ class RIDAircraftStateWriter():
         for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry['telemetery_data_list']):
             
             
-            rid_test_file_name = 'flight_' + str(flight_id) + '_rid_aircraft_state' + '.json'
+            rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering
             
             output_subdirectory = Path(self.output_directory , 'aircraft_states')
             rid_test_file_path = output_subdirectory / rid_test_file_name
