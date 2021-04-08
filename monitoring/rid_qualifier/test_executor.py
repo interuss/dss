@@ -1,6 +1,6 @@
 import aircraft_state_replayer
 from urllib.parse import urlparse
-import uuid
+import uuid, os
 import json
 from typing import List, NamedTuple, Any
 import arrow
@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 # This is the configuration for the test.
 test_configuration = {
     "locale": "che",
-    "utm_sps": [
+    "utmsps": [
         {
             "name": "Unmanned Systems Corp.",
             "injection_base_url": "https://unmanned.systems/tests/",
@@ -75,12 +75,16 @@ class AircraftState(NamedTuple):
 
 class RIDFlightDetails(NamedTuple):
     ''' A object to hold RID details of a flight ''' 
-    pass
+    operator_id:str
+    operation_description: str
+    serial_number: str
+    registration_number: str
+
 
 class TestFlightDetails(NamedTuple):
     ''' A object to hold details of a test flight ''' 
     effective_after: datetime
-    details: 
+    details: RIDFlightDetails
 
 
 class TestFlight(NamedTuple):
@@ -94,13 +98,30 @@ class TestFlight(NamedTuple):
 class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''
 
-    def __init__(self, test_config: Any) -> None:
+    def __init__(self, test_config: Any, country_code='che') -> None:
 
-        self.test_config = test_config
+        self.test_config = test_config        
         self.test_config_valid()
+        self.tracks_directory = Path('test_definitions', self.country_code, 'tracks')
+        self.verify_track_directory(self.tracks_directory)
+        self.flight_tracks = self.load_flight_tracks(self.tracks_directory)
     
-    def test_config_valid(self) -> None:
+    def load_flight_tracks(self, tracks_directory) -> None:
+        track_files = os.listdir(tracks_directory) 
+        return track_files
 
+
+    def verify_track_directory(self, tracks_directory) -> None:
+
+        ''' This method checks if there are tracks in the tracks directory '''        
+        
+        files = [f for f in os.listdir(tracks_directory) if os.path.isfile(os.path.join(tracks_directory, f))]
+        if files:
+            pass
+        else:
+            raise ValueError("The there are no tracks in the tracks directory, create tracks first using the flight_data_generator module. ")
+
+    def test_config_valid(self) -> None:
         ''' This method checks if the test definition is a valid JSON ''' #TODO : Have a comprehensive way to check JSON definition
         if json.loads(self.test_config):
             pass
@@ -109,14 +130,16 @@ class TestBuilder():
 
 
     def build_test_payload(self) -> None: 
-        ''' This is the main method to process the test configuration and build RID payload object '''
-        utm_sps = self.test_config['utm_sps']
+        ''' This is the main method to process the test configuration and build RID payload object, maxium of one flight is allocated to each UTMSP. '''
+        utm_sps = self.test_config['utmsps']
         test_id = str(uuid.uuid4())
         requested_flights = []
         for utm_sp in utm_sps:
 
 
-        pass
+
+
+        return requested_flights
 
 
 class TestSubmitter():
