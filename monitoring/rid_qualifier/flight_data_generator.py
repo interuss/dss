@@ -3,69 +3,13 @@ import shapely.geometry
 from pyproj import Geod, Transformer
 import json
 from pathlib import Path
-from typing import List, NamedTuple, Any
 import arrow
 import datetime
 from datetime import datetime, timedelta
 import uuid
-
-class QueryBoundingBox(NamedTuple):
-    ''' This is the object that stores details of query bounding box '''
-
-    name: str
-    shape: Polygon
-    timestamp_before: timedelta
-    timestamp_after: timedelta
-    
-class FlightPoint(NamedTuple):
-    ''' This object holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum '''
-
-    lat: float # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
-    lng: float # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
-    alt: float # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
-    
-
-class AircraftPosition(NamedTuple):
-    ''' A object to hold AircraftPosition details for Remote ID purposes, it mataches the RIDAircraftPosition  per the RID standard, for more information see https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1091'''
-
-    lat : float 
-    lng : float 
-    alt : float
-    accuracy_h : str
-    accuracy_v : str
-    extrapolated : bool
-    pressure_altitude : float
-
-class AircraftHeight(NamedTuple):
-    ''' A object to hold relative altitude for the purposes of Remote ID. For more information see: https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1142 '''
-
-    distance: float
-    reference: str
-
-class AircraftState(NamedTuple):
-    ''' A object to hold Aircraft state details for remote ID purposes. For more information see the published standard API specification at https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604 '''
-    
-    timestamp: datetime 
-    operational_status: str 
-    position: AircraftPosition # See the definition above 
-    height: AircraftHeight # See the definition above 
-    track: float 
-    speed: float 
-    speed_accuracy: str 
-    vertical_speed: float 
-
-
-class RIDFlight(NamedTuple):
-    ''' A object to store details of a remoteID flight ''' 
-    id: str # ID of the flight for Remote ID purposes, e.g. uss1.JA6kHYCcByQ-6AfU, we for this simulation we use just numeric : https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L943
-    aircraft_type: str  # Generic type of aircraft https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1711
-    current_state: AircraftState # See above for definition
-
-
-class GridCellFlight(NamedTuple):
-    ''' A object to hold details of a grid location and the track within it '''
-    bounds: shapely.geometry.polygon.Polygon
-    track: List[FlightPoint]
+from typing import List, NamedTuple, Any
+import utils
+from utils import QueryBoundingBox, FlightPoint, AircraftPosition, AircraftHeight, AircraftState, RIDFlight, GridCellFlight
 
 class AdjacentCircularFlightsSimulator():
 
@@ -99,6 +43,8 @@ class AdjacentCircularFlightsSimulator():
         self.query_bboxes: List[QueryBoundingBox] = [] # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
 
         self.flight_telemetry: List[List[AircraftState]] = []
+        
+        self.rid_serializer = utils.RIDSerializer()
         
         self.input_extents_valid()
         
@@ -209,18 +155,6 @@ class AdjacentCircularFlightsSimulator():
 
         self.grid_cells_flight_tracks = all_grid_cell_tracks
 
-    def make_json_compatible(self, struct: Any) -> Any:
-        if isinstance(struct, tuple) and hasattr(struct, '_asdict'):
-            return {k: self.make_json_compatible(v) for k, v in struct._asdict().items()}
-        elif isinstance(struct, dict):
-            return {k: self.make_json_compatible(v) for k, v in struct.items()}
-        elif isinstance(struct, str):
-            return struct
-        try:
-            return [self.make_json_compatible(v) for v in struct]
-        except TypeError:
-            return struct
-
     def generate_rid_state(self, duration = 180):
         '''
         
@@ -287,7 +221,7 @@ class AdjacentCircularFlightsSimulator():
                     rid_aircraft_flight = RIDFlight(id = k, aircraft_type = "Other", current_state = rid_aircraft_state)
 
 
-                    rid_aircraft_state_deserialized = self.make_json_compatible(rid_aircraft_flight)
+                    rid_aircraft_state_deserialized = self.rid_serializer.make_json_compatible(rid_aircraft_flight)
                     all_flight_telemetry[k].append(rid_aircraft_state_deserialized)
                     flight_current_index[k]+= 1
                 else:
