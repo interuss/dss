@@ -190,7 +190,7 @@ class AdjacentCircularFlightsSimulator():
                 grid_cells.append(shapely.geometry.box(x0, y0, x1, y1))
 
         all_grid_cell_tracks = []
-        flight_points = []
+        
         ''' For each of the boxes (grid) allocated to the operator, get the centroid and buffer to generate a flight path. A 70 m radius is provided to have flight paths within each of the boxes '''
         # Iterate over the flight_grid
         for grid_cell in grid_cells:
@@ -201,8 +201,7 @@ class AdjacentCircularFlightsSimulator():
             pt = Point(transformed_x, transformed_y)
             # build a buffer so that the radius is 70m for the track
             buffer = pt.buffer(70)
-            buffer_points = zip(
-                buffer.exterior.coords.xy[0], buffer.exterior.coords.xy[1])
+            buffer_points = zip(buffer.exterior.coords.xy[0], buffer.exterior.coords.xy[1])            
             proj_buffer_points = []
             # reproject back to ESPG 4326
             transformer2 = Transformer.from_crs("epsg:3857", "epsg:4326")
@@ -223,10 +222,9 @@ class AdjacentCircularFlightsSimulator():
             flight_speed = self.generate_flight_speed(adjecent_points=adjecent_points, number_of_points= number_of_points)
 
             for coord in range(0, len(x)):
-                flight_points_with_altitude.append(FlightPoint(lat=x[coord], lng=y[coord], alt=altitude))
+                flight_points_with_altitude.append(FlightPoint(lat=y[coord], lng=x[coord], alt=altitude))
 
-            # Build a list of points so that they can be fed to the sim and outputted.
-            flight_points.append(flight_points_with_altitude)
+
             all_grid_cell_tracks.append(GridCellFlight(bounds=grid_cell, track=flight_points_with_altitude, flight_speed = flight_speed))
 
         self.grid_cells_flight_tracks = all_grid_cell_tracks
@@ -277,7 +275,7 @@ class AdjacentCircularFlightsSimulator():
 
         for j in range(duration):
             if j == 0:
-                track_angle = 90
+                track_angle = 270
                 timestamp = now.shift(seconds=1)
             else:
                 timestamp = timestamp.shift(seconds=1)
@@ -285,8 +283,10 @@ class AdjacentCircularFlightsSimulator():
 
             if track_angle >= 360:
                 track_angle = 0
+            elif track_angle <= 0:
+                track_angle = 355
             else:
-                track_angle = track_angle + angle_increment
+                track_angle = track_angle - angle_increment
 
             for k in range(num_flights): 
                 list_end = flight_track_details[k]['track_length'] - \
@@ -369,8 +369,8 @@ class TrackWriter():
 
             features = json.dumps({'type': 'Feature', 'properties': {"timestamp_before": buffered_bbox_details.timestamp_before.isoformat(), "timestamp_after": buffered_bbox_details.timestamp_after.isoformat()}, 'geometry': shapely.geometry.mapping(buffered_bbox_details.shape)})
             bbox_file_name = 'box_%s.geojson' % buffered_bbox_details.name
-            output_subdirectory = Path(self.output_directory, 'query_bboxes')
-            bbox_output_path = output_subdirectory / bbox_file_name
+            
+            bbox_output_path = self.output_subdirectories[1] / bbox_file_name
 
             with open(bbox_output_path, 'w') as f:
                 f.write(features)
@@ -395,8 +395,8 @@ class TrackWriter():
             feature_collection['features'].append(line_feature)
 
             path_file_name = 'track_%s.geojson' % str(track_id + 1)  # Avoid Zero based numbering
-            output_subdirectory = Path(self.output_directory, 'tracks')
-            tracks_file_path = output_subdirectory / path_file_name
+            
+            tracks_file_path = self.output_subdirectories[0] / path_file_name
             with open(tracks_file_path, 'w') as f:
                 f.write(json.dumps(feature_collection))
 
@@ -445,10 +445,9 @@ class RIDAircraftStateWriter():
 
         for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry['telemetery_data_list']):
 
-            rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering
+            rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering            
             
-            output_subdirectory = Path(self.output_directory, 'aircraft_states')
-            rid_test_file_path = output_subdirectory / rid_test_file_name
+            rid_test_file_path = self.output_subdirectories[0] / rid_test_file_name
             flight_telemetry_data = {'reference_time': reference_time, 'flight_telemetry': single_flight_telemetry_data}
             with open(rid_test_file_path, 'w') as f:
                 f.write(json.dumps(flight_telemetry_data))
@@ -456,14 +455,13 @@ class RIDAircraftStateWriter():
 
 if __name__ == '__main__':
     # TODO: accept these parameters as values so that other locations can be supplied
-    my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121)
-    # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
-    altitude_over_ground_wgs84 = 48.73
+    my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121)    
+    altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
     COUNTRY_CODE = 'che'
     flight_points = []
     query_bboxes = []
 
-    my_path_generator.generate_flight_grid_and_path_points(altitude_over_ground_wgs84)
+    my_path_generator.generate_flight_grid_and_path_points(altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
     my_path_generator.generate_query_bboxes()
 
     grid_tracks = my_path_generator.grid_cells_flight_tracks
