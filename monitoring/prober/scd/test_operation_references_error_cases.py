@@ -253,3 +253,18 @@ def test_big_operation_search(scd_session):
   req['area_of_interest'] = scd.offset_time([req['area_of_interest']], dt)[0]
   resp = scd_session.post('/operation_references/query', json=req)
   assert  resp.status_code == 400, resp.content
+
+
+@default_scope(SCOPE_SC)
+def test_ensure_clean_workspace(scd_session):
+  for op_id in (OP_ID, OP_ID2):
+    resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+    if resp.status_code == 200:
+      # only the owner of the subscription can delete a operation reference.
+      resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+      assert resp.status_code == 200, resp.content
+    elif resp.status_code == 404:
+      # As expected.
+      pass
+    else:
+      assert False, resp.content

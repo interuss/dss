@@ -97,3 +97,14 @@ def test_get_isa_without_scope(session):
     pytest.skip('General auth providers will not usually grant tokens without any scopes')
   resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope='')
   assert resp.status_code == 403, resp.content
+
+
+def test_delete(session):
+  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
+  if resp.status_code == 200:
+    version = resp.json()["service_area"]['version']
+    resp = session.delete('/identification_service_areas/{}/{}'.format(ISA_ID, version), scope=SCOPE_WRITE)
+    assert resp.status_code == 200, resp.content
+  elif resp.status_code == 404:
+    # As expected.
+    pass
