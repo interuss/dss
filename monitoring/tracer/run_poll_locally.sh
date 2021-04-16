@@ -22,6 +22,6 @@ docker build \
 docker run --name tracer_poll \
   --rm \
   -e TRACER_OPTIONS="${TRACER_OPTIONS}" \
-  -v /Users/pelletierb/Documents/test/localmock:/logs \
+  -v `pwd`/logs:/logs \
   interuss/dss/tracer \
   python tracer_poll.py $TRACER_OPTIONS
