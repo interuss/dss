@@ -8,6 +8,7 @@
   {% for log in logs %}
     <li>
       <a href="{{ url_for('logs', log=log) }}">{{ log }}</a>
+      {% if log in kmls %}[<a href="{{ kmls[log] }}">kml</a>]{% endif %}
     </li>
   {% endfor %}
 </ul>
