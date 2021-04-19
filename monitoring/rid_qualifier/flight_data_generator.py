@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 import uuid
 from typing import List, NamedTuple, Any
 import utils
-from utils import QueryBoundingBox, FlightPoint, AircraftPosition, AircraftHeight, AircraftState, RIDFlight, GridCellFlight
+from utils import QueryBoundingBox, FlightPoint, GridCellFlight
+from monitoring.monitorlib.rid import RIDFlight, AircraftState, AircraftPosition, AircraftHeight
 
 class AdjacentCircularFlightsSimulator():
 
