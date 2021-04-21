@@ -345,13 +345,14 @@ class RIDAircraftStateWriter():
         for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry['telemetery_data_list']):
             
             
-            rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering
+            rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_test_flight' + '.json' # Add 1 to avoid zero based numbering
             
             output_subdirectory = Path(self.output_directory , 'aircraft_states')
             rid_test_file_path = output_subdirectory / rid_test_file_name
             flight_telemetry_data = {'reference_time':reference_time, 'flight_telemetry':single_flight_telemetry_data}
             with open(rid_test_file_path,'w') as f:                
                 f.write(json.dumps(flight_telemetry_data))
+
 
         
 if __name__ == '__main__':

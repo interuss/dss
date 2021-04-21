@@ -22,7 +22,7 @@ class TestSubmitter():
     def submit_payload(self, test_payloads: List) -> None:
         ''' This method submits the payload to indvidual USS '''
         my_test_harness = TestHarness()
-        for payload in test_payloads: 
+        for payload in test_payloads:   
             my_test_harness.submit_test(payload)
         
 
@@ -31,30 +31,10 @@ if __name__ == '__main__':
     # This is the configuration for the test.
     test_configuration = {
         "locale": "che",
-        "usses": [
-            {
-                "name": "Unmanned Systems Corp.",
-                "injection_url": "https://dss.unmanned.corp/tests/",
-                "flight_details": [
-                    {
-                        "serial_number": "C1A10C76-22D9-44E7",
-                        "registration_number": "CHE87astrdge12k8",
-                        "operation_description": "Electricity Grid Inspection"
-                    }
-                ],
-                "operator_details": [
-                    {
-                        "name": "Electricity Inspection Company",
-                        "location": {
-                            "latitude": 46.974432835242055,
-                            "longitude": 7.472983002662658
-                        }
-                    }
-                ]
-            }
-        ]
+        "auth_spec":'DummyOAuth("https://dss.com/', sub='+ auth_sub +')'
     }
     my_test_builder = TestBuilder(test_config = json.dumps(test_configuration), country_code='CHE')    
     test_payloads = my_test_builder.build_test_payload()
 
-    my_test_submitter = TestSubmitter(test_payloads= test_payloads)
+    my_test_harness = TestHarness(auth = test_configuration['auth_url'])
+    my_test_submitter = my_test_harness.submit_test(test_payloads= test_payloads)

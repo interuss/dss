@@ -1,12 +1,14 @@
 import requests
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import DSSTestSession
+
 import json, os
 import uuid
 from pathlib import Path
 from typing import List, NamedTuple, Any
 from utils import RIDSP, OperatorLocation, Operator, RIDFlightDetails, TestFlightDetails, TestFlight
 from monitoring.monitorlib.rid import RIDFlight
+from urllib.parse import urlparse
 
 class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''
@@ -22,7 +24,6 @@ class TestBuilder():
     def load_flight_tracks(self, tracks_directory) -> None:
         track_files = os.listdir(tracks_directory) 
         return track_files
-
 
     def verify_tracks_directory(self, tracks_directory) -> None:
 
@@ -88,25 +89,32 @@ class TestBuilder():
 class TestHarness():
     ''' A class to submit Aircraft RID State to the USS test endpoint '''
 
-    def __init__(self, test_payload):
-        self.test_payload = test_payload
-    
-    def get_auth_token(self):
-        return 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImp0aSI6ImEyMzBlMzRjLTNmNmUtNGU5Mi1iNjAyLTIzYjEzMmY2ODQxOSIsImlhdCI6MTYxODQxODk5NCwiZXhwIjoxNjE4NDIyNTk0fQ.O-po9I044alQuxV-EzAOgTffFXbgYyRX02XJSIy9AcI'
-
-    def submit_test(self):
-
-        base_url = self.test_payload['injection_url']
+    def __init__(self, auth_url):
+        self.auth_url = auth_url
         
-        headers = {
-            'Authorization': "Bearer " + self.get_auth_token
-        }
+    
+    def get_dss_session(self, auth_spec):
+        ''' This method gets a DSS session using the monitoring tools that are provided in the DSS '''
 
-        response = requests.put(base_url, headers=headers, data=self.test_payload['injection_payload'])
+        auth_adapter = make_auth_adapter(auth_spec)
+        s = DSSTestSession(self.auth_url, auth_adapter)
+
+        return s
+
+
+    def submit_test(self, test_payload):
+
+        injection_url = test_payload['injection_url']        
+        
+        auth_sub = urlparse(injection_url).netloc
+        dss_session = self.get_dss_session(auth_url= self.auth_url, auth_sub= auth_sub)
+
+        response = dss_session.put(injection_url, data=test_payload['injection_payload'])
+
         if response.status_code == 200:
-            print("New test with ID %s created" % self.test_payload['injection_payload']['test_id'])
+            print("New test with ID %s created" % test_payload['injection_payload']['test_id'])
         elif response.status_code ==409:
-            print("Test already with ID %s already exists" % self.test_payload['injection_payload']['test_id'])
+            print("Test already with ID %s already exists" % test_payload['injection_payload']['test_id'])
         else: 
             print(response.json())
 
