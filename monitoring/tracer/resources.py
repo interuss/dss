@@ -32,6 +32,8 @@ class ResourceSet(object):
     parser.add_argument('--start-time', default=datetime.datetime.utcnow().isoformat(), help='ISO8601 UTC datetime at which to start polling')
     parser.add_argument('--trace-hours', type=float, default=18, help='Number of hours to trace for')
     parser.add_argument('--output-folder', help='Path of folder in which to write logs')
+    parser.add_argument('--kml-server', help='Base URL of KML-generating server', type=str, default=None)
+    parser.add_argument('--kml-folder', help='Name of path on KML server', type=str, default=None)
 
   @classmethod
   def from_arguments(cls, args: argparse.Namespace):
@@ -40,5 +42,8 @@ class ResourceSet(object):
     area: s2sphere.LatLngRect = geo.make_latlng_rect(args.area)
     start_time = datetime.datetime.fromisoformat(args.start_time)
     end_time = start_time + datetime.timedelta(hours=args.trace_hours)
-    logger = tracerlog.Logger(args.output_folder) if args.output_folder else None
+    if args.kml_server and args.kml_folder is None:
+      raise ValueError('If --kml-server is specified, --kml-folder must also be specified')
+    kml_session = infrastructure.KMLGenerationSession(args.kml_server, args.kml_folder) if args.kml_server else None
+    logger = tracerlog.Logger(args.output_folder, kml_session) if args.output_folder else None
     return ResourceSet(dss_client, area, logger, start_time, end_time)

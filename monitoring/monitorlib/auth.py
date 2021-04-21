@@ -35,7 +35,7 @@ class DummyOAuth(AuthAdapter):
       urllib.parse.quote(intended_audience), self._sub)
     response = self._oauth_session.post(url)
     if response.status_code != 200:
-      raise AccessTokenError('Request to get access token returned {} {}'.format(response.status_code, response.content.decode('utf-8')))
+      raise AccessTokenError('Request to get DummyOAuth access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
@@ -59,7 +59,7 @@ class ServiceAccount(AuthAdapter):
       urllib.parse.quote(intended_audience))
     response = self._oauth_session.post(url)
     if response.status_code != 200:
-      raise AccessTokenError('Request to get access token returned {} {}'.format(response.status_code, response.content.decode('utf-8')))
+      raise AccessTokenError('Request to get ServiceAccount access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
@@ -85,7 +85,7 @@ class UsernamePassword(AuthAdapter):
       'scope': ' '.join(scopes),
     })
     if response.status_code != 200:
-      raise AccessTokenError('Request to get access token returned {} {}'.format(response.status_code, response.content.decode('utf-8')))
+      raise AccessTokenError('Request to get UsernamePassword access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
@@ -193,7 +193,7 @@ class SignedRequest(AuthAdapter):
     }
     response = requests.post(self._token_endpoint, data=payload, headers=request_headers)
     if response.status_code != 200:
-      raise AccessTokenError('Unable to retrieve access token:\n' + response.content.decode('utf-8'))
+      raise AccessTokenError('Request to get SignedRequest access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
