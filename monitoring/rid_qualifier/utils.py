@@ -1,8 +1,9 @@
-from typing import List, NamedTuple, Any
-from shapely.geometry import Point, Polygon
+from typing import List, NamedTuple
+from shapely.geometry import Polygon
 import shapely.geometry
 from datetime import datetime, timedelta
-from monitoring.monitorlib.rid import AircraftState
+from monitoring.monitorlib import rid
+
 class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
 
@@ -71,6 +72,6 @@ class TestFlight(NamedTuple):
     ''' Represents the data necessary to inject a single, complete test flight into a Remote ID Service Provider under test; matches TestFlight in injection interface ''' 
 
     injection_id: str    
-    telemetry: List[AircraftState]
+    telemetry: List[rid.AircraftState]
     details_responses : List[TestFlightDetails]    
 

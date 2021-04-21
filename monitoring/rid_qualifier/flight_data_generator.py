@@ -6,12 +6,10 @@ from pathlib import Path
 import arrow
 import datetime
 from datetime import datetime, timedelta
-import uuid
-from typing import List, NamedTuple, Any
-import utils
+from typing import List, Any
 from utils import QueryBoundingBox, FlightPoint, GridCellFlight
-from monitoring.monitorlib.rid import RIDFlight, AircraftState, AircraftPosition, AircraftHeight
-
+from monitoring.monitorlib import rid
+from . import operator_flight_details_generator as ofds
 class AdjacentCircularFlightsSimulator():
 
     ''' A class to generate Flight Paths given a bounding box, this is the main module to generate flight path datasets, the data is generated as latitude / longitude pairs with assoiated with the flights. Additional flight metadata e.g. flight id, altitude, registration number can also be generated '''
@@ -102,6 +100,18 @@ class AdjacentCircularFlightsSimulator():
             self.query_bboxes.append(QueryBoundingBox(name=box_diagonals[box_id]['name'], shape=buffered_box, timestamp_after = box_diagonals[box_id]['timestamp_after'], timestamp_before = box_diagonals[box_id]['timestamp_before']))
             
 
+    def make_json_compatible(self, struct: Any) -> Any:
+        if isinstance(struct, tuple) and hasattr(struct, '_asdict'):
+            return {k: self.make_json_compatible(v) for k, v in struct._asdict().items()}
+        elif isinstance(struct, dict):
+            return {k: self.make_json_compatible(v) for k, v in struct.items()}
+        elif isinstance(struct, str):
+            return struct
+        try:
+            return [self.make_json_compatible(v) for v in struct]
+        except TypeError:
+            return struct
+
     
     def generate_flight_grid_and_path_points(self, altitude_of_ground_level_wgs_84):
 
@@ -156,6 +166,20 @@ class AdjacentCircularFlightsSimulator():
 
         self.grid_cells_flight_tracks = all_grid_cell_tracks
 
+    def generate_flight_operator_details(self, locale = 'en_US'): 
+        ''' This class generates details of flights and operator details for a flight, this data is required for identifying flight, operator and operation  
+            Args:
+            locale of the format ISO 639 Language Code and - or _ followed by ISO 3166 Country code, not all locales are supported by the Faker module, '''
+        
+        my_flight_details_generator = ofds.OperatorFlightDataGenerator()
+        
+        flight_details = { "serial_number":my_flight_details_generator.generate_serial_number(),"registration_number":my_flight_details_generator.generate_registration_number(),"operation_description":my_flight_details_generator.generate_operation_description()}
+        
+        operator_details =  { "name":my_flight_details_generator.generate_company_name, "location":my_flight_details_generator.generate_operator_location()}
+
+        flight_operator_details = {'flight_details':flight_details, 'operator_details':operator_details}
+        return flight_operator_details
+
     def generate_rid_state(self, duration = 180):
         '''
         
@@ -201,15 +225,15 @@ class AdjacentCircularFlightsSimulator():
                 if list_end != 1:
 
                     flight_point = self.grid_cells_flight_tracks[k].track[flight_current_index[k]]
-                    aircraft_position = AircraftPosition(lat = flight_point.lat, 
+                    aircraft_position = rid.AircraftPosition(lat = flight_point.lat, 
                                                          lng = flight_point.lng, 
                                                          alt = flight_point.alt, 
                                                          accuracy_h = "HAUnkown", 
                                                          accuracy_v = "VAUnknown", 
                                                          extrapolated = 0, 
                                                          pressure_altitude = 0)
-                    aircraft_height = AircraftHeight(distance = self.altitude_agl, reference = "TakeoffLocation")
-                    rid_aircraft_state = AircraftState( 
+                    aircraft_height = rid.AircraftHeight(distance = self.altitude_agl, reference = "TakeoffLocation")
+                    rid_aircraft_state = rid.AircraftState( 
                         timestamp = timestamp_isoformat,
                         operational_status = "Airborne", 
                         position = aircraft_position, 
@@ -219,10 +243,10 @@ class AdjacentCircularFlightsSimulator():
                         speed_accuracy = "SA3mps",
                         vertical_speed = 0.0)
 
-                    rid_aircraft_flight = RIDFlight(id = k, aircraft_type = "Other", current_state = rid_aircraft_state)
+                    rid_aircraft_flight = rid.RIDFlight(id = k, aircraft_type = "Other", current_state = rid_aircraft_state)
 
 
-                    rid_aircraft_state_deserialized = self.rid_serializer.make_json_compatible(rid_aircraft_flight)
+                    rid_aircraft_state_deserialized = self.make_json_compatible(rid_aircraft_flight)
                     all_flight_telemetry[k].append(rid_aircraft_state_deserialized)
                     flight_current_index[k]+= 1
                 else:
@@ -230,7 +254,9 @@ class AdjacentCircularFlightsSimulator():
                 
         telemetry_data = all_flight_telemetry.values()
         telemetery_data_list = list(telemetry_data)
-        self.flight_telemetry = {"telemetery_data_list": telemetery_data_list, "reference_time": now_isoformat}
+        flight_operator_details = self.generate_flight_operator_details(locale='ch_DE')
+        
+        self.flight_telemetry = {"telemetery_data_list": telemetery_data_list, "reference_time": now_isoformat,'operator_details':flight_operator_details['operator_details'], 'flight_details':flight_operator_details['flight_details']}
 
 
 
@@ -335,7 +361,7 @@ class RIDAircraftStateWriter():
             return
         else:
             raise ValueError("At least one flight track is necessary to create a AircraftState and a test JSON, please generate the tracks first using AdjacentCircularFlightsSimulator class")
-
+        
     def write_rid_state(self, duration = 180):
 
         ''' This method iterates over flight tracks and geneates AircraftState JSON objects and writes to disk in the test_definitions folder, these files can be used to submit the data in the test harness '''
@@ -343,15 +369,13 @@ class RIDAircraftStateWriter():
         reference_time = self.flight_telemetry['reference_time']
 
         for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry['telemetery_data_list']):
-            
-            
             rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_test_flight' + '.json' # Add 1 to avoid zero based numbering
             
             output_subdirectory = Path(self.output_directory , 'aircraft_states')
             rid_test_file_path = output_subdirectory / rid_test_file_name
-            flight_telemetry_data = {'reference_time':reference_time, 'flight_telemetry':single_flight_telemetry_data}
+
             with open(rid_test_file_path,'w') as f:                
-                f.write(json.dumps(flight_telemetry_data))
+                f.write(json.dumps(single_flight_telemetry_data))
 
 
         
