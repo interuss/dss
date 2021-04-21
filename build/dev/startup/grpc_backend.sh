@@ -30,3 +30,4 @@ else
   -accepted_jwt_audiences localhost,local-gateway,dss_sandbox_local-dss-http-gateway_1 \
   -enable_scd
 fi
+
