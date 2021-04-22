@@ -7,7 +7,6 @@ from typing import List, NamedTuple, Any
 import arrow
 import datetime
 from datetime import datetime, timedelta
-import uuid
 
 
 class QueryBoundingBox(NamedTuple):
@@ -158,19 +157,17 @@ class AdjacentCircularFlightsSimulator():
             self.query_bboxes.append(QueryBoundingBox(name=box_diagonals[box_id]['name'], shape=buffered_box,
                                                       timestamp_after=box_diagonals[box_id]['timestamp_after'], timestamp_before=box_diagonals[box_id]['timestamp_before']))
 
-    def generate_flight_speed(self, adjecent_points: List, number_of_points: int) -> float:
+    def generate_flight_speed(self, adjacent_points: List, delta_time_secs: float) -> float:
         ''' A method to generate flight speed, assume that the flight has to traverse the circular points in one minute, calculating speed in meters / second '''
 
-        first_point = adjecent_points[0]
-        second_point = adjecent_points[1]
+        first_point = adjacent_points[0]
+        second_point = adjacent_points[1]
         line = LineString([first_point, second_point])
         geod = Geod(ellps="WGS84")
-        adjecent_point_distance_mts = geod.geometry_length(line)
-        total_distance_mts = adjecent_point_distance_mts * number_of_points
+        adjacent_point_distance_mts = geod.geometry_length(line)
         
-        # we have to travese this distnace in 60 seconds
-        speed_mts_per_sec = (total_distance_mts / 60)
-        
+        speed_mts_per_sec = (adjacent_point_distance_mts / delta_time_secs)
+        speed_mts_per_sec = float("{:.2f}".format(speed_mts_per_sec))
         return speed_mts_per_sec
 
     def generate_flight_grid_and_path_points(self, altitude_of_ground_level_wgs_84):
@@ -216,10 +213,10 @@ class AdjacentCircularFlightsSimulator():
             flight_points_with_altitude = []
             x, y = buffered_path.exterior.coords.xy
 
-            adjecent_points = [Point(x[0], y[0]), Point(x[1], y[1])]
-            number_of_points = len(proj_buffer_points)
+            adjacent_points = [Point(x[0], y[0]), Point(x[1], y[1])]
+            
 
-            flight_speed = self.generate_flight_speed(adjecent_points=adjecent_points, number_of_points= number_of_points)
+            flight_speed = self.generate_flight_speed(adjacent_points=adjacent_points, delta_time_secs= 1)
 
             for coord in range(0, len(x)):
                 flight_points_with_altitude.append(FlightPoint(lat=y[coord], lng=x[coord], alt=altitude))
@@ -260,9 +257,9 @@ class AdjacentCircularFlightsSimulator():
         for i in range(num_flights):
             flight_positions_len = len(self.grid_cells_flight_tracks[i].track)
             # in a circular flight pattern increment direction
-            angle_increment = int(360 / flight_positions_len)
+            angle_increment = (360 / flight_positions_len)
             # the resolution of track is 1 degree minimum
-            angle_increment = 1 if angle_increment == 0 else angle_increment
+            angle_increment = 1.0 if angle_increment == 0.0 else angle_increment
             flight_speed = self.grid_cells_flight_tracks[i].flight_speed
 
             if i not in flight_track_details:
@@ -286,7 +283,9 @@ class AdjacentCircularFlightsSimulator():
             elif track_angle <= 0:
                 track_angle = 355
             else:
-                track_angle = track_angle - angle_increment
+                track_angle = (track_angle - angle_increment)
+            
+            track_angle = float(("{:.2f}".format(track_angle)))
 
             for k in range(num_flights): 
                 list_end = flight_track_details[k]['track_length'] - \
@@ -387,13 +386,12 @@ class TrackWriter():
             feature_collection = {"type": "FeatureCollection", "features": []}
             point_collection = []
             for cur_track_point in grid_cell_flight_track.track:
-                p = Point((cur_track_point.lat, cur_track_point.lng, cur_track_point.alt))
+                p = Point((cur_track_point.lng, cur_track_point.lat, cur_track_point.alt))
                 point_collection.append(p)
 
             line = LineString(point_collection)
             line_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(line)}                
             feature_collection['features'].append(line_feature)
-
             path_file_name = 'track_%s.geojson' % str(track_id + 1)  # Avoid Zero based numbering
             
             tracks_file_path = self.output_subdirectories[0] / path_file_name
