@@ -3,12 +3,11 @@
 set -eo pipefail
 
 echo "Re/Create probe_local_instance_test_result file"
-RESULTFILE="$(pwd)/probe_local_instance_test_result"
+RESULTFILE="$(pwd)/probe_local_instance_test_result.xml"
 touch "${RESULTFILE}"
-cat /dev/null > "${RESULTFILE}"
-declare -a localhost_containers=("dss_sandbox_local-dss-http-gateway_1" 
-                "dss_sandbox_local-dss-grpc-backend_1" "dss_sandbox_local-dss-crdb_1"
-                )
+GATEWAY_CONTAINER="dss_sandbox_local-dss-http-gateway_1"
+OAUTH_CONTAINER="dss_sandbox_local-dss-dummy-oauth_1"
+declare -a localhost_containers="$GATEWAY_CONTAINER $OAUTH_CONTAINER"
 
 for container_name in $localhost_containers; do
 	if [ "$( docker container inspect -f '{{.State.Status}}' $container_name )" == "running" ]; then
@@ -34,14 +33,14 @@ sleep 1
 echo " -------------- PYTEST -------------- "
 echo "Building Integration Test container"
 echo "$(pwd)"
-docker build -q --rm -f monitoring/prober/Dockerfile monitoring -t e2e-test
+docker build -q --rm -f monitoring/prober/Dockerfile monitoring -t probe-local-test
 
 echo "Finally Begin Testing"
 docker run --network dss_sandbox_default \
-  --link dss_sandbox_local-dss-dummy-oauth_1:oauth \
-	--link dss_sandbox_local-dss-http-gateway_1:local-gateway \
+  --link $OAUTH_CONTAINER:oauth \
+	--link $GATEWAY_CONTAINER:local-gateway \
 	-v "${RESULTFILE}:/app/test_result" \
-	e2e-test \
+	probe-local-test \
 	"${1:-.}" \
 	--junitxml=/app/test_result \
 	--dss-endpoint http://local-gateway:8082 \
