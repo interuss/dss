@@ -6,8 +6,7 @@ import json, os
 import uuid
 from pathlib import Path
 from typing import List, NamedTuple, Any
-from utils import RIDSP, OperatorLocation, Operator, RIDFlightDetails, TestFlightDetails, TestFlight
-from monitoring.monitorlib.rid import RIDFlight
+from utils import RIDSP, OperatorLocation, Operator, RIDFlightDetails, TestFlightDetails, TestFlight, RIDFlight
 from urllib.parse import urlparse
 
 class TestBuilder():
@@ -69,11 +68,13 @@ class TestBuilder():
 
             
             effective_after = rid_state_data['reference_time']
+            flight_details =  rid_state_data['flight_details']
+            operator_details = rid_state_data['operator_details']
             
-            operator_location = OperatorLocation(lat = uss['operator_details'][uss_index]['location']['latitude'], lng = uss['operator_details'][uss_index]['location']['longitude'])
+            operator_location = OperatorLocation(lat = operator_details['location']['latitude'], lng = operator_details['location']['longitude'])
             operator_id = str(uuid.uuid4())
 
-            rid_flight_details = RIDFlightDetails(operator_id = operator_id, operator_location = operator_location, operation_description = uss['flight_details'][uss_index]['operation_description'] , serial_number = uss['flight_details'][uss_index]['serial_number'], registration_number = uss['flight_details'][uss_index]['registration_number'])
+            rid_flight_details = RIDFlightDetails(operator_id = operator_id, operator_location = operator_location, operation_description = flight_details['operation_description'] , serial_number = flight_details['serial_number'], registration_number = flight_details['registration_number'])
 
             test_flight_details = TestFlightDetails(effective_after= effective_after,details = rid_flight_details)
             test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= rid_state_data['flight_telemetry'], details_respones= test_flight_details)            
@@ -89,12 +90,12 @@ class TestBuilder():
 class TestHarness():
     ''' A class to submit Aircraft RID State to the USS test endpoint '''
 
-    def __init__(self, auth_url):
+    def __init__(self, auth_url, auth_spec, auth_sub):
         self.auth_url = auth_url
         
     
     def get_dss_session(self, auth_spec):
-        ''' This method gets a DSS session using the monitoring tools that are provided in the DSS '''
+        ''' This method gets a DSS session using the monitoring tools that are provided in the DSS monitoring repository'''
 
         auth_adapter = make_auth_adapter(auth_spec)
         s = DSSTestSession(self.auth_url, auth_adapter)
@@ -102,12 +103,14 @@ class TestHarness():
         return s
 
 
-    def submit_test(self, test_payload):
+    def submit_test(self, test_payload):        
+        ''' This method submits the payload to the injection url by creating a DSSTestSession and then using that session to send the payload '''
 
         injection_url = test_payload['injection_url']        
-        
+        auth_spec = test_payload['auth_spec']
         auth_sub = urlparse(injection_url).netloc
-        dss_session = self.get_dss_session(auth_url= self.auth_url, auth_sub= auth_sub)
+        auth_spec_with_sub = auth_spec # TODO: Modify auth_spec with sub information
+        dss_session = self.get_dss_session(auth_spec= auth_spec, auth_url= self.auth_url, auth_sub= auth_sub)
 
         response = dss_session.put(injection_url, data=test_payload['injection_payload'])
 
