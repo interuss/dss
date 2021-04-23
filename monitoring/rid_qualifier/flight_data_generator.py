@@ -24,6 +24,7 @@ class FlightPoint(NamedTuple):
     lat: float  # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
     lng: float  # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
     alt: float  # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
+    speed: float # speed in m / s 
 
 
 class AircraftPosition(NamedTuple):
@@ -69,7 +70,6 @@ class GridCellFlight(NamedTuple):
 
     bounds: shapely.geometry.polygon.Polygon
     track: List[FlightPoint]
-    flight_speed: float
 
 
 class AdjacentCircularFlightsSimulator():
@@ -157,7 +157,7 @@ class AdjacentCircularFlightsSimulator():
             self.query_bboxes.append(QueryBoundingBox(name=box_diagonals[box_id]['name'], shape=buffered_box,
                                                       timestamp_after=box_diagonals[box_id]['timestamp_after'], timestamp_before=box_diagonals[box_id]['timestamp_before']))
 
-    def generate_flight_speed(self, adjacent_points: List, delta_time_secs: float) -> float:
+    def generate_flight_speed(self, adjacent_points: List, delta_time_secs: int) -> float:
         ''' A method to generate flight speed, assume that the flight has to traverse the circular points in one minute, calculating speed in meters / second '''
 
         first_point = adjacent_points[0]
@@ -170,7 +170,7 @@ class AdjacentCircularFlightsSimulator():
         speed_mts_per_sec = float("{:.2f}".format(speed_mts_per_sec))
         return speed_mts_per_sec
 
-    def generate_flight_grid_and_path_points(self, altitude_of_ground_level_wgs_84):
+    def generate_flight_grid_and_path_points(self, altitude_of_ground_level_wgs_84 : float):
         ''' Generate a series of boxes (grid) within the given bounding box to have areas for different flight tracks within each box '''
         # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid.
         N_COLS = 3
@@ -219,10 +219,9 @@ class AdjacentCircularFlightsSimulator():
             flight_speed = self.generate_flight_speed(adjacent_points=adjacent_points, delta_time_secs= 1)
 
             for coord in range(0, len(x)):
-                flight_points_with_altitude.append(FlightPoint(lat=y[coord], lng=x[coord], alt=altitude))
+                flight_points_with_altitude.append(FlightPoint(lat = y[coord], lng = x[coord], alt = altitude, speed = flight_speed))
 
-
-            all_grid_cell_tracks.append(GridCellFlight(bounds=grid_cell, track=flight_points_with_altitude, flight_speed = flight_speed))
+            all_grid_cell_tracks.append(GridCellFlight(bounds = grid_cell, track = flight_points_with_altitude))
 
         self.grid_cells_flight_tracks = all_grid_cell_tracks
 
@@ -251,16 +250,17 @@ class AdjacentCircularFlightsSimulator():
         flight_current_index = {}
         # Get the number of flights
         num_flights = len(self.grid_cells_flight_tracks)
-
+        time_increment_seconds = 1 # the number of seconds it takes to go from one point to next on the track
         now = arrow.now()
         now_isoformat = now.isoformat()
         for i in range(num_flights):
             flight_positions_len = len(self.grid_cells_flight_tracks[i].track)
+            
             # in a circular flight pattern increment direction
             angle_increment = (360 / flight_positions_len)
+            
             # the resolution of track is 1 degree minimum
             angle_increment = 1.0 if angle_increment == 0.0 else angle_increment
-            flight_speed = self.grid_cells_flight_tracks[i].flight_speed
 
             if i not in flight_track_details:
                 flight_track_details[i] = {}
@@ -272,18 +272,19 @@ class AdjacentCircularFlightsSimulator():
 
         for j in range(duration):
             if j == 0:
+                timestamp = now.shift(seconds=time_increment_seconds)
+            else:
+                timestamp = timestamp.shift(seconds=time_increment_seconds)
+            if j == 0: 
                 track_angle = 270
-                timestamp = now.shift(seconds=1)
             else:
-                timestamp = timestamp.shift(seconds=1)
-            timestamp_isoformat = timestamp.isoformat()
-
-            if track_angle >= 360:
-                track_angle = 0
-            elif track_angle <= 0:
-                track_angle = 355
-            else:
+                
                 track_angle = (track_angle - angle_increment)
+                if track_angle <= 0:
+                    track_angle = 360 + track_angle
+                    
+                
+            timestamp_isoformat = timestamp.isoformat()
             
             track_angle = float(("{:.2f}".format(track_angle)))
 
@@ -308,7 +309,7 @@ class AdjacentCircularFlightsSimulator():
                         position=aircraft_position,
                         height=aircraft_height,
                         track=track_angle,
-                        speed=flight_speed,
+                        speed=flight_point.speed,
                         speed_accuracy="SA3mps",
                         vertical_speed=0.0)
 
