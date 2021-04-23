@@ -16,7 +16,7 @@ if [[ $DEBUG_ON == 1 ]]; then
   -reflect_api \
   -log_format console \
   -dump_requests \
-  -accepted_jwt_audiences localhost,host.docker.internal \
+  -accepted_jwt_audiences localhost,host.docker.internal,local-gateway,dss_sandbox_local-dss-http-gateway_1 \
   -enable_scd
 else
   echo "Debug Mode: off"
@@ -27,6 +27,7 @@ else
   -reflect_api \
   -log_format console \
   -dump_requests \
-  -accepted_jwt_audiences localhost,host.docker.internal \
+  -accepted_jwt_audiences localhost,host.docker.internal,local-gateway,dss_sandbox_local-dss-http-gateway_1 \
   -enable_scd
 fi
+
