@@ -9,7 +9,11 @@ This document aims to provide a introduction to the repository and it's structur
 
 ### Monitoring toolset
 
-The `monitoring` directory contains a set of folders containing different test suites to test different capabilities of the DSS during development and production use.
+The `monitoring` directory contains a set of folders containing different test suites to test different capabilities of the DSS during development and production use. 
+
+### Running tools locally
+
+When running tools in the monitoring toolset for local debugging outside of Docker, the [monitoring](https://github.com/interuss/dss/tree/master/monitoring) top-level folder must be added to your `PYTHONPATH`.
 
 #### Prober
 
