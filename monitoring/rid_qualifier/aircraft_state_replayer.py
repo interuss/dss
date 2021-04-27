@@ -1,13 +1,16 @@
 import requests
+from requests.sessions import get_auth_from_url
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import DSSTestSession
 
 import json, os
 import uuid
 from pathlib import Path
-from typing import List, NamedTuple, Any
-from utils import RIDSP, OperatorLocation, Operator, RIDFlightDetails, TestFlightDetails, TestFlight, RIDFlight
+from typing import  Any
+from utils import OperatorLocation, RIDFlightDetails, TestFlightDetails, TestFlight
 from urllib.parse import urlparse
+from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
+
 
 class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''
@@ -55,14 +58,14 @@ class TestBuilder():
 
     def build_test_payload(self): 
         ''' This is the main method to process the test configuration and build RID payload object, maxium of one flight is allocated to each USS. '''
-        
+        print(len(self.flight_tracks))
         usses = self.test_config['usses']
 
         all_test_payloads = []
         
         for uss_index, uss in enumerate(usses):
             requested_flights = []
-            flight_track_path = Path(self.tracks_directory, self.flight_tracks[uss_index])
+            flight_track_path = Path(self.tracks_directory, self.flight_tracks[uss_index+1])
             with open(flight_track_path) as generated_rid_state:
                 rid_state_data = json.load(generated_rid_state)
 
@@ -77,7 +80,7 @@ class TestBuilder():
             rid_flight_details = RIDFlightDetails(operator_id = operator_id, operator_location = operator_location, operation_description = flight_details['operation_description'] , serial_number = flight_details['serial_number'], registration_number = flight_details['registration_number'])
 
             test_flight_details = TestFlightDetails(effective_after= effective_after,details = rid_flight_details)
-            test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= rid_state_data['flight_telemetry'], details_respones= test_flight_details)            
+            test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= rid_state_data['flight_telemetry'], details_responses = test_flight_details)            
             test_flight_deserialized = self.make_json_compatible(test_flight)
             requested_flights.append(test_flight_deserialized)
             test_payload = {'test_id': str(uuid.uuid4()), "requested_flights": requested_flights}        
@@ -90,34 +93,35 @@ class TestBuilder():
 class TestHarness():
     ''' A class to submit Aircraft RID State to the USS test endpoint '''
 
-    def __init__(self, auth_url, auth_spec, auth_sub):
-        self.auth_url = auth_url
+    def __init__(self, auth_spec:str, auth_url:str):
+        self.auth_spec = auth_spec
+        self.auth_url= auth_url
         
     
-    def get_dss_session(self, auth_spec):
+    def get_dss_session(self, auth_url:str, auth_spec:str):
         ''' This method gets a DSS session using the monitoring tools that are provided in the DSS monitoring repository'''
 
         auth_adapter = make_auth_adapter(auth_spec)
-        s = DSSTestSession(self.auth_url, auth_adapter)
-
+        s = DSSTestSession(auth_url, auth_adapter)
+    
         return s
 
 
-    def submit_test(self, test_payload):        
+    def submit_test(self, test_payloads):        
         ''' This method submits the payload to the injection url by creating a DSSTestSession and then using that session to send the payload '''
+        for test_payload in test_payloads:
+            injection_url = test_payload['injection_url']        
+            auth_sub = urlparse(injection_url).netloc
+            auth_url = self.auth_spec
+            auth_spec_with_sub = self.auth_spec.replace("fake_uss",auth_sub)
+            dss_session = self.get_dss_session(auth_spec= auth_spec_with_sub, auth_url= self.auth_url)
 
-        injection_url = test_payload['injection_url']        
-        auth_spec = test_payload['auth_spec']
-        auth_sub = urlparse(injection_url).netloc
-        auth_spec_with_sub = auth_spec # TODO: Modify auth_spec with sub information
-        dss_session = self.get_dss_session(auth_spec= auth_spec, auth_url= self.auth_url, auth_sub= auth_sub)
+            response = dss_session.put(injection_url, data=test_payload['injection_payload'])
 
-        response = dss_session.put(injection_url, data=test_payload['injection_payload'])
-
-        if response.status_code == 200:
-            print("New test with ID %s created" % test_payload['injection_payload']['test_id'])
-        elif response.status_code ==409:
-            print("Test already with ID %s already exists" % test_payload['injection_payload']['test_id'])
-        else: 
-            print(response.json())
+            if response.status_code == 200:
+                print("New test with ID %s created" % test_payload['injection_payload']['test_id'])
+            elif response.status_code ==409:
+                print("Test already with ID %s already exists" % test_payloads['injection_payload']['test_id'])
+            else: 
+                print(response.json())
 

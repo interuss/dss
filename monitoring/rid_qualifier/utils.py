@@ -2,7 +2,7 @@ from typing import List, NamedTuple
 from shapely.geometry import Polygon
 import shapely.geometry
 from datetime import datetime, timedelta
-
+from monitoring.monitorlib.rid import AircraftState
 
 class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
@@ -25,43 +25,6 @@ class GridCellFlight(NamedTuple):
     ''' A object to hold details of a grid location and the track within it '''
     bounds: shapely.geometry.polygon.Polygon
     track: List[FlightPoint]
-
-
-class AircraftPosition(NamedTuple):
-    ''' A object to hold AircraftPosition details for Remote ID purposes, it mataches the RIDAircraftPosition  per the RID standard, for more information see https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1091'''
-
-    lat : float 
-    lng : float 
-    alt : float
-    accuracy_h : str
-    accuracy_v : str
-    extrapolated : bool
-    pressure_altitude : float
-
-class AircraftHeight(NamedTuple):
-    ''' A object to hold relative altitude for the purposes of Remote ID. For more information see: https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1142 '''
-
-    distance: float
-    reference: str
-
-class AircraftState(NamedTuple):
-    ''' A object to hold Aircraft state details for remote ID purposes. For more information see the published standard API specification at https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604 '''
-    
-    timestamp: datetime 
-    operational_status: str 
-    position: AircraftPosition # See the definition above 
-    height: AircraftHeight # See the definition above 
-    track: float 
-    speed: float 
-    speed_accuracy: str 
-    vertical_speed: float 
-
-class RIDFlight(NamedTuple):
-    ''' A object to store details of a remoteID flight ''' 
-    id: str # ID of the flight for Remote ID purposes, e.g. uss1.JA6kHYCcByQ-6AfU, we for this simulation we use just numeric : https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L943
-    aircraft_type: str  # Generic type of aircraft https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1711
-    current_state: AircraftState # See above for definition
-
 
 class RIDSP(NamedTuple):
 

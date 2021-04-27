@@ -7,7 +7,8 @@ import arrow
 import datetime
 from datetime import datetime, timedelta
 from typing import List, Any
-from utils import QueryBoundingBox, FlightPoint, GridCellFlight, AircraftPosition, AircraftHeight, AircraftState, RIDFlight
+from utils import QueryBoundingBox, FlightPoint, GridCellFlight
+from monitoring.monitorlib.rid import AircraftPosition, AircraftHeight, AircraftState, RIDFlight
 import operator_flight_details_generator as details_generator
 
 class AdjacentCircularFlightsSimulator():

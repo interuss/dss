@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 from typing import List
-from test_executor import TestHarness, TestBuilder
+from aircraft_state_replayer import TestHarness, TestBuilder
 
 
 class TestSubmitter():
@@ -31,12 +31,18 @@ if __name__ == '__main__':
     # This is the configuration for the test.
     test_configuration = {
         "locale": "che",
-        "auth_spec": ""
+        'auth_url':'http://localhost:8085/token',
+        "auth_spec": "DummyOAuth(http://localhost:8085/token, sub=fake_uss)",
+        "usses":[
+            {
+                "name": "Unmanned Systems Corp.",
+                "injection_url": "https://dss.unmanned.corp/tests/",
+            }
+        ]
     }
     my_test_builder = TestBuilder(test_config=json.dumps(
         test_configuration), country_code='CHE')
     test_payloads = my_test_builder.build_test_payload()
 
-    my_test_harness = TestHarness(auth=test_configuration['auth_url'])
-    my_test_submitter = my_test_harness.submit_test(
-        test_payloads=test_payloads)
+    my_test_harness = TestHarness(auth_spec=test_configuration['auth_spec'], auth_url= test_configuration['auth_url'])
+    my_test_submitter = my_test_harness.submit_test(test_payloads=test_payloads)
