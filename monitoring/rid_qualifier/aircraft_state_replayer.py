@@ -3,6 +3,7 @@ from requests.sessions import get_auth_from_url
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import DSSTestSession
 
+from monitoring.monitorlib import rid
 import json, os
 import uuid
 from pathlib import Path
@@ -97,7 +98,6 @@ class TestHarness():
         self.auth_spec = auth_spec
         self.auth_url= auth_url
         
-    
     def get_dss_session(self, auth_url:str, auth_spec:str):
         ''' This method gets a DSS session using the monitoring tools that are provided in the DSS monitoring repository'''
 
@@ -115,7 +115,8 @@ class TestHarness():
             auth_url = self.auth_spec
             auth_spec_with_sub = self.auth_spec.replace("fake_uss",auth_sub)
             dss_session = self.get_dss_session(auth_spec= auth_spec_with_sub, auth_url= self.auth_url)
-
+            dss_session.default_scopes = rid.SCOPE_WRITE
+           
             response = dss_session.put(injection_url, data=test_payload['injection_payload'])
 
             if response.status_code == 200:
