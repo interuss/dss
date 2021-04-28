@@ -2,7 +2,7 @@ import requests
 from requests.sessions import get_auth_from_url
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import DSSTestSession
-
+import asyncio
 from monitoring.monitorlib import rid
 import json, os
 import uuid
@@ -11,7 +11,7 @@ from typing import  Any
 from utils import OperatorLocation, RIDFlightDetails, TestFlightDetails, TestFlight
 from urllib.parse import urlparse
 from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
-
+import time
 
 class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''
@@ -59,17 +59,16 @@ class TestBuilder():
 
     def build_test_payload(self): 
         ''' This is the main method to process the test configuration and build RID payload object, maxium of one flight is allocated to each USS. '''
-        print(len(self.flight_tracks))
+        
         usses = self.test_config['usses']
 
         all_test_payloads = []
         
         for uss_index, uss in enumerate(usses):
             requested_flights = []
-            flight_track_path = Path(self.tracks_directory, self.flight_tracks[uss_index+1])
+            flight_track_path = Path(self.tracks_directory, self.flight_tracks[uss['allocated_flight_track_number']])
             with open(flight_track_path) as generated_rid_state:
                 rid_state_data = json.load(generated_rid_state)
-
             
             effective_after = rid_state_data['reference_time']
             flight_details =  rid_state_data['flight_details']
@@ -86,7 +85,7 @@ class TestBuilder():
             requested_flights.append(test_flight_deserialized)
             test_payload = {'test_id': str(uuid.uuid4()), "requested_flights": requested_flights}        
 
-            all_test_payloads.append({'injection_url':uss['injection_url'], 'injection_payload': test_payload})        
+            all_test_payloads.append({'injection_url':uss['injection_url'], 'injection_payload': test_payload, 'injection_start_time_from_now_secs':uss['start_time_from_now_secs']})        
         
         return all_test_payloads
 
@@ -106,23 +105,29 @@ class TestHarness():
     
         return s
 
+    async def submit_test(self,dss_session, injection_url,  test_payload):
+        print(f"Started: {time.strftime('%X')}")
+        print("Waiting %f seconds" % test_payload['injection_start_time_from_now_secs'])
+        await asyncio.sleep(test_payload['injection_start_time_from_now_secs'])            
+        response = dss_session.put(injection_url, data=test_payload['injection_payload'])
+        print(f"Ended: {time.strftime('%X')}")
 
-    def submit_test(self, test_payloads):        
+        if response.status_code == 200:
+            print("New test with ID %s created" % test_payload['injection_payload']['test_id'])
+        elif response.status_code ==409:
+            print("Test with ID %s already exists" % test_payload['injection_payload']['test_id'])
+        else: 
+            print(response.json())
+
+
+    
+    async def submit_payload_async(self, test_payloads):        
         ''' This method submits the payload to the injection url by creating a DSSTestSession and then using that session to send the payload '''
         for test_payload in test_payloads:
             injection_url = test_payload['injection_url']        
             auth_sub = urlparse(injection_url).netloc
-            auth_url = self.auth_spec
+            
             auth_spec_with_sub = self.auth_spec.replace("fake_uss",auth_sub)
             dss_session = self.get_dss_session(auth_spec= auth_spec_with_sub, auth_url= self.auth_url)
             dss_session.default_scopes = rid.SCOPE_WRITE
-           
-            response = dss_session.put(injection_url, data=test_payload['injection_payload'])
-
-            if response.status_code == 200:
-                print("New test with ID %s created" % test_payload['injection_payload']['test_id'])
-            elif response.status_code ==409:
-                print("Test already with ID %s already exists" % test_payloads['injection_payload']['test_id'])
-            else: 
-                print(response.json())
-
+            await self.submit_test(dss_session=dss_session, injection_url=injection_url, test_payload=test_payload)
