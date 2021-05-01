@@ -93,15 +93,15 @@ class TestBuilder():
 class TestHarness():
     ''' A class to submit Aircraft RID State to the USS test endpoint '''
 
-    def __init__(self, auth_spec:str, auth_url:str):
+    def __init__(self, auth_spec:str, uss_url:str):
         self.auth_spec = auth_spec
-        self.auth_url= auth_url
+        self.uss_url= uss_url
         
-    def get_dss_session(self, auth_url:str, auth_spec:str):
+    def get_dss_session(self):
         ''' This method gets a DSS session using the monitoring tools that are provided in the DSS monitoring repository'''
 
-        auth_adapter = make_auth_adapter(auth_spec)
-        s = DSSTestSession(auth_url, auth_adapter)
+        auth_adapter = make_auth_adapter(self.auth_spec)
+        s = DSSTestSession(self.uss_url, auth_adapter)
     
         return s
 
