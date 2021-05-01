@@ -25,6 +25,7 @@ class FlightPoint(NamedTuple):
     lng: float  # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
     alt: float  # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
     speed: float # speed in m / s 
+    bearing: float # forward azimuth for the this and the next point on the track
 
 
 class AircraftPosition(NamedTuple):
@@ -158,18 +159,33 @@ class AdjacentCircularFlightsSimulator():
                                                       timestamp_after=box_diagonals[box_id]['timestamp_after'], timestamp_before=box_diagonals[box_id]['timestamp_before']))
 
     def generate_flight_speed(self, adjacent_points: List, delta_time_secs: int) -> float:
-        ''' A method to generate flight speed, assume that the flight has to traverse the circular points in one minute, calculating speed in meters / second '''
+        ''' A method to generate flight speed, assume that the flight has to traverse two adjecent points in x number of seconds provided as delta_time_secs and speed is consistent throughout the duration of the flight, calculating speed in meters / second '''
 
         first_point = adjacent_points[0]
         second_point = adjacent_points[1]
-        line = LineString([first_point, second_point])
+        
         geod = Geod(ellps="WGS84")
-        adjacent_point_distance_mts = geod.geometry_length(line)
+        fwd_azimuth, back_azimuth, adjacent_point_distance_mts = geod.inv(first_point.x, first_point.y, second_point.x, second_point.y)
         
         speed_mts_per_sec = (adjacent_point_distance_mts / delta_time_secs)
         speed_mts_per_sec = float("{:.2f}".format(speed_mts_per_sec))
+        
         return speed_mts_per_sec
 
+    def generate_bearing(self, adjacent_points: List) -> float:
+        ''' A method to generate bearing between this and next point, this is used to populate the 'track' paramater in the Aircraft State JSON. '''
+
+        first_point = adjacent_points[0]
+        second_point = adjacent_points[1]
+        
+        geod = Geod(ellps="WGS84")
+        fwd_azimuth, back_azimuth, adjacent_point_distance_mts = geod.inv(first_point.x, first_point.y, second_point.x, second_point.y)
+       
+        if fwd_azimuth < 0:
+            fwd_azimuth = 360 + fwd_azimuth
+            
+        return fwd_azimuth
+    
     def generate_flight_grid_and_path_points(self, altitude_of_ground_level_wgs_84 : float):
         ''' Generate a series of boxes (grid) within the given bounding box to have areas for different flight tracks within each box '''
         # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid.
@@ -213,13 +229,18 @@ class AdjacentCircularFlightsSimulator():
             flight_points_with_altitude = []
             x, y = buffered_path.exterior.coords.xy
 
-            adjacent_points = [Point(x[0], y[0]), Point(x[1], y[1])]
+            first_two_points = [Point(x[0], y[0]), Point(x[1], y[1])]
             
-
-            flight_speed = self.generate_flight_speed(adjacent_points=adjacent_points, delta_time_secs= 1)
+            flight_speed = self.generate_flight_speed(adjacent_points= first_two_points, delta_time_secs= 1)
 
             for coord in range(0, len(x)):
-                flight_points_with_altitude.append(FlightPoint(lat = y[coord], lng = x[coord], alt = altitude, speed = flight_speed))
+                cur_coord = coord
+                next_coord = coord + 1 
+                next_coord = 0 if next_coord == len(x) else next_coord
+                adjacent_points = [Point(x[cur_coord], y[cur_coord]), Point(x[next_coord], y[next_coord])]
+                bearing  = self.generate_bearing(adjacent_points=adjacent_points)
+                print(bearing)
+                flight_points_with_altitude.append(FlightPoint(lat = y[coord], lng = x[coord], alt = altitude, speed = flight_speed, bearing = bearing))
 
             all_grid_cell_tracks.append(GridCellFlight(bounds = grid_cell, track = flight_points_with_altitude))
 
@@ -275,19 +296,10 @@ class AdjacentCircularFlightsSimulator():
                 timestamp = now.shift(seconds=time_increment_seconds)
             else:
                 timestamp = timestamp.shift(seconds=time_increment_seconds)
-            if j == 0: 
-                track_angle = 270
-            else:
-                
-                track_angle = (track_angle - angle_increment)
-                if track_angle <= 0:
-                    track_angle = 360 + track_angle
-                    
+            
                 
             timestamp_isoformat = timestamp.isoformat()
             
-            track_angle = float(("{:.2f}".format(track_angle)))
-
             for k in range(num_flights): 
                 list_end = flight_track_details[k]['track_length'] - \
                     flight_current_index[k]
@@ -308,7 +320,7 @@ class AdjacentCircularFlightsSimulator():
                         operational_status="Airborne",
                         position=aircraft_position,
                         height=aircraft_height,
-                        track=track_angle,
+                        track=flight_point.bearing,
                         speed=flight_point.speed,
                         speed_accuracy="SA3mps",
                         vertical_speed=0.0)
