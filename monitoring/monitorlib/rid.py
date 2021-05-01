@@ -11,6 +11,8 @@ DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 SCOPE_READ = 'dss.read.identification_service_areas'
 SCOPE_WRITE = 'dss.write.identification_service_areas'
 
+SCOPE_RID_QUALIFIER_INJECT = 'rid.inject_test_data'
+
 # This scope is used only for experimentation during UPP2
 UPP2_SCOPE_ENHANCED_DETAILS = 'rid.read.enhanced_details'
 

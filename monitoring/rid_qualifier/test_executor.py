@@ -1,29 +1,8 @@
 from pathlib import Path
 import json
 from typing import List
-from aircraft_state_replayer import TestHarness, TestBuilder
+from monitorting.aircraft_state_replayer import TestHarness, TestBuilder
 import asyncio
-class TestSubmitter():
-    ''' A class to submit the test data to USS end point '''
-
-    def __init__(self, test_payloads):
-        self.test_payload_valid(test_payloads)
-        self.submit_payload(test_payloads)
-
-    def test_payload_valid(self, test_payloads: List) -> None:
-        ''' This method checks if the test definition is a valid JSON '''  # TODO : Have a comprehensive way to check JSON definition
-        if len(test_payloads):
-            pass
-        else:
-            raise ValueError(
-                "A valid payload object with atleast one flight / USS must be submitted")
-
-    def submit_payload(self, test_payloads: List) -> None:
-        ''' This method submits the payload to indvidual USS '''
-        my_test_harness = TestHarness()
-        for payload in test_payloads:
-            my_test_harness.submit_test(payload)
-
 
 
 async def main():

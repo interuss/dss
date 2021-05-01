@@ -1,5 +1,4 @@
 import requests
-from requests.sessions import get_auth_from_url
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import DSSTestSession
 import asyncio
@@ -8,9 +7,9 @@ import json, os
 import uuid
 from pathlib import Path
 from typing import  Any
-from utils import OperatorLocation, RIDFlightDetails, TestFlightDetails, TestFlight
+from monitoring.monitorlib.rid_qualifier.utils import OperatorLocation, RIDFlightDetails, TestFlightDetails, TestFlight
 from urllib.parse import urlparse
-from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
+
 import time
 
 class TestBuilder():
@@ -115,7 +114,7 @@ class TestHarness():
         if response.status_code == 200:
             print("New test with ID %s created" % test_payload['injection_payload']['test_id'])
         elif response.status_code ==409:
-            print("Test with ID %s already exists" % test_payload['injection_payload']['test_id'])
+            print("Test with ID %s already exists" % test_payload['injection_payload']['test_id'])  
         else: 
             print(response.json())
 
@@ -129,5 +128,6 @@ class TestHarness():
             
             auth_spec_with_sub = self.auth_spec.replace("fake_uss",auth_sub)
             dss_session = self.get_dss_session(auth_spec= auth_spec_with_sub, auth_url= self.auth_url)
-            dss_session.default_scopes = rid.SCOPE_WRITE
+            dss_session.default_scopes = rid.SCOPE_RID_QUALIFIER_INJECT 
+
             await self.submit_test(dss_session=dss_session, injection_url=injection_url, test_payload=test_payload)
