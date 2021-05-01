@@ -1,6 +1,6 @@
 from shapely.geometry import Point, Polygon, LineString
 import shapely.geometry
-from pyproj import Geod, Transformer
+from pyproj import Geod, Transformer, Proj
 import json
 from pathlib import Path
 from typing import List, NamedTuple, Any
@@ -77,7 +77,7 @@ class AdjacentCircularFlightsSimulator():
 
     ''' A class to generate Flight Paths given a bounding box, this is the main module to generate flight path datasets, the data is generated as latitude / longitude pairs with assoiated with the flights. Additional flight metadata e.g. flight id, altitude, registration number can also be generated '''
 
-    def __init__(self, minx: float, miny: float, maxx: float, maxy: float) -> None:
+    def __init__(self, minx: float, miny: float, maxx: float, maxy: float, utm_zone:str) -> None:
         """ Create an AdjacentCircularFlightsSimulator with the specified bounding box.
 
             Once these extents are specified, a grid will be created with two rows.  The idea is that multiple flights tracks will be created within the extents.
@@ -86,7 +86,8 @@ class AdjacentCircularFlightsSimulator():
             maxx: Eastern edge of bounding box (degrees longitude)
             miny: Southern edge of bounding box (degrees latitude)
             maxy: Northern edge of bounding box (degrees latitude)
-
+            utm_zone: UTM Zone string for the location, see https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system to identify the zone for the location. 
+            
             Raises:
             ValueError: If bounding box has more area than a 500m x 500m square.
         """
@@ -95,6 +96,7 @@ class AdjacentCircularFlightsSimulator():
         self.miny = miny
         self.maxx = maxx
         self.maxy = maxy
+        self.utm_zone = utm_zone
 
         self.altitude_agl = 50.0
 
@@ -176,6 +178,21 @@ class AdjacentCircularFlightsSimulator():
             
         return [speed_mts_per_sec, fwd_azimuth]
 
+    def utm_converter(self, shapely_shape: shapely.geometry, inverse:bool=False) -> shapely.geometry.shape:
+        ''' A helper function to convert from lat / lon to UTM coordinates for buffering. tracks. This is the UTM projection (https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system), we use Zone 33T which encompasses Switzerland, this zone has to be set for each locale / city. Adapted from https://gis.stackexchange.com/questions/325926/buffering-geometry-with-points-in-wgs84-using-shapely '''
+        
+        proj = Proj(proj="utm", zone=self.utm_zone, ellps="WGS84", datum="WGS84")
+        
+        geo_interface = shapely_shape.__geo_interface__
+        point_or_polygon = geo_interface['type']
+        coordinates = geo_interface['coordinates']
+        if point_or_polygon == 'Polygon':
+            new_coordinates = [[proj(*point, inverse=inverse) for point in linring] for linring in coordinates]
+        elif point_or_polygon == 'Point':
+            new_coordinates = proj(*coordinates, inverse=inverse)
+        return shapely.geometry.shape({'type': point_or_polygon, 'coordinates': tuple(new_coordinates)})
+
+
     
     def generate_flight_grid_and_path_points(self, altitude_of_ground_level_wgs_84 : float):
         ''' Generate a series of boxes (grid) within the given bounding box to have areas for different flight tracks within each box '''
@@ -199,23 +216,10 @@ class AdjacentCircularFlightsSimulator():
         # Iterate over the flight_grid
         for grid_cell in grid_cells:
             center = grid_cell.centroid
-            # Transfrom to buffer 140 m diameter circle on which the drone will fly
-            transformer = Transformer.from_crs("epsg:4326", "epsg:3857")
-            transformed_x, transformed_y = transformer.transform(center.x, center.y)
-            pt = Point(transformed_x, transformed_y)
-            # build a buffer so that the radius is 70m for the track
-            buffer = pt.buffer(70)
-            buffer_points = zip(buffer.exterior.coords.xy[0], buffer.exterior.coords.xy[1])            
-            proj_buffer_points = []
-            # reproject back to ESPG 4326
-            transformer2 = Transformer.from_crs("epsg:3857", "epsg:4326")
-            for point in buffer_points:
-                x = point[0]
-                y = point[1]
-                x, y = transformer2.transform(x, y)
-                proj_buffer_points.append((x, y))
-            buffered_path = Polygon(proj_buffer_points)
-
+            center_utm = self.utm_converter(center)
+            buffer_shape_utm = center_utm.buffer(70)
+            buffered_path = self.utm_converter(buffer_shape_utm, inverse=True)
+            
             altitude = altitude_of_ground_level_wgs_84 + self.altitude_agl  # meters WGS 84
             flight_points_with_altitude = []
             x, y = buffered_path.exterior.coords.xy
@@ -453,7 +457,7 @@ class RIDAircraftStateWriter():
 
 if __name__ == '__main__':
     # TODO: accept these parameters as values so that other locations can be supplied
-    my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121)    
+    my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')    
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
     COUNTRY_CODE = 'che'
     flight_points = []
