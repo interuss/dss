@@ -105,14 +105,16 @@ class AdjacentCircularFlightsSimulator():
 
         self.flight_telemetry: List[List[AircraftState]] = []
 
+        self.geod = Geod(ellps="WGS84")
+        
         self.input_extents_valid()
 
     def input_extents_valid(self) -> None:
         ''' This method checks if the input extents are valid i.e. small enough, if the extent is too large, we reject them, at the moment it checks for extents less than 500m x 500m square but can be changed as necessary.'''
 
         box = shapely.geometry.box(self.minx, self.miny, self.maxx, self.maxy)
-        geod = Geod(ellps="WGS84")
-        area = abs(geod.geometry_area_perimeter(box)[0])
+        
+        area = abs(self.geod.geometry_area_perimeter(box)[0])
 
         # Have a area less than 500m x 500m square and more than 300m x 300m square to ensure a 70 m diameter tracks
         if (area) < 250000 and (area) > 90000:
@@ -158,33 +160,22 @@ class AdjacentCircularFlightsSimulator():
             self.query_bboxes.append(QueryBoundingBox(name=box_diagonals[box_id]['name'], shape=buffered_box,
                                                       timestamp_after=box_diagonals[box_id]['timestamp_after'], timestamp_before=box_diagonals[box_id]['timestamp_before']))
 
-    def generate_flight_speed(self, adjacent_points: List, delta_time_secs: int) -> float:
-        ''' A method to generate flight speed, assume that the flight has to traverse two adjecent points in x number of seconds provided as delta_time_secs and speed is consistent throughout the duration of the flight, calculating speed in meters / second '''
+    def generate_flight_speed_bearing(self, adjacent_points: List, delta_time_secs: int) -> List[float]:
+        ''' A method to generate flight speed, assume that the flight has to traverse two adjecent points in x number of seconds provided, calculating speed in meters / second. It also generates bearing between this and next point, this is used to populate the 'track' paramater in the Aircraft State JSON. '''
 
         first_point = adjacent_points[0]
         second_point = adjacent_points[1]
         
-        geod = Geod(ellps="WGS84")
-        fwd_azimuth, back_azimuth, adjacent_point_distance_mts = geod.inv(first_point.x, first_point.y, second_point.x, second_point.y)
+        fwd_azimuth, back_azimuth, adjacent_point_distance_mts = self.geod.inv(first_point.x, first_point.y, second_point.x, second_point.y)
         
         speed_mts_per_sec = (adjacent_point_distance_mts / delta_time_secs)
         speed_mts_per_sec = float("{:.2f}".format(speed_mts_per_sec))
         
-        return speed_mts_per_sec
-
-    def generate_bearing(self, adjacent_points: List) -> float:
-        ''' A method to generate bearing between this and next point, this is used to populate the 'track' paramater in the Aircraft State JSON. '''
-
-        first_point = adjacent_points[0]
-        second_point = adjacent_points[1]
-        
-        geod = Geod(ellps="WGS84")
-        fwd_azimuth, back_azimuth, adjacent_point_distance_mts = geod.inv(first_point.x, first_point.y, second_point.x, second_point.y)
-       
         if fwd_azimuth < 0:
             fwd_azimuth = 360 + fwd_azimuth
             
-        return fwd_azimuth
+        return [speed_mts_per_sec, fwd_azimuth]
+
     
     def generate_flight_grid_and_path_points(self, altitude_of_ground_level_wgs_84 : float):
         ''' Generate a series of boxes (grid) within the given bounding box to have areas for different flight tracks within each box '''
@@ -229,17 +220,13 @@ class AdjacentCircularFlightsSimulator():
             flight_points_with_altitude = []
             x, y = buffered_path.exterior.coords.xy
 
-            first_two_points = [Point(x[0], y[0]), Point(x[1], y[1])]
-            
-            flight_speed = self.generate_flight_speed(adjacent_points= first_two_points, delta_time_secs= 1)
-
             for coord in range(0, len(x)):
                 cur_coord = coord
                 next_coord = coord + 1 
                 next_coord = 0 if next_coord == len(x) else next_coord
                 adjacent_points = [Point(x[cur_coord], y[cur_coord]), Point(x[next_coord], y[next_coord])]
-                bearing  = self.generate_bearing(adjacent_points=adjacent_points)
-                print(bearing)
+                flight_speed, bearing  = self.generate_flight_speed_bearing(adjacent_points=adjacent_points, delta_time_secs= 1)
+                
                 flight_points_with_altitude.append(FlightPoint(lat = y[coord], lng = x[coord], alt = altitude, speed = flight_speed, bearing = bearing))
 
             all_grid_cell_tracks.append(GridCellFlight(bounds = grid_cell, track = flight_points_with_altitude))
