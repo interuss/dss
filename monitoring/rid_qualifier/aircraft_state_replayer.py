@@ -1,4 +1,4 @@
-import requests
+
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import DSSTestSession
 import asyncio
@@ -7,10 +7,11 @@ import json, os
 import uuid
 from pathlib import Path
 from typing import  Any
-from monitoring.monitorlib.rid_qualifier.utils import OperatorLocation, RIDFlightDetails, TestFlightDetails, TestFlight
+from monitoring.rid_qualifier.utils import OperatorLocation, RIDFlightDetails, TestFlightDetails, TestFlight
 from urllib.parse import urlparse
 
 import time
+from typing import List
 
 class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''
@@ -23,7 +24,7 @@ class TestBuilder():
         self.verify_tracks_directory(self.tracks_directory)
         self.flight_tracks = self.load_flight_tracks(self.tracks_directory)
             
-    def load_flight_tracks(self, tracks_directory) -> None:
+    def load_flight_tracks(self, tracks_directory) -> List[str]:
         track_files = os.listdir(tracks_directory) 
         return track_files
 

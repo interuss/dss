@@ -42,15 +42,6 @@ class OperatorLocation(NamedTuple):
     lat: float
     lng: float
 
-class Operator(NamedTuple):
-    ''' A object to hold details of a operator while querying Remote ID for testing purposes, contains details of operator assigned to the USS '''
-    id: str
-    location: OperatorLocation
-    operation_description: str
-    serial_number: str
-    registration_number: str
-
-
 class RIDFlightDetails(NamedTuple):
     ''' A object to hold RID details of a flight operator that will be reported by the USS as a part of the test ''' 
     operator_id:str
@@ -58,7 +49,6 @@ class RIDFlightDetails(NamedTuple):
     operator_location: OperatorLocation
     serial_number: str
     registration_number: str
-
 
 class TestFlightDetails(NamedTuple):
     ''' A object to hold the remote ID Details,  and a date time after which the USS should submit the flight details, it matches the TestFlightDetails in the injection interface, for more details see: https://github.com/interuss/dss/blob/master/interfaces/automated-testing/rid/injection.yaml#L158 ''' 
