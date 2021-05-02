@@ -1,4 +1,3 @@
-
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import DSSTestSession
 import asyncio
@@ -8,8 +7,7 @@ import uuid
 from pathlib import Path
 from typing import  Any
 from monitoring.rid_qualifier.utils import OperatorLocation, RIDFlightDetails, TestFlightDetails, TestFlight
-from urllib.parse import urlparse
-
+import arrow
 import time
 from typing import List
 
@@ -93,23 +91,24 @@ class TestBuilder():
 class TestHarness():
     ''' A class to submit Aircraft RID State to the USS test endpoint '''
 
-    def __init__(self, auth_spec:str, uss_url:str):
+    def __init__(self, auth_spec:str, injection_url:str):
         self.auth_spec = auth_spec
-        self.uss_url= uss_url
+        self.injection_url= injection_url
         
-    def get_dss_session(self):
+    def get_uss_session(self, ) -> DSSTestSession:
         ''' This method gets a DSS session using the monitoring tools that are provided in the DSS monitoring repository'''
 
         auth_adapter = make_auth_adapter(self.auth_spec)
-        s = DSSTestSession(self.uss_url, auth_adapter)
+        s = DSSTestSession(self.injection_url, auth_adapter)
     
         return s
 
-    async def submit_test(self,dss_session, injection_url,  test_payload):
+    async def submit_test(self,uss_session,  test_payload):
         print(f"Started: {time.strftime('%X')}")
         print("Waiting %f seconds" % test_payload['injection_start_time_from_now_secs'])
-        await asyncio.sleep(test_payload['injection_start_time_from_now_secs'])            
-        response = dss_session.put(injection_url, data=test_payload['injection_payload'])
+        await asyncio.sleep(test_payload['injection_start_time_from_now_secs'])  
+        
+        response = uss_session.put(data=test_payload['injection_payload'])
         print(f"Ended: {time.strftime('%X')}")
 
         if response.status_code == 200:
@@ -119,16 +118,12 @@ class TestHarness():
         else: 
             print(response.json())
 
-
-    
     async def submit_payload_async(self, test_payloads):        
         ''' This method submits the payload to the injection url by creating a DSSTestSession and then using that session to send the payload '''
         for test_payload in test_payloads:
-            injection_url = test_payload['injection_url']        
-            auth_sub = urlparse(injection_url).netloc
-            
-            auth_spec_with_sub = self.auth_spec.replace("fake_uss",auth_sub)
-            dss_session = self.get_dss_session(auth_spec= auth_spec_with_sub, auth_url= self.auth_url)
-            dss_session.default_scopes = rid.SCOPE_RID_QUALIFIER_INJECT 
+            test_injection_url = self.injection_url  + '/tests/{test_id}'.format(test_id=test_payload['injection_payload']['test_id'])
+                  
+            uss_session = self.get_uss_session(test_injection_url = test_injection_url)
+            uss_session.default_scopes = rid.SCOPE_RID_QUALIFIER_INJECT 
 
-            await self.submit_test(dss_session=dss_session, injection_url=injection_url, test_payload=test_payload)
+            await self.submit_test(uss_session=uss_session, injection_url=self.injection_url, test_payload=test_payload)

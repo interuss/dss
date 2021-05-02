@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 from typing import List
-from monitorting.aircraft_state_replayer import TestHarness, TestBuilder
+from monitorting.rid_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
 import asyncio
 
 
@@ -9,8 +9,8 @@ async def main():
     # This is the configuration for the test.
     test_configuration = {
         "locale": "che", # The locale here is indicating the geographical location in ISO3166 3-letter country code and also a folder within the test definitions directory. The aircraft_state_replayer reads flight track information from the locale/aircraft_states directory.  The locale directory also contains information about the query_bboxes that the rid display provider will use to query and retrieve the flight information. 
-        'auth_url':'http://localhost:8085/token',
-        "auth_spec": "DummyOAuth(http://localhost:8085/token, sub=fake_uss)",
+        
+        "auth_spec": "DummyOAuth(http://localhost:8085/token, sub=uss1)",
         "usses":[
             {
                 "name": "Unmanned Systems Corp.",
@@ -24,7 +24,7 @@ async def main():
         test_configuration), country_code='CHE')
     test_payloads = my_test_builder.build_test_payload()
 
-    my_test_harness = TestHarness(auth_spec=test_configuration['auth_spec'], auth_url= test_configuration['auth_url'])
+    my_test_harness = TestHarness(auth_spec=test_configuration['auth_spec'])
     await my_test_harness.submit_payload_async(test_payloads=test_payloads)
     
 if __name__ == '__main__':

@@ -61,5 +61,5 @@ class TestFlight(NamedTuple):
 
     injection_id: str    
     telemetry: List[AircraftState]
-    details_responses : List[TestFlightDetails]    
+    details_responses : TestFlightDetails   
 
