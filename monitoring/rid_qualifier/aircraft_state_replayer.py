@@ -62,28 +62,43 @@ class TestBuilder():
 
         all_test_payloads = []
         
+        now = arrow.now()
+        four_minutes_from_now = now.shift(minutes=4)
+        four_minutes_from_now_isoformat = four_minutes_from_now.isoformat()
+
         for uss_index, uss in enumerate(usses):
             requested_flights = []
             flight_track_path = Path(self.tracks_directory, self.flight_tracks[uss['allocated_flight_track_number']])
             with open(flight_track_path) as generated_rid_state:
-                rid_state_data = json.load(generated_rid_state)
+                disk_rid_state_data = json.load(generated_rid_state)
+                
+            disk_rid_state_data['reference_time'] = four_minutes_from_now_isoformat
+
+            updated_timestamps_telemetry = []
             
-            effective_after = rid_state_data['reference_time']
-            flight_details =  rid_state_data['flight_details']
-            operator_details = rid_state_data['operator_details']
+            for telemetry_id, flight_telemetry in enumerate(disk_rid_state_data['flight_telemetry']):
+
+                timestamp = four_minutes_from_now_isoformat.shift(seconds =1) if (telemetry_id ==0) else timestamp.shift(seconds = 1)
+
+                flight_telemetry['current_state']['timestamp'] = timestamp.isoformat()
+                updated_timestamps_telemetry.append(flight_telemetry)
+            
+            
+            flight_details =  disk_rid_state_data['flight_details']
+            operator_details = disk_rid_state_data['operator_details']
             
             operator_location = OperatorLocation(lat = operator_details['location']['latitude'], lng = operator_details['location']['longitude'])
             operator_id = str(uuid.uuid4())
 
             rid_flight_details = RIDFlightDetails(operator_id = operator_id, operator_location = operator_location, operation_description = flight_details['operation_description'] , serial_number = flight_details['serial_number'], registration_number = flight_details['registration_number'])
 
-            test_flight_details = TestFlightDetails(effective_after= effective_after,details = rid_flight_details)
-            test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= rid_state_data['flight_telemetry'], details_responses = test_flight_details)            
+            test_flight_details = TestFlightDetails(effective_after= four_minutes_from_now_isoformat,details = rid_flight_details)
+            test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= updated_timestamps_telemetry, details_responses = test_flight_details)            
             test_flight_deserialized = self.make_json_compatible(test_flight)
             requested_flights.append(test_flight_deserialized)
             test_payload = {'test_id': str(uuid.uuid4()), "requested_flights": requested_flights}        
 
-            all_test_payloads.append({'injection_url':uss['injection_url'], 'injection_payload': test_payload, 'injection_start_time_from_now_secs':uss['start_time_from_now_secs']})        
+            all_test_payloads.append({'injection_url':uss['injection_url'], 'injection_payload': test_payload})        
         
         return all_test_payloads
 
@@ -95,7 +110,7 @@ class TestHarness():
         self.auth_spec = auth_spec
         self.injection_url= injection_url
         
-    def get_uss_session(self, ) -> DSSTestSession:
+    def get_uss_session(self, test_injection_url:str) -> DSSTestSession:
         ''' This method gets a DSS session using the monitoring tools that are provided in the DSS monitoring repository'''
 
         auth_adapter = make_auth_adapter(self.auth_spec)
@@ -103,20 +118,15 @@ class TestHarness():
     
         return s
 
-    async def submit_test(self,uss_session,  test_payload):
-        print(f"Started: {time.strftime('%X')}")
-        print("Waiting %f seconds" % test_payload['injection_start_time_from_now_secs'])
-        await asyncio.sleep(test_payload['injection_start_time_from_now_secs'])  
+    def submit_test(self,uss_session, test_payload) -> None:
         
         response = uss_session.put(data=test_payload['injection_payload'])
-        print(f"Ended: {time.strftime('%X')}")
 
         if response.status_code == 200:
             print("New test with ID %s created" % test_payload['injection_payload']['test_id'])
         elif response.status_code ==409:
             print("Test with ID %s already exists" % test_payload['injection_payload']['test_id'])  
-        else: 
-            print(response.json())
+
 
     async def submit_payload_async(self, test_payloads):        
         ''' This method submits the payload to the injection url by creating a DSSTestSession and then using that session to send the payload '''
@@ -126,4 +136,4 @@ class TestHarness():
             uss_session = self.get_uss_session(test_injection_url = test_injection_url)
             uss_session.default_scopes = rid.SCOPE_RID_QUALIFIER_INJECT 
 
-            await self.submit_test(uss_session=uss_session, injection_url=self.injection_url, test_payload=test_payload)
+            await self.submit_test(uss_session=uss_session, test_payload=test_payload)
