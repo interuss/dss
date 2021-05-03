@@ -62,9 +62,10 @@ class TestBuilder():
 
         all_test_payloads = []
         
-        now = arrow.now()
-        four_minutes_from_now = now.shift(minutes=4)
-        four_minutes_from_now_isoformat = four_minutes_from_now.isoformat()
+        test_reference_time = arrow.get(self.test_config['now'])
+        test_start_time = arrow.get(self.test_config['test_start_time'])
+        three_minutes_from_now = test_start_time.shift(minutes =3)
+        three_minutes_from_now_isoformat = three_minutes_from_now.isoformat()
 
         for uss_index, uss in enumerate(usses):
             requested_flights = []
@@ -72,13 +73,13 @@ class TestBuilder():
             with open(flight_track_path) as generated_rid_state:
                 disk_rid_state_data = json.load(generated_rid_state)
                 
-            disk_rid_state_data['reference_time'] = four_minutes_from_now_isoformat
+            disk_rid_state_data['reference_time'] = test_reference_time.isoformat()
 
             updated_timestamps_telemetry = []
             
             for telemetry_id, flight_telemetry in enumerate(disk_rid_state_data['flight_telemetry']):
 
-                timestamp = four_minutes_from_now_isoformat.shift(seconds =1) if (telemetry_id ==0) else timestamp.shift(seconds = 1)
+                timestamp = three_minutes_from_now.shift(seconds =1) if (telemetry_id ==0) else timestamp.shift(seconds = 1)
 
                 flight_telemetry['current_state']['timestamp'] = timestamp.isoformat()
                 updated_timestamps_telemetry.append(flight_telemetry)
@@ -92,7 +93,7 @@ class TestBuilder():
 
             rid_flight_details = RIDFlightDetails(operator_id = operator_id, operator_location = operator_location, operation_description = flight_details['operation_description'] , serial_number = flight_details['serial_number'], registration_number = flight_details['registration_number'])
 
-            test_flight_details = TestFlightDetails(effective_after= four_minutes_from_now_isoformat,details = rid_flight_details)
+            test_flight_details = TestFlightDetails(effective_after= three_minutes_from_now_isoformat,details = rid_flight_details)
             test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= updated_timestamps_telemetry, details_responses = test_flight_details)            
             test_flight_deserialized = self.make_json_compatible(test_flight)
             requested_flights.append(test_flight_deserialized)
@@ -110,7 +111,7 @@ class TestHarness():
         self.auth_spec = auth_spec
         self.injection_url= injection_url
         
-    def get_uss_session(self, test_injection_url:str) -> DSSTestSession:
+    def get_uss_session(self) -> DSSTestSession:
         ''' This method gets a DSS session using the monitoring tools that are provided in the DSS monitoring repository'''
 
         auth_adapter = make_auth_adapter(self.auth_spec)

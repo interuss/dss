@@ -13,4 +13,4 @@ ADD . /app/monitoring
 ENV PYTHONPATH /app
 ARG version
 ENV CODE_VERSION=$version
-ENTRYPOINT ["python", "rid_qualifier.py"]
+ENTRYPOINT ["python", "rid_qualifier_entry.py"]

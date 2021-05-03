@@ -10,6 +10,7 @@ def build_test_configuration(locale: str, auth_spec:str, injection_url:str, allo
     three_minutes_from_now = now.shift(minutes=3) # Start the test three minutes from the time the test_exceutor is run. 
     test_configuration = {
         "locale": locale, # The locale here is indicating the geographical location in ISO3166 3-letter country code and also a folder within the test definitions directory. The aircraft_state_replayer reads flight track information from the locale/aircraft_states directory.  The locale directory also contains information about the query_bboxes that the rid display provider will use to query and retrieve the flight information. 
+        "now": now.isoformat(),
         "test_start_time": three_minutes_from_now.isoformat(),
         "auth_spec": auth_spec,
         "usses":[
