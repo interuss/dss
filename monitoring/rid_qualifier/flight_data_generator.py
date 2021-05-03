@@ -3,6 +3,7 @@ import shapely.geometry
 from pyproj import Geod, Transformer, Proj
 import json
 from pathlib import Path
+from typing import List, NamedTuple, Any
 import arrow
 import datetime
 from datetime import datetime, timedelta
