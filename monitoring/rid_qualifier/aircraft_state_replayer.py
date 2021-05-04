@@ -112,16 +112,16 @@ class TestHarness():
         self.injection_url= injection_url
         
     def get_uss_session(self) -> DSSTestSession:
-        ''' This method gets a DSS session using the monitoring tools that are provided in the DSS monitoring repository'''
+        ''' This method gets a DSS session using the monitoring tools that are provided in the DSS monitoring repository '''
 
         auth_adapter = make_auth_adapter(self.auth_spec)
         s = DSSTestSession(self.injection_url, auth_adapter)
     
         return s
 
-    def submit_test(self,uss_session, test_payload) -> None:
+    def submit_test(self,uss_session, test_payload, test_injection_url, scope:str) -> None:
         
-        response = uss_session.put(data=test_payload['injection_payload'])
+        response = uss_session.put(url = test_injection_url, data=test_payload['injection_payload'],scope = scope)
 
         if response.status_code == 200:
             print("New test with ID %s created" % test_payload['injection_payload']['test_id'])
@@ -133,8 +133,10 @@ class TestHarness():
         ''' This method submits the payload to the injection url by creating a DSSTestSession and then using that session to send the payload '''
         for test_payload in test_payloads:
             test_injection_url = self.injection_url  + '/tests/{test_id}'.format(test_id=test_payload['injection_payload']['test_id'])
-                  
-            uss_session = self.get_uss_session(test_injection_url = test_injection_url)
-            uss_session.default_scopes = rid.SCOPE_RID_QUALIFIER_INJECT 
-
-            await self.submit_test(uss_session=uss_session, test_payload=test_payload)
+                        
+            
+            uss_session = self.get_uss_session()
+            
+            scope = ' '.join([rid.SCOPE_RID_QUALIFIER_INJECT ])
+            
+            await self.submit_test(uss_session=uss_session, test_payload=test_payload,test_injection_url = test_injection_url, scope = scope)

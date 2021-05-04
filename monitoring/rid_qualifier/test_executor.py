@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 from typing import Dict
-from monitorting.rid_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
+from monitoring.rid_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
 import asyncio
 import arrow
 
@@ -25,13 +25,13 @@ def build_test_configuration(locale: str, auth_spec:str, injection_url:str, allo
     
 async def main(test_configuration:dict):
     # This is the configuration for the test.
-    my_test_builder = TestBuilder(test_config=json.dumps(test_configuration), country_code=test_configuration('locale'))
+    my_test_builder = TestBuilder(test_config=json.dumps(test_configuration), country_code=test_configuration['locale'])
     test_payloads = my_test_builder.build_test_payload()
 
-    my_test_harness = TestHarness(auth_spec=test_configuration['auth_spec'])
+    my_test_harness = TestHarness(auth_spec=test_configuration['auth_spec'], injection_url = test_configuration['usses'][0]['injection_url'])
     await my_test_harness.submit_payload_async(test_payloads=test_payloads)
     
 if __name__ == '__main__':
     
-    test_configuration = build_test_configuration(locale='che', injection_url="https://dss.unmanned.corp/tests/", auth_spec="DummyOAuth(http://localhost:8085/token, sub=uss1)")
+    test_configuration = build_test_configuration(locale='che', injection_url="https://dss.unmanned.corp", auth_spec="DummyOAuth(http://localhost:8085/token, sub=uss1)")
     asyncio.run(main(test_configuration=test_configuration))
