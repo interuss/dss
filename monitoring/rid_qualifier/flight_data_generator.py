@@ -14,8 +14,8 @@ class QueryBoundingBox(NamedTuple):
 
     name: str
     shape: Polygon
-    timestamp_before: timedelta
-    timestamp_after: timedelta
+    timestamp_before: datetime
+    timestamp_after: datetime
 
 
 class FlightPoint(NamedTuple):
@@ -49,7 +49,7 @@ class AircraftHeight(NamedTuple):
 class AircraftState(NamedTuple):
     ''' A object to hold Aircraft state details for remote ID purposes. For more information see the published standard API specification at https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604 '''
 
-    timestamp: datetime
+    timestamp: str
     operational_status: str
     position: AircraftPosition  # See the definition above
     height: AircraftHeight  # See the definition above
@@ -190,6 +190,9 @@ class AdjacentCircularFlightsSimulator():
             new_coordinates = [[proj(*point, inverse=inverse) for point in linring] for linring in coordinates]
         elif point_or_polygon == 'Point':
             new_coordinates = proj(*coordinates, inverse=inverse)
+        else:
+            raise RuntimeError('Unexpected geo_interface type: {}'.format(point_or_polygon))
+        
         return shapely.geometry.shape({'type': point_or_polygon, 'coordinates': tuple(new_coordinates)})
 
 
@@ -282,13 +285,10 @@ class AdjacentCircularFlightsSimulator():
             all_flight_telemetry[i]= {}
             all_flight_telemetry[i]['states'] = []
 
+        timestamp = now
         for j in range(duration):
-            if j == 0:
-                timestamp = now.shift(seconds=time_increment_seconds)
-            else:
-                timestamp = timestamp.shift(seconds=time_increment_seconds)
+            timestamp = timestamp.shift(seconds=time_increment_seconds)
             
-                
             timestamp_isoformat = timestamp.isoformat()
             
             for k in range(num_flights): 
@@ -326,7 +326,7 @@ class AdjacentCircularFlightsSimulator():
         telemetery_data_list = []
         for m in range(num_flights):
             
-            rid_aircraft_flight = RIDFlight(id=m, aircraft_type="Helicopter", states=all_flight_telemetry[m]['states'])
+            rid_aircraft_flight = RIDFlight(id=str(m), aircraft_type="Helicopter", states=all_flight_telemetry[m]['states'])
 
             rid_aircraft_flight_deserialized = self.make_json_compatible(rid_aircraft_flight)
             telemetery_data_list.append(rid_aircraft_flight_deserialized)
@@ -460,9 +460,7 @@ if __name__ == '__main__':
     my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')    
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
     COUNTRY_CODE = 'che'
-    flight_points = []
-    query_bboxes = []
-
+    
     my_path_generator.generate_flight_grid_and_path_points(altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
     my_path_generator.generate_query_bboxes()
 
