@@ -13,7 +13,9 @@ The `monitoring` directory contains a set of folders containing different test s
 
 ### Running tools locally
 
-When running tools in the monitoring toolset for local debugging outside of Docker, the [monitoring](https://github.com/interuss/dss/tree/master/monitoring) top-level folder must be added to your `PYTHONPATH`.
+- When running tools in the monitoring toolset for local debugging outside of Docker, the [monitoring](https://github.com/interuss/dss/tree/master/monitoring) folder must be accessible from one of the entries in your `PYTHONPATH`.  To accomplish this, add the root repo folder to your `PYTHONPATH`.
+
+- To run a DSS instance locally, see [this documentation](build/dev/stand_alone_instance.md).
 
 #### Prober
 
