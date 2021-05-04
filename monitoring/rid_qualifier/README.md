@@ -12,7 +12,7 @@ This directory contains a series of tests for qualifying Network Remote ID compl
 
 ## Building the image
 
-From the [`root folder of this repo`](../..) folder, build the image:
+From the `root folder of this repo` folder, build the image:
 
 ```shell script
 
