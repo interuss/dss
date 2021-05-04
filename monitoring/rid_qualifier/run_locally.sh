@@ -6,7 +6,7 @@ AUTH='--auth=DummyOAuth(http://host.docker.internal:8085/token,uss1)'
 
 LOCALE='--locale=che'
 
-INJECTION_URL='--injection_url=https://dss.unmanned.corp/tests/'
+INJECTION_URL='--injection_url=https://dss.unmanned.corp/tests'
 
 RID_QUALIFIER_OPTIONS="$AUTH $LOCALE $INJECTION_URL"
 

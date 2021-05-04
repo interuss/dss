@@ -9,3 +9,34 @@ This directory contains a series of tests for qualifying Network Remote ID compl
 3. **Test executor**: (`test_executor.py`) The test executor is  the main routine of `rid_qualifier`: it instructs the `aircraft_state_replayer` to send test data into each SP's injection harness, and then asks the `display_data_evaluator` to query the RID system for expected data and evaluate the query results against expectations to produce qualification results.
 
 4. **Display Data Evaluator**: Once test aircraft state data is sent to each Remote ID Service Provider's injection test harness to be injected into their systems, the state of the RID system must be queried and then the results of those queries compared against expected results.  This module performs the latter tasks of querying the RID system through each specified Remote ID Display Provider's ingestion test harness, and comparing those query results against expectations. [Flight Blender](https://github.com/openskies-sh/flight-blender) is an open-source Remote ID Display Provider that will implement an ingestion test harness, and therefore can be used to test compliance.
+
+## Building the image
+
+From the [`root folder of this repo`](../..) folder, build the image:
+
+```shell script
+
+docker build \
+    -f monitoring/rid_qualifier/Dockerfile \
+    -t interuss/dss/rid_qualifier \
+    --build-arg version=`scripts/git/commit.sh` \
+    monitoring
+
+```
+
+### Invocation
+
+```shell script
+
+docker run --name rid_qualifier \
+   --rm \   
+   -v "$(pwd)"/test_definitions:/test_definitions \
+   interuss/dss/rid_qualifier \ 
+   --auth=<SPEC> \
+   --dss=https://example.com \
+   --locale=che \
+   --injection_url=https://dss.unmanned.corp/tests \
+    
+```
+
+The auth SPEC defines how to obtain access tokens to access the DSS instances and USSs in the network. See [the auth spec documentation](../monitorlib/README.md#Auth_specs) for examples and more information.
