@@ -62,7 +62,7 @@ class NoAuth(AuthAdapter):
       claims={
         'sub': self.sub,
         'client_id': self.sub,
-        'scope': scopes,
+        'scope': ' '.join(scopes),
         'aud': intended_audience,
         'nbf': timestamp - 1,
         'exp': timestamp + NoAuth.EXPIRATION,
