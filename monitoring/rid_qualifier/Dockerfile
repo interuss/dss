@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.8
 # Not -alpine because: https://stackoverflow.com/a/58028091/651139
 # `docker build` should be run from `monitoring` (the parent folder of this folder)
 RUN apt-get update && apt-get install openssl && apt-get install ca-certificates

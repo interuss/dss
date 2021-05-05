@@ -7,15 +7,14 @@ import arrow
 
 def build_test_configuration(locale: str, auth_spec:str, injection_url:str, allocated_track = 1) -> Dict: 
     now = arrow.now()
-    three_minutes_from_now = now.shift(minutes=3) # Start the test three minutes from the time the test_exceutor is run. 
+    test_start_time = now.shift(minutes=3) # Start the test three minutes from the time the test_exceutor is run. 
     test_configuration = {
         "locale": locale, # The locale here is indicating the geographical location in ISO3166 3-letter country code and also a folder within the test definitions directory. The aircraft_state_replayer reads flight track information from the locale/aircraft_states directory.  The locale directory also contains information about the query_bboxes that the rid display provider will use to query and retrieve the flight information. 
         "now": now.isoformat(),
-        "test_start_time": three_minutes_from_now.isoformat(),
+        "test_start_time": test_start_time.isoformat(),
         "auth_spec": auth_spec,
         "usses":[
             {
-                "name": "Unmanned Systems Corp.",
                 "injection_url": injection_url,
                 "allocated_flight_track_number": allocated_track,  # The track that will be allocated to the uss
             }
@@ -30,7 +29,9 @@ async def main(test_configuration:dict):
 
     my_test_harness = TestHarness(auth_spec=test_configuration['auth_spec'], injection_url = test_configuration['usses'][0]['injection_url'])
     await my_test_harness.submit_payload_async(test_payloads=test_payloads)
+    # TODO: call display data evaluator to read RID system state and compare to expectations
     
+
 if __name__ == '__main__':
     
     test_configuration = build_test_configuration(locale='che', injection_url="https://dss.unmanned.corp", auth_spec="DummyOAuth(http://localhost:8085/token, sub=uss1)")

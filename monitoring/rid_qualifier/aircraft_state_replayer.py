@@ -64,24 +64,24 @@ class TestBuilder():
         
         test_reference_time = arrow.get(self.test_config['now'])
         test_start_time = arrow.get(self.test_config['test_start_time'])
-        three_minutes_from_now = test_start_time.shift(minutes =3)
-        three_minutes_from_now_isoformat = three_minutes_from_now.isoformat()
+        test_start_offset = test_start_time.shift(minutes =1)
+        test_start_offset_isoformat = test_start_offset.isoformat()
 
         for uss_index, uss in enumerate(usses):
             requested_flights = []
             flight_track_path = Path(self.tracks_directory, self.flight_tracks[uss['allocated_flight_track_number']])
             with open(flight_track_path) as generated_rid_state:
                 disk_rid_state_data = json.load(generated_rid_state)
-                
+            print(disk_rid_state_data['flight_telemetry'].keys())
             disk_rid_state_data['reference_time'] = test_reference_time.isoformat()
 
             updated_timestamps_telemetry = []
-            
-            for telemetry_id, flight_telemetry in enumerate(disk_rid_state_data['flight_telemetry']):
-
-                timestamp = three_minutes_from_now.shift(seconds =1) if (telemetry_id ==0) else timestamp.shift(seconds = 1)
-
-                flight_telemetry['current_state']['timestamp'] = timestamp.isoformat()
+            timestamp = test_start_offset.shift(seconds = 1)
+            for telemetry_id, flight_telemetry in enumerate(disk_rid_state_data['flight_telemetry']['states']):
+                # print(flight_telemetry)
+                test_start_offset.shift(seconds =1) 
+                
+                flight_telemetry['timestamp'] = timestamp.isoformat()
                 updated_timestamps_telemetry.append(flight_telemetry)
             
             
@@ -93,7 +93,7 @@ class TestBuilder():
 
             rid_flight_details = RIDFlightDetails(operator_id = operator_id, operator_location = operator_location, operation_description = flight_details['operation_description'] , serial_number = flight_details['serial_number'], registration_number = flight_details['registration_number'])
 
-            test_flight_details = TestFlightDetails(effective_after= three_minutes_from_now_isoformat,details = rid_flight_details)
+            test_flight_details = TestFlightDetails(effective_after= test_start_offset_isoformat,details = rid_flight_details)
             test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= updated_timestamps_telemetry, details_responses = test_flight_details)            
             test_flight_deserialized = self.make_json_compatible(test_flight)
             requested_flights.append(test_flight_deserialized)
@@ -119,14 +119,24 @@ class TestHarness():
     
         return s
 
-    def submit_test(self,uss_session, test_payload, test_injection_url, scope:str) -> None:
+    def submit_test(self,uss_session, test_payload, test_injection_url) -> None:
         
-        response = uss_session.put(url = test_injection_url, data=test_payload['injection_payload'],scope = scope)
+        response = uss_session.put(url = test_injection_url, data=test_payload['injection_payload'],scope = ' '.join([rid.SCOPE_RID_QUALIFIER_INJECT ]))
 
         if response.status_code == 200:
             print("New test with ID %s created" % test_payload['injection_payload']['test_id'])
         elif response.status_code ==409:
-            print("Test with ID %s already exists" % test_payload['injection_payload']['test_id'])  
+            raise RuntimeError("Test with ID %s already exists" % test_payload['injection_payload']['test_id'])
+        elif response.status_code == 404:
+            raise RuntimeError("Test with ID %s not submitted, the requested endpoint was not found on the server" % test_payload['injection_payload']['test_id'])
+        elif response.status_code == 401:
+            raise RuntimeError("Test with ID %s not submitted, the access token was not provided in the Authorization header, or the token could not be decoded, or token was invalid" % test_payload['injection_payload']['test_id'])
+        elif response.status_code == 403:
+            raise RuntimeError("Test with ID %s not submitted, the access token was decoded successfully but did not include the appropriate scope" % test_payload['injection_payload']['test_id'])
+        elif response.status_code == 413:
+            raise RuntimeError("Test with ID %s not submitted, the injection payload was too large" % test_payload['injection_payload']['test_id'])
+        else:
+            raise RuntimeError("Test with ID %(test_id)s not submitted, the server returned a HTTP error code %(error_code)d" % {'test_id':test_payload['injection_payload']['test_id'], 'error_code': response.error_code})
 
 
     async def submit_payload_async(self, test_payloads):        
@@ -137,6 +147,6 @@ class TestHarness():
             
             uss_session = self.get_uss_session()
             
-            scope = ' '.join([rid.SCOPE_RID_QUALIFIER_INJECT ])
             
-            await self.submit_test(uss_session=uss_session, test_payload=test_payload,test_injection_url = test_injection_url, scope = scope)
+            
+            self.submit_test(uss_session=uss_session, test_payload=test_payload,test_injection_url = test_injection_url)

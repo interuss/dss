@@ -22,7 +22,7 @@ def parseArgs() -> argparse.Namespace:
 
     parser.add_argument(
         "--locale",
-        help="A three letter ISO 3166 country code to run the qualifier against")
+        help="A three letter ISO 3166 country code to run the qualifier against, this should be the same one used to simulate the flight_data in flight_data_generator.py module.")
 
     parser.add_argument(
         "--injection_url",

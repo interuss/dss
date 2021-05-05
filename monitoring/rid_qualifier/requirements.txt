@@ -4,3 +4,4 @@ arrow==1.0.3
 requests===2.25.1
 faker===8.1.0
 geojson===2.5.0
+-r ../monitorlib/requirements.txt
