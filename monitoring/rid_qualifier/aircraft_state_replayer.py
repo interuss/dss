@@ -72,13 +72,13 @@ class TestBuilder():
             flight_track_path = Path(self.tracks_directory, self.flight_tracks[uss['allocated_flight_track_number']])
             with open(flight_track_path) as generated_rid_state:
                 disk_rid_state_data = json.load(generated_rid_state)
-            print(disk_rid_state_data['flight_telemetry'].keys())
+            
             disk_rid_state_data['reference_time'] = test_reference_time.isoformat()
 
             updated_timestamps_telemetry = []
             timestamp = test_start_offset.shift(seconds = 1)
             for telemetry_id, flight_telemetry in enumerate(disk_rid_state_data['flight_telemetry']['states']):
-                # print(flight_telemetry)
+                
                 test_start_offset.shift(seconds =1) 
                 
                 flight_telemetry['timestamp'] = timestamp.isoformat()

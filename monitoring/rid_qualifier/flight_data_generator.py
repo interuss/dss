@@ -8,6 +8,10 @@ import arrow
 import datetime
 from datetime import datetime, timedelta
 
+from shapely.geometry.geo import shape
+from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight
+from monitoring.monitorlib.rid import AircraftPosition, AircraftHeight, AircraftState, RIDFlight
+import operator_flight_details_generator as details_generator
 
 class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
@@ -106,6 +110,7 @@ class AdjacentCircularFlightsSimulator():
         self.query_bboxes: List[QueryBoundingBox] = []
 
         self.flight_telemetry: List[List[AircraftState]] = []
+        self.bbox_center: List[shapely.geometry.Point] = []
 
         self.geod = Geod(ellps="WGS84")
         
@@ -193,7 +198,17 @@ class AdjacentCircularFlightsSimulator():
             new_coordinates = proj(*coordinates, inverse=inverse)
         return shapely.geometry.shape({'type': point_or_polygon, 'coordinates': tuple(new_coordinates)})
 
-
+    def make_json_compatible(self, struct: Any) -> Any:
+         if isinstance(struct, tuple) and hasattr(struct, '_asdict'):
+             return {k: self.make_json_compatible(v) for k, v in struct._asdict().items()}
+         elif isinstance(struct, dict):
+             return {k: self.make_json_compatible(v) for k, v in struct.items()}
+         elif isinstance(struct, str):
+             return struct
+         try:
+             return [self.make_json_compatible(v) for v in struct]
+         except TypeError:
+             return struct
     
     def generate_flight_grid_and_path_points(self, altitude_of_ground_level_wgs_84 : float):
         ''' Generate a series of boxes (grid) within the given bounding box to have areas for different flight tracks within each box '''
@@ -325,7 +340,6 @@ class AdjacentCircularFlightsSimulator():
                 else:
                     flight_current_index[k] = 0
 
-
         telemetery_data_list = []
         for m in range(num_flights):
             
@@ -334,8 +348,11 @@ class AdjacentCircularFlightsSimulator():
             rid_aircraft_flight_deserialized = self.make_json_compatible(rid_aircraft_flight)
             telemetery_data_list.append(rid_aircraft_flight_deserialized)
                     
+   
+        flight_operator_details = self.generate_flight_operator_details()
         
-        self.flight_telemetry = {"telemetery_data_list": telemetery_data_list, "reference_time": now_isoformat}
+        self.flight_telemetry = {"telemetery_data_list": telemetery_data_list, "reference_time": now_isoformat,'operator_details':flight_operator_details['operator_details'], 'flight_details':flight_operator_details['flight_details']}
+
 
 
 class TrackWriter():
@@ -455,7 +472,7 @@ class RIDAircraftStateWriter():
             rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering            
             
             rid_test_file_path = self.output_subdirectories[0] / rid_test_file_name
-            flight_telemetry_data = {'reference_time': reference_time, 'flight_telemetry': single_flight_telemetry_data}
+            flight_telemetry_data = {'reference_time':reference_time, 'flight_telemetry':single_flight_telemetry_data,'flight_details':flight_details, 'operator_details':operator_details }
             with open(rid_test_file_path, 'w') as f:
                 f.write(json.dumps(flight_telemetry_data))
 
