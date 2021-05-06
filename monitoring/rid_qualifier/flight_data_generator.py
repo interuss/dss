@@ -7,7 +7,7 @@ from typing import List, NamedTuple, Any
 import arrow
 import datetime
 from datetime import datetime, timedelta
-
+import pathlib
 
 class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
@@ -358,6 +358,11 @@ class TrackWriter():
         self.grid_cells_flight_tracks = grid_tracks
         self.bboxes = bboxes
         self.country_code = country_code
+
+        p = pathlib.Path(__file__)
+        if not (str(p.parents[0]) == '.'):
+            raise RuntimeError("Please run the flight_data_generator.py file from the rid_qualifier directory, the test_definitions will be created in the rid_qualifier folder")
+
         self.output_directory = Path('test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
@@ -424,6 +429,10 @@ class RIDAircraftStateWriter():
         self.country_code = country_code
         self.flight_telemetry_check()
 
+        p = pathlib.Path(__file__)
+        if not (str(p.parents[0]) == '.'):
+            raise RuntimeError("Please run the flight_data_generator.py file from the rid_qualifier directory, the test_definitions will be created in the rid_qualifier folder")
+            
         self.output_directory = Path('test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
