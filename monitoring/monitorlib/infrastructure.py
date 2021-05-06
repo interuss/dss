@@ -171,3 +171,24 @@ def get_token_claims(headers: Dict) -> Dict:
     return {'error': 'ValueError: ' + str(e)}
   except jwt.exceptions.DecodeError as e:
     return {'error': 'DecodeError: ' + str(e)}
+
+
+class KMLGenerationSession(requests.Session):
+  """
+  Requests session that provides additional functionality for generating KMLs:
+    * Adds a prefix to URLs that start with a '/'.
+  """
+
+  def __init__(self, prefix_url: str, kml_folder: str):
+    super().__init__()
+
+    self._prefix_url = prefix_url[0:-1] if prefix_url[-1] == '/' else prefix_url
+    self.kml_folder = kml_folder
+
+  # Overrides method on requests.Session
+  def prepare_request(self, request, **kwargs):
+    # Automatically prefix any unprefixed URLs
+    if request.url.startswith('/'):
+      request.url = self._prefix_url + request.url
+
+    return super().prepare_request(request, **kwargs)

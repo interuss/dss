@@ -6,7 +6,7 @@ set -eo pipefail
 # DSS instance using any of the deployment methods described in
 # standalone_instance.md.
 
-if jq --version > /dev/null; then
+if [[ -z $(command -v jq) ]]; then
   echo "This script requires the jq utility.  On Debian Linux, install with"
   echo "  sudo apt-get install jq"
   echo "With homebrew, install with"

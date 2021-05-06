@@ -12,14 +12,15 @@ from shapely.geometry.geo import shape
 from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight
 from monitoring.monitorlib.rid import AircraftPosition, AircraftHeight, AircraftState, RIDFlight
 import operator_flight_details_generator as details_generator
+import pathlib
 
 class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
 
     name: str
     shape: Polygon
-    timestamp_before: timedelta
-    timestamp_after: timedelta
+    timestamp_before: datetime
+    timestamp_after: datetime
 
 
 class FlightPoint(NamedTuple):
@@ -53,7 +54,7 @@ class AircraftHeight(NamedTuple):
 class AircraftState(NamedTuple):
     ''' A object to hold Aircraft state details for remote ID purposes. For more information see the published standard API specification at https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604 '''
 
-    timestamp: datetime
+    timestamp: str
     operational_status: str
     position: AircraftPosition  # See the definition above
     height: AircraftHeight  # See the definition above
@@ -196,6 +197,9 @@ class AdjacentCircularFlightsSimulator():
             new_coordinates = [[proj(*point, inverse=inverse) for point in linring] for linring in coordinates]
         elif point_or_polygon == 'Point':
             new_coordinates = proj(*coordinates, inverse=inverse)
+        else:
+            raise RuntimeError('Unexpected geo_interface type: {}'.format(point_or_polygon))
+        
         return shapely.geometry.shape({'type': point_or_polygon, 'coordinates': tuple(new_coordinates)})
 
     def make_json_compatible(self, struct: Any) -> Any:
@@ -300,13 +304,10 @@ class AdjacentCircularFlightsSimulator():
             all_flight_telemetry[i]= {}
             all_flight_telemetry[i]['states'] = []
 
+        timestamp = now
         for j in range(duration):
-            if j == 0:
-                timestamp = now.shift(seconds=time_increment_seconds)
-            else:
-                timestamp = timestamp.shift(seconds=time_increment_seconds)
+            timestamp = timestamp.shift(seconds=time_increment_seconds)
             
-                
             timestamp_isoformat = timestamp.isoformat()
             
             for k in range(num_flights): 
@@ -343,7 +344,7 @@ class AdjacentCircularFlightsSimulator():
         telemetery_data_list = []
         for m in range(num_flights):
             
-            rid_aircraft_flight = RIDFlight(id=m, aircraft_type="Helicopter", states=all_flight_telemetry[m]['states'])
+            rid_aircraft_flight = RIDFlight(id=str(m), aircraft_type="Helicopter", states=all_flight_telemetry[m]['states'])
 
             rid_aircraft_flight_deserialized = self.make_json_compatible(rid_aircraft_flight)
             telemetery_data_list.append(rid_aircraft_flight_deserialized)
@@ -378,6 +379,11 @@ class TrackWriter():
         self.grid_cells_flight_tracks = grid_tracks
         self.bboxes = bboxes
         self.country_code = country_code
+
+        p = pathlib.Path(__file__)
+        if not (str(p.parents[0]) == '.'):
+            raise RuntimeError("Please run the flight_data_generator.py file from the rid_qualifier directory, the test_definitions will be created in the rid_qualifier folder")
+
         self.output_directory = Path('test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
@@ -444,6 +450,10 @@ class RIDAircraftStateWriter():
         self.country_code = country_code
         self.flight_telemetry_check()
 
+        p = pathlib.Path(__file__)
+        if not (str(p.parents[0]) == '.'):
+            raise RuntimeError("Please run the flight_data_generator.py file from the rid_qualifier directory, the test_definitions will be created in the rid_qualifier folder")
+            
         self.output_directory = Path('test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
@@ -482,9 +492,7 @@ if __name__ == '__main__':
     my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')    
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
     COUNTRY_CODE = 'che'
-    flight_points = []
-    query_bboxes = []
-
+    
     my_path_generator.generate_flight_grid_and_path_points(altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
     my_path_generator.generate_query_bboxes()
 

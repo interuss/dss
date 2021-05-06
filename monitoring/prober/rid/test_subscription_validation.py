@@ -219,3 +219,15 @@ def test_update_sub_with_too_long_end_time(session):
         },
     )
     assert resp.status_code == 400, resp.content
+
+
+@default_scope(SCOPE_READ)
+def test_delete(session):
+  resp = session.get('/subscriptions/{}'.format(SUB_ID), scope=SCOPE_READ)
+  if resp.status_code == 200:
+    version = resp.json()['subscription']['version']
+    resp = session.delete('/subscriptions/{}/{}'.format(SUB_ID, version), scope=SCOPE_READ)
+    assert resp.status_code == 200, resp.content
+  elif resp.status_code == 404:
+    # As expected.
+    pass

@@ -1,6 +1,8 @@
 from typing import Dict, List, Optional, NamedTuple, Any
 import s2sphere
-from datetime import datetime
+
+from monitoring.monitorlib.typing import ImplicitDict
+
 
 MAX_SUB_PER_AREA = 10
 
@@ -79,39 +81,54 @@ class Subscription(dict):
     return self.get('version', None)
 
 
-class AircraftPosition(NamedTuple):
-    ''' A object to hold AircraftPosition details for Remote ID purposes, it mataches the RIDAircraftPosition  per the RID standard, for more information see https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1091'''
+# === Mirrors of types defined in ASTM remote ID standard ===
 
-    lat : float 
-    lng : float 
-    alt : float
-    accuracy_h : str
-    accuracy_v : str
-    extrapolated : bool
-    pressure_altitude : float
+class ErrorResponse(ImplicitDict):
+  message: Optional[str]
 
 
-class AircraftHeight(NamedTuple):
-    ''' A object to hold relative altitude for the purposes of Remote ID. For more information see: https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1142 '''
+class LatLngPoint(ImplicitDict):
+  lat: float
+  lng: float
 
-    distance: float
-    reference: str
 
-class AircraftState(NamedTuple):
-    ''' A object to hold Aircraft state details for remote ID purposes. For more information see the published standard API specification at https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604 '''
-    
-    timestamp: datetime 
-    operational_status: str 
-    position: AircraftPosition # See the definition above 
-    height: AircraftHeight # See the definition above 
-    track: float 
-    speed: float 
-    speed_accuracy: str 
-    vertical_speed: float 
+class RIDAuthData(ImplicitDict):
+  format: str
+  data: str
 
-class RIDFlight(NamedTuple):
-    ''' A object to store details of a remoteID flight ''' 
-    id: str # ID of the flight for Remote ID purposes, e.g. uss1.JA6kHYCcByQ-6AfU, we for this simulation we use just numeric : https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L943
-    aircraft_type: str  # Generic type of aircraft https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1711
-    current_state: AircraftState # See above for definition
 
+class RIDFlightDetails(ImplicitDict):
+  id: str
+  operator_id: Optional[str]
+  operator_location: Optional[LatLngPoint]
+  operation_description: Optional[str]
+  auth_data: Optional[RIDAuthData]
+  serial_number: Optional[str]
+  registration_number: Optional[str]
+
+
+class RIDAircraftPosition(ImplicitDict):
+  lat: float
+  lng: float
+  alt: float
+  accuracy_h: str
+  accuracy_v: str
+  extrapolated: Optional[bool]
+  pressure_altitude: Optional[float]
+
+
+class RIDHeight(ImplicitDict):
+  distance: float
+  reference: str
+
+
+class RIDAircraftState(ImplicitDict):
+  timestamp: str
+  timestamp_accuracy: float
+  operational_status: Optional[str]
+  position: RIDAircraftPosition
+  track: float
+  speed: float
+  speed_accuracy: str
+  vertical_speed: float
+  height: Optional[RIDHeight]
