@@ -79,7 +79,7 @@ class TestBuilder():
             timestamp = test_start_offset.shift(seconds = 1)
             for telemetry_id, flight_telemetry in enumerate(disk_rid_state_data['flight_telemetry']['states']):
                 
-                test_start_offset.shift(seconds =1) 
+                timestamp = timestamp.shift(seconds =1) 
                 
                 flight_telemetry['timestamp'] = timestamp.isoformat()
                 updated_timestamps_telemetry.append(flight_telemetry)
@@ -94,9 +94,10 @@ class TestBuilder():
             rid_flight_details = RIDFlightDetails(operator_id = operator_id, operator_location = operator_location, operation_description = flight_details['operation_description'] , serial_number = flight_details['serial_number'], registration_number = flight_details['registration_number'])
 
             test_flight_details = TestFlightDetails(effective_after= test_start_offset_isoformat,details = rid_flight_details)
-            test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= updated_timestamps_telemetry, details_responses = test_flight_details)            
+            test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= updated_timestamps_telemetry, details_responses = test_flight_details)
             test_flight_deserialized = self.make_json_compatible(test_flight)
             requested_flights.append(test_flight_deserialized)
+            
             test_payload = {'test_id': str(uuid.uuid4()), "requested_flights": requested_flights}        
 
             all_test_payloads.append({'injection_url':uss['injection_url'], 'injection_payload': test_payload})        

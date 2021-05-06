@@ -1,8 +1,27 @@
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional, Dict
 from shapely.geometry import Polygon
 import shapely.geometry
 from datetime import datetime, timedelta
 from monitoring.monitorlib.rid import AircraftState
+from monitoring.monitorlib.typing import ImplicitDict
+
+
+class RIDQualifierUSSConfig(ImplicitDict):
+    ''' This object defines the data required for a uss '''
+
+    injection_url: str
+    allocated_flight_track_number: int
+
+
+class RIDQualifierTestConfiguration(ImplicitDict):
+    ''' This is the object that defines the test configuration for a RID Qualifier '''
+
+    locale: float
+    now: str
+    test_start_time: str
+    auth_spec: str
+    usses: List[RIDQualifierUSSConfig]
+
 
 class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''

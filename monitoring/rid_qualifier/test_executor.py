@@ -4,6 +4,8 @@ from typing import Dict
 from monitoring.rid_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
 import asyncio
 import arrow
+from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration
 
 def build_test_configuration(locale: str, auth_spec:str, injection_url:str, allocated_track = 1) -> Dict: 
     now = arrow.now()
@@ -20,6 +22,9 @@ def build_test_configuration(locale: str, auth_spec:str, injection_url:str, allo
             }
         ]
     }
+
+    test_config = ImplicitDict.parse(test_configuration, RIDQualifierTestConfiguration)
+    print(test_config)
     return test_configuration
     
 async def main(test_configuration:dict):
@@ -31,7 +36,6 @@ async def main(test_configuration:dict):
     await my_test_harness.submit_payload_async(test_payloads=test_payloads)
     # TODO: call display data evaluator to read RID system state and compare to expectations
     
-
 if __name__ == '__main__':
     
     test_configuration = build_test_configuration(locale='che', injection_url="https://dss.unmanned.corp", auth_spec="DummyOAuth(http://localhost:8085/token, sub=uss1)")
