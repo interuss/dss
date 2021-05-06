@@ -2,7 +2,7 @@ from typing import List, NamedTuple, Optional, Dict
 from shapely.geometry import Polygon
 import shapely.geometry
 from datetime import datetime, timedelta
-from monitoring.monitorlib.rid import AircraftState
+from monitoring.monitorlib.rid import RIDAircraftState
 from monitoring.monitorlib.typing import ImplicitDict
 
 
@@ -79,6 +79,6 @@ class TestFlight(NamedTuple):
     ''' Represents the data necessary to inject a single, complete test flight into a Remote ID Service Provider under test; matches TestFlight in injection interface ''' 
 
     injection_id: str    
-    telemetry: List[AircraftState]
+    telemetry: List[RIDAircraftState]
     details_responses : TestFlightDetails   
 
