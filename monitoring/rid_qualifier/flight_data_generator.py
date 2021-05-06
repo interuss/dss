@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 
 from shapely.geometry.geo import shape
 from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight
-from monitoring.monitorlib.rid import AircraftPosition, AircraftHeight, AircraftState, RIDFlight
 import operator_flight_details_generator as details_generator
 import pathlib
 

@@ -36,7 +36,4 @@ async def main(test_configuration:dict):
     await my_test_harness.submit_payload_async(test_payloads=test_payloads)
     # TODO: call display data evaluator to read RID system state and compare to expectations
     
-if __name__ == '__main__':
     
-    test_configuration = build_test_configuration(locale='che', injection_url="https://dss.unmanned.corp", auth_spec="DummyOAuth(http://localhost:8085/token, sub=uss1)")
-    asyncio.run(main(test_configuration=test_configuration))
