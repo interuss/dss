@@ -137,17 +137,12 @@ class TestHarness():
         elif response.status_code == 413:
             raise RuntimeError("Test with ID %s not submitted, the injection payload was too large" % test_payload['injection_payload']['test_id'])
         else:
-            raise RuntimeError("Test with ID %(test_id)s not submitted, the server returned a HTTP error code %(error_code)d" % {'test_id':test_payload['injection_payload']['test_id'], 'error_code': response.error_code})
+            raise RuntimeError("Test with ID %(test_id)s not submitted, the server returned the following HTTP error code: %(error_code)d" % {'test_id':test_payload['injection_payload']['test_id'], 'error_code': response.error_code})
 
 
     async def submit_payload_async(self, test_payloads):        
         ''' This method submits the payload to the injection url by creating a DSSTestSession and then using that session to send the payload '''
-        for test_payload in test_payloads:
-            test_injection_url = self.injection_url  + '/tests/{test_id}'.format(test_id=test_payload['injection_payload']['test_id'])
-                        
-            
-            uss_session = self.get_uss_session()
-            
-            
-            
+        for test_payload in test_payloads:            
+            test_injection_url = self.injection_url  + '/tests/{test_id}'.format(test_id=test_payload['injection_payload']['test_id'])            
+            uss_session = self.get_uss_session()            
             self.submit_test(uss_session=uss_session, test_payload=test_payload,test_injection_url = test_injection_url)

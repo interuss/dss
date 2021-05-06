@@ -24,16 +24,14 @@ def build_test_configuration(locale: str, auth_spec:str, injection_url:str, allo
     }
 
     test_config = ImplicitDict.parse(test_configuration, RIDQualifierTestConfiguration)
-    print(test_config)
-    return test_configuration
+    
+    return test_config
     
 async def main(test_configuration:dict):
     # This is the configuration for the test.
     my_test_builder = TestBuilder(test_config=json.dumps(test_configuration), country_code=test_configuration['locale'])
     test_payloads = my_test_builder.build_test_payload()
-
+    
     my_test_harness = TestHarness(auth_spec=test_configuration['auth_spec'], injection_url = test_configuration['usses'][0]['injection_url'])
     await my_test_harness.submit_payload_async(test_payloads=test_payloads)
     # TODO: call display data evaluator to read RID system state and compare to expectations
-    
-    

@@ -20,7 +20,8 @@ docker build \
 
 docker run --name rid_qualifier \
   --rm \
-  -e RID_QUALIFIER_OPTIONS="${RID_QUALIFIER_OPTIONS}"
-  -v "$(pwd)"/test_definitions:/test_definitions \
-  interuss/dss/rid_qualifier 
+  -e RID_QUALIFIER_OPTIONS="${RID_QUALIFIER_OPTIONS}" \
+  -v `pwd`/test_definitions:/test_definitions \
+  interuss/dss/rid_qualifier \
+  python rid_qualifier_entry.py $RID_QUALIFIER_OPTIONS
     
