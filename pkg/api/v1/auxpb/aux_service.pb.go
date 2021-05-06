@@ -259,9 +259,20 @@ type StandardErrorResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Error   string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
-	Code    int32  `protobuf:"varint,2,opt,name=code,proto3" json:"code,omitempty"`
+	// Human-readable error message; should be identical to `message` content.
+	Error string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	// Code for error category; uses standard gRPC response codes*, plus some
+	// additional custom codes defined for this project (see
+	// pkg/errors/errors.go).
+	//
+	// *https://developers.google.com/maps-booking/reference/grpc-api/status_codes
+	Code int32 `protobuf:"varint,2,opt,name=code,proto3" json:"code,omitempty"`
+	// Human-readable error message.  Required by ASTM standards' APIs in most
+	// error responses.
 	Message string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	// ID of error in the format E:<UUID> which allows fast lookups in the DSS
+	// logs to relate a client's observed error response from the DSS to the
+	// detailed logs related to that error in the internal DSS logs.
 	ErrorId string `protobuf:"bytes,4,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`
 }
 

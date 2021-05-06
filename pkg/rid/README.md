@@ -11,14 +11,13 @@ validation logic, and not much else.
 
 ## Server
 
-contains the API for serving the DSS.
+Contains the API for serving the DSS.
 
-Code in the server package should *only*
+Code in the server package should *only*:
 
 1. Convert API objects to domain objects (models)
 1. Call any validation functions on the  domain objects (the logic should be present in the models package)
 1. Call out to the application layer to perform its task.
-
 
 ## Application
 
@@ -38,7 +37,7 @@ The repository layer should provide *simple* CRUD style operations. It should
 *only* interact with it's given entity. Any cross entity txn's should be done 
 via the application layer.
 
-## COckroachDB
+## CockroachDB
 
 The implementation of the Repository layer.
 

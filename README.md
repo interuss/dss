@@ -61,6 +61,10 @@ Component responsible for performing orderly database schema migrations, includi
 *   [`test/`](test) contains some tests; see [the README](test/README.md)
     for more information about testing.
 
+## Detailed introduction to the repository
+
+If you are new to the project, read this document to get a long form introduction [about repository structure](introduction_to_repository.md)
+
 ## Notes
 
 *   The current implementation relies on CockroachDB for data storage

@@ -28,7 +28,8 @@ message ValidateOauthRequest {
 }
 
 // Validate Oauth token response
-message ValidateOauthResponse {}
+message ValidateOauthResponse {
+}
 
 // Error response format for most errors
 message StandardErrorResponse {

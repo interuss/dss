@@ -32,7 +32,7 @@ Download & install the following tools to your workstation:
   - `kubectl` can be installed from `gcloud` instead of via the method below.
 - [Install kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) to
   interact with kubernetes
-  - Confirm sucessful installation with `kubectl version --client` (should
+  - Confirm successful installation with `kubectl version --client` (should
     succeed from any working directory).
   - Note that kubectl can alternatively be installed via the Google Cloud SDK
    `gcloud` shell if using Google Cloud.
@@ -82,7 +82,7 @@ endpoint.
 
 1. Use the [`build.sh` script](./build.sh) in this directory to build and push
    an image tagged with the current date and git commit hash.
-        
+
 1. Note the two VAR_* values printed at the end of the script.
 
 ## Deploying the DSS on Kubernetes
@@ -103,7 +103,7 @@ a PR to that effect would be greatly appreciated.
     `dss-mx-integration-sae1a`, etc.  The name of this cluster will be combined
     with other information by Kubernetes to generate a longer cluster context
     ID.
-    
+
     -  On Google Cloud, the recommended procedure to create a cluster is:
        -  In Google Cloud Platform, go to the Kubernetes Engine page and under
           Clusters click Create cluster.
@@ -121,10 +121,10 @@ a PR to that effect would be greatly appreciated.
 
 1.  Make sure correct cluster context is selected by printing the context
     name to the console: `kubectl config current-context`
-    
+
     -  Record this value and use it for `$CLUSTER_CONTEXT` below; perhaps:
        `export CLUSTER_CONTEXT=$(kubectl config current-context)`
-    
+
     - On Google Cloud, first configure kubectl to interact with the cluster
       created above with
       [these instructions](https://cloud.google.com/kubernetes-engine/docs/quickstart).
@@ -138,7 +138,7 @@ a PR to that effect would be greatly appreciated.
     the current namespaces with `kubectl get namespace`.  Use the current
     namespace as the value for `$NAMESPACE` below; perhaps use an environment
     variable for convenience: `export NAMESPACE=<your namespace>`.
-    
+
 1.  Create static IP addresses: one for the HTTPS Gateway's ingress, and one
     for each CockroachDB node if you want to be able to interact with other
     DSS instances.
@@ -150,7 +150,7 @@ a PR to that effect would be greatly appreciated.
        to reserve the static IP addresses.  Specifically (replacing
        CLUSTER_NAME as appropriate since static IP addresses are defined at
        the project level rather than the cluster level), e.g.:
-       
+
          -  `gcloud compute addresses create ${CLUSTER_NAME}-gateway --global --ip-version IPV4`
          -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-0 --region $REGION`
          -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-1 --region $REGION`
@@ -162,7 +162,7 @@ a PR to that effect would be greatly appreciated.
        `*.db.interuss.com`.  Recommended naming is
        `0.db.yourdeployment.yourdomain.com`,
        `1.db.yourdeployment.yourdomain.com`, etc.
-    
+
     -  If using Google Cloud, see
        [these instructions](https://cloud.google.com/dns/docs/quickstart#create_a_new_record)
        to create DNS entries for the static IP addresses created above.  To list
@@ -176,7 +176,7 @@ a PR to that effect would be greatly appreciated.
             [--ca-cert-to-join <CA_CERT_FILE>]
 
     1.  `$CLUSTER_CONTEXT` is the name of the cluster (see step 2 above).
-    
+
     1.  `Each ADDRESS` is the DNS entry for a CockroachDB node.  To enable
         other clusters to connect to your cluster (including if joining an
         existing cluster) then `--node-address` must include all the hostnames
@@ -192,7 +192,7 @@ a PR to that effect would be greatly appreciated.
         argument.
 
     1.  Note: If you are creating multiple clusters at once, and joining them
-        together you likely want to copy the nth cluster's `ca.crt` into the the
+        together you likely want to copy the nth cluster's `ca.crt` into the
         rest of the clusters, such that ca.crt is the same across all clusters.
 
 1.  If joining an existing cluster, share ca.crt with the cluster(s) you are
@@ -202,7 +202,7 @@ a PR to that effect would be greatly appreciated.
     combined ca.crt from the joining cluster, should perform the actions below.
     While they are performing those actions, you may continue with the
     instructions.
-    
+
     1. Overwrite its existing ca.crt with the new ca.crt provided by the joining
        cluster.
     1. Upload the new ca.crt to its cluster using
@@ -222,15 +222,15 @@ a PR to that effect would be greatly appreciated.
 
 1.  If providing a .pem file directly as the public key to validate incoming
     access tokens, copy it to [dss/build/jwt-public-certs](./jwt-public-certs).
-    Public key specification by JWKS is preferred; if using the JWKS approach to
+    Public key specification by JWKS is preferred; if using the JWKS approach
     to specify the public key, skip this step.
 
 1.  Edit `workspace/$CLUSTER_CONTEXT/main.jsonnet` and replace all `VAR_*`
     instances with appropriate values:
-   
+
     1.  `VAR_NAMESPACE`: Same `$NAMESPACE` used in the make-certs.py (and
         apply-certs.sh) scripts.
-   
+
     1.  `VAR_CLUSTER_CONTEXT`: Same $CLUSTER_CONTEXT used in the `make-certs.py`
         and `apply-certs.sh` scripts.
 
@@ -247,20 +247,20 @@ a PR to that effect would be greatly appreciated.
         recommend "<ORG_NAME>_<CLUSTER_NAME>", and the `=` character is not
         allowed.  However, any unique (among all other participating DSS
         instances) value is acceptable.
-   
+
     1.  `VAR_CRDB_NODE_IPn`: IP address (**numeric**) of nth CRDB node (add more
         entries if you have more than 3 CRDB nodes).  Example: `1.1.1.1`
-       
+
     1.  `VAR_SHOULD_INIT`: Set to `false` if joining an existing cluster, `true`
         if creating the first DSS instance for a Region.  When set `true`, this
         can initialize the data directories on your cluster, and prevent you
         from joining an existing cluster.
-       
+
     1.  `VAR_EXTERNAL_CRDB_NODEn`: Fully-qualified domain name of existing CRDB
         nodes if you are joining an existing cluster.  If more than three are
         available, add additional entries.  If not joining an existing cluster,
         comment out this `JoinExisting:` line.
-       
+
         - You should supply a minimum of 3 seed nodes to every CockroachDB node.
           These 3 nodes should be the same for every node (ie: every node points
           to node 0, 1, and 2). For external clusters you should point to a
@@ -268,19 +268,19 @@ a PR to that effect would be greatly appreciated.
           other clusters. You should do this for every cluster, including newly
           joined clusters. See CockroachDB's note on the
           [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
-   
+
     1.  `VAR_INGRESS_NAME`: If using Google Kubernetes Engine, set this to the
         the name of the gateway static IP address created above (e.g.,
         `CLUSTER_NAME-gateway`).
-   
+
     1.  `VAR_DOCKER_IMAGE_NAME`: Full name of the docker image built in the
         section above.  `build.sh` prints this name as the last thing it does
         when run with `DOCKER_URL` set.  It should look something like
         `gcr.io/your-project-id/dss:2020-07-01-46cae72cf`.
-        
+
     1.  `VAR_APP_HOSTNAME`: Fully-qualified domain name of your HTTPS Gateway
         ingress endpoint.  For example, `dss.example.com`.
-        
+
     1.  `VAR_PUBLIC_KEY_PEM_PATH`: If providing a .pem file directly as the
         public key to validate incoming access tokens, specify the name of this
         .pem file here as `/public-certs/YOUR-KEY-NAME.pem` replacing
@@ -288,21 +288,21 @@ a PR to that effect would be greatly appreciated.
         [`us-demo.pem`](./jwt-public-certs/us-demo.pem), use the path
         `/public-certs/us-demo.pem`.  Note that your .pem file must have been
         copied into [`jwt-public-certs`](./jwt-public-certs) in an earlier step.
-        
+
         - If providing an access token public key via JWKS, provide a blank
           string for this parameter.
-        
+
     1.  `VAR_JWKS_ENDPOINT`: If providing the access token public key via JWKS,
         specify the JWKS endpoint here.  Example:
         `https://auth.example.com/.well-known/jwks.json`
-        
+
         - If providing a .pem file directly as the public key to valid incoming access tokens, provide a blank string for this parameter.
-        
+
     1.  `VAR_JWKS_KEY_ID`: If providing the access token public key via JWKS,
         specify the `kid` (key ID) of they appropriate key in the JWKS file
         referenced above.
-    
-        - If providing a .pem file directly as the public key to valid incoming access tokens, provide a blank string for this parameter. 
+
+        - If providing a .pem file directly as the public key to valid incoming access tokens, provide a blank string for this parameter.
 
     1.  `VAR_SCHEMA_MANAGER_IMAGE_NAME`: Full name of the schema manager docker
         image built in the section above.  `build.sh` prints this name as the
@@ -310,21 +310,21 @@ a PR to that effect would be greatly appreciated.
         something like `gcr.io/your-project-id/db-manager:2020-07-01-46cae72cf`.
 
     -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
-   
+
     -   If you are only turning up a single cluster for development, you
         may optionally change `single_cluster` to `true`.
 
 1.  Edit workspace/$CLUSTER_CONTEXT/spec.json and replace all VAR_*
     instances with appropriate values:
-   
+
     1.  VAR_API_SERVER: Determine this value with the command:
-    
+
         `echo $(kubectl config view -o jsonpath="{.clusters[?(@.name==\"$CLUSTER_CONTEXT\")].cluster.server}")`
-        
+
         - Note that `$CLUSTER_CONTEXT` should be replaced with your actual
          `CLUSTER_CONTEXT` value prior to executing the above command if you
          have not defined a `CLUSTER_CONTEXT` environment variable.
-   
+
     1.  VAR_NAMESPACE: See previous section.
 
 1.  Use the [`apply-certs.sh` script](apply-certs.sh) to create secrets on the
@@ -335,14 +335,14 @@ a PR to that effect would be greatly appreciated.
 
 1.  Run `tk apply workspace/$CLUSTER_CONTEXT` to apply it to the
     cluster.
-    
+
     - If you are joining an existing cluster, do not execute this command until
       the existing cluster confirms that their CockroachDB pods have finished
       their rolling restarts.
 
 1.  Wait for services to initialize.  Verify that basic services are functioning
     by navigating to https://your-gateway-domain.com/healthy.
-    
+
     - On Google Cloud, the highest-latency operation is provisioning of the
       HTTPS certificate which generally takes 10-45 minutes.  To track this
       progress:
@@ -364,7 +364,7 @@ a PR to that effect would be greatly appreciated.
     operator of the existing cluster.  They will add these node addresses to
     JoinExisting where `VAR_CRDB_EXTERNAL_NODEn` is indicated in the minimum
     example, and then perform another rolling restart of their CockroachDB pods:
-    
+
     `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
 
 ## Pooling
@@ -396,7 +396,7 @@ Istio provides better observability by using a sidecar proxy on every binary
 that exports some default metrics, as well as enabling Istio tracing. Istio
 also provides mTLS between all binaries. Enabling Istio is completely optional.
 To enable Istio, simply set the `enable_istio` field in your metadata tuple to
-`true`, then run `tk apply ...` as you would normally. 
+`true`, then run `tk apply ...` as you would normally.
 
 ### Prometheus Federation (Multi Cluster Monitoring)
 
