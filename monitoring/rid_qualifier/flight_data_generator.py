@@ -7,6 +7,7 @@ from typing import List, NamedTuple, Any
 import arrow
 import datetime
 from datetime import datetime, timedelta
+import os
 import pathlib
 
 class QueryBoundingBox(NamedTuple):
@@ -359,9 +360,6 @@ class TrackWriter():
         self.bboxes = bboxes
         self.country_code = country_code
 
-        p = pathlib.Path(__file__)
-        if not (str(p.parents[0]) == '.'):
-            raise RuntimeError("Please run the flight_data_generator.py file from the rid_qualifier directory, the test_definitions will be created in the rid_qualifier folder")
 
         self.output_directory = Path('test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
@@ -428,10 +426,7 @@ class RIDAircraftStateWriter():
         self.flight_telemetry = flight_telemetry
         self.country_code = country_code
         self.flight_telemetry_check()
-
-        p = pathlib.Path(__file__)
-        if not (str(p.parents[0]) == '.'):
-            raise RuntimeError("Please run the flight_data_generator.py file from the rid_qualifier directory, the test_definitions will be created in the rid_qualifier folder")
+        
             
         self.output_directory = Path('test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
@@ -480,6 +475,10 @@ if __name__ == '__main__':
 
     query_bboxes = my_path_generator.query_bboxes
 
+    # Change directory to write test_definitions folder is created in the rid_qualifier folder. 
+    p = pathlib.Path(__file__).parent.absolute()    
+    os.chdir(p)
+    
     my_track_writer = TrackWriter(grid_tracks=grid_tracks, bboxes=query_bboxes, country_code=COUNTRY_CODE)
     my_track_writer.write_bboxes()
     my_track_writer.write_tracks()
