@@ -7,10 +7,9 @@ from typing import List, NamedTuple, Any
 import arrow
 import datetime
 from datetime import datetime, timedelta
-
-from shapely.geometry.geo import shape
 from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight
 import operator_flight_details_generator as details_generator
+import os
 import pathlib
 
 class QueryBoundingBox(NamedTuple):
@@ -269,6 +268,17 @@ class AdjacentCircularFlightsSimulator():
 
         flight_operator_details = {'flight_details':flight_details, 'operator_details':operator_details}
         return flight_operator_details
+    def make_json_compatible(self, struct: Any) -> Any:
+        if isinstance(struct, tuple) and hasattr(struct, '_asdict'):
+            return {k: self.make_json_compatible(v) for k, v in struct._asdict().items()}
+        elif isinstance(struct, dict):
+            return {k: self.make_json_compatible(v) for k, v in struct.items()}
+        elif isinstance(struct, str):
+            return struct
+        try:
+            return [self.make_json_compatible(v) for v in struct]
+        except TypeError:
+            return struct
 
     def generate_rid_state(self, duration=180):
         '''
@@ -340,6 +350,7 @@ class AdjacentCircularFlightsSimulator():
                 else:
                     flight_current_index[k] = 0
 
+
         telemetery_data_list = []
         for m in range(num_flights):
             
@@ -379,9 +390,6 @@ class TrackWriter():
         self.bboxes = bboxes
         self.country_code = country_code
 
-        p = pathlib.Path(__file__)
-        if not (str(p.parents[0]) == '.'):
-            raise RuntimeError("Please run the flight_data_generator.py file from the rid_qualifier directory, the test_definitions will be created in the rid_qualifier folder")
 
         self.output_directory = Path('test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
@@ -448,10 +456,7 @@ class RIDAircraftStateWriter():
         self.flight_telemetry = flight_telemetry
         self.country_code = country_code
         self.flight_telemetry_check()
-
-        p = pathlib.Path(__file__)
-        if not (str(p.parents[0]) == '.'):
-            raise RuntimeError("Please run the flight_data_generator.py file from the rid_qualifier directory, the test_definitions will be created in the rid_qualifier folder")
+        
             
         self.output_directory = Path('test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
@@ -502,6 +507,10 @@ if __name__ == '__main__':
 
     query_bboxes = my_path_generator.query_bboxes
 
+    # Change directory to write test_definitions folder is created in the rid_qualifier folder. 
+    p = pathlib.Path(__file__).parent.absolute()    
+    os.chdir(p)
+    
     my_track_writer = TrackWriter(grid_tracks=grid_tracks, bboxes=query_bboxes, country_code=COUNTRY_CODE)
     my_track_writer.write_bboxes()
     my_track_writer.write_tracks()
