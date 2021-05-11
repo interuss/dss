@@ -29,8 +29,3 @@ async def main(test_configuration: RIDQualifierTestConfiguration):
     await my_test_harness.submit_payload_async(test_payloads=test_payloads)
     # TODO: call display data evaluator to read RID system state and compare to expectations
 
-
-if __name__ == '__main__':
-    
-    test_configuration = build_test_configuration(locale='che', injection_base_url="https://uss.unmanned.corp",injection_suffix='/sp/uss1/tests/9a20678b-fad4-49e6-9009-b4891aa77cb7',auth_spec="DummyOAuth(http://localhost:8085/token, sub=uss1)")
-    asyncio.run(main(test_configuration=test_configuration))
