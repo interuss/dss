@@ -9,19 +9,19 @@ from monitoring.monitorlib.typing import ImplicitDict
 class RIDQualifierUSSConfig(ImplicitDict):
     ''' This object defines the data required for a uss '''
 
-    injection_url: str
+    injection_base_url: str
+    injection_suffix: str
     allocated_flight_track_number: int
 
 
 class RIDQualifierTestConfiguration(ImplicitDict):
     ''' This is the object that defines the test configuration for a RID Qualifier '''
 
-    locale: float
+    locale: str  # The locale here is indicating the geographical location in ISO3166 3-letter country code and also a folder within the test definitions directory. The aircraft_state_replayer reads flight track information from the locale/aircraft_states directory.  The locale directory also contains information about the query_bboxes that the rid display provider will use to query and retrieve the flight information. 
     now: str
     test_start_time: str
     auth_spec: str
     usses: List[RIDQualifierUSSConfig]
-
 
 class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
@@ -82,3 +82,15 @@ class TestFlight(NamedTuple):
     telemetry: List[RIDAircraftState]
     details_responses : TestFlightDetails   
 
+
+class TestPayload(ImplicitDict):
+    ''' This object defines the detail of a test object, one or more flight tracks may be assigned in a test therefore the requested flights is a list. '''
+
+    test_id: str 
+    requested_flights:List[TestFlight]
+
+class DeliverablePayload(ImplicitDict):
+    ''' This object defines the payload that needs will be submitted to the Test Inejection URL. The payload is a set of flight tracks, operator details and other associated objects. '''
+        
+    injection_path: str    
+    injection_payload: List[TestPayload]
