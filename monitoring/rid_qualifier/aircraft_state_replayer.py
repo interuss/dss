@@ -36,7 +36,7 @@ class TestBuilder():
             
     def verify_aircraft_states_directory(self, aircraft_states_directory) -> None:
 
-        ''' This method checks if there are tracks in the tracks directory '''        
+        ''' This method checks if there are tracks in the tracks directory '''
         
         files = [f for f in os.listdir(aircraft_states_directory) if os.path.isfile(os.path.join(aircraft_states_directory, f))]
         if files:
@@ -59,18 +59,18 @@ class TestBuilder():
     def build_test_payload(self) ->List[DeliverablePayload]: 
         ''' This is the main method to process the test configuration and build RID payload object, maxium of one flight is allocated to each USS. '''
         
-        usses = self.test_configuration.usses
+        usses = self.test_configuration.usses # Store the USS details 
 
-        all_test_payloads = []
+        all_test_payloads = [] # This holds the data that will be deilver
         
         test_reference_time = arrow.get(self.test_configuration.now)
         test_start_time = arrow.get(self.test_configuration.test_start_time)
         test_start_offset = test_start_time.shift(minutes =1)
         test_start_offset_isoformat = test_start_offset.isoformat()
 
-        requested_flights = []
+        requested_flights = [] # This objects holds the modified aircraft state data, aircraft state data is read from disk and timestamps are modified to have recent ones. 
         for state_data_index, current_disk_rid_state_data in enumerate(self.disk_rid_state_data): 
-            uss = usses[state_data_index]            
+            uss = usses[state_data_index]  
 
             if uss.injection_suffix:
                 suffix_paths = uss.injection_suffix.split('/')
@@ -91,30 +91,27 @@ class TestBuilder():
 
             
             current_disk_rid_state_data['reference_time'] = test_reference_time.isoformat()
+            updated_timestamps_telemetry = []            
 
-            updated_timestamps_telemetry = []
             timestamp = test_start_offset.shift(seconds = 1)
-            for telemetry_id, flight_telemetry in enumerate(current_disk_rid_state_data['flight_telemetry']['states']):                
-                timestamp = timestamp.shift(seconds =1) 
-                
+            
+            for telemetry_id, flight_telemetry in enumerate(current_disk_rid_state_data['flight_telemetry']['states']):
+
+                timestamp = timestamp.shift(seconds =1)
                 flight_telemetry['timestamp'] = timestamp.isoformat()
                 updated_timestamps_telemetry.append(flight_telemetry)
-            
-            
+                        
             flight_details =  current_disk_rid_state_data['flight_details']
             operator_details = current_disk_rid_state_data['operator_details']
             
             operator_location = OperatorLocation(lat = operator_details['location']['latitude'], lng = operator_details['location']['longitude'])            
             rid_flight_details = RIDFlightDetails(operator_id = str(uuid.uuid4()), operator_location = operator_location, operation_description = flight_details['operation_description'] , serial_number = flight_details['serial_number'], registration_number = flight_details['registration_number'])
-
             test_flight_details = TestFlightDetails(effective_after= test_start_offset_isoformat,details = rid_flight_details)
             test_flight = TestFlight(injection_id = str(uuid.uuid4()), telemetry= updated_timestamps_telemetry, details_responses = test_flight_details)
             test_flight_deserialized = self.make_json_compatible(test_flight)
             requested_flights.append(test_flight_deserialized)
             test_payload = TestPayload(test_id = test_id, requested_flights= requested_flights)
-
             test_payload_data_metadata = DeliverablePayload(injection_path= test_injection_path, injection_payload = test_payload)
-
             all_test_payloads.append(test_payload_data_metadata)
         
         return all_test_payloads
@@ -126,7 +123,7 @@ class TestHarness():
     def __init__(self, auth_spec:str, injection_base_url:str):
         
         auth_adapter = make_auth_adapter(auth_spec)
-        self.uss_session = DSSTestSession(injection_base_url, auth_adapter)        
+        self.uss_session = DSSTestSession(injection_base_url, auth_adapter)
 
     def submit_test(self,uss_session:DSSTestSession, test_payload:DeliverablePayload, test_injection_path:str) -> None:
         
@@ -148,8 +145,7 @@ class TestHarness():
             raise RuntimeError("Test with ID %(test_id)s not submitted, the server returned the following HTTP error code: %(error_code)d" % {'test_id':test_payload['injection_payload']['test_id'], 'error_code': response.error_code})
 
 
-    async def submit_payload_async(self, test_payloads):        
+    async def submit_payload_async(self, test_payloads):
         ''' This method submits the payload to the injection url by creating a DSSTestSession and then using that session to send the payload '''
-        for test_payload in test_payloads:        
-            
+        for test_payload in test_payloads:            
             self.submit_test(uss_session=self.uss_session, test_payload=test_payload,test_injection_path = test_payload.injection_path)

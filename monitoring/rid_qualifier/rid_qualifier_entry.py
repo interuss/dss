@@ -4,7 +4,6 @@ import os
 import sys
 import argparse
 import asyncio
-import json
 from urllib.parse import urlparse
 import monitoring.rid_qualifier.test_executor as test_executor 
 

@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional, Dict
+from typing import List, NamedTuple
 from shapely.geometry import Polygon
 import shapely.geometry
 from datetime import datetime, timedelta
@@ -38,7 +38,6 @@ class FlightPoint(NamedTuple):
     lng: float # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
     alt: float # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
     
-
 
 class GridCellFlight(NamedTuple):
     ''' A object to hold details of a grid location and the track within it '''

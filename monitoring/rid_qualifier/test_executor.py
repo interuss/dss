@@ -3,8 +3,6 @@ import asyncio
 import arrow
 from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration, RIDQualifierUSSConfig
 
-import json
-
 def build_test_configuration(locale: str, auth_spec:str, injection_base_url:str, injection_suffix:str=None, allocated_track = 0) -> RIDQualifierTestConfiguration: 
     now = arrow.now()
     test_start_time = now.shift(minutes=3) # Start the test three minutes from the time the test_exceutor is run. 
