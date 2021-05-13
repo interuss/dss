@@ -7,7 +7,7 @@ To view these YAML files locally:
 
 ```shell script
 docker run -it --rm -p 8080:8080 \
-  -v $(pwd)/ingestion.yaml:/usr/share/nginx/html/swagger.yaml \
+  -v $(pwd)/observation.yaml:/usr/share/nginx/html/swagger.yaml \
   -e PORT=8080 -e SPEC_URL=swagger.yaml redocly/redoc
 ```
 
@@ -41,14 +41,14 @@ be injected into their system in whichever manner was most appropriate
 follow as possible).
 
 Meanwhile, the automated test driver would poll a **display data test
-receiver** implemented by a Display Provider to ingest the remote ID
+receiver** implemented by a Display Provider to observe the remote ID
 information currently available in the whole remote ID system under test.  A
 Display Provider USS wishing to run the automated testing system built with the
 interfaces in this folder would implement a display data test receiver tailored
 to their individual system.  This display data test receiver would collect all
 remote ID information available in a requested area, at the level of the Display
 Application, and provide that information to the automated test driver via the
-ingestion interface defined in this folder.
+observation interface defined in this folder.
 
 The automated test driver would perform a test by injecting test data into each
 participating Service Provider, polling the resulting information from the

@@ -115,7 +115,7 @@ def _make_api_flight(flight: api.TestFlight,
 
 @webapp.route('/dp/display_data', methods=['GET'])
 def poll_display_data() -> Tuple[str, int]:
-  """Implements display data polling in RID automated testing ingestion API."""
+  """Implements display data polling in RID automated testing observation API."""
 
   # TODO: Validate token signature & scope
 
@@ -165,7 +165,7 @@ def poll_display_data() -> Tuple[str, int]:
 
 @webapp.route('/dp/display_data/<id>', methods=['GET'])
 def display_data_details(id: str) -> Tuple[str, int]:
-  """Implements display data details in RID automated testing ingestion API."""
+  """Implements display data details in RID automated testing observation API."""
 
   # TODO: Validate token signature & scope
 
