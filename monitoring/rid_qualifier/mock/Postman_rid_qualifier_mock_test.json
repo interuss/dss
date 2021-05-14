@@ -84,7 +84,7 @@
 					]
 				},
 				{
-					"name": "Ingestion",
+					"name": "Observation",
 					"item": [
 						{
 							"name": "Get display data (tight)",
