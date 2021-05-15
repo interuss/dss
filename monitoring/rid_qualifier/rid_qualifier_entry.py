@@ -31,9 +31,6 @@ def parseArgs() -> argparse.Namespace:
         required = True,
         help="A USS url where the test data is to be submitted")
 
-    parser.add_argument(
-        "--injection_suffix",
-        help="A test_id and endpoint can be provided, if it not provided, qualifier will submit a test to /test/{test_id} endpoint ")
 
     return parser.parse_args()
 
@@ -44,11 +41,11 @@ def main() -> int:
     auth_spec = args.auth
     locale = args.locale    
     injection_base_url = args.injection_base_url
-    injection_suffix = args.injection_suffix
+    
 
     is_url(injection_base_url)
-    
-    test_configuration = test_executor.build_test_configuration(locale = locale, auth_spec=auth_spec, injection_base_url= injection_base_url, injection_suffix=injection_suffix)
+    uss_config = test_executor.build_uss_config(injection_base_url= injection_base_url, allocated_track=0)
+    test_configuration = test_executor.build_test_configuration(locale = locale, auth_spec=auth_spec,uss_config = uss_config)
     
     asyncio.run(test_executor.main(test_configuration=test_configuration))
     

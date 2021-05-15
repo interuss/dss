@@ -3,7 +3,12 @@ import asyncio
 import arrow
 from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration, RIDQualifierUSSConfig
 
-def build_test_configuration(locale: str, auth_spec:str, injection_base_url:str, injection_suffix:str=None, allocated_track = 0) -> RIDQualifierTestConfiguration: 
+
+def build_uss_config(injection_base_url:str, allocated_track:int = 0) -> RIDQualifierUSSConfig:
+  return RIDQualifierUSSConfig(injection_base_url=injection_base_url, allocated_flight_track_number = allocated_track)
+  
+
+def build_test_configuration(locale: str, auth_spec:str, uss_config:RIDQualifierUSSConfig) -> RIDQualifierTestConfiguration: 
     now = arrow.now()
     test_start_time = now.shift(minutes=3) # Start the test three minutes from the time the test_exceutor is run. 
     
@@ -12,7 +17,7 @@ def build_test_configuration(locale: str, auth_spec:str, injection_base_url:str,
       now = now.isoformat(),
       test_start_time = test_start_time.isoformat(),
       auth_spec = auth_spec,
-      usses = [RIDQualifierUSSConfig(injection_base_url=injection_base_url, injection_suffix= injection_suffix, allocated_flight_track_number = allocated_track)]
+      usses = [uss_config]
     )
 
     return test_config
@@ -20,10 +25,10 @@ def build_test_configuration(locale: str, auth_spec:str, injection_base_url:str,
 async def main(test_configuration: RIDQualifierTestConfiguration):
     # This is the configuration for the test.
     my_test_builder = TestBuilder(test_configuration = test_configuration)
-    test_payloads = my_test_builder.build_test_payload()
+    test_payloads = my_test_builder.build_test_payloads()
     
     my_test_harness = TestHarness(auth_spec = test_configuration.auth_spec, injection_base_url = test_configuration.usses[0].injection_base_url)
     
-    await my_test_harness.submit_payload_async(test_payloads=test_payloads)
+    await my_test_harness.submit_payloads_async(test_payloads=test_payloads)
     # TODO: call display data evaluator to read RID system state and compare to expectations
 

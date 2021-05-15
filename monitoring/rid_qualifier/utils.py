@@ -10,7 +10,6 @@ class RIDQualifierUSSConfig(ImplicitDict):
     ''' This object defines the data required for a uss '''
 
     injection_base_url: str
-    injection_suffix: str
     allocated_flight_track_number: int
 
 
@@ -88,8 +87,8 @@ class TestPayload(ImplicitDict):
     test_id: str 
     requested_flights:List[TestFlight]
 
-class DeliverablePayload(ImplicitDict):
+class DeliverablePayloads(ImplicitDict):
     ''' This object defines the payload that needs will be submitted to the Test Inejection URL. The payload is a set of flight tracks, operator details and other associated objects. '''
         
     injection_path: str    
-    injection_payload: List[TestPayload]
+    injection_payloads: List[TestPayload]
