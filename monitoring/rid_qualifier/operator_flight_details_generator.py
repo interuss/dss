@@ -21,7 +21,7 @@ class OperatorFlightDataGenerator():
         return random.choice(operation_description)
         
     def generate_operator_location(self, centroid):        
-        operator_location = {'lat':centroid.y, 'lon':centroid.x}
+        operator_location = {'lat':centroid.y, 'lng':centroid.x}
         return operator_location
     
     def generate_company_name(self):

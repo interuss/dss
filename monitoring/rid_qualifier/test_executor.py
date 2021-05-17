@@ -3,7 +3,6 @@ import asyncio
 import arrow
 from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration, RIDQualifierUSSConfig
 
-
 def build_uss_config(injection_base_url:str, allocated_track:int = 0) -> RIDQualifierUSSConfig:
   return RIDQualifierUSSConfig(injection_base_url=injection_base_url, allocated_flight_track_number = allocated_track)
   
@@ -31,4 +30,3 @@ async def main(test_configuration: RIDQualifierTestConfiguration):
     
     await my_test_harness.submit_payloads_async(test_payloads=test_payloads)
     # TODO: call display data evaluator to read RID system state and compare to expectations
-

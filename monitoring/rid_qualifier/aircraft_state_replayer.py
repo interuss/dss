@@ -121,7 +121,7 @@ class TestHarness():
 
     def submit_test(self,uss_session:DSSTestSession, payload:DeliverablePayloads, test_injection_path:str) -> None:
         
-        response = uss_session.put(url = test_injection_path, data=json.dumps(payload.injection_payload), scope = ' '.join([rid.SCOPE_RID_QUALIFIER_INJECT ]))
+        response = uss_session.put(url = test_injection_path, data=json.dumps(payload.injection_payloads), scope = ' '.join([rid.SCOPE_RID_QUALIFIER_INJECT ]))
 
         if response.status_code == 200:
             print("New test with ID %s created" % payload['injection_payload']['test_id'])

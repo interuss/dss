@@ -8,7 +8,6 @@ LOCALE='--locale=che'
 
 INJECTION_URL='--injection_base_url=http://localhost:8070/sp/uss1'
 
-
 RID_QUALIFIER_OPTIONS="$AUTH $LOCALE $INJECTION_URL"
 
 echo Reminder: must be run from root repo folder
