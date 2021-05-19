@@ -29,6 +29,8 @@ def create_test(sp_id: str, test_id: str) -> Tuple[str, int]:
 
   try:
     json = flask.request.json
+    if json is None:
+      raise ValueError('Request did not contain a JSON payload')
     req_body: api.CreateTestParameters = ImplicitDict.parse(json, api.CreateTestParameters)
     record = database.TestRecord(version=str(uuid.uuid4()), flights=req_body.requested_flights)
     if sp_id not in db.sps:
