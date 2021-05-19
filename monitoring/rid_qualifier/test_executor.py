@@ -32,9 +32,3 @@ async def main(test_configuration: RIDQualifierTestConfiguration):
     # TODO: call display data evaluator to read RID system state and compare to expectations
 
 
-
-if __name__ == '__main__':
-    uss_config = build_uss_config( injection_base_url="https://dss.unmanned.corp", allocated_track=0)
-    test_configuration = build_test_configuration(locale='che', auth_spec="DummyOAuth(http://localhost:8085/token, sub=uss1)",uss_config = uss_config)
-    
-    asyncio.run(main(test_configuration=test_configuration))
