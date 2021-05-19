@@ -22,21 +22,26 @@ class RIDQualifierTestConfiguration(ImplicitDict):
     auth_spec: str
     usses: List[RIDQualifierUSSConfig]
 
+
+
 class QueryBoundingBox(NamedTuple):
     ''' This is the object that stores details of query bounding box '''
 
     name: str
     shape: Polygon
-    timestamp_before: timedelta
-    timestamp_after: timedelta
-    
+    timestamp_before: datetime
+    timestamp_after: datetime
+
+
 class FlightPoint(NamedTuple):
     ''' This object holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum '''
 
-    lat: float # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
-    lng: float # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
-    alt: float # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
-    
+    lat: float  # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
+    lng: float  # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
+    alt: float  # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
+    speed: float # speed in m / s 
+    bearing: float # forward azimuth for the this and the next point on the track
+
 
 class GridCellFlight(NamedTuple):
     ''' A object to hold details of a grid location and the track within it '''
@@ -61,7 +66,7 @@ class OperatorLocation(NamedTuple):
 
 class RIDFlightDetails(NamedTuple):
     ''' A object to hold RID details of a flight operator that will be reported by the USS as a part of the test ''' 
-    operator_id:str
+    operator_id: str
     operation_description: str
     operator_location: OperatorLocation
     serial_number: str
@@ -69,7 +74,7 @@ class RIDFlightDetails(NamedTuple):
 
 class TestFlightDetails(NamedTuple):
     ''' A object to hold the remote ID Details,  and a date time after which the USS should submit the flight details, it matches the TestFlightDetails in the injection interface, for more details see: https://github.com/interuss/dss/blob/master/interfaces/automated-testing/rid/injection.yaml#L158 ''' 
-    effective_after: datetime
+    effective_after: str # ISO 8601 datetime string
     details: RIDFlightDetails
 
 
@@ -78,7 +83,7 @@ class TestFlight(NamedTuple):
 
     injection_id: str    
     telemetry: List[RIDAircraftState]
-    details_responses : TestFlightDetails   
+    details_responses : List[TestFlightDetails]
 
 
 class TestPayload(ImplicitDict):

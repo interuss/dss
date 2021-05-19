@@ -23,6 +23,11 @@ class OperatorFlightDataGenerator():
     def generate_operator_location(self, centroid):        
         operator_location = {'lat':centroid.y, 'lng':centroid.x}
         return operator_location
+
+    def generate_operator_id(self, prefix='OP-'):
+        operator_id = prefix + ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        return operator_id
+        
     
     def generate_company_name(self):
         return self.fake.company()

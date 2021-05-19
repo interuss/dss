@@ -2,7 +2,7 @@
 #!/usr/bin/env bash
 
 AUTH='--auth=NoAuth()'
-# NB: A prerequisite to run this command locally is to have a running local DSS instance session via '/build/dev/run_locally.sh', for more information see https://github.com/interuss/dss/blob/master/build/dev/standalone_instance.md
+# NB: A prerequisite to run this command locally is to have a running instance of the rid_qualifier/mock (/monitoring/rid_qualifier/mock/run_locally.sh)
 
 LOCALE='--locale=che'
 

@@ -7,28 +7,11 @@ from typing import List, NamedTuple, Any
 import arrow
 import datetime
 from datetime import datetime, timedelta
-from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight
+from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight, OperatorLocation, RIDFlightDetails
+from monitoring.monitorlib.typing import ImplicitDict
 import operator_flight_details_generator as details_generator
 import os
 import pathlib
-
-class QueryBoundingBox(NamedTuple):
-    ''' This is the object that stores details of query bounding box '''
-
-    name: str
-    shape: Polygon
-    timestamp_before: datetime
-    timestamp_after: datetime
-
-
-class FlightPoint(NamedTuple):
-    ''' This object holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum '''
-
-    lat: float  # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
-    lng: float  # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
-    alt: float  # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
-    speed: float # speed in m / s 
-    bearing: float # forward azimuth for the this and the next point on the track
 
 
 class AircraftPosition(NamedTuple):
@@ -63,17 +46,37 @@ class AircraftState(NamedTuple):
 
 
 class RIDFlight(NamedTuple):
-    ''' A object to store details of a remoteID flight '''
+    ''' A object to stored details of a remoteID flight '''
     id: str  # ID of the flight for Remote ID purposes, e.g. uss1.JA6kHYCcByQ-6AfU, we for this simulation we use just numeric : https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L943
     aircraft_type: str  # Generic type of aircraft https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1711
     states : List[AircraftState]  # See above for definition
 
 
-class GridCellFlight(NamedTuple):
-    ''' A object to hold details of a grid location and the track within it '''
+class GeneratedFlightDetails(ImplicitDict):
+    ''' This object stores the metadata associated with generated flight, this data is shared as information in the remote id call '''
+    serial_number: str
+    operation_description: str
 
-    bounds: shapely.geometry.polygon.Polygon
-    track: List[FlightPoint]
+class GeneratedOperatorDetails(ImplicitDict):
+    ''' This object stores the details of the operator that will be transmitted in the RID output. The registration number and operator id can be customized to meet local regulations, at the moment it generates a random alpha numeric string ''' 
+    
+    operator_id: str
+    name: str
+    registration_number: str
+    location: OperatorLocation
+
+class FlightOperatorDetails(ImplicitDict):
+    ''' This object stores the "automatically" generated data about operator and the fight ''' 
+    flight_details: GeneratedFlightDetails
+    operator_details: GeneratedOperatorDetails
+
+
+class FlightTelemetryDetails(NamedTuple):
+    ''' Store the Aircraft states, and other metadata before saving on disk ''' 
+    telemetry_data_list: List[RIDFlight]
+    reference_time: str
+    operator_details: GeneratedOperatorDetails
+    flight_details: GeneratedFlightDetails
 
 
 class AdjacentCircularFlightsSimulator():
@@ -108,7 +111,7 @@ class AdjacentCircularFlightsSimulator():
         # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
         self.query_bboxes: List[QueryBoundingBox] = []
 
-        self.flight_telemetry: List[List[AircraftState]] = []
+        self.flight_telemetry: FlightTelemetryDetails = []
         self.bbox_center: List[shapely.geometry.Point] = []
 
         self.geod = Geod(ellps="WGS84")
@@ -255,30 +258,23 @@ class AdjacentCircularFlightsSimulator():
 
         self.grid_cells_flight_tracks = all_grid_cell_tracks
 
-    def generate_flight_operator_details(self): 
-        ''' This class generates details of flights and operator details for a flight, this data is required for identifying flight, operator and operation  
-            Args:
-            locale of the format ISO 639 Language Code and - or _ followed by ISO 3166 Country code, not all locales are supported by the Faker module, '''
+    def generate_flight_operator_details(self) -> FlightOperatorDetails: 
+        ''' This class generates details of flights and operator details for a flight, this data is required for identifying flight, operator and operation  '''
         
         my_flight_details_generator = details_generator.OperatorFlightDataGenerator()
         
-        flight_details = { "serial_number":my_flight_details_generator.generate_serial_number(),"registration_number":my_flight_details_generator.generate_registration_number(),"operation_description":my_flight_details_generator.generate_operation_description()}
-        
-        operator_details =  { "name":my_flight_details_generator.generate_company_name(), "location":my_flight_details_generator.generate_operator_location(centroid= self.bbox_center[0])}
+        flight_details = GeneratedFlightDetails(serial_number = my_flight_details_generator.generate_serial_number(),  operation_description = my_flight_details_generator.generate_operation_description())
 
-        flight_operator_details = {'flight_details':flight_details, 'operator_details':operator_details}
+
+        operator_location = my_flight_details_generator.generate_operator_location(centroid= self.bbox_center[0])
+        ol = OperatorLocation(lat = operator_location['lat'], lng = operator_location['lng'])
+        
+        operator_details = GeneratedOperatorDetails(operator_id = my_flight_details_generator.generate_operator_id(),name  = my_flight_details_generator.generate_company_name(), registration_number = my_flight_details_generator.generate_registration_number(), location = {"lat":ol.lat, "lng":ol.lng} )
+
+        flight_operator_details = FlightOperatorDetails(flight_details =flight_details,  operator_details = operator_details)
+        
         return flight_operator_details
-    def make_json_compatible(self, struct: Any) -> Any:
-        if isinstance(struct, tuple) and hasattr(struct, '_asdict'):
-            return {k: self.make_json_compatible(v) for k, v in struct._asdict().items()}
-        elif isinstance(struct, dict):
-            return {k: self.make_json_compatible(v) for k, v in struct.items()}
-        elif isinstance(struct, str):
-            return struct
-        try:
-            return [self.make_json_compatible(v) for v in struct]
-        except TypeError:
-            return struct
+
 
     def generate_rid_state(self, duration=180):
         '''
@@ -480,6 +476,8 @@ class RIDAircraftStateWriter():
         reference_time = self.flight_telemetry['reference_time']
         flight_details = self.flight_telemetry['flight_details']
         operator_details = self.flight_telemetry['operator_details']
+
+        
 
         for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry['telemetery_data_list']):
 
