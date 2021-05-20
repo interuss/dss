@@ -1,5 +1,4 @@
 from monitoring.rid_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
-import asyncio
 import arrow
 from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration, RIDQualifierUSSConfig
 
@@ -21,14 +20,12 @@ def build_test_configuration(locale: str, auth_spec:str, uss_config:RIDQualifier
 
     return test_config
     
-async def main(test_configuration: RIDQualifierTestConfiguration):
+def main(test_configuration: RIDQualifierTestConfiguration):
     # This is the configuration for the test.
     my_test_builder = TestBuilder(test_configuration = test_configuration)
     test_payloads = my_test_builder.build_test_payloads()
     
     my_test_harness = TestHarness(auth_spec = test_configuration.auth_spec, injection_base_url = test_configuration.usses[0].injection_base_url)
     
-    my_test_harness.submit_payloads_async(test_payloads=test_payloads)
+    my_test_harness.submit_payloads(all_test_payloads=test_payloads)
     # TODO: call display data evaluator to read RID system state and compare to expectations
-
-

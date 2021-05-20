@@ -66,6 +66,7 @@ class OperatorLocation(NamedTuple):
 
 class RIDFlightDetails(NamedTuple):
     ''' A object to hold RID details of a flight operator that will be reported by the USS as a part of the test ''' 
+    id: str
     operator_id: str
     operation_description: str
     operator_location: OperatorLocation
@@ -92,8 +93,8 @@ class TestPayload(ImplicitDict):
     test_id: str 
     requested_flights:List[TestFlight]
 
-class DeliverablePayloads(ImplicitDict):
+class DeliverablePayload(ImplicitDict):
     ''' This object defines the payload that needs will be submitted to the Test Inejection URL. The payload is a set of flight tracks, operator details and other associated objects. '''
         
     injection_path: str    
-    injection_payloads: List[TestPayload]
+    injection_payload: TestPayload

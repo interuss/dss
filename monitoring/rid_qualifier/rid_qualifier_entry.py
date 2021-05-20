@@ -3,7 +3,6 @@
 import os
 import sys
 import argparse
-import asyncio
 from urllib.parse import urlparse
 import monitoring.rid_qualifier.test_executor as test_executor 
 
@@ -39,15 +38,14 @@ def main() -> int:
     args = parseArgs()
     
     auth_spec = args.auth
-    locale = args.locale    
-    injection_base_url = args.injection_base_url
-    
+    locale = args.locale
+    injection_base_url = args.injection_base_url    
 
     is_url(injection_base_url)
     uss_config = test_executor.build_uss_config(injection_base_url= injection_base_url, allocated_track=0)
     test_configuration = test_executor.build_test_configuration(locale = locale, auth_spec=auth_spec,uss_config = uss_config)
     
-    asyncio.run(test_executor.main(test_configuration=test_configuration))
+    test_executor.main(test_configuration=test_configuration)
     
     return os.EX_OK
 

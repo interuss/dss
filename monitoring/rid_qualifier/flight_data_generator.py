@@ -42,6 +42,7 @@ class AircraftState(NamedTuple):
     track: float
     speed: float
     speed_accuracy: str
+    timestamp_accuracy:float
     vertical_speed: float
 
 
@@ -337,6 +338,7 @@ class AdjacentCircularFlightsSimulator():
                         height=aircraft_height,
                         track=flight_point.bearing,
                         speed=flight_point.speed,
+                        timestamp_accuracy=0.0,
                         speed_accuracy="SA3mps",
                         vertical_speed=0.0)
 
