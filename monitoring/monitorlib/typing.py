@@ -68,9 +68,11 @@ class ImplicitDict(dict):
   """
 
   @classmethod
-  def parse(cls, source: Dict, type: Type):
+  def parse(cls, source: Dict, parse_type: Type):
+    if not isinstance(source, dict):
+      raise ValueError('Expected to find dictionary data to populate {} object but instead found {} type'.format(parse_type.__name__, type(source).__name__))
     kwargs = {}
-    hints = get_type_hints(type)
+    hints = get_type_hints(parse_type)
     for key, value in source.items():
       if key in hints:
         # This entry has an explicit type
@@ -78,7 +80,7 @@ class ImplicitDict(dict):
       else:
         # This entry's type isn't specified
         kwargs[key] = value
-    return type(**kwargs)
+    return parse_type(**kwargs)
 
   def __init__(self, previous_instance: Optional[dict]=None, **kwargs):
     super(ImplicitDict, self).__init__()
