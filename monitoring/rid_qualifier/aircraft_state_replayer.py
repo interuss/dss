@@ -141,6 +141,5 @@ class TestHarness():
 
     def submit_payloads_async(self, test_payloads):
         ''' This method submits the payloads to the injection url '''
-        for payload in test_payloads:        
-            
+        for payload in test_payloads:             
             self.submit_test(uss_session=self.uss_session, payload=payload)
