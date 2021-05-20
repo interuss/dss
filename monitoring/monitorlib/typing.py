@@ -98,7 +98,6 @@ class ImplicitDict(dict):
         if key not in _DICT_FIELDS and key[0:2] != '__' and not callable(getattr(self, key)):
           all_fields.add(key)
           attributes.add(key)
-          self[key] = getattr(self, key)
 
       # Identify which fields are Optional
       optional_fields = set()
@@ -132,9 +131,15 @@ class ImplicitDict(dict):
         self[key] = value
         provided_values.add(key)
 
+    # Copy default field values
+    for key in optional_fields:
+      if key not in provided_values:
+        if hasattr(type(self), key):
+          self[key] = super(ImplicitDict, self).__getattribute__(key)
+
     # Make sure all fields without a default and not labeled Optional were provided
     for key in all_fields:
-      if key not in provided_values and key not in optional_fields:
+      if key not in self and key not in optional_fields:
         raise ValueError('Required field "{}" not specified in {}'.format(key, type(self).__name__))
 
   def __getattribute__(self, item):

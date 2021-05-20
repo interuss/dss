@@ -8,3 +8,4 @@ def status():
 
 from . import routes_injection
 from . import routes_observation
+from . import routes_behavior

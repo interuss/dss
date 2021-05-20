@@ -7,7 +7,7 @@ implicit DSS, and a USS acting as a Remote ID Display Provider, for the purpose
 of testing `rid_qualifier`.  Once this system is running, `rid_qualifier` can
 inject data into one or more virtual RID Service Providers supporting the
 injection API and then observe the instantaneous state of the RID system via a
-virtual RID Display Provider supporting the observation API. 
+virtual RID Display Provider supporting the observation API.
 
 ## Execution
 
@@ -26,14 +26,24 @@ mock is accessible at localhost:8070, then data can be injected into the `uss1`
 virtual RID Service Provider by making a PUT call to, e.g.,
 http://localhost:8070/sp/uss1/tests/9a20678b-fad4-49e6-9009-b4891aa77cb7.
 
-### RID Display Provider
-This mock implements a single virtual RID Display Provider.  This Display
-Provider implements the
+The behavior of each virtual RID Service Provider can be set PUTing JSON data to
+the /sp/RIDSP/behavior endpoint according to the `ServiceProviderBehavior`
+schema defined in [behavior.py].  Also see the sample requests in the Postman
+collection (in Testing below).
+
+### RID Display Providers
+This mock supports any number of RID Display Providers, and they do not need to
+be declared before use.  The RID Display Provider named `RIDDP` implements the
 [observation API](../../../interfaces/automated-testing/rid) at
-`http://hostname/dp`.  So, for instance, if an instance of this RID system mock
-is accessible at localhost:8070, then the current flights visible to the virtual
-Display Provider can be queried by making a GET call to
-http://localhost:8070/dp/display_data.
+`http://hostname/dp/RIDDP`.  So, for instance, if an instance of this RID system
+mock is accessible at localhost:8070, then the current flights visible to the
+`uss1` virtual Display Provider can be queried by making a GET call to
+http://localhost:8070/dp/uss1/display_data.
+
+The behavior of each virtual RID Display Provider can be set PUTing JSON data to
+the /dp/RIDDP/behavior endpoint according to the `DisplayProviderBehavior`
+schema defined in [behavior.py].  Also see the sample requests in the Postman
+collection (in Testing below).
 
 ## Debugging
 
