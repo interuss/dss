@@ -6,7 +6,7 @@ AUTH='--auth=NoAuth()'
 
 LOCALE='--locale=che'
 
-INJECTION_URL='--injection_base_url=http://localhost:8070/sp/uss1'
+INJECTION_URL='--injection_base_url=http://host.docker.internal:8070/sp/uss1'
 
 RID_QUALIFIER_OPTIONS="$AUTH $LOCALE $INJECTION_URL"
 
