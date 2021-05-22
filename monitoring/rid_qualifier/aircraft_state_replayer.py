@@ -23,13 +23,12 @@ class TestBuilder():
 
         aircraft_states_directory = Path('test_definitions', test_configuration.locale, 'aircraft_states')
         aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
-
+        
         usses = self.test_configuration.usses
 
         self.disk_rid_state_data =[]
         for uss_index, uss in enumerate(usses):
-            aircraft_states_path = Path(aircraft_states_directory, aircraft_state_files[uss['allocated_flight_track_number']])
-
+            aircraft_states_path = Path(aircraft_state_files[uss['allocated_flight_track_number']])
             with open(aircraft_states_path) as generated_rid_state:
                 disk_rid_state_file = json.load(generated_rid_state)
                 self.disk_rid_state_data.append(disk_rid_state_file)
@@ -40,10 +39,10 @@ class TestBuilder():
         ''' This method checks if there are tracks in the tracks directory '''
 
         all_files = os.listdir(aircraft_states_directory)
-        files = [f for f in all_files if os.path.isfile(os.path.join(aircraft_states_directory, f))]
-
+        files = [os.path.join(aircraft_states_directory,f) for f in all_files if os.path.isfile(os.path.join(aircraft_states_directory, f))]
+        
         if files:
-            return all_files
+            return files
         else:
             raise ValueError("The there are no tracks in the tracks directory, create tracks first using the flight_data_generator module. ")
 
