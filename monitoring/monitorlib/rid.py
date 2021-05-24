@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional
-
 import s2sphere
+
+from monitoring.monitorlib.typing import ImplicitDict
 
 
 MAX_SUB_PER_AREA = 10
@@ -76,3 +77,56 @@ class Subscription(dict):
   @property
   def version(self) -> Optional[str]:
     return self.get('version', None)
+
+
+# === Mirrors of types defined in ASTM remote ID standard ===
+
+class ErrorResponse(ImplicitDict):
+  message: Optional[str]
+
+
+class LatLngPoint(ImplicitDict):
+  lat: float
+  lng: float
+
+
+class RIDAuthData(ImplicitDict):
+  format: str
+  data: str
+
+
+class RIDFlightDetails(ImplicitDict):
+  id: str
+  operator_id: Optional[str]
+  operator_location: Optional[LatLngPoint]
+  operation_description: Optional[str]
+  auth_data: Optional[RIDAuthData]
+  serial_number: Optional[str]
+  registration_number: Optional[str]
+
+
+class RIDAircraftPosition(ImplicitDict):
+  lat: float
+  lng: float
+  alt: float
+  accuracy_h: str
+  accuracy_v: str
+  extrapolated: Optional[bool]
+  pressure_altitude: Optional[float]
+
+
+class RIDHeight(ImplicitDict):
+  distance: float
+  reference: str
+
+
+class RIDAircraftState(ImplicitDict):
+  timestamp: str
+  timestamp_accuracy: float
+  operational_status: Optional[str]
+  position: RIDAircraftPosition
+  track: float
+  speed: float
+  speed_accuracy: str
+  vertical_speed: float
+  height: Optional[RIDHeight]

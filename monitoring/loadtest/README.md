@@ -20,6 +20,7 @@ for the format of these values.  Ommiting this step will result in Client Initia
 
 1. Navigate to http://localhost:8089
 1. Start new test with number of Users to spawn and the rate to spawn them. 
+1. For the Host, provide the DSS HTTP Gateway endpoint used for testing. An example of such url is: http://dss_sandbox_local-dss-http-gateway_1:8082/v1/dss/ in case local environment is setup by [run_locally.sh](../../build/dev/run_locally.sh)
 
 
 # Running in a Container
