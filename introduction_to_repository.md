@@ -17,6 +17,8 @@ The `monitoring` directory contains a set of folders containing different test s
 
 - To run a DSS instance locally, see [this documentation](build/dev/stand_alone_instance.md).
 
+- When creating scripts such as `run_locally.sh` that reference other monitoring tools in containers use `http://host.docker.internal` to refer to those containers.
+
 #### Prober
 
 - The first and largest monitoring tool is the "prober" which a full integration test. The [prober documentation](monitoring/prober/README.md) describes how to run it. It uses the `pytest` framework to perform actions on a DSS instance and verify the results.
