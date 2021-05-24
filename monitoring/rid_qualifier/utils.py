@@ -2,17 +2,15 @@ from typing import List, NamedTuple
 from shapely.geometry import Polygon
 import shapely.geometry
 from datetime import datetime
-from monitoring.monitorlib.rid import RIDAircraftState
+from monitoring.monitorlib.rid import RIDAircraftState, RIDFlightDetails
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.rid_qualifier import injection_api
-from monitoring.rid_qualifier.injection_api import OperatorLocation
 
 
 class RIDQualifierUSSConfig(ImplicitDict):
     ''' This object defines the data required for a uss '''
 
     injection_base_url: str
-    allocated_flight_track_number: int
 
 
 class RIDQualifierTestConfiguration(ImplicitDict):
@@ -61,59 +59,14 @@ class RIDSP(NamedTuple):
     rid_state_submission_status: bool
 
 
-class GeneratedFlightDetails(ImplicitDict):
+class FlightDetails(ImplicitDict):
     ''' This object stores the metadata associated with generated flight, this data is shared as information in the remote id call '''
-    serial_number: str
-    operation_description: str
-
-
-class GeneratedOperatorDetails(ImplicitDict):
-    ''' This object stores the details of the operator that will be transmitted in the RID output. The registration number and operator id can be customized to meet local regulations, at the moment it generates a random alpha numeric string '''
-
-    operator_id: str
-    name: str
-    registration_number: str
-    location: OperatorLocation
-
-
-class FlightOperatorDetails(ImplicitDict):
-    ''' This object stores the "automatically" generated data about operator and the fight '''
-    flight_details: GeneratedFlightDetails
-    operator_details: GeneratedOperatorDetails
-
-
-class RIDFlight(ImplicitDict):
-    ''' A object to stored details of a remoteID flight '''
-    id: str  # ID of the flight for Remote ID purposes, e.g. uss1.JA6kHYCcByQ-6AfU, we for this simulation we use just numeric : https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L943
+    rid_details: RIDFlightDetails
+    operator_name: str
     aircraft_type: str  # Generic type of aircraft https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1711
-    states : List[RIDAircraftState]  # See above for definition
-
-
-class TestPayload(ImplicitDict):
-    ''' This object defines the detail of a test object, one or more flight tracks may be assigned in a test therefore the requested flights is a list. '''
-
-    test_id: str
-    requested_flights:List[injection_api.TestFlight]
-
-
-class DeliverablePayload(ImplicitDict):
-    ''' This object defines the payload that needs will be submitted to the Test Inejection URL. The payload is a set of flight tracks, operator details and other associated objects. '''
-
-    injection_path: str
-    injection_payload: TestPayload
-
-
-#TODO: Remove this class; it doesn't make sense to associate many simultaneous flights with the same single operator and flight details
-class FlightTelemetryDetails(ImplicitDict):
-    ''' Store the Aircraft states, and other metadata before saving on disk '''
-    telemetry_data_list: List[RIDFlight]
-    reference_time: str
-    operator_details: GeneratedOperatorDetails
-    flight_details: GeneratedFlightDetails
 
 
 class FullFlightRecord(ImplicitDict):
     reference_time: str
-    flight_telemetry: RIDFlight
-    flight_details: GeneratedFlightDetails
-    operator_details: GeneratedOperatorDetails
+    states: List[RIDAircraftState]
+    flight_details: FlightDetails

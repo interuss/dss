@@ -4,7 +4,7 @@ import os
 import sys
 import argparse
 from urllib.parse import urlparse
-import monitoring.rid_qualifier.test_executor as test_executor 
+import monitoring.rid_qualifier.test_executor as test_executor
 
 def is_url(url_string):
     try:
@@ -36,17 +36,17 @@ def parseArgs() -> argparse.Namespace:
 
 def main() -> int:
     args = parseArgs()
-    
+
     auth_spec = args.auth
     locale = args.locale
-    injection_base_url = args.injection_base_url    
+    injection_base_url = args.injection_base_url
 
     is_url(injection_base_url)
-    uss_config = test_executor.build_uss_config(injection_base_url= injection_base_url, allocated_track=0)
+    uss_config = test_executor.build_uss_config(injection_base_url= injection_base_url)
     test_configuration = test_executor.build_test_configuration(locale = locale, auth_spec=auth_spec,uss_config = uss_config)
-    
+
     test_executor.main(test_configuration=test_configuration)
-    
+
     return os.EX_OK
 
 if __name__ == "__main__":
