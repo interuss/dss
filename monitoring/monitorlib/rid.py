@@ -1,5 +1,4 @@
 from typing import Dict, List, Optional
-
 import s2sphere
 
 from monitoring.monitorlib.typing import ImplicitDict
