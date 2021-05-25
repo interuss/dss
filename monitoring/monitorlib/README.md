@@ -21,6 +21,7 @@ AuthAdapter's `__init__` constructor.  Both ordinal (e.g.,
 
 ### Examples
 
+* `NoAuth()`
 * `UsernamePassword(https://example.com/token, username=uss1, password=uss1,
    client_id=uss1)`
 * `ServiceAccount(https://example.com/token, ~/credentials/account.json)`
@@ -28,3 +29,8 @@ AuthAdapter's `__init__` constructor.  Both ordinal (e.g.,
 * `SignedRequest(https://example.com/oauth/token, client_id=uss1.com,
    key_path=/auth/uss1.key, cert_url=https://uss1.com/uss1.der)`
 * `ClientIdClientSecret(https://example.com/token, uss1, dXNzMQ==)`
+
+### Testing
+
+Use [`get_access_token.py`](../get_access_token.py) to retrieve an access token
+using a provided auth spec.

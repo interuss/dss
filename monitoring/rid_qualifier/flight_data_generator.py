@@ -3,75 +3,16 @@ import shapely.geometry
 from pyproj import Geod, Transformer, Proj
 import json
 from pathlib import Path
-from typing import List, NamedTuple, Any
+from typing import List, Optional
 import arrow
 import datetime
 from datetime import datetime, timedelta
+from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight, FlightTelemetryDetails, FlightOperatorDetails, GeneratedFlightDetails, GeneratedOperatorDetails, FullFlightRecord, RIDFlight
+from monitoring.rid_qualifier.injection_api import OperatorLocation
+from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition
+from monitoring.rid_qualifier import operator_flight_details_generator as details_generator
 import os
 import pathlib
-
-class QueryBoundingBox(NamedTuple):
-    ''' This is the object that stores details of query bounding box '''
-
-    name: str
-    shape: Polygon
-    timestamp_before: datetime
-    timestamp_after: datetime
-
-
-class FlightPoint(NamedTuple):
-    ''' This object holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum '''
-
-    lat: float  # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
-    lng: float  # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
-    alt: float  # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
-    speed: float # speed in m / s 
-    bearing: float # forward azimuth for the this and the next point on the track
-
-
-class AircraftPosition(NamedTuple):
-    ''' A object to hold AircraftPosition details for Remote ID purposes, it mataches the RIDAircraftPosition  per the RID standard, for more information see https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1091'''
-
-    lat: float
-    lng: float
-    alt: float
-    accuracy_h: str
-    accuracy_v: str
-    extrapolated: bool
-
-
-class AircraftHeight(NamedTuple):
-    ''' A object to hold relative altitude for the purposes of Remote ID. For more information see: https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1142 '''
-
-    distance: float
-    reference: str
-
-
-class AircraftState(NamedTuple):
-    ''' A object to hold Aircraft state details for remote ID purposes. For more information see the published standard API specification at https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1604 '''
-
-    timestamp: str
-    operational_status: str
-    position: AircraftPosition  # See the definition above
-    height: AircraftHeight  # See the definition above
-    track: float
-    speed: float
-    speed_accuracy: str
-    vertical_speed: float
-
-
-class RIDFlight(NamedTuple):
-    ''' A object to store details of a remoteID flight '''
-    id: str  # ID of the flight for Remote ID purposes, e.g. uss1.JA6kHYCcByQ-6AfU, we for this simulation we use just numeric : https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L943
-    aircraft_type: str  # Generic type of aircraft https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1711
-    states : List[AircraftState]  # See above for definition
-
-
-class GridCellFlight(NamedTuple):
-    ''' A object to hold details of a grid location and the track within it '''
-
-    bounds: shapely.geometry.polygon.Polygon
-    track: List[FlightPoint]
 
 
 class AdjacentCircularFlightsSimulator():
@@ -87,8 +28,8 @@ class AdjacentCircularFlightsSimulator():
             maxx: Eastern edge of bounding box (degrees longitude)
             miny: Southern edge of bounding box (degrees latitude)
             maxy: Northern edge of bounding box (degrees latitude)
-            utm_zone: UTM Zone string for the location, see https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system to identify the zone for the location. 
-            
+            utm_zone: UTM Zone string for the location, see https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system to identify the zone for the location.
+
             Raises:
             ValueError: If bounding box has more area than a 500m x 500m square.
         """
@@ -106,17 +47,17 @@ class AdjacentCircularFlightsSimulator():
         # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
         self.query_bboxes: List[QueryBoundingBox] = []
 
-        self.flight_telemetry: List[List[AircraftState]] = []
+        self.flight_telemetry: Optional[FlightTelemetryDetails] = None
+        self.bbox_center: List[shapely.geometry.Point] = []
 
         self.geod = Geod(ellps="WGS84")
-        
+
         self.input_extents_valid()
 
     def input_extents_valid(self) -> None:
         ''' This method checks if the input extents are valid i.e. small enough, if the extent is too large, we reject them, at the moment it checks for extents less than 500m x 500m square but can be changed as necessary.'''
 
         box = shapely.geometry.box(self.minx, self.miny, self.maxx, self.maxy)
-        
         area = abs(self.geod.geometry_area_perimeter(box)[0])
 
         # Have a area less than 500m x 500m square and more than 300m x 300m square to ensure a 70 m diameter tracks
@@ -130,6 +71,7 @@ class AdjacentCircularFlightsSimulator():
         # Get center of of the bounding box that is inputted into the generator
         box = shapely.geometry.box(self.minx, self.miny, self.maxx, self.maxy)
         center = box.centroid
+        self.bbox_center.append(center)
         # Transform to geographic co-ordinates to get areas
         transformer = Transformer.from_crs("epsg:4326", "epsg:3857")
         transformed_x, transformed_y = transformer.transform(center.x, center.y)
@@ -168,22 +110,22 @@ class AdjacentCircularFlightsSimulator():
 
         first_point = adjacent_points[0]
         second_point = adjacent_points[1]
-        
+
         fwd_azimuth, back_azimuth, adjacent_point_distance_mts = self.geod.inv(first_point.x, first_point.y, second_point.x, second_point.y)
-        
+
         speed_mts_per_sec = (adjacent_point_distance_mts / delta_time_secs)
         speed_mts_per_sec = float("{:.2f}".format(speed_mts_per_sec))
-        
+
         if fwd_azimuth < 0:
             fwd_azimuth = 360 + fwd_azimuth
-            
+
         return [speed_mts_per_sec, fwd_azimuth]
 
     def utm_converter(self, shapely_shape: shapely.geometry, inverse:bool=False) -> shapely.geometry.shape:
         ''' A helper function to convert from lat / lon to UTM coordinates for buffering. tracks. This is the UTM projection (https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system), we use Zone 33T which encompasses Switzerland, this zone has to be set for each locale / city. Adapted from https://gis.stackexchange.com/questions/325926/buffering-geometry-with-points-in-wgs84-using-shapely '''
-        
+
         proj = Proj(proj="utm", zone=self.utm_zone, ellps="WGS84", datum="WGS84")
-        
+
         geo_interface = shapely_shape.__geo_interface__
         point_or_polygon = geo_interface['type']
         coordinates = geo_interface['coordinates']
@@ -193,11 +135,9 @@ class AdjacentCircularFlightsSimulator():
             new_coordinates = proj(*coordinates, inverse=inverse)
         else:
             raise RuntimeError('Unexpected geo_interface type: {}'.format(point_or_polygon))
-        
+
         return shapely.geometry.shape({'type': point_or_polygon, 'coordinates': tuple(new_coordinates)})
 
-
-    
     def generate_flight_grid_and_path_points(self, altitude_of_ground_level_wgs_84 : float):
         ''' Generate a series of boxes (grid) within the given bounding box to have areas for different flight tracks within each box '''
         # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid.
@@ -215,7 +155,6 @@ class AdjacentCircularFlightsSimulator():
                 grid_cells.append(shapely.geometry.box(x0, y0, x1, y1))
 
         all_grid_cell_tracks = []
-        
         ''' For each of the boxes (grid) allocated to the operator, get the centroid and buffer to generate a flight path. A 70 m radius is provided to have flight paths within each of the boxes '''
         # Iterate over the flight_grid
         for grid_cell in grid_cells:
@@ -223,35 +162,40 @@ class AdjacentCircularFlightsSimulator():
             center_utm = self.utm_converter(center)
             buffer_shape_utm = center_utm.buffer(70)
             buffered_path = self.utm_converter(buffer_shape_utm, inverse=True)
-            
             altitude = altitude_of_ground_level_wgs_84 + self.altitude_agl  # meters WGS 84
             flight_points_with_altitude = []
             x, y = buffered_path.exterior.coords.xy
 
             for coord in range(0, len(x)):
                 cur_coord = coord
-                next_coord = coord + 1 
+                next_coord = coord + 1
                 next_coord = 0 if next_coord == len(x) else next_coord
                 adjacent_points = [Point(x[cur_coord], y[cur_coord]), Point(x[next_coord], y[next_coord])]
                 flight_speed, bearing  = self.generate_flight_speed_bearing(adjacent_points=adjacent_points, delta_time_secs= 1)
-                
+
                 flight_points_with_altitude.append(FlightPoint(lat = y[coord], lng = x[coord], alt = altitude, speed = flight_speed, bearing = bearing))
 
             all_grid_cell_tracks.append(GridCellFlight(bounds = grid_cell, track = flight_points_with_altitude))
 
         self.grid_cells_flight_tracks = all_grid_cell_tracks
 
-    def make_json_compatible(self, struct: Any) -> Any:
-        if isinstance(struct, tuple) and hasattr(struct, '_asdict'):
-            return {k: self.make_json_compatible(v) for k, v in struct._asdict().items()}
-        elif isinstance(struct, dict):
-            return {k: self.make_json_compatible(v) for k, v in struct.items()}
-        elif isinstance(struct, str):
-            return struct
-        try:
-            return [self.make_json_compatible(v) for v in struct]
-        except TypeError:
-            return struct
+    def generate_flight_operator_details(self) -> FlightOperatorDetails:
+        ''' This class generates details of flights and operator details for a flight, this data is required for identifying flight, operator and operation  '''
+
+        my_flight_details_generator = details_generator.OperatorFlightDataGenerator()
+
+        flight_details = GeneratedFlightDetails(serial_number = my_flight_details_generator.generate_serial_number(),  operation_description = my_flight_details_generator.generate_operation_description())
+
+
+        operator_location = my_flight_details_generator.generate_operator_location(centroid= self.bbox_center[0])
+        ol = OperatorLocation(lat = operator_location['lat'], lng = operator_location['lng'])
+
+        operator_details = GeneratedOperatorDetails(operator_id = my_flight_details_generator.generate_operator_id(),name  = my_flight_details_generator.generate_company_name(), registration_number = my_flight_details_generator.generate_registration_number(), location = {"lat":ol.lat, "lng":ol.lng} )
+
+        flight_operator_details = FlightOperatorDetails(flight_details =flight_details,  operator_details = operator_details)
+
+        return flight_operator_details
+
 
     def generate_rid_state(self, duration=180):
         '''
@@ -271,17 +215,16 @@ class AdjacentCircularFlightsSimulator():
         now_isoformat = now.isoformat()
         for i in range(num_flights):
             flight_positions_len = len(self.grid_cells_flight_tracks[i].track)
-            
+
             # in a circular flight pattern increment direction
             angle_increment = (360 / flight_positions_len)
-            
+
             # the resolution of track is 1 degree minimum
             angle_increment = 1.0 if angle_increment == 0.0 else angle_increment
 
             if i not in flight_track_details:
                 flight_track_details[i] = {}
             flight_track_details[i]['track_length'] = flight_positions_len
-            
             flight_current_index[i] = 0
             all_flight_telemetry[i]= {}
             all_flight_telemetry[i]['states'] = []
@@ -289,64 +232,70 @@ class AdjacentCircularFlightsSimulator():
         timestamp = now
         for j in range(duration):
             timestamp = timestamp.shift(seconds=time_increment_seconds)
-            
+
             timestamp_isoformat = timestamp.isoformat()
-            
-            for k in range(num_flights): 
+
+            for k in range(num_flights):
                 list_end = flight_track_details[k]['track_length'] - \
                     flight_current_index[k]
 
                 if list_end != 1:
                     flight_point = self.grid_cells_flight_tracks[k].track[flight_current_index[k]]
-                    aircraft_position = AircraftPosition(lat=flight_point.lat,
-                                                         lng=flight_point.lng,
-                                                         alt=flight_point.alt,
-                                                         accuracy_h="HAUnkown",
-                                                         accuracy_v="VAUnknown",
-                                                         extrapolated=False,
-                                                         )
-                    aircraft_height = AircraftHeight(distance=self.altitude_agl, reference="TakeoffLocation")
+                    aircraft_position = RIDAircraftPosition(lat=flight_point.lat,
+                                                            lng=flight_point.lng,
+                                                            alt=flight_point.alt,
+                                                            accuracy_h="HAUnkown",
+                                                            accuracy_v="VAUnknown",
+                                                            extrapolated=False,
+                                                            )
+                    aircraft_height = RIDHeight(distance=self.altitude_agl, reference="TakeoffLocation")
 
-                    rid_aircraft_state = AircraftState(
+                    rid_aircraft_state = RIDAircraftState(
                         timestamp=timestamp_isoformat,
                         operational_status="Airborne",
                         position=aircraft_position,
                         height=aircraft_height,
                         track=flight_point.bearing,
                         speed=flight_point.speed,
+                        timestamp_accuracy=0.0,
                         speed_accuracy="SA3mps",
                         vertical_speed=0.0)
 
                     all_flight_telemetry[k]['states'].append(rid_aircraft_state)
-                    
                     flight_current_index[k] += 1
                 else:
                     flight_current_index[k] = 0
 
 
-        telemetery_data_list = []
+        telemetry_data_list = []
         for m in range(num_flights):
-            
+
             rid_aircraft_flight = RIDFlight(id=str(m), aircraft_type="Helicopter", states=all_flight_telemetry[m]['states'])
 
-            rid_aircraft_flight_deserialized = self.make_json_compatible(rid_aircraft_flight)
-            telemetery_data_list.append(rid_aircraft_flight_deserialized)
-                    
-        
-        self.flight_telemetry = {"telemetery_data_list": telemetery_data_list, "reference_time": now_isoformat}
+            telemetry_data_list.append(rid_aircraft_flight)
+
+
+        flight_operator_details = self.generate_flight_operator_details()
+
+        self.flight_telemetry = FlightTelemetryDetails(
+            telemetry_data_list=telemetry_data_list,
+            reference_time=now_isoformat,
+            operator_details=flight_operator_details['operator_details'],
+            flight_details=flight_operator_details['flight_details'])
+
 
 
 class TrackWriter():
 
     """
-        Write the tracks created by AdjacentCircularFlightsSimulator into disk (in the outputs directory) as GeoJSON FeatureCollection 
+        Write the tracks created by AdjacentCircularFlightsSimulator into disk (in the outputs directory) as GeoJSON FeatureCollection
         Args:
         flight_path_points: A set of flight path points generated by generate_flight_paths_points method in the AdjacentCircularFlightsSimulator class
         bboxes: A set of bounding boxes generated by generate_query_bboxes method in the AdjacentCircularFlightsSimulator class
         country_code: An ISO 3166-1 alpha-3 code for a country
 
-        Outputs: 
-        GeoJSON files for bboxes created in the `test_definitions/{country_code}` folder 
+        Outputs:
+        GeoJSON files for bboxes created in the `test_definitions/{country_code}` folder
 
 
     """
@@ -375,7 +324,6 @@ class TrackWriter():
 
             features = json.dumps({'type': 'Feature', 'properties': {"timestamp_before": buffered_bbox_details.timestamp_before.isoformat(), "timestamp_after": buffered_bbox_details.timestamp_after.isoformat()}, 'geometry': shapely.geometry.mapping(buffered_bbox_details.shape)})
             bbox_file_name = 'box_%s.geojson' % buffered_bbox_details.name
-            
             bbox_output_path = self.output_subdirectories[1] / bbox_file_name
 
             with open(bbox_output_path, 'w') as f:
@@ -397,10 +345,10 @@ class TrackWriter():
                 point_collection.append(p)
 
             line = LineString(point_collection)
-            line_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(line)}                
+            line_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(line)}
             feature_collection['features'].append(line_feature)
             path_file_name = 'track_%s.geojson' % str(track_id + 1)  # Avoid Zero based numbering
-            
+
             tracks_file_path = self.output_subdirectories[0] / path_file_name
             with open(tracks_file_path, 'w') as f:
                 f.write(json.dumps(feature_collection))
@@ -412,22 +360,22 @@ class RIDAircraftStateWriter():
 
     """
 
-    def __init__(self, flight_telemetry, country_code='che') -> None:
-        """ Atleast single flight points array is necessary and a ouptut directory  
+    def __init__(self, flight_telemetry: FlightTelemetryDetails, country_code='che') -> None:
+        """ Atleast single flight points array is necessary and a ouptut directory
         Args:
-        flight_telemetry: 
+        flight_telemetry:
         country_code: An ISO 3166-1 alpha-3 code for a country, this is used to create a sub-directory to store output.
 
-        Outputs: 
-        A JSON datastructure as a file that can be submitted as a part of the test harness to a USS that implements the automatic remote id testing interface. 
+        Outputs:
+        A JSON datastructure as a file that can be submitted as a part of the test harness to a USS that implements the automatic remote id testing interface.
 
         """
 
         self.flight_telemetry = flight_telemetry
         self.country_code = country_code
         self.flight_telemetry_check()
-        
-            
+
+
         self.output_directory = Path('test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
@@ -439,7 +387,7 @@ class RIDAircraftStateWriter():
         ''' Check if atleast one track is provided, if no tracks are provided, then RIDAircraftState and Test JSON cannot be generated.'''
 
         # Empty flight points cannot be converted to a Aircraft State, check if the list has
-        if (self.flight_telemetry['telemetery_data_list']):
+        if (self.flight_telemetry.telemetry_data_list):
             return
         else:
             raise ValueError("At least one flight track is necessary to create a AircraftState and a test JSON, please generate the tracks first using AdjacentCircularFlightsSimulator class")
@@ -447,24 +395,28 @@ class RIDAircraftStateWriter():
     def write_rid_state(self):
         ''' This method iterates over flight tracks and geneates AircraftState JSON objects and writes to disk in the test_definitions folder, these files can be used to submit the data in the test harness '''
 
-        reference_time = self.flight_telemetry['reference_time']
+        reference_time = self.flight_telemetry.reference_time
+        flight_details = self.flight_telemetry.flight_details
+        operator_details = self.flight_telemetry.operator_details
 
-        for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry['telemetery_data_list']):
 
-            rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering            
-            
+
+        for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry.telemetry_data_list):
+
+            rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering
+
             rid_test_file_path = self.output_subdirectories[0] / rid_test_file_name
-            flight_telemetry_data = {'reference_time': reference_time, 'flight_telemetry': single_flight_telemetry_data}
+            flight_telemetry_data = FullFlightRecord(reference_time=reference_time, flight_telemetry=single_flight_telemetry_data, flight_details=flight_details, operator_details=operator_details)
             with open(rid_test_file_path, 'w') as f:
                 f.write(json.dumps(flight_telemetry_data))
 
 
 if __name__ == '__main__':
     # TODO: accept these parameters as values so that other locations can be supplied
-    my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')    
+    my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
     COUNTRY_CODE = 'che'
-    
+
     my_path_generator.generate_flight_grid_and_path_points(altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
     my_path_generator.generate_query_bboxes()
 
@@ -475,10 +427,10 @@ if __name__ == '__main__':
 
     query_bboxes = my_path_generator.query_bboxes
 
-    # Change directory to write test_definitions folder is created in the rid_qualifier folder. 
-    p = pathlib.Path(__file__).parent.absolute()    
+    # Change directory to write test_definitions folder is created in the rid_qualifier folder.
+    p = pathlib.Path(__file__).parent.absolute()
     os.chdir(p)
-    
+
     my_track_writer = TrackWriter(grid_tracks=grid_tracks, bboxes=query_bboxes, country_code=COUNTRY_CODE)
     my_track_writer.write_bboxes()
     my_track_writer.write_tracks()

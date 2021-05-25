@@ -68,9 +68,11 @@ class ImplicitDict(dict):
   """
 
   @classmethod
-  def parse(cls, source: Dict, type: Type):
+  def parse(cls, source: Dict, parse_type: Type):
+    if not isinstance(source, dict):
+      raise ValueError('Expected to find dictionary data to populate {} object but instead found {} type'.format(parse_type.__name__, type(source).__name__))
     kwargs = {}
-    hints = get_type_hints(type)
+    hints = get_type_hints(parse_type)
     for key, value in source.items():
       if key in hints:
         # This entry has an explicit type
@@ -78,7 +80,7 @@ class ImplicitDict(dict):
       else:
         # This entry's type isn't specified
         kwargs[key] = value
-    return type(**kwargs)
+    return parse_type(**kwargs)
 
   def __init__(self, previous_instance: Optional[dict]=None, **kwargs):
     super(ImplicitDict, self).__init__()
@@ -96,7 +98,6 @@ class ImplicitDict(dict):
         if key not in _DICT_FIELDS and key[0:2] != '__' and not callable(getattr(self, key)):
           all_fields.add(key)
           attributes.add(key)
-          self[key] = getattr(self, key)
 
       # Identify which fields are Optional
       optional_fields = set()
@@ -130,9 +131,15 @@ class ImplicitDict(dict):
         self[key] = value
         provided_values.add(key)
 
+    # Copy default field values
+    for key in optional_fields:
+      if key not in provided_values:
+        if hasattr(type(self), key):
+          self[key] = super(ImplicitDict, self).__getattribute__(key)
+
     # Make sure all fields without a default and not labeled Optional were provided
     for key in all_fields:
-      if key not in provided_values and key not in optional_fields:
+      if key not in self and key not in optional_fields:
         raise ValueError('Required field "{}" not specified in {}'.format(key, type(self).__name__))
 
   def __getattribute__(self, item):
