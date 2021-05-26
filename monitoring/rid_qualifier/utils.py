@@ -9,7 +9,7 @@ from monitoring.rid_qualifier import injection_api
 
 class RIDQualifierUSSConfig(ImplicitDict):
     ''' This object defines the data required for a uss '''
-
+    name: str
     injection_base_url: str
 
 
@@ -70,3 +70,8 @@ class FullFlightRecord(ImplicitDict):
     reference_time: str
     states: List[RIDAircraftState]
     flight_details: FlightDetails
+
+
+class InjectedFlight(ImplicitDict):
+  uss: RIDQualifierUSSConfig
+  flight: injection_api.TestFlight

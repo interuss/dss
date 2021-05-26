@@ -30,6 +30,11 @@ def parseArgs() -> argparse.Namespace:
         required = True,
         help="A USS url where the test data is to be submitted")
 
+    parser.add_argument(
+      "--observation_base_url",
+      required = True,
+      help="A USS url where the system data can be observed")
+
 
     return parser.parse_args()
 
@@ -45,7 +50,7 @@ def main() -> int:
     uss_config = test_executor.build_uss_config(injection_base_url= injection_base_url)
     test_configuration = test_executor.build_test_configuration(locale = locale, auth_spec=auth_spec,uss_config = uss_config)
 
-    test_executor.main(test_configuration=test_configuration)
+    test_executor.main(test_configuration=test_configuration, observation_base_url=args.observation_base_url)
 
     return os.EX_OK
 

@@ -1,10 +1,12 @@
+import datetime
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import DSSTestSession
 import json, os
 import uuid
 from pathlib import Path
+from monitoring.monitorlib import fetch
 from monitoring.rid_qualifier.utils import FullFlightRecord
-from monitoring.rid_qualifier import injection_api
+from monitoring.rid_qualifier import injection_api, reports
 from monitoring.rid_qualifier.injection_api import TestFlightDetails, TestFlight, CreateTestParameters
 from monitoring.monitorlib.typing import ImplicitDict
 import arrow
@@ -54,8 +56,7 @@ class TestBuilder():
 
         test_reference_time = arrow.get(self.test_configuration.now)
         test_start_time = arrow.get(self.test_configuration.test_start_time)
-        test_start_offset = test_start_time.shift(minutes =1)
-        test_start_offset_isoformat = test_start_offset.isoformat()
+        test_start_isoformat = test_start_time.isoformat()
 
         for state_data_index, flight_record in enumerate(self.disk_flight_records):
             disk_reference_time_raw = flight_record.reference_time
@@ -63,13 +64,13 @@ class TestBuilder():
 
             flight_record.reference_time = test_reference_time.isoformat()
 
-            timestamp_offset = test_start_offset - disk_reference_time
+            timestamp_offset = test_start_time - disk_reference_time
 
             for telemetry_id, flight_telemetry in enumerate(flight_record.states):
                 timestamp = arrow.get(flight_telemetry.timestamp) + timestamp_offset
                 flight_telemetry.timestamp = timestamp.isoformat()
 
-            test_flight_details = TestFlightDetails(effective_after = test_start_offset_isoformat, details = flight_record.flight_details.rid_details)
+            test_flight_details = TestFlightDetails(effective_after = test_start_isoformat, details = flight_record.flight_details.rid_details)
 
             test_flight = TestFlight(
               injection_id=str(uuid.uuid4()),
@@ -91,10 +92,13 @@ class TestHarness():
         auth_adapter = make_auth_adapter(auth_spec)
         self.uss_session = DSSTestSession(injection_base_url, auth_adapter)
 
-    def submit_test(self, payload: CreateTestParameters, test_id: str) -> None:
+    def submit_test(self, payload: CreateTestParameters, test_id: str, setup: reports.Setup) -> None:
         injection_path = '/tests/{}'.format(test_id)
 
+        initiated_at = datetime.datetime.utcnow()
         response = self.uss_session.put(url=injection_path, json=payload, scope=injection_api.SCOPE_RID_QUALIFIER_INJECT)
+        #TODO: Use response to specify flights as actually-injected rather than assuming no modifications
+        setup.injections.append(fetch.describe_query(response, initiated_at))
 
         if response.status_code == 200:
             print("New test with ID %s created" % test_id)
