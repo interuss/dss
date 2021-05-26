@@ -21,7 +21,7 @@ The `monitoring` directory contains a set of folders containing different test s
 
 When building new monitoring tools, we recommend using Docker containers as a way to package and deploy / test them. Using Docker containers ensures that consistent runtime environments are created regardless of the OS / Architecture.
 
-- When creating scripts such as `run_locally.sh` that reference other monitoring tools in containers use `http://host.docker.internal` to refer to those containers.
+- When referring to services hosted on the host machine (whether in another Docker container or not) from a service in a Docker container, refer to the host machine from the service in a Docker container using `http://host.docker.internal` ([Windows documentation](https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds), [Mac documentation](https://docs.docker.com/docker-for-mac/networking/#use-cases-and-workarounds)). This often includes demonstration scripts like `run_locally.sh`
 
 #### Prober
 
