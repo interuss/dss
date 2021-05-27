@@ -1,9 +1,12 @@
 #!env/bin/python3
 
+import json
 import os
 import sys
 import argparse
 from urllib.parse import urlparse
+from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration
 import monitoring.rid_qualifier.test_executor as test_executor
 
 def is_url(url_string):
@@ -21,20 +24,9 @@ def parseArgs() -> argparse.Namespace:
         help="Auth spec for obtaining authorization to DSS instances; see README.md")
 
     parser.add_argument(
-        "--locale",
-        required = True,
-        help="A three letter ISO 3166 country code to run the qualifier against, this should be the same one used to simulate the flight_data in flight_data_generator.py module.")
-
-    parser.add_argument(
-        "--injection_base_url",
-        required = True,
-        help="A USS url where the test data is to be submitted")
-
-    parser.add_argument(
-      "--observation_base_url",
-      required = True,
-      help="A USS url where the system data can be observed")
-
+        "--config",
+        required=True,
+        help="Configuration of test to be conducted; either JSON describing a utils.RIDQualifierTestConfig, or the name of a file with that content")
 
     return parser.parse_args()
 
@@ -43,14 +35,22 @@ def main() -> int:
     args = parseArgs()
 
     auth_spec = args.auth
-    locale = args.locale
-    injection_base_url = args.injection_base_url
 
-    is_url(injection_base_url)
-    uss_config = test_executor.build_uss_config(injection_base_url= injection_base_url)
-    test_configuration = test_executor.build_test_configuration(locale = locale, auth_spec=auth_spec,uss_config = uss_config)
+    # Load/parse configuration
+    config_input = args.config
+    if config_input.lower().endswith('.json'):
+        with open(config_input, 'r') as f:
+          config_json = json.load(f)
+    else:
+        config_json = json.loads(config_input)
+    config: RIDQualifierTestConfiguration = ImplicitDict.parse(config_json, RIDQualifierTestConfiguration)
 
-    test_executor.main(test_configuration=test_configuration, observation_base_url=args.observation_base_url)
+    # Validate configuration
+    for injection_target in config.injection_targets:
+        is_url(injection_target.injection_base_url)
+
+    # Run test
+    test_executor.main(test_configuration=config, auth_spec=auth_spec)
 
     return os.EX_OK
 

@@ -5,7 +5,7 @@ import s2sphere
 
 from monitoring.monitorlib import fetch
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.rid_qualifier.utils import InjectedFlight
+from monitoring.rid_qualifier.utils import InjectedFlight, RIDQualifierTestConfiguration
 
 
 class Severity(object):
@@ -66,6 +66,7 @@ class Issue(ImplicitDict):
 
 
 class Setup(ImplicitDict):
+  configuration: RIDQualifierTestConfiguration
   injections: List[fetch.Query] = []
 
 
@@ -175,5 +176,5 @@ class Findings(ImplicitDict):
 
 
 class Report(ImplicitDict):
-  setup: Setup = Setup()
+  setup: Setup
   findings: Findings = Findings()
