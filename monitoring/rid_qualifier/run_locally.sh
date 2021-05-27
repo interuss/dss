@@ -8,9 +8,14 @@ LOCALE='--locale=che'
 
 INJECTION_URL='--injection_base_url=http://host.docker.internal:8070/sp/uss1'
 
-RID_QUALIFIER_OPTIONS="$AUTH $LOCALE $INJECTION_URL"
+OBSERVATION_URL='--observation_base_url=http://host.docker.internal:8070/dp/uss1'
+
+RID_QUALIFIER_OPTIONS="$AUTH $LOCALE $INJECTION_URL $OBSERVATION_URL"
 
 echo Reminder: must be run from root repo folder
+
+# report.json must already exist to share correctly with the Docker container
+touch $(pwd)/monitoring/rid_qualifier/report.json
 
 docker build \
     -f monitoring/rid_qualifier/Dockerfile \
@@ -20,6 +25,9 @@ docker build \
 
 docker run --name rid_qualifier \
   --rm \
+  --tty \
   -e RID_QUALIFIER_OPTIONS="${RID_QUALIFIER_OPTIONS}" \
+  -e PYTHONBUFFERED=1 \
+  -v $(pwd)/monitoring/rid_qualifier/report.json:/app/monitoring/rid_qualifier/report.json \
   interuss/dss/rid_qualifier \
   python rid_qualifier_entry.py $RID_QUALIFIER_OPTIONS

@@ -1,4 +1,8 @@
-from typing import List
+import datetime
+from typing import List, Optional, Tuple
+
+import arrow
+
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.typing import ImplicitDict
 
@@ -25,6 +29,20 @@ class TestFlight(ImplicitDict):
     injection_id: str
     telemetry: List[rid.RIDAircraftState]
     details_responses : List[TestFlightDetails]
+
+    def get_span(self) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
+      earliest = None
+      latest = None
+      times = [arrow.get(aircraft_state.timestamp).datetime
+               for aircraft_state in self.telemetry]
+      times.extend(arrow.get(details.effective_after).datetime
+                   for details in self.details_responses)
+      for t in times:
+        if earliest is None or t < earliest:
+          earliest = t
+        if latest is None or t > latest:
+          latest = t
+      return (earliest, latest)
 
 
 class CreateTestParameters(ImplicitDict):

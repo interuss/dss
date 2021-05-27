@@ -203,7 +203,7 @@ class AdjacentCircularFlightsSimulator():
         return flight_details
 
 
-    def generate_rid_state(self, duration=180):
+    def generate_rid_state(self, duration):
         '''
 
         This method generates rid_state objects that can be submitted as flight telemetry
@@ -414,7 +414,7 @@ if __name__ == '__main__':
 
     grid_tracks = my_path_generator.grid_cells_flight_tracks
 
-    my_path_generator.generate_rid_state(duration=180)
+    my_path_generator.generate_rid_state(duration=30)
     flights = my_path_generator.flights
 
     query_bboxes = my_path_generator.query_bboxes
