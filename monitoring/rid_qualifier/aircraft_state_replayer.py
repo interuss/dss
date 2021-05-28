@@ -27,7 +27,7 @@ class TestBuilder():
         aircraft_states_directory = Path('test_definitions', test_configuration.locale, 'aircraft_states')
         aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
 
-        usses = self.test_configuration.usses
+        usses = self.test_configuration.injection_targets
 
         self.disk_flight_records: List[FullFlightRecord] =[]
         for uss_index, uss in enumerate(usses):
@@ -54,8 +54,8 @@ class TestBuilder():
 
         all_test_payloads = [] # This holds the data that will be deilver
 
-        test_reference_time = arrow.get(self.test_configuration.now)
-        test_start_time = arrow.get(self.test_configuration.test_start_time)
+        test_reference_time = arrow.now()
+        test_start_time = test_reference_time + self.test_configuration.flight_start_delay.timedelta
         test_start_isoformat = test_start_time.isoformat()
 
         for state_data_index, flight_record in enumerate(self.disk_flight_records):

@@ -8,22 +8,11 @@ import s2sphere
 
 from monitoring.monitorlib import fetch, geo, rid
 from monitoring.monitorlib.infrastructure import DSSTestSession
-from monitoring.monitorlib.typing import ImplicitDict, StringBasedTimeDelta
+from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.rid_qualifier import observation_api
 from monitoring.rid_qualifier.reports import Findings
-from monitoring.rid_qualifier.utils import InjectedFlight
+from monitoring.rid_qualifier.utils import EvaluationConfiguration, InjectedFlight
 from monitoring.rid_qualifier.injection_api import TestFlight
-
-
-class EvaluationConfiguration(ImplicitDict):
-  min_polling_interval: Optional[StringBasedTimeDelta] = StringBasedTimeDelta(datetime.timedelta(seconds=5))
-  """Do not repeat system observations with intervals smaller than this."""
-
-  max_propagation_latency: Optional[StringBasedTimeDelta] = StringBasedTimeDelta(datetime.timedelta(seconds=10))
-  """Allow up to this much time for data to propagate through the system."""
-
-  min_query_diagonal: Optional[float] = 100
-  """Do not make queries with diagonals smaller than this many meters."""
 
 
 class RIDSystemObserver(object):
