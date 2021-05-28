@@ -1,3 +1,4 @@
+import arrow
 import datetime
 from typing import get_args, get_origin, get_type_hints, Dict, Optional, Type, Union
 
@@ -186,7 +187,7 @@ def _parse_value(value, value_type: Type):
 
   else:
     # value is a non-generic type that is not an ImplicitDict
-    return value
+    return value_type(value) if value_type else value
 
 
 class StringBasedTimeDelta(str):
@@ -197,4 +198,15 @@ class StringBasedTimeDelta(str):
     else:
       str_value = str.__new__(cls, str(value))
     str_value.timedelta = datetime.timedelta(seconds=pytimeparse.parse(str_value))
+    return str_value
+
+
+class StringBasedDateTime(str):
+  """String that only allows values which describe a datetime."""
+  def __new__(cls, value):
+    if isinstance(value, str):
+      str_value = str.__new__(cls, value)
+    else:
+      str_value = str.__new__(cls, str(value))
+    str_value.datetime = arrow.get(str_value).datetime
     return str_value

@@ -2,7 +2,7 @@ import datetime
 from typing import Dict, List, Optional
 import s2sphere
 
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 
 
 MAX_SUB_PER_AREA = 10
@@ -125,7 +125,7 @@ class RIDHeight(ImplicitDict):
 
 
 class RIDAircraftState(ImplicitDict):
-  timestamp: str
+  timestamp: StringBasedDateTime
   timestamp_accuracy: float
   operational_status: Optional[str]
   position: RIDAircraftPosition

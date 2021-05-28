@@ -3,10 +3,11 @@ import uuid
 
 import flask
 
+from monitoring.monitorlib.rid_automated_testing import injection_api
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.rid_qualifier.mock import database
 from monitoring.rid_qualifier.mock.database import db
-from . import api, webapp
+from . import webapp
 
 
 @webapp.route('/sp/<sp_id>/tests/<test_id>', methods=['PUT'])
@@ -19,13 +20,13 @@ def create_test(sp_id: str, test_id: str) -> Tuple[str, int]:
     json = flask.request.json
     if json is None:
       raise ValueError('Request did not contain a JSON payload')
-    req_body: api.CreateTestParameters = ImplicitDict.parse(json, api.CreateTestParameters)
+    req_body: injection_api.CreateTestParameters = ImplicitDict.parse(json, injection_api.CreateTestParameters)
     record = database.TestRecord(version=str(uuid.uuid4()), flights=req_body.requested_flights)
     if sp_id not in db.sps:
       db.sps[sp_id] = database.RIDSP()
     db.sps[sp_id].tests[test_id] = record
 
-    return flask.jsonify(api.ChangeTestResponse(version=record.version, injected_flights=record.flights))
+    return flask.jsonify(injection_api.ChangeTestResponse(version=record.version, injected_flights=record.flights))
   except ValueError as e:
     msg = 'Create test {} for Service Provider {} unable to parse JSON: {}'.format(test_id, sp_id, e)
     return msg, 400
@@ -44,4 +45,4 @@ def delete_test(sp_id: str, test_id: str) -> Tuple[str, int]:
 
   record = db.sps[sp_id].tests[test_id]
   del db.sps[sp_id].tests[test_id]
-  return flask.jsonify(api.ChangeTestResponse(version=record.version, injected_flights=record.flights))
+  return flask.jsonify(injection_api.ChangeTestResponse(version=record.version, injected_flights=record.flights))

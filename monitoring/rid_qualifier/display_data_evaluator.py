@@ -9,10 +9,10 @@ import s2sphere
 from monitoring.monitorlib import fetch, geo, rid
 from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.rid_qualifier import observation_api
 from monitoring.rid_qualifier.reports import Findings
 from monitoring.rid_qualifier.utils import EvaluationConfiguration, InjectedFlight
-from monitoring.rid_qualifier.injection_api import TestFlight
+from monitoring.monitorlib.rid_automated_testing import observation_api
+from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlight
 
 
 class RIDSystemObserver(object):
