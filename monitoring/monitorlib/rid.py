@@ -134,3 +134,26 @@ class RIDAircraftState(ImplicitDict):
   speed_accuracy: str
   vertical_speed: float
   height: Optional[RIDHeight]
+
+
+class RIDRecentAircraftPosition(ImplicitDict):
+  time: StringBasedDateTime
+  position: RIDAircraftPosition
+
+
+class RIDFlight(ImplicitDict):
+  id: str
+  aircraft_type: str
+  current_state: Optional[RIDAircraftState]
+  # volumes: Optional[List[Volume4D]]
+  simulated: Optional[bool]
+  recent_positions: Optional[List[RIDRecentAircraftPosition]]
+
+
+class GetFlightDetailsResponse(ImplicitDict):
+  details: RIDFlightDetails
+
+
+class GetFlightsResponse(ImplicitDict):
+  timestamp: StringBasedDateTime
+  flights: List[RIDFlight]

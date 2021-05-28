@@ -2,6 +2,7 @@ import datetime
 from typing import List, Optional, Tuple
 
 import arrow
+import s2sphere
 
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
@@ -44,7 +45,7 @@ class TestFlight(ImplicitDict):
                 latest = t
         return (earliest, latest)
 
-    def get_details(self, t_now: datetime.datetime) -> Optional[TestFlightDetails]:
+    def get_details(self, t_now: datetime.datetime) -> Optional[rid.RIDFlightDetails]:
         latest_after: Optional[datetime.datetime] = None
         tf_details = None
         for response in self.details_responses:
@@ -62,6 +63,34 @@ class TestFlight(ImplicitDict):
     def order_telemetry(self):
         self.telemetry = sorted(self.telemetry,
                                 key=lambda telemetry: telemetry.timestamp.datetime)
+
+    def select_relevant_states(
+            self, view: s2sphere.LatLngRect, t0: datetime.datetime,
+            t1: datetime.datetime) -> List[rid.RIDAircraftState]:
+        recent_states: List[rid.RIDAircraftState] = []
+        previously_outside = False
+        previously_inside = False
+        previous_telemetry = None
+        for telemetry in self.telemetry:
+            if (telemetry.timestamp.datetime < t0 or
+                telemetry.timestamp.datetime > t1):
+                # Telemetry not relevant based on time
+                continue
+            pt = s2sphere.LatLng.from_degrees(telemetry.position.lat, telemetry.position.lng)
+            inside_now = view.contains(pt)
+            if inside_now:
+                if previously_outside:
+                    recent_states.append(previous_telemetry)
+                recent_states.append(telemetry)
+                previously_inside = True
+                previously_outside = False
+            else:
+                if previously_inside:
+                    recent_states.append(telemetry)
+                previously_outside = True
+                previously_inside = False
+            previous_telemetry = telemetry
+        return recent_states
 
 
 class CreateTestParameters(ImplicitDict):
