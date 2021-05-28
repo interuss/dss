@@ -2,7 +2,6 @@ import json
 import uuid
 from typing import List
 from monitoring.rid_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
-import arrow
 from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration, InjectedFlight
 from monitoring.rid_qualifier import display_data_evaluator, reports
 from monitoring.monitorlib.infrastructure import DSSTestSession
