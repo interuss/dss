@@ -14,9 +14,11 @@ import jwcrypto.jwk
 import jwcrypto.jws
 import jwcrypto.jwt
 import requests
+import json
 from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
-
+from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.auth_utils import FlightPassportClientDetails
 from monitoring.monitorlib.infrastructure import AuthAdapter
 
 
@@ -116,6 +118,36 @@ class ServiceAccount(AuthAdapter):
     response = self._oauth_session.post(url)
     if response.status_code != 200:
       raise AccessTokenError('Request to get ServiceAccount access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
+    return response.json()['access_token']
+
+
+class FlightPassport(AuthAdapter):
+  """ Auth adpater for Flight Passport OAUTH server (https://www.github.com/openskies-sh/flight_passport) """
+  
+  def __init__(self,token_endpoint: str,  service_account_json: FlightPassportClientDetails):
+    super().__init__()
+    
+    with open(service_account_json) as flight_passport_credentials: 
+      passport_credentials= json.loads(flight_passport_credentials.read())
+      
+    self.passport_config: FlightPassportClientDetails = ImplicitDict.parse(passport_credentials, FlightPassportClientDetails)      
+    
+    self.token_endpoint = token_endpoint
+
+  # Overrides method in AuthAdapter
+  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
+    
+    data = {
+      'client_id':urllib.parse.quote(self.passport_config.client_id),
+      'client_secret': urllib.parse.quote(self.passport_config.client_secret),
+      'grant_type': "client_credentials",
+      'scope': scopes, 
+      'audience':urllib.parse.quote(intended_audience)
+
+    }
+    response = requests.post(self.token_endpoint, data = data)
+    if response.status_code != 200:
+      raise AccessTokenError('Request to get Flight Passport access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
