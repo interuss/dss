@@ -7,9 +7,8 @@ from typing import List, Optional
 import arrow
 import datetime
 from datetime import datetime, timedelta
-from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight, FlightTelemetryDetails, FlightOperatorDetails, GeneratedFlightDetails, GeneratedOperatorDetails, FullFlightRecord, RIDFlight
-from monitoring.rid_qualifier.injection_api import OperatorLocation
-from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition
+from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight, FlightDetails, FullFlightRecord
+from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition, RIDFlightDetails
 from monitoring.rid_qualifier import operator_flight_details_generator as details_generator
 import os
 import pathlib
@@ -47,7 +46,7 @@ class AdjacentCircularFlightsSimulator():
         # This object holds the name and the polygon object of the query boxes. The number of bboxes are controlled by the `box_diagonals` variable
         self.query_bboxes: List[QueryBoundingBox] = []
 
-        self.flight_telemetry: Optional[FlightTelemetryDetails] = None
+        self.flights: List[FullFlightRecord] = []
         self.bbox_center: List[shapely.geometry.Point] = []
 
         self.geod = Geod(ellps="WGS84")
@@ -179,32 +178,36 @@ class AdjacentCircularFlightsSimulator():
 
         self.grid_cells_flight_tracks = all_grid_cell_tracks
 
-    def generate_flight_operator_details(self) -> FlightOperatorDetails:
+    def generate_flight_details(self, id: str, aircraft_type: str) -> FlightDetails:
         ''' This class generates details of flights and operator details for a flight, this data is required for identifying flight, operator and operation  '''
 
         my_flight_details_generator = details_generator.OperatorFlightDataGenerator()
 
-        flight_details = GeneratedFlightDetails(serial_number = my_flight_details_generator.generate_serial_number(),  operation_description = my_flight_details_generator.generate_operation_description())
+        #TODO: Put operator_location in center of circle rather than stacking operators of all flights on top of each other
+        rid_details = RIDFlightDetails(
+            id=id,
+            serial_number=my_flight_details_generator.generate_serial_number(),
+            operation_description=my_flight_details_generator.generate_operation_description(),
+            operator_location=my_flight_details_generator.generate_operator_location(centroid= self.bbox_center[0]),
+            operator_id=my_flight_details_generator.generate_operator_id(),
+            registration_number=my_flight_details_generator.generate_registration_number())
+
+        flight_details = FlightDetails(
+            rid_details=rid_details,
+            aircraft_type=aircraft_type,
+            operator_name=my_flight_details_generator.generate_company_name())
+
+        return flight_details
 
 
-        operator_location = my_flight_details_generator.generate_operator_location(centroid= self.bbox_center[0])
-        ol = OperatorLocation(lat = operator_location['lat'], lng = operator_location['lng'])
-
-        operator_details = GeneratedOperatorDetails(operator_id = my_flight_details_generator.generate_operator_id(),name  = my_flight_details_generator.generate_company_name(), registration_number = my_flight_details_generator.generate_registration_number(), location = {"lat":ol.lat, "lng":ol.lng} )
-
-        flight_operator_details = FlightOperatorDetails(flight_details =flight_details,  operator_details = operator_details)
-
-        return flight_operator_details
-
-
-    def generate_rid_state(self, duration=180):
+    def generate_rid_state(self, duration):
         '''
 
         This method generates rid_state objects that can be submitted as flight telemetry
 
 
         '''
-        all_flight_telemetry = {}
+        all_flight_telemetry: List[List[RIDAircraftState]] = []
         flight_track_details = {}  # Develop a index of flight length and their index
         # Store where on the track the current index is, since the tracks are circular, once the end of the track is reached, the index is reset to 0 to indicate beginning of the track again.
         flight_current_index = {}
@@ -226,8 +229,7 @@ class AdjacentCircularFlightsSimulator():
                 flight_track_details[i] = {}
             flight_track_details[i]['track_length'] = flight_positions_len
             flight_current_index[i] = 0
-            all_flight_telemetry[i]= {}
-            all_flight_telemetry[i]['states'] = []
+            all_flight_telemetry.append([])
 
         timestamp = now
         for j in range(duration):
@@ -261,28 +263,22 @@ class AdjacentCircularFlightsSimulator():
                         speed_accuracy="SA3mps",
                         vertical_speed=0.0)
 
-                    all_flight_telemetry[k]['states'].append(rid_aircraft_state)
+                    all_flight_telemetry[k].append(rid_aircraft_state)
+
                     flight_current_index[k] += 1
                 else:
                     flight_current_index[k] = 0
 
 
-        telemetry_data_list = []
+        flights = []
         for m in range(num_flights):
+            flight = FullFlightRecord(
+                reference_time=now_isoformat,
+                states=all_flight_telemetry[m],
+                flight_details=self.generate_flight_details(id=str(m), aircraft_type="Helicopter"))
+            flights.append(flight)
 
-            rid_aircraft_flight = RIDFlight(id=str(m), aircraft_type="Helicopter", states=all_flight_telemetry[m]['states'])
-
-            telemetry_data_list.append(rid_aircraft_flight)
-
-
-        flight_operator_details = self.generate_flight_operator_details()
-
-        self.flight_telemetry = FlightTelemetryDetails(
-            telemetry_data_list=telemetry_data_list,
-            reference_time=now_isoformat,
-            operator_details=flight_operator_details['operator_details'],
-            flight_details=flight_operator_details['flight_details'])
-
+        self.flights = flights
 
 
 class TrackWriter():
@@ -360,10 +356,9 @@ class RIDAircraftStateWriter():
 
     """
 
-    def __init__(self, flight_telemetry: FlightTelemetryDetails, country_code='che') -> None:
+    def __init__(self, flights: List[FullFlightRecord], country_code='che') -> None:
         """ Atleast single flight points array is necessary and a ouptut directory
         Args:
-        flight_telemetry:
         country_code: An ISO 3166-1 alpha-3 code for a country, this is used to create a sub-directory to store output.
 
         Outputs:
@@ -371,7 +366,7 @@ class RIDAircraftStateWriter():
 
         """
 
-        self.flight_telemetry = flight_telemetry
+        self.flights = flights
         self.country_code = country_code
         self.flight_telemetry_check()
 
@@ -387,7 +382,7 @@ class RIDAircraftStateWriter():
         ''' Check if atleast one track is provided, if no tracks are provided, then RIDAircraftState and Test JSON cannot be generated.'''
 
         # Empty flight points cannot be converted to a Aircraft State, check if the list has
-        if (self.flight_telemetry.telemetry_data_list):
+        if (self.flights):
             return
         else:
             raise ValueError("At least one flight track is necessary to create a AircraftState and a test JSON, please generate the tracks first using AdjacentCircularFlightsSimulator class")
@@ -395,20 +390,12 @@ class RIDAircraftStateWriter():
     def write_rid_state(self):
         ''' This method iterates over flight tracks and geneates AircraftState JSON objects and writes to disk in the test_definitions folder, these files can be used to submit the data in the test harness '''
 
-        reference_time = self.flight_telemetry.reference_time
-        flight_details = self.flight_telemetry.flight_details
-        operator_details = self.flight_telemetry.operator_details
-
-
-
-        for flight_id, single_flight_telemetry_data in enumerate(self.flight_telemetry.telemetry_data_list):
-
+        for flight_id, single_flight in enumerate(self.flights):
             rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering
 
             rid_test_file_path = self.output_subdirectories[0] / rid_test_file_name
-            flight_telemetry_data = FullFlightRecord(reference_time=reference_time, flight_telemetry=single_flight_telemetry_data, flight_details=flight_details, operator_details=operator_details)
             with open(rid_test_file_path, 'w') as f:
-                f.write(json.dumps(flight_telemetry_data))
+                f.write(json.dumps(single_flight))
 
 
 if __name__ == '__main__':
@@ -422,8 +409,8 @@ if __name__ == '__main__':
 
     grid_tracks = my_path_generator.grid_cells_flight_tracks
 
-    my_path_generator.generate_rid_state(duration=180)
-    flight_telemetry = my_path_generator.flight_telemetry
+    my_path_generator.generate_rid_state(duration=30)
+    flights = my_path_generator.flights
 
     query_bboxes = my_path_generator.query_bboxes
 
@@ -435,5 +422,5 @@ if __name__ == '__main__':
     my_track_writer.write_bboxes()
     my_track_writer.write_tracks()
 
-    my_state_generator = RIDAircraftStateWriter(flight_telemetry=flight_telemetry, country_code=COUNTRY_CODE)
+    my_state_generator = RIDAircraftStateWriter(flights=flights, country_code=COUNTRY_CODE)
     my_state_generator.write_rid_state()
