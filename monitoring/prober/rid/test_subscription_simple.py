@@ -12,6 +12,7 @@ import re
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.rid import SCOPE_READ
+from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from . import common
 
 SUB_ID = '000000e0-cf69-456a-91fb-fc9532000000'
@@ -43,24 +44,25 @@ def test_create_sub(session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
+  req_body = {
+    'extents': {
+      'spatial_volume': {
+        'footprint': {
+          'vertices': common.VERTICES,
+        },
+        'altitude_lo': 20,
+        'altitude_hi': 400,
+      },
+      'time_start': time_start.strftime(rid.DATE_FORMAT),
+      'time_end': time_end.strftime(rid.DATE_FORMAT),
+    },
+    'callbacks': {
+      'identification_service_area_url': 'https://example.com/foo'
+    },
+  }
   resp = session.put(
       '/subscriptions/{}'.format(SUB_ID),
-      json={
-          'extents': {
-              'spatial_volume': {
-                  'footprint': {
-                      'vertices': common.VERTICES,
-                  },
-                  'altitude_lo': 20,
-                  'altitude_hi': 400,
-              },
-              'time_start': time_start.strftime(rid.DATE_FORMAT),
-              'time_end': time_end.strftime(rid.DATE_FORMAT),
-          },
-          'callbacks': {
-              'identification_service_area_url': 'https://example.com/foo'
-          },
-      })
+      json=req_body)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
@@ -69,10 +71,8 @@ def test_create_sub(session):
   assert data['subscription']['callbacks'] == {
       'identification_service_area_url': 'https://example.com/foo'
   }
-  assert data['subscription']['time_start'] == time_start.strftime(
-      rid.DATE_FORMAT)
-  assert data['subscription']['time_end'] == time_end.strftime(
-      rid.DATE_FORMAT)
+  assert_datetimes_are_equal(data['subscription']['time_start'], req_body['extents']['time_start'])
+  assert_datetimes_are_equal(data['subscription']['time_end'], req_body['extents']['time_end'])
   assert re.match(r'[a-z0-9]{10,}$', data['subscription']['version'])
   assert 'service_areas' in data
 

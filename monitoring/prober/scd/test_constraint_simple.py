@@ -13,6 +13,7 @@ import datetime
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM
+from monitoring.monitorlib.testing import assert_datetimes_are_equal
 
 
 BASE_URL = 'https://example.com/uss'
@@ -111,8 +112,8 @@ def test_create_constraint(scd_session):
   constraint = data['constraint_reference']
   assert constraint['id'] == CONSTRAINT_ID
   assert constraint['uss_base_url'] == BASE_URL
-  assert constraint['time_start']['value'] == req['extents'][0]['time_start']['value']
-  assert constraint['time_end']['value'] == req['extents'][0]['time_end']['value']
+  assert_datetimes_are_equal(constraint['time_start']['value'], req['extents'][0]['time_start']['value'])
+  assert_datetimes_are_equal(constraint['time_end']['value'], req['extents'][0]['time_end']['value'])
   assert constraint['version'] == 1
 
 

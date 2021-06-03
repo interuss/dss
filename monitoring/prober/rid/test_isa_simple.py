@@ -12,6 +12,7 @@ import re
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
+from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from . import common
 
 
@@ -37,31 +38,30 @@ def test_create_isa(session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
+  req_body = {
+    'extents': {
+      'spatial_volume': {
+        'footprint': {
+          'vertices': common.VERTICES,
+        },
+        'altitude_lo': 20,
+        'altitude_hi': 400,
+      },
+      'time_start': time_start.strftime(rid.DATE_FORMAT),
+      'time_end': time_end.strftime(rid.DATE_FORMAT),
+    },
+    'flights_url': 'https://example.com/dss',
+  }
   resp = session.put(
-    '/identification_service_areas/{}'.format(ISA_ID),
-      json={
-          'extents': {
-              'spatial_volume': {
-                  'footprint': {
-                      'vertices': common.VERTICES,
-                  },
-                  'altitude_lo': 20,
-                  'altitude_hi': 400,
-              },
-              'time_start': time_start.strftime(rid.DATE_FORMAT),
-              'time_end': time_end.strftime(rid.DATE_FORMAT),
-          },
-          'flights_url': 'https://example.com/dss',
-      })
+      '/identification_service_areas/{}'.format(ISA_ID),
+      json=req_body)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
   assert data['service_area']['id'] == ISA_ID
   assert data['service_area']['flights_url'] == 'https://example.com/dss'
-  assert data['service_area']['time_start'] == time_start.strftime(
-      rid.DATE_FORMAT)
-  assert data['service_area']['time_end'] == time_end.strftime(
-      rid.DATE_FORMAT)
+  assert_datetimes_are_equal(data['service_area']['time_start'], req_body['extents']['time_start'])
+  assert_datetimes_are_equal(data['service_area']['time_end'], req_body['extents']['time_end'])
   assert re.match(r'[a-z0-9]{10,}$', data['service_area']['version'])
   assert 'subscribers' in data
 
