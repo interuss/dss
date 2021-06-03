@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 import arrow
 import s2sphere
 
-from monitoring.monitorlib import rid
+from monitoring.monitorlib import geo, rid
 from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 
 
@@ -92,9 +92,33 @@ class TestFlight(ImplicitDict):
             previous_telemetry = telemetry
         return recent_states
 
+    def get_rect(self) -> Optional[s2sphere.LatLngRect]:
+      return geo.bounding_rect([(t.position.lat, t.position.lng) for t in self.telemetry])
+
 
 class CreateTestParameters(ImplicitDict):
     requested_flights: List[TestFlight]
+
+    def get_span(self) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
+        if not self.requested_flights:
+            return (None, None)
+        (earliest, latest) = (None, None)
+        for flight in self.requested_flights:
+            (t0, t1) = flight.get_span()
+            if earliest is None or t0 < earliest:
+                earliest = t0
+            if latest is None or t1 > latest:
+                latest = t1
+        return (earliest, latest)
+
+    def get_rect(self) -> Optional[s2sphere.LatLngRect]:
+      result = None
+      for flight in self.requested_flights:
+        if result is None:
+          result = flight.get_rect()
+        else:
+          result = result.union(flight.get_rect())
+      return result
 
 
 class ChangeTestResponse(ImplicitDict):

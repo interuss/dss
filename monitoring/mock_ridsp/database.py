@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from monitoring.monitorlib.rid_automated_testing import injection_api
 
@@ -7,6 +7,7 @@ class TestRecord(object):
   """Representation of RID SP's record of a set of injected test flights"""
   version: str
   flights: List[injection_api.TestFlight]
+  isa_version: Optional[str] = None
 
   def __init__(self, version: str, flights: List[injection_api.TestFlight]):
     flights = [injection_api.TestFlight(**flight) for flight in flights]
