@@ -2,7 +2,7 @@ import datetime
 from typing import Dict, List, Optional
 import s2sphere
 
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 
 
 MAX_SUB_PER_AREA = 10
@@ -125,7 +125,7 @@ class RIDHeight(ImplicitDict):
 
 
 class RIDAircraftState(ImplicitDict):
-  timestamp: str
+  timestamp: StringBasedDateTime
   timestamp_accuracy: float
   operational_status: Optional[str]
   position: RIDAircraftPosition
@@ -134,3 +134,26 @@ class RIDAircraftState(ImplicitDict):
   speed_accuracy: str
   vertical_speed: float
   height: Optional[RIDHeight]
+
+
+class RIDRecentAircraftPosition(ImplicitDict):
+  time: StringBasedDateTime
+  position: RIDAircraftPosition
+
+
+class RIDFlight(ImplicitDict):
+  id: str
+  aircraft_type: str
+  current_state: Optional[RIDAircraftState]
+  # volumes: Optional[List[Volume4D]]
+  simulated: Optional[bool]
+  recent_positions: Optional[List[RIDRecentAircraftPosition]]
+
+
+class GetFlightDetailsResponse(ImplicitDict):
+  details: RIDFlightDetails
+
+
+class GetFlightsResponse(ImplicitDict):
+  timestamp: StringBasedDateTime
+  flights: List[RIDFlight]

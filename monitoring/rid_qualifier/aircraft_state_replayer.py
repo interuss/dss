@@ -6,8 +6,8 @@ import uuid
 from pathlib import Path
 from monitoring.monitorlib import fetch
 from monitoring.rid_qualifier.utils import FullFlightRecord
-from monitoring.rid_qualifier import injection_api, reports
-from monitoring.rid_qualifier.injection_api import TestFlightDetails, TestFlight, CreateTestParameters
+from monitoring.rid_qualifier import reports
+from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlightDetails, TestFlight, CreateTestParameters, SCOPE_RID_QUALIFIER_INJECT
 from monitoring.monitorlib.typing import ImplicitDict
 import arrow
 import pathlib
@@ -96,7 +96,7 @@ class TestHarness():
         injection_path = '/tests/{}'.format(test_id)
 
         initiated_at = datetime.datetime.utcnow()
-        response = self.uss_session.put(url=injection_path, json=payload, scope=injection_api.SCOPE_RID_QUALIFIER_INJECT)
+        response = self.uss_session.put(url=injection_path, json=payload, scope=SCOPE_RID_QUALIFIER_INJECT)
         #TODO: Use response to specify flights as actually-injected rather than assuming no modifications
         setup.injections.append(fetch.describe_query(response, initiated_at))
 
@@ -119,4 +119,4 @@ class TestHarness():
             raise RuntimeError("Test with ID %s not submitted, the injection payload was too large" % test_id)
 
         else:
-            raise RuntimeError("Test with ID %(test_id)s not submitted, the server returned the following HTTP error code: %(status_code)d" % {'test_id': test_id, 'status_code': response.status_code})
+            raise RuntimeError("Test with ID %(test_id)s not submitted, the server returned the following HTTP error code: %(status_code)d %(msg)s" % {'test_id': test_id, 'status_code': response.status_code, 'msg': response.content})

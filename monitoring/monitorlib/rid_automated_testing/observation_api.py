@@ -8,6 +8,7 @@ from monitoring.monitorlib.typing import ImplicitDict
 class Position(ImplicitDict):
   lat: float
   lng: float
+  alt: Optional[float]
 
 
 class Path(ImplicitDict):
@@ -22,8 +23,8 @@ class Cluster(ImplicitDict):
 
 class Flight(ImplicitDict):
   id: str
-  most_recent_position: Optional[Position] = None
-  recent_paths: List[Path] = []
+  most_recent_position: Optional[Position]
+  recent_paths: Optional[List[Path]]
 
 
 class GetDetailsResponse(ImplicitDict):

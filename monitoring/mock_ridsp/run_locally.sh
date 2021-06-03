@@ -38,6 +38,6 @@ docker run --name mock_ridsp \
   local-interuss/mock_ridsp \
   gunicorn \
     --preload \
-    --workers=2 \
+    --workers=1 \
     --bind=0.0.0.0:5000 \
     monitoring.mock_ridsp:webapp
