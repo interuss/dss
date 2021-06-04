@@ -14,7 +14,6 @@ import jwcrypto.jwk
 import jwcrypto.jws
 import jwcrypto.jwt
 import requests
-
 from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
 from monitoring.monitorlib.infrastructure import AuthAdapter
