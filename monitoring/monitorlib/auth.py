@@ -302,7 +302,10 @@ class FlightPassport(ClientIdClientSecret):
 class AccessTokenError(RuntimeError):
   def __init__(self, msg):
     super(AccessTokenError, self).__init__(msg)
-
+        
+def all_subclasses(cls):
+    # Reference: https://stackoverflow.com/questions/3862310/how-to-find-all-the-subclasses-of-a-class-given-its-name
+    return set(cls.__subclasses__()).union([s for c in cls.__subclasses__() for s in all_subclasses(c)])
 
 def make_auth_adapter(spec: str) -> AuthAdapter:
   """Make an AuthAdapter according to a string specification.
@@ -323,8 +326,8 @@ def make_auth_adapter(spec: str) -> AuthAdapter:
   if m is None:
     raise ValueError('Auth adapter specification did not match the pattern `AdapterName(param, param, ...)`')
 
-  adapter_name = m.group(1)
-  adapter_classes = {cls.__name__: cls for cls in AuthAdapter.__subclasses__()}
+  adapter_name = m.group(1)  
+  adapter_classes = {cls.__name__: cls for cls in all_subclasses(AuthAdapter)}
   if adapter_name not in adapter_classes:
     raise ValueError('Auth adapter `%s` does not exist' % adapter_name)
   Adapter = adapter_classes[adapter_name]
