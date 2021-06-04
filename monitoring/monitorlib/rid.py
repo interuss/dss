@@ -157,3 +157,22 @@ class GetFlightDetailsResponse(ImplicitDict):
 class GetFlightsResponse(ImplicitDict):
   timestamp: StringBasedDateTime
   flights: List[RIDFlight]
+
+
+class IdentificationServiceArea(ImplicitDict):
+  flights_url: str
+  owner: str
+  time_start: StringBasedDateTime
+  time_end: StringBasedDateTime
+  version: str
+  id: str
+
+
+class SubscriptionState(ImplicitDict):
+  subscription_id: str
+  notification_index: int = 0
+
+
+class SubscriberToNotify(ImplicitDict):
+  subscriptions: List[SubscriptionState] = []
+  url: str

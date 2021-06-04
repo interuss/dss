@@ -1,5 +1,5 @@
 import math
-from typing import Tuple
+from typing import List, Tuple
 import s2sphere
 
 
@@ -54,3 +54,18 @@ def unflatten(reference: s2sphere.LatLng, point: Tuple[float, float]) -> s2spher
 def area_of_latlngrect(rect: s2sphere.LatLngRect) -> float:
   """Compute the approximate surface area within a lat-lng rectangle."""
   return EARTH_AREA_M2 * rect.area() / (4 * math.pi)
+
+
+def bounding_rect(latlngs: List[Tuple[float, float]]) -> s2sphere.LatLngRect:
+  lat_min = 90
+  lat_max = -90
+  lng_min = 360
+  lng_max = -360
+  for (lat, lng) in latlngs:
+    lat_min = min(lat_min, lat)
+    lat_max = max(lat_max, lat)
+    lng_min = min(lng_min, lng)
+    lng_max = max(lng_max, lng)
+  return s2sphere.LatLngRect.from_point_pair(
+    s2sphere.LatLng.from_degrees(lat_min, lng_min),
+    s2sphere.LatLng.from_degrees(lat_max, lng_max))
