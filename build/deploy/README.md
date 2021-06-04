@@ -63,3 +63,37 @@ groups (one group per USS) of two nodes per USS.
 |                                    | (🟩 , 🟩 ) (🔴 , 🔴 ) (🟥 , 🟥 ) | 🔴 No; some ranges may be lost
 
 ## Sizing
+
+### Introduction
+This section contains an estimate of the computational and other resources
+likely necessary to support expected demand in a country similar to the United
+States.
+
+### Time required to fulfill queries for a single flight
+1. Assume 1 ISA per flight (worst case)
+    1. 2 ISA management queries per flight (create & delete)
+1. Assume 90% of flights are nominal and require 3 strategic deconfliction queries (Accepted, Activated, Ended) while 10% of flights have problems and require 7 strategic deconfliction queries
+    1. 3.4 strategic deconfliction queries per flight
+1. Assume 0.1 seconds to fulfill a query
+    1. Therefore, 0.54 seconds required (on average) to fulfill management queries to support a flight
+
+### Time required to fulfill queries for a RID Display Provider
+1. Assume 2 Display Providers viewing each flight on average, 4 subscriptions per flight per DP, and 40% chance of subscription reuse
+    1. 9.6 subscription queries per flight
+    1. 0.96 seconds required (on average) to fulfill viewing queries to support a flight
+
+### Required parallelism
+1. Use [348,537 remote pilots in 2024](https://www.faa.gov/uas/resources/by_the_numbers/)
+1. Assume 100 flights per month per remote pilot
+1. Use [989,916 recreational pilots](https://www.faa.gov/data_research/aviation/aerospace_forecasts/media/FY2020-40_faa_aerospace_forecast.pdf) as a baseline (even though this is likely number of aircraft, not number of pilots) and double it for the future
+1. Use [7.1 flights per month per recreational pilot](https://www.faa.gov/data_research/aviation/aerospace_forecasts/media/FY2020-40_faa_aerospace_forecast.pdf)
+1. Therefore, expect about 18.6 flights per second
+1. With 1.5 seconds of query time per flight, a nominal parallelism of 28 is required to satisfy the demand
+1. Assuming a peak-average ratio of 3.5, a parallelism of 98 is required
+
+### Required resources
+1. With Cockroach Labs guidance of 4 parallel operations per vCPU, the DSS pool requires 25 vCPUs.
+1. Assuming 3 DSS instances and the need to continue to operate when one instance is down, each DSS instance requires 13 vCPUs.
+1. Using 8-vCPU virtual machines (like n2-standard-8), this means each instance needs 2 of these virtual machines
+1. Assuming that 5 days' worth of flights are occupying space on disk at any given time and that each flight record on disk is 100k, approximately 83 GB of storage is required
+    1. Note that Cockroach Labs recommends 4,000 read IO/s and 4,000 write IO/s, and some cloud providers scale storage speed with storage size, so 83 GB of storage may be far less than is necessary to achieve these speed numbers
