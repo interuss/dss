@@ -282,11 +282,17 @@ class ClientIdClientSecret(AuthAdapter):
     return response.json()['access_token']
 
 
-class FlightPassport(ClientIdClientSecret, AuthAdapter):
+class FlightPassport(ClientIdClientSecret):
   """ Auth adpater for Flight Passport OAUTH server (https://www.github.com/openskies-sh/flight_passport) """
+
+  def __init__(self, token_endpoint: str, client_id: str, client_secret: str, send_request_as_data:str = 'true'):
+    if (send_request_as_data.lower() == 'true'):
+      send_request_as_data = True
+    else:
+      send_request_as_data = False
+      
+    super(FlightPassport, self).__init__(token_endpoint, client_id, client_secret, send_request_as_data)
   
-  def __init__(self,  token_endpoint: str, client_id: str, client_secret: str, send_request_as_data :bool=True):
-    
     self._oauth_token_endpoint = token_endpoint
     self._client_id = client_id
     self._client_secret = client_secret
