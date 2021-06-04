@@ -17,8 +17,6 @@ import requests
 import json
 from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
-from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.monitorlib.auth_utils import FlightPassportClientDetails
 from monitoring.monitorlib.infrastructure import AuthAdapter
 
 
@@ -118,36 +116,6 @@ class ServiceAccount(AuthAdapter):
     response = self._oauth_session.post(url)
     if response.status_code != 200:
       raise AccessTokenError('Request to get ServiceAccount access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
-    return response.json()['access_token']
-
-
-class FlightPassport(AuthAdapter):
-  """ Auth adpater for Flight Passport OAUTH server (https://www.github.com/openskies-sh/flight_passport) """
-  
-  def __init__(self,token_endpoint: str,  service_account_json: FlightPassportClientDetails):
-    super().__init__()
-    
-    with open(service_account_json) as flight_passport_credentials: 
-      passport_credentials= json.loads(flight_passport_credentials.read())
-      
-    self.passport_config: FlightPassportClientDetails = ImplicitDict.parse(passport_credentials, FlightPassportClientDetails)      
-    
-    self.token_endpoint = token_endpoint
-
-  # Overrides method in AuthAdapter
-  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
-    
-    data = {
-      'client_id':urllib.parse.quote(self.passport_config.client_id),
-      'client_secret': urllib.parse.quote(self.passport_config.client_secret),
-      'grant_type': "client_credentials",
-      'scope': scopes, 
-      'audience':urllib.parse.quote(intended_audience)
-
-    }
-    response = requests.post(self.token_endpoint, data = data)
-    if response.status_code != 200:
-      raise AccessTokenError('Request to get Flight Passport access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
@@ -286,27 +254,44 @@ class SignedRequest(AuthAdapter):
 
 
 class ClientIdClientSecret(AuthAdapter):
-  """Auth adapter that gets JWTs using a client ID and client secret."""
+  """Auth adapter that gets JWTs using a client ID and client secret. By default, this will send the request as JSON, you can use send_request_as_data flag to send the request as form data. """
 
-  def __init__(self, token_endpoint: str, client_id: str, client_secret: str):
+  def __init__(self, token_endpoint: str, client_id: str, client_secret: str, send_request_as_data :bool=False):
     super().__init__()
 
     self._oauth_token_endpoint = token_endpoint
     self._client_id = client_id
     self._client_secret = client_secret
-
+    self.send_request_as_data = send_request_as_data
+    
   # Overrides method in AuthAdapter
   def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
-    response = requests.post(self._oauth_token_endpoint, json={
+    payload = {
       'grant_type': 'client_credentials',
       'client_id': self._client_id,
       'client_secret': self._client_secret,
       'audience': intended_audience,
       'scope': ' '.join(scopes),
-    })
+    }
+
+    if self.send_request_as_data: 
+      response = requests.post(self._oauth_token_endpoint, data=payload)
+    else:
+      response = requests.post(self._oauth_token_endpoint, json=payload)
     if response.status_code != 200:
       raise AccessTokenError('Unable to retrieve access token:\n' + response.content.decode('utf-8'))
     return response.json()['access_token']
+
+
+class FlightPassport(ClientIdClientSecret, AuthAdapter):
+  """ Auth adpater for Flight Passport OAUTH server (https://www.github.com/openskies-sh/flight_passport) """
+  
+  def __init__(self,  token_endpoint: str, client_id: str, client_secret: str, send_request_as_data :bool=True):
+    
+    self._oauth_token_endpoint = token_endpoint
+    self._client_id = client_id
+    self._client_secret = client_secret
+    self.send_request_as_data = send_request_as_data
 
 
 class AccessTokenError(RuntimeError):

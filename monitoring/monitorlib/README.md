@@ -25,7 +25,7 @@ AuthAdapter's `__init__` constructor.  Both ordinal (e.g.,
 * `UsernamePassword(https://example.com/token, username=uss1, password=uss1,
    client_id=uss1)`
 * `ServiceAccount(https://example.com/token, ~/credentials/account.json)`
-* `FlightPassport(https://example.com/oauth/token/, ~/credentials/account.json)`
+* `FlightPassport(https://example.com/oauth/token/, client_id=NdepxcA, client_secret=PSh7DzZdN)`
 * `DummyOAuth(http://localhost:8085/token, sub=fake_uss)`
 * `SignedRequest(https://example.com/oauth/token, client_id=uss1.com,
    key_path=/auth/uss1.key, cert_url=https://uss1.com/uss1.der)`
