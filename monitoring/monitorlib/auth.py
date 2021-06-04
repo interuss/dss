@@ -286,10 +286,8 @@ class FlightPassport(ClientIdClientSecret):
   """ Auth adpater for Flight Passport OAUTH server (https://www.github.com/openskies-sh/flight_passport) """
 
   def __init__(self, token_endpoint: str, client_id: str, client_secret: str, send_request_as_data:str = 'true'):
-    if (send_request_as_data.lower() == 'true'):
-      send_request_as_data = True
-    else:
-      send_request_as_data = False
+    
+    send_request_as_data = True if (send_request_as_data.lower() == 'true') else False
       
     super(FlightPassport, self).__init__(token_endpoint, client_id, client_secret, send_request_as_data)
   
