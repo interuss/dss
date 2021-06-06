@@ -261,7 +261,7 @@ class ClientIdClientSecret(AuthAdapter):
     self._oauth_token_endpoint = token_endpoint
     self._client_id = client_id
     self._client_secret = client_secret
-    self.send_request_as_data = send_request_as_data
+    self._send_request_as_data = send_request_as_data
     
   # Overrides method in AuthAdapter
   def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
@@ -273,7 +273,7 @@ class ClientIdClientSecret(AuthAdapter):
       'scope': ' '.join(scopes),
     }
 
-    if self.send_request_as_data: 
+    if self._send_request_as_data: 
       response = requests.post(self._oauth_token_endpoint, data=payload)
     else:
       response = requests.post(self._oauth_token_endpoint, json=payload)
@@ -287,14 +287,11 @@ class FlightPassport(ClientIdClientSecret):
 
   def __init__(self, token_endpoint: str, client_id: str, client_secret: str, send_request_as_data:str = 'true'):
     
-    send_request_as_data = True if (send_request_as_data.lower() == 'true') else False
+    send_request_as_data = (send_request_as_data.lower() == 'true')
       
     super(FlightPassport, self).__init__(token_endpoint, client_id, client_secret, send_request_as_data)
   
-    self._oauth_token_endpoint = token_endpoint
-    self._client_id = client_id
-    self._client_secret = client_secret
-    self.send_request_as_data = send_request_as_data
+    self._send_request_as_data = send_request_as_data
 
 
 class AccessTokenError(RuntimeError):
