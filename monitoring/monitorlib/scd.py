@@ -80,12 +80,6 @@ def make_polygon(coords: List[Tuple[float, float]]=None, latlngrect: s2sphere.La
   }
 
 
-def iso8601_equal(dts1: str, dts2: str) -> bool:
-  dt1 = datetime.fromisoformat(dts1.replace("Z", "+00:00"))
-  dt2 = datetime.fromisoformat(dts2.replace("Z", "+00:00"))
-  return dt1 == dt2
-
-
 def latitude_degrees(distance_meters: float) -> float:
   return 360 * distance_meters / EARTH_CIRCUMFERENCE_M
 
