@@ -16,7 +16,6 @@ import jwcrypto.jwt
 import requests
 from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
-
 from monitoring.monitorlib.infrastructure import AuthAdapter
 
 
@@ -254,33 +253,54 @@ class SignedRequest(AuthAdapter):
 
 
 class ClientIdClientSecret(AuthAdapter):
-  """Auth adapter that gets JWTs using a client ID and client secret."""
+  """Auth adapter that gets JWTs using a client ID and client secret. By default, this will send the request as JSON, you can use send_request_as_data flag to send the request as form data. """
 
-  def __init__(self, token_endpoint: str, client_id: str, client_secret: str):
+  def __init__(self, token_endpoint: str, client_id: str, client_secret: str, send_request_as_data :bool=False):
     super().__init__()
 
     self._oauth_token_endpoint = token_endpoint
     self._client_id = client_id
     self._client_secret = client_secret
-
+    self._send_request_as_data = send_request_as_data
+    
   # Overrides method in AuthAdapter
   def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
-    response = requests.post(self._oauth_token_endpoint, json={
+    payload = {
       'grant_type': 'client_credentials',
       'client_id': self._client_id,
       'client_secret': self._client_secret,
       'audience': intended_audience,
       'scope': ' '.join(scopes),
-    })
+    }
+
+    if self._send_request_as_data: 
+      response = requests.post(self._oauth_token_endpoint, data=payload)
+    else:
+      response = requests.post(self._oauth_token_endpoint, json=payload)
     if response.status_code != 200:
       raise AccessTokenError('Unable to retrieve access token:\n' + response.content.decode('utf-8'))
     return response.json()['access_token']
 
 
+class FlightPassport(ClientIdClientSecret):
+  """ Auth adpater for Flight Passport OAUTH server (https://www.github.com/openskies-sh/flight_passport) """
+
+  def __init__(self, token_endpoint: str, client_id: str, client_secret: str, send_request_as_data:str = 'true'):
+    
+    send_request_as_data = (send_request_as_data.lower() == 'true')
+      
+    super(FlightPassport, self).__init__(token_endpoint, client_id, client_secret, send_request_as_data)
+  
+    self._send_request_as_data = send_request_as_data
+
+
 class AccessTokenError(RuntimeError):
   def __init__(self, msg):
     super(AccessTokenError, self).__init__(msg)
-
+        
+def all_subclasses(cls):
+    # Reference: https://stackoverflow.com/questions/3862310/how-to-find-all-the-subclasses-of-a-class-given-its-name
+    return set(cls.__subclasses__()).union([s for c in cls.__subclasses__() for s in all_subclasses(c)])
 
 def make_auth_adapter(spec: str) -> AuthAdapter:
   """Make an AuthAdapter according to a string specification.
@@ -301,8 +321,8 @@ def make_auth_adapter(spec: str) -> AuthAdapter:
   if m is None:
     raise ValueError('Auth adapter specification did not match the pattern `AdapterName(param, param, ...)`')
 
-  adapter_name = m.group(1)
-  adapter_classes = {cls.__name__: cls for cls in AuthAdapter.__subclasses__()}
+  adapter_name = m.group(1)  
+  adapter_classes = {cls.__name__: cls for cls in all_subclasses(AuthAdapter)}
   if adapter_name not in adapter_classes:
     raise ValueError('Auth adapter `%s` does not exist' % adapter_name)
   Adapter = adapter_classes[adapter_name]
