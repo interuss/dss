@@ -24,24 +24,31 @@ To do this we need to make sure we are using the Minikube Docker daemon, you can
 Note: Later, when you no longer wish to use the Minikube host, you can undo this change by running: `eval $(minikube docker-env -u)`
 
 Pull images locally by running:
+
 `build/build.sh` 
 
 Start minikube by:
+
 `minikube start`
 
 Check the status of minikube by:
+
 `minikube status`
+
 `minikube cluster-info`
 
 A test environment can be set up by running build/dev/minikube/multi_region_dss_local.yaml locally.
+
 `kubectl apply -f build/dev/minikube/multi_region_dss_local.yaml`
 
 After a few minutes, the cluster should be up and running, check the Pods are ready and in a running state:
-<insert image>
+![Cluster setup status](assets/minikube_status_sample.png)
 
 We can open the Kubernetes dashboard in a browser using the following command which will open a browser window with your dashboard:
 `minikube dashboard`
- <insert image>
+
+![Minikube Dashboard](assets/minikube_dashboard_sample.png)
+
 
 ## Access the DB Console
 
@@ -97,9 +104,13 @@ Do a complete cleanup of docker containers by:
 ### grpc-backend error: "operating without authorizing interceptor"
 Add volume to grpc-backend pod.
 TODO: check for the right way to pass following cert file to volumes.
- 	```volumes:
-        - $PWD/../test-certs:/var/test-certs:ro```
+ 	```
+     volumes:
+        - $PWD/../test-certs:/var/test-certs:ro
+    ```
 
 As a workaround, update following args in the grpc-backend pod configurations.
-       ```- --jwks_endpoint=https://oauth.casa-staging.rpasplatform.net/jwks.json
-       - --jwks_key_ids=1```
+       ```
+       - --jwks_endpoint=https://oauth.casa-staging.rpasplatform.net/jwks.json
+       - --jwks_key_ids=1
+       ```
