@@ -104,13 +104,15 @@ Do a complete cleanup of docker containers by:
 ### grpc-backend error: "operating without authorizing interceptor"
 Add volume to grpc-backend pod.
 TODO: check for the right way to pass following cert file to volumes.
- 	```
-     volumes:
-        - $PWD/../test-certs:/var/test-certs:ro
-    ```
+
+```
+    volumes:
+    - $PWD/../test-certs:/var/test-certs:ro
+```
 
 As a workaround, update following args in the grpc-backend pod configurations.
-       ```
-       - --jwks_endpoint=https://oauth.casa-staging.rpasplatform.net/jwks.json
-       - --jwks_key_ids=1
-       ```
+
+```
+- --jwks_endpoint=https://oauth.casa-staging.rpasplatform.net/jwks.json
+- --jwks_key_ids=1
+```
