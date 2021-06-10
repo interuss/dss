@@ -732,39 +732,3 @@ metadata:
   labels:
     name: db-rid-schema
   name: db-rid-schema
----
-# apiVersion: batch/v1
-# kind: Job
-# metadata:
-#   labels:
-#     name: rid-schema-manager
-#   name: rid-schema-manager
-# spec:
-#   completions: 1
-#   parallelism: 1
-#   template:
-#     metadata:
-#       annotations:
-#         sidecar.istio.io/inject: "false"
-#       labels:
-#         name: rid-schema-manager
-#     spec:
-#       containers:
-#         - image: interuss-local/db-manager:latest
-#           command: ["/usr/bin/db-manager"]
-#           args: ["--cockroach_host=cockroachdb.default", "--cockroach_port=26257", "--db_version=3.1.1", "--schemas_dir=/db-schemas/defaultdb"]
-#           imagePullPolicy: IfNotPresent
-#           name: rid-schema-manager
-#           stdin: false
-#           tty: false
-#           volumeMounts:
-#           - mountPath: /db-schemas/defaultdb
-#             name: db-rid-schema
-#             readOnly: false
-#       restartPolicy: OnFailure
-#       terminationGracePeriodSeconds: 30
-#       volumes:
-#       - configMap:
-#           defaultMode: 420
-#           name: db-rid-schema
-#         name: db-rid-schema
