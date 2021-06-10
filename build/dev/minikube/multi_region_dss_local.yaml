@@ -1,0 +1,770 @@
+# australia-southeast1-a
+apiVersion: v1
+kind: Service
+metadata:
+  name: australia-southeast1-a
+  labels:
+    app: cockroachdb
+spec:
+  ports:
+    # SQL client port
+    - name: grpc
+      port: 26257
+      targetPort: 26257
+    # Admin UI
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: cockroachdb
+    region: australia-southeast1-a
+---
+# australia-southeast1-b
+apiVersion: v1
+kind: Service
+metadata:
+  name: australia-southeast1-b
+  labels:
+    app: cockroachdb
+spec:
+  ports:
+    # SQL client port
+    - name: grpc
+      port: 26257
+      targetPort: 26257
+    # Admin UI
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: cockroachdb
+    region: australia-southeast1-b
+---
+# australia-southeast1-c
+apiVersion: v1
+kind: Service
+metadata:
+  name: australia-southeast1-c
+  labels:
+    app: cockroachdb
+spec:
+  ports:
+    # SQL client port
+    - name: grpc
+      port: 26257
+      targetPort: 26257
+    # Admin UI
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: cockroachdb
+    region: australia-southeast1-c
+---
+# intra-node service
+apiVersion: v1
+kind: Service
+metadata:
+  name: cockroachdb
+  labels:
+    app: cockroachdb
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "_status/vars"
+    prometheus.io/port: "8080"
+spec:
+  ports:
+    - port: 26257
+      targetPort: 26257
+      name: grpc
+    - port: 8080
+      targetPort: 8080
+      name: http
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    app: cockroachdb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: roach-sydney
+  labels:
+    app: cockroachdb
+    region: australia-southeast1-a
+spec:
+  serviceName: "cockroachdb"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cockroachdb
+  template:
+    metadata:
+      labels:
+        app: cockroachdb
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cockroachdb
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: roach-sydney
+        image: cockroachdb/cockroach:v21.1.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 26257
+          name: grpc
+        - containerPort: 8080
+          name: http
+        livenessProbe:
+          httpGet:
+            path: "/health"
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: "/health?ready=1"
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 2
+        volumeMounts:
+        - name: datadir
+          mountPath: /cockroach/cockroach-data
+        env:
+        - name: COCKROACH_CHANNEL
+          value: kubernetes-insecure
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+              divisor: "1"
+        - name: MEMORY_LIMIT_MIB
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+              divisor: "1Mi"
+        command:
+          - "/bin/bash"
+          - "-ecx"
+          # The use of qualified `hostname -f` is crucial:
+          # Other nodes aren't able to look up the unqualified hostname.
+          - exec
+            /cockroach/cockroach
+            start
+            --logtostderr
+            --insecure
+            --advertise-host $(hostname -f)
+            --http-addr 0.0.0.0
+            --join roach-sydney-0.cockroachdb.default.svc.cluster.local,roach-melbourne-0.cockroachdb.default.svc.cluster.local,roach-perth-0.cockroachdb.default.svc.cluster.local
+            --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB
+            --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB
+            --locality=region=australia-southeast1-a,zone=b
+      # No pre-stop hook is required, a SIGTERM plus some time is all that's
+      # needed for graceful shutdown of a node.
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: datadir
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: roach-melbourne
+  labels:
+    app: cockroachdb
+    region: australia-southeast1-b
+spec:
+  serviceName: "cockroachdb"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cockroachdb
+  template:
+    metadata:
+      labels:
+        app: cockroachdb
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cockroachdb
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: roach-melbourne
+        image: cockroachdb/cockroach:v21.1.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 26257
+          name: grpc
+        - containerPort: 8080
+          name: http
+        livenessProbe:
+          httpGet:
+            path: "/health"
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: "/health?ready=1"
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 2
+        volumeMounts:
+        - name: datadir
+          mountPath: /cockroach/cockroach-data
+        env:
+        - name: COCKROACH_CHANNEL
+          value: kubernetes-insecure
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+              divisor: "1"
+        - name: MEMORY_LIMIT_MIB
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+              divisor: "1Mi"
+        command:
+          - "/bin/bash"
+          - "-ecx"
+          # The use of qualified `hostname -f` is crucial:
+          # Other nodes aren't able to look up the unqualified hostname.
+          - exec
+            /cockroach/cockroach
+            start
+            --logtostderr
+            --insecure
+            --advertise-host $(hostname -f)
+            --http-addr 0.0.0.0
+            --join roach-sydney-0.cockroachdb.default.svc.cluster.local,roach-melbourne-0.cockroachdb.default.svc.cluster.local,roach-perth-0.cockroachdb.default.svc.cluster.local
+            --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB
+            --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB
+            --locality=region=australia-southeast1-b,zone=a
+      # No pre-stop hook is required, a SIGTERM plus some time is all that's
+      # needed for graceful shutdown of a node.
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: datadir
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: roach-perth
+  labels:
+    app: cockroachdb
+    region: australia-southeast1-c
+spec:
+  serviceName: "cockroachdb"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cockroachdb
+  template:
+    metadata:
+      labels:
+        app: cockroachdb
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cockroachdb
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: roach-perth
+        image: cockroachdb/cockroach:v21.1.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 26257
+          name: grpc
+        - containerPort: 8080
+          name: http
+        livenessProbe:
+          httpGet:
+            path: "/health"
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: "/health?ready=1"
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 2
+        volumeMounts:
+        - name: datadir
+          mountPath: /cockroach/cockroach-data
+        env:
+        - name: COCKROACH_CHANNEL
+          value: kubernetes-insecure
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+              divisor: "1"
+        - name: MEMORY_LIMIT_MIB
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+              divisor: "1Mi"
+        command:
+          - "/bin/bash"
+          - "-ecx"
+          # The use of qualified `hostname -f` is crucial:
+          # Other nodes aren't able to look up the unqualified hostname.
+          - exec
+            /cockroach/cockroach
+            start
+            --logtostderr
+            --insecure
+            --advertise-host $(hostname -f)
+            --http-addr 0.0.0.0
+            --join roach-sydney-0.cockroachdb.default.svc.cluster.local,roach-melbourne-0.cockroachdb.default.svc.cluster.local,roach-perth-0.cockroachdb.default.svc.cluster.local
+            --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB
+            --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB
+            --locality=region=australia-southeast1-c,zone=a
+      # No pre-stop hook is required, a SIGTERM plus some time is all that's
+      # needed for graceful shutdown of a node.
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: datadir
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cluster-init
+  labels:
+    app: cockroachdb
+spec:
+  template:
+    spec:
+      containers:
+      - name: cluster-init
+        image: cockroachdb/cockroach:v21.1.1
+        imagePullPolicy: IfNotPresent
+        command:
+          - "/cockroach/cockroach"
+          - "init"
+          - "--insecure"
+          - "--host=roach-sydney-0.cockroachdb"
+      restartPolicy: OnFailure
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: http-gateway
+  name: http-gateway
+spec:
+  minReadySeconds: 30
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-gateway
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: http-gateway
+    spec:
+      containers:
+      - args:
+        - --addr=:8080
+        - --enable_scd=false
+        - --gcp_prof_service_name=
+        - --grpc-backend=grpc-backend.default:8081
+        - --trace-requests=true
+        command:
+        - http-gateway
+        image: interuss-local/dss
+        imagePullPolicy: IfNotPresent
+        name: http-gateway
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthy
+            port: 8080
+        stdin: false
+        tty: false
+      terminationGracePeriodSeconds: 30
+      volumes: []
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.allow-http: "false"
+    kubernetes.io/ingress.global-static-ip-name: http-gateway
+  labels:
+    name: https-ingress
+  name: https-ingress
+spec:
+  backend:
+    serviceName: http-gateway
+    servicePort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app: http-gateway
+    name: http-gateway
+  name: http-gateway
+spec:
+  ports:
+  - name: http-gateway
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: http-gateway
+  # type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: grpc-backend
+  name: grpc-backend
+spec:
+  minReadySeconds: 30
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc-backend
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: grpc-backend
+    spec:
+      containers:
+      - args:
+        - --accepted_jwt_audiences=http-gateway
+        - --addr=:8081
+        - --cockroach_host=cockroachdb.default
+        - --cockroach_port=26257
+        - --cockroach_user=root
+        - --dump_requests=true
+        - --enable_scd=false
+        - --gcp_prof_service_name=
+        - --jwks_endpoint=https://oauth.casa-staging.rpasplatform.net/jwks.json
+        - --jwks_key_ids=1
+        - --locality=australia-southeast1-a
+        - --public_key_files=
+        command:
+        - grpc-backend
+        image: interuss-local/dss
+        imagePullPolicy: IfNotPresent
+        name: grpc-backend
+        ports:
+        - containerPort: 8081
+          name: grpc
+        stdin: false
+        tty: false
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app: grpc-backend
+    name: grpc-backend
+  name: grpc-backend
+  
+spec:
+  ports:
+  - name: grpc-backend
+    port: 8081
+    targetPort: 8081
+  selector:
+    app: grpc-backend
+  type: ClusterIP
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  clusterName: minikube
+  labels:
+    name: rid-schema-manager
+  name: rid-schema-manager
+  namespace: default
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        name: rid-schema-manager
+    spec:
+      containers:
+        - image: interuss-local/db-manager:latest
+          command: ["/usr/bin/db-manager"]
+          args: ["--cockroach_host=cockroachdb.default", "--cockroach_port=26257", "--db_version=3.1.1", "--schemas_dir=/db-schemas/defaultdb"]
+          imagePullPolicy: IfNotPresent
+          name: rid-schema-manager
+          stdin: false
+          tty: false
+          volumeMounts:
+          - mountPath: /db-schemas/defaultdb
+            name: db-rid-schema
+            readOnly: false
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: db-rid-schema
+        name: db-rid-schema
+---
+apiVersion: v1
+data:
+  000001_create_isa_subs_tables.down.sql: |-
+    DROP TABLE IF EXISTS cells_identification_service_areas;
+    DROP TABLE IF EXISTS cells_subscriptions;
+    DROP TABLE IF EXISTS identification_service_areas;
+    DROP TABLE IF EXISTS subscriptions;
+    DROP TABLE IF EXISTS schema_versions;
+  000001_create_isa_subs_tables.up.sql: "CREATE TABLE IF NOT EXISTS subscriptions
+    (\n    id UUID PRIMARY KEY,\n    owner STRING NOT NULL,\n    url STRING NOT NULL,\n
+    \   notification_index INT4 DEFAULT 0,\n    starts_at TIMESTAMPTZ,\n    ends_at
+    TIMESTAMPTZ,\n    updated_at TIMESTAMPTZ NOT NULL,\n    INDEX owner_idx (owner),\n
+    \   INDEX starts_at_idx (starts_at),\n    INDEX ends_at_idx (ends_at),\n    CHECK
+    (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at)\n);\nCREATE TABLE
+    IF NOT EXISTS cells_subscriptions (\n\t\tcell_id INT64 NOT NULL,\n\t\tcell_level
+    INT CHECK (cell_level BETWEEN 0 and 30),\n\t\tsubscription_id UUID NOT NULL REFERENCES
+    subscriptions (id) ON DELETE CASCADE,\n\t\tPRIMARY KEY (cell_id, subscription_id),\n\t\tINDEX
+    cell_id_idx (cell_id),\n\t\tINDEX subscription_id_idx (subscription_id)\n);\nCREATE
+    TABLE IF NOT EXISTS identification_service_areas (\n    id UUID PRIMARY KEY,\n
+    \   owner STRING NOT NULL,\n    url STRING NOT NULL,\n    starts_at TIMESTAMPTZ,\n
+    \   ends_at TIMESTAMPTZ,\n    updated_at TIMESTAMPTZ NOT NULL,\n    INDEX owner_idx
+    (owner),\n    INDEX starts_at_idx (starts_at),\n    INDEX ends_at_idx (ends_at),\n
+    \   INDEX updated_at_idx (updated_at),\n    CHECK (starts_at IS NULL OR ends_at
+    IS NULL OR starts_at < ends_at)\n);\nCREATE TABLE IF NOT EXISTS cells_identification_service_areas
+    (\n    cell_id INT64 NOT NULL,\n    cell_level INT CHECK (cell_level BETWEEN 0
+    and 30),\n    identification_service_area_id UUID NOT NULL REFERENCES identification_service_areas
+    (id) ON DELETE CASCADE,\n    PRIMARY KEY (cell_id, identification_service_area_id),\n
+    \   INDEX cell_id_idx (cell_id),\n    INDEX identification_service_area_id_idx
+    (identification_service_area_id)\n);\n\nCREATE TABLE IF NOT EXISTS schema_versions
+    (\n\tonerow_enforcer bool PRIMARY KEY DEFAULT TRUE CHECK(onerow_enforcer),\n\tschema_version
+    STRING NOT NULL\n);\n\nINSERT INTO schema_versions (schema_version) VALUES ('v1.0.0');"
+  000002_inverted_index.down.sql: |-
+    DROP INDEX IF EXISTS identification_service_areas@cell_idx;
+    DROP INDEX IF EXISTS subscriptions@cell_idx;
+    ALTER TABLE identification_service_areas DROP IF EXISTS cells;
+    ALTER TABLE subscriptions DROP IF EXISTS cells;
+    UPDATE schema_versions set schema_version = 'v1.0.0' WHERE onerow_enforcer = TRUE;
+  000002_inverted_index.up.sql: |-
+    ALTER TABLE identification_service_areas ADD COLUMN IF NOT EXISTS cells INT64[];
+    CREATE INVERTED INDEX IF NOT EXISTS cell_idx on identification_service_areas (cells);
+    ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cells INT64[];
+    CREATE INVERTED INDEX IF NOT EXISTS cell_idx on subscriptions (cells);
+  000003_migrate_data_to_index.down.sql: |-
+    INSERT INTO cells_identification_service_areas
+    SELECT UNNEST(cells) as cell_id,
+           13 AS cell_level,
+           id AS identification_service_area_id
+    FROM identification_service_areas
+    ON CONFLICT (identification_service_area_id, cell_id)
+    DO NOTHING;
+
+    INSERT INTO cells_subscriptions
+    SELECT UNNEST(cells) AS cell_id,
+           13 AS cell_level,
+           id AS subscription_id
+    FROM subscriptions
+    ON CONFLICT (subscription_id, cell_id)
+    DO NOTHING;
+  000003_migrate_data_to_index.up.sql: |-
+    BEGIN;
+
+    WITH compact_isa_cells AS
+        ( SELECT identification_service_area_id,
+                 array_agg(cell_id) AS cell_ids
+         FROM cells_identification_service_areas
+         GROUP BY identification_service_area_id)
+    UPDATE identification_service_areas isa
+    SET cells = compact_isa_cells.cell_ids
+    FROM compact_isa_cells
+    WHERE isa.id = compact_isa_cells.identification_service_area_id
+        AND cells IS NULL;
+
+    COMMIT;
+
+    BEGIN;
+
+    WITH compact_sub_cells AS
+        ( SELECT subscription_id,
+                 array_agg(cell_id) AS cell_ids
+         FROM cells_subscriptions
+         GROUP BY subscription_id)
+    UPDATE subscriptions subs
+    SET cells = compact_sub_cells.cell_ids
+    FROM compact_sub_cells
+    WHERE subs.id = compact_sub_cells.subscription_id
+        AND cells IS NULL;
+
+    COMMIT;
+
+    ALTER TABLE identification_service_areas ALTER COLUMN cells SET NOT NULL;
+    ALTER TABLE subscriptions ALTER COLUMN cells SET NOT NULL;
+    ALTER TABLE identification_service_areas ADD CONSTRAINT isa_cells_not_null CHECK (array_length(cells, 1) IS NOT NULL);
+    ALTER TABLE subscriptions ADD CONSTRAINT subs_cells_not_null CHECK (array_length(cells, 1) IS NOT NULL);
+    ALTER TABLE identification_service_areas DROP CONSTRAINT IF EXISTS cells_not_null;
+    ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS cells_not_null;
+  000004_drop_cells_table.down.sql: "CREATE TABLE IF NOT EXISTS cells_identification_service_areas
+    (\n    cell_id INT64 NOT NULL,\n    cell_level INT CHECK (cell_level BETWEEN 0
+    and 30),\n    identification_service_area_id UUID NOT NULL REFERENCES identification_service_areas
+    (id) ON DELETE CASCADE,\n    PRIMARY KEY (cell_id, identification_service_area_id),\n
+    \   INDEX cell_id_idx (cell_id),\n    INDEX identification_service_area_id_idx
+    (identification_service_area_id)\n);\n\nCREATE TABLE IF NOT EXISTS cells_subscriptions
+    (\n\t\tcell_id INT64 NOT NULL,\n\t\tcell_level INT CHECK (cell_level BETWEEN 0
+    and 30),\n\t\tsubscription_id UUID NOT NULL REFERENCES subscriptions (id) ON DELETE
+    CASCADE,\n\t\tPRIMARY KEY (cell_id, subscription_id),\n\t\tINDEX cell_id_idx (cell_id),\n\t\tINDEX
+    subscription_id_idx (subscription_id)\n);"
+  000004_drop_cells_table.up.sql: |-
+    DROP TABLE IF EXISTS cells_identification_service_areas;
+    DROP TABLE IF EXISTS cells_subscriptions;
+    UPDATE schema_versions set schema_version = 'v2.0.0' WHERE onerow_enforcer = TRUE;
+  000005_bump_version.down.sql: UPDATE schema_versions set schema_version = 'v2.0.0'
+    WHERE onerow_enforcer = TRUE;
+  000005_bump_version.up.sql: UPDATE schema_versions set schema_version = 'v3.0.0'
+    WHERE onerow_enforcer = TRUE;
+  000006_add_writer_column.down.sql: |-
+    ALTER TABLE identification_service_areas DROP IF EXISTS writer;
+    ALTER TABLE subscriptions DROP IF EXISTS writer;
+    UPDATE schema_versions set schema_version = 'v3.0.0' WHERE onerow_enforcer = TRUE;
+  000006_add_writer_column.up.sql: |
+    ALTER TABLE identification_service_areas ADD COLUMN IF NOT EXISTS writer STRING;
+    ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS writer STRING;
+    UPDATE schema_versions set schema_version = 'v3.1.0' WHERE onerow_enforcer = TRUE;
+  000007_add_index_by_time_subscriptions.down.sql: |-
+    DROP INDEX IF EXISTS subscriptions@subs_by_time_with_owner;
+    UPDATE schema_versions set schema_version = 'v3.1.0' WHERE onerow_enforcer = TRUE;
+  000007_add_index_by_time_subscriptions.up.sql: |-
+    CREATE INDEX subs_by_time_with_owner ON subscriptions (ends_at) STORING (owner);
+    UPDATE schema_versions set schema_version = 'v3.1.1' WHERE onerow_enforcer = TRUE;
+kind: ConfigMap
+metadata:
+  labels:
+    name: db-rid-schema
+  name: db-rid-schema
+---
+# apiVersion: batch/v1
+# kind: Job
+# metadata:
+#   labels:
+#     name: rid-schema-manager
+#   name: rid-schema-manager
+# spec:
+#   completions: 1
+#   parallelism: 1
+#   template:
+#     metadata:
+#       annotations:
+#         sidecar.istio.io/inject: "false"
+#       labels:
+#         name: rid-schema-manager
+#     spec:
+#       containers:
+#         - image: interuss-local/db-manager:latest
+#           command: ["/usr/bin/db-manager"]
+#           args: ["--cockroach_host=cockroachdb.default", "--cockroach_port=26257", "--db_version=3.1.1", "--schemas_dir=/db-schemas/defaultdb"]
+#           imagePullPolicy: IfNotPresent
+#           name: rid-schema-manager
+#           stdin: false
+#           tty: false
+#           volumeMounts:
+#           - mountPath: /db-schemas/defaultdb
+#             name: db-rid-schema
+#             readOnly: false
+#       restartPolicy: OnFailure
+#       terminationGracePeriodSeconds: 30
+#       volumes:
+#       - configMap:
+#           defaultMode: 420
+#           name: db-rid-schema
+#         name: db-rid-schema
