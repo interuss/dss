@@ -1,0 +1,6 @@
+pyproj==3.0.0
+shapely==1.7.1
+arrow==1.1.0
+faker===8.1.0
+geojson===2.5.0
+-r ../monitorlib/requirements.txt

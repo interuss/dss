@@ -15,6 +15,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
+from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from . import common
 
 
@@ -97,10 +98,8 @@ def test_create_isa_concurrent(session):
     data = resp.json()
     assert data['service_area']['id'] == isa_id
     assert data['service_area']['flights_url'] == 'https://example.com/dss'
-    assert data['service_area']['time_start'] == time_start.strftime(
-      rid.DATE_FORMAT)
-    assert data['service_area']['time_end'] == time_end.strftime(
-      rid.DATE_FORMAT)
+    assert_datetimes_are_equal(data['service_area']['time_start'], req['extents']['time_start'])
+    assert_datetimes_are_equal(data['service_area']['time_end'], req['extents']['time_end'])
     assert re.match(r'[a-z0-9]{10,}$', data['service_area']['version'])
     assert 'subscribers' in data
 

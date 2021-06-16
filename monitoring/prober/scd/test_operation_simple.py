@@ -13,6 +13,7 @@ import datetime
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM
+from monitoring.monitorlib.testing import assert_datetimes_are_equal
 
 
 BASE_URL = 'https://example.com/uss'
@@ -125,8 +126,8 @@ def test_create_op(scd_session):
   op = data['operation_reference']
   assert op['id'] == OP_ID
   assert op['uss_base_url'] == BASE_URL
-  assert op['time_start']['value'] == req['extents'][0]['time_start']['value']
-  assert op['time_end']['value'] == req['extents'][0]['time_end']['value']
+  assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
+  assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
   assert op['version'] == 1
   assert 'subscription_id' in op
   assert 'state' not in op

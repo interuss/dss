@@ -1,12 +1,9 @@
 import datetime
 import enum
-import json
 from typing import Dict, List, Tuple
 
-import requests
+import arrow
 from termcolor import colored
-
-from monitoring.monitorlib import infrastructure
 
 
 class Change(enum.Enum):
@@ -135,3 +132,12 @@ def format_timedelta(td: datetime.timedelta) -> str:
     return sign + '{:s}d{:s}:{:s}:{:s}'.format(*segments)
   else:
     return sign + '{:s}:{:s}:{:s}'.format(*segments[1:])
+
+
+def make_datetime(t) -> datetime.datetime:
+  if isinstance(t, str):
+    return arrow.get(t).datetime
+  elif isinstance(t, datetime.datetime):
+    return arrow.get(t).datetime
+  else:
+    raise ValueError('Could not convert {} to datetime'.format(str(type(t))))

@@ -15,6 +15,8 @@ import datetime
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
+from monitoring.monitorlib.testing import assert_datetimes_are_equal
+
 
 SUB_ID = '000000b7-cf7e-4d9a-af00-6963ca000000'
 
@@ -89,8 +91,8 @@ def test_create_sub(scd_session):
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  assert data['subscription']['time_start']['value'] == req['extents']['time_start']['value']
-  assert data['subscription']['time_end']['value'] == req['extents']['time_end']['value']
+  assert_datetimes_are_equal(data['subscription']['time_start']['value'], req['extents']['time_start']['value'])
+  assert_datetimes_are_equal(data['subscription']['time_end']['value'], req['extents']['time_end']['value'])
   _check_sub1(data, SUB_ID)
 
 
@@ -141,8 +143,8 @@ def test_mutate_sub(scd_session):
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  assert scd.iso8601_equal(data['subscription']['time_start']['value'], req['extents']['time_start']['value'])
-  assert scd.iso8601_equal(data['subscription']['time_end']['value'], req['extents']['time_end']['value'])
+  assert_datetimes_are_equal(data['subscription']['time_start']['value'], req['extents']['time_start']['value'])
+  assert_datetimes_are_equal(data['subscription']['time_end']['value'], req['extents']['time_end']['value'])
 
 
 @default_scope(SCOPE_SC)
