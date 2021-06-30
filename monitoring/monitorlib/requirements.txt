@@ -2,8 +2,11 @@ arrow==1.1.0
 cryptography==3.3.2
 flask==1.1.2
 google-auth==1.6.3
+jsonpickle==0.3.0
 jwcrypto==0.7
+lxml==4.6.3
 pyjwt==1.7.1
+pykml==0.2.0
 pytimeparse==1.1.8
 pyyaml==5.4
 requests==2.25.1
