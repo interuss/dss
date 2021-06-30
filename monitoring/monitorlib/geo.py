@@ -46,8 +46,8 @@ def flatten(reference: s2sphere.LatLng, point: s2sphere.LatLng) -> Tuple[float, 
 def unflatten(reference: s2sphere.LatLng, point: Tuple[float, float]) -> s2sphere.LatLng:
   """Locally unflatten a (dx, dy) point to an absolute lat-lng point."""
   return s2sphere.LatLng.from_degrees(
-    reference.lat().degrees + point[1] * 360 / (EARTH_CIRCUMFERENCE_KM * 1000 * math.cos(reference.lat().radians)),
-    reference.lng().degrees + point[0] * 360 / (EARTH_CIRCUMFERENCE_KM * 1000)
+    reference.lat().degrees + point[1] * 360 / (EARTH_CIRCUMFERENCE_KM * 1000),
+    reference.lng().degrees + point[0] * 360 / (EARTH_CIRCUMFERENCE_KM * 1000 * math.cos(reference.lat().radians))
   )
 
 
