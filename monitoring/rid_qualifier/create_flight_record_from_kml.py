@@ -5,12 +5,11 @@ import s2sphere
 import datetime
 from json import JSONEncoder
 from datetime import datetime, timedelta
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, Point, Polygon
 from monitoring.monitorlib import kml
 from monitoring.monitorlib.geo import flatten, unflatten
 from monitoring.rid_qualifier.utils import FlightDetails, FullFlightRecord
 from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition, RIDFlightDetails, LatLngPoint
-from monitoring.monitorlib.rid_automated_testing.injection_api import OperatorLocation
 from typing import List
 
 # TODO: Need to know value for ALTITUDE_AGL
@@ -43,11 +42,6 @@ def check_if_vertex_is_correct(point1, point2, point3, flight_distance):
     assert abs(
         points_distance_difference - flight_distance
         ) < 0.2, f'Generated vertex is not correct. {point1}, {point2}, {point3}, {flight_distance}'
-
-
-def test_distance_bw_two_points(last_flight_state, state_vertex):
-    distance_bw_last_two_states = get_distance_between_two_points(last_flight_state, state_vertex)
-    assert distance_bw_last_two_states < 1.9, f'Points are not equally positioned.{last_flight_state}, {state_vertex}'
 
 
 def get_flight_state_vertices(flatten_points):
@@ -185,6 +179,28 @@ def generate_flight_record(state_coordinates, flight_description, operator_locat
         states=flight_telemetry,
         flight_details=flight_details)
 
+def get_flight_alt_polygons_flattened(reference_point, alt_polygons):
+    """Returns flattened altitude polygons."""
+    alt_polygons_flatten = []
+    for input_coordinates in alt_polygons.values():
+        flatten_coordinates = []
+        for coord in input_coordinates:
+            flatten_coordinates.append(flatten(
+                s2sphere.LatLng.from_degrees(*reference_point[:2]),
+                s2sphere.LatLng.from_degrees(coord[1], coord[0])
+            ))
+        alt_polygons_flatten.append(flatten_coordinates)
+
+    return alt_polygons_flatten
+
+def get_nearest_polygon_from_point(point, polygons):
+    """Returns index of the nearest polygon."""
+    distances = []
+    for poly in polygons:
+        distances.append(Point(*point).distance(Polygon(poly)))
+    return distances.index(min(distances))
+
+
 def get_flight_state_coordinates(flight_details):
     """Returns flight's state coordinates at speed/sec.
     Args:
@@ -195,8 +211,8 @@ def get_flight_state_coordinates(flight_details):
     if flight_details.get('input_coordinates'):
         input_coordinates = get_flight_coordinates(flight_details['input_coordinates'])
     reference_point = input_coordinates[0] # TODO: Check `if input_coordinates:`.
-    alt = reference_point[2] # TODO: Get alt from input_coordinates.
-    alt = 140
+    alt_polygons = flight_details['alt_polygons']
+    flattened_polygons = get_flight_alt_polygons_flattened(reference_point, alt_polygons)
     flatten_points = []
     for point in input_coordinates:
         flatten_points.append(flatten(
@@ -205,14 +221,21 @@ def get_flight_state_coordinates(flight_details):
         ))
     
     flight_state_vertices = get_flight_state_vertices(flatten_points)
+    all_polygon_alts = [p[0][2] for p in list(alt_polygons.values())]
+    flight_state_altitudes = []
+    for point in flight_state_vertices:
+        nearest_polygon_index = get_nearest_polygon_from_point(point, flattened_polygons)
+        flight_state_altitudes.append(all_polygon_alts[nearest_polygon_index])
     flight_state_vertices_unflatten = [unflatten(
         s2sphere.LatLng.from_degrees(*reference_point[:2]), v) for v in flight_state_vertices]
 
     # Position Lat, Lng to Lng, Lat order for KML representation.
-    flight_state_vertices_unflatten = [(
-        str(p.lng().degrees), str(p.lat().degrees), str(alt)
-    ) for p in flight_state_vertices_unflatten]
-    return flight_state_vertices_unflatten
+    flight_state_coordinates = []
+    for p, alt in zip(flight_state_vertices_unflatten, flight_state_altitudes):
+        flight_state_coordinates.append((
+            str(p.lng().degrees), str(p.lat().degrees), str(alt)
+        ))
+    return flight_state_coordinates
 
 
 def write_to_json_file(data, file_name):

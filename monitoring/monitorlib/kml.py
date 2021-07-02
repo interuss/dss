@@ -38,18 +38,18 @@ def get_folder_details(folder_elem):
             }
         if polygons:
             if placemark_name.startswith('alt:'):
-                alt_polygons.update({placemark.name: polygons[0].outerBoundaryIs.LinearRing.coordinates})
+                polygon_coords = get_coordinates_from_kml(polygons[0].outerBoundaryIs.LinearRing.coordinates)
+                alt_polygons.update({placemark_name: polygon_coords})
             if placemark_name.startswith('speed:'):
                 if not get_polygon_speed(placemark_name):
                     # TODO: raise error
                     pass
-                speed_polygons.update({placemark.name: polygons[0].outerBoundaryIs.LinearRing.coordinates})
+                speed_polygons.update({placemark_name: polygons[0].outerBoundaryIs.LinearRing.coordinates})
         
         coords = placemark.xpath('.//kml:LineString/kml:coordinates', namespaces=KML_NAMESPACE)
         if coords:
             coordinates = coords
             coordinates = get_coordinates_from_kml(coordinates)
-        print(f'from xpath placemarks: {placemark.name}....{len(polygons)}')
     
     return  {
         str(folder_elem.name): {
@@ -86,7 +86,6 @@ def get_kml_content(kml_file):
     folders = get_folders(root)
     kml_content = {}
     for folder in folders:
-        print(folder.name)
         folder_details = get_folder_details(folder)
         if folder_details:
             kml_content.update(folder_details)
