@@ -179,6 +179,7 @@ def generate_flight_record(state_coordinates, flight_description, operator_locat
         states=flight_telemetry,
         flight_details=flight_details)
 
+
 def get_flight_alt_polygons_flattened(reference_point, alt_polygons):
     """Returns flattened altitude polygons."""
     alt_polygons_flatten = []
@@ -193,13 +194,41 @@ def get_flight_alt_polygons_flattened(reference_point, alt_polygons):
 
     return alt_polygons_flatten
 
-def get_nearest_polygon_from_point(point, polygons):
-    """Returns index of the nearest polygon."""
+
+def get_polygons_distances_from_point(point, polygons):
+    """Returns a list of distances for a point from surrounding polygons.
+    Args:
+        point: A tuple of x,y coordinates.
+        polygons: A list of flattened polygons.
+    Returns:
+        A list of distances in meters.
+    """
     distances = []
     for poly in polygons:
         distances.append(Point(*point).distance(Polygon(poly)))
-    return distances.index(min(distances))
+    return distances
 
+def get_interpolated_altitude(point, polygons, all_polygon_alts):
+    """Returns interpolated altitude wrt. to the relative distances from surrounding polygons.
+    Args:
+        point: A tuple of flattened x,y point.
+        polygons: A list of flattened polygons.
+        all_polygon_alts: All surrounding polygons' altitude.
+    Returns:
+        An altitude number.
+    """
+    distances = get_polygons_distances_from_point(point, polygons)
+    if min(distances) < 1:
+        # less than 1 meter, consider it almost on the polygon.
+        alt = all_polygon_alts[distances.index(min(distances))]
+    else:
+        dividend = 0
+        divisor = 0
+        for alt, distance in zip(all_polygon_alts, distances):
+            dividend += alt/distance
+            divisor += 1/distance 
+        alt = dividend / divisor
+    return alt
 
 def get_flight_state_coordinates(flight_details):
     """Returns flight's state coordinates at speed/sec.
@@ -224,8 +253,8 @@ def get_flight_state_coordinates(flight_details):
     all_polygon_alts = [p[0][2] for p in list(alt_polygons.values())]
     flight_state_altitudes = []
     for point in flight_state_vertices:
-        nearest_polygon_index = get_nearest_polygon_from_point(point, flattened_polygons)
-        flight_state_altitudes.append(all_polygon_alts[nearest_polygon_index])
+        alt = get_interpolated_altitude(point, flattened_polygons, all_polygon_alts)
+        flight_state_altitudes.append(alt)
     flight_state_vertices_unflatten = [unflatten(
         s2sphere.LatLng.from_degrees(*reference_point[:2]), v) for v in flight_state_vertices]
 
