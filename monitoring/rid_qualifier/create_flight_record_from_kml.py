@@ -1,4 +1,8 @@
+#!/usr/bin/env python
+
 # A file to generate Flight Records from KML.
+import os
+import argparse
 import jsonpickle
 import math
 import s2sphere
@@ -44,19 +48,24 @@ def check_if_vertex_is_correct(point1, point2, point3, flight_distance):
         ) < 0.2, f'Generated vertex is not correct. {point1}, {point2}, {point3}, {flight_distance}'
 
 
-def get_flight_state_vertices(flatten_points):
+def get_flight_state_vertices(flatten_points, flattened_speed_polygons, all_polygon_speeds):
     """Get flight state vertices at flight distance's m/s interval.
     Args:
         flatten_points: A list of x,y coordinates on flattening KML's Lat,Lng points.
+        flattened_speed_polygons: Surrounding  speed polygons.
+        all_polygon_speeds: Speeds from all polygons.
     Returns:
         A list of vertices found at every interval of flight state.
     """
     points = iter(flatten_points)
     point1 = next(points)
     point2 = next(points)
-    flight_distance = get_distance_travelled()
+    
     flight_state_vertices = []
+    flight_state_speeds = []
     while True:
+        flight_distance = get_interpolated_value(point1, flattened_speed_polygons, all_polygon_speeds, round_value=True)
+        flight_state_speeds.append(flight_distance)
         input_coord_gap = get_distance_between_two_points(point1, point2)
         if input_coord_gap <= 0:
             # points are overlapping
@@ -102,7 +111,7 @@ def get_flight_state_vertices(flatten_points):
                         break
                 point1 = state_vertex
         
-    return flight_state_vertices
+    return flight_state_vertices, flight_state_speeds
 
 
 def get_vertex_between_points(point1, point2, at_distance):
@@ -128,12 +137,13 @@ def output_coordinates_to_file(flight_state_coords, filename):
     with open(f'monitoring/rid_qualifier/test_data/{filename}.txt', 'w') as text_file:
         text_file.write(flight_state_vertices_str)
 
-def generate_flight_record(state_coordinates, flight_description, operator_location):
+def generate_flight_record(
+    state_coordinates, flight_description, operator_location, flight_state_speeds):
     timestamp = datetime.now()
     now_isoformat = timestamp.isoformat()
 
     flight_telemetry: List[List[RIDAircraftState]] = []
-    for coordinates in state_coordinates:
+    for coordinates, speed in zip(state_coordinates, flight_state_speeds):
         timestamp = timestamp + timedelta(0, STATE_INCREMENT_SECONDS)
         timestamp_isoformat = timestamp.isoformat()
         aircraft_position = RIDAircraftPosition(
@@ -156,7 +166,7 @@ def generate_flight_record(state_coordinates, flight_description, operator_locat
             # TODO: track ?
             track=198.57516619987473,
             # TODO: Speed to be fetched relative to speed polygon.
-            speed=2,
+            speed=speed,
             timestamp_accuracy=float(flight_description.get('timestamp_accuracy', '0.0')),
             speed_accuracy=flight_description.get('speed_accuracy', ''),
             # TODO: vertical_speed ?
@@ -180,7 +190,7 @@ def generate_flight_record(state_coordinates, flight_description, operator_locat
         flight_details=flight_details)
 
 
-def get_flight_alt_polygons_flattened(reference_point, alt_polygons):
+def get_flight_polygons_flattened(reference_point, alt_polygons):
     """Returns flattened altitude polygons."""
     alt_polygons_flatten = []
     for input_coordinates in alt_polygons.values():
@@ -208,40 +218,44 @@ def get_polygons_distances_from_point(point, polygons):
         distances.append(Point(*point).distance(Polygon(poly)))
     return distances
 
-def get_interpolated_altitude(point, polygons, all_polygon_alts):
+def get_interpolated_value(point, polygons, all_possible_values, round_value=False):
     """Returns interpolated altitude wrt. to the relative distances from surrounding polygons.
     Args:
         point: A tuple of flattened x,y point.
         polygons: A list of flattened polygons.
-        all_polygon_alts: All surrounding polygons' altitude.
+        all_possible_values: All surrounding polygons' values. Values can be altitude or speed.
     Returns:
         An altitude number.
     """
     distances = get_polygons_distances_from_point(point, polygons)
-    if min(distances) < 1:
+    if min(distances) < 0.1:
         # less than 1 meter, consider it almost on the polygon.
-        alt = all_polygon_alts[distances.index(min(distances))]
+        interpolated_value = all_possible_values[distances.index(min(distances))]
     else:
         dividend = 0
         divisor = 0
-        for alt, distance in zip(all_polygon_alts, distances):
-            dividend += alt/distance
+        for value, distance in zip(all_possible_values, distances):
+            dividend += value/distance
             divisor += 1/distance 
-        alt = dividend / divisor
-    return alt
+        interpolated_value = dividend / divisor
+    return round(interpolated_value, 2) if round_value else interpolated_value
+
+
+def get_speeds_from_speed_polygons(speed_polygons):
+    return [kml.get_polygon_speed(n) for n in list(speed_polygons)]
+   
 
 def get_flight_state_coordinates(flight_details):
     """Returns flight's state coordinates at speed/sec.
     Args:
         flight_details: Flight details from the KML that include input coordinates.
     Returns:
-        List of unflatten coordinates at a speed/sec interval.
+        List of unflatten coordinates at a speed/sec interval and list of speeds at each point.
     """
     if flight_details.get('input_coordinates'):
         input_coordinates = get_flight_coordinates(flight_details['input_coordinates'])
     reference_point = input_coordinates[0] # TODO: Check `if input_coordinates:`.
-    alt_polygons = flight_details['alt_polygons']
-    flattened_polygons = get_flight_alt_polygons_flattened(reference_point, alt_polygons)
+    
     flatten_points = []
     for point in input_coordinates:
         flatten_points.append(flatten(
@@ -249,12 +263,25 @@ def get_flight_state_coordinates(flight_details):
             s2sphere.LatLng.from_degrees(*point[:2])
         ))
     
-    flight_state_vertices = get_flight_state_vertices(flatten_points)
+    speed_polygons = flight_details['speed_polygons']
+    flattened_speed_polygons = get_flight_polygons_flattened(reference_point, speed_polygons)
+    all_polygon_speeds = get_speeds_from_speed_polygons(speed_polygons)
+    flight_state_vertices, flight_state_speeds = get_flight_state_vertices(
+        flatten_points, flattened_speed_polygons, all_polygon_speeds)
+    
+    alt_polygons = flight_details['alt_polygons']
+    flattened_alt_polygons = get_flight_polygons_flattened(reference_point, alt_polygons)
     all_polygon_alts = [p[0][2] for p in list(alt_polygons.values())]
+
+    # return
+    
     flight_state_altitudes = []
+    # flight_state_speeds = []
     for point in flight_state_vertices:
-        alt = get_interpolated_altitude(point, flattened_polygons, all_polygon_alts)
-        flight_state_altitudes.append(alt)
+        flight_state_altitudes.append(
+            get_interpolated_value(point, flattened_alt_polygons, all_polygon_alts))
+        # flight_state_speeds.append(
+        #     get_interpolated_value(point, flattened_speed_polygons, all_polygon_speeds, round_value=True))
     flight_state_vertices_unflatten = [unflatten(
         s2sphere.LatLng.from_degrees(*reference_point[:2]), v) for v in flight_state_vertices]
 
@@ -264,25 +291,60 @@ def get_flight_state_coordinates(flight_details):
         flight_state_coordinates.append((
             str(p.lng().degrees), str(p.lat().degrees), str(alt)
         ))
-    return flight_state_coordinates
+    return flight_state_coordinates, flight_state_speeds
 
 
 def write_to_json_file(data, file_name):
     with open(f'monitoring/rid_qualifier/test_data/{file_name}.json', 'w') as outfile:
         outfile.write(jsonpickle.encode(data, unpicklable=False))
 
-def main():
-    # TODO: get KML file as user input
-    kml_file = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
+def main(kml_file, debug_mode=None):
+    # kml_file = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
     kml_content = kml.get_kml_content(kml_file)
     flight_state_coordinates = {}
     for flight_name, flight_details in kml_content.items():
         flight_description = flight_details['description']
         operator_location = flight_details['operator_location']
-        flight_state_coordinates = get_flight_state_coordinates(flight_details)
-        flight_record = generate_flight_record(flight_state_coordinates, flight_description, operator_location)
+        flight_state_coordinates, flight_state_speeds = get_flight_state_coordinates(
+            flight_details)
+        if debug_mode:
+            flight_state_vertices_unflatten = [','.join(p) for p in flight_state_coordinates]
+            flight_state_vertices_str = '\n'.join(flight_state_vertices_unflatten)
+            with open(f'monitoring/rid_qualifier/test_data/kml_state_{flight_name}.txt', 'w') as text_file:
+                text_file.write(flight_state_vertices_str)
+        flight_record = generate_flight_record(
+            flight_state_coordinates,
+            flight_description,
+            operator_location,
+            flight_state_speeds)
         write_to_json_file(flight_record, flight_name.replace('flight: ', ''))
+
+def init_argparse() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        usage="%(prog)s [OPTION] [FILE]",
+        description="Generates All Flights' state records from the KML file."
+    )
+    parser.add_argument(
+        "-f", "--kml-file",
+        help='Path to flight record KML file',
+        type=str, default=None, required=True
+    )
+    parser.add_argument(
+        "-d", "--debug",
+        help='Set Debug to true to generate output coordinates to test in KML.',
+        type=bool, default=None)
+    return parser
 
 
 if __name__ == '__main__':
-    main()
+    parser = init_argparse()
+    args = parser.parse_args()
+    if args.kml_file:
+        kml_file = args.kml_file
+        print(kml_file)
+        if os.path.isfile(kml_file):
+            file = open(kml_file, 'r')
+        else:
+            raise 'Invalid file path.'
+        debug_mode = args.debug
+        main(kml_file, debug_mode=debug_mode)

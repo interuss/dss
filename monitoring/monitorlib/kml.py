@@ -38,19 +38,21 @@ def get_folder_details(folder_elem):
             }
         if polygons:
             if placemark_name.startswith('alt:'):
-                polygon_coords = get_coordinates_from_kml(polygons[0].outerBoundaryIs.LinearRing.coordinates)
+                polygon_coords = get_coordinates_from_kml(
+                    polygons[0].outerBoundaryIs.LinearRing.coordinates)
                 alt_polygons.update({placemark_name: polygon_coords})
             if placemark_name.startswith('speed:'):
                 if not get_polygon_speed(placemark_name):
                     # TODO: raise error
                     pass
-                speed_polygons.update({placemark_name: polygons[0].outerBoundaryIs.LinearRing.coordinates})
+                polygon_coords = get_coordinates_from_kml(
+                    polygons[0].outerBoundaryIs.LinearRing.coordinates)
+                speed_polygons.update({placemark_name: polygon_coords})
         
         coords = placemark.xpath('.//kml:LineString/kml:coordinates', namespaces=KML_NAMESPACE)
         if coords:
             coordinates = coords
             coordinates = get_coordinates_from_kml(coordinates)
-    
     return  {
         str(folder_elem.name): {
             'description': get_folder_description(folder_elem),
@@ -68,6 +70,7 @@ def get_coordinates_from_kml(coordinates):
     """
     if coordinates:
        return [tuple(float(x.strip()) for x in c.split(',')) for c in str(coordinates[0]).split(' ') if c.strip()]
+
 
 def get_folder_description(folder_elem, to_json=True):
     """Returns folder description from KML.
@@ -90,6 +93,7 @@ def get_kml_content(kml_file):
         if folder_details:
             kml_content.update(folder_details)
     return kml_content
+
 
 if __name__ == '__main__':
     kml_path = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
