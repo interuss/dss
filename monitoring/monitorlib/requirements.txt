@@ -2,7 +2,7 @@ arrow==1.1.0
 cryptography==3.3.2
 flask==1.1.2
 google-auth==1.6.3
-jsonpickle==0.3.0
+jsonpickle==2.0.0
 jwcrypto==0.7
 lxml==4.6.3
 pyjwt==1.7.1
