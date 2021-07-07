@@ -59,7 +59,7 @@ class AdjacentCircularFlightsSimulator():
         box = shapely.geometry.box(self.minx, self.miny, self.maxx, self.maxy)
         area = abs(self.geod.geometry_area_perimeter(box)[0])
 
-        # Have a area less than 500m x 500m square and more than 300m x 300m square to ensure a 70 m diameter tracks
+        # Have a area less than 500m x 500m square and more than 300m x 300m square to ensure a 50 m diameter tracks
         if (area) < 250000 and (area) > 90000:
             return
         else:
@@ -154,12 +154,12 @@ class AdjacentCircularFlightsSimulator():
                 grid_cells.append(shapely.geometry.box(x0, y0, x1, y1))
 
         all_grid_cell_tracks = []
-        ''' For each of the boxes (grid) allocated to the operator, get the centroid and buffer to generate a flight path. A 70 m radius is provided to have flight paths within each of the boxes '''
+        ''' For each of the boxes (grid) allocated to the operator, get the centroid and buffer to generate a flight path. A 50 m radius is provided to have flight paths within each of the boxes '''
         # Iterate over the flight_grid
         for grid_cell in grid_cells:
             center = grid_cell.centroid
             center_utm = self.utm_converter(center)
-            buffer_shape_utm = center_utm.buffer(70)
+            buffer_shape_utm = center_utm.buffer(50)
             buffered_path = self.utm_converter(buffer_shape_utm, inverse=True)
             altitude = altitude_of_ground_level_wgs_84 + self.altitude_agl  # meters WGS 84
             flight_points_with_altitude = []
