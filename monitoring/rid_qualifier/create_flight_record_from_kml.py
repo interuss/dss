@@ -294,14 +294,22 @@ def get_flight_state_coordinates(flight_details):
     return flight_state_coordinates, flight_state_speeds
 
 
-def write_to_json_file(data, file_name):
-    with open(f'monitoring/rid_qualifier/test_data/{file_name}.json', 'w') as outfile:
+def write_to_json_file(data, file_name, output_folder):
+    with open(f'{output_folder}/{file_name}.json', 'w') as outfile:
         outfile.write(jsonpickle.encode(data, unpicklable=False))
+
+
+def create_output_folder(folder_path):
+    directory = os.path.dirname(folder_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 def main(kml_file, debug_mode=None):
     # kml_file = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
     kml_content = kml.get_kml_content(kml_file)
     flight_state_coordinates = {}
+    output_folder = 'monitoring/rid_qualifier/test_data'
+    create_output_folder(output_folder)
     for flight_name, flight_details in kml_content.items():
         flight_description = flight_details['description']
         operator_location = flight_details['operator_location']
@@ -310,14 +318,14 @@ def main(kml_file, debug_mode=None):
         if debug_mode:
             flight_state_vertices_unflatten = [','.join(p) for p in flight_state_coordinates]
             flight_state_vertices_str = '\n'.join(flight_state_vertices_unflatten)
-            with open(f'monitoring/rid_qualifier/test_data/kml_state_{flight_name}.txt', 'w') as text_file:
+            with open(f'{output_folder}/kml_state_{flight_name}.txt', 'w') as text_file:
                 text_file.write(flight_state_vertices_str)
         flight_record = generate_flight_record(
             flight_state_coordinates,
             flight_description,
             operator_location,
             flight_state_speeds)
-        write_to_json_file(flight_record, flight_name.replace('flight: ', ''))
+        write_to_json_file(flight_record, flight_name.replace('flight: ', ''), output_folder=output_folder)
 
 def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
