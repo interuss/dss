@@ -1,4 +1,3 @@
-import copy
 import datetime
 from typing import List, Optional, Tuple
 
@@ -7,9 +6,10 @@ import iso8601
 import s2sphere
 
 from monitoring.monitorlib import geo, rid
+from monitoring.monitorlib.rid_automated_testing import injection_api, observation_api
 from monitoring.rid_qualifier.mock import behavior
 from monitoring.rid_qualifier.mock.database import db
-from . import api, clustering, webapp
+from . import clustering, webapp
 
 
 FLIGHT_ACCESSIBLE_DURATION = datetime.timedelta(seconds=65) # after last telemetry
@@ -18,7 +18,7 @@ FLIGHT_ACCESSIBLE_DURATION = datetime.timedelta(seconds=65) # after last telemet
 def _make_position_report(
     true_lat: float, true_lng: float, true_alt: float,
     sp_behavior: behavior.ServiceProviderBehavior,
-    dp_behavior: behavior.DisplayProviderBehavior) -> api.Position:
+    dp_behavior: behavior.DisplayProviderBehavior) -> observation_api.Position:
   lat = true_lat
   lng = true_lng
   alt = true_alt
@@ -26,14 +26,14 @@ def _make_position_report(
     temp = lat
     lat = lng
     lng = temp
-  return api.Position(lat=lat, lng=lng, alt=alt)
+  return observation_api.Position(lat=lat, lng=lng, alt=alt)
 
 
-def _make_api_flight(flight: api.TestFlight,
+def _make_api_flight(flight: injection_api.TestFlight,
                      sp_behavior: behavior.ServiceProviderBehavior,
                      dp_behavior: behavior.DisplayProviderBehavior,
                      t_earliest: datetime.datetime, t_now: datetime.datetime,
-                     lat_min: float, lng_min: float, lat_max: float, lng_max: float) -> api.Flight:
+                     lat_min: float, lng_min: float, lat_max: float, lng_max: float) -> observation_api.Flight:
   """Extract the currently-relevant information from a TestFlight.
 
   :param flight: TestFlight with telemetry for all time
@@ -41,10 +41,10 @@ def _make_api_flight(flight: api.TestFlight,
   :param t_now: The time after which telemetry should be ignored
   :return: Flight information currently visible in the remote ID system
   """
-  paths: List[List[api.Position]] = []
-  current_path: List[api.Position] = []
-  previous_position: Optional[api.Position] = None
-  most_recent_position: Optional[Tuple[datetime.datetime, api.Position]] = None
+  paths: List[List[observation_api.Position]] = []
+  current_path: List[observation_api.Position] = []
+  previous_position: Optional[observation_api.Position] = None
+  most_recent_position: Optional[Tuple[datetime.datetime, observation_api.Position]] = None
 
   for telemetry in flight.telemetry:
     t = iso8601.parse_date(telemetry.timestamp)
@@ -91,10 +91,10 @@ def _make_api_flight(flight: api.TestFlight,
 
   kwargs = {'id': flight.get_id(t_now)}
   if paths and not dp_behavior.always_omit_recent_paths:
-    kwargs['recent_paths'] = [api.Path(positions=p) for p in paths]
+    kwargs['recent_paths'] = [observation_api.Path(positions=p) for p in paths]
   if most_recent_position:
     kwargs['most_recent_position'] = most_recent_position[1]
-  return api.Flight(**kwargs)
+  return observation_api.Flight(**kwargs)
 
 
 @webapp.route('/dp/<dp_id>/display_data', methods=['GET'])
@@ -137,7 +137,7 @@ def poll_display_data(dp_id: str) -> Tuple[str, int]:
   # Find flights to report
   t_now = datetime.datetime.now(datetime.timezone.utc)
   t_earliest = t_now - datetime.timedelta(seconds=60)
-  flights: List[api.Flight] = []
+  flights: List[observation_api.Flight] = []
   for sp_id, sp in db.sps.items():
     if sp_id in dp_behavior.do_not_display_flights_from:
       continue
@@ -150,9 +150,9 @@ def poll_display_data(dp_id: str) -> Tuple[str, int]:
   flights = [flight for flight in flights if 'most_recent_position' in flight]
 
   if diagonal <= 1:
-    return flask.jsonify(api.GetDisplayDataResponse(flights=flights))
+    return flask.jsonify(observation_api.GetDisplayDataResponse(flights=flights))
   else:
-    return flask.jsonify(api.GetDisplayDataResponse(clusters=clustering.make_clusters(flights, view_min, view_max)))
+    return flask.jsonify(observation_api.GetDisplayDataResponse(clusters=clustering.make_clusters(flights, view_min, view_max)))
 
 
 @webapp.route('/dp/<dp_id>/display_data/<flight_id>', methods=['GET'])
@@ -169,7 +169,7 @@ def display_data_details(dp_id: str, flight_id: str) -> Tuple[str, int]:
         if tf_details and tf_details.id == flight_id:
           t_max = max(iso8601.parse_date(telemetry.timestamp) for telemetry in flight.telemetry)
           if t_now <= t_max + FLIGHT_ACCESSIBLE_DURATION:
-            return flask.jsonify(api.GetDetailsResponse())
+            return flask.jsonify(observation_api.GetDetailsResponse())
           else:
             return 'Flight no longer exists', 404
 

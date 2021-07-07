@@ -15,6 +15,7 @@ import json
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.infrastructure import default_scope
+from monitoring.monitorlib.testing import assert_datetimes_are_equal
 
 
 def _load_op_ids():
@@ -103,8 +104,8 @@ def test_create_ops(scd_session):
     op = data['operation_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
-    assert scd.iso8601_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
-    assert scd.iso8601_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
+    assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
+    assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
     assert op['version'] == 1
     assert op['ovn']
     assert 'subscription_id' in op

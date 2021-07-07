@@ -1,15 +1,16 @@
 from typing import Dict, List
 
-from monitoring.rid_qualifier.mock import api, behavior
+from monitoring.monitorlib.rid_automated_testing import injection_api
+from monitoring.rid_qualifier.mock import behavior
 
 
 class TestRecord(object):
   """Representation of RID SP's record of a set of injected test flights"""
   version: str
-  flights: List[api.TestFlight]
+  flights: List[injection_api.TestFlight]
 
-  def __init__(self, version: str, flights: List[api.TestFlight]):
-    flights = [api.TestFlight(**flight) for flight in flights]
+  def __init__(self, version: str, flights: List[injection_api.TestFlight]):
+    flights = [injection_api.TestFlight(**flight) for flight in flights]
     for flight in flights:
       flight.order_telemetry()
     self.version = version

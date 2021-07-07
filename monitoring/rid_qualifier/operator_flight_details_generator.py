@@ -3,7 +3,7 @@ import string
 import random
 import uuid
 
-from monitoring.rid_qualifier.injection_api import OperatorLocation
+from monitoring.monitorlib.rid_automated_testing.injection_api import OperatorLocation
 
 
 class OperatorFlightDataGenerator():

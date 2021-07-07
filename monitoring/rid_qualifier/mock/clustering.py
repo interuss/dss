@@ -5,7 +5,7 @@ import s2sphere
 
 from monitoring.monitorlib import geo
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.rid_qualifier.mock import api
+from monitoring.monitorlib.rid_automated_testing import observation_api
 
 
 class Point(object):
@@ -37,7 +37,7 @@ class Cluster(ImplicitDict):
       points=self.points)
 
 
-def make_clusters(flights: List[api.Flight], view_min: s2sphere.LatLng, view_max: s2sphere.LatLng) -> List[api.Cluster]:
+def make_clusters(flights: List[observation_api.Flight], view_min: s2sphere.LatLng, view_max: s2sphere.LatLng) -> List[observation_api.Cluster]:
   if not flights:
     return []
 
@@ -50,13 +50,13 @@ def make_clusters(flights: List[api.Flight], view_min: s2sphere.LatLng, view_max
 
   # TODO: subdivide cluster into many clusters
 
-  result: List[api.Cluster] = []
+  result: List[observation_api.Cluster] = []
   for cluster in clusters:
     cluster = cluster.randomize()
     p1 = geo.unflatten(view_min, (cluster.x_min, cluster.y_min))
     p2 = geo.unflatten(view_min, (cluster.x_max, cluster.y_max))
-    result.append(api.Cluster(
-      corners=[api.Position(lat=p1.lat().degrees, lng=p1.lng().degrees), api.Position(lat=p2.lat().degrees, lng=p2.lng().degrees)],
+    result.append(observation_api.Cluster(
+      corners=[observation_api.Position(lat=p1.lat().degrees, lng=p1.lng().degrees), observation_api.Position(lat=p2.lat().degrees, lng=p2.lng().degrees)],
       area_sqm=geo.area_of_latlngrect(s2sphere.LatLngRect(p1, p2)),
       number_of_flights=len(cluster.points)
     ))

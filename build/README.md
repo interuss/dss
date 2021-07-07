@@ -2,22 +2,27 @@
 
 ## Deployment options
 
-This document describes how to deploy a production DSS instance to interoperate
-with other DSS instances in a DSS Region.
+This document describes how to deploy a production-style DSS instance to
+interoperate with other DSS instances in a DSS pool.
 
 To run a local DSS instance for testing, evaluation, or development, see
 [dev/standalone_instance.md](dev/standalone_instance.md).
 
+To create or join a pool consisting of multiple interoperable DSS instances, see
+[information on pooling](pooling.md).
+
 ## Glossary
 
-- DSS Region - an entire synchronized DSS, typically operated by multiple
-  organizations.
-- DSS instance - a single logical replica in a DSS Region.
+- DSS Region - A region in which a single, unified airspace representation is
+  presented by one or more interoperable DSS instances, each instance typically
+  operated by a separate organization.  A specific environment (for example,
+  "production" or "staging") in a particular DSS Region is called a "pool".
+- DSS instance - a single logical replica in a DSS pool.
 
 ## Preface
 
-This doc provides a well-lit path for deploying the DSS and its dependencies
-(namely CockroachDB) on Kubernetes. The use of Kubernetes is not a requirement,
+This doc describes a procedure for deploying the DSS and its dependencies
+(namely CockroachDB) via Kubernetes. The use of Kubernetes is not a requirement,
 and a DSS instance can join a cluster as long as it meets the
 [CockroachDB requirements below](#cockroachdb-requirements).
 
@@ -56,11 +61,12 @@ Download & install the following tools to your workstation:
 
 ## Docker images
 
-The grpc-backend and http-gateway are the two main binaries for processing DSS
-requests. These are both built and pushed to a docker registry of your choice.
-You can easily find out how to push to a docker registry through a quick search.
-All major cloud providers have a docker registry service, or you can set up your
-own.
+The application logic of the DSS is located in grpc-backend and translation
+between external HTTPS requests and internal gRPC requests to grpc-backend is
+accomplished with http-gateway.  Both of these binaries are provided in a single
+Docker image which is built locally and then pushed to a Docker registry of your
+choice.  All major cloud providers have a docker registry service, or you can
+set up your own.
 
 To build these images (and, optionally, push them to a docker registry):
 
@@ -85,7 +91,7 @@ endpoint.
 
 1. Note the two VAR_* values printed at the end of the script.
 
-## Deploying the DSS on Kubernetes
+## Deploying a DSS instance via Kubernetes
 
 This section discusses deploying a Kubernetes service, although you can deploy
 a DSS instance however you like as long as it meets the CockroachDB requirements
@@ -252,7 +258,7 @@ a PR to that effect would be greatly appreciated.
         entries if you have more than 3 CRDB nodes).  Example: `1.1.1.1`
 
     1.  `VAR_SHOULD_INIT`: Set to `false` if joining an existing cluster, `true`
-        if creating the first DSS instance for a Region.  When set `true`, this
+        if creating the first DSS instance for a pool.  When set `true`, this
         can initialize the data directories on your cluster, and prevent you
         from joining an existing cluster.
 

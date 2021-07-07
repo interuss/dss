@@ -2,9 +2,9 @@ from typing import List, NamedTuple
 from shapely.geometry import Polygon
 import shapely.geometry
 from datetime import datetime
+from monitoring.monitorlib.rid_automated_testing import injection_api
 from monitoring.monitorlib.rid import RIDAircraftState, RIDFlightDetails
 from monitoring.monitorlib.typing import ImplicitDict, StringBasedTimeDelta
-from monitoring.rid_qualifier import injection_api
 
 
 class InjectionTargetConfiguration(ImplicitDict):

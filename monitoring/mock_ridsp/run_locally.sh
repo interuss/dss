@@ -16,7 +16,7 @@ AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
 PUBLIC_KEY="/var/test-certs/auth2.pem"
 AUD="host.docker.internal"
-BASE_URL="http://host.docker.internal:8071"
+BASE_URL="http://host.docker.internal:8071/ridsp"
 PORT=8071
 
 docker build \
@@ -38,6 +38,6 @@ docker run --name mock_ridsp \
   local-interuss/mock_ridsp \
   gunicorn \
     --preload \
-    --workers=2 \
+    --workers=1 \
     --bind=0.0.0.0:5000 \
     monitoring.mock_ridsp:webapp
