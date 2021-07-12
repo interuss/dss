@@ -14,4 +14,5 @@ ENV PYTHONPATH /app
 ARG version
 ENV CODE_VERSION=$version
 
+# ENTRYPOINT ["rq", "worker", "qualifer-tasks"]
 ENTRYPOINT []

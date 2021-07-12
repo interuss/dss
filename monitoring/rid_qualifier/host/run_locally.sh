@@ -25,6 +25,29 @@ docker build \
   monitoring \
   || exit 1
 
+# TODO: Cleaning Redis may not be required.
+echo "cleaning up any Redis containers"
+docker container stop redis &> /dev/null || echo "No Redis server running"
+echo "Start Redis container"
+docker run --name redis --rm -d -p 6379:6379 redis:3-alpine
+
+echo "cleaning up any RQ worker containers"
+docker container stop rq-worker &> /dev/null || echo "No RQ worker running"
+echo "Start RQ worker container."
+docker run --name rq-worker -d --rm \
+  -e MOCK_HOST_AUTH_SPEC="${AUTH}" \
+  -e MOCK_HOST_DSS_URL="${DSS}" \
+  -e MOCK_HOST_PUBLIC_KEY="${PUBLIC_KEY}" \
+  -e MOCK_HOST_TOKEN_AUDIENCE="${AUD}" \
+  -e MOCK_HOST_BASE_URL="${BASE_URL}" \
+  -e REDIS_URL=redis://redis-server:6379/0 \
+  -v `pwd`/build/test-certs:/var/test-certs:ro \
+  --link redis:redis-server \
+  --entrypoint /usr/local/bin/rq \
+  local-interuss/rid-host \
+  worker -u redis://redis-server:6379/0 qualifer-tasks
+
+echo "Start Host container"
 docker run --name rid-host \
   --rm \
   -e MOCK_HOST_AUTH_SPEC="${AUTH}" \
@@ -32,8 +55,10 @@ docker run --name rid-host \
   -e MOCK_HOST_PUBLIC_KEY="${PUBLIC_KEY}" \
   -e MOCK_HOST_TOKEN_AUDIENCE="${AUD}" \
   -e MOCK_HOST_BASE_URL="${BASE_URL}" \
+  -e REDIS_URL=redis://redis-server:6379/0 \
   -p ${PORT}:5000 \
   -v `pwd`/build/test-certs:/var/test-certs:ro \
+  --link redis:redis-server \
   local-interuss/rid-host \
   gunicorn \
     --preload \

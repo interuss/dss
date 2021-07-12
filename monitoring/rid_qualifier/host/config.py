@@ -28,3 +28,5 @@ class Config(object):
   USS_BASE_URL = os.environ[ENV_KEY_BASE_URL]
   AUTH_SPEC = os.environ[ENV_KEY_AUTH]
   DSS_URL = os.environ[ENV_KEY_DSS]
+  REDIS_URL = os.environ['REDIS_URL']
+  REDIS_QUEUE = 'qualifer-tasks'
