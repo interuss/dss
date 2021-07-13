@@ -3,12 +3,11 @@
 # A file to generate Flight Records from KML.
 import argparse
 import datetime
-import jsonpickle
+import json
 import math
 import s2sphere
 import os
 import uuid
-from json import JSONEncoder
 from datetime import datetime, timedelta
 from shapely.geometry import LineString, Point, Polygon
 from monitoring.monitorlib import kml
@@ -299,7 +298,7 @@ def get_flight_state_coordinates(flight_details):
 
 def write_to_json_file(data, file_name, output_folder):
     with open(f'{output_folder}/{file_name}.json', 'w') as outfile:
-        outfile.write(jsonpickle.encode(data, unpicklable=False))
+        outfile.write(json.dumps(data))
 
 
 def create_output_folder(folder_path):
