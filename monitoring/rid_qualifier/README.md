@@ -12,12 +12,22 @@ This directory contains a series of tests for qualifying Network Remote ID compl
 
 5. **Create Flight Record from KML**: [create_flight_record_from_kml.py](create_flight_record_from_kml.py) accepts a KML file with one/many flights defined in the KML folders and produce a set of JSON files for each such flight, snapshoting the aircraft's state every sample_rate. Every flight needs exactly one path (LineString) and this is the path the aircraft takes over the ground. Speed and altitude of the flight  are defined by the polygons surrounding the path.
 
+Following are the specifications for input KML:
+
+- **Flight path**: KML must contain one folder for each flight path. Folder name should be prefixed with "flight: " and the flight ID of the flight, e.g. "flight: fly_north". Every flight needs exactly one path (LineString) and this is the path the aircraft should take over the ground. Rest of the characteristics of the flight are defined in the folder's description, including the sample_rate (in Hertz).
+
+- **Speed zones**: Speed zones for a flight should be defined as polygons nested in the flight folder. Each speed polygon must be prefixed with "speed: " and include m/s in parenthesis. For example: "speed: Mission (2.5)".
+
+- **Altitude zones**: Like speed, the polygon names prefixed with "alt: " are considered Altitude polygons for a flight path. Altitude of each point in the flight path is interpolated based on the distance of the point from the nearby altitude polygons.
+
+- **Speed and Altitude interpolation**: Speed and Altitude of each point is interpolated by adding weight of surrounding zones where weigh of each zone is 1/distance of the zone from the point. For example: If zone 1 was at 10m altitude 10m away, zone 2 was at 20m altitude 50m away, and zone 3 was at 30m altitude 100m away, the weights would be 1/10 for zone 1, 1/50 for zone 2, and 1/100 for zone 3.  So, the aircraft altitude would be (10/10 + 20/50 + 30/100) / (1/10 + 1/50 + 1/100) = 13.1m.
+
 - To run script, Set PYTHONPATH to path to the working directory `dss`
-- mark create_flight_record_from_kml.py executable using
-    `sudo chmod +x monitoring/rid_qualifier/create_flight_record_from_kml.py`
-- Execute the script kml file path as an argument to the script.
-  ./create_flight_record_from_kml.py <path_to_kml_file>
-- ./create_flight_record_from_kml.py --help for more details.
+- Execute the script with kml file path as an argument to the script.
+  `python monitoring/rid_qualifier/create_flight_record_from_kml.py -f <path_to_kml_file>`
+- `python monitoring/rid_qualifier/create_flight_record_from_kml.py --help` for more details.
+- A flight path "coordinates" per sample rate can be generated when script is run with debug flag set to true, i.e. `-d true`. To verify the output these coordiates can be added to a KML folder as a new flight path. 
+
 
 ## Running locally
 

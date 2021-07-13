@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 # A file to generate Flight Records from KML.
-import os
 import argparse
+import datetime
 import jsonpickle
 import math
 import s2sphere
-import datetime
+import os
+import uuid
 from json import JSONEncoder
 from datetime import datetime, timedelta
 from shapely.geometry import LineString, Point, Polygon
@@ -164,7 +165,7 @@ def generate_flight_record(
             position=aircraft_position,
             height=aircraft_height,
             # TODO: track ?
-            track=198.57516619987473,
+            track=99999,
             # TODO: Speed to be fetched relative to speed polygon.
             speed=speed,
             timestamp_accuracy=float(flight_description.get('timestamp_accuracy', '0.0')),
@@ -173,10 +174,12 @@ def generate_flight_record(
             vertical_speed=0.0)
         flight_telemetry.append(rid_aircraft_state)
     rid_details = RIDFlightDetails(
-        id=id,
+        id=flight_description.get('id', str(uuid.uuid4())),
         serial_number=flight_description.get('serial_number'),
         operation_description=flight_description.get('operation_description'),
-        operator_location=LatLngPoint(lat=operator_location.get('lat'), lng=operator_location.get('lng')),
+        operator_location=LatLngPoint(
+            lat=float(operator_location.get('lat')),
+            lng=float(operator_location.get('lng'))),
         operator_id=flight_description.get('operator_id'),
         registration_number=flight_description.get('registration_number'))
 
@@ -289,7 +292,7 @@ def get_flight_state_coordinates(flight_details):
     flight_state_coordinates = []
     for p, alt in zip(flight_state_vertices_unflatten, flight_state_altitudes):
         flight_state_coordinates.append((
-            str(p.lng().degrees), str(p.lat().degrees), str(alt)
+            p.lng().degrees, p.lat().degrees, alt
         ))
     return flight_state_coordinates, flight_state_speeds
 

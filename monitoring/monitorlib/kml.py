@@ -80,7 +80,7 @@ def get_folder_description(folder_elem, to_json=True):
     """
     if to_json:
         description = folder_elem.description
-        return dict([tuple((i.strip()).split(':')) for i in str(description).split('\n')])
+        return dict([tuple(j.strip() for j in i.split(':')) for i in str(description).split('\n')])
     return str(folder_elem.description)
 
 
@@ -93,9 +93,3 @@ def get_kml_content(kml_file):
         if folder_details:
             kml_content.update(folder_details)
     return kml_content
-
-
-if __name__ == '__main__':
-    kml_path = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
-    kml_content = get_kml_content(kml_path)
-    print(kml_content)
