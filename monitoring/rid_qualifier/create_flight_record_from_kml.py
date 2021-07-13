@@ -10,8 +10,8 @@ import os
 import uuid
 from datetime import datetime, timedelta
 from shapely.geometry import LineString, Point, Polygon
-from monitoring.monitorlib import kml
 from monitoring.monitorlib.geo import flatten, unflatten
+from monitoring.rid_qualifier import kml
 from monitoring.rid_qualifier.utils import FlightDetails, FullFlightRecord
 from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition, RIDFlightDetails, LatLngPoint
 from typing import List
@@ -307,26 +307,31 @@ def create_output_folder(folder_path):
 
 def main(kml_file, debug_mode=None):
     # kml_file = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
-    kml_content = kml.get_kml_content(kml_file)
-    flight_state_coordinates = {}
-    output_folder = 'monitoring/rid_qualifier/test_data'
-    create_output_folder(output_folder)
-    for flight_name, flight_details in kml_content.items():
-        flight_description = flight_details['description']
-        operator_location = flight_details['operator_location']
-        flight_state_coordinates, flight_state_speeds = get_flight_state_coordinates(
-            flight_details)
-        if debug_mode:
-            flight_state_vertices_unflatten = [','.join(p) for p in flight_state_coordinates]
-            flight_state_vertices_str = '\n'.join(flight_state_vertices_unflatten)
-            with open(f'{output_folder}/kml_state_{flight_name}.txt', 'w') as text_file:
-                text_file.write(flight_state_vertices_str)
-        flight_record = generate_flight_record(
-            flight_state_coordinates,
-            flight_description,
-            operator_location,
-            flight_state_speeds)
-        write_to_json_file(flight_record, flight_name.replace('flight: ', ''), output_folder=output_folder)
+    try:
+        kml_content = kml.get_kml_content(kml_file)
+    except ValueError as e:
+        print(e)
+    else:
+        flight_state_coordinates = {}
+        output_folder = 'monitoring/rid_qualifier/test_data'
+        create_output_folder(output_folder)
+        for flight_name, flight_details in kml_content.items():
+            flight_description = flight_details['description']
+            operator_location = flight_details['operator_location']
+            flight_state_coordinates, flight_state_speeds = get_flight_state_coordinates(
+                flight_details)
+            if debug_mode:
+                flight_state_vertices_unflatten = [','.join(p) for p in flight_state_coordinates]
+                flight_state_vertices_str = '\n'.join(flight_state_vertices_unflatten)
+                with open(f'{output_folder}/kml_state_{flight_name}.txt', 'w') as text_file:
+                    text_file.write(flight_state_vertices_str)
+            flight_record = generate_flight_record(
+                flight_state_coordinates,
+                flight_description,
+                operator_location,
+                flight_state_speeds)
+            write_to_json_file(
+                flight_record, flight_name.replace('flight: ', ''), output_folder=output_folder)
 
 def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(

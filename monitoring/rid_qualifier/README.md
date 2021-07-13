@@ -26,7 +26,9 @@ Following are the specifications for input KML:
 - Execute the script with kml file path as an argument to the script.
   `python monitoring/rid_qualifier/create_flight_record_from_kml.py -f <path_to_kml_file>`
 - `python monitoring/rid_qualifier/create_flight_record_from_kml.py --help` for more details.
-- A flight path "coordinates" per sample rate can be generated when script is run with debug flag set to true, i.e. `-d true`. To verify the output these coordiates can be added to a KML folder as a new flight path. 
+- A flight path "coordinates" per sample rate can be generated when script is run with debug flag set to true, i.e. `-d true`. To verify the output these coordiates can be added to a KML folder as a new flight path.
+- pytest can be run locally or via Docker using:
+`pytest monitoring/rid_qualifier/test_create_flight_record_from_kml.py`
 
 
 ## Running locally

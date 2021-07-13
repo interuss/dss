@@ -30,12 +30,14 @@ def get_folder_details(folder_elem):
         polygons = placemark.xpath('.//kml:Polygon', namespaces=KML_NAMESPACE)
 
         if placemark_name == 'operator_location':
-            operator_location = {
-                'lng': folder_elem.xpath(
-                    './/kml:Placemark/kml:LookAt/kml:longitude', namespaces=KML_NAMESPACE)[0],
-                'lat': folder_elem.xpath(
-                    './/kml:Placemark/kml:LookAt/kml:latitude', namespaces=KML_NAMESPACE)[0]
-            }
+            operator_point = folder_elem.xpath(
+                    './/kml:Placemark/kml:Point/kml:coordinates', namespaces=KML_NAMESPACE)[0]
+            if operator_point:
+                operator_point = str(operator_point).split(',')
+                operator_location = {
+                    'lng': operator_point[0],
+                    'lat': operator_point[1]
+                }
         if polygons:
             if placemark_name.startswith('alt:'):
                 polygon_coords = get_coordinates_from_kml(
@@ -43,8 +45,7 @@ def get_folder_details(folder_elem):
                 alt_polygons.update({placemark_name: polygon_coords})
             if placemark_name.startswith('speed:'):
                 if not get_polygon_speed(placemark_name):
-                    # TODO: raise error
-                    pass
+                    raise ValueError('Could not determine Polygon speed from Placemark "{}"'.format(placemark_name))
                 polygon_coords = get_coordinates_from_kml(
                     polygons[0].outerBoundaryIs.LinearRing.coordinates)
                 speed_polygons.update({placemark_name: polygon_coords})
@@ -72,16 +73,13 @@ def get_coordinates_from_kml(coordinates):
        return [tuple(float(x.strip()) for x in c.split(',')) for c in str(coordinates[0]).split(' ') if c.strip()]
 
 
-def get_folder_description(folder_elem, to_json=True):
+def get_folder_description(folder_elem):
     """Returns folder description from KML.
     Args:
         folder_elem: Folder element from KML.
-        to_json: If True: Returns description details as key: value pair, else a description string.
     """
-    if to_json:
-        description = folder_elem.description
-        return dict([tuple(j.strip() for j in i.split(':')) for i in str(description).split('\n')])
-    return str(folder_elem.description)
+    description = folder_elem.description
+    return dict([tuple(j.strip() for j in i.split(':')) for i in str(description).split('\n')])
 
 
 def get_kml_content(kml_file):
