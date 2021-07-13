@@ -246,7 +246,7 @@ class AdjacentCircularFlightsSimulator():
                     aircraft_position = RIDAircraftPosition(lat=flight_point.lat,
                                                             lng=flight_point.lng,
                                                             alt=flight_point.alt,
-                                                            accuracy_h="HAUnkown",
+                                                            accuracy_h="HAUnknown",
                                                             accuracy_v="VAUnknown",
                                                             extrapolated=False,
                                                             )
