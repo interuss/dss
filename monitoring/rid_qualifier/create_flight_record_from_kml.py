@@ -302,9 +302,8 @@ def write_to_json_file(data, file_name, output_folder):
 
 
 def create_output_folder(folder_path):
-    directory = os.path.dirname(folder_path)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    if not os.path.isdir(folder_path):
+        os.makedirs(folder_path)
 
 def main(kml_file, debug_mode=None):
     # kml_file = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
