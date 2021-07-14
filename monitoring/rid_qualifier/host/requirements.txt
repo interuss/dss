@@ -1,4 +1,5 @@
 flask==1.1.2
+flask-wtf
 gunicorn==20.0.4
 pyopenssl
 rq

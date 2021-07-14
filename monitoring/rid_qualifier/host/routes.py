@@ -10,11 +10,12 @@ from werkzeug.exceptions import HTTPException
 
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.rid_qualifier.host import webapp
+from . import forms
 
 
 @webapp.route('/')
 def home_page():
-  return f'Hello RID Host !! ' + render_template('start_test.html')
+  return render_template('home.html', title='Home', greetings='Hello RID Host !!')
 
 @webapp.route('/start_task', methods=['GET', 'POST'])
 def start_background_task():
@@ -24,6 +25,11 @@ def start_background_task():
   job = queue.enqueue('monitoring.rid_qualifier.host.tasks.example', 1)
   time.sleep(3)
   return json.dumps({'job_id': job.get_id(), 'job_finished': job.is_finished})
+
+@webapp.route('/userconfig')
+def login():
+    form = forms.UserConfig()
+    return render_template('config_form.html', title='Get User config', form=form)
 
 @webapp.route('/status')
 def status():
