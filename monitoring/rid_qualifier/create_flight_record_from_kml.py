@@ -305,7 +305,7 @@ def create_output_folder(folder_path):
     if not os.path.isdir(folder_path):
         os.makedirs(folder_path)
 
-def main(kml_file, debug_mode=None):
+def main(kml_file, output_folder, debug_mode=None):
     # kml_file = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
     try:
         kml_content = kml.get_kml_content(kml_file)
@@ -313,7 +313,6 @@ def main(kml_file, debug_mode=None):
         print(e)
     else:
         flight_state_coordinates = {}
-        output_folder = 'monitoring/rid_qualifier/test_data'
         create_output_folder(output_folder)
         for flight_name, flight_details in kml_content.items():
             flight_description = flight_details['description']
@@ -321,7 +320,7 @@ def main(kml_file, debug_mode=None):
             flight_state_coordinates, flight_state_speeds = get_flight_state_coordinates(
                 flight_details)
             if debug_mode:
-                flight_state_vertices_unflatten = [','.join(p) for p in flight_state_coordinates]
+                flight_state_vertices_unflatten = [','.join(str(p)) for p in flight_state_coordinates]
                 flight_state_vertices_str = '\n'.join(flight_state_vertices_unflatten)
                 with open(f'{output_folder}/kml_state_{flight_name}.txt', 'w') as text_file:
                     text_file.write(flight_state_vertices_str)
@@ -344,6 +343,11 @@ def init_argparse() -> argparse.ArgumentParser:
         type=str, default=None, required=True
     )
     parser.add_argument(
+        "-o", "--output-path",
+        help='Folder path to the output',
+        type=str, default=None, required=True
+    )
+    parser.add_argument(
         "-d", "--debug",
         help='Set Debug to true to generate output coordinates to test in KML.',
         type=bool, default=None)
@@ -353,6 +357,8 @@ def init_argparse() -> argparse.ArgumentParser:
 if __name__ == '__main__':
     parser = init_argparse()
     args = parser.parse_args()
+    if not args.output_path:
+        raise 'Path to output folder not provided.'
     if args.kml_file:
         kml_file = args.kml_file
         print(kml_file)
@@ -361,4 +367,4 @@ if __name__ == '__main__':
         else:
             raise 'Invalid file path.'
         debug_mode = args.debug
-        main(kml_file, debug_mode=debug_mode)
+        main(kml_file, args.output_path, debug_mode=debug_mode)

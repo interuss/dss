@@ -10,7 +10,8 @@ WORKDIR /app/monitoring/rid_qualifier
 RUN pip install -r requirements.txt
 RUN rm -rf __pycache__
 ADD . /app/monitoring
-RUN chmod a+x /app/monitoring/rid_qualifier/create_flight_record_from_kml.py
+RUN mkdir -p /app/kml-input
+RUN mkdir -p /app/flight-states
 ENV PYTHONPATH /app
 ARG version
 ENV CODE_VERSION=$version
