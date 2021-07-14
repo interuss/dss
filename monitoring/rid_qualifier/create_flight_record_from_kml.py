@@ -221,13 +221,13 @@ def get_polygons_distances_from_point(point, polygons):
     return distances
 
 def get_interpolated_value(point, polygons, all_possible_values, round_value=False):
-    """Returns interpolated altitude wrt. to the relative distances from surrounding polygons.
+    """Returns interpolated value wrt. to the relative distances from surrounding polygons.
     Args:
         point: A tuple of flattened x,y point.
         polygons: A list of flattened polygons.
         all_possible_values: All surrounding polygons' values. Values can be altitude or speed.
     Returns:
-        An altitude number.
+        An interpolated value for altitude or speed.
     """
     distances = get_polygons_distances_from_point(point, polygons)
     if min(distances) < 0.1:
