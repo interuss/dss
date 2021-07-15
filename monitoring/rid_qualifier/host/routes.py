@@ -4,7 +4,7 @@ import rq
 import time
 
 from . import config
-from flask import render_template
+from flask import render_template, flash, redirect
 from redis import Redis
 from werkzeug.exceptions import HTTPException
 
@@ -26,9 +26,19 @@ def start_background_task():
   time.sleep(3)
   return json.dumps({'job_id': job.get_id(), 'job_finished': job.is_finished})
 
-@webapp.route('/userconfig')
-def login():
+@webapp.route('/userconfig', methods=['GET', 'POST'])
+def user_config():
     form = forms.UserConfig()
+    if form.validate_on_submit():
+      queue = rq.Queue(
+      config.Config.REDIS_QUEUE,
+      connection=Redis.from_url(config.Config.REDIS_URL))
+      job = queue.enqueue(
+        'monitoring.rid_qualifier.host.tasks.process_auth_specs',
+        form.auth_spec.data, form.user_config.data)
+      flash('Login requested for user {}, remember_me={}'.format(
+          form.auth_spec.data, form.user_config.data))
+        # return redirect('/')
     return render_template('config_form.html', title='Get User config', form=form)
 
 @webapp.route('/status')

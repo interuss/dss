@@ -1,18 +1,30 @@
-{% extends "home.html" %}
 
-{% block content %}
-    <h1>Sign In</h1>
+    <h1>Auth Spec and configs</h1>
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
         <p>
-            {{ form.username.label }}<br>
-            {{ form.username(size=32) }}
+            {{ form.auth_spec.label }}<br>
+            {{ form.auth_spec(size=32) }}<br>
+            {% for error in form.auth_spec.errors %}
+            <span style="color: red;">{{ error }}</span>
+            {% endfor %}
         </p>
         <p>
-            {{ form.password.label }}<br>
-            {{ form.password(size=32) }}
+            {{ form.user_config.label }}<br>
+            {{ form.user_config(size=32) }}<br>
+            {% for error in form.user_config.errors %}
+            <span style="color: red;">{{ error }}</span>
+            {% endfor %}
         </p>
-        <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
         <p>{{ form.submit() }}</p>
+        <p>{% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <ul>
+                {% for message in messages %}
+                <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% endwith %}
+        </p>
     </form>
-{% endblock %}

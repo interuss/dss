@@ -7,3 +7,6 @@ def example(seconds):
         time.sleep(1)
     print('Task completed')
     return 'task completed'
+
+def process_auth_specs(auth_spec, config):
+    print(auth_spec, config)

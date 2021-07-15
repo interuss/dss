@@ -17,3 +17,4 @@ class Config(object):
   AUTH_SPEC = os.environ[ENV_KEY_AUTH]
   REDIS_URL = os.environ['REDIS_URL']
   REDIS_QUEUE = 'qualifer-tasks'
+  SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-test-secret-string'
