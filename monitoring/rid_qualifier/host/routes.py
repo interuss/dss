@@ -1,11 +1,9 @@
 import flask
 import json
-import rq
 import time
 
 from . import config
 from flask import render_template, flash, redirect
-from redis import Redis
 from werkzeug.exceptions import HTTPException
 
 from monitoring.monitorlib import versioning, auth_validation
@@ -19,10 +17,7 @@ def home_page():
 
 @webapp.route('/start_task', methods=['GET', 'POST'])
 def start_background_task():
-  queue = rq.Queue(
-    config.Config.REDIS_QUEUE,
-    connection=Redis.from_url(config.Config.REDIS_URL))
-  job = queue.enqueue('monitoring.rid_qualifier.host.tasks.example', 1)
+  job = config.Config.qualifier_queue.enqueue('monitoring.rid_qualifier.host.tasks.example', 1)
   time.sleep(3)
   return json.dumps({'job_id': job.get_id(), 'job_finished': job.is_finished})
 
@@ -30,15 +25,11 @@ def start_background_task():
 def user_config():
     form = forms.UserConfig()
     if form.validate_on_submit():
-      queue = rq.Queue(
-      config.Config.REDIS_QUEUE,
-      connection=Redis.from_url(config.Config.REDIS_URL))
-      job = queue.enqueue(
+      job = config.Config.qualifier_queue.enqueue(
         'monitoring.rid_qualifier.host.tasks.process_auth_specs',
         form.auth_spec.data, form.user_config.data)
-      flash('Login requested for user {}, remember_me={}'.format(
+      flash('Auth spec is {}, config is {}'.format(
           form.auth_spec.data, form.user_config.data))
-        # return redirect('/')
     return render_template('config_form.html', title='Get User config', form=form)
 
 @webapp.route('/status')

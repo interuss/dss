@@ -1,6 +1,7 @@
 import os
+import rq
 
-from monitoring.monitorlib import auth_validation
+from redis import Redis
 
 
 ENV_KEY_PREFIX = 'MOCK_HOST'
@@ -18,3 +19,4 @@ class Config(object):
   REDIS_URL = os.environ['REDIS_URL']
   REDIS_QUEUE = 'qualifer-tasks'
   SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-test-secret-string'
+  qualifier_queue = rq.Queue(REDIS_QUEUE, connection=Redis.from_url(REDIS_URL))

@@ -3,15 +3,15 @@
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
         <p>
-            {{ form.auth_spec.label }}<br>
+            <h3>{{ form.auth_spec.label }}</h3>
             {{ form.auth_spec(size=32) }}<br>
             {% for error in form.auth_spec.errors %}
             <span style="color: red;">{{ error }}</span>
             {% endfor %}
         </p>
         <p>
-            {{ form.user_config.label }}<br>
-            {{ form.user_config(size=32) }}<br>
+            <h3>{{ form.user_config.label }}</h3>
+            {{ form.user_config(rows='20',cols='50') }}<br>
             {% for error in form.user_config.errors %}
             <span style="color: red;">{{ error }}</span>
             {% endfor %}
