@@ -1,6 +1,7 @@
 import os
 import rq
 
+import redis
 from redis import Redis
 
 
@@ -19,4 +20,6 @@ class Config(object):
   REDIS_URL = os.environ['REDIS_URL']
   REDIS_QUEUE = 'qualifer-tasks'
   SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-test-secret-string'
-  qualifier_queue = rq.Queue(REDIS_QUEUE, connection=Redis.from_url(REDIS_URL))
+  qualifier_queue = rq.Queue(REDIS_QUEUE, connection=Redis.from_url(REDIS_URL), default_timeout=3600)
+  POOL = redis.ConnectionPool(host='redis', port=6379, db=0)
+  redis_client = redis.Redis(connection_pool=POOL)

@@ -3,4 +3,4 @@ flask-wtf
 gunicorn==20.0.4
 pyopenssl
 rq
--r ../../monitorlib/requirements.txt
+-r ../../rid_qualifier/requirements.txt

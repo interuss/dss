@@ -1,36 +1,60 @@
 import flask
-import json
-import time
 
 from . import config
-from flask import render_template, flash, redirect
+from . import forms
+from . import tasks
+
+from flask import render_template, flash, request, make_response
 from werkzeug.exceptions import HTTPException
 
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.rid_qualifier.host import webapp
-from . import forms
 
 
 @webapp.route('/')
 def home_page():
   return render_template('home.html', title='Home', greetings='Hello RID Host !!')
 
-@webapp.route('/start_task', methods=['GET', 'POST'])
-def start_background_task():
-  job = config.Config.qualifier_queue.enqueue('monitoring.rid_qualifier.host.tasks.example', 1)
-  time.sleep(3)
-  return json.dumps({'job_id': job.get_id(), 'job_finished': job.is_finished})
+
+def start_background_task(user_config, auth_spec):
+  job = config.Config.qualifier_queue.enqueue(
+    'monitoring.rid_qualifier.host.tasks.call_test_executor', user_config, auth_spec)
+  return job.get_id()
 
 @webapp.route('/userconfig', methods=['GET', 'POST'])
 def user_config():
     form = forms.UserConfig()
+    job_id = ''
+    data = {}
     if form.validate_on_submit():
-      job = config.Config.qualifier_queue.enqueue(
-        'monitoring.rid_qualifier.host.tasks.process_auth_specs',
-        form.auth_spec.data, form.user_config.data)
-      flash('Auth spec is {}, config is {}'.format(
-          form.auth_spec.data, form.user_config.data))
-    return render_template('config_form.html', title='Get User config', form=form)
+      job_id = start_background_task(form.user_config.data, form.auth_spec.data)
+    if request.method == 'POST':
+      data = {
+        'job_id' : job_id
+      }      
+    return render_template('config_form.html', title='Get User config', form=form, data=data)
+
+@webapp.route('/result/<string:job_id>', methods=['GET', 'POST'])
+def get_result(job_id):
+  task = tasks.get_rq_job(job_id)
+  response_object = {}
+  if task:
+    if task.get_status() == 'finished':
+      response_object = config.Config.redis_client.get(job_id)
+      output = make_response(response_object)
+      output.headers["Content-Disposition"] = "attachment; filename=report.json"
+      output.headers["Content-type"] = "text/csv"
+      return output
+    else:
+      response_object = {
+          "status": "success",
+          "data": {
+              "task_id": task.get_id(),
+              "task_status": task.get_status(),
+              "task_result": task.result,
+          },
+      }
+  return render_template('output.html', title='result', response_object=response_object)
 
 @webapp.route('/status')
 def status():
