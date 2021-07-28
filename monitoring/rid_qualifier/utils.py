@@ -28,6 +28,9 @@ class EvaluationConfiguration(ImplicitDict):
     min_query_diagonal: float = 100
     """Do not make queries with diagonals smaller than this many meters."""
 
+    reduce_query_variation: bool = True
+    """Reduce variations in queries performed during obsverations."""
+
 
 class RIDQualifierTestConfiguration(ImplicitDict):
     locale: str

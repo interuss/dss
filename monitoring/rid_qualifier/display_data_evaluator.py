@@ -128,11 +128,26 @@ def evaluate_system(
       'Cannot evaluate system: injected test flights ended at {}, which is before now ({})'.format(
         t_end, datetime.datetime.utcnow()))
 
+  
+  query_counter = 0  
+  last_rect = None
+
   t_next = arrow.utcnow()
-  while arrow.utcnow() < t_end:
-    # Evaluate the system at an instant in time
+
+  while arrow.utcnow() < t_end:  
+    # Evaluate the system at an instant in time    
+  
+    t_now = arrow.utcnow().datetime      
+    if ((query_counter != 0) and (config.reduce_query_variation)): 
+      if (query_counter % 3 == 0):# every third request keep the rectangle as the last one   
+        rect = last_rect
+    else:      
+      rect = _get_query_rect(
+        [injected_flight.flight for injected_flight in injected_flights],
+        t_now, config)
+      last_rect = rect
     _evaluate_system_instantaneously(
-      injected_flights, observers, config, findings)
+      injected_flights, observers, config, findings, rect)
     print('After observation at {}, {}'.format(arrow.utcnow(), findings))
     print(json.dumps(findings.issues, indent=2))
 
@@ -144,18 +159,13 @@ def evaluate_system(
     delay = t_next - arrow.utcnow()
     if delay.total_seconds() > 0:
       time.sleep(delay.total_seconds())
+    query_counter += 1
 
 
 def _evaluate_system_instantaneously(
     injected_flights: List[InjectedFlight], observers: List[RIDSystemObserver],
-    config: EvaluationConfiguration, findings: Findings) -> None:
+    config: EvaluationConfiguration, findings: Findings, rect: s2sphere.LatLngRect) -> None:
   for observer in observers:
-    # Find a bounding box that should observe all aircraft currently active
-    t_now = arrow.utcnow().datetime
-    rect = _get_query_rect(
-      [injected_flight.flight for injected_flight in injected_flights],
-      t_now, config)
-
     # Conduct an observation, then log and evaluate it
     (observation, query) = observer.observe_system(rect)
     findings.add_observation_query(query)
@@ -164,7 +174,6 @@ def _evaluate_system_instantaneously(
 
     #TODO: If bounding rect is smaller than cluster threshold, expand slightly above cluster threshold and re-observe
     #TODO: If bounding rect is smaller than area-too-large threshold, expand slightly above area-too-large threshold and re-observe
-
 
 def _evaluate_observation(
     injected_flights: List[InjectedFlight], observer: RIDSystemObserver,
