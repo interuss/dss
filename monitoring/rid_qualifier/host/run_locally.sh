@@ -11,7 +11,7 @@ fi
 cd "${BASEDIR}/../../.." || exit 1
 
 # This sample assumes that a local DSS instance is available similar to the one
-# produced with /build/dev/run_locally.sh
+# produced with monitoring/rid_qualifier/mock/run_locally.sh
 AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
 AUD="host.docker.internal"
