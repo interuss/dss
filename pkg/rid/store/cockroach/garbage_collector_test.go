@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jonboulle/clockwork"
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
 

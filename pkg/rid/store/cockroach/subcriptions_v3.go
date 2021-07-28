@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jonboulle/clockwork"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/jonboulle/clockwork"
 
 	"github.com/golang/geo/s2"
 	dssql "github.com/interuss/dss/pkg/sql"

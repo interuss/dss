@@ -3,7 +3,6 @@ package scd
 import (
 	"context"
 
-	"github.com/jonboulle/clockwork"
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
@@ -13,6 +12,7 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/stacktrace"
+	"github.com/jonboulle/clockwork"
 )
 
 var (
