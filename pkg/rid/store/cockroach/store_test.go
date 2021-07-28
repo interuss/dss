@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dpjacques/clockwork"
+	"github.com/jonboulle/clockwork"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"

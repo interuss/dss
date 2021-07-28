@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dpjacques/clockwork"
+	"github.com/jonboulle/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"

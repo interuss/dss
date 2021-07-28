@@ -3,7 +3,7 @@ package scd
 import (
 	"context"
 
-	"github.com/dpjacques/clockwork"
+	"github.com/jonboulle/clockwork"
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"

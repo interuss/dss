@@ -10,7 +10,7 @@ require (
 	github.com/cockroachdb/cockroach-go v0.0.0-20200504194139-73ffeee90b62
 	github.com/coreos/go-semver v0.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/dpjacques/clockwork v0.1.0
+	github.com/jonboulle/clockwork v0.2.2
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec
 	github.com/golang/protobuf v1.4.3
@@ -27,3 +27,10 @@ require (
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/square/go-jose.v2 v2.5.1
 )
+
+// This replacement added per instructions at
+// https://github.com/golang-jwt/jwt/blob/main/MIGRATION_GUIDE.md#gomod-replacement
+// TODO: Replace all references to dgrijalva in the repo after the bug below is
+//       resolved, then remove this replace statement.
+//       https://github.com/golang-migrate/migrate/issues/569
+replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.1+incompatible

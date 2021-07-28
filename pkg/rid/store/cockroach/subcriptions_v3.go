@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dpjacques/clockwork"
+	"github.com/jonboulle/clockwork"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"

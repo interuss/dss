@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dpjacques/clockwork"
+	"github.com/jonboulle/clockwork"
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	dssmodels "github.com/interuss/dss/pkg/models"

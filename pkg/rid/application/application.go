@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/dpjacques/clockwork"
+	"github.com/jonboulle/clockwork"
 	"github.com/interuss/dss/pkg/rid/store"
 	"go.uber.org/zap"
 )
