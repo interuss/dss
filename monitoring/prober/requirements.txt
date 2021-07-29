@@ -1,2 +1,1 @@
-pytest==4.4.1
 -r ../monitorlib/requirements.txt
