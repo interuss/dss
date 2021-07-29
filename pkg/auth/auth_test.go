@@ -13,7 +13,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/models"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
