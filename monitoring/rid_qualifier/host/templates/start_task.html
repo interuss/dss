@@ -115,17 +115,26 @@
                     {{ form.sample_report.label(class="form-check-label") }}
                 </div>
             </fieldset>
+
             <div class="form-group">
+                <script>
+                    $('a.back').click(function(e){
+                        e.preventDefault();
+                        parent.history.back();
+                        return false;
+                    });
+                </script>
                 {{ form.submit(class="btn btn-outline-info config-submit") }}
+                <a onclick="window.history.back();" class="back btn btn-outline-info">back</a>
             </div>
         </form>
         {% if data.job_id %}
-        <script>
-            if(data.job_id != startedTask) {
-                $(document).ready(getCurrentStatus());
-                startedTask = data.job_id;
-            }
-        </script>
+            <script>
+                if(data.job_id != startedTask) {
+                    $(document).ready(getCurrentStatus());
+                    startedTask = data.job_id;
+                }
+            </script>
         {% endif %}
         <div id="status-container">
             <div id="status" class="alert " style="display: none;">

@@ -12,22 +12,24 @@ from monitoring.monitorlib.typing import ImplicitDict
 import arrow
 import pathlib
 
-from typing import List
+from typing import List, Optional
 from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration
 
 class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''
 
-    def __init__(self, test_configuration: RIDQualifierTestConfiguration) -> None:
+    def __init__(
+        self, test_configuration: RIDQualifierTestConfiguration,
+        aircraft_state_files: Optional[list]) -> None:
         self.test_configuration = test_configuration
         # Change directory to read the test_definitions folder appropriately
         p = pathlib.Path(__file__).parent.absolute()
         os.chdir(p)
 
         # TODO: Get flight-state flights/path as an input.
-        # aircraft_states_directory = Path('test_definitions', test_configuration.locale, 'aircraft_states')
-        aircraft_states_directory = Path('/app/monitoring/rid_qualifier/test-data')
-        aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
+        if not aircraft_state_files:
+            aircraft_states_directory = Path('test_definitions', test_configuration.locale, 'aircraft_states')
+            aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
 
         usses = self.test_configuration.injection_targets
 

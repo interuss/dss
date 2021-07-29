@@ -37,6 +37,7 @@ docker run --name rq-worker -d --rm \
   -e MOCK_HOST_DSS_URL="${DSS}" \
   -e REDIS_URL=redis://redis-server:6379/0 \
   -v `pwd`/build/test-certs:/var/test-certs:ro \
+  -v /tmp:/mnt/app/input-files \
   --link redis:redis-server \
   --entrypoint /usr/local/bin/rq \
   local-interuss/rid-host \
@@ -50,6 +51,7 @@ docker run --name rid-host \
   -e REDIS_URL=redis://redis-server:6379/0 \
   -p ${PORT}:5000 \
   -v `pwd`/build/test-certs:/var/test-certs:ro \
+  -v /tmp:/mnt/app/input-files \
   --link redis:redis-server \
   local-interuss/rid-host \
   gunicorn \

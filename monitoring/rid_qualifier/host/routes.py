@@ -1,11 +1,13 @@
 import flask
+import os
 
 from . import config
 from . import forms
 from . import tasks
 
-from flask import render_template, flash, request, make_response
+from flask import render_template, request, make_response, redirect, url_for
 from werkzeug.exceptions import HTTPException
+from werkzeug.utils import secure_filename
 
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.rid_qualifier.host import webapp
@@ -16,24 +18,31 @@ def home_page():
   return render_template('home.html', title='Home', greetings='Hello RID Host !!')
 
 
-def start_background_task(user_config, auth_spec, debug):
+def start_background_task(user_config, auth_spec, input_files, debug):
   job = config.Config.qualifier_queue.enqueue(
-    'monitoring.rid_qualifier.host.tasks.call_test_executor', user_config, auth_spec, debug)
+    'monitoring.rid_qualifier.host.tasks.call_test_executor',
+    user_config, auth_spec, input_files, debug)
   return job.get_id()
 
-@webapp.route('/userconfig', methods=['GET', 'POST'])
-def user_config():
+
+@webapp.route('/executor', methods=['GET', 'POST'])
+def execute_task():
+    files = request.args['files']
+    if not files:
+      return 'files not found.'
+    files = files.split(',')
     form = forms.UserConfig()
     job_id = ''
     data = {}
     if form.validate_on_submit():
       job_id = start_background_task(
-        form.user_config.data, form.auth_spec.data, form.sample_report.data)
+        form.user_config.data, form.auth_spec.data, files, form.sample_report.data)
     if request.method == 'POST':
       data = {
         'job_id' : job_id
       }
     return render_template('start_task.html', title='Get User config', form=form, data=data)
+
 
 @webapp.route('/result/<string:job_id>', methods=['GET', 'POST'])
 def get_result(job_id):
@@ -55,6 +64,21 @@ def get_report(job_id):
   output.headers["Content-Disposition"] = "attachment; filename=report.json"
   output.headers["Content-type"] = "text/csv"
   return output
+
+
+@webapp.route('/upload_file', methods=['POST'])
+def upload_flight_state_files():
+    """Upload files."""
+    files = request.files.getlist('files[]')
+    destination_file_paths = []
+    for file in files:
+        if file:
+            filename = secure_filename(file.filename)
+            if filename.endswith('.json'):
+              file_path = os.path.join(config.Config.INPUT_PATH, filename)
+              file.save(file_path)
+              destination_file_paths.append(file_path)
+    return redirect(url_for('.execute_task', files=','.join(destination_file_paths)))
 
 
 @webapp.route('/status')
