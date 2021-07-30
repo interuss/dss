@@ -26,9 +26,9 @@ class TestBuilder():
         p = pathlib.Path(__file__).parent.absolute()
         os.chdir(p)
 
-        # TODO: Get flight-state flights/path as an input.
         if not aircraft_state_files:
-            aircraft_states_directory = Path('test_definitions', test_configuration.locale, 'aircraft_states')
+            aircraft_states_directory = Path(
+                'test_definitions', test_configuration.locale, 'aircraft_states')
             aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
 
         usses = self.test_configuration.injection_targets
