@@ -31,7 +31,7 @@ def execute_task():
     if not files:
       return 'files not found.'
     files = files.split(',')
-    form = forms.UserConfig()
+    form = forms.UserConfig(file_count=len(files))
     job_id = ''
     data = {}
     if form.validate_on_submit():
