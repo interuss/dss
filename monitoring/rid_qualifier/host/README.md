@@ -13,7 +13,7 @@ This project will create the following environment:
 
 * rid-host Container: A flask application which accepts flight states' files, collect auth and config spec from user and executes RID Qualifier task. Once task finishes successfully, report.json file is available to download.
 
-* Additionally, you need to bring up (rid_qualifier mock instance)[../mock/run_locally.sh] to produce a mock RID system for use with rid_qualifier. The instructions to bring up the rid_qualifier mock instance can be found (here)[../mock/README.md].
+* Additionally, you need to bring up (rid_qualifier mock instance)[monitoring/rid_qualifier/mock/run_locally.sh] to produce a mock RID system for use with rid_qualifier. The instructions to bring up the rid_qualifier mock instance can be found (here)[monitoring/rid_qualifier/mock/README.md].
 
 ## Run via Docker
 
