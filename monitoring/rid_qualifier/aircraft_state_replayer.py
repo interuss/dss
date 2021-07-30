@@ -19,26 +19,26 @@ class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''
 
     def __init__(
-        self, test_configuration: RIDQualifierTestConfiguration,
-        aircraft_state_files: Optional[list]) -> None:
-            self.test_configuration = test_configuration
-            # Change directory to read the test_definitions folder appropriately
-            p = pathlib.Path(__file__).parent.absolute()
-            os.chdir(p)
+            self, test_configuration: RIDQualifierTestConfiguration,
+            aircraft_state_files: Optional[list]) -> None:
+        self.test_configuration = test_configuration
+        # Change directory to read the test_definitions folder appropriately
+        p = pathlib.Path(__file__).parent.absolute()
+        os.chdir(p)
 
-            # TODO: Get flight-state flights/path as an input.
-            if not aircraft_state_files:
-                aircraft_states_directory = Path('test_definitions', test_configuration.locale, 'aircraft_states')
-                aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
+        # TODO: Get flight-state flights/path as an input.
+        if not aircraft_state_files:
+            aircraft_states_directory = Path('test_definitions', test_configuration.locale, 'aircraft_states')
+            aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
 
-            usses = self.test_configuration.injection_targets
+        usses = self.test_configuration.injection_targets
 
-            self.disk_flight_records: List[FullFlightRecord] =[]
-            for uss_index, uss in enumerate(usses):
-                aircraft_states_path = Path(aircraft_state_files[uss_index])
-                with open(aircraft_states_path, 'rb') as generated_rid_state:
-                    disk_flight_record = ImplicitDict.parse(json.load(generated_rid_state), FullFlightRecord)
-                    self.disk_flight_records.append(disk_flight_record)
+        self.disk_flight_records: List[FullFlightRecord] =[]
+        for uss_index, uss in enumerate(usses):
+            aircraft_states_path = Path(aircraft_state_files[uss_index])
+            with open(aircraft_states_path, 'rb') as generated_rid_state:
+                disk_flight_record = ImplicitDict.parse(json.load(generated_rid_state), FullFlightRecord)
+                self.disk_flight_records.append(disk_flight_record)
 
 
     def get_aircraft_states (self, aircraft_states_directory: Path):
