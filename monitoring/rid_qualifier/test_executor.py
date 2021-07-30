@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import List
+from typing import List, Optional
 from monitoring.rid_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
 from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration, InjectedFlight
 from monitoring.rid_qualifier import display_data_evaluator, reports
@@ -8,9 +8,10 @@ from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib.auth import make_auth_adapter
 
 
-def main(test_configuration: RIDQualifierTestConfiguration, auth_spec: str):
-    # This is the configuration for the test.
-    my_test_builder = TestBuilder(test_configuration = test_configuration)
+def main(
+        test_configuration: RIDQualifierTestConfiguration,
+        auth_spec: str, aircraft_state_files: Optional[list]) -> reports.Report:
+    my_test_builder = TestBuilder(test_configuration=test_configuration, aircraft_state_files=aircraft_state_files)
     test_payloads = my_test_builder.build_test_payloads()
     test_id = str(uuid.uuid4())
     report = reports.Report(setup=reports.Setup(configuration=test_configuration))
@@ -40,3 +41,4 @@ def main(test_configuration: RIDQualifierTestConfiguration, auth_spec: str):
         report.findings)
     with open('report.json', 'w') as f:
         json.dump(report, f)
+    return report
