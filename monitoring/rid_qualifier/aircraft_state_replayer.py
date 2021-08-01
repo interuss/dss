@@ -12,27 +12,31 @@ from monitoring.monitorlib.typing import ImplicitDict
 import arrow
 import pathlib
 
-from typing import List
+from typing import List, Optional
 from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration
 
 class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''
 
-    def __init__(self, test_configuration: RIDQualifierTestConfiguration) -> None:
+    def __init__(
+            self, test_configuration: RIDQualifierTestConfiguration,
+            aircraft_state_files: Optional[list]) -> None:
         self.test_configuration = test_configuration
         # Change directory to read the test_definitions folder appropriately
         p = pathlib.Path(__file__).parent.absolute()
         os.chdir(p)
 
-        aircraft_states_directory = Path('test_definitions', test_configuration.locale, 'aircraft_states')
-        aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
+        if not aircraft_state_files:
+            aircraft_states_directory = Path(
+                'test_definitions', test_configuration.locale, 'aircraft_states')
+            aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
 
         usses = self.test_configuration.injection_targets
 
         self.disk_flight_records: List[FullFlightRecord] =[]
         for uss_index, uss in enumerate(usses):
             aircraft_states_path = Path(aircraft_state_files[uss_index])
-            with open(aircraft_states_path) as generated_rid_state:
+            with open(aircraft_states_path, 'rb') as generated_rid_state:
                 disk_flight_record = ImplicitDict.parse(json.load(generated_rid_state), FullFlightRecord)
                 self.disk_flight_records.append(disk_flight_record)
 

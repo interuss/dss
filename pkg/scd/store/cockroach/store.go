@@ -6,11 +6,11 @@ import (
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/coreos/go-semver/semver"
-	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
+	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 )
 
