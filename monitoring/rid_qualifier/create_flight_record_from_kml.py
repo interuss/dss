@@ -16,7 +16,6 @@ from monitoring.rid_qualifier.utils import FlightDetails, FullFlightRecord
 from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition, RIDFlightDetails, LatLngPoint
 from typing import List
 
-# TODO: Need to know value for ALTITUDE_AGL
 ALTITUDE_AGL = 50.0
 STATE_INCREMENT_SECONDS = 1
 
@@ -24,11 +23,6 @@ STATE_INCREMENT_SECONDS = 1
 def get_flight_coordinates(input_coordinates):
     # Reverse the Lng,Lat from KML to Lat,Lng for processing.
     return [(p[1], p[0], p[2]) for p in input_coordinates]
-
-
-def get_distance_travelled():
-    # TODO: should be calculated based on speed m/s, hardcoding to 2m/s for now.
-    return 2
 
 
 def get_distance_between_two_points(flatten_point1, flatten_point2):
@@ -48,6 +42,14 @@ def check_if_vertex_is_correct(point1, point2, point3, flight_distance):
         ) < 0.2, f'Generated vertex is not correct. {point1}, {point2}, {point3}, {flight_distance}'
 
 
+def get_track_angle(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    if x2 == x1:
+        return 0
+    else:
+        return math.degrees(math.atan((y2 -y1)/(x2 - x1)))
+
 def get_flight_state_vertices(flatten_points, flattened_speed_polygons, all_polygon_speeds):
     """Get flight state vertices at flight distance's m/s interval.
     Args:
@@ -55,7 +57,10 @@ def get_flight_state_vertices(flatten_points, flattened_speed_polygons, all_poly
         flattened_speed_polygons: Surrounding  speed polygons.
         all_polygon_speeds: Speeds from all polygons.
     Returns:
-        A list of vertices found at every interval of flight state.
+        A tuple containing:
+            (list of vertices found at every interval of flight state,
+            list of speeds at each flight interval,
+            list of angles at each flight interval)
     """
     points = iter(flatten_points)
     point1 = next(points)
@@ -63,8 +68,10 @@ def get_flight_state_vertices(flatten_points, flattened_speed_polygons, all_poly
     
     flight_state_vertices = []
     flight_state_speeds = []
+    flight_track_angles = []
     while True:
-        flight_distance = get_interpolated_value(point1, flattened_speed_polygons, all_polygon_speeds, round_value=True)
+        flight_distance = get_interpolated_value(
+            point1, flattened_speed_polygons, all_polygon_speeds, round_value=True)
         flight_state_speeds.append(flight_distance)
         input_coord_gap = get_distance_between_two_points(point1, point2)
         if input_coord_gap <= 0:
@@ -86,7 +93,6 @@ def get_flight_state_vertices(flatten_points, flattened_speed_polygons, all_poly
                 state_vertex = get_vertex_between_points(point1, point2, flight_distance)
                 if state_vertex:
                     state_vertex = state_vertex.coords[:][0]
-                    # TODO: move it to unit tests.
                     check_if_vertex_is_correct(point1, point2, state_vertex, flight_distance)
                     flight_state_vertices.append(state_vertex)
                     point1 = state_vertex
@@ -110,8 +116,10 @@ def get_flight_state_vertices(flatten_points, flattened_speed_polygons, all_poly
                         flight_state_vertices.append(point1)
                         break
                 point1 = state_vertex
-        
-    return flight_state_vertices, flight_state_speeds
+
+    for point1, point2 in zip(flight_state_vertices[:-1],flight_state_vertices[1:]):
+        flight_track_angles.append(get_track_angle(point1, point2))
+    return flight_state_vertices, flight_state_speeds, flight_track_angles
 
 
 def get_vertex_between_points(point1, point2, at_distance):
@@ -138,12 +146,14 @@ def output_coordinates_to_file(flight_state_coords, filename):
         text_file.write(flight_state_vertices_str)
 
 def generate_flight_record(
-    state_coordinates, flight_description, operator_location, flight_state_speeds):
+        state_coordinates, flight_description, operator_location,
+        flight_state_speeds, flight_track_angles):
     timestamp = datetime.now()
     now_isoformat = timestamp.isoformat()
 
     flight_telemetry: List[List[RIDAircraftState]] = []
-    for coordinates, speed in zip(state_coordinates, flight_state_speeds):
+    for coordinates, speed, angle in zip(
+            state_coordinates, flight_state_speeds, flight_track_angles):
         timestamp = timestamp + timedelta(0, STATE_INCREMENT_SECONDS)
         timestamp_isoformat = timestamp.isoformat()
         aircraft_position = RIDAircraftPosition(
@@ -152,10 +162,9 @@ def generate_flight_record(
             alt=coordinates[2],
             accuracy_h=flight_description.get('accuracy_h'),
             accuracy_v=flight_description.get('accuracy_v'),
-            # TODO: need to check value for extrapolated
+            # TODO: extrapolated ?
             extrapolated=False,
             )
-        # TODO: RIDHeight values ?
         aircraft_height = RIDHeight(distance=ALTITUDE_AGL, reference="TakeoffLocation")
         rid_aircraft_state = RIDAircraftState(
             timestamp=timestamp_isoformat,
@@ -163,13 +172,10 @@ def generate_flight_record(
             operational_status="Airborne",
             position=aircraft_position,
             height=aircraft_height,
-            # TODO: track ?
-            track=99999,
-            # TODO: Speed to be fetched relative to speed polygon.
+            track=angle,
             speed=speed,
             timestamp_accuracy=float(flight_description.get('timestamp_accuracy', '0.0')),
             speed_accuracy=flight_description.get('speed_accuracy', ''),
-            # TODO: vertical_speed ?
             vertical_speed=0.0)
         flight_telemetry.append(rid_aircraft_state)
     rid_details = RIDFlightDetails(
@@ -252,7 +258,10 @@ def get_flight_state_coordinates(flight_details):
     Args:
         flight_details: Flight details from the KML that include input coordinates.
     Returns:
-        List of unflatten coordinates at a speed/sec interval and list of speeds at each point.
+        A tuple containing:
+            a list of unflatten coordinates at a speed/sec interval,
+            a list of speeds at each point,
+            a list of angles at each interval.
     """
     if flight_details.get('input_coordinates'):
         input_coordinates = get_flight_coordinates(flight_details['input_coordinates'])
@@ -268,22 +277,17 @@ def get_flight_state_coordinates(flight_details):
     speed_polygons = flight_details['speed_polygons']
     flattened_speed_polygons = get_flight_polygons_flattened(reference_point, speed_polygons)
     all_polygon_speeds = get_speeds_from_speed_polygons(speed_polygons)
-    flight_state_vertices, flight_state_speeds = get_flight_state_vertices(
+    flight_state_vertices, flight_state_speeds, flight_track_angles = get_flight_state_vertices(
         flatten_points, flattened_speed_polygons, all_polygon_speeds)
     
     alt_polygons = flight_details['alt_polygons']
     flattened_alt_polygons = get_flight_polygons_flattened(reference_point, alt_polygons)
     all_polygon_alts = [p[0][2] for p in list(alt_polygons.values())]
 
-    # return
-    
     flight_state_altitudes = []
-    # flight_state_speeds = []
     for point in flight_state_vertices:
         flight_state_altitudes.append(
             get_interpolated_value(point, flattened_alt_polygons, all_polygon_alts))
-        # flight_state_speeds.append(
-        #     get_interpolated_value(point, flattened_speed_polygons, all_polygon_speeds, round_value=True))
     flight_state_vertices_unflatten = [unflatten(
         s2sphere.LatLng.from_degrees(*reference_point[:2]), v) for v in flight_state_vertices]
 
@@ -293,7 +297,7 @@ def get_flight_state_coordinates(flight_details):
         flight_state_coordinates.append((
             p.lng().degrees, p.lat().degrees, alt
         ))
-    return flight_state_coordinates, flight_state_speeds
+    return flight_state_coordinates, flight_state_speeds, flight_track_angles
 
 
 def write_to_json_file(data, file_name, output_folder):
@@ -317,7 +321,7 @@ def main(kml_file, output_folder, debug_mode=None):
         for flight_name, flight_details in kml_content.items():
             flight_description = flight_details['description']
             operator_location = flight_details['operator_location']
-            flight_state_coordinates, flight_state_speeds = get_flight_state_coordinates(
+            flight_state_coordinates, flight_state_speeds, flight_track_angles = get_flight_state_coordinates(
                 flight_details)
             if debug_mode:
                 flight_state_vertices_unflatten = [','.join(str(p)) for p in flight_state_coordinates]
@@ -328,7 +332,8 @@ def main(kml_file, output_folder, debug_mode=None):
                 flight_state_coordinates,
                 flight_description,
                 operator_location,
-                flight_state_speeds)
+                flight_state_speeds,
+                flight_track_angles)
             write_to_json_file(
                 flight_record, flight_name.replace('flight: ', ''), output_folder=output_folder)
 
