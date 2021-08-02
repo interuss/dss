@@ -16,28 +16,26 @@ AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
 PUBLIC_KEY="/var/test-certs/auth2.pem"
 AUD="host.docker.internal,localhost"
-BASE_URL="http://localhost:8071/ridsp"
-PORT=8071
+PORT=8073
 
 docker build \
-  -t local-interuss/mock_ridsp \
-  -f monitoring/mock_ridsp/Dockerfile \
+  -t local-interuss/mock_riddp \
+  -f monitoring/mock_riddp/Dockerfile \
   --build-arg version=`scripts/git/commit.sh` \
   monitoring \
   || exit 1
 
-docker run --name mock_ridsp \
+docker run --name mock_riddp \
   --rm \
-  -e MOCK_RIDSP_AUTH_SPEC="${AUTH}" \
-  -e MOCK_RIDSP_DSS_URL="${DSS}" \
-  -e MOCK_RIDSP_PUBLIC_KEY="${PUBLIC_KEY}" \
-  -e MOCK_RIDSP_TOKEN_AUDIENCE="${AUD}" \
-  -e MOCK_RIDSP_BASE_URL="${BASE_URL}" \
+  -e MOCK_RIDDP_AUTH_SPEC="${AUTH}" \
+  -e MOCK_RIDDP_DSS_URL="${DSS}" \
+  -e MOCK_RIDDP_PUBLIC_KEY="${PUBLIC_KEY}" \
+  -e MOCK_RIDDP_TOKEN_AUDIENCE="${AUD}" \
   -p ${PORT}:5000 \
   -v `pwd`/build/test-certs:/var/test-certs:ro \
-  local-interuss/mock_ridsp \
+  local-interuss/mock_riddp \
   gunicorn \
     --preload \
     --workers=1 \
     --bind=0.0.0.0:5000 \
-    monitoring.mock_ridsp:webapp
+    monitoring.mock_riddp:webapp

@@ -69,3 +69,8 @@ def bounding_rect(latlngs: List[Tuple[float, float]]) -> s2sphere.LatLngRect:
   return s2sphere.LatLngRect.from_point_pair(
     s2sphere.LatLng.from_degrees(lat_min, lng_min),
     s2sphere.LatLng.from_degrees(lat_max, lng_max))
+
+
+def get_latlngrect_diagonal_km(rect: s2sphere.LatLngRect) -> float:
+  """Compute the distance in km between two opposite corners of the rect"""
+  return rect.lo().get_distance(rect.hi()).degrees * EARTH_CIRCUMFERENCE_KM / 360
