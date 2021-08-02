@@ -1,3 +1,4 @@
+import datetime
 from typing import Tuple
 import uuid
 
@@ -11,6 +12,11 @@ from monitoring.mock_ridsp import webapp
 from monitoring.mock_ridsp.auth import requires_scope
 from . import config, database, resources
 from .database import db
+
+
+# Time after the last position report during which the created ISA will still
+# exist.  This value must be at least 60 seconds per NET0610.
+RECENT_POSITIONS_BUFFER = datetime.timedelta(seconds=60.2)
 
 
 @webapp.route('/injection/tests/<test_id>', methods=['PUT'])
@@ -30,6 +36,7 @@ def create_test(test_id: str) -> Tuple[str, int]:
 
   # Create ISA in DSS
   (t0, t1) = req_body.get_span()
+  t1 += RECENT_POSITIONS_BUFFER
   rect = req_body.get_rect()
   flights_url = '{}/v1/uss/flights'.format(webapp.config.get(config.KEY_BASE_URL))
   mutated_isa = mutate.put_isa(resources.dss_client, rect, t0, t1, flights_url, record.version)
