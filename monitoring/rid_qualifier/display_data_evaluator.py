@@ -131,15 +131,16 @@ def evaluate_system(
   
   query_counter = 0  
   last_rect = None
-
+  
   t_next = arrow.utcnow()
 
   while arrow.utcnow() < t_end:  
     # Evaluate the system at an instant in time    
   
     t_now = arrow.utcnow().datetime      
-    if ((query_counter != 0) and (config.reduce_query_variation)): 
-      if (query_counter % 3 == 0):# every third request keep the rectangle as the last one   
+    if (last_rect and
+      config.reduce_query_variation > 0 and
+      query_counter % config.repeat_query_rect_period == 0):
         rect = last_rect
     else:      
       rect = _get_query_rect(
