@@ -50,7 +50,7 @@ def main() -> int:
         is_url(injection_target.injection_base_url)
 
     # Run test
-    test_executor.main(test_configuration=config, auth_spec=auth_spec)
+    test_executor.main(test_configuration=config, auth_spec=auth_spec, aircraft_state_files=[])
 
     return os.EX_OK
 
