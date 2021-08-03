@@ -28,9 +28,6 @@ class EvaluationConfiguration(ImplicitDict):
     min_query_diagonal: float = 100
     """Do not make queries with diagonals smaller than this many meters."""
 
-    reduce_query_variation: bool = True
-    """Reduce variations in queries performed during obsverations."""
-    
     repeat_query_rect_period: int = 3
     """If set to a value above zero, reuse the most recent query rectangle/view every this many queries."""
 

@@ -139,8 +139,8 @@ def evaluate_system(
   
     t_now = arrow.utcnow().datetime      
     if (last_rect and
-      config.reduce_query_variation > 0 and
-      query_counter % config.repeat_query_rect_period == 0):
+      config.repeat_query_rect_period > 0 and
+      query_counter % config.repeat_query_rect_period == 0):        
         rect = last_rect
     else:      
       rect = _get_query_rect(
