@@ -9,8 +9,7 @@ require (
 	cloud.google.com/go v0.64.0
 	github.com/cockroachdb/cockroach-go v0.0.0-20200504194139-73ffeee90b62
 	github.com/coreos/go-semver v0.3.0
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/dpjacques/clockwork v0.1.0
+	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec
 	github.com/golang/protobuf v1.4.3
@@ -18,6 +17,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/interuss/stacktrace v1.0.0
+	github.com/jonboulle/clockwork v0.2.2
 	github.com/lib/pq v1.9.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.7.0
@@ -27,3 +27,12 @@ require (
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/square/go-jose.v2 v2.5.1
 )
+
+// This replacement should actually be for v3.2.1 to fix the second-level
+// dependency issue with go-migrate eventually depending on the obsolete
+// dgrijalva package, but Go will not allow this giving an error of:
+//   go: github.com/golang-jwt/jwt@v3.2.1+incompatible used for two different
+//   module paths (github.com/dgrijalva/jwt-go and github.com/golang-jwt/jwt)
+// TODO: Remove this replace statement after the bug below is resolved:
+//       https://github.com/golang-migrate/migrate/issues/569
+replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.0+incompatible

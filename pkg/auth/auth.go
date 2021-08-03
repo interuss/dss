@@ -18,7 +18,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/models"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
