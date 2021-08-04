@@ -4,3 +4,9 @@ gunicorn==20.0.4
 pyopenssl
 rq==1.9.0
 -r ../../rid_qualifier/requirements.txt
+
+oauthlib==3.0.1
+Flask-Login==0.4.1
+
+google-auth-oauthlib==0.4.2
+cachetools==4.2.1
