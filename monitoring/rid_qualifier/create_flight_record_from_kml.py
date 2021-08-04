@@ -45,14 +45,16 @@ def check_if_vertex_is_correct(point1, point2, point3, flight_distance):
 def get_track_angle(point1, point2):
     x1, y1 = point1
     x2, y2 = point2
-    # Since the direction of angle is East of North, so angle of origin is going to be Y-axis.
-    # Hence denominator is going to be difference of y-coordinates instead of x-coordinates.
+    # Since the direction of angle is East of North, so angle of origin is
+    # on Y-axis.Hence denominator is going to be difference of y-coordinates
+    # instead of x-coordinates.
     if y2 - y1 == 0:
         return 0
     else:
         angle = math.degrees(math.atan2((x2 - x1), (y2 -y1)))
         if angle < 0:
-            # it is an angle anti-clockwise on the coordinate, get the other way (clockwise) angle.
+            # it is an angle anti-clockwise on the coordinate, get the other
+            # way (clockwise) angle.
             return 360 - abs(angle)
         return angle
 
