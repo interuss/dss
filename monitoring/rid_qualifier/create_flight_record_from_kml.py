@@ -13,13 +13,13 @@ from shapely.geometry import LineString, Point, Polygon
 from monitoring.monitorlib.geo import flatten, unflatten
 from monitoring.rid_qualifier import kml
 from monitoring.rid_qualifier.utils import FlightDetails, FullFlightRecord
-from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition, RIDFlightDetails, LatLngPoint
+from monitoring.monitorlib.rid import RIDAircraftState, RIDAircraftPosition, RIDFlightDetails, LatLngPoint
 from typing import List
 
-ALTITUDE_AGL = 50.0
+
 STATE_INCREMENT_SECONDS = 1
 
-        
+
 def get_flight_coordinates(input_coordinates):
     # Reverse the Lng,Lat from KML to Lat,Lng for processing.
     return [(p[1], p[0], p[2]) for p in input_coordinates]
@@ -45,10 +45,16 @@ def check_if_vertex_is_correct(point1, point2, point3, flight_distance):
 def get_track_angle(point1, point2):
     x1, y1 = point1
     x2, y2 = point2
-    if x2 == x1:
+    # Since the direction of angle is East of North, so angle of origin is going to be Y-axis.
+    # Hence denominator is going to be difference of y-coordinates instead of x-coordinates.
+    if y2 - y1 == 0:
         return 0
     else:
-        return math.degrees(math.atan((y2 -y1)/(x2 - x1)))
+        angle = math.degrees(math.atan2((x2 - x1), (y2 -y1)))
+        if angle < 0:
+            # it is an angle anti-clockwise on the coordinate, get the other way (clockwise) angle.
+            return 360 - abs(angle)
+        return angle
 
 def get_flight_state_vertices(flatten_points, flattened_speed_polygons, all_polygon_speeds):
     """Get flight state vertices at flight distance's m/s interval.
@@ -162,13 +168,11 @@ def generate_flight_record(
             alt=coordinates[2],
             accuracy_h=flight_description.get('accuracy_h'),
             accuracy_v=flight_description.get('accuracy_v'),
-            # TODO: extrapolated ?
             extrapolated=False,
             )
-        aircraft_height = RIDHeight(distance=ALTITUDE_AGL, reference="TakeoffLocation")
+        aircraft_height = None
         rid_aircraft_state = RIDAircraftState(
             timestamp=timestamp_isoformat,
-            # TODO: operational_status ?
             operational_status="Airborne",
             position=aircraft_position,
             height=aircraft_height,
@@ -265,7 +269,7 @@ def get_flight_state_coordinates(flight_details):
     """
     if flight_details.get('input_coordinates'):
         input_coordinates = get_flight_coordinates(flight_details['input_coordinates'])
-    reference_point = input_coordinates[0] # TODO: Check `if input_coordinates:`.
+    reference_point = input_coordinates[0]
     
     flatten_points = []
     for point in input_coordinates:
@@ -324,7 +328,7 @@ def main(kml_file, output_folder, debug_mode=None):
             flight_state_coordinates, flight_state_speeds, flight_track_angles = get_flight_state_coordinates(
                 flight_details)
             if debug_mode:
-                flight_state_vertices_unflatten = [','.join(str(p)) for p in flight_state_coordinates]
+                flight_state_vertices_unflatten = [','.join(map(str, p)) for p in flight_state_coordinates]
                 flight_state_vertices_str = '\n'.join(flight_state_vertices_unflatten)
                 with open(f'{output_folder}/kml_state_{flight_name}.txt', 'w') as text_file:
                     text_file.write(flight_state_vertices_str)
