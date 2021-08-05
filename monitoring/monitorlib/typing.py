@@ -176,7 +176,12 @@ def _parse_value(value, value_type: Type):
 
     elif generic_type is Union and len(arg_types) == 2 and arg_types[1] is type(None):
       # Type is an Optional declaration
-      return _parse_value(value, arg_types[0])
+      if value is None:
+        # An optional field specified explicitly as None is equivalent to
+        # omitting the field's value
+        return None
+      else:
+        return _parse_value(value, arg_types[0])
 
     else:
       raise NotImplementedError('Automatic parsing of {} type is not yet implemented'.format(value_type))
