@@ -20,7 +20,7 @@ class TestBuilder():
 
     def __init__(
             self, test_configuration: RIDQualifierTestConfiguration,
-            aircraft_state_files: Optional[list]) -> None:
+            aircraft_state_files: Optional[list] = None) -> None:
         self.test_configuration = test_configuration
         # Change directory to read the test_definitions folder appropriately
         p = pathlib.Path(__file__).parent.absolute()
