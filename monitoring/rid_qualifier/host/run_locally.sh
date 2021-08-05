@@ -16,6 +16,7 @@ AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
 AUD="host.docker.internal"
 PORT=8072
+RID_HOST="http://localhost:${PORT}"
 
 docker build \
   -t local-interuss/rid-host \
@@ -48,6 +49,8 @@ docker run --name rid-host \
   --rm \
   -e MOCK_HOST_AUTH_SPEC="${AUTH}" \
   -e MOCK_HOST_DSS_URL="${DSS}" \
+  -e RID_HOST_URL="${RID_HOST}" \
+  -e PORT="${PORT}" \
   -e REDIS_URL=redis://redis-server:6379/0 \
   -p ${PORT}:5000 \
   -v `pwd`/build/test-certs:/var/test-certs:ro \

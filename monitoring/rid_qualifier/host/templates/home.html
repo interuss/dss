@@ -1,9 +1,14 @@
-<p>Select Flight states files</p>
+{% extends 'base.html' %}
 
-<div class="form-group">
-    <form action = "/upload_file" method = "POST"
-        enctype = "multipart/form-data">
-        <input type = "file" name="files[]" multiple="true" required />
-        <input type = "submit"/>
-    </form>
-</div>
+{% block body %}
+    <p>Select Flight states files</p>
+
+    <div class="form-group">
+        <form action = "/upload_file" method = "POST"
+            enctype = "multipart/form-data">
+            <input type = "file" name="files[]" multiple="true" required />
+            <input type = "submit"/>
+        </form>
+    </div>
+
+{% endblock %}
