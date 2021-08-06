@@ -132,8 +132,13 @@ class ImplicitDict(dict):
           provided_values.add(key)
     for key, value in kwargs.items():
       if key in all_fields:
-        self[key] = value
-        provided_values.add(key)
+        if value is None and key in optional_fields and key not in provided_values:
+          # Don't consider an explicit null provided for an optional field as
+          # actually providing a value; instead, consider it omitting a value.
+          pass
+        else:
+          self[key] = value
+          provided_values.add(key)
 
     # Copy default field values
     for key in all_fields:
