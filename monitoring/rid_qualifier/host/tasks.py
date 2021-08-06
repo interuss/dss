@@ -25,8 +25,4 @@ def call_test_executor(user_config_json, auth_spec, input_files, debug=False):
         report = test_report.test_data
     else:
         report = test_executor.main(user_config, auth_spec, input_files)
-    if report:
-        job = get_current_job()
-        job_id = job.get_id()
-        if job_id:
-            config.Config.redis_client.set(job_id, json.dumps(report))
+    return json.dumps(report)

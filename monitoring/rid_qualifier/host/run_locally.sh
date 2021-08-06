@@ -36,6 +36,8 @@ echo "Start RQ worker container."
 docker run --name rq-worker -d --rm \
   -e MOCK_HOST_AUTH_SPEC="${AUTH}" \
   -e MOCK_HOST_DSS_URL="${DSS}" \
+  -e RID_HOST_URL="${RID_HOST}" \
+  -e PORT="${PORT}" \
   -e REDIS_URL=redis://redis-server:6379/0 \
   -v `pwd`/build/test-certs:/var/test-certs:ro \
   -v /tmp/rid-host-input-files:/mnt/app/input-files \

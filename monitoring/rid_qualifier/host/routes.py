@@ -2,6 +2,7 @@ import flask
 import os
 import pathlib
 import requests
+import logging
 
 from . import config
 from . import forms
@@ -19,6 +20,7 @@ from werkzeug.utils import secure_filename
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.rid_qualifier.host import webapp
 
+logging.basicConfig(level=logging.DEBUG)
 
 client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent,
@@ -107,11 +109,15 @@ def execute_task():
     job_id = ''
     data = {}
     if form.validate_on_submit():
-        job_id = start_background_task(
-            form.user_config.data,
-            form.auth_spec.data,
-            files,
-            form.sample_report.data)
+      file_objs = []
+      for f in files:
+        with open(f) as fo:
+          file_objs.append(fo.read())
+      job_id = start_background_task(
+          form.user_config.data,
+          form.auth_spec.data,
+          file_objs,
+          form.sample_report.data)
     if request.method == 'POST':
         data = {
             'job_id': job_id
@@ -133,6 +139,16 @@ def get_result(job_id):
             'task_status': task.get_status(),
             'task_result': task.result,
         }
+    if task.get_status() == 'finished':
+      if task.result:
+        filename = 'report.json'
+        filepath = f'{config.Config.FILE_PATH}/user_name/tests/{filename}'
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        with open(filepath, 'w') as f:
+          f.write(task.result)
+        response_object.update({'filename': filename})
+      else:
+        logging.info('Task result not available yet..')
     return response_object
 
 
@@ -150,11 +166,14 @@ def upload_flight_state_files():
     """Upload files."""
     files = request.files.getlist('files[]')
     destination_file_paths = []
+    folder_path = f'{config.Config.FILE_PATH}/user_name/flight_records'
+    if not os.path.isdir(folder_path):
+        os.makedirs(folder_path)
     for file in files:
         if file:
             filename = secure_filename(file.filename)
             if filename.endswith('.json'):
-                file_path = os.path.join(config.Config.INPUT_PATH, filename)
+                file_path = os.path.join(folder_path, filename)
                 file.save(file_path)
                 destination_file_paths.append(file_path)
     return redirect(

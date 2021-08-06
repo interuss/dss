@@ -27,4 +27,5 @@ class Config(object):
   POOL = redis.ConnectionPool(host='redis', port=6379, db=0)
   redis_client = redis.StrictRedis(connection_pool=POOL)
   INPUT_PATH = '/mnt/app/input-files'
+  FILE_PATH = '/app/rid-host-files'
   GOOGLE_CLIENT_ID = "95537707830-qovbcpoe6akdmk2tmai2su2pomp2hu4k.apps.googleusercontent.com"
