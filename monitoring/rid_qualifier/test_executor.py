@@ -10,7 +10,7 @@ from monitoring.monitorlib.auth import make_auth_adapter
 
 def main(
         test_configuration: RIDQualifierTestConfiguration,
-        auth_spec: str, aircraft_state_files: Optional[list]) -> reports.Report:
+        auth_spec: str, aircraft_state_files: Optional[list] = None) -> reports.Report:
     my_test_builder = TestBuilder(test_configuration=test_configuration, aircraft_state_files=aircraft_state_files)
     test_payloads = my_test_builder.build_test_payloads()
     test_id = str(uuid.uuid4())

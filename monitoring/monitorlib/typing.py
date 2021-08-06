@@ -132,8 +132,13 @@ class ImplicitDict(dict):
           provided_values.add(key)
     for key, value in kwargs.items():
       if key in all_fields:
-        self[key] = value
-        provided_values.add(key)
+        if value is None and key in optional_fields and key not in provided_values:
+          # Don't consider an explicit null provided for an optional field as
+          # actually providing a value; instead, consider it omitting a value.
+          pass
+        else:
+          self[key] = value
+          provided_values.add(key)
 
     # Copy default field values
     for key in all_fields:
@@ -176,7 +181,12 @@ def _parse_value(value, value_type: Type):
 
     elif generic_type is Union and len(arg_types) == 2 and arg_types[1] is type(None):
       # Type is an Optional declaration
-      return _parse_value(value, arg_types[0])
+      if value is None:
+        # An optional field specified explicitly as None is equivalent to
+        # omitting the field's value
+        return None
+      else:
+        return _parse_value(value, arg_types[0])
 
     else:
       raise NotImplementedError('Automatic parsing of {} type is not yet implemented'.format(value_type))
