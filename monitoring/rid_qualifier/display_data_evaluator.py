@@ -30,6 +30,7 @@ class RIDSystemObserver(object):
                                    observation_api.GetDisplayDataResponse)
                 if resp.status_code == 200 else None)
     except ValueError as e:
+      print('Error parsing observation response: {}'.format(e))
       result = None
     return (result, fetch.describe_query(resp, initiated_at))
 
@@ -128,21 +129,21 @@ def evaluate_system(
       'Cannot evaluate system: injected test flights ended at {}, which is before now ({})'.format(
         t_end, datetime.datetime.utcnow()))
 
-  
-  query_counter = 0  
+
+  query_counter = 0
   last_rect = None
-  
+
   t_next = arrow.utcnow()
 
-  while arrow.utcnow() < t_end:  
-    # Evaluate the system at an instant in time    
-  
-    t_now = arrow.utcnow().datetime      
+  while arrow.utcnow() < t_end:
+    # Evaluate the system at an instant in time
+
+    t_now = arrow.utcnow().datetime
     if (last_rect and
       config.repeat_query_rect_period > 0 and
-      query_counter % config.repeat_query_rect_period == 0):        
+      query_counter % config.repeat_query_rect_period == 0):
         rect = last_rect
-    else:      
+    else:
       rect = _get_query_rect(
         [injected_flight.flight for injected_flight in injected_flights],
         t_now, config)

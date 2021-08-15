@@ -55,7 +55,7 @@ def _make_flight_observation(flight: rid.RIDFlight, view: s2sphere.LatLngRect) -
       lat=flight.current_state.position.lat,
       lng=flight.current_state.position.lng,
       alt=flight.current_state.position.alt),
-    recent_paths=paths)
+    recent_paths=[observation_api.Path(positions=path) for path in paths])
 
 
 @webapp.route('/observation/display_data', methods=['GET'])
