@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "23a068fa-6ece-4afd-b27c-fe23527e6689",
-		"name": "Mock RIDSP",
+		"_postman_id": "27d288bd-10ce-4a6e-8536-09e5d21a0ba6",
+		"name": "Mock RIDDP",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -84,106 +84,7 @@
 			"response": []
 		},
 		{
-			"name": "Create test in mock_riddp",
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							"const moment = require('moment');",
-							"pm.globals.set(\"t_1\", moment().add(5, 'seconds').toISOString());",
-							"pm.globals.set(\"t_2\", moment().add(1, 'minutes').toISOString());",
-							"pm.globals.set(\"t_3\", moment().add(2, 'minutes').toISOString());",
-							"pm.globals.set(\"t_4\", moment().add(2, 'minutes').toISOString());",
-							"pm.globals.set(\"t_5\", moment().add(2, 'minutes').toISOString());",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{production_token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"requested_flights\": [\n    {\n      \"injection_id\": \"edb7695f-8737-4b9f-91f8-e2afbb333f41\",\n      \"telemetry\": [\n        {\n          \"timestamp\": \"{{t_1}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1231,\n            \"lng\": -118.4561,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 90,\n          \"speed\": 1.9,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        },\n        {\n          \"timestamp\": \"{{t_2}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1231,\n            \"lng\": -118.4551,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 180,\n          \"speed\": 2.0,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        },\n        {\n          \"timestamp\": \"{{t_3}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1221,\n            \"lng\": -118.4551,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 270,\n          \"speed\": 2.1,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        },\n        {\n          \"timestamp\": \"{{t_4}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1221,\n            \"lng\": -118.4561,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 270,\n          \"speed\": 2.2,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        },\n        {\n          \"timestamp\": \"{{t_5}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1221,\n            \"lng\": -118.4571,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 45,\n          \"speed\": 2.3,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        }\n      ],\n      \"details_responses\": [\n        {\n          \"effective_after\": \"{{t_1}}\",\n          \"details\": {\n            \"id\": \"a3423b-213401-0023\",\n            \"operator_id\": \"operator1\",\n            \"operator_location\": {\n              \"lng\": -118.4561,\n              \"lat\": 34.1231\n            },\n            \"operation_description\": \"SafeFlightDrone company doing survey with DJI Inspire 2. See my privacy policy www.example.com/privacy.\",\n            \"serial_number\": \"INTCJ123-4567-891\",\n            \"registration_number\": \"FA12345891\"\n          }\n        }\n      ]\n    }\n  ]\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8071/injection/tests/9a20678b-fad4-49e6-9009-b4891aa77cb7",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8071",
-					"path": [
-						"injection",
-						"tests",
-						"9a20678b-fad4-49e6-9009-b4891aa77cb7"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Delete test",
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{production_token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:8071/injection/tests/9a20678b-fad4-49e6-9009-b4891aa77cb7",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8071",
-					"path": [
-						"injection",
-						"tests",
-						"9a20678b-fad4-49e6-9009-b4891aa77cb7"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Flights in test area",
+			"name": "Flights in mock_ridsp test area",
 			"request": {
 				"auth": {
 					"type": "bearer",
@@ -198,26 +99,20 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8071/ridsp/v1/uss/flights?view=34.122,-118.453,34.125,-118.458&include_recent_positions=false",
+					"raw": "http://localhost:8073/observation/display_data?view=34.122,-118.453,34.125,-118.458",
 					"protocol": "http",
 					"host": [
 						"localhost"
 					],
-					"port": "8071",
+					"port": "8073",
 					"path": [
-						"ridsp",
-						"v1",
-						"uss",
-						"flights"
+						"observation",
+						"display_data"
 					],
 					"query": [
 						{
 							"key": "view",
 							"value": "34.122,-118.453,34.125,-118.458"
-						},
-						{
-							"key": "include_recent_positions",
-							"value": "false"
 						}
 					]
 				}
@@ -225,7 +120,7 @@
 			"response": []
 		},
 		{
-			"name": "Flight details",
+			"name": "Flight details from mock_ridsp test data",
 			"request": {
 				"auth": {
 					"type": "bearer",
