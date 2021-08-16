@@ -1,0 +1,33 @@
+{% if data %}
+<label for="flight-selection">Select Flight Records</label>
+<div id="flight-selection">
+    {% if data.flight_records %}
+        {% for file in data.flight_records %}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="{{file}}" name="filecheck" id="{{file}}">
+                <label class="form-check-label" for="{{file}}">
+                    {{file}}
+                </label>
+            </div>
+        {% endfor %}
+    {% else %}
+        {% if data.message %}
+        <p>{{ data.message }}</p>
+        {% endif %}
+    {% endif %}
+</div>
+{% endif %}
+
+<script>
+    // $('#flight-selection').click(function() {
+    //     console.log('Inside on click within flight_records.html');
+    //     var files_checked = $( "input:checked" );
+    //     if(files_checked.length > 0) {
+    //         console.log('selected');
+    //         selected_files = Object.values(files_checked).map(x=> x.value);
+    //         $('#user-auth').text = 'test';
+    //     } else {
+    //         console.log('not selected');
+    //     }
+    // });
+</script>
