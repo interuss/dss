@@ -73,14 +73,76 @@
                 xhrPool = [];
             }
         }
+
+        
+
     </script>
 {% endblock %}
 
 {% block body %}
+<script>
+
+function callUpload() {
+            var formData = new FormData();
+            $.each($("input[type='file']")[0].files, function(i, file) {
+                formData.append('files', file);
+            });
+            $.ajax({
+                type: "POST",
+                url: "/upload_file" ,
+                contentType: false,
+                processData: false,
+                cache: false,
+                enctype: 'multipart/form-data',
+                dataType: 'json',
+                data: formData,
+                success: function(response) {
+                    console.log('file upload called callUpload');
+                    // console.log('upload file response: ', response);
+                    $("#upload-updated").text = 'files updated';
+                }
+            })
+        }
+
+    $('#file-upload').on("change", function(e) {
+            var formData = new FormData();
+            $.each($("input[type='file']")[0].files, function(i, file) {
+                formData.append('files', file);
+            });
+            $.ajax({
+                type: "POST",
+                url: "/upload_file" ,
+                contentType: false,
+                processData: false,
+                cache: false,
+                enctype: 'multipart/form-data',
+                dataType: 'json',
+                data: formData,
+                success: function(response) {
+                    console.log('file upload called');
+                    console.log('upload file response: ', response);
+                    $("#upload-updated").text = 'files updated';
+                }
+            })
+        });
+</script>
 <div class="container-fluid">
     <div class="row">
         <div class="col-8">
             <div class="content-section">
+                <div>
+                    <form id="file-upload-form" action = "/upload_file" method = "POST" enctype = "multipart/form-data">
+                        <label class="btn btn-primary">
+                            <i class="fa fa-image"></i>Add Flight Records<input id="file-upload" type="file" name="files[]" style="display: none;" multiple>
+                        </label>
+                    </form>
+                    <script>
+                        document.getElementById("file-upload-form").onchange = function() {
+                            // callUpload();
+                            document.getElementById("file-upload-form").submit();
+                        }
+                    </script>
+                </div>
                 <form action="" method="post" novalidate>
                     {{ form.hidden_tag() }}
                     <fieldset class="form-group">
@@ -104,7 +166,7 @@
                             </div>
                         </div>
             
-                        <legend class="border-bottom mb-4">User Spec</legend>
+                        <legend class="border-bottom mb-4">Start New Test</legend>
                         <div class="form-group">
                             {{ form.auth_spec.label(class="form-control-label") }}
             
@@ -138,10 +200,8 @@
                             {{ form.sample_report.label(class="form-check-label") }}
                         </div>
                     </fieldset>
-            
                     <div class="form-group">
                         {{ form.submit(class="btn btn-outline-info config-submit") }}
-                        <a onclick="window.history.back();" class="back btn btn-outline-info">back</a>
                     </div>
                 </form>
                 {% if data.job_id %}
@@ -152,25 +212,26 @@
                         }
                     </script>
                 {% endif %}
-                <div id="status-container">
-                    <div id="status" class="alert " style="display: none;">
-                        <div id="current-status"></div>
-                        <div id="spinner" class="spinner" style="display: none;">
-                            <div>Processing ..</div>
-                            <img src="/static/images/spinner.gif"/>
-                        </div>
-                    </div>
-                    <div id="getresult" class="form-group get-result" style="display: none;">
-                        <form method="post" action="/report/{{data.filename}}">
-                            <input type="submit" value="Get Result" >
-                        </form>
-                    </div>
-                </div>
+                
             </div>
           </div>
           <div class="col-4">
+            <div id="status-container" style="height: 200px;padding-top: 20px;">
+                <div id="status" class="alert " style="display: none;">
+                    <div id="current-status"></div>
+                    <div id="spinner" class="spinner" style="display: none;">
+                        <div>Processing ..</div>
+                        <img src="/static/images/spinner.gif"/>
+                    </div>
+                </div>
+                <div id="getresult" class="form-group get-result" style="display: none;">
+                    <form method="post" action="/report/{{data.filename}}">
+                        <input type="submit" value="Get Result" >
+                    </form>
+                </div>
+            </div>
             {% if data.tests %}
-                <label for="history">Existing Tests results</label>
+                <legend class="border-bottom mb-4">Existing Tests results</legend>
                 <div id="history" class="container">
                     {% for file in data.tests %}
                         <a href="/test_download/{{file}}" download>{{file}}</a>

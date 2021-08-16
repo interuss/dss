@@ -40,7 +40,7 @@ class TestsExecuteForm(FlaskForm):
     auth_spec = StringField('Auth Spec', validators=[DataRequired()])
     user_config = TextAreaField('User Config', validators=[DataRequired()])
     sample_report = BooleanField('Sample Report')
-    submit = SubmitField('Submit')
+    submit = SubmitField('Run Test')
 
     def validate_user_config(form, field):
         user_config = json.loads(field.data)
