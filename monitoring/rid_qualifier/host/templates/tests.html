@@ -59,6 +59,21 @@
                         $(".spinner").hide();
                         if(task_status === 'finished') {
                             $(".get-result").show();
+                            $.ajax({
+                                type: 'GET',
+                                url: '/history',
+                                success: function(response) {
+                                    console.log('history response: ', response);
+                                    result_display = '';
+                                    $.each(response.tests, function(i, file) {
+                                        result_display += '<a href="/test_download/' + file + '">' + file + '</a><br />';
+                                    });
+                                    // response.tests.each(file => {
+                                    //     result_display.append('<a href="/test_download/"' + file + ' download>{{file}}</a>');
+                                    // })
+                                    $('#history').html(result_display);
+                                }
+                            });
                         }
                     }
                 }
@@ -121,7 +136,6 @@ function callUpload() {
                 success: function(response) {
                     console.log('file upload called');
                     console.log('upload file response: ', response);
-                    $("#upload-updated").text = 'files updated';
                 }
             })
         });
@@ -148,7 +162,7 @@ function callUpload() {
                     <fieldset class="form-group">
             
                         <div class="form-group">
-                            <div class="form-check">
+                            <div class="form-check" >
                                 <!-- {{ form.flight_records(class="form-check-input") }}
                                 {{ form.flight_records.label(class="form-check-label") }} -->
             
@@ -160,8 +174,13 @@ function callUpload() {
                                         {% endfor %}
                                     </div>
                                 {% else %}
-                                    {{ form.flight_records.label(class="form-check-label") }} 
-                                    {{ form.flight_records(class="form-control form-control-lg") }}
+                                    {% for subfield in form.flight_records %}
+                                        <div>
+                                            {{ subfield(class="form-control-lg") }}
+                                            {{ subfield.label(class="form-check-label ") }}
+                                        </div>
+                                    {% endfor %}
+                                   
                                 {% endif %}
                             </div>
                         </div>
@@ -230,16 +249,16 @@ function callUpload() {
                     </form>
                 </div>
             </div>
-            {% if data.tests %}
-                <legend class="border-bottom mb-4">Existing Tests results</legend>
-                <div id="history" class="container">
+            <legend class="border-bottom mb-4">Existing Tests results</legend>
+            <div id="history" class="container">
+                {% if data.tests %}
                     {% for file in data.tests %}
-                        <a href="/test_download/{{file}}" download>{{file}}</a>
+                        <a href="/test_download/{{file}}" >{{file}}</a><br/>
                     {% endfor %}
-                </div>
-            {% else %}
-            <p>No existing test results.</p>
-            {% endif %}
+                {% else %}
+                    <p>No existing test results.</p>
+                {% endif %}
+            </div>
           </div>
     </div>
 </div>

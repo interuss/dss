@@ -109,7 +109,6 @@ def start_background_task(user_config, auth_spec, input_files, debug):
 @login_required
 def tests():
     flight_record_data = get_flight_records()
-    test_history = get_test_history()
     files = []
     if flight_record_data.get('flight_records'):
         files= [(x, x) for x in flight_record_data['flight_records']]
@@ -123,7 +122,6 @@ def tests():
         input_files_location = f'{config.Config.FILE_PATH}/user_name/flight_records'
         for filename in form.flight_records.data:
             logging.info(f'file: {filename}')
-            print('file 123: ', filename)
             filepath = f'{input_files_location}/{filename}'
             with open(filepath) as fo:
                 file_objs.append(fo.read())
@@ -133,10 +131,10 @@ def tests():
                 file_objs,
                 form.sample_report.data)
     #   form_status = 'submitted'
-    if request.method == 'POST':
-        data.update({
-            'job_id': job_id
-        })
+        if request.method == 'POST':
+            data.update({
+                'job_id': job_id
+            })
     return render_template(
         'tests.html',
         title='Execute tests',
@@ -223,7 +221,7 @@ def get_report(job_id):
     output.headers['Content-type'] = 'text/csv'
     return output
 
-@webapp.route('/test_download/<string:filename>', methods=['POST'])
+@webapp.route('/test_download/<string:filename>', methods=['POST', 'GET'])
 def download_test(filename):
     filepath = f'{config.Config.FILE_PATH}/user_name/tests/{filename}'
     # os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -232,12 +230,12 @@ def download_test(filename):
         content = f.read()
     if content:
         output = make_response(content)
-        output.headers['Content-Disposition'] = 'attachment; filename=report.json'
+        output.headers['Content-Disposition'] = f'attachment; filename={filename}'
         output.headers['Content-type'] = 'text/csv'
         return output
     return {'error': 'Error downloading file'}
 
-# @webapp.route('/history')
+@webapp.route('/history')
 def get_test_history():
     output_path = f'{config.Config.FILE_PATH}/user_name/tests'
     try:
