@@ -21,7 +21,6 @@ from werkzeug.utils import secure_filename
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.rid_qualifier.host import webapp
 
-logging.basicConfig(level=logging.DEBUG)
 
 client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent,
