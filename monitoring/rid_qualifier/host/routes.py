@@ -81,17 +81,6 @@ def logout():
     return render_template('logout.html')
 
 
-@webapp.route('/')
-@login_required
-def home_page():
-    if session.get('google_id'):
-        return render_template(
-            'home.html',
-            title='Home',
-            greetings='Hello RID Host !!')
-    return redirect('/login')
-
-
 def start_background_task(user_config, auth_spec, input_files, debug):
     job = config.Config.qualifier_queue.enqueue(
         'monitoring.rid_qualifier.host.tasks.call_test_executor',
@@ -99,6 +88,7 @@ def start_background_task(user_config, auth_spec, input_files, debug):
     return job.get_id()
 
 
+@webapp.route('/')
 @webapp.route('/tests', methods=['GET', 'POST'])
 @login_required
 def tests():
@@ -146,37 +136,6 @@ def get_flight_records():
         flight_records = [f for f in os.listdir(folder_path) if f.endswith('.json')]
         data['flight_records'] = flight_records
     return data
-
-
-@webapp.route('/executor', methods=['GET', 'POST'])
-@login_required
-def execute_task():
-    files = request.args['files']
-    if not files:
-        return 'files not found.'
-    files = files.split(',')
-    form = forms.UserConfig(file_count=len(files))
-    job_id = ''
-    data = {}
-    if form.validate_on_submit():
-      file_objs = []
-      for f in files:
-        with open(f) as fo:
-          file_objs.append(fo.read())
-      job_id = start_background_task(
-          form.user_config.data,
-          form.auth_spec.data,
-          file_objs,
-          form.sample_report.data)
-    if request.method == 'POST':
-        data = {
-            'job_id': job_id
-        }
-    return render_template(
-        'start_task.html',
-        title='Get User config',
-        form=form,
-        data=data)
 
 
 @webapp.route('/result/<string:job_id>', methods=['GET', 'POST'])
