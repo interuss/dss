@@ -88,7 +88,7 @@ def start_background_task(user_config, auth_spec, input_files, debug):
     return job.get_id()
 
 
-@webapp.route('/')
+@webapp.route('/', methods=['GET', 'POST'])
 @webapp.route('/tests', methods=['GET', 'POST'])
 @login_required
 def tests():
@@ -103,7 +103,8 @@ def tests():
     job_id = ''
     if form.validate_on_submit():
         file_objs = []
-        input_files_location = f'{config.Config.FILE_PATH}/user_name/flight_records'
+        user_id = session['google_id']
+        input_files_location = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
         for filename in form.flight_records.data:
             filepath = f'{input_files_location}/{filename}'
             with open(filepath) as fo:
@@ -129,7 +130,8 @@ def get_flight_records():
         'flight_records': [],
         'message': ''
     }
-    folder_path = f'{config.Config.FILE_PATH}/user_name/flight_records'
+    user_id = session['google_id']
+    folder_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
     if not os.path.isdir(folder_path):
         data['message'] = 'Flight records not available.'
     else:
@@ -152,7 +154,8 @@ def get_result(job_id):
         now = datetime.now()
         if task.result:
             filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
-            filepath = f'{config.Config.FILE_PATH}/user_name/tests/{filename}'
+            user_id = session['google_id']
+            filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{filename}'
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             with open(filepath, 'w') as f:
                 f.write(task.result)
@@ -164,10 +167,11 @@ def get_result(job_id):
 
 @webapp.route('/report', methods=['POST'])
 def get_report():
-    output_path = f'{config.Config.FILE_PATH}/user_name/tests'
+    user_id = session['google_id']
+    output_path = f'{config.Config.FILE_PATH}/{user_id}/tests'
     try:
         latest_file = os.listdir(output_path)[0]
-        filepath = f'{config.Config.FILE_PATH}/user_name/tests/{latest_file}'
+        filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{latest_file}'
         with open(filepath) as f:
             content = f.read()
             if content:
@@ -182,7 +186,8 @@ def get_report():
 
 @webapp.route('/result_download/<string:filename>', methods=['POST', 'GET'])
 def download_test(filename):
-    filepath = f'{config.Config.FILE_PATH}/user_name/tests/{filename}'
+    user_id = session['google_id']
+    filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{filename}'
     content = ''
     with open(filepath) as f:
         content = f.read()
@@ -195,7 +200,8 @@ def download_test(filename):
 
 @webapp.route('/history')
 def get_test_history():
-    output_path = f'{config.Config.FILE_PATH}/user_name/tests'
+    user_id = session['google_id']
+    output_path = f'{config.Config.FILE_PATH}/{user_id}/tests'
     try:
         executed_tests = os.listdir(output_path)
     except:
@@ -208,7 +214,8 @@ def upload_flight_state_files():
     """Upload files."""
     files = request.files.getlist('files[]')
     destination_file_paths = []
-    folder_path = f'{config.Config.FILE_PATH}/user_name/flight_records'
+    user_id = session['google_id']
+    folder_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
     if not os.path.isdir(folder_path):
         os.makedirs(folder_path)
     for file in files:
