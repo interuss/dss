@@ -13,6 +13,7 @@
     var startedTask = '';
     var startTime = new Date().getTime();
     var xhrPool = [];
+    var currentFile = '';
     function getStatusHtml(task_status, timeTaken, refreshIntervalId) {
         try {
             taskStatusStr = 'Current task status: ' + task_status[0].toUpperCase() + task_status.slice(1);
@@ -33,6 +34,7 @@
                     currentTime = new Date().getTime();
                     timeTaken = Math.round((((currentTime - startTime) % 86400000) % 3600000) / 60000);
                     task_status = response.task_status;
+                    currentFile = response.filename;
                     $("#current-status").html(getStatusHtml(task_status, timeTaken, refreshIntervalId));
                     $("#status").show();
                     if(task_status === 'started' || task_status === 'queued') {
@@ -51,7 +53,6 @@
                         }, 1000 * 60 * minutesInterval);
                     } else {
                         clearInterval(refreshIntervalId);
-                        console.log('interval cleared: ', refreshIntervalId);
                         if(task_status !== 'finished'){
                             $("#status").removeClass("alert-success").addClass("alert-danger");
                         }
@@ -63,14 +64,10 @@
                                 type: 'GET',
                                 url: '/history',
                                 success: function(response) {
-                                    console.log('history response: ', response);
                                     result_display = '';
                                     $.each(response.tests, function(i, file) {
-                                        result_display += '<a href="/test_download/' + file + '">' + file + '</a><br />';
+                                        result_display += '<a href="/result_download/' + file + '">' + file + '</a><br />';
                                     });
-                                    // response.tests.each(file => {
-                                    //     result_display.append('<a href="/test_download/"' + file + ' download>{{file}}</a>');
-                                    // })
                                     $('#history').html(result_display);
                                 }
                             });
@@ -81,44 +78,18 @@
             xhrPool.push(current_request);
             if(task_status === 'finished' || task_status === 'failed') {
                 $.each(xhrPool, function(idx, jqXHR) {
-                    console.log('Aborting current request');
+                    console.log('Aborting additional requests');
                     jqXHR.abort();
                 });
-                // empty xhrPool
                 xhrPool = [];
             }
         }
-
-        
 
     </script>
 {% endblock %}
 
 {% block body %}
 <script>
-
-function callUpload() {
-            var formData = new FormData();
-            $.each($("input[type='file']")[0].files, function(i, file) {
-                formData.append('files', file);
-            });
-            $.ajax({
-                type: "POST",
-                url: "/upload_file" ,
-                contentType: false,
-                processData: false,
-                cache: false,
-                enctype: 'multipart/form-data',
-                dataType: 'json',
-                data: formData,
-                success: function(response) {
-                    console.log('file upload called callUpload');
-                    // console.log('upload file response: ', response);
-                    $("#upload-updated").text = 'files updated';
-                }
-            })
-        }
-
     $('#file-upload').on("change", function(e) {
             var formData = new FormData();
             $.each($("input[type='file']")[0].files, function(i, file) {
@@ -133,13 +104,11 @@ function callUpload() {
                 enctype: 'multipart/form-data',
                 dataType: 'json',
                 data: formData,
-                success: function(response) {
-                    console.log('file upload called');
-                    console.log('upload file response: ', response);
-                }
-            })
+                success: function(response) {}
+            });
         });
 </script>
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-8">
@@ -151,10 +120,9 @@ function callUpload() {
                         </label>
                     </form>
                     <script>
-                        document.getElementById("file-upload-form").onchange = function() {
-                            // callUpload();
-                            document.getElementById("file-upload-form").submit();
-                        }
+                        $("#file-upload-form").on('change', function() {
+                            $("#file-upload-form").submit();
+                        })
                     </script>
                 </div>
                 <form action="" method="post" novalidate>
@@ -163,11 +131,8 @@ function callUpload() {
             
                         <div class="form-group">
                             <div class="form-check" >
-                                <!-- {{ form.flight_records(class="form-check-input") }}
-                                {{ form.flight_records.label(class="form-check-label") }} -->
-            
                                 {% if form.flight_records.errors %}
-                                    {{ form.flight_records(class="form-control form-control-lg is-invalid") }}
+                                    {{ form.flight_records(class="form-control form-control-sm is-invalid") }}
                                     <div class="invalid-feedback">
                                         {% for error in form.flight_records.errors %}
                                             <span>{{ error }}</span>
@@ -176,7 +141,7 @@ function callUpload() {
                                 {% else %}
                                     {% for subfield in form.flight_records %}
                                         <div>
-                                            {{ subfield(class="form-control-lg") }}
+                                            {{ subfield(class="form-control-sm") }}
                                             {{ subfield.label(class="form-check-label ") }}
                                         </div>
                                     {% endfor %}
@@ -190,28 +155,28 @@ function callUpload() {
                             {{ form.auth_spec.label(class="form-control-label") }}
             
                             {% if form.auth_spec.errors %}
-                                {{ form.auth_spec(class="form-control form-control-lg is-invalid") }}
+                                {{ form.auth_spec(class="form-control form-control-sm is-invalid") }}
                                 <div class="invalid-feedback">
                                     {% for error in form.auth_spec.errors %}
                                         <span>{{ error }}</span>
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                {{ form.auth_spec(class="form-control form-control-lg") }}
+                                {{ form.auth_spec(class="form-control form-control-sm") }}
                             {% endif %}
                         </div>
                         <div class="form-group">
                             {{ form.user_config.label(class="form-control-label") }}
             
                             {% if form.user_config.errors %}
-                                {{ form.user_config(class="form-control form-control-lg is-invalid", rows='7') }}
+                                {{ form.user_config(class="form-control form-control-sm is-invalid", rows='7') }}
                                 <div class="invalid-feedback">
                                     {% for error in form.user_config.errors %}
                                         <span>{{ error }}</span>
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                {{ form.user_config(class="form-control form-control-lg", rows='7') }}
+                                {{ form.user_config(class="form-control form-control-sm", rows='7') }}
                             {% endif %}
                         </div>
                         <div class="form-check">
@@ -244,7 +209,7 @@ function callUpload() {
                     </div>
                 </div>
                 <div id="getresult" class="form-group get-result" style="display: none;">
-                    <form method="post" action="/report/{{data.filename}}">
+                    <form method="post" action="/report">
                         <input type="submit" value="Get Result" >
                     </form>
                 </div>
@@ -253,7 +218,7 @@ function callUpload() {
             <div id="history" class="container">
                 {% if data.tests %}
                     {% for file in data.tests %}
-                        <a href="/test_download/{{file}}" >{{file}}</a><br/>
+                        <a href="/result_download/{{file}}" >{{file}}</a><br/>
                     {% endfor %}
                 {% else %}
                     <p>No existing test results.</p>

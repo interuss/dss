@@ -36,10 +36,16 @@
     <body>
         <title>RID Qualifier host</title>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
+        <script>
+          $(window).on("load", function() {
+            // Animate loader off screen
+            $(".loader").fadeOut("2000");;
+          });
+        </script>
+        <div class="loader"></div>
         <main role="main" class="container-fluid">
             <div class="row">
-              
+              <div class="col-md-8"></div>
                 {% with messages = get_flashed_messages(with_categories=true) %}
                   {% if messages %}
                     {% for category, message in messages %}
@@ -50,7 +56,7 @@
                   {% endif %}
                 {% endwith %}
                 {% block body %}{% endblock %}
-              
+              </div>
             </div>
           </main>
 
