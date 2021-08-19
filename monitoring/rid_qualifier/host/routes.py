@@ -27,14 +27,22 @@ client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent,
     'client_secret.json')
 
-flow = Flow.from_client_secrets_file(
-    client_secrets_file=client_secrets_file,
-    scopes=[
-        'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'openid'],
-    redirect_uri=f'{config.Config.RID_HOST_URL}/callback')
+flow = ''
+try:
+    flow = Flow.from_client_secrets_file(
+        client_secrets_file=client_secrets_file,
+        scopes=[
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/userinfo.email',
+            'openid'],
+        redirect_uri=f'{config.Config.RID_HOST_URL}/callback')
+except FileNotFoundError:
+    pass
 
+
+@webapp.route('/info')
+def info():
+    return render_template('info.html')
 
 def login_required(function):
     @wraps(function)
@@ -49,6 +57,8 @@ def login_required(function):
 def login():
     # make sure session is empty
     session.clear()
+    if not flow:
+        return redirect(url_for('.info'))
     authorization_url, state = flow.authorization_url()
     session['state'] = state
     return redirect(authorization_url)
@@ -56,6 +66,8 @@ def login():
 
 @webapp.route('/callback')
 def callback():
+    if not flow:
+        return redirect(url_for('.info'))
     flow.fetch_token(authorization_response=request.url)
 
     credentials = flow.credentials
