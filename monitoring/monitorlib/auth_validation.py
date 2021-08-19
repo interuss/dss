@@ -37,6 +37,7 @@ def requires_scope_decorator(public_key: str, audience: str):
   will ensure that the requester has a valid access token with the required
   scope before allowing the endpoint to be called.
   """
+  audiences = audience.split(',') if audience else []
   def decorator(permitted_scopes):
     def outer_wrapper(fn):
       @wraps(fn)
@@ -59,9 +60,15 @@ def requires_scope_decorator(public_key: str, audience: str):
           try:
             if not public_key:
               raise ConfigurationError('Public key for access tokens is not configured on server')
-            if not audience:
+            if not audiences:
               raise ConfigurationError('Audience for access tokens is not configured on server')
-            r = jwt.decode(token, public_key, algorithms='RS256', audience=audience)
+            r = jwt.decode(token, public_key, algorithms='RS256', options={'verify_aud': False})
+            if 'aud' not in r:
+              raise InvalidAccessTokenError('Access token is missing aud claim.')
+            if r['aud'] not in audiences:
+              raise InvalidAccessTokenError(
+                'Access token audience "{}" is invalid; expected {}'.format(
+                  r['aud'], ', '.join(audiences)))
             provided_scopes = r['scope'].split(' ')
             has_scope = False
             for scope in permitted_scopes:
