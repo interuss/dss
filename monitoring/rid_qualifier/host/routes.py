@@ -1,8 +1,9 @@
 import flask
+import json
+import logging
 import os
 import pathlib
 import requests
-import logging
 
 from . import config
 from . import forms
@@ -227,6 +228,18 @@ def upload_flight_state_files():
 
     return redirect(url_for('.tests'))
 
+@webapp.route('/delete', methods=['GET', 'POST'])
+def delete_file():
+    data = json.loads(request.get_data())
+    filename = data.get('filename')
+    if filename:
+        user_id = session['google_id']
+        file = f'{config.Config.FILE_PATH}/{user_id}/flight_records/{filename}'
+        if os.path.exists(file):
+            os.remove(file)
+        else:
+            raise 'File not found'
+    return {'deleted': filename}
 
 @webapp.route('/status')
 def status():

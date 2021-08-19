@@ -107,6 +107,24 @@
                 success: function(response) {}
             });
         });
+
+        $(function(){
+            $('.child').click(function(e){
+                let parentElem = $(this).parent();
+                $.ajax({
+                    type: 'POST',
+                    url: '/delete',
+                    contentType: 'application/json',
+                    data: JSON.stringify({'filename': parentElem.children()[0].value}),
+                    success: function(response) {
+                        console.log('response: ', response);
+                        console.log(parentElem);
+                        parentElem.hide();
+                        return false; // important!
+                    }
+                });
+            });
+    });
 </script>
 
 <div class="container-fluid">
@@ -140,9 +158,12 @@
                                     </div>
                                 {% else %}
                                     {% for subfield in form.flight_records %}
-                                        <div>
+                                        <div class="parent">
                                             {{ subfield(class="form-control-sm") }}
-                                            {{ subfield.label(class="form-check-label ") }}
+                                            {{ subfield.label(class="form-check-label") }}
+                                            <button type="button" class="close child" aria-label="Close" style="float: none !important;">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
                                         </div>
                                     {% endfor %}
                                    

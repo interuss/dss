@@ -27,5 +27,5 @@ body {
   width: 100%;
   height: 100%;
   z-index: 9999;
-  background: url('/dss/monitoring/rid_qualifier/host/static/images/spinner.gif') 50% 50% no-repeat rgb(249,249,249);
+  background: url('images/spinner.gif') 50% 50% no-repeat rgb(249,249,249);
 }
