@@ -27,7 +27,6 @@ client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent,
     'client_secret.json')
 
-flow = ''
 try:
     flow = Flow.from_client_secrets_file(
         client_secrets_file=client_secrets_file,
@@ -37,7 +36,7 @@ try:
             'openid'],
         redirect_uri=f'{config.Config.RID_HOST_URL}/callback')
 except FileNotFoundError:
-    pass
+    flow = ''
 
 
 @webapp.route('/info')
@@ -47,8 +46,12 @@ def info():
 def login_required(function):
     @wraps(function)
     def decorated_function(*args, **kwargs):
-        if 'google_id' not in session:
+        if flow and 'google_id' not in session:
             return redirect(url_for('login', next=request.url))
+        elif 'google_id' not in session:
+            session['google_id'] = 'testuser'
+            session['name'] = 'Test User'
+            session['state'] = 'test'
         return function(*args, **kwargs)
     return decorated_function
 
@@ -93,11 +96,17 @@ def logout():
     return render_template('logout.html')
 
 
-def start_background_task(user_config, auth_spec, input_files, debug):
+def _start_background_task(user_config, auth_spec, input_files, debug):
     job = config.Config.qualifier_queue.enqueue(
         'monitoring.rid_qualifier.host.tasks.call_test_executor',
         user_config, auth_spec, input_files, debug)
     return job.get_id()
+
+def _get_running_jobs():
+    registry = config.Config.qualifier_queue.started_job_registry
+    running_job = registry.get_job_ids()
+    if running_job:
+        return running_job[0]
 
 
 @webapp.route('/', methods=['GET', 'POST'])
@@ -106,30 +115,35 @@ def start_background_task(user_config, auth_spec, input_files, debug):
 def tests():
     flight_record_data = get_flight_records()
     files = []
+    running_job = _get_running_jobs()
+
     if flight_record_data.get('flight_records'):
         files= [(x, x) for x in flight_record_data['flight_records']]
 
     form = forms.TestsExecuteForm()
     form.flight_records.choices = files
     data = get_test_history()
-    job_id = ''
-    if form.validate_on_submit():
-        file_objs = []
-        user_id = session['google_id']
-        input_files_location = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
-        for filename in form.flight_records.data:
-            filepath = f'{input_files_location}/{filename}'
-            with open(filepath) as fo:
-                file_objs.append(fo.read())
-            job_id = start_background_task(
-                form.user_config.data,
-                form.auth_spec.data,
-                file_objs,
-                form.sample_report.data)
-        if request.method == 'POST':
-            data.update({
-                'job_id': job_id
-            })
+    if running_job:
+        data.update({'job_id': running_job})
+    else:
+        job_id = ''
+        if form.validate_on_submit():
+            file_objs = []
+            user_id = session['google_id']
+            input_files_location = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
+            for filename in form.flight_records.data:
+                filepath = f'{input_files_location}/{filename}'
+                with open(filepath) as fo:
+                    file_objs.append(fo.read())
+                job_id = _start_background_task(
+                    form.user_config.data,
+                    form.auth_spec.data,
+                    file_objs,
+                    form.sample_report.data)
+            if request.method == 'POST':
+                data.update({
+                    'job_id': job_id,
+                })
     return render_template(
         'tests.html',
         title='Execute tests',

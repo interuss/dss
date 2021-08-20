@@ -124,7 +124,14 @@
                     }
                 });
             });
-    });
+
+            $("#userConfig").submit(function () {
+                $(".config-submit").attr("disabled", true);
+                $(".config-submit").attr('value', 'Starting Test...')
+                return true;
+            });
+        });
+
 </script>
 
 <div class="container-fluid">
@@ -143,7 +150,7 @@
                         })
                     </script>
                 </div>
-                <form action="" method="post" novalidate>
+                <form id="userConfig" action="" method="post" novalidate>
                     {{ form.hidden_tag() }}
                     <fieldset class="form-group">
             
@@ -209,6 +216,7 @@
                     </div>
                 </form>
                 {% if data.job_id %}
+                    <p class="text-info">A job running in the background: {{ data.job_id }}</p>
                     <script>
                         if(data.job_id != startedTask) {
                             $(document).ready(getCurrentStatus());

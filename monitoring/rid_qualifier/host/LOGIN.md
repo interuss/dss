@@ -4,7 +4,7 @@ The first step to enable a Google Login option is to register the application as
 
 First, note that you will need a Google Account. You already have one if you use Gmail.
 
-Next, go to the (Google developers credentials page)[https://console.developers.google.com/apis/credentials].
+Next, go to the [Google developers credentials page](https://console.developers.google.com/apis/credentials).
 
 Once in, you may be prompted to agree to their terms of service. Should you agree to those, press the Create credentials button on the next page. Select the option for OAuth client ID:
 
