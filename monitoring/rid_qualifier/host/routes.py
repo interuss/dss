@@ -34,7 +34,7 @@ try:
             'https://www.googleapis.com/auth/userinfo.profile',
             'https://www.googleapis.com/auth/userinfo.email',
             'openid'],
-        redirect_uri=f'{config.Config.RID_HOST_URL}/callback')
+        redirect_uri=f'{config.ENV_KEY_RID_HOST_URL}/login_callback')
 except FileNotFoundError:
     flow = ''
 
@@ -67,8 +67,8 @@ def login():
     return redirect(authorization_url)
 
 
-@webapp.route('/callback')
-def callback():
+@webapp.route('/login_callback')
+def login_callback():
     if not flow:
         return redirect(url_for('.info'))
     flow.fetch_token(authorization_response=request.url)
@@ -81,8 +81,7 @@ def callback():
 
     id_info = id_token.verify_oauth2_token(
         id_token=credentials._id_token,
-        request=token_request,
-        audience=config.Config.GOOGLE_CLIENT_ID
+        request=token_request
     )
 
     session['google_id'] = id_info.get('sub')
@@ -235,7 +234,7 @@ def get_test_history():
     return {'tests': executed_tests}
 
 
-@webapp.route('/upload_file', methods=['POST'])
+@webapp.route('/flight_records', methods=['POST'])
 def upload_flight_state_files():
     """Upload files."""
     files = request.files.getlist('files[]')
