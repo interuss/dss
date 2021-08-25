@@ -1,14 +1,20 @@
 # Module to parse KML file.
 
+import logging
 from pykml import parser
 import re
 
 
 KML_NAMESPACE = {"kml":"http://www.opengis.net/kml/2.2"}
 
-def get_kml_root(kml_path):
-    kml = parser.parse(kml_path)
-    return kml.getroot()
+def get_kml_root(kml_obj, from_string=False):
+    print('kml_obj: ', type(kml_obj))
+    logging.info(f'kml_obj: {type(kml_obj)}')
+    if from_string:
+        content = parser.fromstring(kml_obj)
+        return content
+    content = parser.parse(kml_obj)
+    return content.getroot()
 
 
 def get_folders(root):
@@ -82,8 +88,8 @@ def get_folder_description(folder_elem):
     return dict([tuple(j.strip() for j in i.split(':')) for i in str(description).split('\n')])
 
 
-def get_kml_content(kml_file):
-    root = get_kml_root(kml_file)
+def get_kml_content(kml_file, from_string=False):
+    root = get_kml_root(kml_file, from_string)
     folders = get_folders(root)
     kml_content = {}
     for folder in folders:

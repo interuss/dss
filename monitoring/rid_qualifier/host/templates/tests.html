@@ -72,6 +72,8 @@
                                     $('#history').html(result_display);
                                 }
                             });
+                        } else if(task_status === 'failed') {
+                            $(".last-job").hide();
                         }
                     }
                 }
