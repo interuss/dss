@@ -22,11 +22,11 @@ REDIS_QUEUE = 'qualifer-tasks'
 REDIS_URL = os.environ[ENV_KEY_REDIS_URL]
 qualifier_queue = rq.Queue(
     REDIS_QUEUE, connection=Redis.from_url(REDIS_URL), default_timeout=3600)
+AUTH_SPEC = os.environ[ENV_KEY_AUTH]
+RID_QUALIFIER_HOST_URL = os.environ[ENV_KEY_RID_QUALIFIER_HOST_URL]
 
 
 class Config(object):
-    AUTH_SPEC = os.environ[ENV_KEY_AUTH]
-    RID_QUALIFIER_HOST_URL = os.environ[ENV_KEY_RID_QUALIFIER_HOST_URL]
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-test-secret-string'
     INPUT_PATH = '/mnt/app/input-files'
     FILE_PATH = '/app/rid-host-files'
