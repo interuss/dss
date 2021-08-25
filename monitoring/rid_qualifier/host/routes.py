@@ -186,18 +186,19 @@ def get_result(job_id):
             'task_result': task.result,
         }
     if task.get_status() == 'finished':
+        task_result = task.result
         response_object.update({
             'task_status': 'finished',
-            'task_result': task.result,
+            'task_result': task_result,
         })
         # removing job so that all pending requests on this job should fail.
-        tasks.remove_rq_job(job_id)
+        tasks.remove_rq_jobs()
         now = datetime.now()
-        if task.result:
+        if task_result:
             filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
             user_id = session['google_id']
             filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{filename}'
-            job_result = json.loads(task.result)
+            job_result = json.loads(task_result)
             if job_result.get('is_flight_records_from_kml'):
                 del job_result['is_flight_records_from_kml']
                 for filename, content in job_result.items():
@@ -205,7 +206,7 @@ def get_result(job_id):
                     _write_to_file(filepath, json.dumps(content))
                 response_object.update({'is_flight_records_from_kml': True})
             else:
-                job_result = task.result
+                job_result = task_result
                 _write_to_file(filepath, job_result)
             response_object.update({'filename': filename})
         else:
@@ -292,10 +293,8 @@ def _process_kml():
     kml_files = request.args['kml_files']
     user_id = session['google_id']
     flight_records_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
-    logging.info(f'files 2: {kml_files}')
     kml_jobs = []
     for file in json.loads(kml_files):
-        logging.info(f'file: {file}')
         with open(file, 'rb') as fo:
             content = fo.read()
             job_id = _process_kml_files_task(content, flight_records_path)

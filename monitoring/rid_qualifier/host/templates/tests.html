@@ -53,6 +53,7 @@
                         }, 1000 * 60 * minutesInterval);
                     } else {
                         clearInterval(refreshIntervalId);
+                        $('#file-upload').removeAttr('disabled');
                         if(task_status !== 'finished'){
                             $("#status").removeClass("alert-success").addClass("alert-danger");
                             $(".last-job").hide();
@@ -102,6 +103,7 @@
             $.each($("input[type='file']")[0].files, function(i, file) {
                 formData.append('files', file);
             });
+            $('#file-upload').attr('disabled', 'disabled');
             $.ajax({
                 type: "POST",
                 url: "/flight_records" ,
@@ -111,7 +113,9 @@
                 enctype: 'multipart/form-data',
                 dataType: 'json',
                 data: formData,
-                success: function(response) {}
+                success: function(response) {
+                    $('#file-upload').removeAttr('disabled');
+                }
             });
         });
 
@@ -135,6 +139,7 @@
             $("#userConfig").submit(function () {
                 $(".config-submit").attr("disabled", true);
                 $(".config-submit").attr('value', 'Starting Test...');
+                $('#file-upload').attr('disabled', 'disabled');
                 return true;
             });
 

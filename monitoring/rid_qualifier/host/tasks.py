@@ -18,12 +18,13 @@ def get_rq_job(job_id):
       return None
   return rq_job
 
-def remove_rq_job(job_id):
-  try:
-      rq_job = config.Config.qualifier_queue.remove(job_id)
-  except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
-      return None
-  return rq_job
+def remove_rq_jobs():
+    """Removes all remaining messages on the queue."""
+    try:
+        rq_job = config.Config.qualifier_queue.empty()
+    except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
+        return None
+    return rq_job
 
 
 def call_test_executor(user_config_json, auth_spec, input_files, debug=False):

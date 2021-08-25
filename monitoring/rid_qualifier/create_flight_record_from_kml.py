@@ -381,7 +381,6 @@ if __name__ == '__main__':
         raise 'Path to output folder not provided.'
     if args.kml_file:
         kml_file = args.kml_file
-        print(kml_file)
         if os.path.isfile(kml_file):
             file = open(kml_file, 'r')
         else:

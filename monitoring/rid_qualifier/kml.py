@@ -8,8 +8,6 @@ import re
 KML_NAMESPACE = {"kml":"http://www.opengis.net/kml/2.2"}
 
 def get_kml_root(kml_obj, from_string=False):
-    print('kml_obj: ', type(kml_obj))
-    logging.info(f'kml_obj: {type(kml_obj)}')
     if from_string:
         content = parser.fromstring(kml_obj)
         return content
