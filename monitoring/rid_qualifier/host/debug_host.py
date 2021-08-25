@@ -6,7 +6,7 @@ from . import config
 
 def main(argv):
   del argv
-  webapp.run(host='localhost', port=config.ENV_KEY_PORT)
+  webapp.run(host='localhost', port=config.Config.RID_QUALIFIER_HOST_PORT)
 
 
 if __name__ == '__main__':

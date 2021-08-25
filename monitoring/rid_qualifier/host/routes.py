@@ -34,7 +34,7 @@ try:
             'https://www.googleapis.com/auth/userinfo.profile',
             'https://www.googleapis.com/auth/userinfo.email',
             'openid'],
-        redirect_uri=f'{config.ENV_KEY_RID_HOST_URL}/login_callback')
+        redirect_uri=f'{config.Config.RID_QUALIFIER_HOST_URL}/login_callback')
 except FileNotFoundError:
     flow = ''
 
