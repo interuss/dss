@@ -55,25 +55,29 @@
                         clearInterval(refreshIntervalId);
                         if(task_status !== 'finished'){
                             $("#status").removeClass("alert-success").addClass("alert-danger");
+                            $(".last-job").hide();
                         }
                         $('.config-submit').attr('disabled', false);
                         $(".spinner").hide();
                         if(task_status === 'finished') {
-                            $(".get-result").show();
-                            $(".last-job").hide();
-                            $.ajax({
-                                type: 'GET',
-                                url: '/history',
-                                success: function(response) {
-                                    result_display = '';
-                                    $.each(response.tests, function(i, file) {
-                                        result_display += '<a href="/result_download/' + file + '">' + file + '</a><br />';
-                                    });
-                                    $('#history').html(result_display);
-                                }
-                            });
-                        } else if(task_status === 'failed') {
-                            $(".last-job").hide();
+                            if(response.is_flight_records_from_kml) {
+                                location.reload();
+                            }
+                            else {
+                                $(".get-result").show();
+                                $(".last-job").hide();
+                                $.ajax({
+                                    type: 'GET',
+                                    url: '/history',
+                                    success: function(response) {
+                                        result_display = '';
+                                        $.each(response.tests, function(i, file) {
+                                            result_display += '<a href="/result_download/' + file + '">' + file + '</a><br />';
+                                        });
+                                        $('#history').html(result_display);
+                                    }
+                                });
+                            }
                         }
                     }
                 }
@@ -130,9 +134,10 @@
 
             $("#userConfig").submit(function () {
                 $(".config-submit").attr("disabled", true);
-                $(".config-submit").attr('value', 'Starting Test...')
+                $(".config-submit").attr('value', 'Starting Test...');
                 return true;
             });
+
         });
 
 </script>

@@ -186,14 +186,27 @@ def get_result(job_id):
             'task_result': task.result,
         }
     if task.get_status() == 'finished':
+        response_object.update({
+            'task_status': 'finished',
+            'task_result': task.result,
+        })
+        # removing job so that all pending requests on this job should fail.
+        tasks.remove_rq_job(job_id)
         now = datetime.now()
         if task.result:
             filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
             user_id = session['google_id']
             filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{filename}'
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            with open(filepath, 'w') as f:
-                f.write(task.result)
+            job_result = json.loads(task.result)
+            if job_result.get('is_flight_records_from_kml'):
+                del job_result['is_flight_records_from_kml']
+                for filename, content in job_result.items():
+                    filepath = f'{config.Config.FILE_PATH}/{user_id}/flight_records/{filename}.json'
+                    _write_to_file(filepath, json.dumps(content))
+                response_object.update({'is_flight_records_from_kml': True})
+            else:
+                job_result = task.result
+                _write_to_file(filepath, job_result)
             response_object.update({'filename': filename})
         else:
             logging.info('Task result not available yet..')
@@ -205,25 +218,19 @@ def get_report():
     user_id = session['google_id']
     output_path = f'{config.Config.FILE_PATH}/{user_id}/tests'
     try:
-        # latest_file = os.listdir(output_path)[0]
-        # filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{latest_file}'
         output_files = os.listdir(output_path)
-        logging.info(f'output_files: {output_files}')
         output_files = [os.path.join(output_path, f) for f in output_files]
-        logging.info(f'output_files .. 2: {output_files}')
         output_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
         latest_file = output_files[0]
-        logging.info(f'latest_file: {latest_file}')
         with open(latest_file) as f:
             content = f.read()
-            logging.info(f'filename: {f.name}')
             if content:
                 output = make_response(content)
                 output.headers['Content-Disposition'] = f'attachment; filename={os.path.basename(f.name)}'
                 output.headers['Content-type'] = 'text/csv'
                 return output
-    except Exception as e:
-        logging.info(e)
+    except FileNotFoundError as e:
+        logging.exception(e)
         return {'error': 'Error downloading file'}
     return {'Error': 'Error getting result'}
 
@@ -257,7 +264,6 @@ def get_test_history():
 def upload_flight_state_files():
     """Upload files."""
     files = request.files.getlist('files[]')
-    # destination_file_paths = []
     user_id = session['google_id']
     flight_records_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
     if not os.path.isdir(flight_records_path):
@@ -272,12 +278,10 @@ def upload_flight_state_files():
             if filename.endswith('.json'):
                 file_path = os.path.join(flight_records_path, filename)
                 file.save(file_path)
-                # destination_file_paths.append(file_path)
             elif filename.endswith('.kml'):
                 file_path = os.path.join(kml_files_path, filename)
                 file.save(file_path)
                 kml_files.append(file_path)
-                # destination_file_paths.append(file_path)
     logging.info(f'KML files: {kml_files}')
     if kml_files:
         return redirect(url_for('._process_kml', kml_files=json.dumps(kml_files)), code=307)
@@ -286,19 +290,20 @@ def upload_flight_state_files():
 @webapp.route('/process_kml', methods=['POST'])
 def _process_kml():
     kml_files = request.args['kml_files']
-    print('kml_files: ', kml_files, type(kml_files))
     user_id = session['google_id']
     flight_records_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
-    # kml_files = request.get_data()
     logging.info(f'files 2: {kml_files}')
+    kml_jobs = []
     for file in json.loads(kml_files):
         logging.info(f'file: {file}')
         with open(file, 'rb') as fo:
             content = fo.read()
             job_id = _process_kml_files_task(content, flight_records_path)
-            get_result(job_id)
-    # return redirect(url_for('.get_result', job_id=job_id))
+            kml_jobs.append(job_id)
+    for job_id in kml_jobs:
+        get_result(job_id)
     return redirect(url_for('.tests'))
+
 
 @webapp.route('/delete', methods=['GET', 'POST'])
 def delete_file():
@@ -312,6 +317,7 @@ def delete_file():
         else:
             raise 'File not found'
     return {'deleted': filename}
+
 
 @webapp.route('/status')
 def status():
