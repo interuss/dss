@@ -12,7 +12,7 @@ from rq import get_current_job
 
 def get_rq_job(job_id):
   try:
-      rq_job = config.Config.qualifier_queue.fetch_job(job_id)
+      rq_job = config.qualifier_queue.fetch_job(job_id)
   except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
       return None
   return rq_job

@@ -96,13 +96,13 @@ def logout():
 
 
 def _start_background_task(user_config, auth_spec, input_files, debug):
-    job = config.Config.qualifier_queue.enqueue(
+    job = config.qualifier_queue.enqueue(
         'monitoring.rid_qualifier.host.tasks.call_test_executor',
         user_config, auth_spec, input_files, debug)
     return job.get_id()
 
 def _get_running_jobs():
-    registry = config.Config.qualifier_queue.started_job_registry
+    registry = config.qualifier_queue.started_job_registry
     running_job = registry.get_job_ids()
     if running_job:
         return running_job[0]
