@@ -49,9 +49,9 @@ def login_required(function):
         if flow and 'google_id' not in session:
             return redirect(url_for('login', next=request.url))
         elif 'google_id' not in session:
-            session['google_id'] = 'testuser'
-            session['name'] = 'Test User'
-            session['state'] = 'test'
+            session['google_id'] = 'localuser'
+            session['name'] = 'Local User'
+            session['state'] = 'localuser'
         return function(*args, **kwargs)
     return decorated_function
 
