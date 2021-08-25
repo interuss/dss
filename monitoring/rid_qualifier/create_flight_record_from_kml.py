@@ -344,13 +344,12 @@ def get_flight_records(kml_content, output_folder, debug_mode=False):
 
 def main(kml_file, output_folder, debug_mode=None, from_string=False):
     # kml_file = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
-    # try:
-    if True:
+    try:
         kml_content = kml.get_kml_content(kml_file, from_string)
-    # except ValueError as e:
-    #     print(e)
-    #     return e
-    # else:
+    except ValueError as e:
+        print(e)
+        return e
+    else:
         return get_flight_records(kml_content, output_folder, debug_mode)
 
 def init_argparse() -> argparse.ArgumentParser:
