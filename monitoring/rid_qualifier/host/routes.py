@@ -13,7 +13,7 @@ from datetime import datetime
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 import google.auth.transport.requests
-from flask import render_template, request, make_response, redirect, url_for, session
+from flask import render_template, request, make_response, redirect, url_for, session, abort
 from functools import wraps
 from pip._vendor import cachecontrol
 from werkzeug.exceptions import HTTPException
@@ -22,7 +22,6 @@ from werkzeug.utils import secure_filename
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.rid_qualifier.host import webapp
 
-logging.basicConfig(level=logging.INFO)
 
 client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent,
@@ -177,6 +176,8 @@ def _write_to_file(filepath, content):
 
 @webapp.route('/result/<string:job_id>', methods=['GET', 'POST'])
 def get_result(job_id):
+    if session.get('completed_job') == job_id:
+        abort(400, 'Request already processed')
     task = tasks.get_rq_job(job_id)
     response_object = {}
     if task:
@@ -186,13 +187,14 @@ def get_result(job_id):
             'task_result': task.result,
         }
     if task.get_status() == 'finished':
+        session['completed_job'] = job_id
         task_result = task.result
         response_object.update({
             'task_status': 'finished',
             'task_result': task_result,
         })
-        # removing job so that all pending requests on this job should fail.
-        tasks.remove_rq_jobs()
+        # removing job so that all the pending requests on this job should fail.
+        tasks.remove_rq_job(job_id)
         now = datetime.now()
         if task_result:
             filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
@@ -283,7 +285,6 @@ def upload_flight_state_files():
                 file_path = os.path.join(kml_files_path, filename)
                 file.save(file_path)
                 kml_files.append(file_path)
-    logging.info(f'KML files: {kml_files}')
     if kml_files:
         return redirect(url_for('._process_kml', kml_files=json.dumps(kml_files)), code=307)
     return redirect(url_for('.tests'))

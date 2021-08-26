@@ -18,10 +18,10 @@ def get_rq_job(job_id):
       return None
   return rq_job
 
-def remove_rq_jobs():
-    """Removes all remaining messages on the queue."""
+def remove_rq_job(job_id):
+    """Removes a job from the queue."""
     try:
-        rq_job = config.Config.qualifier_queue.empty()
+        rq_job = config.Config.qualifier_queue.remove(job_id)
     except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
         return None
     return rq_job
