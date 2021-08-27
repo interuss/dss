@@ -10,10 +10,11 @@ ENV_KEY_RID_QUALIFIER_HOST_PORT = '{}_HOST_PORT'.format(ENV_KEY_PREFIX)
 
 workspace_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'workspace')
 
-KEY_REDIS_QUEUE = 'REDIS_URL'
+KEY_REDIS_QUEUE = 'REDIS_QUEUE'
 KEY_REDIS_URL = 'REDIS_URL'
 KEY_RID_QUALIFIER_HOST_URL = 'RID_QUALIFIER_HOST_URL'
 KEY_FILE_PATH = 'FILE_PATH'
+KEY_RID_QUALIFIER_HOST_PORT = 'RID_QUALIFIER_HOST_PORT'
 
 class Config(object):
     AUTH_SPEC = os.environ[ENV_KEY_AUTH]
