@@ -2,14 +2,11 @@ import json
 import time
 import redis
 import rq
-from . import config, resources
-from monitoring.rid_qualifier.host import webapp
-# import resources
+from . import resources
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.rid_qualifier import test_executor
 from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration
 from monitoring.rid_qualifier.test_data import test_report
-# from resources import qualifier_queue
 
 
 def get_rq_job(job_id):
