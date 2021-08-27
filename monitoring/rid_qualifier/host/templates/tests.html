@@ -231,7 +231,7 @@
                     <p class="text-info last-job">A job running in the background: {{ data.job_id }}</p>
                     <script>
                         if(data.job_id != startedTask) {
-                            $(document).one(getCurrentStatus());
+                            $(document).ready(getCurrentStatus());
                             startedTask = data.job_id;
                         }
                     </script>
