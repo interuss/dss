@@ -5,9 +5,8 @@ import os
 import pathlib
 import requests
 
-from . import config
+from . import config, resources, tasks
 from . import forms
-from . import tasks
 
 from datetime import datetime
 from google.oauth2 import id_token
@@ -27,7 +26,6 @@ client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent,
     'client_secret.json')
 
-flow = ''
 try:
     flow = Flow.from_client_secrets_file(
         client_secrets_file=client_secrets_file,
@@ -35,9 +33,9 @@ try:
             'https://www.googleapis.com/auth/userinfo.profile',
             'https://www.googleapis.com/auth/userinfo.email',
             'openid'],
-        redirect_uri=f'{config.Config.RID_HOST_URL}/callback')
+        redirect_uri=f'{webapp.config.get(config.KEY_RID_QUALIFIER_HOST_URL)}/login_callback')
 except FileNotFoundError:
-    pass
+    flow = ''
 
 
 @webapp.route('/info')
@@ -47,8 +45,12 @@ def info():
 def login_required(function):
     @wraps(function)
     def decorated_function(*args, **kwargs):
-        if 'google_id' not in session:
+        if flow and 'google_id' not in session:
             return redirect(url_for('login', next=request.url))
+        elif 'google_id' not in session:
+            session['google_id'] = 'localuser'
+            session['name'] = 'Local User'
+            session['state'] = 'localuser'
         return function(*args, **kwargs)
     return decorated_function
 
@@ -64,8 +66,8 @@ def login():
     return redirect(authorization_url)
 
 
-@webapp.route('/callback')
-def callback():
+@webapp.route('/login_callback')
+def login_callback():
     if not flow:
         return redirect(url_for('.info'))
     flow.fetch_token(authorization_response=request.url)
@@ -78,8 +80,7 @@ def callback():
 
     id_info = id_token.verify_oauth2_token(
         id_token=credentials._id_token,
-        request=token_request,
-        audience=config.Config.GOOGLE_CLIENT_ID
+        request=token_request
     )
 
     session['google_id'] = id_info.get('sub')
@@ -93,11 +94,17 @@ def logout():
     return render_template('logout.html')
 
 
-def start_background_task(user_config, auth_spec, input_files, debug):
-    job = config.Config.qualifier_queue.enqueue(
+def _start_background_task(user_config, auth_spec, input_files, debug):
+    job = resources.qualifier_queue.enqueue(
         'monitoring.rid_qualifier.host.tasks.call_test_executor',
         user_config, auth_spec, input_files, debug)
     return job.get_id()
+
+def _get_running_jobs():
+    registry = resources.qualifier_queue.started_job_registry
+    running_job = registry.get_job_ids()
+    if running_job:
+        return running_job[0]
 
 
 @webapp.route('/', methods=['GET', 'POST'])
@@ -106,30 +113,35 @@ def start_background_task(user_config, auth_spec, input_files, debug):
 def tests():
     flight_record_data = get_flight_records()
     files = []
+    running_job = _get_running_jobs()
+
     if flight_record_data.get('flight_records'):
         files= [(x, x) for x in flight_record_data['flight_records']]
 
     form = forms.TestsExecuteForm()
     form.flight_records.choices = files
     data = get_test_history()
-    job_id = ''
-    if form.validate_on_submit():
-        file_objs = []
-        user_id = session['google_id']
-        input_files_location = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
-        for filename in form.flight_records.data:
-            filepath = f'{input_files_location}/{filename}'
-            with open(filepath) as fo:
-                file_objs.append(fo.read())
-            job_id = start_background_task(
-                form.user_config.data,
-                form.auth_spec.data,
-                file_objs,
-                form.sample_report.data)
-        if request.method == 'POST':
-            data.update({
-                'job_id': job_id
-            })
+    if running_job:
+        data.update({'job_id': running_job})
+    else:
+        job_id = ''
+        if form.validate_on_submit():
+            file_objs = []
+            user_id = session['google_id']
+            input_files_location = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
+            for filename in form.flight_records.data:
+                filepath = f'{input_files_location}/{filename}'
+                with open(filepath) as fo:
+                    file_objs.append(fo.read())
+                job_id = _start_background_task(
+                    form.user_config.data,
+                    form.auth_spec.data,
+                    file_objs,
+                    form.sample_report.data)
+            if request.method == 'POST':
+                data.update({
+                    'job_id': job_id,
+                })
     return render_template(
         'tests.html',
         title='Execute tests',
@@ -143,7 +155,7 @@ def get_flight_records():
         'message': ''
     }
     user_id = session['google_id']
-    folder_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
+    folder_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
     if not os.path.isdir(folder_path):
         data['message'] = 'Flight records not available.'
     else:
@@ -167,7 +179,7 @@ def get_result(job_id):
         if task.result:
             filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
             user_id = session['google_id']
-            filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{filename}'
+            filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             with open(filepath, 'w') as f:
                 f.write(task.result)
@@ -180,10 +192,10 @@ def get_result(job_id):
 @webapp.route('/report', methods=['POST'])
 def get_report():
     user_id = session['google_id']
-    output_path = f'{config.Config.FILE_PATH}/{user_id}/tests'
+    output_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests'
     try:
         latest_file = os.listdir(output_path)[0]
-        filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{latest_file}'
+        filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{latest_file}'
         with open(filepath) as f:
             content = f.read()
             if content:
@@ -199,7 +211,7 @@ def get_report():
 @webapp.route('/result_download/<string:filename>', methods=['POST', 'GET'])
 def download_test(filename):
     user_id = session['google_id']
-    filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{filename}'
+    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
     content = ''
     with open(filepath) as f:
         content = f.read()
@@ -213,7 +225,7 @@ def download_test(filename):
 @webapp.route('/history')
 def get_test_history():
     user_id = session['google_id']
-    output_path = f'{config.Config.FILE_PATH}/{user_id}/tests'
+    output_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests'
     try:
         executed_tests = os.listdir(output_path)
     except:
@@ -221,13 +233,13 @@ def get_test_history():
     return {'tests': executed_tests}
 
 
-@webapp.route('/upload_file', methods=['POST'])
+@webapp.route('/flight_records', methods=['POST'])
 def upload_flight_state_files():
     """Upload files."""
     files = request.files.getlist('files[]')
     destination_file_paths = []
     user_id = session['google_id']
-    folder_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
+    folder_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
     if not os.path.isdir(folder_path):
         os.makedirs(folder_path)
     for file in files:
@@ -246,7 +258,7 @@ def delete_file():
     filename = data.get('filename')
     if filename:
         user_id = session['google_id']
-        file = f'{config.Config.FILE_PATH}/{user_id}/flight_records/{filename}'
+        file = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records/{filename}'
         if os.path.exists(file):
             os.remove(file)
         else:

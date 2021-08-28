@@ -42,8 +42,8 @@
                         $("#status").removeClass("alert-danger").addClass("alert-success");
                         $('.config-submit').attr('disabled', true);
                         if(firstTimeCheck === 0) {
-                            // check first time response in 30 secs.
-                            minutesInterval = 0.5;
+                            // check first time response in 10 secs.
+                            minutesInterval = 0.2;
                             firstTimeCheck = 1;
                         } else {
                             minutesInterval = 1;
@@ -60,6 +60,7 @@
                         $(".spinner").hide();
                         if(task_status === 'finished') {
                             $(".get-result").show();
+                            $(".last-job").hide();
                             $.ajax({
                                 type: 'GET',
                                 url: '/history',
@@ -97,7 +98,7 @@
             });
             $.ajax({
                 type: "POST",
-                url: "/upload_file" ,
+                url: "/flight_records" ,
                 contentType: false,
                 processData: false,
                 cache: false,
@@ -124,7 +125,14 @@
                     }
                 });
             });
-    });
+
+            $("#userConfig").submit(function () {
+                $(".config-submit").attr("disabled", true);
+                $(".config-submit").attr('value', 'Starting Test...')
+                return true;
+            });
+        });
+
 </script>
 
 <div class="container-fluid">
@@ -132,7 +140,7 @@
         <div class="col-8">
             <div class="content-section">
                 <div>
-                    <form id="file-upload-form" action = "/upload_file" method = "POST" enctype = "multipart/form-data">
+                    <form id="file-upload-form" action = "/flight_records" method = "POST" enctype = "multipart/form-data">
                         <label class="btn btn-primary">
                             <i class="fa fa-image"></i>Add Flight Records<input id="file-upload" type="file" name="files[]" style="display: none;" multiple>
                         </label>
@@ -143,7 +151,7 @@
                         })
                     </script>
                 </div>
-                <form action="" method="post" novalidate>
+                <form id="userConfig" action="" method="post" novalidate>
                     {{ form.hidden_tag() }}
                     <fieldset class="form-group">
             
@@ -209,6 +217,7 @@
                     </div>
                 </form>
                 {% if data.job_id %}
+                    <p class="text-info last-job">A job running in the background: {{ data.job_id }}</p>
                     <script>
                         if(data.job_id != startedTask) {
                             $(document).ready(getCurrentStatus());
