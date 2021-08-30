@@ -21,11 +21,13 @@ This application accepts Auth2 credentials for user specific login. The process 
 
 Accepted input files are, either valid flight records or KML files in the format mentioned (here)[/rid_rualifier/README.md/#Create-Flight-Record-from-KML].
 
-When KML files are provided as an input, `Flight records json` files are generated from the KML and kept into user specific `flight_records` folder on the RID host. Once records are generated, these are available on the UI for selection during test execution.
+When KML files are provided as input, `Flight records json` files are generated from the KML and kept into user specific `flight_records` folder on the RID host. Once records are generated, these are available on the UI for selection during test execution.
 
-A test when executed, starts as a backend job on rq-worker server. This job takes some amount of time, during that RID Host keeps polling rq-worker server to check if job has finished. Once job finishes successfully, RID Host generates resulting report from job response and keep it in user specific `tests` folder on rid-host to make it available on UI.
+### Test Execution
 
-All the tests run by a user are available to download from the UI.
+When the user requests the execution of a test, the rid_qualifier host sends it as a message to the `redis` server Message Queue, which is then handled by the worker process running on the `rq-worker`. This job takes some amount of time, during this time UI keeps sending requests to rid_qualifier server to check the job status. rid_qualifier host then checks the Redis container for the job progress and returns current status to the UI. Once job finishes successfully, RID Host generates resulting report from the job response and keep it in user specific `tests` folder on rid-host, and sends it as a response to the UI.
+
+All the tests run by a user are the available to download from the UI.
 
 ## Run via Docker
 

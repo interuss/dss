@@ -5,9 +5,8 @@ import os
 import pathlib
 import requests
 
-from . import config
+from . import config, resources, tasks
 from . import forms
-from . import tasks
 
 from datetime import datetime
 from google.oauth2 import id_token
@@ -34,7 +33,7 @@ try:
             'https://www.googleapis.com/auth/userinfo.profile',
             'https://www.googleapis.com/auth/userinfo.email',
             'openid'],
-        redirect_uri=f'{config.ENV_KEY_RID_HOST_URL}/login_callback')
+        redirect_uri=f'{webapp.config.get(config.KEY_RID_QUALIFIER_HOST_URL)}/login_callback')
 except FileNotFoundError:
     flow = ''
 
@@ -49,9 +48,9 @@ def login_required(function):
         if flow and 'google_id' not in session:
             return redirect(url_for('login', next=request.url))
         elif 'google_id' not in session:
-            session['google_id'] = 'testuser'
-            session['name'] = 'Test User'
-            session['state'] = 'test'
+            session['google_id'] = 'localuser'
+            session['name'] = 'Local User'
+            session['state'] = 'localuser'
         return function(*args, **kwargs)
     return decorated_function
 
@@ -96,19 +95,19 @@ def logout():
 
 
 def _start_background_task(user_config, auth_spec, input_files, debug):
-    job = config.Config.qualifier_queue.enqueue(
+    job = resources.qualifier_queue.enqueue(
         'monitoring.rid_qualifier.host.tasks.call_test_executor',
         user_config, auth_spec, input_files, debug)
     return job.get_id()
 
 def _get_running_jobs():
-    registry = config.Config.qualifier_queue.started_job_registry
+    registry = resources.qualifier_queue.started_job_registry
     running_job = registry.get_job_ids()
     if running_job:
         return running_job[0]
 
 def _process_kml_files_task(kml_content, output_path):
-    job = config.Config.qualifier_queue.enqueue(
+    job = resources.qualifier_queue.enqueue(
         'monitoring.rid_qualifier.host.tasks.call_kml_processor',
         kml_content, output_path)
     return job.get_id()
@@ -134,7 +133,7 @@ def tests():
         if form.validate_on_submit():
             file_objs = []
             user_id = session['google_id']
-            input_files_location = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
+            input_files_location = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
             for filename in form.flight_records.data:
                 filepath = f'{input_files_location}/{filename}'
                 with open(filepath) as fo:
@@ -161,7 +160,7 @@ def get_flight_records():
         'message': ''
     }
     user_id = session['google_id']
-    folder_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
+    folder_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
     if not os.path.isdir(folder_path):
         data['message'] = 'Flight records not available.'
     else:
@@ -193,18 +192,18 @@ def get_result(job_id):
             'task_status': 'finished',
             'task_result': task_result,
         })
-        # removing job so that all the pending requests on this job should fail.
+        # removing job so that all the pending requests on this job should abort.
         tasks.remove_rq_job(job_id)
         now = datetime.now()
         if task_result:
             filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
             user_id = session['google_id']
-            filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{filename}'
+            filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
             job_result = json.loads(task_result)
             if job_result.get('is_flight_records_from_kml'):
                 del job_result['is_flight_records_from_kml']
                 for filename, content in job_result.items():
-                    filepath = f'{config.Config.FILE_PATH}/{user_id}/flight_records/{filename}.json'
+                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records/{filename}.json'
                     _write_to_file(filepath, json.dumps(content))
                 response_object.update({'is_flight_records_from_kml': True})
             else:
@@ -219,7 +218,7 @@ def get_result(job_id):
 @webapp.route('/report', methods=['POST'])
 def get_report():
     user_id = session['google_id']
-    output_path = f'{config.Config.FILE_PATH}/{user_id}/tests'
+    output_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests'
     try:
         output_files = os.listdir(output_path)
         output_files = [os.path.join(output_path, f) for f in output_files]
@@ -241,7 +240,7 @@ def get_report():
 @webapp.route('/result_download/<string:filename>', methods=['POST', 'GET'])
 def download_test(filename):
     user_id = session['google_id']
-    filepath = f'{config.Config.FILE_PATH}/{user_id}/tests/{filename}'
+    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
     content = ''
     with open(filepath) as f:
         content = f.read()
@@ -255,7 +254,7 @@ def download_test(filename):
 @webapp.route('/history')
 def get_test_history():
     user_id = session['google_id']
-    output_path = f'{config.Config.FILE_PATH}/{user_id}/tests'
+    output_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests'
     try:
         executed_tests = os.listdir(output_path)
     except:
@@ -268,10 +267,10 @@ def upload_flight_state_files():
     """Upload files."""
     files = request.files.getlist('files[]')
     user_id = session['google_id']
-    flight_records_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
+    flight_records_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
     if not os.path.isdir(flight_records_path):
         os.makedirs(flight_records_path)
-    kml_files_path = f'{config.Config.FILE_PATH}/{user_id}/kml_files'
+    kml_files_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/kml_files'
     if not os.path.isdir(kml_files_path):
         os.makedirs(kml_files_path)
     kml_files = []
@@ -311,7 +310,7 @@ def delete_file():
     filename = data.get('filename')
     if filename:
         user_id = session['google_id']
-        file = f'{config.Config.FILE_PATH}/{user_id}/flight_records/{filename}'
+        file = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records/{filename}'
         if os.path.exists(file):
             os.remove(file)
         else:
