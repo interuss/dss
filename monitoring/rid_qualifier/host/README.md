@@ -3,7 +3,7 @@
 `rid_qualifier host` is a development-level web server that provides endpoint to initialize the automated testing of the rid qualifier. 
 This PR includes the initial setup for the web-server that can be run locally on your system via the (run_locally.sh)[run_locally.sh] script. 
 
-## About
+## Architecture
 
 This project will create the following environment:
 
@@ -11,9 +11,23 @@ This project will create the following environment:
 
 * rq-worker Container: A container to run redis queue worker processes.
 
-* rid-host Container: A flask application which accepts flight states' files, collect auth and config spec from user and executes RID Qualifier task. Once task finishes successfully, report.json file is available to download.
+* rid-host Container: A flask application which accepts KML files or flight states' json files as input, collect auth and config spec from user and allow user to executes RID Qualifier test. Once task finishes successfully, report file becomes available to download from the UI.
+
+This application accepts Auth2 credentials for user specific login. The process to authenticate using Auth2 is described (here)[/LOGIN.md]. If Auth2 credentials are not provided application uses `Local User` session by default.
 
 * Additionally, you need to bring up (rid_qualifier mock instance)[monitoring/rid_qualifier/mock/run_locally.sh] to produce a mock RID system for use with rid_qualifier. The instructions to bring up the rid_qualifier mock instance can be found (here)[monitoring/rid_qualifier/mock/README.md].
+
+### Input Files
+
+Accepted input files are, either valid flight records or KML files in the format mentioned (here)[/rid_rualifier/README.md/#Create-Flight-Record-from-KML].
+
+When KML files are provided as input, `Flight records json` files are generated from the KML and kept into user specific `flight_records` folder on the RID host. Once records are generated, these are available on the UI for selection during test execution.
+
+### Test Execution
+
+When the user requests the execution of a test, the rid_qualifier host sends it as a message to the `redis` server Message Queue, which is then handled by the worker process running on the `rq-worker`. This job takes some amount of time, during this time UI keeps sending requests to rid_qualifier server to check the job status. rid_qualifier host then checks the Redis container for the job progress and returns current status to the UI. Once job finishes successfully, RID Host generates resulting report from the job response and keep it in user specific `tests` folder on rid-host, and sends it as a response to the UI.
+
+All the tests run by a user are the available to download from the UI.
 
 ## Run via Docker
 
