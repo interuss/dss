@@ -315,33 +315,42 @@ def create_output_folder(folder_path):
     if not os.path.isdir(folder_path):
         os.makedirs(folder_path)
 
-def main(kml_file, output_folder, debug_mode=None):
+def get_flight_records(kml_content, output_folder, debug_mode=False):
+    flight_state_coordinates = {}
+    create_output_folder(output_folder)
+    flight_records = {}
+    for flight_name, flight_details in kml_content.items():
+        flight_description = flight_details['description']
+        operator_location = flight_details['operator_location']
+        flight_state_coordinates, flight_state_speeds, flight_track_angles = get_flight_state_coordinates(
+            flight_details)
+        if debug_mode:
+            flight_state_vertices_unflatten = [','.join(map(str, p)) for p in flight_state_coordinates]
+            flight_state_vertices_str = '\n'.join(flight_state_vertices_unflatten)
+            with open(f'{output_folder}/kml_state_{flight_name}.txt', 'w') as text_file:
+                text_file.write(flight_state_vertices_str)
+        flight_record = generate_flight_record(
+            flight_state_coordinates,
+            flight_description,
+            operator_location,
+            flight_state_speeds,
+            flight_track_angles)
+        filename = flight_name.replace('flight: ', '')
+        flight_records.update({filename: flight_record})
+        write_to_json_file(
+            flight_record, filename, output_folder=output_folder)
+    flight_records.update({'is_flight_records_from_kml': True})
+    return json.dumps(flight_records)
+
+def main(kml_file, output_folder, debug_mode=None, from_string=False):
     # kml_file = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
     try:
-        kml_content = kml.get_kml_content(kml_file)
+        kml_content = kml.get_kml_content(kml_file, from_string)
     except ValueError as e:
         print(e)
+        return e
     else:
-        flight_state_coordinates = {}
-        create_output_folder(output_folder)
-        for flight_name, flight_details in kml_content.items():
-            flight_description = flight_details['description']
-            operator_location = flight_details['operator_location']
-            flight_state_coordinates, flight_state_speeds, flight_track_angles = get_flight_state_coordinates(
-                flight_details)
-            if debug_mode:
-                flight_state_vertices_unflatten = [','.join(map(str, p)) for p in flight_state_coordinates]
-                flight_state_vertices_str = '\n'.join(flight_state_vertices_unflatten)
-                with open(f'{output_folder}/kml_state_{flight_name}.txt', 'w') as text_file:
-                    text_file.write(flight_state_vertices_str)
-            flight_record = generate_flight_record(
-                flight_state_coordinates,
-                flight_description,
-                operator_location,
-                flight_state_speeds,
-                flight_track_angles)
-            write_to_json_file(
-                flight_record, flight_name.replace('flight: ', ''), output_folder=output_folder)
+        return get_flight_records(kml_content, output_folder, debug_mode)
 
 def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -372,7 +381,6 @@ if __name__ == '__main__':
         raise 'Path to output folder not provided.'
     if args.kml_file:
         kml_file = args.kml_file
-        print(kml_file)
         if os.path.isfile(kml_file):
             file = open(kml_file, 'r')
         else:

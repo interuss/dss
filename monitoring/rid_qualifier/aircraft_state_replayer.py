@@ -26,18 +26,23 @@ class TestBuilder():
         p = pathlib.Path(__file__).parent.absolute()
         os.chdir(p)
 
+        usses = self.test_configuration.injection_targets
+
+        self.disk_flight_records: List[FullFlightRecord] =[]
         if not aircraft_state_files:
             aircraft_states_directory = Path(
                 'test_definitions', test_configuration.locale, 'aircraft_states')
             aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
 
-        usses = self.test_configuration.injection_targets
-
-        self.disk_flight_records: List[FullFlightRecord] =[]
-        for uss_index, uss in enumerate(usses):
-            aircraft_states_path = Path(aircraft_state_files[uss_index])
-            with open(aircraft_states_path, 'rb') as generated_rid_state:
-                disk_flight_record = ImplicitDict.parse(json.load(generated_rid_state), FullFlightRecord)
+            for uss_index, uss in enumerate(usses):
+                aircraft_states_path = Path(aircraft_state_files[uss_index])
+                with open(aircraft_states_path, 'rb') as generated_rid_state:
+                    disk_flight_record = ImplicitDict.parse(json.load(generated_rid_state), FullFlightRecord)
+                    self.disk_flight_records.append(disk_flight_record)
+        else:
+            for uss_index, uss in enumerate(usses):
+                generated_rid_state = aircraft_state_files[uss_index]
+                disk_flight_record = ImplicitDict.parse(json.loads(generated_rid_state), FullFlightRecord)
                 self.disk_flight_records.append(disk_flight_record)
 
 
