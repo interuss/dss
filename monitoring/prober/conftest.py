@@ -1,7 +1,8 @@
 from typing import Optional
 
 from monitoring.monitorlib import infrastructure
-from monitoring.monitorlib import auth
+from monitoring.monitorlib import auth, scd
+from monitoring.prober.infrastructure import VersionString
 
 import pytest
 
@@ -12,6 +13,7 @@ def pytest_addoption(parser):
   parser.addoption('--rid-auth')
   parser.addoption('--scd-auth1')
   parser.addoption('--scd-auth2')
+  parser.addoption('--scd-api-version')
 
 
 def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[infrastructure.DSSTestSession]:
@@ -53,3 +55,10 @@ def scd_session2(pytestconfig):
 @pytest.fixture(scope='function')
 def no_auth_session(pytestconfig):
   return make_session(pytestconfig, '/v1/dss')
+
+@pytest.fixture(scope='session')
+def scd_api(pytestconfig):
+  api = pytestconfig.getoption('scd_api_version')
+  if api is None:
+    api = scd.API_0_3_5
+  return VersionString(api)

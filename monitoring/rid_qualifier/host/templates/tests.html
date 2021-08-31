@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<script>
+    var task_status = '';
+    let data = JSON.parse('{{ data | tojson }}');
+    var refreshIntervalId = null;
+    var firstTimeCheck = 0;
+    var minutesInterval = 0;
+    var timeTaken = 0;
+    var timeTakenStr = '';
+    var taskStatusStr = '';
+    var startedTask = '';
+    var startTime = new Date().getTime();
+    var xhrPool = [];
+    var currentFile = '';
+    function getStatusHtml(task_status, timeTaken, refreshIntervalId) {
+        try {
+            taskStatusStr = 'Current task status: ' + task_status[0].toUpperCase() + task_status.slice(1);
+        } catch(err) {
+            clearInterval(refreshIntervalId);
+            return '';
+        }
+        if(timeTaken > 0) {
+            timeTakenStr =  ' Time taken: ' + timeTaken + ' minute' + (timeTaken === 1 ? "" : "s");
+        }
+        return taskStatusStr + '<br/>' + timeTakenStr;
+    }
+    function getCurrentStatus() {
+        var current_request = $.ajax({
+                method: 'GET',
+                url: '/result/{{data.job_id}}',
+                success: function(response) {
+                    currentTime = new Date().getTime();
+                    timeTaken = Math.round((((currentTime - startTime) % 86400000) % 3600000) / 60000);
+                    task_status = response.task_status;
+                    currentFile = response.filename;
+                    $("#current-status").html(getStatusHtml(task_status, timeTaken, refreshIntervalId));
+                    $("#status").show();
+                    if(task_status === 'started' || task_status === 'queued') {
+                        $(".spinner").show();
+                        $("#status").removeClass("alert-danger").addClass("alert-success");
+                        $('.config-submit').attr('disabled', true);
+                        if(firstTimeCheck === 0) {
+                            // check first time response in 10 secs.
+                            minutesInterval = 0.2;
+                            firstTimeCheck = 1;
+                        } else {
+                            minutesInterval = 1;
+                        }
+                        if(refreshIntervalId !=null) {
+                            clearInterval(refreshIntervalId);
+                        }
+                        refreshIntervalId = setInterval(getCurrentStatus, 1000 * 60 * minutesInterval);
+                    } else {
+                        clearInterval(refreshIntervalId);
+                        $('#file-upload').removeAttr('disabled');
+                        if(task_status !== 'finished'){
+                            $("#status").removeClass("alert-success").addClass("alert-danger");
+                            $(".last-job").hide();
+                        }
+                        $('.config-submit').attr('disabled', false);
+                        $(".spinner").hide();
+                        if(task_status === 'finished') {
+                            if(response.is_flight_records_from_kml) {
+                                location.reload();
+                            }
+                            else {
+                                $(".get-result").show();
+                                $(".last-job").hide();
+                                $.ajax({
+                                    type: 'GET',
+                                    url: '/history',
+                                    success: function(response) {
+                                        result_display = '';
+                                        $.each(response.tests, function(i, file) {
+                                            result_display += '<a href="/result_download/' + file + '">' + file + '</a><br />';
+                                        });
+                                        $('#history').html(result_display);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            });
+            xhrPool.push(current_request);
+            if(task_status === 'finished' || task_status === 'failed') {
+                $.each(xhrPool, function(idx, jqXHR) {
+                    console.log('Aborting additional requests');
+                    jqXHR.abort();
+                });
+                xhrPool = [];
+            }
+        }
+
+    </script>
+{% endblock %}
+
+{% block body %}
+<script>
+    $('#file-upload').on("change", function(e) {
+            var formData = new FormData();
+            $.each($("input[type='file']")[0].files, function(i, file) {
+                formData.append('files', file);
+            });
+            $('#file-upload').attr('disabled', 'disabled');
+            $.ajax({
+                type: "POST",
+                url: "/flight_records" ,
+                contentType: false,
+                processData: false,
+                cache: false,
+                enctype: 'multipart/form-data',
+                dataType: 'json',
+                data: formData,
+                success: function(response) {
+                    $('#file-upload').removeAttr('disabled');
+                }
+            });
+        });
+
+        $(function(){
+            $('.child').click(function(e){
+                let parentElem = $(this).parent();
+                $.ajax({
+                    type: 'POST',
+                    url: '/delete',
+                    contentType: 'application/json',
+                    data: JSON.stringify({'filename': parentElem.children()[0].value}),
+                    success: function(response) {
+                        parentElem.hide();
+                        return false; // important!
+                    }
+                });
+            });
+
+            $("#userConfig").submit(function () {
+                $(".config-submit").attr("disabled", true);
+                $(".config-submit").attr('value', 'Starting Test...');
+                $('#file-upload').attr('disabled', 'disabled');
+                return true;
+            });
+
+        });
+
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-8">
+            <div class="content-section">
+                <div>
+                    <form id="file-upload-form" action = "/flight_records" method = "POST" enctype = "multipart/form-data">
+                        <label class="btn btn-primary">
+                            <i class="fa fa-image"></i>Add Flight Records/KML<input id="file-upload" type="file" name="files[]" style="display: none;" multiple>
+                        </label>
+                    </form>
+                    <script>
+                        $("#file-upload-form").on('change', function() {
+                            $("#file-upload-form").submit();
+                        })
+                    </script>
+                </div>
+                <form id="userConfig" action="" method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    <fieldset class="form-group">
+            
+                        <div class="form-group">
+                            <div class="form-check" >
+                                {% if form.flight_records.errors %}
+                                    {{ form.flight_records(class="form-control form-control-sm is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.flight_records.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {% for subfield in form.flight_records %}
+                                        <div class="parent">
+                                            {{ subfield(class="form-control-sm") }}
+                                            {{ subfield.label(class="form-check-label") }}
+                                            <button type="button" class="close child" aria-label="Close" style="float: none !important;">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                    {% endfor %}
+                                   
+                                {% endif %}
+                            </div>
+                        </div>
+            
+                        <legend class="border-bottom mb-4">Start New Test</legend>
+                        <div class="form-group">
+                            {{ form.auth_spec.label(class="form-control-label") }}
+            
+                            {% if form.auth_spec.errors %}
+                                {{ form.auth_spec(class="form-control form-control-sm is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.auth_spec.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.auth_spec(class="form-control form-control-sm") }}
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.user_config.label(class="form-control-label") }}
+                            {% if form.user_config.errors %}
+                                {{ form.user_config(class="form-control form-control-sm is-invalid", rows='7') }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.user_config.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.user_config(class="form-control form-control-sm", rows='7') }}
+                            {% endif %}
+                        </div>
+                        <div class="form-check">
+                            {{ form.sample_report(class="form-check-input") }}
+                            {{ form.sample_report.label(class="form-check-label") }}
+                        </div>
+                    </fieldset>
+                    <div class="form-group">
+                        {{ form.submit(class="btn btn-outline-info config-submit") }}
+                    </div>
+                </form>
+                {% if data.job_id %}
+                    <p class="text-info last-job">A job running in the background: {{ data.job_id }}</p>
+                    <script>
+                        if(data.job_id != startedTask) {
+                            $(document).ready(getCurrentStatus());
+                            startedTask = data.job_id;
+                        }
+                    </script>
+                {% endif %}
+                
+            </div>
+          </div>
+          <div class="col-4">
+            <div id="status-container" style="height: 200px;padding-top: 20px;">
+                <div id="status" class="alert " style="display: none;">
+                    <div id="current-status"></div>
+                    <div id="spinner" class="spinner" style="display: none;">
+                        <div>Processing ..</div>
+                        <img src="/static/images/spinner.gif"/>
+                    </div>
+                </div>
+                <div id="getresult" class="form-group get-result" style="display: none;">
+                    <form method="post" action="/report">
+                        <input type="submit" value="Get Result" >
+                    </form>
+                </div>
+            </div>
+            <legend class="border-bottom mb-4">Existing Tests results</legend>
+            <div id="history" class="container">
+                {% if data.tests %}
+                    {% for file in data.tests %}
+                        <a href="/result_download/{{file}}" >{{file}}</a><br/>
+                    {% endfor %}
+                {% else %}
+                    <p>No existing test results.</p>
+                {% endif %}
+            </div>
+          </div>
+    </div>
+</div>
+{% endblock %}
