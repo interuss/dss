@@ -4,12 +4,16 @@
 import json
 
 from monitoring.monitorlib.infrastructure import default_scope
+from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
+from monitoring.prober.infrastructure import for_api_versions
+
 
 OP_ID = '00000067-cb83-4880-a7e7-1fee85000000'
 
 
-def test_ensure_clean_workspace(scd_session):
+@for_api_versions(scd.API_0_3_5)
+def test_ensure_clean_workspace(scd_api, scd_session):
   resp = scd_session.get('/operation_references/{}'.format(OP_ID), scope=SCOPE_SC)
   if resp.status_code == 200:
     resp = scd_session.delete('/operation_references/{}'.format(OP_ID), scope=SCOPE_SC)
@@ -21,8 +25,9 @@ def test_ensure_clean_workspace(scd_session):
     assert False, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_accepted(scd_session):
+def test_op_accepted(scd_api, scd_session):
   # Accepted for the first time
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
@@ -30,8 +35,9 @@ def test_op_accepted(scd_session):
   assert resp.status_code == 200, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_activated(scd_session):
+def test_op_activated(scd_api, scd_session):
   # GET current op
   resp = scd_session.get('/operation_references/{}'.format(OP_ID))
   assert resp.status_code == 200, resp.content
@@ -48,8 +54,9 @@ def test_op_activated(scd_session):
   assert resp.status_code == 200, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_accepted_bad1(scd_session):
+def test_op_accepted_bad1(scd_api, scd_session):
   # GET current op
   resp = scd_session.get('/operation_references/{}'.format(OP_ID))
   assert resp.status_code == 200, resp.content
@@ -64,8 +71,9 @@ def test_op_accepted_bad1(scd_session):
   assert resp.status_code == 409, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_bad_state_transition(scd_session):
+def test_op_bad_state_transition(scd_api, scd_session):
   # Delete operation
   resp = scd_session.delete('/operation_references/{}'.format(OP_ID))
   assert resp.status_code == 200, resp.content
