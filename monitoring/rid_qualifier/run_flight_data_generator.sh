@@ -20,6 +20,6 @@ docker run -i -t --name flight_data_generator \
   --rm \
   --tty \
   -e PYTHONBUFFERED=1 \
-  -v $(pwd)/monitoring/rid_qualifier/test_definitions:/app/test_definitions \
+  -v $(pwd)/monitoring/rid_qualifier/test_definitions:/app/monitoring/rid_qualifier/test_definitions \
   interuss/dss/rid_qualifier \
   python flight_data_generator.py

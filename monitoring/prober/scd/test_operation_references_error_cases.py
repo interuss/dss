@@ -10,12 +10,15 @@ import yaml
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
+from monitoring.prober.infrastructure import for_api_versions
+
 
 OP_ID = '00000028-728d-40c4-8eb2-20d19c000000'
 OP_ID2 = '0000006e-b4ec-48a3-ae38-426042000000'
 
 
-def test_ensure_clean_workspace(scd_session):
+@for_api_versions(scd.API_0_3_5)
+def test_ensure_clean_workspace(scd_api, scd_session):
   for op_id in (OP_ID, OP_ID2):
     resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     if resp.status_code == 200:
@@ -28,16 +31,18 @@ def test_ensure_clean_workspace(scd_session):
       assert False, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_ref_area_too_large(scd_session):
+def test_op_ref_area_too_large(scd_api, scd_session):
   with open('./scd/resources/op_ref_area_too_large.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_ref_start_end_times_past(scd_session):
+def test_op_ref_start_end_times_past(scd_api, scd_session):
   with open('./scd/resources/op_ref_start_end_times_past.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
@@ -48,40 +53,45 @@ def test_op_ref_start_end_times_past(scd_session):
   assert resp.status_code == 200, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_ref_incorrect_units(scd_session):
+def test_op_ref_incorrect_units(scd_api, scd_session):
   with open('./scd/resources/op_ref_incorrect_units.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_ref_incorrect_altitude_ref(scd_session):
+def test_op_ref_incorrect_altitude_ref(scd_api, scd_session):
   with open('./scd/resources/op_ref_incorrect_altitude_ref.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_uss_base_url_non_tls(scd_session):
+def test_op_uss_base_url_non_tls(scd_api, scd_session):
   with open('./scd/resources/op_uss_base_url_non_tls.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_bad_subscription_id(scd_session):
+def test_op_bad_subscription_id(scd_api, scd_session):
   with open('./scd/resources/op_bad_subscription.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_bad_subscription_id_random(scd_session):
+def test_op_bad_subscription_id_random(scd_api, scd_session):
   with open('./scd/resources/op_bad_subscription.json', 'r') as f:
     req = json.load(f)
     req['subscription_id'] = uuid.uuid4().hex
@@ -89,24 +99,27 @@ def test_op_bad_subscription_id_random(scd_session):
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_new_and_existing_subscription(scd_session):
+def test_op_new_and_existing_subscription(scd_api, scd_session):
   with open('./scd/resources/op_new_and_existing_subscription.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_end_time_past(scd_session):
+def test_op_end_time_past(scd_api, scd_session):
   with open('./scd/resources/op_end_time_past.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_already_exists(scd_session):
+def test_op_already_exists(scd_api, scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
@@ -124,48 +137,54 @@ def test_op_already_exists(scd_session):
   assert resp.status_code == 404, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_404_version1(scd_session):
+def test_op_404_version1(scd_api, scd_session):
   with open('./scd/resources/op_404_version1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
   assert resp.status_code == 404, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_bad_state_version0(scd_session):
+def test_op_bad_state_version0(scd_api, scd_session):
   with open('./scd/resources/op_bad_state_version0.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_bad_lat_lon_range(scd_session):
+def test_op_bad_lat_lon_range(scd_api, scd_session):
   with open('./scd/resources/op_bad_lat_lon_range.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_area_too_large_put(scd_session):
+def test_op_area_too_large_put(scd_api, scd_session):
   with open('./scd/resources/op_area_too_large_put.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_bad_time_format(scd_session):
+def test_op_bad_time_format(scd_api, scd_session):
   with open('./scd/resources/op_bad_time_format.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_repeated_requests(scd_session):
+def test_op_repeated_requests(scd_api, scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP_ID), json=req)
@@ -181,16 +200,18 @@ def test_op_repeated_requests(scd_session):
   assert resp.status_code == 200, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_invalid_id(scd_session):
+def test_op_invalid_id(scd_api, scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/not_uuid_format', json=req)
   assert resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_missing_conflicted_operation(scd_session):
+def test_missing_conflicted_operation(scd_api, scd_session):
   """
   This test reproduces a case where a conflicting Operation did not appear in a
   follow-up area-based query for Operations.
@@ -241,8 +262,9 @@ def test_missing_conflicted_operation(scd_session):
   assert OP_ID2 not in ops, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_big_operation_search(scd_session):
+def test_big_operation_search(scd_api, scd_session):
   """
   This test reproduces a case where a search resulted in 503 because the
   underlying gRPC backend had crashed.
@@ -255,8 +277,9 @@ def test_big_operation_search(scd_session):
   assert  resp.status_code == 400, resp.content
 
 
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_ensure_clean_workspace(scd_session):
+def test_ensure_clean_workspace(scd_api, scd_session):
   for op_id in (OP_ID, OP_ID2):
     resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     if resp.status_code == 200:
