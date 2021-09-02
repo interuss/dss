@@ -1,5 +1,4 @@
 import json
-import time
 import redis
 import rq
 from . import resources
