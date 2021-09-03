@@ -17,49 +17,91 @@ OP_ID = '00000028-728d-40c4-8eb2-20d19c000000'
 OP_ID2 = '0000006e-b4ec-48a3-ae38-426042000000'
 
 
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 def test_ensure_clean_workspace(scd_api, scd_session):
-  for op_id in (OP_ID, OP_ID2):
-    resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-    if resp.status_code == 200:
-      resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-      assert resp.status_code == 200, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
+  if scd_api == scd.API_0_3_5:
+    for op_id in (OP_ID, OP_ID2):
+      resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+      if resp.status_code == 200:
+        resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+        assert resp.status_code == 200, resp.content
+      elif resp.status_code == 404:
+        # As expected.
+        pass
+      else:
+        assert False, resp.content
+  elif scd_api == scd.API_0_3_15:
+    for op_id in (OP_ID, OP_ID2):
+      resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+      if resp.status_code == 200:
+        resp = scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+        assert resp.status_code == 200, resp.content
+      elif resp.status_code == 404:
+        # As expected.
+        pass
+      else:
+        assert False, resp.content
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
 def test_op_ref_area_too_large(scd_api, scd_session):
-  with open('./scd/resources/op_ref_area_too_large.json', 'r') as f:
-    req = json.load(f)
-  resp = scd_session.post('/operation_references/query', json=req)
-  assert resp.status_code == 400, resp.content
+  if scd_api == scd.API_0_3_5:
+    with open('./scd/resources/op_ref_area_too_large.json', 'r') as f:
+      req = json.load(f)
+    resp = scd_session.post('/operation_references/query', json=req)
+    assert resp.status_code == 400, resp.content
+  elif scd_api == scd.API_0_3_15:
+    with open('./scd/resources/op_ref_area_too_large_v15.json', 'r') as f:
+      req = json.load(f)
+    resp = scd_session.post('/operational_intent_reference/query', json=req)
+    assert resp.status_code == 400, resp.content
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
 def test_op_ref_start_end_times_past(scd_api, scd_session):
-  with open('./scd/resources/op_ref_start_end_times_past.json', 'r') as f:
-    req = json.load(f)
-  resp = scd_session.post('/operation_references/query', json=req)
-  # It is ok (and useful) to query for past Operations that may not yet have
-  # been explicitly deleted.  This is unlike remote ID where ISAs are
-  # auto-removed from the perspective of the client immediately after their end
-  # time.
-  assert resp.status_code == 200, resp.content
+  if scd_api == scd.API_0_3_5:
+    with open('./scd/resources/op_ref_start_end_times_past.json', 'r') as f:
+      req = json.load(f)
+    resp = scd_session.post('/operation_references/query', json=req)
+    # It is ok (and useful) to query for past Operations that may not yet have
+    # been explicitly deleted.  This is unlike remote ID where ISAs are
+    # auto-removed from the perspective of the client immediately after their end
+    # time.
+    assert resp.status_code == 200, resp.content
+  elif scd_api == scd.API_0_3_15:
+    with open('./scd/resources/op_ref_start_end_times_past_v15.json', 'r') as f:
+      req = json.load(f)
+    resp = scd_session.post('/operational_intent_reference/query', json=req)
+    # It is ok (and useful) to query for past Operations that may not yet have
+    # been explicitly deleted.  This is unlike remote ID where ISAs are
+    # auto-removed from the perspective of the client immediately after their end
+    # time.
+    assert resp.status_code == 200, resp.content
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
 def test_op_ref_incorrect_units(scd_api, scd_session):
-  with open('./scd/resources/op_ref_incorrect_units.json', 'r') as f:
-    req = json.load(f)
-  resp = scd_session.post('/operation_references/query', json=req)
-  assert resp.status_code == 400, resp.content
+  if scd_api == scd.API_0_3_5:
+    with open('./scd/resources/op_ref_incorrect_units.json', 'r') as f:
+      req = json.load(f)
+    resp = scd_session.post('/operation_references/query', json=req)
+    assert resp.status_code == 400, resp.content
+  elif scd_api == scd.API_0_3_15:
+    with open('./scd/resources/op_ref_incorrect_units_v15.json', 'r') as f:
+      req = json.load(f)
+    resp = scd_session.post('/operational_intent_reference/query', json=req)
+    assert resp.status_code == 400, resp.content
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 
 @for_api_versions(scd.API_0_3_5)
