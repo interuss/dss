@@ -134,6 +134,7 @@ def _update_user_local_config(auth_spec, config_spec):
     with open(user_config_file, 'w') as f:
         f.write(json.dumps(user_config))
 
+
 @webapp.route('/', methods=['GET', 'POST'])
 @webapp.route('/tests', methods=['GET', 'POST'])
 @login_required
