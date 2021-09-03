@@ -16,6 +16,7 @@ from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
+from monitoring.prober.infrastructure import for_api_versions
 
 
 def _load_op_ids():
@@ -51,7 +52,8 @@ def _intersection(list1, list2):
   return list(set(list1) & set(list2))
 
 
-def test_ensure_clean_workspace(scd_session):
+@for_api_versions(scd.API_0_3_5)
+def test_ensure_clean_workspace(scd_api, scd_session):
   for op_id in OP_IDS:
     resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     if resp.status_code == 200:
@@ -66,8 +68,9 @@ def test_ensure_clean_workspace(scd_session):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_ops_do_not_exist_get(scd_session):
+def test_ops_do_not_exist_get(scd_api, scd_session):
   for op_id in OP_IDS:
     resp = scd_session.get('/operation_references/{}'.format(op_id))
     assert resp.status_code == 404, resp.content
@@ -75,8 +78,9 @@ def test_ops_do_not_exist_get(scd_session):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_ops_do_not_exist_query(scd_session):
+def test_ops_do_not_exist_query(scd_api, scd_session):
   time_now = datetime.datetime.utcnow()
   end_time = time_now + datetime.timedelta(hours=1)
 
@@ -90,7 +94,8 @@ def test_ops_do_not_exist_query(scd_session):
 
 # Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
-def test_create_ops(scd_session):
+@for_api_versions(scd.API_0_3_5)
+def test_create_ops(scd_api, scd_session):
   assert len(ovn_map) == 0
 
   for idx, op_id in enumerate(OP_IDS):
@@ -118,7 +123,8 @@ def test_create_ops(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
-def test_get_ops_by_ids(scd_session):
+@for_api_versions(scd.API_0_3_5)
+def test_get_ops_by_ids(scd_api, scd_session):
   for op_id in OP_IDS:
     resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     assert resp.status_code == 200, resp.content
@@ -133,8 +139,9 @@ def test_get_ops_by_ids(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_get_ops_by_search(scd_session):
+def test_get_ops_by_search(scd_api, scd_session):
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
@@ -145,8 +152,9 @@ def test_get_ops_by_search(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_get_ops_by_search_earliest_time_included(scd_session):
+def test_get_ops_by_search_earliest_time_included(scd_api, scd_session):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=59)
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 12000))
@@ -158,8 +166,9 @@ def test_get_ops_by_search_earliest_time_included(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_get_ops_by_search_earliest_time_excluded(scd_session):
+def test_get_ops_by_search_earliest_time_excluded(scd_api, scd_session):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=81)
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 12000))
@@ -171,8 +180,9 @@ def test_get_ops_by_search_earliest_time_excluded(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_get_ops_by_search_latest_time_included(scd_session):
+def test_get_ops_by_search_latest_time_included(scd_api, scd_session):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=20)
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': scd.make_vol4(None, latest_time, 0, 5000, scd.make_circle(-56, 178, 12000))
@@ -184,8 +194,9 @@ def test_get_ops_by_search_latest_time_included(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_get_ops_by_search_latest_time_excluded(scd_session):
+def test_get_ops_by_search_latest_time_excluded(scd_api, scd_session):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': scd.make_vol4(None, latest_time, 0, 5000, scd.make_circle(-56, 178, 12000))
@@ -197,8 +208,9 @@ def test_get_ops_by_search_latest_time_excluded(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: Operations with ids in OP_IDS mutated to second version
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_mutate_ops(scd_session):
+def test_mutate_ops(scd_api, scd_session):
   for idx, op_id in enumerate(OP_IDS):
     # GET current op
     resp = scd_session.get('/operation_references/{}'.format(op_id))
@@ -242,7 +254,8 @@ def test_mutate_ops(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS mutated to second version
 # Mutations: Operations with ids in OP_IDS deleted
-def test_delete_op(scd_session):
+@for_api_versions(scd.API_0_3_5)
+def test_delete_op(scd_api, scd_session):
   for op_id in OP_IDS:
     resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     assert resp.status_code == 200, resp.content
@@ -250,8 +263,9 @@ def test_delete_op(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS deleted
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_get_deleted_ops_by_ids(scd_session):
+def test_get_deleted_ops_by_ids(scd_api, scd_session):
   for op_id in OP_IDS:
     resp = scd_session.get('/operation_references/{}'.format(op_id))
     assert resp.status_code == 404, resp.content
@@ -259,8 +273,9 @@ def test_get_deleted_ops_by_ids(scd_session):
 
 # Preconditions: Operations with ids in OP_IDS deleted
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_get_deleted_ops_by_search(scd_session):
+def test_get_deleted_ops_by_search(scd_api, scd_session):
   resp = scd_session.post('/operation_references/query', json={
     'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })

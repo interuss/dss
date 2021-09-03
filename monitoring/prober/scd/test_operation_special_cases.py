@@ -13,13 +13,17 @@ import json
 import uuid
 
 from monitoring.monitorlib.infrastructure import default_scope
+from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
+from monitoring.prober.infrastructure import for_api_versions
+
 
 OP1_ID = '00000020-b6ee-4082-b6e7-75eb4f000000'
 OP2_ID = '00000000-ee51-4700-873d-e10911000000'
 
 
-def test_ensure_clean_workspace(scd_session):
+@for_api_versions(scd.API_0_3_5)
+def test_ensure_clean_workspace(scd_api, scd_session):
   for op_id in (OP1_ID, OP2_ID):
     resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     if resp.status_code == 200:
@@ -36,8 +40,9 @@ def test_ensure_clean_workspace(scd_session):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_request_1(scd_session):
+def test_op_request_1(scd_api, scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP1_ID), json=req)
@@ -49,8 +54,9 @@ def test_op_request_1(scd_session):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_request_2(scd_session):
+def test_op_request_2(scd_api, scd_session):
   with open('./scd/resources/op_request_2.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP2_ID), json=req)
@@ -59,8 +65,9 @@ def test_op_request_2(scd_session):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_query_degenerate_polygon(scd_session):
+def test_op_query_degenerate_polygon(scd_api, scd_session):
   with open('./scd/resources/op_request_3.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
@@ -69,8 +76,9 @@ def test_op_query_degenerate_polygon(scd_session):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_query_not_area_too_large(scd_session):
+def test_op_query_not_area_too_large(scd_api, scd_session):
   with open('./scd/resources/op_request_4.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
@@ -79,8 +87,9 @@ def test_op_query_not_area_too_large(scd_session):
 
 # ID conversion bug exposure
 # Reproduces issue #314
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_id_conversion_bug(scd_session):
+def test_id_conversion_bug(scd_api, scd_session):
   sub_uuid = uuid.uuid4()
   time_ref = datetime.datetime.utcnow() + datetime.timedelta(days=1)
   time_start = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 1, 30)
