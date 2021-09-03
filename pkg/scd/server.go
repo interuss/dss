@@ -43,7 +43,7 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []*scdpb.S
 type Server struct {
 	Store   scdstore.Store
 	Timeout time.Duration
-	EnableHttp	bool
+	EnableHTTP	bool
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
