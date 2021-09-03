@@ -112,6 +112,28 @@ def _process_kml_files_task(kml_content, output_path):
         kml_content, output_path)
     return job.get_id()
 
+def _get_user_local_config():
+    """Get user's last saved specs."""
+    user_id = session['google_id']
+    user_config_file = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/user_config.json'
+    auth_spec = ''
+    config_spec = ''
+    if os.path.isfile(user_config_file):
+        with open(user_config_file) as fo:
+            file_content = json.loads(fo.read())
+            auth_spec = file_content['auth']
+            config_spec = file_content['config']
+    return auth_spec, config_spec
+
+
+def _update_user_local_config(auth_spec, config_spec):
+    """Saves user's local config in  profile specific folder."""
+    user_id = session['google_id']
+    user_config_file = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/user_config.json'
+    user_config = {'auth': auth_spec, 'config': config_spec}
+    with open(user_config_file, 'w') as f:
+        f.write(json.dumps(user_config))
+
 @webapp.route('/', methods=['GET', 'POST'])
 @webapp.route('/tests', methods=['GET', 'POST'])
 @login_required
@@ -126,11 +148,16 @@ def tests():
     form = forms.TestsExecuteForm()
     form.flight_records.choices = files
     data = get_test_history()
+    if request.method == 'GET':
+        auth_spec, config_spec = _get_user_local_config()
+        form.user_config.data = config_spec
+        form.auth_spec.data = auth_spec
     if running_job:
         data.update({'job_id': running_job})
     else:
         job_id = ''
         if form.validate_on_submit():
+            _update_user_local_config(form.auth_spec.data, form.user_config.data)
             file_objs = []
             user_id = session['google_id']
             input_files_location = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
