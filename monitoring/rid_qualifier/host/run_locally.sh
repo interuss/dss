@@ -61,6 +61,6 @@ docker run --name rid-host \
   local-interuss/rid-host \
   gunicorn \
     --preload \
-    --workers=1 \
+    --workers=2 \
     --bind=0.0.0.0:5000 \
     monitoring.rid_qualifier.host:webapp
