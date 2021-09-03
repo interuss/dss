@@ -161,8 +161,8 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	}
 
 	return &scd.Server{
-		Store:   scdStore,
-		Timeout: *timeout,
+		Store:      scdStore,
+		Timeout:    *timeout,
 		EnableHTTP: *enableHTTP,
 	}, nil
 }
