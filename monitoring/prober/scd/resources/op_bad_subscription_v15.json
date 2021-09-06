@@ -3,17 +3,17 @@
     {
       "volume": {
         "outline_circle": {
-            "center": {
-              "lng": 10.019861937948736,
-                "lat": 10.02005709311726
-            },
-            "radius": {
-              "value": 300.183,
-              "units": "M"
-            }
-            },
-            "outline_polygon": {
-              "vertices": [
+          "center": {
+            "lng": 10.019861937948736,
+            "lat": 10.02005709311726
+          },
+          "radius": {
+            "value": 300.183,
+            "units": "M"
+          }
+        },
+        "outline_polygon": {
+          "vertices": [
             {
               "lng": 10.019861937948736,
               "lat": 10.02005709311726

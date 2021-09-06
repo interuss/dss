@@ -4,8 +4,8 @@
       "volume": {
         "outline_circle": {
           "center": {
-            "lng": -118.456,
-            "lat": 34.123
+            "lng": 9.980582850817164,
+            "lat": 9.98038769564864
           },
           "radius": {
             "value": 300.183,
@@ -60,7 +60,7 @@
   "oldVersion": 0,
   "key": [],
   "state": "Ended",
-  "ussBaseUrl": "https://localhost:8080",
+  "uss_base_url": "https://localhost:8080",
   "new_subscription": {
     "uss_base_url": "https://localhost:8080",
     "notify_for_constraints": false
