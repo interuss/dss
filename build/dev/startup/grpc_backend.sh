@@ -17,7 +17,8 @@ if [[ $DEBUG_ON == 1 ]]; then
   -log_format console \
   -dump_requests \
   -accepted_jwt_audiences localhost,host.docker.internal,local-gateway,dss_sandbox_local-dss-http-gateway_1 \
-  -enable_scd
+  -enable_scd \
+  -enable_http
 else
   echo "Debug Mode: off"
 
