@@ -196,9 +196,9 @@ def _collect_resp_callback(key, op_resp_map, future):
   op_resp_map[key] = future.result()
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-def test_ensure_clean_workspace(scd_api, scd_session):
-  if scd_api == scd.API_0_3_5:
+@for_api_versions(scd.API_0_3_5)
+@default_scope(SCOPE_SC)
+def test_ensure_clean_workspace_v5(scd_api, scd_session):
     for op_id in OP_IDS:
       resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
       if resp.status_code == 200:
@@ -209,7 +209,11 @@ def test_ensure_clean_workspace(scd_api, scd_session):
         pass
       else:
         assert False, resp.content
-  elif scd_api == scd.API_0_3_15:
+
+
+@for_api_versions(scd.API_0_3_15)
+@default_scope(SCOPE_SC)
+def test_ensure_clean_workspace_v15(scd_api, scd_session):
     for op_id in OP_IDS:
       resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
       if resp.status_code == 200:
@@ -220,13 +224,12 @@ def test_ensure_clean_workspace(scd_api, scd_session):
         pass
       else:
         assert False, resp.content
-  else:
-    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 
 # Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@default_scope(SCOPE_SC)
 def test_create_ops_concurrent(scd_api, scd_session):
   assert len(ovn_map) == 0
   op_req_map = {}

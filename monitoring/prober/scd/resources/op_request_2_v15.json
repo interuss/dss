@@ -1,0 +1,68 @@
+{
+  "extents": [
+    {
+      "volume": {
+        "outline_circle": {
+          "center": {
+            "lng": 9.980387695648641,
+            "lat": 9.980582850817164
+          },
+          "radius": {
+            "value": 300.183,
+            "units": "M"
+          }
+        },
+        "outline_polygon": {
+          "vertices": [
+            {
+              "lng": 9.980387695648641,
+              "lat": 9.980582850817164
+            },
+            {
+              "lng": 9.980585843863057,
+              "lat": 9.980390688694534
+            },
+            {
+              "lng": 10.02005709311726,
+              "lat": 20.019861937948736
+            },
+            {
+              "lng": 20.01985896200956,
+              "lat": 20.020054117178084
+            },
+            {
+              "lng": 9.980387695648641,
+              "lat": 9.980582850817164
+            }
+          ]
+        },
+        "altitude_lower": {
+          "value": -12.191999609856008,
+          "reference": "W84",
+          "units": "M"
+        },
+        "altitude_upper": {
+          "value": 18.287999414784014,
+          "reference": "W84",
+          "units": "M"
+        }
+      },
+      "time_start": {
+        "value": "2020-06-10T18:31:20.00Z",
+        "format": "RFC3339"
+      },
+      "time_end": {
+        "value": "2030-06-11T18:52:00.00Z",
+        "format": "RFC3339"
+      }
+    }
+  ],
+  "old_version": 0,
+  "key": [],
+  "state": "Accepted",
+  "uss_base_url": "https://localhost:8080",
+  "new_subscription": {
+    "uss_base_url": "https://localhost:8080",
+    "notify_for_constraints": true
+  }
+}
