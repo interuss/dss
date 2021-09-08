@@ -106,7 +106,8 @@ docker run -d --name grpc-backend-for-testing \
 	-log_format console \
 	-dump_requests \
 	-accepted_jwt_audiences local-gateway \
-	-enable_scd
+	-enable_scd	\
+	-enable_http
 
 sleep 1
 echo " ------------- HTTP GATEWAY -------------- "
