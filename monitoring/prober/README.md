@@ -44,7 +44,7 @@ Or, execute the two steps separately.  First, build the prober image:
 
 (from [`monitoring`](../) working directory)
 ```shell script
-docker build -f monitoring/prober/Dockerfile monitoring/prober -t local-prober
+docker build -f prober/Dockerfile . -t local-prober
 ```
 
 ...then run it:
