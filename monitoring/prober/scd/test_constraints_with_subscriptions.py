@@ -14,6 +14,7 @@ from typing import Dict
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_CI, SCOPE_CM, SCOPE_SC
+from monitoring.prober.infrastructure import for_api_versions
 
 
 CONSTRAINT_BASE_URL_1 = 'https://example.com/con1/uss'
@@ -49,7 +50,8 @@ def _make_sub_req(base_url: str, notify_ops: bool, notify_constraints: bool) -> 
   }
 
 
-def test_ensure_clean_workspace(scd_session, scd_session2):
+@for_api_versions(scd.API_0_3_5)
+def test_ensure_clean_workspace(scd_api, scd_session, scd_session2):
   resp = scd_session.get('/constraint_references/{}'.format(CONSTRAINT_ID), scope=SCOPE_CM)
   if resp.status_code == 200:
     resp = scd_session.delete('/constraint_references/{}'.format(CONSTRAINT_ID), scope=SCOPE_CM)
@@ -74,8 +76,9 @@ def test_ensure_clean_workspace(scd_session, scd_session2):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_CI)
-def test_subs_do_not_exist(scd_session, scd_session2):
+def test_subs_do_not_exist(scd_api, scd_session, scd_session2):
   if scd_session is None:
     return
   resp = scd_session.get('/subscriptions/{}'.format(SUB1_ID))
@@ -88,8 +91,9 @@ def test_subs_do_not_exist(scd_session, scd_session2):
 
 # Preconditions: None
 # Mutations: {Sub1, Sub2, Sub3} created by scd_session2 user
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_CI)
-def test_create_subs(scd_session, scd_session2):
+def test_create_subs(scd_api, scd_session, scd_session2):
   if scd_session2 is None:
     return
   req = _make_sub_req(SUB_BASE_URL_A, notify_ops=True, notify_constraints=False)
@@ -107,16 +111,18 @@ def test_create_subs(scd_session, scd_session2):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_CM)
-def test_constraint_does_not_exist(scd_session, scd_session2):
+def test_constraint_does_not_exist(scd_api, scd_session, scd_session2):
   resp = scd_session.get('/constraint_references/{}'.format(CONSTRAINT_ID))
   assert resp.status_code == 404, resp.content
 
 
 # Preconditions: {Sub1, Sub2, Sub3} created by scd_session2 user
 # Mutations: Constraint CONSTRAINT_ID created by scd_session user
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_CM)
-def test_create_constraint(scd_session, scd_session2):
+def test_create_constraint(scd_api, scd_session, scd_session2):
   req = _make_c1_request()
   resp = scd_session.put('/constraint_references/{}'.format(CONSTRAINT_ID), json=req)
   assert resp.status_code == 200, resp.content
@@ -142,8 +148,9 @@ def test_create_constraint(scd_session, scd_session2):
 #   * {Sub2, Sub3} received one notification
 #   * Constraint CONSTRAINT_ID created by scd_session user
 # Mutations: Constraint CONSTRAINT_ID mutated to second version
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_CM)
-def test_mutate_constraint(scd_session, scd_session2):
+def test_mutate_constraint(scd_api, scd_session, scd_session2):
   # GET current constraint
   resp = scd_session.get('/constraint_references/{}'.format(CONSTRAINT_ID))
   assert resp.status_code == 200, resp.content
@@ -179,8 +186,9 @@ def test_mutate_constraint(scd_session, scd_session2):
 
 # Preconditions: {Sub1, Sub2, Sub3} created by scd_session2 user
 # Mutations: Sub1 listens for Constraints, Sub3 doesn't listen for Constraints
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_CI)
-def test_mutate_subs(scd_session2, scd_session):
+def test_mutate_subs(scd_api, scd_session2, scd_session):
   # GET current sub1 before mutation
   resp = scd_session2.get('/subscriptions/{}'.format(SUB1_ID))
   assert resp.status_code == 200, resp.content
@@ -216,8 +224,9 @@ def test_mutate_subs(scd_session2, scd_session):
 #   * Sub3 received one notification and mutated by scd_session2 user to not receive Constraints
 #   * Constraint CONSTRAINT_ID mutated by scd_session user to second version
 # Mutations: Constraint CONSTRAINT_ID mutated to third version
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_CM)
-def test_mutate_constraint2(scd_session, scd_session2):
+def test_mutate_constraint2(scd_api, scd_session, scd_session2):
   # GET current constraint
   resp = scd_session.get('/constraint_references/{}'.format(CONSTRAINT_ID))
   assert resp.status_code == 200, resp.content
@@ -263,16 +272,18 @@ def test_mutate_constraint2(scd_session, scd_session2):
 
 # Preconditions: Constraint CONSTRAINT_ID mutated to second version
 # Mutations: Constraint CONSTRAINT_ID deleted
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_CM)
-def test_delete_constraint(scd_session, scd_session2):
+def test_delete_constraint(scd_api, scd_session, scd_session2):
   resp = scd_session.delete('/constraint_references/{}'.format(CONSTRAINT_ID))
   assert resp.status_code == 200, resp.content
 
 
 # Preconditions: {Sub1, Sub2, Sub3} created by scd_session2 user
 # Mutations: {Sub1, Sub2, Sub3} deleted
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_CI)
-def test_delete_subs(scd_session2, scd_session):
+def test_delete_subs(scd_api, scd_session2, scd_session):
   if scd_session2 is None:
     return
   for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):

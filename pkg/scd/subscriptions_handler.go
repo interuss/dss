@@ -37,6 +37,13 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		params = req.GetParams()
 	)
 
+	if !a.EnableHTTP {
+		err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
+		if err != nil {
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
+		}
+	}
+
 	// Parse extents
 	extents, err := dssmodels.Volume4DFromSCDProto(params.GetExtents())
 	if err != nil {
