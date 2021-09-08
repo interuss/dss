@@ -6,6 +6,7 @@ This document aims to provide a introduction to the repository and it's structur
 
 - The main codebase for the DSS is in `/pkg` and `/cmds`, the core organization and structure of the DSS is in these directories.
 - The `/monitoring` folder contains tools to validate DSS deployments and has different directories detailing the tests.
+- The `/interfaces` folder contains diagrams, API specifications of the standards and other test tools that come with the DSS. This folder contains references to the ASTM standard, diagrams about remote-id test suite etc.
 
 ### Introduction to the Monitoring toolset
 

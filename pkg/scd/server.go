@@ -41,8 +41,9 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []*scdpb.S
 
 // Server implements scdpb.DiscoveryAndSynchronizationService.
 type Server struct {
-	Store   scdstore.Store
-	Timeout time.Duration
+	Store      scdstore.Store
+	Timeout    time.Duration
+	EnableHTTP bool
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
