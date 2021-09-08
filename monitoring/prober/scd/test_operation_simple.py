@@ -23,7 +23,7 @@ OP_ID = '0000008c-91c8-4afc-927d-d923f5000000'
 
 @for_api_versions(scd.API_0_3_5)
 def test_ensure_clean_workspace_v5(scd_api, scd_session):
-  resp = scd_session.get('/operaton_references/{}'.format(OP_ID), scope=SCOPE_SC)
+  resp = scd_session.get('/operation_references/{}'.format(OP_ID), scope=SCOPE_SC)
   if resp.status_code == 200:
     resp = scd_session.delete('/operation_references/{}'.format(OP_ID), scope=SCOPE_SC)
     assert resp.status_code == 200, resp.content
