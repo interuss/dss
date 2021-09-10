@@ -1,8 +1,8 @@
 package models
 
 import (
-	"net/url"
 	"github.com/interuss/stacktrace"
+	"net/url"
 )
 
 // ValidateURL ensures https
