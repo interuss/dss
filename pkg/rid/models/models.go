@@ -16,9 +16,9 @@ func ValidateURL(s string) error {
 	case "https":
 		// All good, proceed normally.
 	case "http":
-		return stacktrace.NewError("uss_base_url in new_subscription must use TLS")
+		return stacktrace.NewError("rid url must use TLS")
 	default:
-		return stacktrace.NewError("uss_base_url must support https scheme")
+		return stacktrace.NewError("rid url must support https scheme")
 	}
 
 	return nil
