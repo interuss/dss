@@ -138,6 +138,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		App:      application.NewFromTransactor(ridStore, logger),
 		Timeout:  *timeout,
 		Locality: locality,
+		EnableHTTP: *enableHTTP,
 	}, nil
 }
 

@@ -30,6 +30,7 @@ type Server struct {
 	App      application.App
 	Timeout  time.Duration
 	Locality string
+	EnableHTTP bool
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
