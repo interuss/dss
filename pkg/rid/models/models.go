@@ -5,8 +5,8 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-// ValidateUSSBaseURL ensures https
-func ValidateUSSBaseURL(s string) error {
+// ValidateURL ensures https
+func ValidateURL(s string) error {
 	u, err := url.Parse(s)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error parsing URL")

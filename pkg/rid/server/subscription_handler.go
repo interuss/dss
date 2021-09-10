@@ -136,7 +136,7 @@ func (s *Server) CreateSubscription(
 	}
 
 	if !s.EnableHTTP {
-		err = ridmodels.ValidateUSSBaseURL(params.Callbacks.IdentificationServiceAreaUrl)
+		err = ridmodels.ValidateURL(params.Callbacks.IdentificationServiceAreaUrl)
 		if err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
 		}

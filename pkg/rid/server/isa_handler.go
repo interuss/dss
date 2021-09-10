@@ -71,7 +71,7 @@ func (s *Server) CreateIdentificationServiceArea(
 	}
 
 	if !s.EnableHTTP {
-		err = ridmodels.ValidateUSSBaseURL(params.GetFlightsUrl())
+		err = ridmodels.ValidateURL(params.GetFlightsUrl())
 		if err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
 		}
