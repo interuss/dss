@@ -171,6 +171,13 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
 	}
 
+	if !a.EnableHTTP {
+		err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
+		if err != nil {
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
+		}
+	}
+
 	// TODO: factor out logic below into common multi-vol4d parser and reuse with PutOperationReference
 	for idx, extent := range params.GetExtents() {
 		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)

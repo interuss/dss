@@ -135,9 +135,10 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	ridCron.Start()
 
 	return &rid.Server{
-		App:      application.NewFromTransactor(ridStore, logger),
-		Timeout:  *timeout,
-		Locality: locality,
+		App:        application.NewFromTransactor(ridStore, logger),
+		Timeout:    *timeout,
+		Locality:   locality,
+		EnableHTTP: *enableHTTP,
 	}, nil
 }
 
