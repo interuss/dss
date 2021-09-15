@@ -14,6 +14,7 @@ from typing import Dict
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_CI, SCOPE_CM, SCOPE_SC
+from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
 
 
@@ -29,95 +30,15 @@ SUB2_ID = ''
 SUB3_ID = ''
 
 
-def _bin_to_hex(bin_string):
-  return format(int(bin_string,2), "02x")
-
-
-def _bin_to_dec(bin_string):
-  return int(bin_string, 2)
-
-
-def _hex_to_bin(hex_string):
-  return format(int(hex_string,16), "08b")
-
-
-def _dec_to_bin(num):
-  return format(num, "06b")
-
-
-def _split_by(string_val, num=8):
-  """Splits a string into substrings with a length of given number."""
-  return [string_val[i:i+num] for i in range(0, len(string_val), num)]
-
-
-def _get_ord_val(letter):
-  """Encodes new ord value for ascii letters."""
-  ord_val = ord(letter)
-  if ord_val >= 48 and ord_val <= 57: # decimal numbers
-    return ord_val - 48
-  if ord_val >= 65 and ord_val <= 90: # capitals
-    return ord_val - 65 + 10
-  if ord_val >= 97 and ord_val <= 122: # small letters.
-    return ord_val - 97 + 10 + 26
-  if ord_val == 95:
-    return 63
-
-
-def _get_ascii_val_from_bit_value(num):
-  """Decodes new ord value to ascii letters."""
-  if num >=0 and num <= 9:
-    return chr(num + 48)
-  if num >= 10 and num <= 35:
-    return chr(num + 65 - 10)
-  if num >= 36 and num <= 61:
-    return chr(num + 97 - 10 - 26)
-  if num == 63:
-    return '_'
-
-
-def _encode_owner(string_val, fixed_id):
-  bits = ''
-  for letter in string_val:
-    ord_val = _get_ord_val(letter)
-    bits += _dec_to_bin(ord_val)
-  hex_codes = ''.join((_bin_to_hex(s) for s in _split_by(bits)[:6]))
-  fixed_code = list(fixed_id)
-  curr_pos = 16
-  hex_ptr = 0
-  while curr_pos <= 30 and hex_ptr < len(hex_codes):
-    if fixed_code[curr_pos] == '-':
-      curr_pos += 1
-    fixed_code[curr_pos] = hex_codes[hex_ptr]
-    curr_pos += 1
-    hex_ptr += 1
-  return ''.join(fixed_code)
-
-
-def _decode_owner(owner_id):
-  if len(owner_id) < 30:
-    raise ValueError('Invalid owner id.')
-  owner_hex_code = (owner_id[16:30]).replace('-', '')
-  hex_splits = _split_by(owner_hex_code, num=2)
-  bits = ''
-  for h in hex_splits:
-    print(f'h: {h}, bits: {_hex_to_bin(h)}')
-    bits += _hex_to_bin(h)
-  test_owner = ''
-  for seq in _split_by(bits, 6):
-    num = _bin_to_dec(seq)
-    test_owner += _get_ascii_val_from_bit_value(num)
-  return test_owner
-
-
 def test_set_test_owner_ids(test_owner):
   global CONSTRAINT_ID
   global SUB1_ID
   global SUB2_ID
   global SUB3_ID
-  CONSTRAINT_ID = _encode_owner(test_owner, '000000a2-2629-49c9-a688-23afb3000000')
-  SUB1_ID = _encode_owner(test_owner, '00000007-e548-48bb-b9f2-68e0e0000000')
-  SUB2_ID = _encode_owner(test_owner, '00000068-6289-46cc-a402-fbc0f7000000')
-  SUB3_ID = _encode_owner(test_owner, '00000089-b954-4d3f-8afa-2c4e3b000000')
+  CONSTRAINT_ID = utils.encode_owner(test_owner, '000000a2-2629-49c9-a688-23afb3000000')
+  SUB1_ID = utils.encode_owner(test_owner, '00000007-e548-48bb-b9f2-68e0e0000000')
+  SUB2_ID = utils.encode_owner(test_owner, '00000068-6289-46cc-a402-fbc0f7000000')
+  SUB3_ID = utils.encode_owner(test_owner, '00000089-b954-4d3f-8afa-2c4e3b000000')
 
 
 def _make_c1_request():
