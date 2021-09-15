@@ -13,7 +13,7 @@ def pytest_addoption(parser):
   parser.addoption('--rid-auth')
   parser.addoption('--scd-auth1')
   parser.addoption('--scd-auth2')
-  parser.addoption('--test-owner')
+  parser.addoption('--test-owner', default='localowner')
   parser.addoption('--scd-api-version')
 
 

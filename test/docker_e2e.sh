@@ -18,9 +18,6 @@ fi
 echo "e2e base directory is ${BASEDIR}"
 cd "${BASEDIR}"
 
-TESTOWNER=$1
-
-echo "TESTOWNER: ${TESTOWNER}"
 
 function gather_logs() {
 	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
@@ -157,7 +154,6 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
-	--test-owner ${TESTOWNER}
 
 echo "Cleaning up http-gateway container"
 docker stop http-gateway-for-testing > /dev/null

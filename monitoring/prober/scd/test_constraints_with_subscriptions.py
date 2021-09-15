@@ -110,7 +110,6 @@ def _decode_owner(owner_id):
 
 
 def test_set_test_owner_ids(test_owner):
-  print(f'test_owner: {test_owner}')
   global CONSTRAINT_ID
   global SUB1_ID
   global SUB2_ID
