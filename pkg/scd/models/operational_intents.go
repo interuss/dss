@@ -11,69 +11,69 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-// Aggregates constants for operations.
+// Aggregates constants for operational intents.
 const (
-	OperationStateUnknown       OperationState = ""
-	OperationStateAccepted      OperationState = "Accepted"
-	OperationStateActivated     OperationState = "Activated"
-	OperationStateNonConforming OperationState = "NonConforming"
-	OperationStateContingent    OperationState = "Contingent"
-	OperationStateEnded         OperationState = "Ended"
+	OperationalIntentStateUnknown       OperationalIntentState = ""
+	OperationalIntentStateAccepted      OperationalIntentState = "Accepted"
+	OperationalIntentStateActivated     OperationalIntentState = "Activated"
+	OperationalIntentStateNonConforming OperationalIntentState = "NonConforming"
+	OperationalIntentStateContingent    OperationalIntentState = "Contingent"
 )
 
 // OperationState models the state of an operation.
-type OperationState string
+type OperationalIntentState string
 
-// RequiresKey indicates whether transitioning an Operation to this
-// OperationState requires a valid key.
-func (s OperationState) RequiresKey() bool {
+// RequiresKey indicates whether transitioning an OperationalIntent to this
+// OperationalIntentState requires a valid key.
+func (s OperationalIntentState) RequiresKey() bool {
 	switch s {
-	case OperationStateNonConforming:
+	case OperationalIntentStateNonConforming:
 		fallthrough
-	case OperationStateContingent:
+	case OperationalIntentStateContingent:
 		return false
 	}
 	return true
 }
 
-// IsValid indicates whether an Operation may be transitioned to the specified
+// IsValid indicates whether an OperationalIntent may be transitioned to the specified
 // state via a DSS PUT.
-func (s OperationState) IsValidInDSS() bool {
+func (s OperationalIntentState) IsValidInDSS() bool {
 	switch s {
-	case OperationStateAccepted:
+	case OperationalIntentStateAccepted:
 		fallthrough
-	case OperationStateActivated:
+	case OperationalIntentStateActivated:
 		fallthrough
-	case OperationStateNonConforming:
+	case OperationalIntentStateNonConforming:
 		fallthrough
-	case OperationStateContingent:
+	case OperationalIntentStateContingent:
 		return true
 	}
 	return false
 }
 
-// Operation models an operation.
-type Operation struct {
+// OperationalIntent models an operational intent.
+type OperationalIntent struct {
+	// Reference
 	ID             dssmodels.ID
+	Manager        dssmodels.Manager
 	Version        Version
+	State          OperationalIntentState
 	OVN            OVN
-	Owner          dssmodels.Owner
 	StartTime      *time.Time
 	EndTime        *time.Time
+	USSBaseURL     string
+	SubscriptionID dssmodels.ID
 	AltitudeLower  *float32
 	AltitudeUpper  *float32
-	USSBaseURL     string
-	State          OperationState
 	Cells          s2.CellUnion
-	SubscriptionID dssmodels.ID
 }
 
-// ToProto converts the Operation to its proto API format
-func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
-	result := &scdpb.OperationReference{
+// ToProto converts the OperationalIntent to its proto API format
+func (o *OperationalIntent) ToProto() (*scdpb.OperationalIntentReference, error) {
+	result := &scdpb.OperationalIntentReference{
 		Id:             o.ID.String(),
 		Ovn:            o.OVN.String(),
-		Owner:          o.Owner.String(),
+		Manager:        o.Manager.String(),
 		Version:        int32(o.Version),
 		UssBaseUrl:     o.USSBaseURL,
 		SubscriptionId: o.SubscriptionID.String(),
@@ -100,16 +100,19 @@ func (o *Operation) ToProto() (*scdpb.OperationReference, error) {
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
+
+	// TODO: Populate UssAvailability field
+
 	return result, nil
 }
 
 // ValidateTimeRange validates the time range of o.
-func (o *Operation) ValidateTimeRange() error {
+func (o *OperationalIntent) ValidateTimeRange() error {
 	if o.StartTime == nil {
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation must have an time_start")
 	}
 
-	// EndTime cannot be omitted for new Operations.
+	// EndTime cannot be omitted for new Operational Intents.
 	if o.EndTime == nil {
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation must have an time_end")
 	}

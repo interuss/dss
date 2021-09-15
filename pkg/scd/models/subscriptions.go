@@ -24,32 +24,31 @@ const (
 
 // Subscription represents an SCD subscription
 type Subscription struct {
-	ID                dssmodels.ID
-	Version           Version
-	NotificationIndex int
-	Owner             dssmodels.Owner
-	StartTime         *time.Time
-	EndTime           *time.Time
-	AltitudeHi        *float32
-	AltitudeLo        *float32
-
-	BaseURL              string
-	NotifyForOperations  bool
-	NotifyForConstraints bool
-	ImplicitSubscription bool
-	Cells                s2.CellUnion
+	ID                          dssmodels.ID
+	Version                     VersionToken
+	NotificationIndex           int
+	Manager                     dssmodels.Manager
+	StartTime                   *time.Time
+	EndTime                     *time.Time
+	AltitudeHi                  *float32
+	AltitudeLo                  *float32
+	USSBaseURL                  string
+	NotifyForOperationalIntents bool
+	NotifyForConstraints        bool
+	ImplicitSubscription        bool
+	Cells                       s2.CellUnion
 }
 
 // ToProto converts the Subscription to its proto API format
-func (s *Subscription) ToProto(dependentOperations []dssmodels.ID) (*scdpb.Subscription, error) {
+func (s *Subscription) ToProto(dependentOperationalIntents []dssmodels.ID) (*scdpb.Subscription, error) {
 	result := &scdpb.Subscription{
-		Id:                   s.ID.String(),
-		Version:              int32(s.Version),
-		NotificationIndex:    int32(s.NotificationIndex),
-		UssBaseUrl:           s.BaseURL,
-		NotifyForOperations:  s.NotifyForOperations,
-		NotifyForConstraints: s.NotifyForConstraints,
-		ImplicitSubscription: s.ImplicitSubscription,
+		Id:                          s.ID.String(),
+		Version:                     string(s.Version),
+		NotificationIndex:           int32(s.NotificationIndex),
+		UssBaseUrl:                  s.USSBaseURL,
+		NotifyForOperationalIntents: s.NotifyForOperationalIntents,
+		NotifyForConstraints:        s.NotifyForConstraints,
+		ImplicitSubscription:        s.ImplicitSubscription,
 	}
 
 	if s.StartTime != nil {
@@ -74,8 +73,8 @@ func (s *Subscription) ToProto(dependentOperations []dssmodels.ID) (*scdpb.Subsc
 		}
 	}
 
-	for _, op := range dependentOperations {
-		result.DependentOperations = append(result.DependentOperations, op.String())
+	for _, op := range dependentOperationalIntents {
+		result.DependentOperationalIntents = append(result.DependentOperationalIntents, op.String())
 	}
 
 	return result, nil
@@ -124,8 +123,8 @@ func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
 }
 
 // ValidateDependentOps validates subscription against given operations in all 4 dimensions
-func (s *Subscription) ValidateDependentOps(operations []*Operation) error {
-	for _, op := range operations {
+func (s *Subscription) ValidateDependentOps(operationalIntents []*OperationalIntent) error {
+	for _, op := range operationalIntents {
 		if err := s.ValidateDependentOp(op); err != nil {
 			return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Subscription does not cover dependent operations")
 		}
@@ -134,19 +133,19 @@ func (s *Subscription) ValidateDependentOps(operations []*Operation) error {
 }
 
 // ValidateDependentOp validates subscription against single operation in all 4 dimensions
-func (s *Subscription) ValidateDependentOp(operation *Operation) error {
+func (s *Subscription) ValidateDependentOp(operationalIntent *OperationalIntent) error {
 	// validate 2d area
-	if !s.Cells.Contains(operation.Cells) {
-		return stacktrace.NewError("Subscription does not cover dependent operation 2d area, %s", operation.ID)
+	if !s.Cells.Contains(operationalIntent.Cells) {
+		return stacktrace.NewError("Subscription does not cover dependent operation 2d area, %s", operationalIntent.ID)
 	}
 	// validate altitudes
-	if *operation.AltitudeLower < *s.AltitudeLo || *operation.AltitudeUpper > *s.AltitudeHi {
-		return stacktrace.NewError("Subscription does not cover dependent operation altitude, %s", operation.ID)
+	if *operationalIntent.AltitudeLower < *s.AltitudeLo || *operationalIntent.AltitudeUpper > *s.AltitudeHi {
+		return stacktrace.NewError("Subscription does not cover dependent operation altitude, %s", operationalIntent.ID)
 	}
 	// validate time range
-	// Skip checking start time since subscription's start time cannot be in the past while its dependent operation can
-	if (*operation.EndTime).After(*s.EndTime) {
-		return stacktrace.NewError("Subscription does not cover dependent operation time range, %s", operation.ID)
+	// Skip checking start time since subscription's start time cannot be in the past while its dependent operational intent can
+	if (*operationalIntent.EndTime).After(*s.EndTime) {
+		return stacktrace.NewError("Subscription does not cover dependent operation time range, %s", operationalIntent.ID)
 	}
 	return nil
 }
