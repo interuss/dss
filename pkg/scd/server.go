@@ -27,7 +27,7 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []*scdpb.S
 			SubscriptionId:    sub.ID.String(),
 			NotificationIndex: int32(sub.NotificationIndex),
 		}
-		subscriptionsByURL[sub.BaseURL] = append(subscriptionsByURL[sub.BaseURL], subState)
+		subscriptionsByURL[sub.USSBaseURL] = append(subscriptionsByURL[sub.USSBaseURL], subState)
 	}
 	for url, states := range subscriptionsByURL {
 		result = append(result, &scdpb.SubscriberToNotify{
