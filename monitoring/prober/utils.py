@@ -45,8 +45,12 @@ def get_ascii_val_from_bit_value(num):
     return '_'
 
 
-def encode_owner(string_val, fixed_id):
+def encode_owner(owner_name, fixed_id):
   bits = ''
+  if len(owner_name) > 8:
+    string_val = owner_name[:4] + owner_name[-4:]
+  else:
+    string_val = owner_name
   for letter in string_val:
     ord_val = get_ord_val(letter)
     bits += dec_to_bin(ord_val)
@@ -76,4 +80,6 @@ def decode_owner(owner_id):
   for seq in split_by(bits, 6):
     num = bin_to_dec(seq)
     test_owner += get_ascii_val_from_bit_value(num)
+  if len(test_owner) == 8:
+      return test_owner[:4] + '.. ' + test_owner[-4:]
   return test_owner
