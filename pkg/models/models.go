@@ -15,6 +15,9 @@ type (
 	// Owner is the owner taken from the oauth token.
 	Owner string
 
+	// Semantically similar to Owner
+	Manager string
+
 	// Version represents a version, which can be supplied as a commit timestamp
 	// or a string.
 	Version struct {
@@ -41,6 +44,10 @@ func (id ID) Empty() bool {
 
 func (owner Owner) String() string {
 	return string(owner)
+}
+
+func (manager Manager) String() string {
+  return string(manager)
 }
 
 func IDFromString(s string) (ID, error) {

@@ -13,16 +13,17 @@ import (
 
 // Constraint models a constraint, as known by the DSS
 type Constraint struct {
-	ID            dssmodels.ID
-	Version       Version
-	OVN           OVN
-	Owner         dssmodels.Owner
-	StartTime     *time.Time
-	EndTime       *time.Time
-	AltitudeLower *float32
-	AltitudeUpper *float32
-	USSBaseURL    string
-	Cells         s2.CellUnion
+	ID              dssmodels.ID
+	Manager         dssmodels.Manager
+	UssAvailability UssAvailabilityState
+	Version         Version
+	OVN             OVN
+	StartTime       *time.Time
+	EndTime         *time.Time
+	USSBaseURL      string
+	AltitudeLower   *float32
+	AltitudeUpper   *float32
+	Cells           s2.CellUnion
 }
 
 // ToProto converts the Constraint to its proto API format
@@ -30,7 +31,7 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 	result := &scdpb.ConstraintReference{
 		Id:         c.ID.String(),
 		Ovn:        c.OVN.String(),
-		Owner:      c.Owner.String(),
+		Manager:    c.Manager.String(),
 		Version:    int32(c.Version),
 		UssBaseUrl: c.USSBaseURL,
 	}
@@ -56,6 +57,9 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
+
+	// TODO: Populate UssAvailability field
+
 	return result, nil
 }
 
