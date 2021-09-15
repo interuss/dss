@@ -24,12 +24,24 @@ def fix_string_enums(node):
 # Specific to the SCD API, manually change the type of the `key` field to array
 # of string
 def fix_key_type(tree):
-  key = tree['components']['schemas']['PutOperationReferenceParameters']['properties']['key']
-  del key['anyOf']
-  key['type'] = 'array'
-  key['items'] = {
-    'type': 'string'
-  }
+  keys = [
+    tree['components']['schemas']['PutOperationalIntentReferenceParameters']['properties']['key'],
+    tree['components']['schemas']['GeoZone']['properties']['identifier'],
+    tree['components']['schemas']['GeoZone']['properties']['country'],
+    tree['components']['schemas']['GeoZone']['properties']['name'],
+    tree['components']['schemas']['GeoZone']['properties']['type'],
+    tree['components']['schemas']['GeoZone']['properties']['restriction'],
+    tree['components']['schemas']['GeoZone']['properties']['regulation_exemption'],
+    tree['components']['schemas']['GeoZone']['properties']['u_space_class'],
+    tree['components']['schemas']['GeoZone']['properties']['message'],
+  ]
+
+  for key in keys:
+    del key['anyOf']
+    key['type'] = 'array'
+    key['items'] = {
+      'type': 'string'
+    }
 
 
 parser = argparse.ArgumentParser(description='Preprocess an OpenAPI YAML')
