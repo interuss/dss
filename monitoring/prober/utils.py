@@ -39,7 +39,7 @@ def get_ascii_val_from_bit_value(num):
     return chr(num + 48)
   if num >= 10 and num <= 35:
     return chr(num + 65 - 10)
-  if num >= 36 and num <= 61:
+  if num >= 36 and num <= 62:
     return chr(num + 97 - 10 - 26)
   if num == 63:
     return '_'
