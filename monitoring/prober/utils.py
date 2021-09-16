@@ -74,7 +74,6 @@ def decode_owner(owner_id):
   hex_splits = split_by(owner_hex_code, num=2)
   bits = ''
   for h in hex_splits:
-    print(f'h: {h}, bits: {hex_to_bin(h)}')
     bits += hex_to_bin(h)
   test_owner = ''
   for seq in split_by(bits, 6):
