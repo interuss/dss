@@ -2,6 +2,16 @@
   "extents": [
     {
       "volume": {
+        "outline_circle": {
+          "center": {
+            "lng": 9.980387695648641,
+            "lat": 9.980582850817164
+          },
+          "radius": {
+            "value": 300.183,
+            "units": "M"
+          }
+        },
         "outline_polygon": {
           "vertices": [
             {
