@@ -15,7 +15,7 @@ security:
 tags:
 - name: Strategic Deconfliction
   description: |-
-    Endpoints exposed by the USS for interaction with strategic deconfliction test suite (`scd_qualifier`)
+    Endpoints exposed by the USS for interaction with strategic deconfliction test suite (`scd_qualifier`).
 
 
 components:
@@ -464,7 +464,7 @@ paths:
           description: Requested test was not found.
       operationId: getDetails
       summary: Get Operational Intent reference details
-      description: Get the details of a operational intent identified in `/scd_qualifier_data`.
+      description: Get the details of a operational intent identified in `/scd_qualifier_data`. The `reference.state` parameter is expected to be modified by the USSP depending on the result of de-confliction mechanisms per the standard. 
       security:
         - RIDAuth:
             - utm.strategic_coordination
