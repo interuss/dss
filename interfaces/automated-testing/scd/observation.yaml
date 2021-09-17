@@ -1,0 +1,473 @@
+---
+openapi: "3.0.3"
+info:
+  title: "SCD Qualifier Observaton API specification"
+  description: |-
+    This interface must be implemented by every Service Provider wishing to be tested by the automated testing framework. The test suite calls these endpoints to verify compliance with the test suite.
+
+    Unless otherwise specified, fields specified in a message but not declared in the API shall be ignored.
+  version: "0.0.1"
+ 
+security:
+- TestAuthority:
+  - utm.strategic_coordination
+   
+tags:
+- name: Strategic Deconfliction
+  description: |-
+    Endpoints exposed by the USS for interaction with strategic deconfliction test suite (`scd_qualifier`)
+
+
+components:
+  securitySchemes:
+    Authority:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://token_vendor.com/oauth/token
+          scopes:
+            utm.negotiation: |-
+              Client may perform negotiations and other related activities.
+
+      description: |-
+        Authorization from, or on behalf of, an authorization authority.  This authority shall issue access tokens that are JSON Web Tokens as defined in RFC 7519, using the `RS256` algorithm for the signature, publish to all providers the public key for verifying that signature, and implement standard OAuth server discovery mechanisms as described in RFC 8414.
+        The following fields shall be included in the JWT claim for access tokens issued by this authority:
+        * `iss`, with the URL at which the token generation request was received.
+        * `exp`, with a time no further than 1 hour in the future.
+        * `sub`, with unique ID of the client requesting the access token.
+        * `scope`, with a string composed of a space-separated list of strings indicating the scopes granted, per RFC 6749.
+        * `jti`, according to RFC 7519.
+        Following the principle of least privilege, only one of the scopes enumerated in this document shall be granted in a single token (though other scopes may accompany it).  The tokens granted by this authority shall protect against reuse of received tokens to impersonate the sender to other recipients (via use of the `aud` claim or other means).
+        When using the `aud` claim to protect against the reuse of received tokens, and absent guidance on behalf of the competent authority to the contrary, the JWT `aud` claim requested by the client shall be included in each access token and shall contain the fully qualified domain name of the URL the access token will be used to access.  For example, if a USS were querying the endpoint at https://dss.example.com:8888/rid/v2/dss/identification_service_areas, the access token included in the request should specify `"aud": "dss.example.com"`.
+        Clients shall provide these access tokens in an `Authorization` header in the form `Bearer <token>` in accordance with RFC 6750.
+
+  schemas:
+  
+    UUIDv4Format:
+      description: |-
+        String whose format matches a version-4 UUID according to RFC 4122.
+      maxLength: 36
+      minLength: 36
+      type: string
+      format: uuid
+      pattern: >-
+        '^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$'
+      example: 03e5572a-f733-49af-bc14-8a18bd53ee39
+
+    EntityID:
+      description: |-
+        Identifier for an Entity communicated through the DSS.  Formatted as
+        a UUIDv4.
+      anyOf:
+      - $ref: '#/components/schemas/UUIDv4Format'
+      example: 2f8343be-6482-4d1b-a474-16847e01af1e
+
+    Time:
+      required:
+      - value
+      - format
+      type: object
+      properties:
+        value:
+          type: string
+          description: RFC3339-formatted time/date string.  The time zone must be
+            'Z'.
+          format: date-time
+          example: '1985-04-12T23:20:50.52Z'
+        format:
+          type: string
+          enum:
+          - RFC3339
+
+    Radius:
+      required:
+      - value
+      - units
+      type: object
+      properties:
+        value:
+          format: float
+          description: Distance from the centerpoint of a circular area, along the
+            WGS84 ellipsoid.
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          example: 300.183
+        units:
+          type: string
+          description: FIXM-compatible units.  Only meters ("M") are acceptable for
+            UTM.
+          enum:
+          - M
+
+    Altitude:
+      type: object
+      required:
+      - value
+      - reference
+      - units
+      properties:
+        value:
+          description: |-
+            The numeric value of the altitude. Note that min and max values are
+            added as a sanity check. As use cases evolve and more options are
+            made available in terms of units of measure or reference systems,
+            these bounds should be re-evaluated.
+          type: number
+          format: double
+          minimum: -8000
+          exclusiveMinimum: false
+          maximum: 100000
+          exclusiveMaximum: false
+        reference:
+          description: |-
+            A code indicating the reference for a vertical distance. See AIXM 5.1
+            and FIXM 4.2.0. Currently, UTM only allows WGS84 with no immediate
+            plans to allow other options. FIXM and AIXM allow for 'SFC' which is
+            equivalent to AGL.
+          type: string
+          enum:
+          - W84
+        units:
+          description: |-
+            The reference quantities used to express the value of altitude. See
+            FIXM 4.2. Currently, UTM only allows meters with no immediate plans
+            to allow other options.
+          type: string
+          enum:
+          - M
+
+    Latitude:
+      description: Degrees of latitude north of the equator, with reference to the
+        WGS84 ellipsoid.
+      maximum: 90
+      exclusiveMaximum: false
+      minimum: -90
+      exclusiveMinimum: false
+      type: number
+      format: double
+      example: 34.123
+
+    Longitude:
+      description: Degrees of longitude east of the Prime Meridian, with reference
+        to the WGS84 ellipsoid.
+      minimum: -180
+      exclusiveMaximum: false
+      maximum: 180
+      exclusiveMinimum: false
+      type: number
+      format: double
+      example: -118.456
+
+    Polygon:
+      description: |-
+        An enclosed area on the earth.
+        The bounding edges of this polygon shall be the shortest paths between connected vertices.  This means, for instance, that the edge between two points both defined at a particular latitude is not generally contained at that latitude.
+        The winding order shall be interpreted as the order which produces the smaller area.
+        The path between two vertices shall be the shortest possible path between those vertices.
+        Edges may not cross.
+        Vertices may not be duplicated.  In particular, the final polygon vertex shall not be identical to the first vertex.
+      required:
+      - vertices
+      type: object
+      properties:
+        vertices:
+          minItems: 3
+          type: array
+          items:
+            $ref: '#/components/schemas/LatLngPoint'
+
+    LatLngPoint:
+      description: Point on the earth's surface.
+      required:
+      - lat
+      - lng
+      type: object
+      properties:
+        lng:
+          $ref: '#/components/schemas/Longitude'
+        lat:
+          $ref: '#/components/schemas/Latitude'
+
+    Circle:
+      description: |-
+        A circular area on the surface of the earth.
+      type: object
+      properties:
+        center:
+          $ref: '#/components/schemas/LatLngPoint'
+        radius:
+          $ref: '#/components/schemas/Radius'
+
+    Volume3D:
+      description: |-
+        A three-dimensional geographic volume consisting of a vertically-extruded shape.  Exactly
+        one outline must be specified.
+      type: object
+      properties:
+        outline_circle:
+          anyOf:
+          - $ref: '#/components/schemas/Circle'
+          description: A circular geographic shape on the surface of the earth.
+        outline_polygon:
+          anyOf:
+          - $ref: '#/components/schemas/Polygon'
+          description: A polygonal geographic shape on the surface of the earth.
+        altitude_lower:
+          description: Minimum bounding altitude of this volume. Must be less than
+            altitude_upper, if specified.
+          anyOf:
+          - $ref: '#/components/schemas/Altitude'
+        altitude_upper:
+          description: Maximum bounding altitude of this volume. Must be greater than
+            altitude_lower, if specified.
+          anyOf:
+          - $ref: '#/components/schemas/Altitude'
+
+    Volume4D:
+      description: Contiguous block of geographic spacetime.
+      required:
+      - volume
+      type: object
+      properties:
+        volume:
+          $ref: '#/components/schemas/Volume3D'
+        time_start:
+          description: Beginning time of this volume. Must be before time_end.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        time_end:
+          description: End time of this volume. Must be after time_start.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+
+
+    OperationalIntentDetails:
+      description: |-
+        Details of a UTM operational intent. Note that this data is not stored in the DSS; only with the clients.
+      required:
+      - volumes
+      type: object
+      properties:
+        volumes:
+          description: |-
+            Volumes that wholly contain the operational intent while being as small as practical.
+            Start and end times, as well as lower and upper altitudes, are required for each
+            volume. The end time may not be in the past.
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/Volume4D'
+        priority:
+          $ref: '#/components/schemas/Priority'
+
+    Priority:
+      description: |-
+        Ordinal priority of the operational intent, as defined by the regulator.  Operational intents with lesser
+        values are lower priority than all operational intents with greater values.  A lower-priority
+        operational intent may not create a conflict with a higher-priority operational intent.  A higher-priority
+        operational intent may create a conflict with a lower-priority operational intent.  The regulator specifies
+        whether an operational intent may create a conflict with other operational intents of the same priority.
+      type: integer
+      default: 0
+
+    UssBaseURL:
+      description: |-
+        The base URL of a USS implementation of part or all of the USS-USS API. Per the USS-USS API, the full URL
+        of a particular resource can be constructed by appending, e.g., `/uss/v1/{resource}/{id}` to this base URL.
+        Accordingly, this URL may not have a trailing '/' character.
+      type: string
+      example: https://utm_uss.com/utm
+
+    OperationalIntentState:
+      description: |-
+        State of an operational intent.
+        'Accepted': Operational intent is created and shared, but not yet in use; see standard text for more details.
+        The create or update request for this operational intent reference must include a Key containing all OVNs for
+        all relevant Entities.
+        'Activated': Operational intent is in active use; see standard text for more details.
+        The create or update request for this operational intent reference must include a Key containing all OVNs for
+        all relevant Entities.
+        'NonConforming': UA is temporarily outside its volumes, but the situation is expected to be recoverable; see
+        standard text for more details.
+        In this state, the `/uss/v1/operational_intents/{entityid}/telemetry' USS-USS endpoint should respond, if
+        available, to queries from USS peers.  The create or update request for this operational intent may omit a Key
+        in this case because the operational intent is being adjusted as flown and cannot necessarily deconflict.
+        'Contingent': UA is considered unrecoverably unable to conform with its coordinate operational intent; see
+        standard text for more details.
+        This state must transition to Ended.  In this state, the `/uss/v1/operational_intents/{entityid}/telemetry'
+        USS-USS endpoint should respond, if available, to queries from USS peers.  The create or update request for
+        this operational intent may omit a Key in this case because the operational intent is being adjusted as flown
+        and cannot necessarily deconflict.
+      type: string
+      enum:
+      - Accepted
+      - Activated
+      - NonConforming
+      - Contingent
+
+    UssAvailabilityState:
+      type: string
+      enum:
+      - Unknown
+      - Normal
+      - Down
+      description: |-
+        A USS is presumed to be in the Unknown state absent indication otherwise by a USS with
+        availability arbitration scope.  Upon determination via availability arbitration, a USS is
+        Down when it does not respond appropriately, and a Down USS may not perform the following
+        operations in the DSS:
+          * Create an operational intent in the Accepted or Activated states
+          * Modify an operational intent whose new or unchanged state is Accepted or Activated
+          * Delete an operational intent
+        A USS in the Unknown state possesses all the capabilities, within the DSS, of a USS in the
+        Normal state.
+
+    EntityOVN:
+      title: EntityOVN
+      description: |-
+        A token associated with a particular UTM Entity+version created
+        by the DSS upon creation or modification of an Entity reference and provided
+        to the client creating or modifying the Entity reference.  The EntityOVN
+        is stored privately by the DSS and then compared against entries in a Key
+        provided to mutate the airspace.  The EntityOVN is also provided by
+        the client whenever that client transmits the full information of the Entity
+        (either via GET, or via a subscription notification).
+      type: string
+      minLength: 16
+      maxLength: 128
+      example: 9d158f59-80b7-4c11-9c0c-8a2b4d936b2d
+
+    SubscriptionID:
+      description: |-
+        Identifier for a subscription communicated through the DSS.  Formatted
+        as a UUIDv4.
+      anyOf:
+      - $ref: '#/components/schemas/UUIDv4Format'
+      example: 78ea3fe8-71c2-4f5c-9b44-9c02f5563c6f
+
+    OperationalIntentReference:
+      description: |-
+        The high-level information of a planned or active operational intent with the URL
+        of a USS to query for details.  Note: 'OVN' is returned ONLY to the USS that
+        created the operational intent but NEVER to other USS instances.
+      required:
+      - id
+      - manager
+      - uss_availability
+      - version
+      - state
+      - time_start
+      - time_end
+      - uss_base_url
+      - subscription_id
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/EntityID'
+        manager:
+          type: string
+          example: uss1
+          description: |-
+            Created by the DSS based on creating client's ID (via access token).  Used internal
+            to the DSS for restricting mutation and deletion operations to manager.  Used by USSs
+            to reject operational intent update notifications originating from a USS that does not manage
+            the operational intent.
+        uss_availability:
+          $ref: '#/components/schemas/UssAvailabilityState'
+        version:
+          type: integer
+          format: int32
+          example: 1
+          description: |-
+            Numeric version of this operational intent which increments upon each change in the operational intent,
+            regardless of whether any field of the operational intent reference changes.  A USS with the
+            details of this operational intent when it was at a particular version does not need to retrieve
+            the details again until the version changes.
+        state:
+          $ref: '#/components/schemas/OperationalIntentState'
+        ovn:
+          description: |-
+            Opaque version number of this operational intent.  Populated only when the OperationalIntentReference
+            is managed by the USS retrieving or providing it.  Not populated when the
+            OperationalIntentReference is not managed by the USS retrieving or providing it (instead, the
+            USS must obtain the OVN from the details retrieved from the managing USS).
+          anyOf:
+          - $ref: '#/components/schemas/EntityOVN'
+        time_start:
+          description: Beginning time of operational intent.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        time_end:
+          description: End time of operational intent.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        uss_base_url:
+          $ref: '#/components/schemas/OperationalIntentUssBaseURL'
+        subscription_id:
+          description: |-
+            The ID of the subscription that is ensuring the operational intent manager receives relevant
+            airspace updates.
+          anyOf:
+          - $ref: '#/components/schemas/SubscriptionID'
+
+    OperationalIntentUssBaseURL:
+      description: |-
+        The base URL of a USS implementation that implements the parts of the USS-USS API necessary for
+        providing the details of this operational intent, and telemetry during non-conformance or contingency,
+        if applicable.
+      anyOf:
+      - $ref: '#/components/schemas/UssBaseURL'
+
+    OperationalIntent:
+      description: Full description of a UTM operational intent.
+      required:
+      - reference
+      - details
+      type: object
+      properties:
+        reference:
+          $ref: '#/components/schemas/OperationalIntentReference'
+        details:
+          $ref: '#/components/schemas/OperationalIntentDetails'
+
+        
+    OperationalIntentList:
+      description: A list of operational intent 
+      type: array
+      items: 
+        $ref: '#/components/schemas/OperationalIntent'
+
+paths:
+  /scd_qualifier_data/{id}:
+    get:
+      parameters:
+        -
+          examples:
+            default:
+              value: '2fa86378-5915-42bf-9e87-99ff5bce543c'
+          name: id
+          description: >-
+            ID of test identified in `/scd_qualifier_data`.
+          schema:
+            type: string
+          in: path
+          required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalIntentList'
+          description: Details about the requested test were retrieved successfully.
+        '404':
+          description: Requested test was not found.
+      operationId: getDetails
+      summary: Get Operational Intent reference details
+      description: Get the details of a operational intent identified in `/scd_qualifier_data`.
+      security:
+        - RIDAuth:
+            - utm.strategic_coordination
+
+      tags:
+        - Strategic Deconfliction
