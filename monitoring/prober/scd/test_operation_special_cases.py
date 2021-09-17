@@ -23,7 +23,7 @@ OP2_ID = '00000000-ee51-4700-873d-e10911000000'
 
 
 @for_api_versions(scd.API_0_3_5)
-def test_ensure_clean_workspace(scd_api, scd_session):
+def test_ensure_clean_workspace_v5(scd_api, scd_session):
   for op_id in (OP1_ID, OP2_ID):
     resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     if resp.status_code == 200:
@@ -38,11 +38,30 @@ def test_ensure_clean_workspace(scd_api, scd_session):
       assert False, resp.content
 
 
+@for_api_versions(scd.API_0_3_15)
+def test_ensure_clean_workspace_v15(scd_api, scd_session):
+  for op_id in (OP1_ID, OP2_ID):
+    resp = scd_session.get(
+      '/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+    if resp.status_code == 200:
+      resp = scd_session.delete(
+        '/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+      assert resp.status_code == 200, resp.content
+      resp = scd_session.get(
+        '/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+      assert resp.status_code == 404, resp.content
+    elif resp.status_code == 404:
+      # As expected.
+      pass
+    else:
+      assert False, resp.content
+
+
 # Preconditions: None
 # Mutations: None
 @for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_request_1(scd_api, scd_session):
+def test_op_request_1_v5(scd_api, scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP1_ID), json=req)
@@ -54,9 +73,23 @@ def test_op_request_1(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_15)
+@default_scope(SCOPE_SC)
+def test_op_request_1_v15(scd_api, scd_session):
+  with open('./scd/resources/op_request_1_v15.json', 'r') as f:
+    req = json.load(f)
+  resp = scd_session.put('/operational_intent_references/{}'.format(OP1_ID), json=req)
+  assert resp.status_code == 200, resp.content
+
+  resp = scd_session.delete('/operational_intent_references/{}'.format(OP1_ID))
+  assert resp.status_code == 200, resp.content
+
+
+# Preconditions: None
+# Mutations: None
 @for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_request_2(scd_api, scd_session):
+def test_op_request_2_v5(scd_api, scd_session):
   with open('./scd/resources/op_request_2.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operation_references/{}'.format(OP2_ID), json=req)
@@ -65,9 +98,20 @@ def test_op_request_2(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_15)
+@default_scope(SCOPE_SC)
+def test_op_request_2_v15(scd_api, scd_session):
+  with open('./scd/resources/op_request_2_v15.json', 'r') as f:
+    req = json.load(f)
+  resp = scd_session.put('/operational_intent_references/{}'.format(OP2_ID), json=req)
+  assert resp.status_code == 400, resp.content
+
+
+# Preconditions: None
+# Mutations: None
 @for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_query_degenerate_polygon(scd_api, scd_session):
+def test_op_query_degenerate_polygon_v5(scd_api, scd_session):
   with open('./scd/resources/op_request_3.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
@@ -76,20 +120,42 @@ def test_op_query_degenerate_polygon(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
+@for_api_versions(scd.API_0_3_15)
+@default_scope(SCOPE_SC)
+def test_op_query_degenerate_polygon_v15(scd_api, scd_session):
+  with open('./scd/resources/op_request_3_v15.json', 'r') as f:
+    req = json.load(f)
+  resp = scd_session.post('/operational_intent_references/query', json=req)
+  assert resp.status_code == 400, resp.content
+
+
+# Preconditions: None
+# Mutations: None
 @for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_op_query_not_area_too_large(scd_api, scd_session):
+def test_op_query_not_area_too_large_v5(scd_api, scd_session):
   with open('./scd/resources/op_request_4.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operation_references/query', json=req)
   assert resp.status_code == 200, resp.content
 
 
+# Preconditions: None
+# Mutations: None
+@for_api_versions(scd.API_0_3_15)
+@default_scope(SCOPE_SC)
+def test_op_query_not_area_too_large_v15(scd_api, scd_session):
+  with open('./scd/resources/op_request_4_v15.json', 'r') as f:
+    req = json.load(f)
+  resp = scd_session.post('/operational_intent_references/query', json=req)
+  assert resp.status_code == 200, resp.content
+
+
 # ID conversion bug exposure
 # Reproduces issue #314
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_id_conversion_bug(scd_api, scd_session):
+def test_id_conversion_bug_v5(scd_api, scd_session):
   sub_uuid = uuid.uuid4()
   time_ref = datetime.datetime.utcnow() + datetime.timedelta(days=1)
   time_start = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 1, 30)

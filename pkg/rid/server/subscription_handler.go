@@ -135,6 +135,14 @@ func (s *Server) CreateSubscription(
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
+	if !s.EnableHTTP {
+		err = ridmodels.ValidateURL(params.Callbacks.IdentificationServiceAreaUrl)
+		if err != nil {
+			return nil, stacktrace.PropagateWithCode(
+				err, dsserr.BadRequest, "Failed to validate IdentificationServiceAreaUrl")
+		}
+	}
+
 	sub := &ridmodels.Subscription{
 		ID:     id,
 		Owner:  owner,
