@@ -21,6 +21,7 @@ var (
 	operationFieldsWithoutPrefix string
 )
 
+// TODO Update database schema and fields below.
 func init() {
 	operationFieldsWithIndices[0] = "id"
 	operationFieldsWithIndices[1] = "owner"
@@ -47,22 +48,22 @@ func init() {
 	)
 }
 
-func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Operation, error) {
+func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.OperationalIntent, error) {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
-	var payload []*scdmodels.Operation
+	var payload []*scdmodels.OperationalIntent
 	for rows.Next() {
 		var (
-			o         = &scdmodels.Operation{}
+			o         = &scdmodels.OperationalIntent{}
 			updatedAt time.Time
 		)
 		err := rows.Scan(
 			&o.ID,
-			&o.Owner,
+			&o.Manager,
 			&o.Version,
 			&o.USSBaseURL,
 			&o.AltitudeLower,
@@ -83,7 +84,7 @@ func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query st
 	}
 
 	for _, op := range payload {
-		if err := s.populateOperationCells(ctx, q, op); err != nil {
+		if err := s.populateOperationalIntentCells(ctx, q, op); err != nil {
 			return nil, stacktrace.Propagate(err, "Error populating cells for Operation %s", op.ID)
 		}
 	}
@@ -91,8 +92,8 @@ func (s *repo) fetchOperations(ctx context.Context, q dsssql.Queryable, query st
 	return payload, nil
 }
 
-func (s *repo) fetchOperation(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Operation, error) {
-	operations, err := s.fetchOperations(ctx, q, query, args...)
+func (s *repo) fetchOperationalIntent(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.OperationalIntent, error) {
+	operations, err := s.fetchOperationalIntents(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -105,16 +106,16 @@ func (s *repo) fetchOperation(ctx context.Context, q dsssql.Queryable, query str
 	return operations[0], nil
 }
 
-func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*scdmodels.Operation, error) {
+func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*scdmodels.OperationalIntent, error) {
 	query := fmt.Sprintf(`
 		SELECT %s FROM
 			scd_operations
 		WHERE
 			id = $1`, operationFieldsWithoutPrefix)
-	return s.fetchOperation(ctx, q, query, id)
+	return s.fetchOperationalIntent(ctx, q, query, id)
 }
 
-func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.Operation) error {
+func (s *repo) populateOperationalIntentCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.OperationalIntent) error {
 	const query = `
 	SELECT
 		cell_id
@@ -145,12 +146,12 @@ func (s *repo) populateOperationCells(ctx context.Context, q dsssql.Queryable, o
 }
 
 // GetOperation implements repos.Operation.GetOperation.
-func (s *repo) GetOperation(ctx context.Context, id dssmodels.ID) (*scdmodels.Operation, error) {
+func (s *repo) GetOperationalIntent(ctx context.Context, id dssmodels.ID) (*scdmodels.OperationalIntent, error) {
 	return s.fetchOperationByID(ctx, s.q, id)
 }
 
 // DeleteOperation implements repos.Operation.DeleteOperation.
-func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID) error {
+func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) error {
 	var (
 		deleteOperationQuery = `
 			DELETE FROM
@@ -176,7 +177,7 @@ func (s *repo) DeleteOperation(ctx context.Context, id dssmodels.ID) error {
 }
 
 // UpsertOperation implements repos.Operation.UpsertOperation.
-func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operation) (*scdmodels.Operation, error) {
+func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels.OperationalIntent) (*scdmodels.OperationalIntent, error) {
 	var (
 		upsertOperationsQuery = fmt.Sprintf(`
 			UPSERT INTO
@@ -210,9 +211,9 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 	}
 
 	cells := operation.Cells
-	operation, err := s.fetchOperation(ctx, s.q, upsertOperationsQuery,
+	operation, err := s.fetchOperationalIntent(ctx, s.q, upsertOperationsQuery,
 		operation.ID,
-		operation.Owner,
+		operation.Manager,
 		operation.Version,
 		operation.USSBaseURL,
 		operation.AltitudeLower,
@@ -239,7 +240,7 @@ func (s *repo) UpsertOperation(ctx context.Context, operation *scdmodels.Operati
 	return operation, nil
 }
 
-func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error) {
+func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error) {
 	var (
 		operationsIntersectingVolumeQuery = fmt.Sprintf(`
 			SELECT
@@ -284,7 +285,7 @@ func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *ds
 		cids[i] = int64(cid)
 	}
 
-	result, err := s.fetchOperations(
+	result, err := s.fetchOperationalIntents(
 		ctx, q, operationsIntersectingVolumeQuery,
 		pq.Array(cids),
 		v4d.SpatialVolume.AltitudeLo,
@@ -300,12 +301,12 @@ func (s *repo) searchOperations(ctx context.Context, q dsssql.Queryable, v4d *ds
 }
 
 // SearchOperations implements repos.Operation.SearchOperations.
-func (s *repo) SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error) {
-	return s.searchOperations(ctx, s.q, v4d)
+func (s *repo) SearchOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error) {
+	return s.searchOperationalIntents(ctx, s.q, v4d)
 }
 
 // GetDependentOperations implements repos.Operation.GetDependentOperations.
-func (s *repo) GetDependentOperations(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error) {
+func (s *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error) {
 	var dependentOperationsQuery = `
       SELECT
         id

@@ -21,6 +21,7 @@ var (
 	subscriptionFieldsWithoutPrefix string
 )
 
+// TODO Update database schema and fields below.
 func init() {
 	subscriptionFieldsWithIndices[0] = "id"
 	subscriptionFieldsWithIndices[1] = "owner"
@@ -98,11 +99,11 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 		)
 		err = rows.Scan(
 			&s.ID,
-			&s.Owner,
+			&s.Manager,
 			&s.Version,
-			&s.BaseURL,
+			&s.USSBaseURL,
 			&s.NotificationIndex,
-			&s.NotifyForOperations,
+			&s.NotifyForOperationalIntents,
 			&s.NotifyForConstraints,
 			&s.ImplicitSubscription,
 			&s.StartTime,
@@ -204,10 +205,10 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 	cells := s.Cells
 	s, err := c.fetchSubscription(ctx, q, upsertQuery,
 		s.ID,
-		s.Owner,
-		s.BaseURL,
+		s.Manager,
+		s.USSBaseURL,
 		s.NotificationIndex,
-		s.NotifyForOperations,
+		s.NotifyForOperationalIntents,
 		s.NotifyForConstraints,
 		s.ImplicitSubscription,
 		s.StartTime,
