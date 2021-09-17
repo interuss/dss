@@ -19,23 +19,21 @@ var (
 	DefaultClock = clockwork.NewRealClock()
 )
 
-// TODO: implement using PutSubscription
 func (a *Server) CreateSubscription(ctx context.Context, req *scdpb.CreateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
-	panic("implement me")
+	return a.PutSubscription(ctx, req.GetSubscriptionid(), "", req.GetParams())
 }
 
-// TODO: implement using PutSubscription
 func (a *Server) UpdateSubscription(ctx context.Context, req *scdpb.UpdateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
-	panic("implement me")
+	return a.PutSubscription(ctx, req.GetSubscriptionid(), req.GetVersion(), req.GetParams())
 }
 
 // PutSubscription creates a single subscription.
-func (a *Server) PutSubscription(ctx context.Context, req *scdpb.UpdateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
+func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, version string, params *scdpb.PutSubscriptionParameters) (*scdpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
+	id, err := dssmodels.IDFromString(subscriptionid)
 
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetSubscriptionid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", subscriptionid)
 	}
 
 	// Retrieve ID of client making call
@@ -43,10 +41,6 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.UpdateSubscript
 	if !ok {
 		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
-
-	var (
-		params = req.GetParams()
-	)
 
 	if !a.EnableHTTP {
 		err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
@@ -72,8 +66,8 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.UpdateSubscript
 
 	subreq := &scdmodels.Subscription{
 		ID:      id,
-		Manager: dssmodels.Manager(manager),
-		Version: scdmodels.VersionToken(params.OldVersion),
+		Manager: manager,
+		Version: scdmodels.VersionToken(version),
 
 		StartTime:  extents.StartTime,
 		EndTime:    extents.EndTime,

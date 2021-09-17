@@ -235,20 +235,20 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *scdp
 	return response, nil
 }
 
-// TODO: implement using PutOperationalIntentReference
 func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *scdpb.CreateOperationalIntentReferenceRequest) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
-	panic("implement me")
+	return a.PutOperationalIntentReference(ctx, req.GetEntityid(), "", req.GetParams())
 }
 
 func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *scdpb.UpdateOperationalIntentReferenceRequest) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
-	panic("implement me")
+	return a.PutOperationalIntentReference(ctx, req.GetEntityid(), req.Ovn, req.GetParams())
 }
 
-// PutOperationalIntentReference creates a single operation ref.
-func (a *Server) PutOperationalIntentReference(ctx context.Context, req *scdpb.UpdateOperationalIntentReferenceRequest) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(req.GetEntityid())
+// PutOperationalIntentReference inserts or updates an Operational Intent.
+// If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
+func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid string, ovn string, params *scdpb.PutOperationalIntentReferenceParameters) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
+	id, err := dssmodels.IDFromString(entityid)
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
 	}
 
 	// Retrieve ID of client making call
@@ -258,7 +258,6 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, req *scdpb.U
 	}
 
 	var (
-		params  = req.GetParams()
 		extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
 	)
 
@@ -308,8 +307,8 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, req *scdpb.U
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is past the start time")
 	}
 
-	if params.OldVersion == 0 && params.State != "Accepted" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for version 0: `%s`", params.State)
+	if ovn == "" && params.State != "Accepted" {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for initial version: `%s`", params.State)
 	}
 
 	subscriptionID, err := dssmodels.IDFromOptionalString(params.GetSubscriptionId())
@@ -319,6 +318,8 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, req *scdpb.U
 
 	var response *scdpb.ChangeOperationalIntentReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
+		var version int32 // Version of the Operational Intent (0 means creation requested).
+
 		// Get existing OperationalIntent, if any, and validate request
 		old, err := r.GetOperationalIntent(ctx, id)
 		if err != nil {
@@ -329,14 +330,18 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, req *scdpb.U
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 					"OperationalIntent owned by %s, but %s attempted to modify", old.Manager, manager)
 			}
-			if old.Version != scdmodels.Version(params.OldVersion) {
+			if old.OVN != scdmodels.OVN(ovn) {
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
-					"Current version is %d but client specified version %d", old.Version, params.OldVersion)
+					"Current version is %s but client specified version %s", old.OVN, ovn)
 			}
+
+			version = int32(old.Version)
 		} else {
-			if params.OldVersion != 0 {
-				return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent does not exist and therefore is not version %d", params.OldVersion)
+			if ovn != "" {
+				return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent does not exist and therefore is not version %s", ovn)
 			}
+
+			version = 0
 		}
 
 		var sub *scdmodels.Subscription
@@ -465,7 +470,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, req *scdpb.U
 		op := &scdmodels.OperationalIntent{
 			ID:      id,
 			Manager: manager,
-			Version: scdmodels.Version(params.OldVersion + 1),
+			Version: scdmodels.Version(version + 1),
 
 			StartTime:     uExtent.StartTime,
 			EndTime:       uExtent.EndTime,
