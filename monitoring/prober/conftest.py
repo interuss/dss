@@ -60,7 +60,7 @@ def test_owner(pytestconfig):
   else:
     pytest.exit(
       ValueError("""
-      --test-owner required.
+      test-owner required.
       Please follow the instructions in monitoring/prober/README.md to set the value"""))
 
 
