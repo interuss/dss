@@ -46,5 +46,5 @@ docker run --network dss_sandbox_default \
 	--dss-endpoint http://local-gateway:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
-	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"
-
+	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
+	--test-owner "unknown"

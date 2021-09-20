@@ -58,7 +58,10 @@ def test_owner(pytestconfig):
   if pytestconfig.getoption('test_owner'):
     return pytestconfig.getoption('test_owner')
   else:
-    return 'localowner'
+    pytest.exit(
+      ValueError("""
+      --test-owner required.
+      Please follow the instructions in monitoring/prober/README.md to set the value"""))
 
 
 @pytest.fixture(scope='function')
