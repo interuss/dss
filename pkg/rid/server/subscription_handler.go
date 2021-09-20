@@ -58,7 +58,7 @@ func (s *Server) SearchSubscriptions(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Invalid area")
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
