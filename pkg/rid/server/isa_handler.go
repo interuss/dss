@@ -221,7 +221,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Invalid area")
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
 	var (
