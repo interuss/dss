@@ -153,6 +153,7 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
+	--scd-api-version 0.3.15 \
 	--test-owner "unknown"
 
 echo "Cleaning up http-gateway container"
