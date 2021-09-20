@@ -25,8 +25,8 @@ func MissingOVNsErrorResponse(missingOps []*dssmodels.OperationalIntent, missing
 	for _, missingOp := range missingOps {
 		opRef, err := missingOp.ToProto()
 		if err != nil {
-      return nil, stacktrace.Propagate(err, "Error converting missing OperationalIntent to proto")
-    }
+			return nil, stacktrace.Propagate(err, "Error converting missing OperationalIntent to proto")
+		}
 		detail.MissingOperationalIntents = append(detail.MissingOperationalIntents, opRef)
 	}
 	for _, missingConstraint := range missingConstraints {

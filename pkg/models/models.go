@@ -47,7 +47,7 @@ func (owner Owner) String() string {
 }
 
 func (manager Manager) String() string {
-  return string(manager)
+	return string(manager)
 }
 
 func IDFromString(s string) (ID, error) {

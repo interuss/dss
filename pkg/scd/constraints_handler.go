@@ -149,21 +149,21 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 	return response, nil
 }
 
-// TODO: implement using PutConstraintReference
 func (a *Server) CreateConstraintReference(ctx context.Context, req *scdpb.CreateConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
-	panic("implement me")
+	return a.PutConstraintReference(ctx, req.GetEntityid(), "", req.GetParams())
 }
 
 func (a *Server) UpdateConstraintReference(ctx context.Context, req *scdpb.UpdateConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
-	panic("implement me")
+	return a.PutConstraintReference(ctx, req.GetEntityid(), req.GetOvn(), req.GetParams())
 }
 
-// PutConstraintReference creates a single contraint ref.
-func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.UpdateConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(req.GetEntityid())
+// PutConstraintReference inserts or updates a Constraint.
+// If the ovn argument is empty (""), it will attempt to create a new Constraint.
+func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ovn string, params *scdpb.PutConstraintReferenceParameters) (*scdpb.ChangeConstraintReferenceResponse, error) {
+	id, err := dssmodels.IDFromString(entityid)
 
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
 	}
 
 	// Retrieve ID of client making call
@@ -172,10 +172,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.UpdateCo
 		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
 	}
 
-	var (
-		params  = req.GetParams()
-		extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
-	)
+	var extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
 
 	if len(params.UssBaseUrl) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
@@ -215,14 +212,17 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.UpdateCo
 
 	var response *scdpb.ChangeConstraintReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
+		var version int32 // Version of the Constraint (0 means creation requested).
+
 		// Get existing Constraint, if any, and validate request
 		old, err := r.GetConstraint(ctx, id)
 		switch {
 		case err == sql.ErrNoRows:
 			// No existing Constraint; verify that creation was requested
-			if params.OldVersion != 0 {
-				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d does not exist", params.OldVersion)
+			if ovn != "" {
+				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %s does not exist", ovn)
 			}
+			version = 0
 		case err != nil:
 			return stacktrace.Propagate(err, "Could not get Constraint from repo")
 		}
@@ -231,10 +231,11 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.UpdateCo
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 					"Constraint owned by %s, but %s attempted to modify", old.Manager, manager)
 			}
-			if old.Version != scdmodels.Version(params.OldVersion) {
+			if old.OVN != scdmodels.OVN(ovn) {
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
-					"Current version is %d but client specified version %d", old.Version, params.OldVersion)
+					"Current version is %s but client specified version %s", old.OVN, ovn)
 			}
+			version = int32(old.Version)
 		}
 
 		// Compute total affected Volume4D for notification purposes
@@ -262,7 +263,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.UpdateCo
 		constraint, err := r.UpsertConstraint(ctx, &scdmodels.Constraint{
 			ID:      id,
 			Manager: manager,
-			Version: scdmodels.Version(params.OldVersion + 1),
+			Version: scdmodels.Version(version + 1),
 
 			StartTime:     uExtent.StartTime,
 			EndTime:       uExtent.EndTime,
