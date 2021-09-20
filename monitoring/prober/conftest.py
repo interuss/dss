@@ -13,6 +13,7 @@ def pytest_addoption(parser):
   parser.addoption('--rid-auth')
   parser.addoption('--scd-auth1')
   parser.addoption('--scd-auth2')
+  parser.addoption('--test-owner')
   parser.addoption('--scd-api-version')
 
 
@@ -50,6 +51,17 @@ def scd_session(pytestconfig):
 @pytest.fixture(scope='session')
 def scd_session2(pytestconfig):
   return make_session(pytestconfig, '/dss/v1', 'scd_auth2')
+
+
+@pytest.fixture()
+def test_owner(pytestconfig):
+  if pytestconfig.getoption('test_owner'):
+    return pytestconfig.getoption('test_owner')
+  else:
+    pytest.exit(
+      ValueError("""
+      test-owner required.
+      Please follow the instructions in monitoring/prober/README.md to set the value"""))
 
 
 @pytest.fixture(scope='function')
