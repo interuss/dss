@@ -70,6 +70,13 @@ func (s *Server) CreateIdentificationServiceArea(
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
 	}
 
+	if !s.EnableHTTP {
+		err = ridmodels.ValidateURL(params.GetFlightsUrl())
+		if err != nil {
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Flight URL")
+		}
+	}
+
 	isa := &ridmodels.IdentificationServiceArea{
 		ID:     id,
 		URL:    params.GetFlightsUrl(),

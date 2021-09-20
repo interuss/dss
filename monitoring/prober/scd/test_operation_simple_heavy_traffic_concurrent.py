@@ -123,28 +123,54 @@ def _intersection(list1, list2):
   return list(set(list1) & set(list2))
 
 
-def _put_operation(req, op_id, scd_session):
-  return scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+def _put_operation(req, op_id, scd_session, scd_api):
+  if scd_api == scd.API_0_3_5:
+    return scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+  elif scd_api == scd.API_0_3_15:
+    return scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 
-def _get_operation(op_id, scd_session):
-  return scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+def _get_operation(op_id, scd_session, scd_api):
+  if scd_api == scd.API_0_3_5:
+    return scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+  elif scd_api == scd.API_0_3_15:
+    return scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 
-def _query_operation(idx, scd_session):
+def _query_operation(idx, scd_session, scd_api):
   lat = _calculate_lat(idx)
-  return scd_session.post('/operation_references/query', json={
-    'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
-  }, scope=SCOPE_SC)
+  if scd_api == scd.API_0_3_5:
+    return scd_session.post('/operation_references/query', json={
+      'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
+    }, scope=SCOPE_SC)
+  elif scd_api == scd.API_0_3_15:
+    return scd_session.post('/operational_intent_references/query', json={
+      'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
+    }, scope=SCOPE_SC)
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 
-def _build_mutate_request(idx, op_id, op_map, scd_session):
+def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
   # GET current op
-  resp = scd_session.get('/operation_references/{}'.format(op_id))
-  assert resp.status_code == 200, resp.content
-  existing_op = resp.json().get('operation_reference', None)
-  assert existing_op is not None
-  op_map[op_id] = existing_op
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session.get('/operation_references/{}'.format(op_id))
+    assert resp.status_code == 200, resp.content
+    existing_op = resp.json().get('operation_reference', None)
+    assert existing_op is not None
+    op_map[op_id] = existing_op
+  elif scd_api == scd.API_0_3_15:
+    resp = scd_session.get('/operational_intent_references/{}'.format(op_id))
+    assert resp.status_code == 200, resp.content
+    existing_op = resp.json().get('operational_intent_reference', None)
+    assert existing_op is not None
+    op_map[op_id] = existing_op
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
   req = _make_op_request(idx)
   req = {
@@ -158,52 +184,72 @@ def _build_mutate_request(idx, op_id, op_map, scd_session):
   return req
 
 
-def _delete_operation(op_id, scd_session):
-  return scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-
+def _delete_operation(op_id, scd_session, scd_api):
+  if scd_api == scd.API_0_3_5:
+    return scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+  elif scd_api == scd.API_0_3_15:
+    return scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 def _collect_resp_callback(key, op_resp_map, future):
   op_resp_map[key] = future.result()
 
 
 @for_api_versions(scd.API_0_3_5)
-def test_ensure_clean_workspace(scd_api, scd_session):
-  for op_id in OP_IDS:
-    resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-    if resp.status_code == 200:
-      resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-      assert resp.status_code == 200, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
+@default_scope(SCOPE_SC)
+def test_ensure_clean_workspace_v5(scd_api, scd_session):
+    for op_id in OP_IDS:
+      resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+      if resp.status_code == 200:
+        resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+        assert resp.status_code == 200, resp.content
+      elif resp.status_code == 404:
+        # As expected.
+        pass
+      else:
+        assert False, resp.content
+
+
+@for_api_versions(scd.API_0_3_15)
+@default_scope(SCOPE_SC)
+def test_ensure_clean_workspace_v15(scd_api, scd_session):
+    for op_id in OP_IDS:
+      resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+      if resp.status_code == 200:
+        resp = scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+        assert resp.status_code == 200, resp.content
+      elif resp.status_code == 404:
+        # As expected.
+        pass
+      else:
+        assert False, resp.content
 
 
 # Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@default_scope(SCOPE_SC)
 def test_create_ops_concurrent(scd_api, scd_session):
   assert len(ovn_map) == 0
-
   op_req_map = {}
   op_resp_map = {}
-
   # Create opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
     for idx, op_id in enumerate(OP_IDS):
       req = _make_op_request(idx)
       op_req_map[op_id] = req
 
-      future = executor.submit(_put_operation, req, op_id, scd_session)
+      future = executor.submit(_put_operation, req, op_id, scd_session, scd_api)
       future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
-
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
-
     req = op_req_map[op_id]
     data = resp.json()
-    op = data['operation_reference']
+    if scd_api == scd.API_0_3_5:
+      op = data['operation_reference']
+    else:
+      op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
     assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
@@ -212,29 +258,30 @@ def test_create_ops_concurrent(scd_api, scd_session):
     assert op['ovn']
     assert 'subscription_id' in op
     assert 'state' not in op
-
     ovn_map[op_id] = op['ovn']
-
   assert len(ovn_map) == len(OP_IDS)
 
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 def test_get_ops_by_ids_concurrent(scd_api, scd_session):
   op_resp_map = {}
 
   # Get opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
     for op_id in OP_IDS:
-      future = executor.submit(_get_operation, op_id, scd_session)
+      future = executor.submit(_get_operation, op_id, scd_session, scd_api)
       future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
 
     data = resp.json()
-    op = data['operation_reference']
+    if scd_api == scd.API_0_3_5:
+      op = data['operation_reference']
+    else:
+      op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
     assert op['version'] == 1
@@ -243,7 +290,7 @@ def test_get_ops_by_ids_concurrent(scd_api, scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
 def test_get_ops_by_search_concurrent(scd_api, scd_session):
   op_resp_map = {}
@@ -252,12 +299,15 @@ def test_get_ops_by_search_concurrent(scd_api, scd_session):
   # Query opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
     for idx in range(len(OP_IDS)):
-      future = executor.submit(_query_operation, idx, scd_session)
+      future = executor.submit(_query_operation, idx, scd_session, scd_api)
       future.add_done_callback(functools.partial(_collect_resp_callback, idx, op_resp_map))
 
   for idx, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
-    found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
+    if scd_api == scd.API_0_3_5:
+      found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
+    else:
+      found_ids = [op['id'] for op in resp.json().get('operational_intent_reference', [])]
     total_found_ids.update(found_ids)
 
   assert len(_intersection(OP_IDS, total_found_ids)) == len(OP_IDS)
@@ -265,7 +315,7 @@ def test_get_ops_by_search_concurrent(scd_api, scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: Operations with ids in OP_IDS mutated to second version
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
 def test_mutate_ops_concurrent(scd_api, scd_session):
   op_req_map = {}
@@ -274,14 +324,14 @@ def test_mutate_ops_concurrent(scd_api, scd_session):
 
   # Build mutate requests
   for idx, op_id in enumerate(OP_IDS):
-    op_req_map[op_id] = _build_mutate_request(idx, op_id, op_map, scd_session)
+    op_req_map[op_id] = _build_mutate_request(idx, op_id, op_map, scd_session, scd_api)
   assert len(op_req_map) == len(OP_IDS)
 
   # Mutate operations in parallel
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
     for op_id in OP_IDS:
       req = op_req_map[op_id]
-      future = executor.submit(_put_operation, req, op_id, scd_session)
+      future = executor.submit(_put_operation, req, op_id, scd_session, scd_api)
       future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
   ovn_map.clear()
@@ -292,7 +342,10 @@ def test_mutate_ops_concurrent(scd_api, scd_session):
 
     assert resp.status_code == 200, resp.content
     data = resp.json()
-    op = data['operation_reference']
+    if scd_api == scd.API_0_3_5:
+      op = data['operation_reference']
+    else:
+      op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == 'https://example.com/uss2'
     assert op['version'] == 2
@@ -306,14 +359,14 @@ def test_mutate_ops_concurrent(scd_api, scd_session):
 
 # Preconditions: Operations with ids in OP_IDS mutated to second version
 # Mutations: Operations with ids in OP_IDS deleted
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 def test_delete_op_concurrent(scd_api, scd_session):
   op_resp_map = {}
 
   # Delete operations concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
     for op_id in OP_IDS:
-      future = executor.submit(_delete_operation, op_id, scd_session)
+      future = executor.submit(_delete_operation, op_id, scd_session, scd_api)
       future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
   assert len(op_resp_map) == len(OP_IDS)

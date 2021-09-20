@@ -2,6 +2,16 @@
   "extents": [
     {
       "volume": {
+        "outline_circle": {
+          "center": {
+            "lng": 10.019861937948736,
+              "lat": 10.02005709311726
+          },
+          "radius": {
+            "value": 300.183,
+            "units": "M"
+          }
+          },
         "outline_polygon": {
           "vertices": [
             {
@@ -19,33 +29,36 @@
             {
               "lng": 10.020054117178084,
               "lat": 10.01985896200956
+            },
+            {
+              "lng": 9.980582850817164,
+              "lat": 9.98038769564864
             }
           ]
         },
-        "altitude_lower": {
+        "altitudeLower": {
           "value": -12.191999609856008,
           "reference": "W84",
           "units": "M"
         },
-        "altitude_upper": {
+        "altitudeUpper": {
           "value": 18.287999414784014,
           "reference": "W84",
           "units": "M"
         }
       },
-      "time_start": {
-        "value": "2019-06-30T15:58:00.00Z",
+      "timeStart": {
+        "value": "2020-06-30T15:58:00.00Z",
         "format": "RFC3339"
       },
-      "time_end": {
-        "value": "2030-06-30T16:02:00.00Z",
+      "timeEnd": {
+        "value": "2019-06-30T16:02:00.00Z",
         "format": "RFC3339"
       }
     }
   ],
-  "old_version": 1,
   "key": [],
-  "state": "Activated",
+  "state": "Accepted",
   "uss_base_url": "https://localhost:8080",
   "new_subscription": {
     "uss_base_url": "https://localhost:8080",

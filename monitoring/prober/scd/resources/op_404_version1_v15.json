@@ -2,6 +2,16 @@
   "extents": [
     {
       "volume": {
+        "outline_circle": {
+          "center": {
+            "lng": -118.456,
+            "lat": 34.123
+          },
+          "radius": {
+            "value": 300.183,
+            "units": "M"
+          }
+        },
         "outline_polygon": {
           "vertices": [
             {
@@ -43,7 +53,7 @@
       }
     }
   ],
-  "old_version": 1,
+  "oldVersion": 1,
   "key": [],
   "state": "Activated",
   "uss_base_url": "https://localhost:8080",
