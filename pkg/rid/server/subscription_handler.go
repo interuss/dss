@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"strings"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/auth"
@@ -58,6 +59,9 @@ func (s *Server) SearchSubscriptions(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
+		if strings.Contains(err.Error(), "Area is too large") {
+			return nil, stacktrace.Propagate(err, "Invalid area")
+		}
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 

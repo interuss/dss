@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"time"
+	"strings"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
@@ -221,6 +222,9 @@ func (s *Server) SearchIdentificationServiceAreas(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
+		if strings.Contains(err.Error(), "Area is too large") {
+			return nil, stacktrace.Propagate(err, "Invalid area")
+		}
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
