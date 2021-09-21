@@ -152,7 +152,8 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--dss-endpoint http://local-gateway:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
-	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"
+	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
+	--test-owner "unknown"
 
 echo "Cleaning up http-gateway container"
 docker stop http-gateway-for-testing > /dev/null

@@ -14,6 +14,7 @@ from typing import Dict
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_CI, SCOPE_CM, SCOPE_SC
+from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
 
 
@@ -22,10 +23,22 @@ CONSTRAINT_BASE_URL_2 = 'https://example.com/con2/uss'
 CONSTRAINT_BASE_URL_3 = 'https://example.com/con3/uss'
 SUB_BASE_URL_A = 'https://example.com/sub1/uss'
 SUB_BASE_URL_B = 'https://example.com/sub2/uss'
-CONSTRAINT_ID = '000000a2-2629-49c9-a688-23afb3000000'
-SUB1_ID = '00000007-e548-48bb-b9f2-68e0e0000000'
-SUB2_ID = '00000068-6289-46cc-a402-fbc0f7000000'
-SUB3_ID = '00000089-b954-4d3f-8afa-2c4e3b000000'
+
+CONSTRAINT_ID = ''
+SUB1_ID = ''
+SUB2_ID = ''
+SUB3_ID = ''
+
+
+def test_set_test_owner_ids(test_owner):
+  global CONSTRAINT_ID
+  global SUB1_ID
+  global SUB2_ID
+  global SUB3_ID
+  CONSTRAINT_ID = utils.encode_owner(test_owner, '000000a2-2629-49c9-a688-23afb3000000')
+  SUB1_ID = utils.encode_owner(test_owner, '00000007-e548-48bb-b9f2-68e0e0000000')
+  SUB2_ID = utils.encode_owner(test_owner, '00000068-6289-46cc-a402-fbc0f7000000')
+  SUB3_ID = utils.encode_owner(test_owner, '00000089-b954-4d3f-8afa-2c4e3b000000')
 
 
 def _make_c1_request():
