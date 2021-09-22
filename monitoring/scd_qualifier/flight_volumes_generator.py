@@ -1,10 +1,11 @@
+from monitoring.rid_qualifier.utils import FlightPoint
 from pathlib import Path
 import arrow
 from typing import List
 from shapely.geometry.linestring import LineString
 from pyproj import Geod
 from monitoring.monitorlib import scd
-from .utils import Volume3D, Volume4D
+from .utils import TreatmentVolumeOptions, TreatmentPathOptions, Volume3D, Volume4D
 import shapely.geometry
 import pathlib, os
 import geojson
@@ -21,7 +22,7 @@ class FlightVolumeGenerator():
         self.utm_zone = utm_zone
 
         self.altitude_agl = 50.0
-
+        self.control_flight_path: LineString
         self.geod = Geod(ellps="WGS84")
         self.input_extents_valid()
 
@@ -31,22 +32,30 @@ class FlightVolumeGenerator():
         box = shapely.geometry.box(self.minx, self.miny, self.maxx, self.maxy)
         area = abs(self.geod.geometry_area_perimeter(box)[0])
 
-        # Have a area less than 500m x 500m square and more than 300m x 300m square to ensure a 50 m diameter tracks
-        if (area) < 250000 and (area) > 90000:
+        # Have a area less than 500m x 500m square and more than 300m x 300m square to ensure enough space for tracks
+        if (area) > 250000 and (area) > 90000:
             return
         else:
             raise ValueError("The extents provided are not of the correct size, please provide extents that are less than 500m x 500m and more than 300m x 300m square")
 
 
-    def generate_flight_path(self) -> LineString: 
+    def generate_flight_path(self, path_options:TreatmentPathOptions, is_control:bool= False) -> LineString: 
         ''' A method to generate flight path within a geographic bounds. This method utilzies the generate_random utiltiy provided by the geojson module to generate flight paths. '''
-        pass
+        flight_path = 1
+        if is_control:
+            self.control_flight_path = flight_path
+        return flight_path
 
-    def path_to_volume_converter(flight_path:LineString) -> Volume3D:
+    def path_to_outline_polygon_converter(flight_path:LineString) -> Volume3D:
+        ''' A method to convert a GeoJSON LineString to a ASTM outline_polygon object by buffering 10m spatially '''
         volume3D = None
         return volume3D
         
-    def generate_volume_payloads(number_of_volumes:int = 6) -> List[Volume4D]:
+    def generate_treatment_volume(treatment_options: TreatmentVolumeOptions) -> Volume4D:
+        ''' Generate a volume given the options to the control volume '''
+        pass
+    
+    def generate_test_payload(number_of_volumes:int = 6) -> List[Volume4D]:
         ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
         pass
 

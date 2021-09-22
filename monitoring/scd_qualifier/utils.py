@@ -15,21 +15,21 @@ class StringBasedDateTime(str):
     return str_value
 
 class LatLngPoint(NamedTuple):
-    '''A clas to hold information about LatLngPoint'''
+    '''A clas to hold information about a location as Latitude / Longitude pair'''
     lat: float
     lng: float
 
 class Radius(NamedTuple):
-    ''' A class to hold the radius object '''
+    ''' A class to hold the radius of a circle for the outline_circle object '''
     value: float
     units:str
 
 class Polygon(NamedTuple):
-    ''' A class to hold the polygon object '''
+    ''' A class to hold the polygon object, used in the outline_polygon of the Volume3D object '''
     vertices: List[LatLngPoint] # A minimum of three LatLngPoints
 
 class Circle(NamedTuple):
-    ''' Hold the details of a circle object '''
+    ''' Hold the details of a circle object used in the outline_circle object'''
     center: LatLngPoint 
     radius: Radius
 
@@ -54,13 +54,22 @@ class Volume3D(NamedTuple):
     altitude_upper: Altitude
 
 class Volume4D(NamedTuple):
-    '''A class to hold Volume4D objects'''
+    '''A class to hold ASTM Volume4D objects '''
     volume: Volume3D
     time_start: StringBasedDateTime
     time_end: StringBasedDateTime
 
 
 class OperationalIntentDetails(NamedTuple):
-    """Class for keeping track of an operational intent reference"""
+    """Class for keeping track of an operational intent reference """
     volumes: List[Volume4D]
     priority: int
+
+class TreatmentVolumeOptions(NamedTuple):
+    """ A class to hold configuration for developing treatments """
+    intersect_altitude: bool = 0
+    intersect_time: bool = 0
+    
+class TreatmentPathOptions(NamedTuple):
+    """ A class to hold configuration for developing treatment flight path as GeoJSON """
+    intersect_space:bool = 0
