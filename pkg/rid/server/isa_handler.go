@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
