@@ -14,11 +14,17 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
+from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
 
 
 BASE_URL = 'https://example.com/uss'
-CONSTRAINT_ID = '0000006f-5a03-482a-a7e1-23c29c000000'
+CONSTRAINT_ID = ''
+
+
+def test_set_test_owner_ids(test_owner):
+  global CONSTRAINT_ID
+  CONSTRAINT_ID = utils.encode_owner(test_owner, '0000006f-5a03-482a-a7e1-23c29c000000')
 
 
 def _make_c1_request():
