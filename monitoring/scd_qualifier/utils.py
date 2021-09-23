@@ -43,7 +43,7 @@ class Altitude(NamedTuple):
 
 class OperationalIntentReference(NamedTuple):
     """Class for keeping track of an operational intent reference"""
-    id: uuid.uuid4()
+    id: str
 
 
 class Volume3D(NamedTuple):
@@ -70,6 +70,6 @@ class TreatmentVolumeOptions(NamedTuple):
     intersect_altitude: bool = 0
     intersect_time: bool = 0
     
-class TreatmentPathOptions(NamedTuple):
+class TreatmentPathOptions(ImplicitDict):
     """ A class to hold configuration for developing treatment flight path as GeoJSON """
     intersect_space:bool = 0
