@@ -42,3 +42,28 @@ HUGE_VERTICES = [
 ]
 
 HUGE_GEO_POLYGON_STRING = rid.geo_polygon_string(HUGE_VERTICES)
+
+LOOP_VERTICES = [
+    {
+        'lat': -80.75088500976562,
+        'lng': 37.045312802603355
+    },
+    {
+        'lat': -80.2496337890625,
+        'lng': 37.045312802603355
+    },
+    {
+        'lat': -80.2496337890625,
+        'lng': 37.35487607348372
+    },
+    {
+        'lat': -80.75088500976562,
+        'lng': 37.35487607348372
+    },
+    {
+        'lat': -80.75088500976562,
+        'lng': 37.045312802603355
+    }
+]
+
+LOOP_GEO_POLYGON_STRING = rid.geo_polygon_string(LOOP_VERTICES)
