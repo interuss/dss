@@ -9,12 +9,22 @@ import datetime
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
+from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
 
 
-SUB1_ID = '00000088-b268-481c-a32d-6be442000000'
-SUB2_ID = '00000017-a3fe-42d6-9f3b-83dec2000000'
-SUB3_ID = '0000001b-9c8a-475e-a82d-d81922000000'
+SUB1_ID = ''
+SUB2_ID = ''
+SUB3_ID = ''
+
+
+def test_set_test_owner_ids(test_owner):
+  global SUB1_ID
+  global SUB2_ID
+  global SUB3_ID
+  SUB1_ID = utils.encode_owner(test_owner, '00000088-b268-481c-a32d-6be442000000')
+  SUB2_ID = utils.encode_owner(test_owner, '00000017-a3fe-42d6-9f3b-83dec2000000')
+  SUB3_ID = utils.encode_owner(test_owner, '0000001b-9c8a-475e-a82d-d81922000000')
 
 
 LAT0 = 23
@@ -255,7 +265,6 @@ def test_search_time_footprint(scd_api, scd_session):
   assert SUB1_ID not in result_ids
   assert SUB2_ID in result_ids
   assert SUB3_ID not in result_ids
-
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
