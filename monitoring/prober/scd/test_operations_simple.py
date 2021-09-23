@@ -16,6 +16,7 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
+from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
 
 
@@ -24,9 +25,18 @@ URL_SUB1 = 'https://example.com/subs1/dss'
 URL_OP2 = 'https://example.com/op2/dss'
 URL_SUB2 = 'https://example.com/subs2/dss'
 
-OP1_ID = '0000007d-312e-47f5-b51c-dc5744000000'
-OP2_ID = '0000007a-be5e-4503-b8cf-40a6b4000000'
-SUB2_ID = '00000059-193c-4910-8f36-bde224000000'
+OP1_ID = ''
+OP2_ID = ''
+SUB2_ID = ''
+
+
+def test_set_test_owner_ids(test_owner):
+  global OP1_ID
+  global OP2_ID
+  global SUB2_ID
+  OP1_ID = utils.encode_owner(test_owner, '0000007d-312e-47f5-b51c-dc5744000000')
+  OP2_ID = utils.encode_owner(test_owner, '0000007a-be5e-4503-b8cf-40a6b4000000')
+  SUB2_ID = utils.encode_owner(test_owner, '00000059-193c-4910-8f36-bde224000000')
 
 
 op1_ovn = None

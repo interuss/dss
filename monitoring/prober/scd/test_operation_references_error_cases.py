@@ -10,11 +10,19 @@ import yaml
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
+from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
 
 
-OP_ID = '00000028-728d-40c4-8eb2-20d19c000000'
-OP_ID2 = '0000006e-b4ec-48a3-ae38-426042000000'
+OP_ID = ''
+OP_ID2 = ''
+
+
+def test_set_test_owner_ids(test_owner):
+  global OP_ID
+  global OP_ID2
+  OP_ID = utils.encode_owner(test_owner, '00000028-728d-40c4-8eb2-20d19c000000')
+  OP_ID2 = utils.encode_owner(test_owner, '0000006e-b4ec-48a3-ae38-426042000000')
 
 
 @for_api_versions(scd.API_0_3_5)
