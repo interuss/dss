@@ -223,3 +223,10 @@ def test_get_deleted_isa_by_search(session):
       common.GEO_POLYGON_STRING))
   assert resp.status_code == 200, resp.content
   assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]
+
+
+@default_scope(SCOPE_READ)
+def test_get_isa_search_area_with_loop(session):
+  resp = session.get('/identification_service_areas'
+                     '?area={}'.format(common.LOOP_GEO_POLYGON_STRING))
+  assert resp.status_code == 400, resp.content

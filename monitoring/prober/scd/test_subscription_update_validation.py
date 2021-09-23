@@ -17,13 +17,19 @@ from monitoring.monitorlib import scd
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
+from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
 
 
 BASE_URL = 'https://example.com/uss'
-OP_ID = '00000073-ff83-443b-aa56-36671e000000'
+OP_ID = ''
 
 sub_id = ''
+
+
+def test_set_test_owner_ids(test_owner):
+  global OP_ID
+  OP_ID = utils.encode_owner(test_owner, '00000073-ff83-443b-aa56-36671e000000')
 
 
 def _make_op_req():

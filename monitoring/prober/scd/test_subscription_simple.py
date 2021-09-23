@@ -16,10 +16,16 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
+from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
 
 
-SUB_ID = '000000b7-cf7e-4d9a-af00-6963ca000000'
+SUB_ID = ''
+
+
+def test_set_test_owner_ids(test_owner):
+  global SUB_ID
+  SUB_ID = utils.encode_owner(test_owner, '000000b7-cf7e-4d9a-af00-6963ca000000')
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)

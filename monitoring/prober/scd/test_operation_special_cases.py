@@ -15,11 +15,19 @@ import uuid
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
+from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
 
 
-OP1_ID = '00000020-b6ee-4082-b6e7-75eb4f000000'
-OP2_ID = '00000000-ee51-4700-873d-e10911000000'
+OP1_ID = ''
+OP2_ID = ''
+
+
+def test_set_test_owner_ids(test_owner):
+  global OP1_ID
+  global OP2_ID
+  OP1_ID = utils.encode_owner(test_owner, '00000020-b6ee-4082-b6e7-75eb4f000000')
+  OP2_ID = utils.encode_owner(test_owner, '00000000-ee51-4700-873d-e10911000000')
 
 
 @for_api_versions(scd.API_0_3_5)

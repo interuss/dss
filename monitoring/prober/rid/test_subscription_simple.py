@@ -141,3 +141,9 @@ def test_get_deleted_sub_by_search(session):
   resp = session.get('/subscriptions?area={}'.format(common.GEO_POLYGON_STRING))
   assert resp.status_code == 200, resp.content
   assert SUB_ID not in [x['id'] for x in resp.json()['subscriptions']]
+
+
+@default_scope(SCOPE_READ)
+def test_get_sub_with_loop_area(session):
+  resp = session.get('/subscriptions?area={}'.format(common.LOOP_GEO_POLYGON_STRING))
+  assert resp.status_code == 400, resp.content

@@ -27,6 +27,8 @@ the tests that depend on that authorization will be skipped.
 Example: `--rid-auth "UsernamePassword(https://example.com/token, username=uss1,
 password=uss1, client_id=uss1)"`
 
+`--test-owner` flag should be set to uniquely identify a prober test owner. Supported characters for an owner name are letters, numbers and _.  
+
 ## Running pytest via Docker
 This approach takes slightly longer to execute due to building the prober image,
 but it requires no setup and generally obtains more reproducible results than
@@ -35,6 +37,7 @@ running locally.  From the root of this repo:
 ```shell script
 docker run --rm $(docker build -q -f monitoring/prober/Dockerfile monitoring) \
     --dss-endpoint <URL> \
+    --test-owner <owner-name> \
     [--rid-auth <SPEC>] \
     [--scd-auth1 <SPEC>] \
     [--scd-auth2 <SPEC>]
@@ -52,6 +55,7 @@ docker build -f prober/Dockerfile . -t local-prober
 ```shell script
 docker run --rm local-prober \
     --dss-endpoint <URL> \
+    --test-owner <owner-name> \
     [--rid-auth <SPEC>] \
     [--scd-auth1 <SPEC>] \
     [--scd-auth2 <SPEC>]
@@ -75,6 +79,7 @@ pip install -r requirements.txt
 . ./env/bin/activate
 pytest \
     --dss-endpoint <URL> \
+    --test-owner <owner-name> \
     [--rid-auth <SPEC>] \
     [--scd-auth1 <SPEC>] \
     [--scd-auth2 <SPEC>] \
