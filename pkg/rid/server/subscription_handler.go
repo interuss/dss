@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
-	"strings"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	geoerr "github.com/interuss/dss/pkg/geo"
+	"github.com/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -59,7 +60,7 @@ func (s *Server) SearchSubscriptions(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		if strings.Contains(err.Error(), "Area is too large") {
+		if errors.Is(err, geoerr.ErrAreaTooLarge) {
 			return nil, stacktrace.Propagate(err, "Invalid area")
 		}
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
