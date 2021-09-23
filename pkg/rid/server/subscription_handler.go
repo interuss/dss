@@ -6,12 +6,12 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	geoerr "github.com/interuss/dss/pkg/geo"
-	"github.com/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
+	geoerr "github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/stacktrace"
+	"github.com/pkg/errors"
 )
 
 // DeleteSubscription deletes an existing subscription.
