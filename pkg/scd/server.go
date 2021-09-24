@@ -15,7 +15,8 @@ import (
 const (
 	strategicCoordinationScope   = "utm.strategic_coordination"
 	constraintManagementScope    = "utm.constraint_management"
-	constraintIngestionScope     = "utm.constraint_ingestion"
+	constraintProcessingScope    = "utm.constraint_processing"
+	conformanceMonitoringSAScope = "utm.conformance_monitoring_sa"
 	availabilityArbitrationScope = "utm.availability_arbitration"
 )
 
@@ -49,26 +50,25 @@ type Server struct {
 
 // AuthScopes returns a map of endpoint to required Oauth scope.
 func (a *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
-	// TODO: replace with correct scopes
 	return map[auth.Operation]auth.KeyClaimedScopesValidator{
 		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/CreateConstraintReference":        auth.RequireAnyScope(constraintManagementScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/CreateOperationalIntentReference": auth.RequireAnyScope(strategicCoordinationScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/CreateSubscription":               auth.RequireAnyScope(strategicCoordinationScope, constraintIngestionScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/CreateOperationalIntentReference": auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/CreateSubscription":               auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
 		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteConstraintReference":        auth.RequireAnyScope(constraintManagementScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteOperationalIntentReference": auth.RequireAnyScope(strategicCoordinationScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteSubscription":               auth.RequireAnyScope(strategicCoordinationScope, constraintIngestionScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetConstraintReference":           auth.RequireAnyScope(constraintManagementScope, constraintIngestionScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetOperationalIntentReference":    auth.RequireAnyScope(strategicCoordinationScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetSubscription":                  auth.RequireAnyScope(strategicCoordinationScope, constraintIngestionScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetUssAvailability":               auth.RequireAnyScope(strategicCoordinationScope, availabilityArbitrationScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/MakeDssReport":                    auth.RequireAnyScope(strategicCoordinationScope, constraintIngestionScope, constraintManagementScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QueryConstraintReferences":        auth.RequireAnyScope(constraintIngestionScope, constraintManagementScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QueryOperationalIntentReferences": auth.RequireAnyScope(strategicCoordinationScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QuerySubscriptions":               auth.RequireAnyScope(strategicCoordinationScope, constraintIngestionScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteOperationalIntentReference": auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteSubscription":               auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetConstraintReference":           auth.RequireAnyScope(constraintManagementScope, constraintProcessingScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetOperationalIntentReference":    auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetSubscription":                  auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetUssAvailability":               auth.RequireAnyScope(strategicCoordinationScope, availabilityArbitrationScope, conformanceMonitoringSAScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/MakeDssReport":                    auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope, constraintManagementScope, availabilityArbitrationScope, conformanceMonitoringSAScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QueryConstraintReferences":        auth.RequireAnyScope(constraintProcessingScope, constraintManagementScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QueryOperationalIntentReferences": auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QuerySubscriptions":               auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
 		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/SetUssAvailability":               auth.RequireAnyScope(availabilityArbitrationScope),
 		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/UpdateConstraintReference":        auth.RequireAnyScope(constraintManagementScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/UpdateOperationalIntentReference": auth.RequireAnyScope(strategicCoordinationScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/UpdateSubscription":               auth.RequireAnyScope(strategicCoordinationScope, constraintIngestionScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/UpdateOperationalIntentReference": auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
+		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/UpdateSubscription":               auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
 	}
 }
 
