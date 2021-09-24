@@ -1,4 +1,6 @@
 from typing import List, NamedTuple
+
+from shapely.geometry.linestring import LineString
 from monitoring.monitorlib.typing import ImplicitDict
 import arrow
 import uuid
@@ -73,3 +75,10 @@ class TreatmentVolumeOptions(NamedTuple):
 class TreatmentPathOptions(ImplicitDict):
     """ A class to hold configuration for developing treatment flight path as GeoJSON """
     intersect_space:bool = 0
+    
+class PathPayload(ImplicitDict):
+    path: LineString
+    is_control: bool
+    path_options: TreatmentPathOptions
+    
+    
