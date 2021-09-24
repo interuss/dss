@@ -16,7 +16,7 @@ const (
 	OperationalIntentStateUnknown       OperationalIntentState = ""
 	OperationalIntentStateAccepted      OperationalIntentState = "Accepted"
 	OperationalIntentStateActivated     OperationalIntentState = "Activated"
-	OperationalIntentStateNonConforming OperationalIntentState = "NonConforming"
+	OperationalIntentStateNonconforming OperationalIntentState = "Nonconforming"
 	OperationalIntentStateContingent    OperationalIntentState = "Contingent"
 )
 
@@ -27,7 +27,7 @@ type OperationalIntentState string
 // OperationalIntentState requires a valid key.
 func (s OperationalIntentState) RequiresKey() bool {
 	switch s {
-	case OperationalIntentStateNonConforming:
+	case OperationalIntentStateNonconforming:
 		fallthrough
 	case OperationalIntentStateContingent:
 		return false
@@ -43,7 +43,7 @@ func (s OperationalIntentState) IsValidInDSS() bool {
 		fallthrough
 	case OperationalIntentStateActivated:
 		fallthrough
-	case OperationalIntentStateNonConforming:
+	case OperationalIntentStateNonconforming:
 		fallthrough
 	case OperationalIntentStateContingent:
 		return true
