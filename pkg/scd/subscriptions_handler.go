@@ -115,8 +115,8 @@ func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, ver
 			case !subreq.Version.Matches(old.Version):
 				// The user wants to update a Subscription but the version doesn't match.
 				return stacktrace.Propagate(
-					stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %d is not current", subreq.Version),
-					"Current version is %d but client specified version %d", old.Version, subreq.Version)
+					stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", subreq.Version),
+					"Current version is %s but client specified version %s", old.Version, subreq.Version)
 			case old.Manager != subreq.Manager:
 				return stacktrace.Propagate(
 					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
