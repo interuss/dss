@@ -32,7 +32,7 @@ message Altitude {
   // The numeric value of the altitude. Note that min and max values are
   // added as a sanity check. As use cases evolve and more options are
   // made available in terms of units of measure or reference systems,
-  // these bounds should be re-evaluated.
+  // these bounds may be re-evaluated.
   double value = 3;
 }
 
@@ -76,7 +76,7 @@ message Authority {
 message ChangeConstraintReferenceResponse {
   ConstraintReference constraint_reference = 1;
 
-  // DSS subscribers that this client now has the obligation to notify of the constraint changes just made.  This client must call POST for each provided URL according to the USS-USS `/uss/v1/constraints/{entityid}` path API.  The client's own subscriptions will also be included in this list.
+  // DSS subscribers that this client now has the obligation to notify of the constraint changes just made.  This client must call POST for each provided URL according to the USS-USS `/uss/v1/constraints` path API.  The client's own subscriptions will also be included in this list.
   repeated SubscriberToNotify subscribers = 2;
 }
 
@@ -87,7 +87,7 @@ message ChangeOperationalIntentReferenceResponse {
 
   // DSS subscribers that this client now has the obligation to
   // notify of the operational intent changes just made.  This client must call POST
-  // for each provided URL according to the USS-USS `/uss/v1/operational_intents/{entityid}`
+  // for each provided URL according to the USS-USS `/uss/v1/operational_intents`
   // path API.  The client's own subscriptions will also be included in this list.
   repeated SubscriberToNotify subscribers = 2;
 }
@@ -387,7 +387,10 @@ message GetUssAvailabilityRequest {
 
 // Information necessary to create a subscription to serve a single operational intent's notification needs.
 message ImplicitSubscriptionParameters {
-  // True if this operational intent's subscription should trigger notifications when constraints change.  Otherwise, changes in constraints should not trigger notifications.
+  // True if this operational intent's subscription should trigger notifications when constraints change.
+  // Otherwise, changes in constraints should not trigger notifications.  The scope
+  // utm.constraint_processing is required to set this flag true, and a USS performing the constraint
+  // processing role should set this flag true.
   bool notify_for_constraints = 1;
 
   // The base URL of a USS implementation of the parts of the USS-USS API necessary for
@@ -415,13 +418,27 @@ message OperationalIntent {
 
 // Details of a UTM operational intent. Note that this data is not stored in the DSS; only with the clients.
 message OperationalIntentDetails {
-  int32 priority = 1;
+  // Volumes that contain the anticipated area of non-conformance while the aircraft is in the Nonconforming
+  // or Contingent states.
+  // 
+  // Start and end times, as well as lower and upper altitudes, are required for each
+  // volume. The end time may not be in the past.
+  // 
+  // Required with at least one item when the operational intent is Nonconforming or Contingent.
+  // 
+  // May not contain any items when the operational intent is Accepted or Activated.
+  repeated Volume4D off_nominal_volumes = 1;
+  int32 priority = 2;
 
   // Volumes that wholly contain the operational intent while being as small as practical.
   // 
   // Start and end times, as well as lower and upper altitudes, are required for each
   // volume. The end time may not be in the past.
-  repeated Volume4D volumes = 2;
+  // 
+  // Required with at least one item when the operational intent is Accepted, Activated, or Nonconforming.
+  // 
+  // May not contain any items when the operational intent is Contingent.
+  repeated Volume4D volumes = 3;
 }
 
 // A record of position data gathered through the course of an operational
@@ -433,7 +450,7 @@ message OperationalIntentPositions {
 }
 
 // The high-level information of a planned or active operational intent with the URL
-// of a USS to query for details.  Note: 'OVN' is returned ONLY to the USS that
+// of a USS to query for details.  Note: 'ovn' is returned ONLY to the USS that
 // created the operational intent but NEVER to other USS instances.
 message OperationalIntentReference {
   string id = 1;
@@ -501,11 +518,11 @@ message PlanningRecord {
 }
 
 // An enclosed area on the earth.
-// The bounding edges of this polygon shall be the shortest paths between connected vertices.  This means, for instance, that the edge between two points both defined at a particular latitude is not generally contained at that latitude.
-// The winding order shall be interpreted as the order which produces the smaller area.
-// The path between two vertices shall be the shortest possible path between those vertices.
+// The bounding edges of this polygon are defined to be the shortest paths between connected vertices.  This means, for instance, that the edge between two points both defined at a particular latitude is not generally contained at that latitude.
+// The winding order must be interpreted as the order which produces the smaller area.
+// The path between two vertices is defined to be the shortest possible path between those vertices.
 // Edges may not cross.
-// Vertices may not be duplicated.  In particular, the final polygon vertex shall not be identical to the first vertex.
+// Vertices may not be duplicated.  In particular, the final polygon vertex must not be identical to the first vertex.
 message Polygon {
   repeated LatLngPoint vertices = 1;
 }
@@ -551,6 +568,11 @@ message PutConstraintReferenceParameters {
   // Spacetime extents that bound this constraint.
   // 
   // The end time may not be in the past.
+  // 
+  // All volumes of the constraint must be encompassed in these extents.
+  // However, these extents do not need to match the precise volumes of
+  // the constraint; a single bounding extent may be provided instead,
+  // for instance.
   repeated Volume4D extents = 1;
   string uss_base_url = 2;
 }
@@ -579,17 +601,20 @@ message PutOperationalIntentReferenceParameters {
   // Spacetime extents that bound this operational intent.
   // 
   // Start and end times, as well as lower and upper altitudes, are required for each
-  // volume. The end time may not be in the past.
+  // volume. The end time may not be in the past. All volumes, both nominal and off-nominal,
+  // must be encompassed in these extents. However, these extents do not need to match the
+  // precise volumes of the operational intent; a single bounding extent may be provided
+  // instead, for instance.
   repeated Volume4D extents = 1;
 
   // Proof that the USS creating or mutating this operational intent was aware of the current state of the
   // airspace, with the expectation that this operational intent is therefore deconflicted from all relevant
-  // features in the airspace.  This field is not required when declaring an operational intent NonConforming
+  // features in the airspace.  This field is not required when declaring an operational intent Nonconforming
   // or Contingent, or when there are no relevant Entities in the airspace, but is otherwise required.
-  // OVNs for constraints are required if and only if the USS managing this operational intent is considering
-  // constraints, which is determined by whether the subscription associated with this operational intent
-  // triggers notifications for constraints.  The key does not need to contain the OVN for an
-  // operational intent being updated.
+  // OVNs for constraints are required if and only if the USS managing this operational intent is performing
+  // the constraint processing role, which is indicated by whether the subscription associated with this
+  // operational intent triggers notifications for constraints.  The key does not need to contain the OVN for
+  // the operational intent being updated.
   repeated string key = 2;
 
   // If an existing subscription is not specified in `subscription_id`, then this field must be
@@ -622,10 +647,10 @@ message PutSubscriptionParameters {
   // area.
   Volume4D extents = 1;
 
-  // If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.
+  // If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true.
   bool notify_for_constraints = 2;
 
-  // If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not trigger notifications.
+  // If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not trigger notifications.  The scope utm.strategic_coordination is required to set this flag true.
   bool notify_for_operational_intents = 3;
   string uss_base_url = 4;
 }
@@ -735,10 +760,10 @@ message Subscription {
   bool implicit_subscription = 3;
   int32 notification_index = 4;
 
-  // If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.
+  // If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true.
   bool notify_for_constraints = 5;
 
-  // If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not trigger notifications.
+  // If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not trigger notifications.  The scope utm.strategic_coordination is required to set this flag true.
   bool notify_for_operational_intents = 6;
 
   // If set, this subscription will not receive notifications involving airspace changes
@@ -750,11 +775,11 @@ message Subscription {
   Time time_start = 8;
   string uss_base_url = 9;
 
-  // Version that the DSS changes every time a USS changes the subscription.  The DSS
-  // incrementing the notification_index does not constitute a change that triggers a
-  // new version.  A USS must specify this version when modifying an existing
-  // subscription to ensure consistency in read-modify-write operations and distributed
-  // systems.
+  // Version of the subscription that the DSS changes every time a USS changes the
+  // subscription.  The DSS incrementing the notification_index does not constitute a
+  // change that triggers a new version.  A USS must specify this version when modifying
+  // an existing subscription to ensure consistency in read-modify-write operations and
+  // distributed systems.
   string version = 10;
 }
 
@@ -885,12 +910,13 @@ message Velocity {
 
   // Direction of flight expressed as a "True North-based" ground track angle.
   // This value is provided in degrees East of North with a minimum resolution of 1 degree.
+  // A value of 360 indicates invalid, no value, or unknown.
   float track = 2;
   string units_speed = 3;
 }
 
-// A three-dimensional geographic volume consisting of a vertically-extruded shape.  Exactly
-// one outline must be specified.
+// A three-dimensional geographic volume consisting of a vertically-extruded shape.
+// Exactly one outline must be specified.
 message Volume3D {
   // Minimum bounding altitude of this volume. Must be less than altitude_upper, if specified.
   Altitude altitude_lower = 1;
