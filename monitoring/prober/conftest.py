@@ -1,8 +1,8 @@
 from typing import Optional
 
 from monitoring.monitorlib import infrastructure
-from monitoring.monitorlib import auth, scd
-from monitoring.prober.infrastructure import VersionString
+from monitoring.monitorlib import auth, rid, scd
+from monitoring.prober.infrastructure import VersionString, IDFactory
 
 import pytest
 
@@ -13,7 +13,6 @@ def pytest_addoption(parser):
   parser.addoption('--rid-auth')
   parser.addoption('--scd-auth1')
   parser.addoption('--scd-auth2')
-  parser.addoption('--test-owner')
   parser.addoption('--scd-api-version')
 
 
@@ -54,19 +53,33 @@ def scd_session2(pytestconfig):
 
 
 @pytest.fixture()
-def test_owner(pytestconfig):
-  if pytestconfig.getoption('test_owner'):
-    return pytestconfig.getoption('test_owner')
-  else:
-    pytest.exit(
-      ValueError("""
-      test-owner required.
-      Please follow the instructions in monitoring/prober/README.md to set the value"""))
+def ids(pytestconfig, session, scd_session, scd_session2):
+  sub = None
+  if session:
+    session.get('/status', scope=rid.SCOPE_READ)
+    rid_sub = session.auth_adapter.get_sub()
+    if rid_sub:
+      sub = rid_sub
+  if sub is None and scd_session:
+    scd_session.get('/status', scope=scd.SCOPE_SC)
+    scd_sub = scd_session.auth_adapter.get_sub()
+    if scd_sub:
+      sub = scd_sub
+  if sub is None and scd_session2:
+    scd_session2.get('/status', scope=scd.SCOPE_SC)
+    scd2_sub = scd_session2.auth_adapter.get_sub()
+    if scd2_sub:
+      sub = scd2_sub
+  if sub is None:
+    sub = 'unknown'
+  factory = IDFactory(sub)
+  return lambda id_code: factory.make_id(id_code)
 
 
 @pytest.fixture(scope='function')
 def no_auth_session(pytestconfig):
   return make_session(pytestconfig, '/v1/dss')
+
 
 @pytest.fixture(scope='session')
 def scd_api(pytestconfig):
