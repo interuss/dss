@@ -51,7 +51,7 @@ def for_api_versions(*args):
 resource_type_code_descriptions: Dict[int, str] = {}
 
 
-# Next resource_type_code: 2
+# Next resource_type_code: 341
 def register_resource_type(code: int, description: str) -> int:
   test_filename = inspect.stack()[1].filename
   this_folder = os.path.dirname(os.path.abspath(__file__))
@@ -70,8 +70,8 @@ class IDFactory(object):
 
   XXXX encodes the kind of ID according to id_codes.
   YYYYYYYYYYYYYYYYY encodes the owner/creator of the resource having the ID and
-  consists of 24 characters encoded as 6-bit groups.
-  ZZ is reserved and currently set to 0.
+  consists of 12 characters encoded as 6-bit groups.
+  Z is reserved and currently set to 0.
   """
 
   owner_id: str
