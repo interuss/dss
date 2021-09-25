@@ -116,8 +116,19 @@ class FlightVolumeGenerator():
             
             current_path = self.generate_flight_path(path_options = treatment_path_options, is_control= is_control)
             raw_path = PathPayload(path = current_path, path_options = treatment_path_options, is_control = is_control)
+            # the first path is control, the last path does not intersect the control
             raw_paths.append(raw_path)
             
+        last_path_index = len(raw_paths) - 1 
+        for path_index, raw_path in enumerate(raw_paths): 
+            if path_index != 0:
+                if path_index == last_path_index:
+                    # no need to have any time / atltitude interserction
+                    pass
+                else:
+                    # intersect time once, and altitude once
+                    pass
+                
             
         # Convert raw path to a payload
         # intersect in time 
