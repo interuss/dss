@@ -52,7 +52,7 @@ resource_type_code_descriptions: Dict[int, str] = {}
 
 
 # Next resource_type_code: 2
-def register_id_code(code: int, description: str) -> int:
+def register_resource_type(code: int, description: str) -> int:
   test_filename = inspect.stack()[1].filename
   this_folder = os.path.dirname(os.path.abspath(__file__))
   test = test_filename[len(this_folder)+1:]

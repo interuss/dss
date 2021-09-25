@@ -95,10 +95,6 @@ E.g.: `test/docker_e2e.sh scd/`
 
 `test/docker_e2e.sh scd/test_constraint_simple.py::test_ensure_clean_workspace`
 
-### Combinations of the above
-
-`test/docker_e2e.sh scd/test_constraint_simple.py::test_ensure_clean_workspace scd/test_constraint_simple.py::test_create_constraint`
-
 ## Writing prober tests
 This project strives to make prober tests as easy as possible to create in order
 to encourage creation of more tests which improve the validity and reliability
@@ -148,21 +144,21 @@ Specifically:
    after all the tests in the test file complete successfully.
 1. Each test file interacting with resources should have the first test in the
    file delete any pre-existing resource that would interfere with the test.
-1. Test IDs should be used for all test resources.  These static IDs can be
+1. Test IDs should be used for all test resources. These static IDs can be
    obtained using the `ids` fixture providing a registered resource type code.
    E.g.:
    ```python
-   from monitoring.prober.infrastructure import register_id_code
+   from monitoring.prober.infrastructure import register_resource_type
    [...]
-   CONFLICTING_OI_ID = register_id_code(103, "OI that conflicts with first OI")
+   CONFLICTING_OI_TYPE = register_resource_type(103, "OI that conflicts with first OI")
    [...]
    def test_create_conflict(ids):
-     conflicting_id = ids(CONFLICTING_OI_ID)
+     conflicting_id = ids(CONFLICTING_OI_TYPE)
    ```
-   The resource type code must be unique among all prober tests.  To determine
+   The resource type code must be unique among all prober tests. To determine
    an appropriate resource type code for a new resource, see the comment above
-   `register_id_code` in [infrastructure.py](infrastructure.py), and then make
-   sure to update that comment after adding new resource type codes.
+   `register_resource_type` in [infrastructure.py](infrastructure.py), and then
+   make sure to update that comment after adding new resource type codes.
 1. Tests should be designed to pass even with pre-existing resources which may
    even be in the same area/time range/etc as the test resources.  Toward this
    end, checking the exact count of results returned by a query, or expecting a
