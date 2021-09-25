@@ -54,6 +54,15 @@ def scd_session2(pytestconfig):
 
 @pytest.fixture()
 def ids(pytestconfig, session, scd_session, scd_session2):
+  """Fixture that converts a ResourceType into an ID for that resource.
+
+  This fixture is a function that accepts a ResourceType as the argument and
+  returns a UUIDv4-format string containing an ID for that resource.
+
+  See register_resource_type in infrastructure.py for how to create
+  ResourceTypes to provide to this fixture, and also the "Resources" section of
+  the README.
+  """
   sub = None
   if session:
     session.get('/status', scope=rid.SCOPE_READ)

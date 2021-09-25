@@ -54,9 +54,9 @@ def encode_owner(owner_name: str) -> str:
   return ''.join((bin_to_hex(s) for s in split_by(bits)))
 
 
-def encode_resource_type_code(id_code: int) -> str:
+def encode_resource_type_code(resource_type: int) -> str:
   """Encode a number between 0 and 0xFFFF as a 4-character hexidecimal string"""
-  return format(id_code, "04x")
+  return format(resource_type, "04x")
 
 
 def decode_owner(owner_id: str) -> str:
@@ -78,6 +78,6 @@ def decode_owner(owner_id: str) -> str:
   return test_owner
 
 
-def decode_id_code(id: str) -> int:
+def decode_resouce_type(id: str) -> int:
   """Decode a number between 0 and 0xFFFF from a 4-character hex string"""
   return int(id, 16)

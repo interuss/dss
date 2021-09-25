@@ -48,11 +48,23 @@ def for_api_versions(*args):
   return decorator_default_scope
 
 
-resource_type_code_descriptions: Dict[int, str] = {}
+ResourceType = int
+resource_type_code_descriptions: Dict[ResourceType, str] = {}
 
 
-# Next resource_type_code: 341
-def register_resource_type(code: int, description: str) -> int:
+# Next code: 341
+def register_resource_type(code: int, description: str) -> ResourceType:
+  """Register that the specified code refers to the described resource.
+
+  Args:
+    code: A integer that is globally-unique among all register_resource_type
+          calls in all prober tests, referring to this specific resource type.
+    description: Description of the resource created from this type.
+
+  Returns:
+    ResourceType that can be used to create an ID with <IDFactory>.make_id,
+    especially with the `ids` test fixture (see conftest.py).
+  """
   test_filename = inspect.stack()[1].filename
   this_folder = os.path.dirname(os.path.abspath(__file__))
   test = test_filename[len(this_folder)+1:]
@@ -79,7 +91,7 @@ class IDFactory(object):
   def __init__(self, test_owner: str):
     self.owner_id = utils.encode_owner(test_owner)
 
-  def make_id(self, resource_type: int):
+  def make_id(self, resource_type: ResourceType):
     """Make a test ID with the specified resource type code"""
     return '0000{x}-{y1}-40{y2}-{y3}-{y4}0000'.format(
       x=utils.encode_resource_type_code(resource_type),
@@ -89,7 +101,7 @@ class IDFactory(object):
       y4=self.owner_id[10:18])
 
   @classmethod
-  def decode(cls, id: str) -> Tuple[str, int]:
+  def decode(cls, id: str) -> Tuple[str, ResourceType]:
     hex_digits = id.replace('-', '')
     if len(hex_digits) != 32:
       raise ValueError('ID {} has the wrong number of characters for a UUID'.format(id))
@@ -99,6 +111,6 @@ class IDFactory(object):
       raise ValueError('ID {} is not formatted like a v4 test ID'.format(id))
     x = hex_digits[4:8]
     y = hex_digits[8:12] + hex_digits[14:28]
-    resource_type_code = int(x, 16)
+    resource_type_code = ResourceType(int(x, 16))
     owner_name = utils.decode_owner(y)
     return owner_name, resource_type_code
