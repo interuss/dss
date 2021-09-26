@@ -1,7 +1,7 @@
 from pathlib import Path
 import arrow
 from typing import List
-from shapely.geometry import LineString, Polygon
+from shapely.geometry import LineString, Polygon, point
 from pyproj import Geod, Proj
 from monitoring.monitorlib import scd
 from monitoring.scd_qualifier.utils import Polygon, TreatmentVolumeOptions, TreatmentPathOptions, Volume3D, Volume4D, PathPayload
@@ -23,6 +23,7 @@ class FlightVolumeGenerator():
         self.utm_zone = utm_zone
 
         self.altitude_agl = 50.0
+        self.altitude_envelope = 15
         self.control_flight_path: LineString
         self.buffered_control_flight_path: Polygon
         self.geod = Geod(ellps="WGS84")
@@ -34,16 +35,16 @@ class FlightVolumeGenerator():
         proj = Proj(proj="utm", zone=self.utm_zone, ellps="WGS84", datum="WGS84")
 
         geo_interface = shapely_shape.__geo_interface__
-        point_or_polygon = geo_interface['type']
+        feature_type = geo_interface['type']
         coordinates = geo_interface['coordinates']
-        if point_or_polygon == 'Polygon':
+        if feature_type == 'Polygon':
             new_coordinates = [[proj(*point, inverse=inverse) for point in linring] for linring in coordinates]
-        elif point_or_polygon == 'Point':
-            new_coordinates = proj(*coordinates, inverse=inverse)
+        elif feature_type == 'LineString':
+            new_coordinates = [proj(*point, inverse=inverse) for point in coordinates]
         else:
-            raise RuntimeError('Unexpected geo_interface type: {}'.format(point_or_polygon))
+            raise RuntimeError('Unexpected geo_interface type: {}'.format(feature_type))
 
-        return shapely.geometry.shape({'type': point_or_polygon, 'coordinates': tuple(new_coordinates)})
+        return shapely.geometry.shape({'type': feature_type, 'coordinates': tuple(new_coordinates)})
 
     def input_extents_valid(self) -> None:
         ''' This method checks if the input extents are valid i.e. small enough, if the extent is too large, we reject them, at the moment it checks for extents less than 500m x 500m square but can be changed as necessary.'''
@@ -70,9 +71,7 @@ class FlightVolumeGenerator():
         if is_control:
             flight_path = self.generate_random_flight_path()
             flight_path_shp = asShape(flight_path)
-            flight_path_buf = flight_path_shp.buffer(0)
-            
-            flight_path_utm = self.utm_converter(flight_path_buf)
+            flight_path_utm = self.utm_converter(flight_path_shp)
             buffer_shape_utm = flight_path_utm.buffer(15)
             buffered_shape = self.utm_converter(buffer_shape_utm, inverse=True)
             self.buffered_control_flight_path = buffered_shape
@@ -91,16 +90,33 @@ class FlightVolumeGenerator():
                 
         return flight_path
 
-    def path_to_outline_polygon_converter(self, flight_path:LineString) -> Volume3D:
-        ''' A method to convert a GeoJSON LineString to a ASTM outline_polygon object by buffering 10m spatially '''
-        volume3D = None
-        return volume3D
+    def convert_path_to_volume(self, flight_path:LineString, volume_generation_options: TreatmentVolumeOptions) -> Volume3D:
+        ''' A method to convert a GeoJSON LineString to a ASTM outline_polygon object by buffering 15m spatially '''
+        print(flight_path)
+        flight_path_shp = asShape(flight_path)
+        print(flight_path_shp)
+        flight_path_utm = self.utm_converter(flight_path_shp)
+        print(flight_path_utm)
+        buffer_shape_utm = flight_path_utm.buffer(15)
+        altitude_upper = altitude_of_ground_level_wgs_84 + self.altitude_envelope  
+        altitude_lower = altitude_of_ground_level_wgs_84 - self.altitude_envelope
         
+        buffered_shape_geo = self.utm_converter(buffer_shape_utm, inverse=True)
+        # print(buffered_shape_geo)
+        outline_polygon = Polygon(vertices=[])
+        volume3D = Volume3D(outline_polygon = outline_polygon, altitude_lower=altitude_lower, altitude_upper=altitude_upper)
+    
+    
+        return volume3D
+
+    def transform_3d_volume_to_4d(self, volume_3d : Volume3D,volume_generation_options: TreatmentVolumeOptions):
+        pass
+    
     def generate_volume(self, treatment_options: TreatmentVolumeOptions) -> Volume4D:
         ''' Generate a volume given the options to the control volume '''
         pass
     
-    def generate_test_payload(self, number_of_volumes:int = 6) -> List[Volume4D]:
+    def generate_test_payload(self, altitude_of_ground_level_wgs_84:float, number_of_volumes:int = 6) -> List[Volume4D]:
         ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
         all_payloads = []
         raw_paths: List[PathPayload] = []
@@ -124,7 +140,10 @@ class FlightVolumeGenerator():
             if path_index != 0:
                 if path_index == last_path_index:
                     # no need to have any time / atltitude interserction
-                    pass
+                    volume_generation_options = TreatmentVolumeOptions(intersect_altitude= False, intersect_time=False)
+                    flight_volume_3d = self.convert_path_to_volume(flight_path = raw_path.path, volume_generation_options=treatment_path_options)
+                    flight_volume_4d = self.transform_3d_volume_to_4d(volume_3d= flight_volume_3d, volume_generation_options = volume_generation_options)
+                    all_payloads.append(flight_volume_4d)
                 else:
                     # intersect time once, and altitude once
                     pass
@@ -141,8 +160,8 @@ if __name__ == '__main__':
     COUNTRY_CODE = 'che'
     # Generate volumes 
     my_volume_generator = FlightVolumeGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')
-    
+    altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
     # Change directory to write test_definitions folder is created in the rid_qualifier folder.
     p = pathlib.Path(__file__).parent.absolute()
     os.chdir(p)
-    test_payload = my_volume_generator.generate_test_payload(number_of_volumes=4)
+    test_payload = my_volume_generator.generate_test_payload(number_of_volumes=4, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
