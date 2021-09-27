@@ -25,6 +25,7 @@ class FlightVolumeGenerator():
         self.altitude_agl = 50.0
         self.altitude_envelope = 15
         self.control_flight_path: LineString
+        self.control_volume3D: Volume3D
         self.buffered_control_flight_path: Polygon
         self.geod = Geod(ellps="WGS84")
         self.input_extents_valid()
@@ -92,20 +93,25 @@ class FlightVolumeGenerator():
 
     def convert_path_to_volume(self, flight_path:LineString, volume_generation_options: TreatmentVolumeOptions) -> Volume3D:
         ''' A method to convert a GeoJSON LineString to a ASTM outline_polygon object by buffering 15m spatially '''
-        print(flight_path)
+        
         flight_path_shp = asShape(flight_path)
-        print(flight_path_shp)
         flight_path_utm = self.utm_converter(flight_path_shp)
-        print(flight_path_utm)
         buffer_shape_utm = flight_path_utm.buffer(15)
-        altitude_upper = altitude_of_ground_level_wgs_84 + self.altitude_envelope  
-        altitude_lower = altitude_of_ground_level_wgs_84 - self.altitude_envelope
+        
+        if volume_generation_options.intersect_altitude == True:    
+            altitude_upper = altitude_of_ground_level_wgs_84 + self.altitude_envelope  
+            altitude_lower = altitude_of_ground_level_wgs_84 - self.altitude_envelope
+        else:
+            # Raise the altitude by 50m so that they dont intersect in altitude
+            altitude_upper = altitude_of_ground_level_wgs_84 + self.altitude_envelope  + 50
+            altitude_lower = altitude_of_ground_level_wgs_84 - self.altitude_envelope + 50
         
         buffered_shape_geo = self.utm_converter(buffer_shape_utm, inverse=True)
-        # print(buffered_shape_geo)
-        outline_polygon = Polygon(vertices=[])
-        volume3D = Volume3D(outline_polygon = outline_polygon, altitude_lower=altitude_lower, altitude_upper=altitude_upper)
-    
+        
+        volume3D = Volume3D(outline_polygon = buffered_shape_geo, altitude_lower=altitude_lower, altitude_upper=altitude_upper)
+        
+        if volume_generation_options.is_control:
+            self.control_volume3D = volume3D
     
         return volume3D
 
@@ -137,17 +143,19 @@ class FlightVolumeGenerator():
             
         last_path_index = len(raw_paths) - 1 
         for path_index, raw_path in enumerate(raw_paths): 
-            if path_index != 0:
-                if path_index == last_path_index:
-                    # no need to have any time / atltitude interserction
-                    volume_generation_options = TreatmentVolumeOptions(intersect_altitude= False, intersect_time=False)
-                    flight_volume_3d = self.convert_path_to_volume(flight_path = raw_path.path, volume_generation_options=treatment_path_options)
-                    flight_volume_4d = self.transform_3d_volume_to_4d(volume_3d= flight_volume_3d, volume_generation_options = volume_generation_options)
-                    all_payloads.append(flight_volume_4d)
-                else:
-                    # intersect time once, and altitude once
-                    pass
+        
+            if path_index in [0,last_path_index]:
+                # This the control path or the well clear path no need to have any time / atltitude interserction
+                treatment_path_options = TreatmentVolumeOptions(intersect_altitude= False, intersect_time=False)
+                if path_index == 0:
+                    treatment_path_options.is_control = True
+            else:
+                # intersect in time and / or intersect in altitude 
+                treatment_path_options = random.choice([TreatmentVolumeOptions(intersect_altitude=True, intersect_time=True),TreatmentVolumeOptions(intersect_altitude=False, intersect_time=True), TreatmentVolumeOptions(intersect_altitude=True, intersect_time=False)])
                 
+            flight_volume_3d = self.convert_path_to_volume(flight_path = raw_path.path, volume_generation_options = treatment_path_options)
+            flight_volume_4d = self.transform_3d_volume_to_4d(volume_3d= flight_volume_3d, volume_generation_options =  treatment_path_options)
+            all_payloads.append(flight_volume_4d)
             
         # Convert raw path to a payload
         # intersect in time 

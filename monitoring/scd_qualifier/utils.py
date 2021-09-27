@@ -50,7 +50,7 @@ class OperationalIntentReference(NamedTuple):
 
 class Volume3D(NamedTuple):
     '''A class to hold Volume3D objects'''
-    outline_circle: Circle
+    
     outline_polygon: Polygon
     altitude_lower: Altitude
     altitude_upper: Altitude
@@ -70,7 +70,7 @@ class OperationalIntentDetails(NamedTuple):
 class TreatmentVolumeOptions(NamedTuple):
     """ A class to hold configuration for developing treatments """
     intersect_altitude: bool = 0
-    intersect_time: bool = 0
+    is_control: bool = 0
     
 class TreatmentPathOptions(ImplicitDict):
     """ A class to hold configuration for developing treatment flight path as GeoJSON """
