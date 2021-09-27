@@ -3,6 +3,8 @@
 # This startup script is meant to be invoked from within a Docker container
 # started by docker-compose_dss.yaml, not on a local system.
 
+# TODO: Is the test disabled on purpose?
+# shellcheck disable=SC2157
 if [ -z "ls /var/local-dss-data/scd_bootstrap > /dev/null 2>&1" ]; then
   echo "SCD DB is already set up; no need to run bootstrapper."
   exit 0

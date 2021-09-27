@@ -17,14 +17,14 @@ echo Reminder: must be run from root repo folder
 docker build \
     -f monitoring/tracer/Dockerfile \
     -t interuss/dss/tracer \
-    --build-arg version=`scripts/git/commit.sh` \
+    --build-arg version="$(scripts/git/commit.sh)" \
     monitoring
 
 docker run --name tracer_subscribe \
   --rm \
   -e TRACER_OPTIONS="${TRACER_OPTIONS}" \
   -p ${PORT}:5000 \
-  -v `pwd`/logs:/logs \
+  -v "$(pwd)/logs:/logs" \
   interuss/dss/tracer \
   gunicorn \
     --preload \
