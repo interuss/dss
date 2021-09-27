@@ -11,7 +11,6 @@ import pathlib, os
 import geojson
 import random
 
-
 class FlightVolumeGenerator():
     ''' A class to generate flight volumes in the ASTM Volume 4D specification. As a input the module takes in a bounding box for which to generate the volumes within. Further test'''
 
@@ -25,8 +24,11 @@ class FlightVolumeGenerator():
         self.altitude_agl = 50.0
         self.altitude_envelope = 15
         self.control_flight_path: LineString
-        self.control_volume3D: Volume3D
         self.buffered_control_flight_path: Polygon
+        
+        self.control_volume3D: Volume3D
+        self.control_volume4D: Volume4D
+        
         self.geod = Geod(ellps="WGS84")
         self.input_extents_valid()
 
@@ -112,14 +114,21 @@ class FlightVolumeGenerator():
         
         if volume_generation_options.is_control:
             self.control_volume3D = volume3D
-    
         return volume3D
 
-    def transform_3d_volume_to_4d(self, volume_3d : Volume3D,volume_generation_options: TreatmentVolumeOptions):
+    def transform_3d_volume_to_4d(self, volume_3d : Volume3D,volume_generation_options: TreatmentVolumeOptions) -> Volume4D:
+        if volume_generation_options.is_control: 
+            pass
+        else: 
+            pass
+            
+    
+    def write_flight_paths(self, raw_paths: List[PathPayload]) -> None:
+        ''' A method to write flight paths to disk as GeoJSON features '''
         pass
     
-    def generate_volume(self, treatment_options: TreatmentVolumeOptions) -> Volume4D:
-        ''' Generate a volume given the options to the control volume '''
+    def write_flight_volumes(self, all_volumes: List[Volume4D]) -> None:
+        ''' A method to write volume 4D objects to disk '''
         pass
     
     def generate_test_payload(self, altitude_of_ground_level_wgs_84:float, number_of_volumes:int = 6) -> List[Volume4D]:
@@ -157,10 +166,6 @@ class FlightVolumeGenerator():
             flight_volume_4d = self.transform_3d_volume_to_4d(volume_3d= flight_volume_3d, volume_generation_options =  treatment_path_options)
             all_payloads.append(flight_volume_4d)
             
-        # Convert raw path to a payload
-        # intersect in time 
-        # intersect in altitude
-        
         return all_payloads
 
 
