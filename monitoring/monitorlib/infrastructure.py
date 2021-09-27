@@ -51,6 +51,15 @@ class AuthAdapter(object):
     for k, v in self.get_headers(request.url, scopes).items():
       request.headers[k] = v
 
+  def get_sub(self) -> Optional[str]:
+    """Retrieve `sub` claim from one of the existing tokens"""
+    for _, tokens_by_scope in self._tokens.items():
+      for token in tokens_by_scope.values():
+        payload = jwt.decode(token, verify=False)
+        if 'sub' in payload:
+          return payload['sub']
+    return None
+
 
 class DSSTestSession(requests.Session):
   """
