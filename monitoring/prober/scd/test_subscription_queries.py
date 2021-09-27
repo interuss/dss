@@ -46,7 +46,7 @@ def _make_sub1_req(scd_api):
   }
   if scd_api == scd.API_0_3_5:
     req.update({"old_version": 0, "notify_for_operations": True})
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req.update({"notify_for_operational_intents": True})
   return req
 
@@ -63,7 +63,7 @@ def _make_sub2_req(scd_api):
   }
   if scd_api == scd.API_0_3_5:
     req.update({"old_version": 0, "notify_for_operations": True})
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req.update({"notify_for_operational_intents": True})
   return req
 
@@ -79,12 +79,12 @@ def _make_sub3_req(scd_api):
   }
   if scd_api == scd.API_0_3_5:
     req.update({"old_version": 0, "notify_for_operations": True})
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req.update({"notify_for_operational_intents": True})
   return req
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_ensure_clean_workspace(scd_api, scd_session):
   for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
     resp = scd_session.get('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
@@ -100,7 +100,7 @@ def test_ensure_clean_workspace(scd_api, scd_session):
 
 # Preconditions: No named Subscriptions exist
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_subs_do_not_exist_get(scd_api, scd_session):
   for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
@@ -110,7 +110,7 @@ def test_subs_do_not_exist_get(scd_api, scd_session):
 
 # Preconditions: No named Subscriptions exist
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_subs_do_not_exist_query(scd_api, scd_session):
   resp = scd_session.post('/subscriptions/query', json={
@@ -124,7 +124,7 @@ def test_subs_do_not_exist_query(scd_api, scd_session):
 
 # Preconditions: No named Subscriptions exist
 # Mutations: Subscriptions 1, 2, and 3 created
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_subs(scd_api, scd_session):
   resp = scd_session.put('/subscriptions/{}'.format(SUB1_ID), json=_make_sub1_req(scd_api))
@@ -139,7 +139,7 @@ def test_create_subs(scd_api, scd_session):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_search_find_all_subs(scd_api, scd_session):
   resp = scd_session.post(
@@ -156,7 +156,7 @@ def test_search_find_all_subs(scd_api, scd_session):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_search_footprint(scd_api, scd_session):
   lat = LAT0 - scd.latitude_degrees(FOOTPRINT_SPACING_M)
@@ -188,7 +188,7 @@ def test_search_footprint(scd_api, scd_session):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_search_time(scd_api, scd_session):
   time_start = datetime.datetime.utcnow()
@@ -248,7 +248,7 @@ def test_search_time(scd_api, scd_session):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_search_time_footprint(scd_api, scd_session):
   time_start = datetime.datetime.utcnow()
@@ -269,7 +269,7 @@ def test_search_time_footprint(scd_api, scd_session):
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: Subscriptions 1, 2, and 3 deleted
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_subs(scd_api, scd_session):
   for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):

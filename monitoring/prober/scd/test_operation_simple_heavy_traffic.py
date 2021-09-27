@@ -66,7 +66,7 @@ def test_ensure_clean_workspace_v5(scd_api, scd_session):
       assert False, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 def test_ensure_clean_workspace_v15(scd_api, scd_session):
   for op_id in OP_IDS:
     resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
@@ -90,7 +90,7 @@ def test_ops_do_not_exist_get_v5(scd_api, scd_session):
     assert resp.status_code == 404, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_ops_do_not_exist_get_v15(scd_api, scd_session):
   for op_id in OP_IDS:
@@ -115,7 +115,7 @@ def test_ops_do_not_exist_query_v5(scd_api, scd_session):
   assert not _intersection(OP_IDS, found_ids)
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_ops_do_not_exist_query_v15(scd_api, scd_session):
   time_now = datetime.datetime.utcnow()
@@ -158,7 +158,7 @@ def test_create_ops_v5(scd_api, scd_session):
   assert len(ovn_map) == len(OP_IDS)
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 def test_create_ops_v15(scd_api, scd_session):
   assert len(ovn_map) == 0
 
@@ -202,7 +202,7 @@ def test_get_ops_by_ids_v5(scd_api, scd_session):
     assert 'state' not in op
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 def test_get_ops_by_ids_v15(scd_api, scd_session):
   for op_id in OP_IDS:
     resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
@@ -229,7 +229,7 @@ def test_get_ops_by_search_v5(scd_api, scd_session):
   assert len(_intersection(OP_IDS, found_ids)) == len(OP_IDS)
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_ops_by_search_v15(scd_api, scd_session):
   resp = scd_session.post('/operational_intent_references/query', json={
@@ -254,7 +254,7 @@ def test_get_ops_by_search_earliest_time_included_v5(scd_api, scd_session):
   assert len(_intersection(OP_IDS, found_ids)) == len(OP_IDS)
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_ops_by_search_earliest_time_included_v15(scd_api, scd_session):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=59)
@@ -280,7 +280,7 @@ def test_get_ops_by_search_earliest_time_excluded_v5(scd_api, scd_session):
   assert not _intersection(OP_IDS, found_ids)
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_ops_by_search_earliest_time_excluded_v15(scd_api, scd_session):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=81)
@@ -306,7 +306,7 @@ def test_get_ops_by_search_latest_time_included_v5(scd_api, scd_session):
   assert len(_intersection(OP_IDS, found_ids)) == len(OP_IDS)
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_ops_by_search_latest_time_included_v15(scd_api, scd_session):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=20)
@@ -333,7 +333,7 @@ def test_get_ops_by_search_latest_time_excluded_v5(scd_api, scd_session):
   assert not _intersection(OP_IDS, found_ids)
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_ops_by_search_latest_time_excluded_v15(scd_api, scd_session):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
@@ -391,7 +391,7 @@ def test_mutate_ops_v5(scd_api, scd_session):
     ovn_map[op_id] = op['ovn']
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_ops_v15(scd_api, scd_session):
   for idx, op_id in enumerate(OP_IDS):
@@ -444,7 +444,7 @@ def test_delete_op_v5(scd_api, scd_session):
     assert resp.status_code == 200, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 def test_delete_op_v15(scd_api, scd_session):
   for op_id in OP_IDS:
     resp = scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
@@ -461,7 +461,7 @@ def test_get_deleted_ops_by_ids_v5(scd_api, scd_session):
       assert resp.status_code == 404, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_deleted_ops_by_ids_v15(scd_api, scd_session):
     for op_id in OP_IDS:
@@ -482,7 +482,7 @@ def test_get_deleted_ops_by_search_v5(scd_api, scd_session):
     assert not _intersection(OP_IDS, found_ids)
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_deleted_ops_by_search_v15(scd_api, scd_session):
     resp = scd_session.post('/operational_intent_references/query', json={

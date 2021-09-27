@@ -12,7 +12,7 @@ import datetime
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
-from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM
+from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM, SCOPE_CP , SCOPE_CM_SA, SCOPE_AA
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober import utils
 from monitoring.prober.infrastructure import for_api_versions
@@ -22,10 +22,12 @@ BASE_URL = 'https://example.com/uss'
 CONSTRAINT_ID = ''
 
 
+
 def test_set_test_owner_ids(test_owner):
   global CONSTRAINT_ID
   CONSTRAINT_ID = utils.encode_owner(test_owner, '0000006f-5a03-482a-a7e1-23c29c000000')
 
+get_test_owner = lambda: test_set_test_owner_ids(test_owner)
 
 def _make_c1_request():
   time_start = datetime.datetime.utcnow()
@@ -37,7 +39,7 @@ def _make_c1_request():
   }
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_ensure_clean_workspace(scd_api, scd_session):
   resp = scd_session.get('/constraint_references/{}'.format(CONSTRAINT_ID), scope=SCOPE_CM)
   if resp.status_code == 200:
@@ -52,21 +54,34 @@ def test_ensure_clean_workspace(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_constraint_does_not_exist_get(scd_api, scd_session):
-  for scope in (SCOPE_SC, SCOPE_CI, SCOPE_CM):
+  auths = None
+  if scd_api == scd.API_0_3_5:
+      auths = (SCOPE_SC, SCOPE_CI, SCOPE_CM)
+  elif scd_api == scd.API_0_3_17:
+      auths = (SCOPE_CM, SCOPE_CP)
+
+  for scope in auths:
     resp = scd_session.get('/constraint_references/{}'.format(CONSTRAINT_ID), scope=scope)
-    assert resp.status_code == 404, resp.content
+    assert resp.status_code == 404, "ConstraintID: {}\n{}".format(CONSTRAINT_ID, resp.content)
 
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_constraint_does_not_exist_query(scd_api, scd_session):
   if scd_session is None:
     return
+
   time_now = datetime.datetime.utcnow()
-  for scope in (SCOPE_SC, SCOPE_CI, SCOPE_CM):
+  auths = None
+  if scd_api == scd.API_0_3_5:
+      auths = (SCOPE_SC, SCOPE_CI, SCOPE_CM)
+  elif scd_api == scd.API_0_3_17:
+      auths = (SCOPE_CM, SCOPE_CP)
+
+  for scope in auths:
     resp = scd_session.post('/constraint_references/query', json={
       'area_of_interest': scd.make_vol4(time_now, time_now, 0, 5000, scd.make_circle(-56, 178, 300))
     }, scope=scope)
@@ -76,7 +91,7 @@ def test_constraint_does_not_exist_query(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_CM)
 def test_create_constraint_single_extent(scd_api, scd_session):
   req = _make_c1_request()
@@ -87,7 +102,7 @@ def test_create_constraint_single_extent(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_CM)
 def test_create_constraint_missing_time_start(scd_api, scd_session):
   req = _make_c1_request()
@@ -98,7 +113,7 @@ def test_create_constraint_missing_time_start(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_CM)
 def test_create_constraint_missing_time_end(scd_api, scd_session):
   req = _make_c1_request()
@@ -109,7 +124,7 @@ def test_create_constraint_missing_time_end(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: Constraint CONSTRAINT_ID created by scd_session user
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_create_constraint(scd_api, scd_session):
   req = _make_c1_request()
 
@@ -133,9 +148,15 @@ def test_create_constraint(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_get_constraint_by_id(scd_api, scd_session):
-  for scope in (SCOPE_SC, SCOPE_CI, SCOPE_CM):
+  auths = None
+  if scd_api == scd.API_0_3_5:
+      auths = (SCOPE_SC, SCOPE_CI, SCOPE_CM)
+  elif scd_api == scd.API_0_3_17:
+      auths = (SCOPE_CM, SCOPE_CP)
+
+  for scope in auths:
     resp = scd_session.get('/constraint_references/{}'.format(CONSTRAINT_ID), scope=scope)
     assert resp.status_code == 200, resp.content
 
@@ -148,8 +169,8 @@ def test_get_constraint_by_id(scd_api, scd_session):
 
 # Preconditions: None, though preferably Constraint CONSTRAINT_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-@default_scope(SCOPE_SC)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@default_scope(SCOPE_CM)
 def test_get_constraint_by_search_missing_params(scd_api, scd_session):
   resp = scd_session.post('/constraint_references/query')
   assert resp.status_code == 400, resp.content
@@ -157,9 +178,14 @@ def test_get_constraint_by_search_missing_params(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_get_constraint_by_search(scd_api, scd_session):
-  for scope in (SCOPE_SC, SCOPE_CI, SCOPE_CM):
+  auths = None
+  if scd_api == scd.API_0_3_5:
+      auths = (SCOPE_SC, SCOPE_CI, SCOPE_CM)
+  elif scd_api == scd.API_0_3_17:
+      auths = (SCOPE_CM, SCOPE_CP)
+  for scope in auths:
     resp = scd_session.post('/constraint_references/query', json={
       'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 300))
     }, scope=scope)
@@ -169,9 +195,10 @@ def test_get_constraint_by_search(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-@default_scope(SCOPE_SC)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@default_scope(SCOPE_CM)
 def test_get_constraint_by_search_earliest_time_included(scd_api, scd_session):
+
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=59)
   resp = scd_session.post('/constraint_references/query', json={
     'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 300))
@@ -182,8 +209,8 @@ def test_get_constraint_by_search_earliest_time_included(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-@default_scope(SCOPE_SC)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@default_scope(SCOPE_CM)
 def test_get_constraint_by_search_earliest_time_excluded(scd_api, scd_session):
   earliest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=61)
   resp = scd_session.post('/constraint_references/query', json={
@@ -195,8 +222,8 @@ def test_get_constraint_by_search_earliest_time_excluded(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-@default_scope(SCOPE_SC)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@default_scope(SCOPE_CM)
 def test_get_constraint_by_search_latest_time_included(scd_api, scd_session):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
   resp = scd_session.post('/constraint_references/query', json={
@@ -208,8 +235,8 @@ def test_get_constraint_by_search_latest_time_included(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-@default_scope(SCOPE_SC)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@default_scope(SCOPE_CM)
 def test_get_constraint_by_search_latest_time_excluded(scd_api, scd_session):
   latest_time = datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
   resp = scd_session.post('/constraint_references/query', json={
@@ -221,7 +248,7 @@ def test_get_constraint_by_search_latest_time_excluded(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID created by scd_session user
 # Mutations: Constraint CONSTRAINT_ID mutated to second version
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_mutate_constraint(scd_api, scd_session):
   # GET current constraint
   resp = scd_session.get('/constraint_references/{}'.format(CONSTRAINT_ID), scope=SCOPE_CI)
@@ -255,7 +282,7 @@ def test_mutate_constraint(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID mutated to second version
 # Mutations: Constraint CONSTRAINT_ID deleted
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_delete_constraint(scd_api, scd_session):
   resp = scd_session.delete('/constraint_references/{}'.format(CONSTRAINT_ID), scope=SCOPE_SC)
   assert resp.status_code == 403, resp.content
@@ -269,8 +296,8 @@ def test_delete_constraint(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID deleted
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-@default_scope(SCOPE_SC)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@default_scope(SCOPE_CM)
 def test_get_deleted_constraint_by_id(scd_api, scd_session):
   resp = scd_session.get('/constraint_references/{}'.format(CONSTRAINT_ID))
   assert resp.status_code == 404, resp.content
@@ -278,8 +305,8 @@ def test_get_deleted_constraint_by_id(scd_api, scd_session):
 
 # Preconditions: Constraint CONSTRAINT_ID deleted
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-@default_scope(SCOPE_SC)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@default_scope(SCOPE_CM)
 def test_get_deleted_constraint_by_search(scd_api, scd_session):
   resp = scd_session.post('/constraint_references/query', json={
     'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 300))

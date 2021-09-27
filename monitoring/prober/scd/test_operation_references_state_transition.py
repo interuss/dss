@@ -32,7 +32,7 @@ def test_ensure_clean_workspace_v5(scd_api, scd_session):
     assert False, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_ensure_clean_workspace_v15(scd_api, scd_session):
   resp = scd_session.get('/operational_intent_references/{}'.format(OP_ID), scope=SCOPE_SC)
@@ -56,7 +56,7 @@ def test_op_accepted_v5(scd_api, scd_session):
   assert resp.status_code == 200, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op_accepted_v15(scd_api, scd_session):
   # Accepted for the first time
@@ -85,7 +85,7 @@ def test_op_activated_v5(scd_api, scd_session):
   assert resp.status_code == 200, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op_activated_v15(scd_api, scd_session):
   # GET current op
@@ -121,7 +121,7 @@ def test_op_accepted_bad1_v5(scd_api, scd_session):
   assert resp.status_code == 409, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op_accepted_bad1_v15(scd_api, scd_session):
   # GET current op
@@ -153,7 +153,7 @@ def test_op_bad_state_transition_v5(scd_api, scd_session):
   assert resp.status_code == 400, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op_bad_state_transition_v15(scd_api, scd_session):
   # Delete operation

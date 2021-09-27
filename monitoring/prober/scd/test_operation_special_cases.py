@@ -46,7 +46,7 @@ def test_ensure_clean_workspace_v5(scd_api, scd_session):
       assert False, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 def test_ensure_clean_workspace_v15(scd_api, scd_session):
   for op_id in (OP1_ID, OP2_ID):
     resp = scd_session.get(
@@ -81,7 +81,7 @@ def test_op_request_1_v5(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op_request_1_v15(scd_api, scd_session):
   with open('./scd/resources/op_request_1_v15.json', 'r') as f:
@@ -106,7 +106,7 @@ def test_op_request_2_v5(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op_request_2_v15(scd_api, scd_session):
   with open('./scd/resources/op_request_2_v15.json', 'r') as f:
@@ -128,7 +128,7 @@ def test_op_query_degenerate_polygon_v5(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op_query_degenerate_polygon_v15(scd_api, scd_session):
   with open('./scd/resources/op_request_3_v15.json', 'r') as f:
@@ -150,7 +150,7 @@ def test_op_query_not_area_too_large_v5(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op_query_not_area_too_large_v15(scd_api, scd_session):
   with open('./scd/resources/op_request_4_v15.json', 'r') as f:
@@ -161,7 +161,7 @@ def test_op_query_not_area_too_large_v15(scd_api, scd_session):
 
 # ID conversion bug exposure
 # Reproduces issue #314
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_id_conversion_bug_v5(scd_api, scd_session):
   sub_uuid = uuid.uuid4()

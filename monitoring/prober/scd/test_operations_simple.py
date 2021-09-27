@@ -119,7 +119,7 @@ def test_ensure_clean_workspace_v5(scd_api, scd_session, scd_session2):
     assert False, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 def test_ensure_clean_workspace_v15(scd_api, scd_session, scd_session2):
   for op_id, owner in ((OP1_ID, scd_session), (OP2_ID, scd_session2)):
     resp = owner.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
@@ -156,7 +156,7 @@ def test_op1_does_not_exist_get_1_v5(scd_api, scd_session, scd_session2):
 # Op1 shouldn't exist by ID for USS1 when starting this sequence
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op1_does_not_exist_get_1_v15(scd_api, scd_session, scd_session2):
   resp = scd_session.get('/operational_intent_references/{}'.format(OP1_ID))
@@ -176,7 +176,7 @@ def test_op1_does_not_exist_get_2_v5(scd_api, scd_session2):
 # Op1 shouldn't exist by ID for USS2 when starting this sequence
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op1_does_not_exist_get_2_v15(scd_api, scd_session2):
   resp = scd_session2.get('/operational_intent_references/{}'.format(OP1_ID))
@@ -203,7 +203,7 @@ def test_op1_does_not_exist_query_1_v5(scd_api, scd_session, scd_session2):
 # Op1 shouldn't exist when searching for USS1 when starting this sequence
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op1_does_not_exist_query_1_v15(scd_api, scd_session, scd_session2):
   if scd_session is None:
@@ -237,7 +237,7 @@ def test_op1_does_not_exist_query_2_v5(scd_api, scd_session, scd_session2):
 # Op1 shouldn't exist when searching for USS2 when starting this sequence
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_op1_does_not_exist_query_2_v15(scd_api, scd_session, scd_session2):
   if scd_session2 is None:
@@ -283,7 +283,7 @@ def test_create_op1_v5(scd_api, scd_session, scd_session2):
 # Create Op1 normally from USS1 (also creates implicit Subscription)
 # Preconditions: None
 # Mutations: Operation OP1_ID created by scd_session user
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_op1_v15(scd_api, scd_session, scd_session2):
   req = _make_op1_request()
@@ -328,7 +328,7 @@ def test_delete_implicit_sub_v5(scd_api, scd_session, scd_session2):
 # Try (unsuccessfully) to delete the implicit Subscription
 # Preconditions: Operation OP1_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_implicit_sub_v15(scd_api, scd_session, scd_session2):
   if scd_session is None:
@@ -354,7 +354,7 @@ def test_delete_op1_by_uss2_v5(scd_api, scd_session, scd_session2):
 # Try (unsuccessfully) to delete Op1 from non-owning USS
 # Preconditions: Operation OP1_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_op1_by_uss2_v15(scd_api, scd_session, scd_session2):
   resp = scd_session2.delete('/operational_intent_references/{}'.format(OP1_ID))
@@ -375,7 +375,7 @@ def test_create_op2_no_sub_v5(scd_api, scd_session, scd_session2):
 # Try to create Op2 without specifying a valid Subscription
 # Preconditions: Operation OP1_ID created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_op2_no_sub_v15(scd_api, scd_session, scd_session2):
   req = _make_op2_request()
@@ -386,7 +386,7 @@ def test_create_op2_no_sub_v15(scd_api, scd_session, scd_session2):
 # Create a Subscription we can use for Op2
 # Preconditions: Operation OP1_ID created by scd_session user
 # Mutations: Subscription SUB2_ID created by scd_session2 user
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_op2sub(scd_api, scd_session, scd_session2):
   if scd_session2 is None:
@@ -400,7 +400,7 @@ def test_create_op2sub(scd_api, scd_session, scd_session2):
   }
   if scd_api == scd.API_0_3_5:
     req.update({"old_version": 0, "notify_for_operations": True})
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req.update({"notify_for_operational_intents": True})
   
   resp = scd_session2.put('/subscriptions/{}'.format(SUB2_ID), json=req)
@@ -445,7 +445,7 @@ def test_create_op2_no_key_v5(scd_api, scd_session, scd_session2):
 #   * Operation OP1_ID created by scd_session user
 #   * Subscription SUB2_ID created by scd_session2 user
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_op2_no_key_v15(scd_api, scd_session, scd_session2):
   req = _make_op2_request()
@@ -506,7 +506,7 @@ def test_create_op2_v5(scd_api, scd_session, scd_session2):
 #   * Operation OP1_ID created by scd_session user
 #   * Subscription SUB2_ID created by scd_session2 user
 # Mutations: Operation OP2_ID created by scd_session2 user
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_op2_v15(scd_api, scd_session, scd_session2):
   req = _make_op2_request()
@@ -574,7 +574,7 @@ def test_read_ops_from_uss1_v5(scd_api, scd_session, scd_session2):
 #   * Operation OP1_ID created by scd_session user
 #   * Operation OP2_ID created by scd_session2 user
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_read_ops_from_uss1_v15(scd_api, scd_session, scd_session2):
   if scd_session is None:
@@ -624,7 +624,7 @@ def test_read_ops_from_uss2_v5(scd_api, scd_session, scd_session2):
 #   * Operation OP1_ID created by scd_session user
 #   * Operation OP2_ID created by scd_session2 user
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_read_ops_from_uss2_v15(scd_api, scd_session, scd_session2):
   if scd_session2 is None:
@@ -692,7 +692,7 @@ def test_mutate_op1_bad_key_v5(scd_api, scd_session, scd_session2):
 #   * Operation OP1_ID created by scd_session user
 #   * Operation OP2_ID created by scd_session2 user
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_op1_bad_key_v15(scd_api, scd_session, scd_session2):
   resp = scd_session.get('/operational_intent_references/{}'.format(OP1_ID))
@@ -782,7 +782,7 @@ def test_mutate_op1_v5(scd_api, scd_session, scd_session2):
 #   * Subscription SUB2_ID created by scd_session2 user
 #   * Operation OP2_ID created by scd_session2 user
 # Mutations: Operation OP1_ID mutated to second version
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_op1_v15(scd_api, scd_session, scd_session2):
   resp = scd_session.get('/operational_intent_references/{}'.format(OP1_ID))
@@ -827,7 +827,7 @@ def test_mutate_op1_v15(scd_api, scd_session, scd_session2):
 #   * Subscription SUB2_ID created by scd_session2 user
 #   * Operation OP2_ID created by scd_session2 user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_dependent_sub(scd_api, scd_session, scd_session2):
   if scd_session2 is None:
@@ -842,7 +842,7 @@ def test_delete_dependent_sub(scd_api, scd_session, scd_session2):
 #   * Subscription SUB2_ID created by scd_session2 user
 #   * Operation OP2_ID created by scd_session2 user
 # Mutations: Subscription SUB2_ID mutated
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub2(scd_api, scd_session, scd_session2):
   if scd_session2 is None:
@@ -872,7 +872,7 @@ def test_mutate_sub2(scd_api, scd_session, scd_session2):
     resp = scd_session2.put('/subscriptions/{}'.format(SUB2_ID), json=req)
     assert resp.status_code == 400, resp.content
     req['notify_for_operations'] = True
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req['notify_for_operational_intents'] = False
     resp = scd_session2.put('/subscriptions/{}'.format(SUB2_ID), json=req)
     assert resp.status_code == 400, resp.content
@@ -963,7 +963,7 @@ def test_delete_op1_v5(scd_api, scd_session, scd_session2):
 #   * Subscription SUB2_ID created/mutated by scd_session2 user
 #   * Operation OP2_ID created by scd_session2 user
 # Mutations: Operation OP1_ID deleted
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_op1_v15(scd_api, scd_session, scd_session2):
   resp = scd_session.delete('/operational_intent_references/{}'.format(OP1_ID))
@@ -1015,7 +1015,7 @@ def test_delete_op2_v5(scd_api, scd_session, scd_session2):
 #   * Subscription SUB2_ID created/mutated by scd_session2 user
 #   * Operation OP2_ID created by scd_session2 user
 # Mutations: Operation OP2_ID deleted
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_op2_v15(scd_api, scd_session, scd_session2):
   resp = scd_session2.delete('/operational_intent_references/{}'.format(OP2_ID))
@@ -1041,7 +1041,7 @@ def test_delete_op2_v15(scd_api, scd_session, scd_session2):
 #   * Subscription SUB2_ID created/mutated by scd_session2 user
 #   * Operation OP2_ID deleted
 # Mutations: Subscription SUB2_ID deleted
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_sub2(scd_api, scd_session2):
   if scd_session2 is None:
