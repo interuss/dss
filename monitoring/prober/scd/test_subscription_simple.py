@@ -16,11 +16,10 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
-from monitoring.prober import utils
-from monitoring.prober.infrastructure import for_api_versions
+from monitoring.prober.infrastructure import for_api_versions, register_resource_type
 
 
-SUB_ID = ''
+SUB_TYPE = register_resource_type(220, 'Subscription')
 
 
 def test_set_test_owner_ids(test_owner):
@@ -29,10 +28,10 @@ def test_set_test_owner_ids(test_owner):
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-def test_ensure_clean_workspace(scd_api, scd_session):
-  resp = scd_session.get('/subscriptions/{}'.format(SUB_ID), scope=SCOPE_SC)
+def test_ensure_clean_workspace(ids, scd_api, scd_session):
+  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)), scope=SCOPE_SC)
   if resp.status_code == 200:
-    resp = scd_session.delete('/subscriptions/{}'.format(SUB_ID), scope=SCOPE_SC)
+    resp = scd_session.delete('/subscriptions/{}'.format(ids(SUB_TYPE)), scope=SCOPE_SC)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected.
@@ -80,56 +79,55 @@ def _check_sub1(data, sub_id, scd_api):
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_sub_does_not_exist_get(scd_api, scd_session):
+def test_sub_does_not_exist_get(ids, scd_api, scd_session):
   if scd_session is None:
     return
-  resp = scd_session.get('/subscriptions/{}'.format(SUB_ID))
+  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 404, resp.content
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_sub_does_not_exist_query(scd_api, scd_session):
+def test_sub_does_not_exist_query(ids, scd_api, scd_session):
   if scd_session is None:
     return
-  time_now = datetime.datetime.utcnow()
   resp = scd_session.post('/subscriptions/query', json={
     'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(12, -34, 300))
   })
   assert resp.status_code == 200, resp.content
-  assert SUB_ID not in [sub['id'] for sub in resp.json().get('subscriptions', [])]
+  assert ids(SUB_TYPE) not in [sub['id'] for sub in resp.json().get('subscriptions', [])]
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_create_sub(scd_api, scd_session):
+def test_create_sub(ids, scd_api, scd_session):
   if scd_session is None:
     return
   req = _make_sub1_req(scd_api)
-  resp = scd_session.put('/subscriptions/{}'.format(SUB_ID), json=req)
+  resp = scd_session.put('/subscriptions/{}'.format(ids(SUB_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
   assert_datetimes_are_equal(data['subscription']['time_start']['value'], req['extents']['time_start']['value'])
   assert_datetimes_are_equal(data['subscription']['time_end']['value'], req['extents']['time_end']['value'])
-  _check_sub1(data, SUB_ID, scd_api)
+  _check_sub1(data, ids(SUB_TYPE), scd_api)
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_get_sub_by_id(scd_api, scd_session):
+def test_get_sub_by_id(ids, scd_api, scd_session):
   if scd_session is None:
     return
-  resp = scd_session.get('/subscriptions/{}'.format(SUB_ID))
+  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  _check_sub1(data, SUB_ID, scd_api)
+  _check_sub1(data, ids(SUB_TYPE), scd_api)
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_get_sub_by_search(scd_api, scd_session):
+def test_get_sub_by_search(ids, scd_api, scd_session):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
@@ -142,17 +140,17 @@ def test_get_sub_by_search(scd_api, scd_session):
   if resp.status_code != 200:
     print(resp.content)
   assert resp.status_code == 200, resp.content
-  assert SUB_ID in [x['id'] for x in resp.json()['subscriptions']]
+  assert ids(SUB_TYPE) in [x['id'] for x in resp.json()['subscriptions']]
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_mutate_sub(scd_api, scd_session):
+def test_mutate_sub(ids, scd_api, scd_session):
   if scd_session is None:
     return
 
   # GET current sub1 before mutation
-  resp = scd_session.get('/subscriptions/{}'.format(SUB_ID))
+  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 200, resp.content
   existing_sub = resp.json().get('subscription', None)
   assert existing_sub is not None
@@ -162,7 +160,7 @@ def test_mutate_sub(scd_api, scd_session):
     req['old_version'] = existing_sub['version']
   req['notify_for_constraints'] = True
 
-  resp = scd_session.put('/subscriptions/{}'.format(SUB_ID), json=req)
+  resp = scd_session.put('/subscriptions/{}'.format(ids(SUB_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
@@ -172,25 +170,25 @@ def test_mutate_sub(scd_api, scd_session):
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_delete_sub(scd_api, scd_session):
+def test_delete_sub(ids, scd_api, scd_session):
   if scd_session is None:
     return
-  resp = scd_session.delete('/subscriptions/{}'.format(SUB_ID))
+  resp = scd_session.delete('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 200, resp.content
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_get_deleted_sub_by_id(scd_api, scd_session):
+def test_get_deleted_sub_by_id(ids, scd_api, scd_session):
   if scd_session is None:
     return
-  resp = scd_session.get('/subscriptions/{}'.format(SUB_ID))
+  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 404, resp.content
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_get_deleted_sub_by_search(scd_api, scd_session):
+def test_get_deleted_sub_by_search(ids, scd_api, scd_session):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
@@ -201,4 +199,4 @@ def test_get_deleted_sub_by_search(scd_api, scd_session):
                                         scd.make_circle(12.00001, -34.00001, 50))
     })
   assert resp.status_code == 200, resp.content
-  assert SUB_ID not in [x['id'] for x in resp.json()['subscriptions']]
+  assert ids(SUB_TYPE) not in [x['id'] for x in resp.json()['subscriptions']]
