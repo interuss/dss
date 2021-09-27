@@ -22,12 +22,10 @@ access tokens in that circumstance:
 The value for each of these flags is a specification for how to retrieve access
 tokens.  See [the auth spec documentation](../monitorlib/README.md#Auth_specs)
 for the format of these values.  Note that if an authorization spec is omitted,
-the tests that depend on that authorization will be skipped. 
+the tests that depend on that authorization will be skipped.
 
 Example: `--rid-auth "UsernamePassword(https://example.com/token, username=uss1,
 password=uss1, client_id=uss1)"`
-
-`--test-owner` flag should be set to uniquely identify a prober test owner. Supported characters for an owner name are letters, numbers and _.  
 
 ## Running pytest via Docker
 This approach takes slightly longer to execute due to building the prober image,
@@ -37,7 +35,6 @@ running locally.  From the root of this repo:
 ```shell script
 docker run --rm $(docker build -q -f monitoring/prober/Dockerfile monitoring) \
     --dss-endpoint <URL> \
-    --test-owner <owner-name> \
     [--rid-auth <SPEC>] \
     [--scd-auth1 <SPEC>] \
     [--scd-auth2 <SPEC>]
@@ -55,7 +52,6 @@ docker build -f prober/Dockerfile . -t local-prober
 ```shell script
 docker run --rm local-prober \
     --dss-endpoint <URL> \
-    --test-owner <owner-name> \
     [--rid-auth <SPEC>] \
     [--scd-auth1 <SPEC>] \
     [--scd-auth2 <SPEC>]
@@ -79,12 +75,25 @@ pip install -r requirements.txt
 . ./env/bin/activate
 pytest \
     --dss-endpoint <URL> \
-    --test-owner <owner-name> \
     [--rid-auth <SPEC>] \
     [--scd-auth1 <SPEC>] \
     [--scd-auth2 <SPEC>] \
     -vv .
 ```
+
+## Specifying specific tests
+
+### All the tests in a folder
+
+E.g.: `test/docker_e2e.sh scd/`
+
+### All the tests in a file
+
+`test/docker_e2e.sh scd/test_constraint_simple.py`
+
+### A specific test
+
+`test/docker_e2e.sh scd/test_constraint_simple.py::test_ensure_clean_workspace`
 
 ## Writing prober tests
 This project strives to make prober tests as easy as possible to create in order
@@ -135,14 +144,21 @@ Specifically:
    after all the tests in the test file complete successfully.
 1. Each test file interacting with resources should have the first test in the
    file delete any pre-existing resource that would interfere with the test.
-1. Static IDs should be used for all test resources.  These static IDs can be
-   defined at the module (test file) level as constants.
-1. Static IDs should, whenever possible, clearly stand out as test IDs.  For
-   UUID-formatted IDs, the suggestion is to replace the first and last 6 digits
-   of the ID with zeros.  Tests that depend on ID value for their behavior do
-   not need to follow this guideline.  Tests built from a failing query should
-   try changing the ID to stand out as a test ID, and keep that change as long
-   as the behavior illustrated does not change.
+1. Test IDs should be used for all test resources. These static IDs can be
+   obtained using the `ids` fixture providing a registered resource type code.
+   E.g.:
+   ```python
+   from monitoring.prober.infrastructure import register_resource_type
+   [...]
+   CONFLICTING_OI_TYPE = register_resource_type(103, "OI that conflicts with first OI")
+   [...]
+   def test_create_conflict(ids):
+     conflicting_id = ids(CONFLICTING_OI_TYPE)
+   ```
+   The resource type code must be unique among all prober tests. To determine
+   an appropriate resource type code for a new resource, see the comment above
+   `register_resource_type` in [infrastructure.py](infrastructure.py), and then
+   make sure to update that comment after adding new resource type codes.
 1. Tests should be designed to pass even with pre-existing resources which may
    even be in the same area/time range/etc as the test resources.  Toward this
    end, checking the exact count of results returned by a query, or expecting a
@@ -150,3 +166,7 @@ Specifically:
 
 The guidelines above should allow the prober to be used on production DSS
 instances without any nominal adverse effects.
+
+If an orphaned resource with a test ID is found in a DSS, the owner and origin
+of that resource can be determined from the ID with
+[decode_id.py](decode_id.py).

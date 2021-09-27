@@ -13,16 +13,18 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.rid import SCOPE_READ
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
+from monitoring.prober.infrastructure import register_resource_type
 from . import common
 
-SUB_ID = '000000e0-cf69-456a-91fb-fc9532000000'
+
+SUB_TYPE = register_resource_type(327, 'Subscription')
 
 
-def test_ensure_clean_workspace(session):
-  resp = session.get('/subscriptions/{}'.format(SUB_ID), scope=SCOPE_READ)
+def test_ensure_clean_workspace(ids, session):
+  resp = session.get('/subscriptions/{}'.format(ids(SUB_TYPE)), scope=SCOPE_READ)
   if resp.status_code == 200:
     version = resp.json()['subscription']['version']
-    resp = session.delete('/subscriptions/{}/{}'.format(SUB_ID, version), scope=SCOPE_READ)
+    resp = session.delete('/subscriptions/{}/{}'.format(ids(SUB_TYPE), version), scope=SCOPE_READ)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected.
@@ -32,14 +34,14 @@ def test_ensure_clean_workspace(session):
 
 
 @default_scope(SCOPE_READ)
-def test_sub_does_not_exist(session):
-  resp = session.get('/subscriptions/{}'.format(SUB_ID))
+def test_sub_does_not_exist(ids, session):
+  resp = session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 404, resp.content
-  assert 'Subscription {} not found'.format(SUB_ID) in resp.json()['message']
+  assert 'Subscription {} not found'.format(ids(SUB_TYPE)) in resp.json()['message']
 
 
 @default_scope(SCOPE_READ)
-def test_create_sub(session):
+def test_create_sub(ids, session):
   """ASTM Compliance Test: DSS0030_C_PUT_SUB."""
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
@@ -61,12 +63,12 @@ def test_create_sub(session):
     },
   }
   resp = session.put(
-      '/subscriptions/{}'.format(SUB_ID),
+      '/subscriptions/{}'.format(ids(SUB_TYPE)),
       json=req_body)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  assert data['subscription']['id'] == SUB_ID
+  assert data['subscription']['id'] == ids(SUB_TYPE)
   assert data['subscription']['notification_index'] == 0
   assert data['subscription']['callbacks'] == {
       'identification_service_area_url': 'https://example.com/foo'
@@ -78,13 +80,13 @@ def test_create_sub(session):
 
 
 @default_scope(SCOPE_READ)
-def test_get_sub_by_id(session):
+def test_get_sub_by_id(ids, session):
   """ASTM Compliance Test: DSS0030_E_GET_SUB_BY_ID."""
-  resp = session.get('/subscriptions/{}'.format(SUB_ID))
+  resp = session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  assert data['subscription']['id'] == SUB_ID
+  assert data['subscription']['id'] == ids(SUB_TYPE)
   assert data['subscription']['notification_index'] == 0
   assert data['subscription']['callbacks'] == {
       'identification_service_area_url': 'https://example.com/foo'
@@ -92,11 +94,11 @@ def test_get_sub_by_id(session):
 
 
 @default_scope(SCOPE_READ)
-def test_get_sub_by_search(session):
+def test_get_sub_by_search(ids, session):
   """ASTM Compliance Test: DSS0030_F_GET_SUBS_BY_AREA."""
   resp = session.get('/subscriptions?area={}'.format(common.GEO_POLYGON_STRING))
   assert resp.status_code == 200, resp.content
-  assert SUB_ID in [x['id'] for x in resp.json()['subscriptions']]
+  assert ids(SUB_TYPE) in [x['id'] for x in resp.json()['subscriptions']]
 
 
 @default_scope(SCOPE_READ)
@@ -106,41 +108,41 @@ def test_get_sub_by_searching_huge_area(session):
 
 
 @default_scope(SCOPE_READ)
-def test_delete_sub_empty_version(session):
-  resp = session.delete('/subscriptions/{}/'.format(SUB_ID))
+def test_delete_sub_empty_version(ids, session):
+  resp = session.delete('/subscriptions/{}/'.format(ids(SUB_TYPE)))
   assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_READ)
-def test_delete_sub_wrong_version(session):
-  resp = session.delete('/subscriptions/{}/fake_version'.format(SUB_ID))
+def test_delete_sub_wrong_version(ids, session):
+  resp = session.delete('/subscriptions/{}/fake_version'.format(ids(SUB_TYPE)))
   assert resp.status_code == 400, resp.content
 
 
 @default_scope(SCOPE_READ)
-def test_delete_sub(session):
+def test_delete_sub(ids, session):
   """ASTM Compliance Test: DSS0030_D_DELETE_SUB."""
   # GET the sub first to find its version.
-  resp = session.get('/subscriptions/{}'.format(SUB_ID))
+  resp = session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 200, resp.content
   version = resp.json()['subscription']['version']
 
   # Then delete it.
-  resp = session.delete('/subscriptions/{}/{}'.format(SUB_ID, version))
+  resp = session.delete('/subscriptions/{}/{}'.format(ids(SUB_TYPE), version))
   assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_READ)
-def test_get_deleted_sub_by_id(session):
-  resp = session.get('/subscriptions/{}'.format(SUB_ID))
+def test_get_deleted_sub_by_id(ids, session):
+  resp = session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 404, resp.content
 
 
 @default_scope(SCOPE_READ)
-def test_get_deleted_sub_by_search(session):
+def test_get_deleted_sub_by_search(ids, session):
   resp = session.get('/subscriptions?area={}'.format(common.GEO_POLYGON_STRING))
   assert resp.status_code == 200, resp.content
-  assert SUB_ID not in [x['id'] for x in resp.json()['subscriptions']]
+  assert ids(SUB_TYPE) not in [x['id'] for x in resp.json()['subscriptions']]
 
 
 @default_scope(SCOPE_READ)
