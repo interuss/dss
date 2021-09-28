@@ -11,8 +11,12 @@
   - confirm deletion by get and query
 """
 
+import aiohttp
+import asyncio
 import datetime
 import functools
+import json
+import pytest
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from monitoring.monitorlib.infrastructure import default_scope
@@ -214,20 +218,25 @@ def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
+@pytest.mark.asyncio
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_create_ops_concurrent(ids, scd_api, scd_session):
+async def test_create_ops_concurrent(ids, scd_api, scd_session):
   assert len(ovn_map) == 0
   op_req_map = {}
   op_resp_map = {}
-  # Create opetions concurrently
+  # Create operations concurrently
+  loop = asyncio.get_running_loop()
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
+    tasks = {}
     for idx, op_id in enumerate(map(ids, OP_TYPES)):
       req = _make_op_request(idx)
       op_req_map[op_id] = req
+      tasks.update({op_id: await loop.run_in_executor(
+            executor, _put_operation, req, op_id, scd_session, scd_api)})
+    for op_id, result in tasks.items():
+      op_resp_map[op_id] = result
 
-      future = executor.submit(_put_operation, req, op_id, scd_session, scd_api)
-      future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
     req = op_req_map[op_id]
@@ -250,15 +259,18 @@ def test_create_ops_concurrent(ids, scd_api, scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
+@pytest.mark.asyncio
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
+async def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
-
   # Get opetions concurrently
+  loop = asyncio.get_running_loop()
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for op_id in map(ids, OP_TYPES):
-      future = executor.submit(_get_operation, op_id, scd_session, scd_api)
-      future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+    tasks = {op_id: await loop.run_in_executor(
+      executor, _get_operation, op_id, scd_session, scd_api
+    ) for op_id in map(ids, OP_TYPES)}
+    for op_id, result in tasks.items():
+      op_resp_map[op_id] = result
 
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
@@ -276,17 +288,21 @@ def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
+@pytest.mark.asyncio
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
+async def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
   total_found_ids = set()
-
   # Query opetions concurrently
+  loop = asyncio.get_running_loop()
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for idx in range(len(OP_TYPES)):
-      future = executor.submit(_query_operation, idx, scd_session, scd_api)
-      future.add_done_callback(functools.partial(_collect_resp_callback, idx, op_resp_map))
+    tasks = {idx: await loop.run_in_executor(
+      executor, _query_operation, idx, scd_session, scd_api
+    ) for idx in range(len(OP_TYPES))}
+    for idx, result in tasks.items():
+      op_resp_map[idx] = result
+
 
   for idx, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
@@ -345,15 +361,18 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session):
 
 # Preconditions: Operations with ids in OP_IDS mutated to second version
 # Mutations: Operations with ids in OP_IDS deleted
+@pytest.mark.asyncio
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-def test_delete_op_concurrent(ids, scd_api, scd_session):
+async def test_delete_op_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
-
+  loop = asyncio.get_running_loop()
   # Delete operations concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for op_id in map(ids, OP_TYPES):
-      future = executor.submit(_delete_operation, op_id, scd_session, scd_api)
-      future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+    tasks = {op_id: await loop.run_in_executor(
+      executor, _delete_operation, op_id, scd_session, scd_api
+      ) for op_id in map(ids, OP_TYPES)}
+    for idx, result in tasks.items():
+      op_resp_map[idx] = result
 
   assert len(op_resp_map) == len(OP_TYPES)
 
