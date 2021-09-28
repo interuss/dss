@@ -21,11 +21,6 @@ BASE_URL = 'https://example.com/uss'
 CONSTRAINT_TYPE = register_resource_type(1, 'Single constraint')
 
 
-def test_set_test_owner_ids(test_owner):
-  global CONSTRAINT_ID
-  CONSTRAINT_ID = utils.encode_owner(test_owner, '0000006f-5a03-482a-a7e1-23c29c000000')
-
-
 def _make_c1_request():
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)

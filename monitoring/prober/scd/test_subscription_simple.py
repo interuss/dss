@@ -22,11 +22,6 @@ from monitoring.prober.infrastructure import for_api_versions, register_resource
 SUB_TYPE = register_resource_type(220, 'Subscription')
 
 
-def test_set_test_owner_ids(test_owner):
-  global SUB_ID
-  SUB_ID = utils.encode_owner(test_owner, '000000b7-cf7e-4d9a-af00-6963ca000000')
-
-
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 def test_ensure_clean_workspace(ids, scd_api, scd_session):
   resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)), scope=SCOPE_SC)

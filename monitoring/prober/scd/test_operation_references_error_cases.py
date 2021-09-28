@@ -17,13 +17,6 @@ OP_TYPE = register_resource_type(6, 'Primary operational intent')
 OP_TYPE2 = register_resource_type(7, 'Conflicting operational intent')
 
 
-def test_set_test_owner_ids(test_owner):
-  global OP_ID
-  global OP_ID2
-  OP_ID = utils.encode_owner(test_owner, '00000028-728d-40c4-8eb2-20d19c000000')
-  OP_ID2 = utils.encode_owner(test_owner, '0000006e-b4ec-48a3-ae38-426042000000')
-
-
 @for_api_versions(scd.API_0_3_5)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
   for op_id in (ids(OP_TYPE), ids(OP_TYPE2)):

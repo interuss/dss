@@ -22,13 +22,6 @@ OP2_TYPE = register_resource_type(211, 'Operational intent 2')
 SUB_TYPE = register_resource_type(212, 'Subscription')
 
 
-def test_set_test_owner_ids(test_owner):
-  global OP1_ID
-  global OP2_ID
-  OP1_ID = utils.encode_owner(test_owner, '00000020-b6ee-4082-b6e7-75eb4f000000')
-  OP2_ID = utils.encode_owner(test_owner, '00000000-ee51-4700-873d-e10911000000')
-
-
 @for_api_versions(scd.API_0_3_5)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
   for op_id in map(ids, (OP1_TYPE, OP2_TYPE)):
