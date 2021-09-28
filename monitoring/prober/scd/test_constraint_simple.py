@@ -273,21 +273,20 @@ def test_mutate_constraint(ids, scd_api, scd_session):
     ovn = existing_constraint["ovn"]
 
     # FIXME: OVNs are not URL safe
-    assert False, ovn
     resp = scd_session.put('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_SC)
-    assert resp.status_code == 403, resp.content
+    assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
   
     resp = scd_session.put('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_CP)
-    assert resp.status_code == 403, resp.content
+    assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 
     resp = scd_session.put('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_CM_SA)
-    assert resp.status_code == 403, resp.content
+    assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 
     resp = scd_session.put('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_AA)
-    assert resp.status_code == 403, resp.content
+    assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 
     resp = scd_session.put('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_CM)
-    assert resp.status_code == 200, resp.content
+    assert resp.status_code == 200, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 
   data = resp.json()
   constraint = data['constraint_reference']
@@ -330,29 +329,26 @@ def test_delete_constraint(ids, scd_api, scd_session):
   elif scd_api == scd.API_0_3_17:
     ovn = existing_constraint["ovn"]
 
-    # FIXME: OVNs are not URL safe
-    assert False, ovn
-
     resp = scd_session.delete('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_SC)
-    assert resp.status_code == 403, resp.content
+    assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
   
     resp = scd_session.delete('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_CP)
-    assert resp.status_code == 403, resp.content
+    assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 
     resp = scd_session.delete('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_CM_SA)
-    assert resp.status_code == 403, resp.content
+    assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 
     resp = scd_session.delete('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_AA)
-    assert resp.status_code == 403, resp.content
+    assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 
     resp = scd_session.delete('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_CM)
-    assert resp.status_code == 200, resp.content
+    assert resp.status_code == 200, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 
 
 # Preconditions: Constraint SIMPLE_CONSTRAINT deleted
 # Mutations: None
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-@default_scope(SCOPE_SC)
+@default_scope(SCOPE_CM)
 def test_get_deleted_constraint_by_id(ids, scd_api, scd_session):
    #FIXME: Depends on prev test
   resp = scd_session.get('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)))
@@ -362,7 +358,7 @@ def test_get_deleted_constraint_by_id(ids, scd_api, scd_session):
 # Preconditions: Constraint SIMPLE_CONSTRAINT deleted
 # Mutations: None
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-@default_scope(SCOPE_SC)
+@default_scope(SCOPE_CM)
 def test_get_deleted_constraint_by_search(ids, scd_api, scd_session):
    #FIXME: Depends on prev test
   resp = scd_session.post('/constraint_references/query', json={
