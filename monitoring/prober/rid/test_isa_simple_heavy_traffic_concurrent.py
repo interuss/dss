@@ -8,7 +8,6 @@
 
 import datetime
 import functools
-import json
 import re
 from concurrent.futures.thread import ThreadPoolExecutor
 
@@ -16,17 +15,13 @@ from monitoring.monitorlib import rid
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
+from monitoring.prober.infrastructure import register_resource_type
 from . import common
-
-
-def _load_isa_ids():
-  with open('./rid/resources/isa_ids_heavy_traffic_concurrent.json', 'r') as f:
-    return json.load(f)
 
 
 THREAD_COUNT = 10
 FLIGHTS_URL = 'https://example.com/dss'
-ISA_IDS = _load_isa_ids()
+ISA_TYPES = [register_resource_type(224 + i, 'Operational intent {}'.format(i)) for i in range(100)]
 
 
 def _intersection(list1, list2):
@@ -66,8 +61,8 @@ def _collect_resp_callback(key, resp_map, future):
   resp_map[key] = future.result()
 
 
-def test_ensure_clean_workspace(session):
-  for isa_id in ISA_IDS:
+def test_ensure_clean_workspace(ids, session):
+  for isa_id in map(ids, ISA_TYPES):
     resp = session.get('/identification_service_areas/{}'.format(isa_id), scope=SCOPE_READ)
     if resp.status_code == 200:
       version = resp.json()['service_area']['version']
@@ -81,7 +76,7 @@ def test_ensure_clean_workspace(session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_create_isa_concurrent(session):
+def test_create_isa_concurrent(ids, session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
   req = _make_isa_request(time_start, time_end)
@@ -89,7 +84,7 @@ def test_create_isa_concurrent(session):
 
   # Create ISAs concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for isa_id in ISA_IDS:
+    for isa_id in map(ids, ISA_TYPES):
       future = executor.submit(_put_isa, isa_id, req, session)
       future.add_done_callback(functools.partial(_collect_resp_callback, isa_id, resp_map))
 
@@ -105,12 +100,12 @@ def test_create_isa_concurrent(session):
 
 
 @default_scope(SCOPE_READ)
-def test_get_isa_by_ids_concurrent(session):
+def test_get_isa_by_ids_concurrent(ids, session):
   resp_map = {}
 
   # Get ISAs concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for isa_id in ISA_IDS:
+    for isa_id in map(ids, ISA_TYPES):
       future = executor.submit(_get_isa, isa_id, session)
       future.add_done_callback(functools.partial(_collect_resp_callback, isa_id, resp_map))
 
@@ -123,21 +118,21 @@ def test_get_isa_by_ids_concurrent(session):
 
 
 @default_scope(SCOPE_READ)
-def test_get_isa_by_search(session):
+def test_get_isa_by_search(ids, session):
   resp = session.get('/identification_service_areas?area={}'.format(common.GEO_POLYGON_STRING))
 
   assert resp.status_code == 200, resp.content
   found_isa_ids = [x['id'] for x in resp.json()['service_areas']]
-  assert len(_intersection(ISA_IDS, found_isa_ids)) == len(ISA_IDS)
+  assert len(_intersection(map(ids, ISA_TYPES), found_isa_ids)) == len(ISA_TYPES)
 
 
-def test_delete_isa_concurrent(session):
+def test_delete_isa_concurrent(ids, session):
   resp_map = {}
   version_map = {}
 
   # GET ISAs concurrently to find their versions
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for isa_id in ISA_IDS:
+    for isa_id in map(ids, ISA_TYPES):
       future = executor.submit(_get_isa, isa_id, session)
       future.add_done_callback(functools.partial(_collect_resp_callback, isa_id, resp_map))
 
@@ -150,7 +145,7 @@ def test_delete_isa_concurrent(session):
 
   # Delete ISAs concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for isa_id in ISA_IDS:
+    for isa_id in map(ids, ISA_TYPES):
       future = executor.submit(_delete_isa, isa_id, version_map[isa_id], session)
       future.add_done_callback(functools.partial(_collect_resp_callback, isa_id, resp_map))
 
