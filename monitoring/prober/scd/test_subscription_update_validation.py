@@ -25,11 +25,6 @@ OP_TYPE = register_resource_type(221, 'Operational intent')
 sub_id = ''
 
 
-def test_set_test_owner_ids(test_owner):
-  global OP_ID
-  OP_ID = utils.encode_owner(test_owner, '00000073-ff83-443b-aa56-36671e000000')
-
-
 def _make_op_req():
   time_start = datetime.datetime.utcnow() + datetime.timedelta(minutes=20)
   time_end = time_start + datetime.timedelta(minutes=60)
