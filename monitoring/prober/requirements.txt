@@ -1,3 +1,1 @@
 -r ../monitorlib/requirements.txt
-aiohttp==3.7.4.post0
-pytest-asyncio==0.15.1
