@@ -1,3 +1,9 @@
+import math
+
+
+ID_CHAR_SET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_'
+MAX_OWNER_LENGTH = 12  # characters
+
 
 def bin_to_hex(bin_string):
   return format(int(bin_string,2), "02x")
@@ -22,56 +28,42 @@ def split_by(string_val, num=8):
 
 def get_ord_val(letter):
   """Encodes new ord value for ascii letters."""
-  ord_val = ord(letter)
-  if ord_val >= 48 and ord_val <= 57: # decimal numbers
-    return ord_val - 48
-  if ord_val >= 65 and ord_val <= 90: # capitals
-    return ord_val - 65 + 10
-  if ord_val >= 97 and ord_val <= 122: # small letters.
-    return ord_val - 97 + 10 + 26
-  if ord_val == 95:
-    return 63
+  v = ID_CHAR_SET.find(letter)
+  if v == -1:
+    v = 63
+  return v
 
 
 def get_ascii_val_from_bit_value(num):
   """Decodes new ord value to ascii letters."""
-  if num >=0 and num <= 9:
-    return chr(num + 48)
-  if num >= 10 and num <= 35:
-    return chr(num + 65 - 10)
-  if num >= 36 and num <= 62:
-    return chr(num + 97 - 10 - 26)
-  if num == 63:
-    return '_'
+  return ID_CHAR_SET[num] if num < 63 else '?'
 
 
-def encode_owner(owner_name, fixed_id):
+def encode_owner(owner_name: str) -> str:
+  """Encode an owner name as a 18-character hexidecimal string"""
   bits = ''
-  if len(owner_name) > 8:
-    string_val = owner_name[:4] + owner_name[-4:]
+  if len(owner_name) > MAX_OWNER_LENGTH:
+    string_val = owner_name[:math.ceil(MAX_OWNER_LENGTH/2)] + owner_name[-math.floor(MAX_OWNER_LENGTH/2):]
+  elif len(owner_name) < MAX_OWNER_LENGTH:
+    string_val = ('?' * (MAX_OWNER_LENGTH - len(owner_name))) + owner_name
   else:
     string_val = owner_name
   for letter in string_val:
     ord_val = get_ord_val(letter)
     bits += dec_to_bin(ord_val)
-  hex_codes = ''.join((bin_to_hex(s) for s in split_by(bits)[:6]))
-  fixed_code = list(fixed_id)
-  curr_pos = 16
-  hex_ptr = 0
-  while curr_pos <= 30 and hex_ptr < len(hex_codes):
-    if fixed_code[curr_pos] == '-':
-      curr_pos += 1
-    fixed_code[curr_pos] = hex_codes[hex_ptr]
-    curr_pos += 1
-    hex_ptr += 1
-  return ''.join(fixed_code)
+  return ''.join((bin_to_hex(s) for s in split_by(bits)))
 
 
-def decode_owner(owner_id):
-  if len(owner_id) < 30:
+def encode_resource_type_code(resource_type: int) -> str:
+  """Encode a number between 0 and 0xFFFF as a 4-character hexidecimal string"""
+  return format(resource_type, "04x")
+
+
+def decode_owner(owner_id: str) -> str:
+  """Decode an owner name from an 18-character hexidecimal string"""
+  if len(owner_id) != 18:
     raise ValueError('Invalid owner id.')
-  owner_hex_code = (owner_id[16:30]).replace('-', '')
-  hex_splits = split_by(owner_hex_code, num=2)
+  hex_splits = split_by(owner_id, num=2)
   bits = ''
   for h in hex_splits:
     bits += hex_to_bin(h)
@@ -79,6 +71,13 @@ def decode_owner(owner_id):
   for seq in split_by(bits, 6):
     num = bin_to_dec(seq)
     test_owner += get_ascii_val_from_bit_value(num)
-  if len(test_owner) == 8:
-      return test_owner[:4] + '.. ' + test_owner[-4:]
+  if test_owner[0] != '?':
+      return test_owner[:math.ceil(MAX_OWNER_LENGTH/2)] + '..' + test_owner[-math.floor(MAX_OWNER_LENGTH/2):]
+  while test_owner[0] == '?':
+    test_owner = test_owner[1:]
   return test_owner
+
+
+def decode_resouce_type(id: str) -> int:
+  """Decode a number between 0 and 0xFFFF from a 4-character hex string"""
+  return int(id, 16)

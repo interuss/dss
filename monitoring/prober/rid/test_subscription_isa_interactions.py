@@ -12,17 +12,19 @@ import datetime
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
+from monitoring.prober.infrastructure import register_resource_type
 from . import common
 
-ISA_ID = '000000d5-aa3d-46b8-b2ec-dd22e7000000'
-SUB_ID = '000000ee-85c7-4bc6-8995-aa5f81000000'
+
+ISA_TYPE = register_resource_type(325, 'ISA')
+SUB_TYPE = register_resource_type(326, 'Subscription')
 
 
-def test_ensure_clean_workspace(session):
-  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
+def test_ensure_clean_workspace(ids, session):
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope=SCOPE_READ)
   if resp.status_code == 200:
     version = resp.json()['service_area']['version']
-    resp = session.delete('/identification_service_areas/{}/{}'.format(ISA_ID, version), scope=SCOPE_WRITE)
+    resp = session.delete('/identification_service_areas/{}/{}'.format(ids(ISA_TYPE), version), scope=SCOPE_WRITE)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected.
@@ -30,10 +32,10 @@ def test_ensure_clean_workspace(session):
   else:
     assert False, resp.content
 
-  resp = session.get('/subscriptions/{}'.format(SUB_ID), scope=SCOPE_READ)
+  resp = session.get('/subscriptions/{}'.format(ids(SUB_TYPE)), scope=SCOPE_READ)
   if resp.status_code == 200:
     version = resp.json()['subscription']['version']
-    resp = session.delete('/subscriptions/{}/{}'.format(SUB_ID, version), scope=SCOPE_READ)
+    resp = session.delete('/subscriptions/{}/{}'.format(ids(SUB_TYPE), version), scope=SCOPE_READ)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected
@@ -43,12 +45,12 @@ def test_ensure_clean_workspace(session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_create_isa(session):
+def test_create_isa(ids, session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/identification_service_areas/{}'.format(ISA_ID),
+      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -67,12 +69,12 @@ def test_create_isa(session):
 
 
 @default_scope(SCOPE_READ)
-def test_create_subscription(session):
+def test_create_subscription(ids, session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/subscriptions/{}'.format(SUB_ID),
+      '/subscriptions/{}'.format(ids(SUB_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -94,19 +96,19 @@ def test_create_subscription(session):
   # The response should include our ISA.
   data = resp.json()
   assert data['subscription']['notification_index'] == 0
-  assert ISA_ID in [x['id'] for x in data['service_areas']]
+  assert ids(ISA_TYPE) in [x['id'] for x in data['service_areas']]
 
 
-def test_modify_isa(session):
+def test_modify_isa(ids, session):
   # GET the ISA first to find its version.
-  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope=SCOPE_READ)
   assert resp.status_code == 200, resp.content
   version = resp.json()['service_area']['version']
 
   # Then modify it.
   time_end = datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
   resp = session.put(
-      '/identification_service_areas/{}/{}'.format(ISA_ID, version),
+      '/identification_service_areas/{}/{}'.format(ids(ISA_TYPE), version),
       json={
           'extents': {
               'spatial_volume': {
@@ -130,20 +132,20 @@ def test_modify_isa(session):
           'https://example.com/foo',
       'subscriptions': [{
           'notification_index': 1,
-          'subscription_id': SUB_ID,
+          'subscription_id': ids(SUB_TYPE),
       },],
   } in data['subscribers']
 
 
-def test_delete_isa(session):
+def test_delete_isa(ids, session):
   # GET the ISA first to find its version.
-  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope=SCOPE_READ)
   assert resp.status_code == 200, resp.content
   version = resp.json()['service_area']['version']
 
   # Then delete it.
   resp = session.delete('/identification_service_areas/{}/{}'.format(
-      ISA_ID, version), scope=SCOPE_WRITE)
+      ids(ISA_TYPE), version), scope=SCOPE_WRITE)
   assert resp.status_code == 200, resp.content
 
   # The response should include our subscription.
@@ -153,15 +155,15 @@ def test_delete_isa(session):
           'https://example.com/foo',
       'subscriptions': [{
           'notification_index': 2,
-          'subscription_id': SUB_ID,
+          'subscription_id': ids(SUB_TYPE),
       },],
   } in data['subscribers']
 
 
 @default_scope(SCOPE_READ)
-def test_delete_subscription(session):
+def test_delete_subscription(ids, session):
   # GET the sub first to find its version.
-  resp = session.get('/subscriptions/{}'.format(SUB_ID))
+  resp = session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
@@ -169,5 +171,5 @@ def test_delete_subscription(session):
   assert data['subscription']['notification_index'] == 2
 
   # Then delete it.
-  resp = session.delete('/subscriptions/{}/{}'.format(SUB_ID, version))
+  resp = session.delete('/subscriptions/{}/{}'.format(ids(SUB_TYPE), version))
   assert resp.status_code == 200, resp.content
