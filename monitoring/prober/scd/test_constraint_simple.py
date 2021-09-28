@@ -350,7 +350,6 @@ def test_delete_constraint(ids, scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_CM)
 def test_get_deleted_constraint_by_id(ids, scd_api, scd_session):
-   #FIXME: Depends on prev test
   resp = scd_session.get('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)))
   assert resp.status_code == 404, resp.content
 
@@ -360,7 +359,6 @@ def test_get_deleted_constraint_by_id(ids, scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_CM)
 def test_get_deleted_constraint_by_search(ids, scd_api, scd_session):
-   #FIXME: Depends on prev test
   resp = scd_session.post('/constraint_references/query', json={
     'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 300))
   })
