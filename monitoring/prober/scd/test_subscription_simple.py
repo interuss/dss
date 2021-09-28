@@ -22,7 +22,7 @@ from monitoring.prober.infrastructure import for_api_versions, register_resource
 SUB_TYPE = register_resource_type(220, 'Subscription')
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_ensure_clean_workspace(ids, scd_api, scd_session):
   resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)), scope=SCOPE_SC)
   if resp.status_code == 200:
@@ -45,7 +45,7 @@ def _make_sub1_req(scd_api):
   }
   if scd_api == scd.API_0_3_5:
     req.update({"old_version": 0, "notify_for_operations": True})
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req.update({"notify_for_operational_intents": True})
   return req
 
@@ -66,13 +66,13 @@ def _check_sub1(data, sub_id, scd_api):
     assert data['subscription']['notify_for_operations'] == True
     assert (('dependent_operations' not in data['subscription'])
             or len(data['subscription']['dependent_operations']) == 0)
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     assert data['subscription']['notify_for_operational_intents'] == True
     assert (('dependent_operational_intents' not in data['subscription'])
             or len(data['subscription']['dependent_operational_intents']) == 0)
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_sub_does_not_exist_get(ids, scd_api, scd_session):
   if scd_session is None:
@@ -81,7 +81,7 @@ def test_sub_does_not_exist_get(ids, scd_api, scd_session):
   assert resp.status_code == 404, resp.content
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_sub_does_not_exist_query(ids, scd_api, scd_session):
   if scd_session is None:
@@ -93,7 +93,7 @@ def test_sub_does_not_exist_query(ids, scd_api, scd_session):
   assert ids(SUB_TYPE) not in [sub['id'] for sub in resp.json().get('subscriptions', [])]
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_sub(ids, scd_api, scd_session):
   if scd_session is None:
@@ -108,7 +108,7 @@ def test_create_sub(ids, scd_api, scd_session):
   _check_sub1(data, ids(SUB_TYPE), scd_api)
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_sub_by_id(ids, scd_api, scd_session):
   if scd_session is None:
@@ -120,7 +120,7 @@ def test_get_sub_by_id(ids, scd_api, scd_session):
   _check_sub1(data, ids(SUB_TYPE), scd_api)
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_sub_by_search(ids, scd_api, scd_session):
   if scd_session is None:
@@ -138,7 +138,7 @@ def test_get_sub_by_search(ids, scd_api, scd_session):
   assert ids(SUB_TYPE) in [x['id'] for x in resp.json()['subscriptions']]
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub(ids, scd_api, scd_session):
   if scd_session is None:
@@ -163,7 +163,7 @@ def test_mutate_sub(ids, scd_api, scd_session):
   assert_datetimes_are_equal(data['subscription']['time_end']['value'], req['extents']['time_end']['value'])
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_sub(ids, scd_api, scd_session):
   if scd_session is None:
@@ -172,7 +172,7 @@ def test_delete_sub(ids, scd_api, scd_session):
   assert resp.status_code == 200, resp.content
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_deleted_sub_by_id(ids, scd_api, scd_session):
   if scd_session is None:
@@ -181,7 +181,7 @@ def test_get_deleted_sub_by_id(ids, scd_api, scd_session):
   assert resp.status_code == 404, resp.content
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_deleted_sub_by_search(ids, scd_api, scd_session):
   if scd_session is None:
