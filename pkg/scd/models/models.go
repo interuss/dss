@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/interuss/stacktrace"
@@ -26,9 +27,13 @@ type (
 // NewOVNFromTime encodes t as an OVN.
 func NewOVNFromTime(t time.Time, salt string) OVN {
 	sum := sha256.Sum256([]byte(salt + t.Format(time.RFC3339)))
-	return OVN(base64.StdEncoding.EncodeToString(
+	ovn := base64.StdEncoding.EncodeToString(
 		sum[:],
-	))
+	)
+	ovn = strings.Replace(ovn, "+", "-", -1)
+	ovn = strings.Replace(ovn, "/", ".", -1)
+	ovn = strings.Replace(ovn, "=", "_", -1)
+	return OVN(ovn)
 }
 
 // Empty returns true if ovn indicates an empty opaque version number.
