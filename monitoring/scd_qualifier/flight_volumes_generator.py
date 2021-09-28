@@ -1,7 +1,7 @@
 from pathlib import Path
 import arrow
 from typing import List
-from shapely.geometry import LineString, Polygon, point
+from shapely.geometry import LineString, Polygon
 from pyproj import Geod, Proj
 from monitoring.monitorlib import scd
 from monitoring.scd_qualifier.utils import Polygon, TreatmentVolumeOptions, TreatmentPathOptions, Volume3D, Volume4D, PathPayload
@@ -21,13 +21,15 @@ class FlightVolumeGenerator():
         self.maxy = maxy
         self.utm_zone = utm_zone
 
-        self.altitude_agl = 50.0
-        self.altitude_envelope = 15
+        self.altitude_agl:float = 50.0
+        self.altitude_envelope: int = 15
         self.control_flight_path: LineString
         self.buffered_control_flight_path: Polygon
         
         self.control_volume3D: Volume3D
         self.control_volume4D: Volume4D
+        
+        self.now = arrow.now()
         
         self.geod = Geod(ellps="WGS84")
         self.input_extents_valid()
@@ -117,11 +119,13 @@ class FlightVolumeGenerator():
         return volume3D
 
     def transform_3d_volume_to_4d(self, volume_3d : Volume3D,volume_generation_options: TreatmentVolumeOptions) -> Volume4D:
-        if volume_generation_options.is_control: 
-            pass
-        else: 
-            pass
-            
+    
+        three_minutes_from_now = self.now.shift(minutes = 3)
+        eight_minutes_from_now = self.now.shift(minutes = 8)
+        
+        volume_4d = Volume4D(volume=volume_3d, time_start= three_minutes_from_now.isoformat(), time_end=eight_minutes_from_now.isoformat())
+    
+        return volume_4d
     
     def write_flight_paths(self, raw_paths: List[PathPayload]) -> None:
         ''' A method to write flight paths to disk as GeoJSON features '''
