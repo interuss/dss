@@ -13,26 +13,13 @@
 
 import datetime
 import functools
-import json
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
-from monitoring.prober.infrastructure import for_api_versions
-
-
-def _load_op_ids():
-  with open('./scd/resources/op_ids_heavy_traffic_concurrent.json', 'r') as f:
-    return json.load(f)
-
-
-def _populate_idx():
-  map = {}
-  for idx, op_id in enumerate(OP_IDS):
-    map[op_id] = idx
-  return map
+from monitoring.prober.infrastructure import for_api_versions, register_resource_type
 
 
 # This test is implemented to fire requests concurrently, given there are several concurrent related issues:
@@ -46,9 +33,8 @@ def _populate_idx():
 # need to touch anything else.
 THREAD_COUNT = 1
 BASE_URL = 'https://example.com/uss'
-OP_IDS = _load_op_ids()
-GROUP_SIZE = len(OP_IDS) // 3
-OP_ID_TO_IDX = _populate_idx()
+OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(100)]
+GROUP_SIZE = len(OP_TYPES) // 3
 
 ovn_map = {}
 
@@ -198,8 +184,8 @@ def _collect_resp_callback(key, op_resp_map, future):
 
 @for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v5(scd_api, scd_session):
-    for op_id in OP_IDS:
+def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
+    for op_id in map(ids, OP_TYPES):
       resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
       if resp.status_code == 200:
         resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
@@ -213,8 +199,8 @@ def test_ensure_clean_workspace_v5(scd_api, scd_session):
 
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v15(scd_api, scd_session):
-    for op_id in OP_IDS:
+def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
+    for op_id in map(ids, OP_TYPES):
       resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
       if resp.status_code == 200:
         resp = scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
@@ -230,13 +216,13 @@ def test_ensure_clean_workspace_v15(scd_api, scd_session):
 # Mutations: Operations with ids in OP_IDS created by scd_session user
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_create_ops_concurrent(scd_api, scd_session):
+def test_create_ops_concurrent(ids, scd_api, scd_session):
   assert len(ovn_map) == 0
   op_req_map = {}
   op_resp_map = {}
   # Create opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for idx, op_id in enumerate(OP_IDS):
+    for idx, op_id in enumerate(map(ids, OP_TYPES)):
       req = _make_op_request(idx)
       op_req_map[op_id] = req
 
@@ -259,18 +245,18 @@ def test_create_ops_concurrent(scd_api, scd_session):
     assert 'subscription_id' in op
     assert 'state' not in op
     ovn_map[op_id] = op['ovn']
-  assert len(ovn_map) == len(OP_IDS)
+  assert len(ovn_map) == len(OP_TYPES)
 
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-def test_get_ops_by_ids_concurrent(scd_api, scd_session):
+def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
 
   # Get opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for op_id in OP_IDS:
+    for op_id in map(ids, OP_TYPES):
       future = executor.submit(_get_operation, op_id, scd_session, scd_api)
       future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
@@ -292,13 +278,13 @@ def test_get_ops_by_ids_concurrent(scd_api, scd_session):
 # Mutations: None
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_get_ops_by_search_concurrent(scd_api, scd_session):
+def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
   total_found_ids = set()
 
   # Query opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for idx in range(len(OP_IDS)):
+    for idx in range(len(OP_TYPES)):
       future = executor.submit(_query_operation, idx, scd_session, scd_api)
       future.add_done_callback(functools.partial(_collect_resp_callback, idx, op_resp_map))
 
@@ -310,26 +296,26 @@ def test_get_ops_by_search_concurrent(scd_api, scd_session):
       found_ids = [op['id'] for op in resp.json().get('operational_intent_reference', [])]
     total_found_ids.update(found_ids)
 
-  assert len(_intersection(OP_IDS, total_found_ids)) == len(OP_IDS)
+  assert len(_intersection(map(ids, OP_TYPES), total_found_ids)) == len(OP_TYPES)
 
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: Operations with ids in OP_IDS mutated to second version
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_mutate_ops_concurrent(scd_api, scd_session):
+def test_mutate_ops_concurrent(ids, scd_api, scd_session):
   op_req_map = {}
   op_resp_map = {}
   op_map = {}
 
   # Build mutate requests
-  for idx, op_id in enumerate(OP_IDS):
+  for idx, op_id in enumerate(map(ids, OP_TYPES)):
     op_req_map[op_id] = _build_mutate_request(idx, op_id, op_map, scd_session, scd_api)
-  assert len(op_req_map) == len(OP_IDS)
+  assert len(op_req_map) == len(OP_TYPES)
 
   # Mutate operations in parallel
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for op_id in OP_IDS:
+    for op_id in map(ids, OP_TYPES):
       req = op_req_map[op_id]
       future = executor.submit(_put_operation, req, op_id, scd_session, scd_api)
       future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
@@ -354,22 +340,22 @@ def test_mutate_ops_concurrent(scd_api, scd_session):
 
     ovn_map[op_id] = op['ovn']
 
-  assert len(ovn_map) == len(OP_IDS)
+  assert len(ovn_map) == len(OP_TYPES)
 
 
 # Preconditions: Operations with ids in OP_IDS mutated to second version
 # Mutations: Operations with ids in OP_IDS deleted
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-def test_delete_op_concurrent(scd_api, scd_session):
+def test_delete_op_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
 
   # Delete operations concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for op_id in OP_IDS:
+    for op_id in map(ids, OP_TYPES):
       future = executor.submit(_delete_operation, op_id, scd_session, scd_api)
       future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
-  assert len(op_resp_map) == len(OP_IDS)
+  assert len(op_resp_map) == len(OP_TYPES)
 
   for resp in op_resp_map.values():
     assert resp.status_code == 200, resp.content
