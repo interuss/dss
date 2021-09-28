@@ -17,15 +17,6 @@ SUB2_TYPE = register_resource_type(217, 'Subscription 2')
 SUB3_TYPE = register_resource_type(218, 'Subscription 3')
 
 
-def test_set_test_owner_ids(test_owner):
-  global SUB1_ID
-  global SUB2_ID
-  global SUB3_ID
-  SUB1_ID = utils.encode_owner(test_owner, '00000088-b268-481c-a32d-6be442000000')
-  SUB2_ID = utils.encode_owner(test_owner, '00000017-a3fe-42d6-9f3b-83dec2000000')
-  SUB3_ID = utils.encode_owner(test_owner, '0000001b-9c8a-475e-a82d-d81922000000')
-
-
 LAT0 = 23
 LNG0 = 56
 

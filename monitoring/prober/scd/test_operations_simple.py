@@ -29,15 +29,6 @@ OP2_TYPE = register_resource_type(214, 'Operational intent 2')
 SUB2_TYPE = register_resource_type(215, 'Subscription')
 
 
-def test_set_test_owner_ids(test_owner):
-  global OP1_ID
-  global OP2_ID
-  global SUB2_ID
-  OP1_ID = utils.encode_owner(test_owner, '0000007d-312e-47f5-b51c-dc5744000000')
-  OP2_ID = utils.encode_owner(test_owner, '0000007a-be5e-4503-b8cf-40a6b4000000')
-  SUB2_ID = utils.encode_owner(test_owner, '00000059-193c-4910-8f36-bde224000000')
-
-
 op1_ovn = None
 op2_ovn = None
 

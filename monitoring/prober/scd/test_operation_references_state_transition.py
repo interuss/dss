@@ -12,11 +12,6 @@ from monitoring.prober.infrastructure import for_api_versions, register_resource
 OP_TYPE = register_resource_type(8, 'Operational intent')
 
 
-def test_set_test_owner_ids(test_owner):
-  global OP_ID
-  OP_ID = utils.encode_owner(test_owner, '00000067-cb83-4880-a7e7-1fee85000000')
-
-
 @for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):

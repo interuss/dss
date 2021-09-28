@@ -21,11 +21,6 @@ BASE_URL = 'https://example.com/uss'
 OP_TYPE = register_resource_type(9, 'Operational intent')
 
 
-def test_set_test_owner_ids(test_owner):
-  global OP_ID
-  OP_ID = utils.encode_owner(test_owner, '0000008c-91c8-4afc-927d-d923f5000000')
-
-
 @for_api_versions(scd.API_0_3_5)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
   resp = scd_session.get('/operation_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_SC)
