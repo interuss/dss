@@ -457,7 +457,7 @@ def test_missing_conflicted_operation_v15(ids, scd_api, scd_session):
     req = yaml.full_load(f)
   dt = datetime.datetime.utcnow() - scd.start_of(req['extents'])
   req['extents'] = scd.offset_time(req['extents'], dt)
-  resp = scd_session.put('/operational_intent_reference/{}'.format(ids(OP_TYPE)), json=req)
+  resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
   ovn1a = resp.json()['operational_intent_reference']['ovn']
   sub_id = resp.json()['operational_intent_reference']['subscription_id']
@@ -467,7 +467,7 @@ def test_missing_conflicted_operation_v15(ids, scd_api, scd_session):
     req = yaml.full_load(f)
   req['extents'] = scd.offset_time(req['extents'], dt)
   req['key'] = [ovn1a]
-  resp = scd_session.put('/operational_intent_reference/{}'.format(ids(OP_TYPE2)), json=req)
+  resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE2)), json=req)
   assert resp.status_code == 200, resp.content
 
   # Attempt to update Operation 1 without OVN for the pre-existing Operation
@@ -476,8 +476,8 @@ def test_missing_conflicted_operation_v15(ids, scd_api, scd_session):
   req['extents'] = scd.offset_time(req['extents'], dt)
   req['key'] = [ovn1a]
   req['subscription_id'] = sub_id
-  resp = scd_session.put('/operational_intent_reference/{}'.format(ids(OP_TYPE)), json=req)
-  assert resp.status_code == 409, resp.content
+  resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
+  assert resp.status_code == 400, resp.content
   # TODO: entity_conflicts is not there in v15 response. What is the replacement key?
   # conflicts = []
   # for conflict in resp.json()['entity_conflicts']:
@@ -489,9 +489,9 @@ def test_missing_conflicted_operation_v15(ids, scd_api, scd_session):
   with open('./scd/resources/op_missing_query.json', 'r') as f:
     req = json.load(f)
   req['area_of_interest'] = scd.offset_time([req['area_of_interest']], dt)[0]
-  resp = scd_session.post('/operational_intent_reference/query', json=req)
+  resp = scd_session.post('/operational_intent_references/query', json=req)
   assert  resp.status_code == 200, resp.content
-  ops = [op['id'] for op in resp.json()['operational_intent_reference']]
+  ops = [op['id'] for op in resp.json()['operational_intent_references']]
   assert ids(OP_TYPE) in ops, resp.content
 
   # ids(OP_ID2) not expected here because its ceiling is <575m whereas query floor is
