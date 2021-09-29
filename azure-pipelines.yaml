@@ -1,4 +1,4 @@
-name: "build-n-test"
+name: "lint-build-n-test"
 trigger:
   branches:
     include:
@@ -20,7 +20,7 @@ jobs:
         inputs:
           command: build
           buildContext: "."
-  - job: "build_n_test"
+  - job: "lint_build_n_test"
     strategy:
       parallel: 1
     pool:
@@ -37,9 +37,9 @@ jobs:
       - bash: |
           set -exo pipefail
           export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
-          make && make test && make test-cockroach && make test-e2e
-        name: "build_and_test"
-        displayName: "build_and_test"
+          make lint && make && make test && make test-cockroach && make test-e2e
+        name: "lint_build_and_test"
+        displayName: "lint_build_and_test"
   - job: "run_locally"
     strategy:
       parallel: 1
@@ -62,4 +62,4 @@ jobs:
           make stop-locally
         name: "build_and_test"
         displayName: "build_and_test"
-        
+
