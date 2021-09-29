@@ -68,6 +68,10 @@ type OperationalIntent struct {
 	Cells          s2.CellUnion
 }
 
+func (state OperationalIntentState) String() string {
+	return string(state)
+}
+
 // ToProto converts the OperationalIntent to its proto API format
 func (o *OperationalIntent) ToProto() (*scdpb.OperationalIntentReference, error) {
 	result := &scdpb.OperationalIntentReference{
@@ -77,6 +81,7 @@ func (o *OperationalIntent) ToProto() (*scdpb.OperationalIntentReference, error)
 		Version:        int32(o.Version),
 		UssBaseUrl:     o.USSBaseURL,
 		SubscriptionId: o.SubscriptionID.String(),
+		State:          o.State.String(),
 	}
 
 	if o.StartTime != nil {

@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	operationFieldsWithIndices   [10]string
+	operationFieldsWithIndices   [11]string
 	operationFieldsWithPrefix    string
 	operationFieldsWithoutPrefix string
 )
@@ -33,6 +33,7 @@ func init() {
 	operationFieldsWithIndices[7] = "ends_at"
 	operationFieldsWithIndices[8] = "subscription_id"
 	operationFieldsWithIndices[9] = "updated_at"
+	operationFieldsWithIndices[10] = "state"
 
 	operationFieldsWithoutPrefix = strings.Join(
 		operationFieldsWithIndices[:], ",",
@@ -72,6 +73,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 			&o.EndTime,
 			&o.SubscriptionID,
 			&updatedAt,
+			&o.State,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Operation row")
@@ -184,7 +186,7 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 				scd_operations
 				(%s)
 			VALUES
-				($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp())
+				($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp(), $10)
 			RETURNING
 				%s`, operationFieldsWithoutPrefix, operationFieldsWithPrefix)
 		upsertCellsForOperationQuery = `
@@ -221,6 +223,7 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		operation.StartTime,
 		operation.EndTime,
 		operation.SubscriptionID,
+		operation.State,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Operation")
