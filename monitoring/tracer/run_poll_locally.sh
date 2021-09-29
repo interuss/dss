@@ -7,9 +7,6 @@ LOGS='--output-folder=/logs'
 KML_SERVER='--kml-server=https://example.com/kmlgeneration'
 KML_FOLDER='--kml-folder=test/localmock'
 MONITOR='--rid-isa-poll-interval=15 --scd-operation-poll-interval=15 --scd-constraint-poll-interval=15'
-# TODO: Fix unused
-# shellcheck disable=SC2034
-PORT=5000
 
 TRACER_OPTIONS="$AUTH $DSS $AREA $LOGS $KML_SERVER $KML_FOLDER $MONITOR"
 

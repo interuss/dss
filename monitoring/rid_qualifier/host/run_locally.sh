@@ -14,9 +14,6 @@ cd "${BASEDIR}/../../.." || exit 1
 # for use with rid_qualifier
 AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
-# TODO: fix unused
-# shellcheck disable=SC2034
-AUD="host.docker.internal"
 PORT=8072
 RID_HOST="http://localhost:${PORT}"
 
