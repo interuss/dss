@@ -86,7 +86,7 @@ docker run --rm --name scd-db-manager \
 	-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
 	local-db-manager \
 	--schemas_dir db-schemas/scd \
-	--db_version 1.0.0 \
+	--db_version "latest" \
 	--cockroach_host crdb
 
 sleep 1
