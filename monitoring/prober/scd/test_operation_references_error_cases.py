@@ -243,12 +243,13 @@ def test_op_already_exists_v15(ids, scd_api, scd_session):
     req = json.load(f)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
+  ovn = resp.json()['operational_intent_reference']['ovn']
 
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 409, resp.content
 
   # Delete operation
-  resp = scd_session.delete('/operational_intent_references/{}'.format(ids(OP_TYPE)))
+  resp = scd_session.delete('/operational_intent_references/{}/{}'.format(ids(OP_TYPE), ovn))
   assert resp.status_code == 200, resp.content
 
   # Verify deletion

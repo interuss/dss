@@ -96,11 +96,12 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 		var (
 			s         = new(scdmodels.Subscription)
 			updatedAt time.Time
+			version   string
 		)
 		err = rows.Scan(
 			&s.ID,
 			&s.Manager,
-			&s.Version,
+			&version,
 			&s.USSBaseURL,
 			&s.NotificationIndex,
 			&s.NotifyForOperationalIntents,
@@ -110,6 +111,8 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 			&s.EndTime,
 			&updatedAt,
 		)
+		v, _ := dssmodels.VersionFromString(version)
+		s.Version = v
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
@@ -175,7 +178,7 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		  scd_subscriptions
 		  (%s)
 		VALUES
-			($1, $2, COALESCE((SELECT version from v), 0) + 1, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp())
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, transaction_timestamp())
 		RETURNING
 			%s`, subscriptionFieldsWithoutPrefix, subscriptionFieldsWithPrefix)
 		subscriptionCellQuery = `
@@ -206,6 +209,7 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 	s, err := c.fetchSubscription(ctx, q, upsertQuery,
 		s.ID,
 		s.Manager,
+		s.Version.String(),
 		s.USSBaseURL,
 		s.NotificationIndex,
 		s.NotifyForOperationalIntents,
