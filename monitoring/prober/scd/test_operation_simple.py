@@ -236,14 +236,14 @@ def test_create_op_v15(ids, scd_api, scd_session):
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  op = data['operation_reference']
+  op = data['operational_intent_reference']
   assert op['id'] == ids(OP_TYPE)
   assert op['uss_base_url'] == BASE_URL
   assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
   assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
   assert op['version'] == 1
   assert 'subscription_id' in op
-  assert 'state' not in op
+  assert op['state'] == 'Accepted'
 
 
 # Preconditions: Operation ids(OP_ID) created by scd_session user
