@@ -53,10 +53,10 @@ WITH compact_constraint_cells AS
              array_agg(cell_id) AS cell_ids
      FROM scd_cells_constraints
      GROUP BY constraint_id)
-UPDATE scd_constraints constraint
+UPDATE scd_constraints "constraint"
 SET cells = compact_constraint_cells.cell_ids
 FROM compact_constraint_cells
-WHERE constraint.id = compact_constraint_cells.constraint_id
+WHERE "constraint".id = compact_constraint_cells.constraint_id
     AND cells IS NULL;
 
 COMMIT;
