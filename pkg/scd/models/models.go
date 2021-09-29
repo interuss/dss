@@ -15,13 +15,8 @@ type (
 	OVN string
 
 	// Version models the version of an entity.
-	//
 	// Primarily used as a fencing token in data mutations.
-	Version int32
-
-	// Opaque string used to ensure consistency in read-modify-write
-	// operations and distributed systems.
-	VersionToken string
+	VersionNumber int32
 )
 
 // NewOVNFromTime encodes t as an OVN.
@@ -51,22 +46,12 @@ func (ovn OVN) String() string {
 }
 
 // Empty returns true if the value of v indicates an empty version.
-func (v Version) Empty() bool {
+func (v VersionNumber) Empty() bool {
 	return v <= 0
 }
 
 // Matches returns true if v matches w.
-func (v Version) Matches(w Version) bool {
-	return v == w
-}
-
-// Empty returns true if the value of v indicates an empty version.
-func (v VersionToken) Empty() bool {
-	return v == ""
-}
-
-// Matches returns true if v matches w.
-func (v VersionToken) Matches(w VersionToken) bool {
+func (v VersionNumber) Matches(w VersionNumber) bool {
 	return v == w
 }
 

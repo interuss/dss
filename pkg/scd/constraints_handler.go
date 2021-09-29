@@ -263,7 +263,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ov
 		constraint, err := r.UpsertConstraint(ctx, &scdmodels.Constraint{
 			ID:      id,
 			Manager: manager,
-			Version: scdmodels.Version(version + 1),
+			Version: scdmodels.VersionNumber(version + 1),
 
 			StartTime:     uExtent.StartTime,
 			EndTime:       uExtent.EndTime,

@@ -2,6 +2,7 @@ package scd
 
 import (
 	"context"
+	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
@@ -20,15 +21,20 @@ var (
 )
 
 func (a *Server) CreateSubscription(ctx context.Context, req *scdpb.CreateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
-	return a.PutSubscription(ctx, req.GetSubscriptionid(), "", req.GetParams())
+	version := dssmodels.VersionFromTime(time.Now())
+	return a.PutSubscription(ctx, req.GetSubscriptionid(), version, req.GetParams())
 }
 
 func (a *Server) UpdateSubscription(ctx context.Context, req *scdpb.UpdateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
-	return a.PutSubscription(ctx, req.GetSubscriptionid(), req.GetVersion(), req.GetParams())
+	version, err := dssmodels.VersionFromString(req.GetVersion())
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse version")
+	}
+	return a.PutSubscription(ctx, req.GetSubscriptionid(), version, req.GetParams())
 }
 
 // PutSubscription creates a single subscription.
-func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, version string, params *scdpb.PutSubscriptionParameters) (*scdpb.PutSubscriptionResponse, error) {
+func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, version *dssmodels.Version, params *scdpb.PutSubscriptionParameters) (*scdpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(subscriptionid)
 
@@ -67,7 +73,7 @@ func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, ver
 	subreq := &scdmodels.Subscription{
 		ID:      id,
 		Manager: manager,
-		Version: scdmodels.VersionToken(version),
+		Version: version,
 
 		StartTime:  extents.StartTime,
 		EndTime:    extents.EndTime,
