@@ -224,8 +224,9 @@ async def _create_ops_concurrent(executor, loop, ids, scd_api, scd_session, op_r
   for idx, op_id in enumerate(map(ids, OP_TYPES)):
       req = _make_op_request(idx)
       op_req_map[op_id] = req
-      blocking_tasks.update(
-        {loop.run_in_executor(executor, _put_operation, req, op_id, scd_session, scd_api): op_id})
+      blocking_tasks.update({
+        loop.run_in_executor(executor, _put_operation, req, op_id, scd_session, scd_api): op_id
+      })
   responses = {}
   for task, op_id in blocking_tasks.items():
     responses[op_id] = await task
@@ -243,9 +244,8 @@ def test_create_ops_concurrent(ids, scd_api, scd_session):
   # Create operations concurrently
   event_loop = asyncio.get_event_loop()
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    results = event_loop.run_until_complete(
-        _create_ops_concurrent(executor, event_loop, ids, scd_api, scd_session, op_req_map)
-    )
+    results = event_loop.run_until_complete(_create_ops_concurrent(
+      executor, event_loop, ids, scd_api, scd_session, op_req_map))
     for op_id, result in results.items():
       op_resp_map[op_id] = result
   for op_id, resp in op_resp_map.items():
@@ -349,8 +349,9 @@ async def _mutate_ops_concurrent(executor, loop, ids, op_req_map, scd_api, scd_s
   blocking_tasks = {}
   for op_id in map(ids, OP_TYPES):
       req = op_req_map[op_id]
-      blocking_tasks.update(
-        {loop.run_in_executor(executor, _put_operation, req, op_id, scd_session, scd_api): op_id})
+      blocking_tasks.update({
+        loop.run_in_executor(executor, _put_operation, req, op_id, scd_session, scd_api): op_id
+      })
   responses = {}
   for task, op_id in blocking_tasks.items():
     responses[op_id] = await task
