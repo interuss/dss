@@ -17,6 +17,7 @@ import datetime
 import functools
 import json
 import pytest
+import time
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from monitoring.monitorlib.infrastructure import default_scope
@@ -35,7 +36,7 @@ from monitoring.prober.infrastructure import for_api_versions, register_resource
 # We intended to keep the thread count to be 1 to enforce sequential execution till the above issues are resolved.
 # By then, just update the 'THREAD_COUNT' to a reasonable thread pool size and everything should still work without
 # need to touch anything else.
-THREAD_COUNT = 1
+THREAD_COUNT = 24
 BASE_URL = 'https://example.com/uss'
 OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(100)]
 GROUP_SIZE = len(OP_TYPES) // 3
@@ -114,8 +115,13 @@ def _intersection(list1, list2):
 
 
 def _put_operation(req, op_id, scd_session, scd_api):
+  print('putting: ', op_id)
   if scd_api == scd.API_0_3_5:
-    return scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+    time.sleep(0.1)
+    resp = scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+    # resp = await scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+    print('put Completed: ', op_id)
+    return resp
   elif scd_api == scd.API_0_3_15:
     return scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
   else:
@@ -216,27 +222,41 @@ def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
         assert False, resp.content
 
 
+async def _create_ops_concurrent(executor, loop, ids, scd_api, scd_session, op_req_map):
+  # loop = asyncio.get_event_loop()
+  blocking_tasks = {}
+  for idx, op_id in enumerate(map(ids, OP_TYPES)):
+      req = _make_op_request(idx)
+      op_req_map[op_id] = req
+      blocking_tasks.update(
+        {loop.run_in_executor(executor, _put_operation, req, op_id, scd_session, scd_api): op_id})
+  responses = {}
+  for task, op_id in blocking_tasks.items():
+    responses[op_id] = await task
+  return responses
+
 # Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
-@pytest.mark.asyncio
+# @pytest.mark.asyncio
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
 @default_scope(SCOPE_SC)
-async def test_create_ops_concurrent(ids, scd_api, scd_session):
+def test_create_ops_concurrent(ids, scd_api, scd_session):
   assert len(ovn_map) == 0
   op_req_map = {}
   op_resp_map = {}
   # Create operations concurrently
-  loop = asyncio.get_running_loop()
+  event_loop = asyncio.get_event_loop()
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    tasks = {}
-    for idx, op_id in enumerate(map(ids, OP_TYPES)):
-      req = _make_op_request(idx)
-      op_req_map[op_id] = req
-      tasks.update({op_id: await loop.run_in_executor(
-            executor, _put_operation, req, op_id, scd_session, scd_api)})
-    for op_id, result in tasks.items():
+    try:
+        results = event_loop.run_until_complete(
+            _create_ops_concurrent(executor, event_loop, ids, scd_api, scd_session, op_req_map)
+        )
+    finally:
+        print('closing event loop!!')
+        # event_loop.close()
+    for op_id, result in results.items():
       op_resp_map[op_id] = result
-
+  assert 1 == 2
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
     req = op_req_map[op_id]
@@ -257,20 +277,44 @@ async def test_create_ops_concurrent(ids, scd_api, scd_session):
   assert len(ovn_map) == len(OP_TYPES)
 
 
+async def _get_ops_by_ids_concurrent(executor, loop, ids, scd_api, scd_session):
+  # loop = asyncio.get_event_loop()
+  blocking_tasks = {}
+  for op_id in map(ids, OP_TYPES):
+      # req = _make_op_request(idx)
+      # op_req_map[op_id] = req
+      blocking_tasks.update(
+        {loop.run_in_executor(executor, _get_operation, op_id, scd_session, scd_api): op_id})
+  responses = {}
+  for task, op_id in blocking_tasks.items():
+    responses[op_id] = await task
+  return responses
+
+
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
 @pytest.mark.asyncio
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-async def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
+async def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session, event_loop):
   op_resp_map = {}
   # Get opetions concurrently
-  loop = asyncio.get_running_loop()
+  # event_loop = asyncio.get_running_loop()
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    tasks = {op_id: await loop.run_in_executor(
-      executor, _get_operation, op_id, scd_session, scd_api
-    ) for op_id in map(ids, OP_TYPES)}
-    for op_id, result in tasks.items():
+    try:
+        results = event_loop.run_until_complete(
+            _get_ops_by_ids_concurrent(executor, event_loop, ids, scd_api, scd_session)
+        )
+    finally:
+        print('closing event loop!!')
+        # event_loop.close()
+    for op_id, result in results.items():
       op_resp_map[op_id] = result
+
+    # tasks = {op_id: await loop.run_in_executor(
+    #   executor, _get_operation, op_id, scd_session, scd_api
+    # ) for op_id in map(ids, OP_TYPES)}
+    # for op_id, result in tasks.items():
+    #   op_resp_map[op_id] = result
 
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
