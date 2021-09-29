@@ -355,6 +355,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			sub, err = r.UpsertSubscription(ctx, &scdmodels.Subscription{
 				ID:                          dssmodels.ID(uuid.New().String()),
 				Manager:                     manager,
+				Version:                     dssmodels.VersionFromTime(time.Now()),
 				StartTime:                   uExtent.StartTime,
 				EndTime:                     uExtent.EndTime,
 				AltitudeLo:                  uExtent.SpatialVolume.AltitudeLo,
@@ -470,7 +471,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 		op := &scdmodels.OperationalIntent{
 			ID:      id,
 			Manager: manager,
-			Version: scdmodels.Version(version + 1),
+			Version: scdmodels.VersionNumber(version + 1),
 
 			StartTime:     uExtent.StartTime,
 			EndTime:       uExtent.EndTime,

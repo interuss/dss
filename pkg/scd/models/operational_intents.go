@@ -56,7 +56,7 @@ type OperationalIntent struct {
 	// Reference
 	ID             dssmodels.ID
 	Manager        dssmodels.Manager
-	Version        Version
+	Version        VersionNumber
 	State          OperationalIntentState
 	OVN            OVN
 	StartTime      *time.Time

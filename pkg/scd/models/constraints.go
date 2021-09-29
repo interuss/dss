@@ -16,7 +16,7 @@ type Constraint struct {
 	ID              dssmodels.ID
 	Manager         dssmodels.Manager
 	UssAvailability UssAvailabilityState
-	Version         Version
+	Version         VersionNumber
 	OVN             OVN
 	StartTime       *time.Time
 	EndTime         *time.Time

@@ -25,7 +25,7 @@ const (
 // Subscription represents an SCD subscription
 type Subscription struct {
 	ID                          dssmodels.ID
-	Version                     VersionToken
+	Version                     *dssmodels.Version
 	NotificationIndex           int
 	Manager                     dssmodels.Manager
 	StartTime                   *time.Time
@@ -43,7 +43,7 @@ type Subscription struct {
 func (s *Subscription) ToProto(dependentOperationalIntents []dssmodels.ID) (*scdpb.Subscription, error) {
 	result := &scdpb.Subscription{
 		Id:                          s.ID.String(),
-		Version:                     string(s.Version),
+		Version:                     s.Version.String(),
 		NotificationIndex:           int32(s.NotificationIndex),
 		UssBaseUrl:                  s.USSBaseURL,
 		NotifyForOperationalIntents: s.NotifyForOperationalIntents,
