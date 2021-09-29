@@ -44,21 +44,22 @@ CONFIG='--config config.json'
 RID_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
 # report.json must already exist to share correctly with the Docker container
-touch $(pwd)/monitoring/rid_qualifier/report.json
+touch "$(pwd)/monitoring/rid_qualifier/report.json"
 
 docker build \
     -f monitoring/rid_qualifier/Dockerfile \
     -t interuss/dss/rid_qualifier \
-    --build-arg version=`scripts/git/commit.sh` \
+    --build-arg version="$(scripts/git/commit.sh)" \
     monitoring
 
+# shellcheck disable=SC2086
 docker run --name rid_qualifier \
   --rm \
   --tty \
   -e RID_QUALIFIER_OPTIONS="${RID_QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
-  -v $(pwd)/monitoring/rid_qualifier/report.json:/app/monitoring/rid_qualifier/report.json \
-  -v $(pwd)/${CONFIG_LOCATION}:/app/${CONFIG_LOCATION} \
+  -v "$(pwd)/monitoring/rid_qualifier/report.json:/app/monitoring/rid_qualifier/report.json" \
+  -v "$(pwd)/${CONFIG_LOCATION}:/app/${CONFIG_LOCATION}" \
   interuss/dss/rid_qualifier \
   python rid_qualifier_entry.py $RID_QUALIFIER_OPTIONS
 
