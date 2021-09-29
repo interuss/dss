@@ -369,16 +369,17 @@ def test_op_repeated_requests_v5(ids, scd_api, scd_session):
 def test_op_repeated_requests_v15(ids, scd_api, scd_session):
   with open('./scd/resources/op_request_1_v15.json', 'r') as f:
     req = json.load(f)
-  resp = scd_session.put('/operational_intent_reference/{}'.format(ids(OP_TYPE)), json=req)
+  resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
+  ovn = resp.json()['operational_intent_reference']['ovn']
 
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
-  resp = scd_session.put('/operational_intent_reference/{}'.format(ids(OP_TYPE)), json=req)
+  resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 409, resp.content
 
   # Delete operation
-  resp = scd_session.delete('/operational_intent_reference/{}'.format(ids(OP_TYPE)))
+  resp = scd_session.delete('/operational_intent_references/{}/{}'.format(ids(OP_TYPE), ovn))
   assert resp.status_code == 200, resp.content
 
 
