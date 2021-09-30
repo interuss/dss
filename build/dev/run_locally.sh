@@ -20,15 +20,18 @@ fi
 
 cd "${BASEDIR}" || exit 1
 
-DC_COMMAND=${1:-up}
+DC_COMMAND=${1}
 
-if [[ "$DC_COMMAND" == "down" ]]; then
+if [[ "$DC_COMMAND" == "up" ]]; then
+  DC_OPTIONS=""
+elif [[ "$DC_COMMAND" == "down" ]]; then
   DC_OPTIONS="--volumes --remove-orphans"
 elif [[ "$DC_COMMAND" == "debug" ]]; then
   DC_COMMAND=up
   export DEBUG_ON=1
 else
-  DC_OPTIONS=""
+  DC_COMMAND="up"
+  DC_OPTIONS="--build"
 fi
 
 # shellcheck disable=SC2086
