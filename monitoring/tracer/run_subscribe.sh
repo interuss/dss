@@ -14,7 +14,7 @@ docker run --name tracer_subscribe \
   --rm \
   -e TRACER_OPTIONS="${TRACER_OPTIONS}" \
   -p ${PORT}:5000 \
-  -v `pwd`:/config \
+  -v "$(pwd):/config" \
   interuss/dss/tracer \
   gunicorn \
     --preload \
