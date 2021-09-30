@@ -21,7 +21,7 @@ PORT=8073
 docker build \
   -t local-interuss/mock_riddp \
   -f monitoring/mock_riddp/Dockerfile \
-  --build-arg version=`scripts/git/commit.sh` \
+  --build-arg version="$(scripts/git/commit.sh)" \
   monitoring \
   || exit 1
 
@@ -32,7 +32,7 @@ docker run --name mock_riddp \
   -e MOCK_RIDDP_PUBLIC_KEY="${PUBLIC_KEY}" \
   -e MOCK_RIDDP_TOKEN_AUDIENCE="${AUD}" \
   -p ${PORT}:5000 \
-  -v `pwd`/build/test-certs:/var/test-certs:ro \
+  -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
   local-interuss/mock_riddp \
   gunicorn \
     --preload \

@@ -17,7 +17,7 @@ echo Building rid_qualifier mock...
 docker build \
     -f monitoring/rid_qualifier/mock/Dockerfile \
     -t interuss/automated-testing/rid-qualifier/mock \
-    --build-arg version=`scripts/git/commit.sh` \
+    --build-arg version="$(scripts/git/commit.sh)" \
     monitoring \
     || exit 1
 

@@ -22,7 +22,7 @@ PORT=8071
 docker build \
   -t local-interuss/mock_ridsp \
   -f monitoring/mock_ridsp/Dockerfile \
-  --build-arg version=`scripts/git/commit.sh` \
+  --build-arg version="$(scripts/git/commit.sh)" \
   monitoring \
   || exit 1
 
@@ -34,7 +34,7 @@ docker run --name mock_ridsp \
   -e MOCK_RIDSP_TOKEN_AUDIENCE="${AUD}" \
   -e MOCK_RIDSP_BASE_URL="${BASE_URL}" \
   -p ${PORT}:5000 \
-  -v `pwd`/build/test-certs:/var/test-certs:ro \
+  -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
   local-interuss/mock_ridsp \
   gunicorn \
     --preload \
