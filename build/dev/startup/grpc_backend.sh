@@ -7,7 +7,7 @@
 
 DEBUG_ON=${1:-0}
 
-if [[ $DEBUG_ON == 1 ]]; then
+if [ "$DEBUG_ON" = "1" ]; then
   echo "Debug Mode: on"
 
   dlv --headless --listen=:4000 --api-version=2 --accept-multiclient exec --continue /usr/bin/grpc-backend -- \

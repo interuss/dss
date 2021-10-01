@@ -15,7 +15,7 @@ IN_FILE=$1   # Input filename.
 if ! [[ ${IN_FILE} ]]; then
     echo "Input KML not provided."
     exit 1
-fi 
+fi
 
 OUT_PATH=$2  # Output folder path.
 
@@ -29,14 +29,14 @@ fi
 docker build \
     -f monitoring/rid_qualifier/Dockerfile \
     -t interuss/dss/rid_qualifier \
-    --build-arg version=`scripts/git/commit.sh` \
+    --build-arg version="$(scripts/git/commit.sh)" \
     monitoring
 
 docker run -i  -t --name flight_state \
   --rm \
   --tty \
   -e PYTHONBUFFERED=1 \
-  -v ${IN_FILE}:/app/kml-input/${IN_FILE} \
-  -v ${OUT_PATH}:/app/flight-states \
+  -v "${IN_FILE}:/app/kml-input/${IN_FILE}" \
+  -v "${OUT_PATH}:/app/flight-states" \
   interuss/dss/rid_qualifier \
-  python create_flight_record_from_kml.py -f /app/kml-input/${IN_FILE} -o /app/flight-states -d ${debug}
+  python create_flight_record_from_kml.py -f "/app/kml-input/${IN_FILE}" -o /app/flight-states -d ${debug}

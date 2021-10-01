@@ -37,12 +37,6 @@ steps:
   - 'show'
   - '--dangerous-allow-redirect'
   - 'build/deploy/examples/minimum'
-- id: 'Evaluate examples/prod'
-  name: 'grafana/tanka'
-  args:
-  - 'show'
-  - '--dangerous-allow-redirect'
-  - 'build/deploy/examples/prod'
 - id: 'Evaluate examples/schema_manager'
   name: 'grafana/tanka'
   args:
