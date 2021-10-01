@@ -2,7 +2,6 @@ package scd
 
 import (
 	"context"
-	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
@@ -21,8 +20,7 @@ var (
 )
 
 func (a *Server) CreateSubscription(ctx context.Context, req *scdpb.CreateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
-	version := dssmodels.VersionFromTime(time.Now())
-	return a.PutSubscription(ctx, req.GetSubscriptionid(), version, req.GetParams())
+	return a.PutSubscription(ctx, req.GetSubscriptionid(), nil, req.GetParams())
 }
 
 func (a *Server) UpdateSubscription(ctx context.Context, req *scdpb.UpdateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
@@ -90,6 +88,8 @@ func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, ver
 	if !subreq.NotifyForOperationalIntents && !subreq.NotifyForConstraints {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "No notification triggers requested for Subscription")
 	}
+
+	// TODO: Check scopes to verify requested information (op intents or constraints) may be requested
 
 	var result *scdpb.PutSubscriptionResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
