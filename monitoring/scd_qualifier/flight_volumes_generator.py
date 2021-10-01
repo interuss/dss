@@ -123,15 +123,23 @@ class FlightVolumeGenerator():
         return volume3D
 
     def transform_3d_volume_to_4d(self, volume_3d : Volume3D,volume_generation_options: TreatmentVolumeOptions) -> Volume4D:
+        if volume_generation_options.intersect_time: 
+            # Overlap with the control 
+            three_mins_from_now = self.now.shift(minutes = 3)
+            eight_mins_from_now = self.now.shift(minutes = 8)
+            start_time = Time(value = three_mins_from_now.isoformat(), format = "RFC3339")
+            end_time = Time(value = eight_mins_from_now.isoformat(), format = "RFC3339")
+
+        else: 
+            mins = [10,15,20,25,30,25,40,45,50,55,60,65,70]
+            future_minutes = random.choice(mins)
+            future_start = self.now.shift(minutes = future_minutes)
+            future_end = self.now.shift(minutes = (future_minutes+ 4))
+            start_time = Time(value = future_start.isoformat(), format = "RFC3339")
+            end_time = Time(value = future_end.isoformat(), format = "RFC3339")
+
     
-        three_mins_from_now = self.now.shift(minutes = 3)
-        eight_mins_from_now = self.now.shift(minutes = 8)
-        
-        three_minutes_from_now = Time(value = three_mins_from_now.isoformat(), format = "RFC3339")
-        eight_minutes_from_now = Time(value = eight_mins_from_now.isoformat(), format = "RFC3339")
-
-
-        volume_4D = Volume4D(volume=volume_3d, time_start= three_minutes_from_now, time_end=eight_minutes_from_now)
+        volume_4D = Volume4D(volume=volume_3d, time_start= start_time, time_end=end_time)
         
         return volume_4D
     
@@ -163,12 +171,12 @@ class FlightVolumeGenerator():
         for path_index, raw_path in enumerate(raw_paths): 
             if path_index in [0,last_path_index]:
                 # This the control path or the well clear path no need to have any time / atltitude interserction
-                treatment_path_options = TreatmentVolumeOptions(intersect_altitude= False)
+                treatment_path_options = TreatmentVolumeOptions(intersect_altitude= False, intersect_time= False, expected_result = 'pass')
                 if path_index == 0:
                     treatment_path_options.is_control = True
             else:
                 # intersect in time and / or intersect in altitude 
-                treatment_path_options = random.choice([TreatmentVolumeOptions(intersect_altitude=True),TreatmentVolumeOptions(intersect_altitude=False), TreatmentVolumeOptions(intersect_altitude=True)])
+                treatment_path_options = random.choice([TreatmentVolumeOptions(intersect_altitude=True, intersect_time= False, expected_result = 'pass'),TreatmentVolumeOptions(intersect_altitude=True, intersect_time= True, expected_result = 'fail'),TreatmentVolumeOptions(intersect_altitude=False, intersect_time= True, expected_result = 'pass')])
             all_treatments.append(treatment_path_options)
         return all_treatments
 

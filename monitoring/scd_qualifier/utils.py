@@ -74,7 +74,9 @@ class OperationalIntentDetails(ImplicitDict):
 class TreatmentVolumeOptions(ImplicitDict):
     """ A class to hold configuration for developing treatments """
     intersect_altitude: bool = 0
+    intersect_time: bool = 0
     is_control: bool = 0
+    expected_result: str
     
 class TreatmentPathOptions(ImplicitDict):
     """ A class to hold configuration for developing treatment flight path as GeoJSON """
