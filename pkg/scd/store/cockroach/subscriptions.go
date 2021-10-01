@@ -96,7 +96,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 		var (
 			s         = new(scdmodels.Subscription)
 			updatedAt time.Time
-			version   string
+			version   int
 		)
 		err = rows.Scan(
 			&s.ID,
@@ -111,10 +111,12 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 			&s.EndTime,
 			&updatedAt,
 		)
-		v, _ := dssmodels.VersionFromString(version)
-		s.Version = v
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
+		}
+		s.Version = scdmodels.NewOVNFromTime(updatedAt, s.ID.String())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error generating Subscription version")
 		}
 		payload = append(payload, s)
 	}
@@ -209,7 +211,7 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 	s, err := c.fetchSubscription(ctx, q, upsertQuery,
 		s.ID,
 		s.Manager,
-		s.Version.String(),
+		0,
 		s.USSBaseURL,
 		s.NotificationIndex,
 		s.NotifyForOperationalIntents,

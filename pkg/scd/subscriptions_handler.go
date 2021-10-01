@@ -20,19 +20,16 @@ var (
 )
 
 func (a *Server) CreateSubscription(ctx context.Context, req *scdpb.CreateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
-	return a.PutSubscription(ctx, req.GetSubscriptionid(), nil, req.GetParams())
+	return a.PutSubscription(ctx, req.GetSubscriptionid(), "", req.GetParams())
 }
 
 func (a *Server) UpdateSubscription(ctx context.Context, req *scdpb.UpdateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
-	version, err := dssmodels.VersionFromString(req.GetVersion())
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse version")
-	}
+	version := req.GetVersion()
 	return a.PutSubscription(ctx, req.GetSubscriptionid(), version, req.GetParams())
 }
 
 // PutSubscription creates a single subscription.
-func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, version *dssmodels.Version, params *scdpb.PutSubscriptionParameters) (*scdpb.PutSubscriptionResponse, error) {
+func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, version string, params *scdpb.PutSubscriptionParameters) (*scdpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(subscriptionid)
 
@@ -71,7 +68,7 @@ func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, ver
 	subreq := &scdmodels.Subscription{
 		ID:      id,
 		Manager: manager,
-		Version: version,
+		Version: scdmodels.OVN(version),
 
 		StartTime:  extents.StartTime,
 		EndTime:    extents.EndTime,
@@ -108,17 +105,17 @@ func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, ver
 
 		if old == nil {
 			// There is no previous Subscription (this is a creation attempt)
-			if !subreq.Version.Empty() {
+			if subreq.Version.String() != "" {
 				// The user wants to update an existing Subscription, but one wasn't found.
 				return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", subreq.ID.String())
 			}
 		} else {
 			// There is a previous Subscription (this is an update attempt)
 			switch {
-			case subreq.Version.Empty():
+			case subreq.Version.String() == "":
 				// The user wants to create a new Subscription but it already exists.
 				return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Subscription %s already exists", subreq.ID.String())
-			case !subreq.Version.Matches(old.Version):
+			case subreq.Version.String() != old.Version.String():
 				// The user wants to update a Subscription but the version doesn't match.
 				return stacktrace.Propagate(
 					stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", subreq.Version),
