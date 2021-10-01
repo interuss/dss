@@ -78,7 +78,7 @@ def test_ensure_clean_workspace(ids, scd_api, scd_session, scd_session2):
 # Preconditions: None
 # Mutations: None
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-@default_scope(SCOPE_CI)
+@default_scope(SCOPE_SC)
 def test_subs_do_not_exist(ids, scd_api, scd_session, scd_session2):
   if scd_session is None:
     return
@@ -99,7 +99,7 @@ def test_subs_do_not_exist(ids, scd_api, scd_session, scd_session2):
 # Preconditions: None
 # Mutations: {Sub1, Sub2, Sub3} created by scd_session2 user
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-@default_scope(SCOPE_CI)
+@default_scope(SCOPE_SC)
 def test_create_subs(ids, scd_api, scd_session, scd_session2):
   if scd_session2 is None:
     return

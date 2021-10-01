@@ -80,8 +80,12 @@ def test_op_request_1_v15(ids, scd_api, scd_session):
     req = json.load(f)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP1_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
+  data = resp.json()
+  assert 'operational_intent_reference'  in data, data
+  assert 'ovn' in resp.json()['operational_intent_reference'], data
+  ovn = data['operational_intent_reference']['ovn']
 
-  resp = scd_session.delete('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
+  resp = scd_session.delete('/operational_intent_references/{}/{}'.format(ids(OP1_TYPE), ovn))
   assert resp.status_code == 200, resp.content
 
 
