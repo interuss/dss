@@ -114,10 +114,11 @@ class FlightVolumeGenerator():
         altitude_upper = Altitude(value= alt_upper, reference = "W84", units="M")
         altitude_lower = Altitude(value=alt_lower, reference = "W84", units="M")
         for vertex in list(buffered_shape_geo.exterior.coords):
-            all_vertices.append(LatLngPoint(lat = vertex[0] , lng = vertex[1]))
-        polygon = VolumePolygon(vertices=all_vertices)
-       
-        volume3D = Volume3D(outline_polygon = polygon, altitude_lower=altitude_lower, altitude_upper=altitude_upper)
+            coord = LatLngPoint(lat = vertex[0] , lng = vertex[1])
+            all_vertices.append(coord)
+        p = VolumePolygon(vertices=all_vertices)
+        
+        volume3D = Volume3D(outline_polygon = p, altitude_lower=altitude_lower, altitude_upper=altitude_upper)
         
         return volume3D
 
@@ -127,11 +128,11 @@ class FlightVolumeGenerator():
         eight_mins_from_now = self.now.shift(minutes = 8)
         
         three_minutes_from_now = Time(value = three_mins_from_now.isoformat(), format = "RFC3339")
-        eight_minutes_from_now = Time(value = eight_mins_from_now.isoformat(), format = "RFC33339")
+        eight_minutes_from_now = Time(value = eight_mins_from_now.isoformat(), format = "RFC3339")
 
 
         volume_4D = Volume4D(volume=volume_3d, time_start= three_minutes_from_now, time_end=eight_minutes_from_now)
-    
+        
         return volume_4D
     
     def generate_raw_paths(self, number_of_paths:int = 6) -> List[PathPayload]:
@@ -154,12 +155,12 @@ class FlightVolumeGenerator():
             raw_paths.append(raw_path)
         return raw_paths
 
-    def generate_4d_volumes(self,raw_paths:List[PathPayload], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
-        ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
-        all_volume_4d :List[Volume4D] = []
+    def generate_path_treatments(self, raw_paths:List[PathPayload]) -> List[TreatmentVolumeOptions]: 
+        ''' A method to generate rules for processing paths '''
+        
+        all_treatments: List[TreatmentVolumeOptions] = []
         last_path_index = len(raw_paths) - 1 
         for path_index, raw_path in enumerate(raw_paths): 
-        
             if path_index in [0,last_path_index]:
                 # This the control path or the well clear path no need to have any time / atltitude interserction
                 treatment_path_options = TreatmentVolumeOptions(intersect_altitude= False)
@@ -168,22 +169,21 @@ class FlightVolumeGenerator():
             else:
                 # intersect in time and / or intersect in altitude 
                 treatment_path_options = random.choice([TreatmentVolumeOptions(intersect_altitude=True),TreatmentVolumeOptions(intersect_altitude=False), TreatmentVolumeOptions(intersect_altitude=True)])
-                
+            all_treatments.append(treatment_path_options)
+        return all_treatments
+
+    def generate_4d_volumes(self,raw_paths:List[PathPayload],treatments : List[PathPayload], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
+        ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
+        all_volume_4d :List[Volume4D] = []
+        last_path_index = len(raw_paths) - 1 
+        for path_index, raw_path in enumerate(raw_paths): 
+            treatment_path_options = treatments[path_index]
+            
             flight_volume_3d = self.convert_path_to_volume(flight_path = raw_path.path, volume_generation_options = treatment_path_options, altitude_of_ground_level_wgs_84=altitude_of_ground_level_wgs_84)
             flight_volume_4d = self.transform_3d_volume_to_4d(volume_3d= flight_volume_3d, volume_generation_options =  treatment_path_options)
             all_volume_4d.append(flight_volume_4d)
             
         return all_volume_4d
-
-    def serialize_4d_volumes(self, all_volumes:List[Volume4D]) -> List[Volume4D]:
-        all_serialized_volumes = []
-        for volume4D in all_volumes:
-            print(volume4D)
-            volume4D = {'volume':json.dumps(volume4D.volume)}
-            all_serialized_volumes.append(json.dumps(volume4D))
-
-        return all_serialized_volumes
-        
 
 
 class SCDFlightPathVolumeWriter():
@@ -217,7 +217,8 @@ class SCDFlightPathVolumeWriter():
     def write_flight_volumes(self) -> None:
         ''' A method to write volume 4D objects to disk '''
 
-        for volume_id, volume in enumerate(self.serialized_flight_volumes):            
+        for volume_id, volume in enumerate(self.serialized_flight_volumes):     
+                
             volume_file_name = 'volume_%s.json' % str(volume_id + 1)  # Avoid Zero based numbering           
             tracks_file_path = self.output_subdirectories[0] / volume_file_name
             with open(tracks_file_path, 'w') as f:
@@ -232,13 +233,12 @@ if __name__ == '__main__':
     # Change directory to write test_definitions folder is created in the rid_qualifier folder.
     p = pathlib.Path(__file__).parent.absolute()
     os.chdir(p)
-    flight_paths = my_volume_generator.generate_raw_paths(number_of_paths=1)
-    flight_volumes = my_volume_generator.generate_4d_volumes(raw_paths=flight_paths, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
+    flight_paths = my_volume_generator.generate_raw_paths(number_of_paths=5)
+    all_treatments = my_volume_generator.generate_path_treatments(raw_paths=flight_paths)
+    
+    flight_volumes = my_volume_generator.generate_4d_volumes(raw_paths = flight_paths, treatments = all_treatments, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
+   
+    my_flight_path_writer = SCDFlightPathVolumeWriter(raw_paths= flight_paths, serialized_flight_volumes=flight_volumes)
 
-    serialized_flight_volumes = my_volume_generator.serialize_4d_volumes(all_volumes=flight_volumes)
-    print(serialized_flight_volumes[0])
-
-    # my_flight_path_writer = SCDFlightPathVolumeWriter(raw_paths= flight_paths, serialized_flight_volumes=serialized_flight_volumes)
-
-    # my_flight_path_writer.write_flight_paths()
-    # my_flight_path_writer.write_flight_volumes()
+    my_flight_path_writer.write_flight_paths()
+    my_flight_path_writer.write_flight_volumes()

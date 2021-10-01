@@ -16,21 +16,21 @@ class StringBasedDateTime(str):
     str_value.datetime = t
     return str_value
 
-class LatLngPoint(NamedTuple):
+class LatLngPoint(ImplicitDict):
     '''A clas to hold information about a location as Latitude / Longitude pair'''
     lat: float
     lng: float
 
-class Radius(NamedTuple):
+class Radius(ImplicitDict):
     ''' A class to hold the radius of a circle for the outline_circle object '''
     value: float
     units:str
 
-class VolumePolygon(NamedTuple):
+class VolumePolygon(ImplicitDict):
     ''' A class to hold the polygon object, used in the outline_polygon of the Volume3D object '''
     vertices: List[LatLngPoint] # A minimum of three LatLngPoints
 
-class Circle(NamedTuple):
+class Circle(ImplicitDict):
     ''' Hold the details of a circle object used in the outline_circle object'''
     center: LatLngPoint 
     radius: Radius
@@ -47,26 +47,26 @@ class Time(ImplicitDict):
     value: str
     format:str 
 
-class OperationalIntentReference(NamedTuple):
+class OperationalIntentReference(ImplicitDict):
     """Class for keeping track of an operational intent reference"""
     id: str
 
 
-class Volume3D(NamedTuple):
+class Volume3D(ImplicitDict):
     '''A class to hold Volume3D objects'''
     
     outline_polygon: VolumePolygon
     altitude_lower: Altitude
     altitude_upper: Altitude
 
-class Volume4D(NamedTuple):
+class Volume4D(ImplicitDict):
     '''A class to hold ASTM Volume4D objects '''
     volume: Volume3D
     time_start: StringBasedDateTime
     time_end: StringBasedDateTime
 
 
-class OperationalIntentDetails(NamedTuple):
+class OperationalIntentDetails(ImplicitDict):
     """Class for keeping track of an operational intent reference """
     volumes: List[Volume4D]
     priority: int
@@ -84,5 +84,4 @@ class PathPayload(ImplicitDict):
     path: LineString
     is_control: bool
     path_options: TreatmentPathOptions
-  
   
