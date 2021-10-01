@@ -26,7 +26,7 @@ class Radius(NamedTuple):
     value: float
     units:str
 
-class Polygon(NamedTuple):
+class VolumePolygon(NamedTuple):
     ''' A class to hold the polygon object, used in the outline_polygon of the Volume3D object '''
     vertices: List[LatLngPoint] # A minimum of three LatLngPoints
 
@@ -36,12 +36,16 @@ class Circle(NamedTuple):
     radius: Radius
 
 
-class Altitude(NamedTuple):
+class Altitude(ImplicitDict):
     ''' A class to hold altitude '''
     value:int
-    reference:str
-    units: str
+    reference:str 
+    units: str 
 
+class Time(ImplicitDict):
+    ''' A class to hold Time'''
+    value: str
+    format:str 
 
 class OperationalIntentReference(NamedTuple):
     """Class for keeping track of an operational intent reference"""
@@ -51,7 +55,7 @@ class OperationalIntentReference(NamedTuple):
 class Volume3D(NamedTuple):
     '''A class to hold Volume3D objects'''
     
-    outline_polygon: Polygon
+    outline_polygon: VolumePolygon
     altitude_lower: Altitude
     altitude_upper: Altitude
 
@@ -67,7 +71,7 @@ class OperationalIntentDetails(NamedTuple):
     volumes: List[Volume4D]
     priority: int
 
-class TreatmentVolumeOptions(NamedTuple):
+class TreatmentVolumeOptions(ImplicitDict):
     """ A class to hold configuration for developing treatments """
     intersect_altitude: bool = 0
     is_control: bool = 0
@@ -80,5 +84,5 @@ class PathPayload(ImplicitDict):
     path: LineString
     is_control: bool
     path_options: TreatmentPathOptions
-    
-    
+  
+  
