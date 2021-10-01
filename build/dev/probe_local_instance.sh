@@ -7,10 +7,10 @@ RESULTFILE="$(pwd)/probe_local_instance_test_result.xml"
 touch "${RESULTFILE}"
 GATEWAY_CONTAINER="dss_sandbox_local-dss-http-gateway_1"
 OAUTH_CONTAINER="dss_sandbox_local-dss-dummy-oauth_1"
-declare -a localhost_containers="$GATEWAY_CONTAINER $OAUTH_CONTAINER"
+declare -a localhost_containers=("$GATEWAY_CONTAINER" "$OAUTH_CONTAINER")
 
-for container_name in $localhost_containers; do
-	if [ "$( docker container inspect -f '{{.State.Status}}' $container_name )" == "running" ]; then
+for container_name in "${localhost_containers[@]}"; do
+	if [ "$( docker container inspect -f '{{.State.Status}}' "$container_name" )" == "running" ]; then
 		echo "$container_name available!"
 	else
 		echo "Error: $container_name not running. Execute run_locally.sh before running probe_local_instance.sh";
@@ -32,7 +32,7 @@ cd "${BASEDIR}"
 sleep 1
 echo " -------------- PYTEST -------------- "
 echo "Building Integration Test container"
-echo "$(pwd)"
+pwd
 docker build -q --rm -f monitoring/prober/Dockerfile monitoring -t probe-local-test
 
 echo "Finally Begin Testing"
