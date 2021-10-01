@@ -233,15 +233,18 @@ def test_mutate_subs(ids, scd_api, scd_session2, scd_session):
   req = _make_sub_req(SUB_BASE_URL_A, notify_ops=True, notify_constraints=True)
   req['old_version'] = existing_version
   if scd_api == scd.API_0_3_5:
-    op_scope = (SCOPE_SC)
-    resp = scd_session2.put('/subscriptions/{}'.format(ids(SUB1_TYPE)), json=req, scope=op_scope)
+    both_scope = SCOPE_SC + " " + SCOPE_CI
+    resp = scd_session2.put('/subscriptions/{}'.format(ids(SUB1_TYPE)), json=req, scope=both_scope)
   elif scd_api == scd.API_0_3_17:
-    op_scope = (SCOPE_SC)
-  resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB1_TYPE), existing_version), json=req, scope=op_scope)
+    both_scope = SCOPE_SC + " " + SCOPE_CP
+  resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB1_TYPE), existing_version), json=req, scope=both_scope)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  assert ids(CONSTRAINT_TYPE) in [constraint['id'] for constraint in data.get('constraints', [])], data
+  if scd_api == scd.API_0_3_5:
+    assert ids(CONSTRAINT_TYPE) in [constraint['id'] for constraint in data.get('constraints', [])], data
+  elif scd_api == scd.API_0_3_17:
+    assert ids(CONSTRAINT_TYPE) in [constraint['id'] for constraint in data.get('constraint_references', [])], data
 
   # GET current sub3 before mutation
   resp = scd_session2.get('/subscriptions/{}'.format(ids(SUB3_TYPE)), scope=sub_scope)
@@ -262,7 +265,10 @@ def test_mutate_subs(ids, scd_api, scd_session2, scd_session):
     assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  assert not data.get('constraints', []), data
+  if scd_api == scd.API_0_3_5:
+    assert not data.get('constraints', []), data
+  elif scd_api == scd.API_0_3_17:
+    assert not data.get('constraint_references', []), data
 
 
 # Preconditions:
