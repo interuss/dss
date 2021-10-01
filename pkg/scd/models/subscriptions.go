@@ -24,8 +24,12 @@ const (
 
 // Subscription represents an SCD subscription
 type Subscription struct {
-	ID                          dssmodels.ID
-	Version                     *dssmodels.Version
+	ID dssmodels.ID
+
+	// Version is an OVN-like string constructed from the Subscription's
+	// updated_at field in the database; it may be unspecified when creating a new
+	// Subscription in the database.
+	Version                     OVN
 	NotificationIndex           int
 	Manager                     dssmodels.Manager
 	StartTime                   *time.Time

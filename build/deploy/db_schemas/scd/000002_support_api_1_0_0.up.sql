@@ -1,6 +1,5 @@
-/* Switch Subscription version from integer to string */
-SET enable_experimental_alter_column_type_general = true;
-ALTER TABLE scd_subscriptions ALTER COLUMN version SET DATA TYPE STRING;
+/* Note: Subscription version column is now ignored; version, like OVN for
+   operational intent, is encoded in updated_at */
 
 /* Add tracking for operational intent state */
 CREATE TYPE operational_intent_state AS ENUM ('Unknown', 'Accepted', 'Activated', 'Nonconforming', 'Contingent');
