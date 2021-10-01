@@ -23,17 +23,12 @@ class FlightVolumeGenerator():
         self.utm_zone = utm_zone
 
         self.altitude_agl:float = 50.0
-        self.altitude_envelope: int = 15
-        self.control_flight_path: LineString
-        self.buffered_control_flight_path: Polygon
+        self.altitude_envelope: int = 15 # the buffer in meters for converting from flight path to a volume
+        self.control_flight_path: LineString # the initial flight path against which subsequent flight paths are generated
+                
         
-        self.control_volume3D: Volume3D
-        self.control_volume4D: Volume4D
-
-        self.raw_paths: List[PathPayload]
-        
-        self.now = arrow.now()
-        
+        self.raw_paths: List[PathPayload]        
+        self.now = arrow.now()        
         self.geod = Geod(ellps="WGS84")
         self.input_extents_valid()
 
@@ -82,7 +77,7 @@ class FlightVolumeGenerator():
             flight_path_utm = self.utm_converter(flight_path_shp)
             buffer_shape_utm = flight_path_utm.buffer(15)
             buffered_shape = self.utm_converter(buffer_shape_utm, inverse=True)
-            self.buffered_control_flight_path = buffered_shape
+            
             self.control_flight_path = flight_path
         else: 
             if path_options.intersect_space: 
@@ -124,8 +119,6 @@ class FlightVolumeGenerator():
        
         volume3D = Volume3D(outline_polygon = polygon, altitude_lower=altitude_lower, altitude_upper=altitude_upper)
         
-        if volume_generation_options.is_control:
-            self.control_volume3D = volume3D
         return volume3D
 
     def transform_3d_volume_to_4d(self, volume_3d : Volume3D,volume_generation_options: TreatmentVolumeOptions) -> Volume4D:
@@ -199,9 +192,7 @@ class SCDFlightPathVolumeWriter():
     def __init__(self, raw_paths:List[PathPayload],  serialized_flight_volumes: List[Volume4D], country_code='che')-> None:
         
         self.country_code = country_code
-
-        self.output_directory = Path('test_definitions', self.country_code)
-        
+        self.output_directory = Path('test_definitions', self.country_code)        
         # Create test_definition directory if it does not exist        
         self.output_directory.mkdir(parents=True, exist_ok=True)
         self.output_subdirectories = (Path(self.output_directory, 'flight_volumes'), Path(self.output_directory, 'path_geojson'),)
@@ -214,13 +205,10 @@ class SCDFlightPathVolumeWriter():
         ''' A method to write flight paths to disk as GeoJSON features '''
         
         for path_id, path_payload in enumerate(self.raw_paths):
-            feature_collection = {"type": "FeatureCollection", "features": []}           
-            
+            feature_collection = {"type": "FeatureCollection", "features": []}                       
             line_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(path_payload.path)}
-
             feature_collection['features'].append(line_feature)
             path_file_name = 'path_%s.geojson' % str(path_id + 1)  # Avoid Zero based numbering
-
             tracks_file_path = self.output_subdirectories[1] / path_file_name
             with open(tracks_file_path, 'w') as f:
                 f.write(json.dumps(feature_collection))
@@ -230,8 +218,7 @@ class SCDFlightPathVolumeWriter():
         ''' A method to write volume 4D objects to disk '''
 
         for volume_id, volume in enumerate(self.serialized_flight_volumes):            
-            volume_file_name = 'volume_%s.json' % str(volume_id + 1)  # Avoid Zero based numbering
-           
+            volume_file_name = 'volume_%s.json' % str(volume_id + 1)  # Avoid Zero based numbering           
             tracks_file_path = self.output_subdirectories[0] / volume_file_name
             with open(tracks_file_path, 'w') as f:
                 f.write(json.dumps(volume))
