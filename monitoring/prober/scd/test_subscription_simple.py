@@ -54,7 +54,6 @@ def _check_sub1(data, sub_id, scd_api):
   assert data['subscription']['id'] == sub_id
   assert (('notification_index' not in data['subscription']) or
           (data['subscription']['notification_index'] == 0))
-  assert data['subscription']['version'] == 1
   assert data['subscription']['uss_base_url'] == 'https://example.com/foo'
   assert data['subscription']['time_start']['format'] == scd.TIME_FORMAT_CODE
   assert data['subscription']['time_end']['format'] == scd.TIME_FORMAT_CODE
@@ -151,11 +150,15 @@ def test_mutate_sub(ids, scd_api, scd_session):
   assert existing_sub is not None
 
   req = _make_sub1_req(scd_api)
-  if scd_api == scd.API_0_3_5:
-    req['old_version'] = existing_sub['version']
   req['notify_for_constraints'] = True
 
-  resp = scd_session.put('/subscriptions/{}'.format(ids(SUB_TYPE)), json=req)
+  if scd_api == scd.API_0_3_5:
+    req['old_version'] = existing_sub['version']
+    resp = scd_session.put('/subscriptions/{}'.format(ids(SUB_TYPE)), json=req)
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session.put('/subscriptions/{}/{}'.format(ids(SUB_TYPE), existing_sub['version']), json=req)
+  else:
+    raise NotImplementedError('Unsupported API version {}'.format(scd_api))
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
@@ -168,7 +171,14 @@ def test_mutate_sub(ids, scd_api, scd_session):
 def test_delete_sub(ids, scd_api, scd_session):
   if scd_session is None:
     return
-  resp = scd_session.delete('/subscriptions/{}'.format(ids(SUB_TYPE)))
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session.delete('/subscriptions/{}'.format(ids(SUB_TYPE)))
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
+    assert resp.status_code == 200, resp.content
+    resp = scd_session.delete('/subscriptions/{}/{}'.format(ids(SUB_TYPE), resp.json()['subscription']['version']))
+  else:
+    raise NotImplementedError('Unsupported API version {}'.format(scd_api))
   assert resp.status_code == 200, resp.content
 
 
