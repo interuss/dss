@@ -84,6 +84,15 @@ def _parse_conflicts(entities: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict], 
       ovns.add(ovn)
   return ops, constraints, ovns
 
+# Parses AirspaceConflictResponse (v17) entities into Dict[Operation ID, Operation Reference] +
+# Dict[Constraint ID, Constraint Reference]
+def _parse_conflicts_v17(conflicts: Dict) -> Tuple[Dict[str, Dict], set]:
+  missing_operational_intents = conflicts.get('missing_operational_intents', [])
+  ops = dict((op['id'], op) for op in missing_operational_intents)
+  missing_constraints = conflicts.get('missing_constraints', [])
+  constraints = dict((constraint['id'], constraint) for constraint in missing_constraints)
+  return ops, constraints
+
 
 @for_api_versions(scd.API_0_3_5)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session, scd_session2):
@@ -447,8 +456,8 @@ def test_create_op2_no_key_v15(ids, scd_api, scd_session, scd_session2):
   resp = scd_session2.put('/operational_intent_references/{}'.format(ids(OP2_TYPE)), json=req)
   assert resp.status_code == 409, resp.content
   data = resp.json()
-  assert 'entity_conflicts' in data, data
-  missing_ops, _, _ = _parse_conflicts(data['entity_conflicts'])
+  assert 'missing_operational_intents' in data, data
+  missing_ops, _ = _parse_conflicts_v17(data)
   assert ids(OP1_TYPE) in missing_ops
 
 
