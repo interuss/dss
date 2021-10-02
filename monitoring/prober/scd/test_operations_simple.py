@@ -126,7 +126,7 @@ def test_ensure_clean_workspace_v5(ids, scd_api, scd_session, scd_session2):
 
 
 @for_api_versions(scd.API_0_3_17)
-def test_ensure_clean_workspace_v15(ids, scd_api, scd_session, scd_session2):
+def test_ensure_clean_workspace_v17(ids, scd_api, scd_session, scd_session2):
   for op_id, owner in ((ids(OP1_TYPE), scd_session), (ids(OP2_TYPE), scd_session2)):
     resp = owner.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
     if resp.status_code == 200:
@@ -166,7 +166,7 @@ def test_op1_does_not_exist_get_1_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_op1_does_not_exist_get_1_v15(ids, scd_api, scd_session, scd_session2):
+def test_op1_does_not_exist_get_1_v17(ids, scd_api, scd_session, scd_session2):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
   assert resp.status_code == 404, resp.content
 
@@ -186,7 +186,7 @@ def test_op1_does_not_exist_get_2_v5(ids, scd_api, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_op1_does_not_exist_get_2_v15(ids, scd_api, scd_session2):
+def test_op1_does_not_exist_get_2_v17(ids, scd_api, scd_session2):
   resp = scd_session2.get('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
   assert resp.status_code == 404, resp.content
 
@@ -213,7 +213,7 @@ def test_op1_does_not_exist_query_1_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_op1_does_not_exist_query_1_v15(ids, scd_api, scd_session, scd_session2):
+def test_op1_does_not_exist_query_1_v17(ids, scd_api, scd_session, scd_session2):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
@@ -247,7 +247,7 @@ def test_op1_does_not_exist_query_2_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_op1_does_not_exist_query_2_v15(ids, scd_api, scd_session, scd_session2):
+def test_op1_does_not_exist_query_2_v17(ids, scd_api, scd_session, scd_session2):
   if scd_session2 is None:
     return
   time_now = datetime.datetime.utcnow()
@@ -293,7 +293,7 @@ def test_create_op1_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: Operation Op1 created by scd_session user
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_create_op1_v15(ids, scd_api, scd_session, scd_session2):
+def test_create_op1_v17(ids, scd_api, scd_session, scd_session2):
   req = _make_op1_request()
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP1_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
@@ -338,7 +338,7 @@ def test_delete_implicit_sub_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_delete_implicit_sub_v15(ids, scd_api, scd_session, scd_session2):
+def test_delete_implicit_sub_v17(ids, scd_api, scd_session, scd_session2):
   if scd_session is None:
     return
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
@@ -366,7 +366,7 @@ def test_delete_op1_by_uss2_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_delete_op1_by_uss2_v15(ids, scd_api, scd_session, scd_session2):
+def test_delete_op1_by_uss2_v17(ids, scd_api, scd_session, scd_session2):
   resp = scd_session2.delete('/operational_intent_references/{}/{}'.format(ids(OP1_TYPE), op1_ovn))
   assert resp.status_code == 403, resp.content
 
@@ -387,7 +387,7 @@ def test_create_op2_no_sub_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_create_op2_no_sub_v15(ids, scd_api, scd_session, scd_session2):
+def test_create_op2_no_sub_v17(ids, scd_api, scd_session, scd_session2):
   req = _make_op2_request()
   resp = scd_session2.put('/operational_intent_references/{}'.format(ids(OP2_TYPE)), json=req)
   assert resp.status_code == 400, resp.content
@@ -461,7 +461,7 @@ def test_create_op2_no_key_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_create_op2_no_key_v15(ids, scd_api, scd_session, scd_session2):
+def test_create_op2_no_key_v17(ids, scd_api, scd_session, scd_session2):
   req = _make_op2_request()
   req['subscription_id'] = ids(SUB2_TYPE)
   resp = scd_session2.put('/operational_intent_references/{}'.format(ids(OP2_TYPE)), json=req)
@@ -522,7 +522,7 @@ def test_create_op2_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: Operation Op2 created by scd_session2 user
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_create_op2_v15(ids, scd_api, scd_session, scd_session2):
+def test_create_op2_v17(ids, scd_api, scd_session, scd_session2):
   req = _make_op2_request()
   req['subscription_id'] = ids(SUB2_TYPE)
   req['key'] = [op1_ovn]
@@ -590,7 +590,7 @@ def test_read_ops_from_uss1_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_read_ops_from_uss1_v15(ids, scd_api, scd_session, scd_session2):
+def test_read_ops_from_uss1_v17(ids, scd_api, scd_session, scd_session2):
   if scd_session is None:
     return
   time_now = datetime.datetime.utcnow()
@@ -640,7 +640,7 @@ def test_read_ops_from_uss2_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_read_ops_from_uss2_v15(ids, scd_api, scd_session, scd_session2):
+def test_read_ops_from_uss2_v17(ids, scd_api, scd_session, scd_session2):
   if scd_session2 is None:
     return
   time_now = datetime.datetime.utcnow()
@@ -708,7 +708,7 @@ def test_mutate_op1_bad_key_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_mutate_op1_bad_key_v15(ids, scd_api, scd_session, scd_session2):
+def test_mutate_op1_bad_key_v17(ids, scd_api, scd_session, scd_session2):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
   assert resp.status_code == 200, resp.content
   existing_op = resp.json().get('operational_intent_reference', None)
@@ -798,7 +798,7 @@ def test_mutate_op1_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: Operation Op1 mutated to second version
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_mutate_op1_v15(ids, scd_api, scd_session, scd_session2):
+def test_mutate_op1_v17(ids, scd_api, scd_session, scd_session2):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
   assert resp.status_code == 200, resp.content
   existing_op = resp.json().get('operational_intent_reference', None)
@@ -985,7 +985,7 @@ def test_delete_op1_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: Operation Op1 deleted
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_delete_op1_v15(ids, scd_api, scd_session, scd_session2):
+def test_delete_op1_v17(ids, scd_api, scd_session, scd_session2):
   resp = scd_session.delete('/operational_intent_references/{}/{}'.format(ids(OP1_TYPE), op1_ovn))
   assert resp.status_code == 200, resp.content
 
@@ -1037,7 +1037,7 @@ def test_delete_op2_v5(ids, scd_api, scd_session, scd_session2):
 # Mutations: Operation Op2 deleted
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_delete_op2_v15(ids, scd_api, scd_session, scd_session2):
+def test_delete_op2_v17(ids, scd_api, scd_session, scd_session2):
   resp = scd_session2.delete('/operational_intent_references/{}/{}'.format(ids(OP2_TYPE), op2_ovn))
   assert resp.status_code == 200, resp.content
 
