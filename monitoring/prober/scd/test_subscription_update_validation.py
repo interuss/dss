@@ -71,7 +71,7 @@ def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
 
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
+def test_ensure_clean_workspace_v17(ids, scd_api, scd_session):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
   if resp.status_code == 200:
     resp = scd_session.delete('/operational_intent_references/{}'.format(ids(OP_TYPE)))
@@ -116,7 +116,7 @@ def test_create_op_v5(ids, scd_api, scd_session):
 # Mutations: Operation and its implicit subscription created
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_create_op_v15(ids, scd_api, scd_session):
+def test_create_op_v17(ids, scd_api, scd_session):
   req = _make_op_req()
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
@@ -260,7 +260,7 @@ def test_delete_op_v5(ids, scd_api, scd_session):
 # Mutations: Operation deleted
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_delete_op_v15(ids, scd_api, scd_session):
+def test_delete_op_v17(ids, scd_api, scd_session):
   resp = scd_session.delete('/operational_intent_references/{}'.format(ids(OP_TYPE)))
   assert resp.status_code == 200, resp.content
 
@@ -278,7 +278,7 @@ def test_get_deleted_op_by_id_v5(ids, scd_api, scd_session):
 # Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_get_deleted_op_by_id_v15(ids, scd_api, scd_session):
+def test_get_deleted_op_by_id_v17(ids, scd_api, scd_session):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
   assert resp.status_code == 404, resp.content
 
