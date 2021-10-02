@@ -301,12 +301,26 @@ def test_get_deleted_op_by_id_v17(ids, scd_api, scd_session):
 
 # Preconditions: Subscription sub_id created
 # Mutations: Subscription sub_id deleted
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_delete_sub(scd_api, scd_session):
+def test_delete_sub_v5(scd_api, scd_session):
   if scd_session is None:
     return
   resp = scd_session.delete('/subscriptions/{}'.format(sub_id))
+  assert resp.status_code == 200, resp.content
+
+
+# Preconditions: Subscription sub_id created
+# Mutations: Subscription sub_id deleted
+@for_api_versions(scd.API_0_3_17)
+@default_scope(SCOPE_SC)
+def test_delete_sub_v17(scd_api, scd_session):
+  if scd_session is None:
+    return
+  resp = scd_session.get('/subscriptions/{}'.format(sub_id))
+  assert resp.status_code == 200, resp.content
+  version = resp.json()['subscription']['version']
+  resp = scd_session.delete('/subscriptions/{}/{}'.format(sub_id, version))
   assert resp.status_code == 200, resp.content
 
 
