@@ -1066,5 +1066,8 @@ def test_delete_op2_v15(ids, scd_api, scd_session, scd_session2):
 def test_delete_sub2(ids, scd_api, scd_session2):
   if scd_session2 is None:
     return
-  resp = scd_session2.delete('/subscriptions/{}'.format(ids(SUB2_TYPE)))
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session2.delete('/subscriptions/{}'.format(ids(SUB2_TYPE)))
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session2.delete('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version))
   assert resp.status_code == 200, resp.content
