@@ -327,9 +327,11 @@ def test_delete_implicit_sub_v15(ids, scd_api, scd_session, scd_session2):
     return
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
   assert resp.status_code == 200, resp.content
-  implicit_sub_id = resp.json()['operational_intent_reference']['subscription_id']
+  operational_intent_reference = resp.json()['operational_intent_reference']
+  implicit_sub_id = operational_intent_reference['subscription_id']
+  implicit_sub_version = operational_intent_reference['version']
 
-  resp = scd_session.delete('/subscriptions/{}'.format(implicit_sub_id))
+  resp = scd_session.delete('/subscriptions/{}/{}'.format(implicit_sub_id, implicit_sub_version))
   assert resp.status_code == 400, resp.content
 
 
