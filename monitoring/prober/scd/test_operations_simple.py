@@ -114,7 +114,8 @@ def test_ensure_clean_workspace_v15(ids, scd_api, scd_session, scd_session2):
   for op_id, owner in ((ids(OP1_TYPE), scd_session), (ids(OP2_TYPE), scd_session2)):
     resp = owner.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
     if resp.status_code == 200:
-      resp = owner.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+      ovn = resp.json()['operational_intent_reference']['ovn']
+      resp = owner.delete('/operational_intent_references/{}/{}'.format(op_id, ovn), scope=SCOPE_SC)
       assert resp.status_code == 200, resp.content
     elif resp.status_code == 404:
       # As expected.
@@ -124,7 +125,8 @@ def test_ensure_clean_workspace_v15(ids, scd_api, scd_session, scd_session2):
 
   resp = scd_session2.get('/subscriptions/{}'.format(ids(SUB2_TYPE)), scope=SCOPE_SC)
   if resp.status_code == 200:
-    resp = scd_session2.delete('/subscriptions/{}'.format(ids(SUB2_TYPE)), scope=SCOPE_SC)
+    version = resp.json()['subscription']['version']
+    resp = scd_session2.delete('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), version), scope=SCOPE_SC)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected.
