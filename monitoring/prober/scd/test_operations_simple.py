@@ -519,19 +519,19 @@ def test_create_op2_v15(ids, scd_api, scd_session, scd_session2):
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  op = data['operation_reference']
+  op = data['operational_intent_reference']
   assert op['id'] == ids(OP2_TYPE)
   assert op['uss_base_url'] == URL_OP2
   assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
   assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
   assert op['version'] == 1
   assert 'subscription_id' in op
-  assert 'state' not in op
+  assert op['state'] == 'Accepted'
   assert op.get('ovn', '')
 
   resp = scd_session2.get('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
   assert resp.status_code == 200, resp.content
-  implicit_sub_id = resp.json()['operation_reference']['subscription_id']
+  implicit_sub_id = resp.json()['operational_intent_reference']['subscription_id']
 
   # USS2 should definitely be instructed to notify USS1's implicit Subscription of the new Operation
   subscribers = _parse_subscribers(data.get('subscribers', []))
