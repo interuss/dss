@@ -74,7 +74,8 @@ def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
 def test_ensure_clean_workspace_v17(ids, scd_api, scd_session):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
   if resp.status_code == 200:
-    resp = scd_session.delete('/operational_intent_references/{}'.format(ids(OP_TYPE)))
+    ovn = resp.json()['operational_intent_reference']['ovn']
+    resp = scd_session.delete('/operational_intent_references/{}/{}'.format(ids(OP_TYPE), ovn), scope=SCOPE_SC)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected.
@@ -161,7 +162,10 @@ def test_mutate_sub_shrink_2d(scd_api, scd_session):
     req['old_version'] = existing_sub['version']
   req['notify_for_constraints'] = True
 
-  resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session.put('/subscriptions/{}/{}'.format(sub_id, existing_sub['version']), json=req)
   assert resp.status_code == 400, resp.content
 
 
