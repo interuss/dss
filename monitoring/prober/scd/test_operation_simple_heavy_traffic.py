@@ -173,7 +173,6 @@ def test_create_ops_v15(ids, scd_api, scd_session):
     assert op['version'] == 1
     assert op['ovn']
     assert 'subscription_id' in op
-    assert 'state' not in op
 
     ovn_map[op_id] = op['ovn']
 
@@ -203,11 +202,10 @@ def test_get_ops_by_ids_v15(ids, scd_api, scd_session):
     assert resp.status_code == 200, resp.content
 
     data = resp.json()
-    op = data['operation_reference']
+    op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
     assert op['version'] == 1
-    assert 'state' not in op
 
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
@@ -230,7 +228,8 @@ def test_get_ops_by_search_v15(ids, scd_api, scd_session):
     'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
-  found_ids = [op['id'] for op in resp.json().get('operational_intent_reference', [])]
+  found_ids = [op['id'] for op in resp.json().get('operational_intent_references', [])]
+  print(found_ids)
   assert len(_intersection(map(ids, OP_TYPES), found_ids)) == len(OP_TYPES)
 
 
@@ -244,7 +243,7 @@ def test_get_ops_by_search_earliest_time_included_v5(ids, scd_api, scd_session):
     'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
-  found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
+  found_ids = [op['id'] for op in resp.json().get('operational_intent_references', [])]
   assert len(_intersection(map(ids, OP_TYPES), found_ids)) == len(OP_TYPES)
 
 
@@ -256,7 +255,7 @@ def test_get_ops_by_search_earliest_time_included_v15(ids, scd_api, scd_session)
     'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
-  found_ids = [op['id'] for op in resp.json().get('operational_intent_reference', [])]
+  found_ids = [op['id'] for op in resp.json().get('operational_intent_references', [])]
   assert len(_intersection(map(ids, OP_TYPES), found_ids)) == len(OP_TYPES)
 
 
@@ -387,12 +386,12 @@ def test_mutate_ops_v5(ids, scd_api, scd_session):
 
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_mutate_ops_v15(ids, scd_api, scd_session):
+def test_mutate_ops_v17(ids, scd_api, scd_session):
   for idx, op_id in enumerate(map(ids, OP_TYPES)):
     # GET current op
     resp = scd_session.get('/operational_intent_references/{}'.format(op_id))
     assert resp.status_code == 200, resp.content
-    existing_op = resp.json().get('operation_reference', None)
+    existing_op = resp.json().get('operational_intent_reference', None)
     assert existing_op is not None
 
     req = _make_op_request(idx)
@@ -402,7 +401,7 @@ def test_mutate_ops_v15(ids, scd_api, scd_session):
       'area_of_interest': req['extents'][0]
     })
     assert resp.status_code == 200, resp.content
-    found_ids = [op['id'] for op in resp.json().get('operational_intent_reference', [])]
+    found_ids = [op['id'] for op in resp.json().get('operational_intent_references', [])]
     ovns = [ovn_map[id] for id in found_ids]
 
     # UPDATE operation
@@ -415,16 +414,15 @@ def test_mutate_ops_v15(ids, scd_api, scd_session):
       'subscription_id': existing_op['subscription_id']
     }
 
-    resp = scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+    resp = scd_session.put('/operational_intent_references/{}/{}'.format(op_id, existing_op['ovn']), json=req, scope=SCOPE_SC)
     assert resp.status_code == 200, resp.content
 
     data = resp.json()
-    op = data['operation_reference']
+    op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == 'https://example.com/uss2'
-    assert op['version'] == 2
+    assert op['version'] != existing_op['version']
     assert op['subscription_id'] == existing_op['subscription_id']
-    assert 'state' not in op
 
     ovn_map[op_id] = op['ovn']
 
@@ -439,9 +437,10 @@ def test_delete_op_v5(ids, scd_api, scd_session):
 
 
 @for_api_versions(scd.API_0_3_17)
+@default_scope(SCOPE_SC)
 def test_delete_op_v15(ids, scd_api, scd_session):
   for op_id in map(ids, OP_TYPES):
-    resp = scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+    resp = scd_session.delete('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]))
     assert resp.status_code == 200, resp.content
 
 
