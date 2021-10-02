@@ -88,9 +88,9 @@ def _parse_conflicts(entities: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict], 
 # Dict[Constraint ID, Constraint Reference]
 def _parse_conflicts_v17(conflicts: Dict) -> Tuple[Dict[str, Dict], set]:
   missing_operational_intents = conflicts.get('missing_operational_intents', [])
-  ops = dict((op['id'], op) for op in missing_operational_intents)
+  ops = {op['id']: op for op in missing_operational_intents}
   missing_constraints = conflicts.get('missing_constraints', [])
-  constraints = dict((constraint['id'], constraint) for constraint in missing_constraints)
+  constraints = {constraint['id']: constraint for constraint in missing_constraints}
   return ops, constraints
 
 
