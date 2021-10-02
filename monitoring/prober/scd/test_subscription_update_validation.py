@@ -129,7 +129,7 @@ def test_create_op_v17(ids, scd_api, scd_session):
   assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
   assert op['version'] == 1
   assert 'subscription_id' in op
-  assert 'state' not in op
+  assert op['state'] == 'Accepted'
 
   # Make sure the implicit Subscription exists when queried separately
   global sub_id
