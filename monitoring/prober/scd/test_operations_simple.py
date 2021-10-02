@@ -589,7 +589,7 @@ def test_read_ops_from_uss1_v15(ids, scd_api, scd_session, scd_session2):
   })
   assert resp.status_code == 200, resp.content
 
-  ops = {op['id']: op for op in resp.json().get('operational_intent_reference', [])}
+  ops = {op['id']: op for op in resp.json().get('operational_intent_references', [])}
   assert ids(OP1_TYPE) in ops
   assert ids(OP2_TYPE) in ops
 
