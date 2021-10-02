@@ -351,7 +351,7 @@ def test_delete_op1_by_uss2_v5(ids, scd_api, scd_session, scd_session2):
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_op1_by_uss2_v15(ids, scd_api, scd_session, scd_session2):
-  resp = scd_session2.delete('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
+  resp = scd_session2.delete('/operational_intent_references/{}/{}'.format(ids(OP1_TYPE), op1_ovn))
   assert resp.status_code == 403, resp.content
 
 
