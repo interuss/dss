@@ -440,9 +440,7 @@ def test_delete_op_v5(ids, scd_api, scd_session):
 @default_scope(SCOPE_SC)
 def test_delete_op_v15(ids, scd_api, scd_session):
   for op_id in map(ids, OP_TYPES):
-    resp = scd_session.get('/operational_intent_references/{}'.format(op_id))
-    assert resp.status_code == 200, resp.content
-    resp = scd_session.delete('/operational_intent_references/{}/{}'.format(op_id, resp.json()['operational_intent_reference']['ovn']))
+    resp = scd_session.delete('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]))
     assert resp.status_code == 200, resp.content
 
 
