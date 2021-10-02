@@ -1038,7 +1038,7 @@ def test_delete_op2_v5(ids, scd_api, scd_session, scd_session2):
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_op2_v15(ids, scd_api, scd_session, scd_session2):
-  resp = scd_session2.delete('/operational_intent_references/{}'.format(ids(OP2_TYPE)))
+  resp = scd_session2.delete('/operational_intent_references/{}/{}'.format(ids(OP2_TYPE), op2_ovn))
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
