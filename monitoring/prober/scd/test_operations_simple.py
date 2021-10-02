@@ -32,6 +32,8 @@ SUB2_TYPE = register_resource_type(215, 'Subscription')
 op1_ovn = None
 op2_ovn = None
 
+sub2_version = None
+
 
 def _make_op1_request():
   time_start = datetime.datetime.utcnow()
@@ -429,6 +431,10 @@ def test_create_op2sub(ids, scd_api, scd_session, scd_session2):
   resp = scd_session2.get('/subscriptions/{}'.format(ids(SUB2_TYPE)))
   assert resp.status_code == 200, resp.content
 
+  if scd_api == scd.API_0_3_17:
+    global sub2_version
+    sub2_version = data['subscription']['version']
+
 
 # Try (unsuccessfully) to create Op2 with a missing key
 # Preconditions:
@@ -795,7 +801,7 @@ def test_mutate_op1_v5(ids, scd_api, scd_session, scd_session2):
 def test_mutate_op1_v15(ids, scd_api, scd_session, scd_session2):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
   assert resp.status_code == 200, resp.content
-  existing_op = resp.json().get('operation_reference', None)
+  existing_op = resp.json().get('operational_intent_reference', None)
   assert existing_op is not None, resp.content
 
   global op1_ovn
@@ -805,20 +811,20 @@ def test_mutate_op1_v15(ids, scd_api, scd_session, scd_session2):
     'key': [op1_ovn, op2_ovn],
     'extents': old_req['extents'],
     'old_version': existing_op['version'],
-    'state': 'Activated',
+    'state': 'Accepted',
     'uss_base_url': URL_OP1,
     'subscription_id': existing_op['subscription_id']
   }
-  resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP1_TYPE)), json=req)
+  resp = scd_session.put('/operational_intent_references/{}/{}'.format(ids(OP1_TYPE), op1_ovn), json=req)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  op = data['operation_reference']
+  op = data['operational_intent_reference']
   assert op['id'] == ids(OP1_TYPE)
   assert op['uss_base_url'] == URL_OP1
   assert op['version'] == 2
   assert op['subscription_id'] == existing_op['subscription_id']
-  assert 'state' not in op
+  assert op['state'] == 'Accepted'
   assert op.get('ovn', '')
 
   # USS1 should definitely be instructed to notify USS2's Subscription of the updated Operation
@@ -840,7 +846,10 @@ def test_mutate_op1_v15(ids, scd_api, scd_session, scd_session2):
 def test_delete_dependent_sub(ids, scd_api, scd_session, scd_session2):
   if scd_session2 is None:
     return
-  resp = scd_session2.delete('/subscriptions/{}'.format(ids(SUB2_TYPE)))
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session2.delete('/subscriptions/{}'.format(ids(SUB2_TYPE)))
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session2.delete('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version))
   assert resp.status_code == 400, resp.content
 
 
