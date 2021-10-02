@@ -86,12 +86,17 @@ def _parse_conflicts(entities: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict], 
 
 # Parses AirspaceConflictResponse (v17) entities into Dict[Operation ID, Operation Reference] +
 # Dict[Constraint ID, Constraint Reference]
-def _parse_conflicts_v17(conflicts: Dict) -> Tuple[Dict[str, Dict], set]:
+def _parse_conflicts_v17(conflicts: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict], set]:
   missing_operational_intents = conflicts.get('missing_operational_intents', [])
   ops = {op['id']: op for op in missing_operational_intents}
   missing_constraints = conflicts.get('missing_constraints', [])
   constraints = {constraint['id']: constraint for constraint in missing_constraints}
-  return ops, constraints
+  ovns = set()
+  for entity in missing_constraints + missing_constraints:
+    ovn = entity.get('ovn', None)
+    if ovn is not None:
+      ovns.add(ovn)
+  return ops, constraints, ovns
 
 
 @for_api_versions(scd.API_0_3_5)
@@ -457,7 +462,7 @@ def test_create_op2_no_key_v15(ids, scd_api, scd_session, scd_session2):
   assert resp.status_code == 409, resp.content
   data = resp.json()
   assert 'missing_operational_intents' in data, data
-  missing_ops, _ = _parse_conflicts_v17(data)
+  missing_ops, _, _ = _parse_conflicts_v17(data)
   assert ids(OP1_TYPE) in missing_ops
 
 
@@ -700,35 +705,35 @@ def test_mutate_op1_bad_key_v5(ids, scd_api, scd_session, scd_session2):
 def test_mutate_op1_bad_key_v15(ids, scd_api, scd_session, scd_session2):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP1_TYPE)))
   assert resp.status_code == 200, resp.content
-  existing_op = resp.json().get('operation_reference', None)
+  existing_op = resp.json().get('operational_intent_reference', None)
   assert existing_op is not None, resp.content
 
   old_req = _make_op1_request()
   req = {
     'extents': old_req['extents'],
     'old_version': existing_op['version'],
-    'state': 'Activated',
+    'state': 'Accepted',
     'uss_base_url': URL_OP1,
     'subscription_id': existing_op['subscription_id']
   }
-  resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP1_TYPE)), json=req)
+  resp = scd_session.put('/operational_intent_references/{}/{}'.format(ids(OP1_TYPE), op1_ovn), json=req)
   assert resp.status_code == 409, resp.content
-  missing_ops, _, _ = _parse_conflicts(resp.json()['entity_conflicts'])
+  missing_ops, _, _ = _parse_conflicts_v17(resp.json())
   assert ids(OP1_TYPE) in missing_ops
   assert ids(OP2_TYPE) in missing_ops
 
   req['key'] = [op1_ovn]
-  resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP1_TYPE)), json=req)
+  resp = scd_session.put('/operational_intent_references/{}/{}'.format(ids(OP1_TYPE), op1_ovn), json=req)
   assert resp.status_code == 409, resp.content
-  missing_ops, _, ovns = _parse_conflicts(resp.json()['entity_conflicts'])
+  missing_ops, _, ovns = _parse_conflicts_v17(resp.json())
   assert ids(OP2_TYPE) in missing_ops
   assert not(op2_ovn in ovns)
   assert not(op1_ovn in ovns)
 
   req['key'] = [op2_ovn]
-  resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP1_TYPE)), json=req)
+  resp = scd_session.put('/operational_intent_references/{}/{}'.format(ids(OP1_TYPE), op1_ovn), json=req)
   assert resp.status_code == 409, resp.content
-  missing_ops, _, ovns = _parse_conflicts(resp.json()['entity_conflicts'])
+  missing_ops, _, ovns = _parse_conflicts_v17(resp.json())
   assert ids(OP1_TYPE) in missing_ops
   assert not(op2_ovn in ovns)
 
