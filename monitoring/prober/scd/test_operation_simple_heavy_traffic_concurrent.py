@@ -109,11 +109,14 @@ def _intersection(list1, list2):
   return list(set(list1) & set(list2))
 
 
-def _put_operation(req, op_id, scd_session, scd_api):
+def _put_operation(req, op_id, scd_session, scd_api, create_new: bool):
   if scd_api == scd.API_0_3_5:
     return scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
   elif scd_api == scd.API_0_3_17:
-    return scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+    if create_new:
+      return scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+    else:
+      return scd_session.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), json=req, scope=SCOPE_SC)
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
@@ -174,7 +177,7 @@ def _delete_operation(op_id, scd_session, scd_api):
   if scd_api == scd.API_0_3_5:
     return scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
   elif scd_api == scd.API_0_3_17:
-    return scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+    return scd_session.delete('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), scope=SCOPE_SC)
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
@@ -226,7 +229,7 @@ def test_create_ops_concurrent(ids, scd_api, scd_session):
       req = _make_op_request(idx)
       op_req_map[op_id] = req
 
-      future = executor.submit(_put_operation, req, op_id, scd_session, scd_api)
+      future = executor.submit(_put_operation, req, op_id, scd_session, scd_api, True)
       future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
@@ -243,7 +246,6 @@ def test_create_ops_concurrent(ids, scd_api, scd_session):
     assert op['version'] == 1
     assert op['ovn']
     assert 'subscription_id' in op
-    assert 'state' not in op
     ovn_map[op_id] = op['ovn']
   assert len(ovn_map) == len(OP_TYPES)
 
@@ -271,7 +273,6 @@ def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
     assert op['version'] == 1
-    assert 'state' not in op
 
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
@@ -293,7 +294,7 @@ def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
     if scd_api == scd.API_0_3_5:
       found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
     else:
-      found_ids = [op['id'] for op in resp.json().get('operational_intent_reference', [])]
+      found_ids = [op['id'] for op in resp.json().get('operational_intent_references', [])]
     total_found_ids.update(found_ids)
 
   assert len(_intersection(map(ids, OP_TYPES), total_found_ids)) == len(OP_TYPES)
@@ -317,7 +318,7 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session):
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
     for op_id in map(ids, OP_TYPES):
       req = op_req_map[op_id]
-      future = executor.submit(_put_operation, req, op_id, scd_session, scd_api)
+      future = executor.submit(_put_operation, req, op_id, scd_session, scd_api, False)
       future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
   ovn_map.clear()
@@ -336,7 +337,6 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session):
     assert op['uss_base_url'] == 'https://example.com/uss2'
     assert op['version'] == 2
     assert op['subscription_id'] == existing_op['subscription_id']
-    assert 'state' not in op
 
     ovn_map[op_id] = op['ovn']
 
