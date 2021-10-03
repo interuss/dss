@@ -263,5 +263,12 @@ def test_search_time_footprint(ids, scd_api, scd_session):
 @default_scope(SCOPE_SC)
 def test_delete_subs(ids, scd_api, scd_session):
   for sub_id in (ids(SUB1_TYPE), ids(SUB2_TYPE), ids(SUB3_TYPE)):
-    resp = scd_session.delete('/subscriptions/{}'.format(sub_id))
+    if scd_api == scd.API_0_3_5:
+      resp = scd_session.delete('/subscriptions/{}'.format(sub_id))
+    elif scd_api == scd.API_0_3_17:
+      resp = scd_session.get('/subscriptions/{}'.format(sub_id))
+      assert resp.status_code == 200
+      resp = scd_session.delete('/subscriptions/{}/{}'.format(sub_id, resp.json()['subscription']['version']))
+    else:
+      raise NotImplementedError('Unsupported API version {}'.format(scd_api))
     assert resp.status_code == 200, resp.content
