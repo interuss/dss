@@ -23,39 +23,62 @@ SUB_TYPE = register_resource_type(212, 'Subscription')
 
 
 @for_api_versions(scd.API_0_3_5)
+@default_scope(SCOPE_SC)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
   for op_id in map(ids, (OP1_TYPE, OP2_TYPE)):
-    resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+    resp = scd_session.get('/operation_references/{}'.format(op_id))
     if resp.status_code == 200:
-      resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+      resp = scd_session.delete('/operation_references/{}'.format(op_id))
       assert resp.status_code == 200, resp.content
-      resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+      resp = scd_session.get('/operation_references/{}'.format(op_id))
       assert resp.status_code == 404, resp.content
     elif resp.status_code == 404:
       # As expected.
       pass
     else:
       assert False, resp.content
+  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
+  if resp.status_code == 200:
+    resp = scd_session.delete('/subscriptions/{}'.format(ids(SUB_TYPE)))
+    assert resp.status_code == 200, resp.content
+    resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
+    assert resp.status_code == 404, resp.content
+  elif resp.status_code == 404:
+    # As expected.
+    pass
+  else:
+    assert False, resp.content
 
 
 @for_api_versions(scd.API_0_3_17)
-def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
+@default_scope(SCOPE_SC)
+def test_ensure_clean_workspace_v17(ids, scd_api, scd_session):
   for op_id in map(ids, (OP1_TYPE, OP2_TYPE)):
     resp = scd_session.get(
-      '/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+      '/operational_intent_references/{}'.format(op_id))
     if resp.status_code == 200:
       resp = scd_session.delete(
-        '/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+        '/operational_intent_references/{}'.format(op_id))
       assert resp.status_code == 200, resp.content
       resp = scd_session.get(
-        '/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+        '/operational_intent_references/{}'.format(op_id))
       assert resp.status_code == 404, resp.content
     elif resp.status_code == 404:
       # As expected.
       pass
     else:
       assert False, resp.content
-
+  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
+  if resp.status_code == 200:
+    resp = scd_session.delete('/subscriptions/{}/{}'.format(ids(SUB_TYPE), resp.json()['subscription']['version']))
+    assert resp.status_code == 200, resp.content
+    resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
+    assert resp.status_code == 404, resp.content
+  elif resp.status_code == 404:
+    # As expected.
+    pass
+  else:
+    assert False, resp.content
 
 # Preconditions: None
 # Mutations: None
@@ -189,9 +212,19 @@ def test_id_conversion_bug_v5(ids, scd_api, scd_session):
   assert resp.status_code == 200, resp.content
 
   req["extents"]["time_start"]["value"] = (time_start + datetime.timedelta(hours=1)).isoformat() + "Z"
-  req["old_version"] = 1
-  resp = scd_session.put('/subscriptions/{}'.format(sub_uuid), json=req)
+  if scd_api == scd.API_0_3_5:
+    req["old_version"] = 1
+    resp = scd_session.put('/subscriptions/{}'.format(sub_uuid), json=req)
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session.put('/subscriptions/{}/{}'.format(sub_uuid, resp.json()['subscription']['version']), json=req)
+  else:
+    raise NotImplementedError('Unsupported API version {}'.format(scd_api))
   assert resp.status_code == 200, resp.content
 
-  resp = scd_session.delete('/subscriptions/{}'.format(sub_uuid))
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session.delete('/subscriptions/{}'.format(sub_uuid))
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session.delete('/subscriptions/{}/{}'.format(sub_uuid, resp.json()['subscription']['version']))
+  else:
+    raise NotImplementedError('Unsupported API version {}'.format(scd_api))
   assert resp.status_code == 200, resp.content
