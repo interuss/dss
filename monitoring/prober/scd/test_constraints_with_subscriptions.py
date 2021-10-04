@@ -252,7 +252,7 @@ def test_mutate_subs(ids, scd_api, scd_session2, scd_session):
   req['old_version'] = existing_sub['version']
 
   if scd_api == scd.API_0_3_5:
-    resp = scd_session2.put('/subscriptions/{}'.format(ids(SUB1_TYPE)), json=req, scope=_read_both_scope(scd_api))
+    resp = scd_session2.put('/subscriptions/{}'.format(ids(SUB3_TYPE)), json=req, scope=_read_both_scope(scd_api))
   elif scd_api == scd.API_0_3_17:
     resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB3_TYPE), existing_sub['version']), json=req, scope=_read_both_scope(scd_api))
   else:

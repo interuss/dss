@@ -243,7 +243,7 @@ def test_get_ops_by_search_earliest_time_included_v5(ids, scd_api, scd_session):
     'area_of_interest': scd.make_vol4(earliest_time, None, 0, 5000, scd.make_circle(-56, 178, 12000))
   })
   assert resp.status_code == 200, resp.content
-  found_ids = [op['id'] for op in resp.json().get('operational_intent_references', [])]
+  found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
   assert len(_intersection(map(ids, OP_TYPES), found_ids)) == len(OP_TYPES)
 
 
