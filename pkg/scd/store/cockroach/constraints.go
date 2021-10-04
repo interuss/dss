@@ -26,6 +26,7 @@ var (
 	constraintFieldsWithoutPrefix string
 )
 
+// TODO Update database schema and fields below.
 func init() {
 	constraintFieldsWithIndices[0] = "id"
 	constraintFieldsWithIndices[1] = "owner"
@@ -68,7 +69,7 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 		)
 		err := rows.Scan(
 			&c.ID,
-			&c.Owner,
+			&c.Manager,
 			&c.Version,
 			&c.USSBaseURL,
 			&c.AltitudeLower,
@@ -143,7 +144,7 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 
 	s, err := c.fetchConstraint(ctx, c.q, upsertQuery,
 		s.ID,
-		s.Owner,
+		s.Manager,
 		s.Version,
 		s.USSBaseURL,
 		s.AltitudeLower,
