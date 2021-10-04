@@ -21,6 +21,7 @@ var (
 	subscriptionFieldsWithoutPrefix string
 )
 
+// TODO Update database schema and fields below.
 func init() {
 	subscriptionFieldsWithIndices[0] = "id"
 	subscriptionFieldsWithIndices[1] = "owner"
@@ -95,14 +96,15 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 		var (
 			s         = new(scdmodels.Subscription)
 			updatedAt time.Time
+			version   int
 		)
 		err = rows.Scan(
 			&s.ID,
-			&s.Owner,
-			&s.Version,
-			&s.BaseURL,
+			&s.Manager,
+			&version,
+			&s.USSBaseURL,
 			&s.NotificationIndex,
-			&s.NotifyForOperations,
+			&s.NotifyForOperationalIntents,
 			&s.NotifyForConstraints,
 			&s.ImplicitSubscription,
 			&s.StartTime,
@@ -111,6 +113,10 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
+		}
+		s.Version = scdmodels.NewOVNFromTime(updatedAt, s.ID.String())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error generating Subscription version")
 		}
 		payload = append(payload, s)
 	}
@@ -174,7 +180,7 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		  scd_subscriptions
 		  (%s)
 		VALUES
-			($1, $2, COALESCE((SELECT version from v), 0) + 1, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp())
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, transaction_timestamp())
 		RETURNING
 			%s`, subscriptionFieldsWithoutPrefix, subscriptionFieldsWithPrefix)
 		subscriptionCellQuery = `
@@ -204,10 +210,11 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 	cells := s.Cells
 	s, err := c.fetchSubscription(ctx, q, upsertQuery,
 		s.ID,
-		s.Owner,
-		s.BaseURL,
+		s.Manager,
+		0,
+		s.USSBaseURL,
 		s.NotificationIndex,
-		s.NotifyForOperations,
+		s.NotifyForOperationalIntents,
 		s.NotifyForConstraints,
 		s.ImplicitSubscription,
 		s.StartTime,

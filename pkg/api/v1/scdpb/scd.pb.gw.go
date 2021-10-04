@@ -31,6 +31,216 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 
+func request_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateConstraintReferenceRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["entityid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
+	}
+
+	protoReq.Entityid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	msg, err := client.CreateConstraintReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateConstraintReferenceRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["entityid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
+	}
+
+	protoReq.Entityid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	msg, err := server.CreateConstraintReference(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateOperationalIntentReferenceRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["entityid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
+	}
+
+	protoReq.Entityid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	msg, err := client.CreateOperationalIntentReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateOperationalIntentReferenceRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["entityid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
+	}
+
+	protoReq.Entityid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	msg, err := server.CreateOperationalIntentReference(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateSubscriptionRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["subscriptionid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "subscriptionid")
+	}
+
+	protoReq.Subscriptionid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "subscriptionid", err)
+	}
+
+	msg, err := client.CreateSubscription(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateSubscriptionRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["subscriptionid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "subscriptionid")
+	}
+
+	protoReq.Subscriptionid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "subscriptionid", err)
+	}
+
+	msg, err := server.CreateSubscription(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 func request_UTMAPIUSSDSSAndUSSUSSService_DeleteConstraintReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DeleteConstraintReferenceRequest
 	var metadata runtime.ServerMetadata
@@ -42,15 +252,26 @@ func request_UTMAPIUSSDSSAndUSSUSSService_DeleteConstraintReference_0(ctx contex
 		_   = err
 	)
 
-	val, ok = pathParams["entityuuid"]
+	val, ok = pathParams["entityid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
 	}
 
-	protoReq.Entityuuid, err = runtime.String(val)
+	protoReq.Entityid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	val, ok = pathParams["ovn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ovn")
+	}
+
+	protoReq.Ovn, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ovn", err)
 	}
 
 	msg, err := client.DeleteConstraintReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -69,15 +290,26 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_DeleteConstraintReference_0(ctx 
 		_   = err
 	)
 
-	val, ok = pathParams["entityuuid"]
+	val, ok = pathParams["entityid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
 	}
 
-	protoReq.Entityuuid, err = runtime.String(val)
+	protoReq.Entityid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	val, ok = pathParams["ovn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ovn")
+	}
+
+	protoReq.Ovn, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ovn", err)
 	}
 
 	msg, err := server.DeleteConstraintReference(ctx, &protoReq)
@@ -85,8 +317,8 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_DeleteConstraintReference_0(ctx 
 
 }
 
-func request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteOperationReferenceRequest
+func request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteOperationalIntentReferenceRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -96,24 +328,35 @@ func request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0(ctx context
 		_   = err
 	)
 
-	val, ok = pathParams["entityuuid"]
+	val, ok = pathParams["entityid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
 	}
 
-	protoReq.Entityuuid, err = runtime.String(val)
+	protoReq.Entityid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
 	}
 
-	msg, err := client.DeleteOperationReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	val, ok = pathParams["ovn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ovn")
+	}
+
+	protoReq.Ovn, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ovn", err)
+	}
+
+	msg, err := client.DeleteOperationalIntentReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteOperationReferenceRequest
+func local_request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteOperationalIntentReferenceRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -123,18 +366,29 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0(ctx c
 		_   = err
 	)
 
-	val, ok = pathParams["entityuuid"]
+	val, ok = pathParams["entityid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
 	}
 
-	protoReq.Entityuuid, err = runtime.String(val)
+	protoReq.Entityid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
 	}
 
-	msg, err := server.DeleteOperationReference(ctx, &protoReq)
+	val, ok = pathParams["ovn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ovn")
+	}
+
+	protoReq.Ovn, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ovn", err)
+	}
+
+	msg, err := server.DeleteOperationalIntentReference(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -159,6 +413,17 @@ func request_UTMAPIUSSDSSAndUSSUSSService_DeleteSubscription_0(ctx context.Conte
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "subscriptionid", err)
+	}
+
+	val, ok = pathParams["version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
+	}
+
+	protoReq.Version, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
 	}
 
 	msg, err := client.DeleteSubscription(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -188,6 +453,17 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_DeleteSubscription_0(ctx context
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "subscriptionid", err)
 	}
 
+	val, ok = pathParams["version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
+	}
+
+	protoReq.Version, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
+	}
+
 	msg, err := server.DeleteSubscription(ctx, &protoReq)
 	return msg, metadata, err
 
@@ -204,15 +480,15 @@ func request_UTMAPIUSSDSSAndUSSUSSService_GetConstraintReference_0(ctx context.C
 		_   = err
 	)
 
-	val, ok = pathParams["entityuuid"]
+	val, ok = pathParams["entityid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
 	}
 
-	protoReq.Entityuuid, err = runtime.String(val)
+	protoReq.Entityid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
 	}
 
 	msg, err := client.GetConstraintReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -231,15 +507,15 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_GetConstraintReference_0(ctx con
 		_   = err
 	)
 
-	val, ok = pathParams["entityuuid"]
+	val, ok = pathParams["entityid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
 	}
 
-	protoReq.Entityuuid, err = runtime.String(val)
+	protoReq.Entityid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
 	}
 
 	msg, err := server.GetConstraintReference(ctx, &protoReq)
@@ -247,8 +523,8 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_GetConstraintReference_0(ctx con
 
 }
 
-func request_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOperationReferenceRequest
+func request_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetOperationalIntentReferenceRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -258,24 +534,24 @@ func request_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0(ctx context.Co
 		_   = err
 	)
 
-	val, ok = pathParams["entityuuid"]
+	val, ok = pathParams["entityid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
 	}
 
-	protoReq.Entityuuid, err = runtime.String(val)
+	protoReq.Entityid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
 	}
 
-	msg, err := client.GetOperationReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetOperationalIntentReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOperationReferenceRequest
+func local_request_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetOperationalIntentReferenceRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -285,18 +561,18 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0(ctx cont
 		_   = err
 	)
 
-	val, ok = pathParams["entityuuid"]
+	val, ok = pathParams["entityid"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
 	}
 
-	protoReq.Entityuuid, err = runtime.String(val)
+	protoReq.Entityid, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
 	}
 
-	msg, err := server.GetOperationReference(ctx, &protoReq)
+	msg, err := server.GetOperationalIntentReference(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -355,6 +631,60 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_GetSubscription_0(ctx context.Co
 
 }
 
+func request_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetUssAvailabilityRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["uss_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uss_id")
+	}
+
+	protoReq.UssId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uss_id", err)
+	}
+
+	msg, err := client.GetUssAvailability(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetUssAvailabilityRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["uss_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uss_id")
+	}
+
+	protoReq.UssId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uss_id", err)
+	}
+
+	msg, err := server.GetUssAvailability(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 func request_UTMAPIUSSDSSAndUSSUSSService_MakeDssReport_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq MakeDssReportRequest
 	var metadata runtime.ServerMetadata
@@ -385,216 +715,6 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_MakeDssReport_0(ctx context.Cont
 	}
 
 	msg, err := server.MakeDssReport(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutConstraintReferenceRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["entityuuid"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
-	}
-
-	protoReq.Entityuuid, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
-	}
-
-	msg, err := client.PutConstraintReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutConstraintReferenceRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["entityuuid"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
-	}
-
-	protoReq.Entityuuid, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
-	}
-
-	msg, err := server.PutConstraintReference(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutOperationReferenceRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["entityuuid"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
-	}
-
-	protoReq.Entityuuid, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
-	}
-
-	msg, err := client.PutOperationReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutOperationReferenceRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["entityuuid"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityuuid")
-	}
-
-	protoReq.Entityuuid, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityuuid", err)
-	}
-
-	msg, err := server.PutOperationReference(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutSubscriptionRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["subscriptionid"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "subscriptionid")
-	}
-
-	protoReq.Subscriptionid, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "subscriptionid", err)
-	}
-
-	msg, err := client.PutSubscription(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutSubscriptionRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["subscriptionid"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "subscriptionid")
-	}
-
-	protoReq.Subscriptionid, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "subscriptionid", err)
-	}
-
-	msg, err := server.PutSubscription(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -633,6 +753,40 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_QueryConstraintReferences_0(ctx 
 
 }
 
+func request_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq QueryOperationalIntentReferencesRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.QueryOperationalIntentReferences(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq QueryOperationalIntentReferencesRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.QueryOperationalIntentReferences(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 func request_UTMAPIUSSDSSAndUSSUSSService_QuerySubscriptions_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq QuerySubscriptionsRequest
 	var metadata runtime.ServerMetadata
@@ -667,8 +821,8 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_QuerySubscriptions_0(ctx context
 
 }
 
-func request_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SearchOperationReferencesRequest
+func request_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq SetUssAvailabilityRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -679,13 +833,31 @@ func request_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0(ctx contex
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.SearchOperationReferences(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["uss_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uss_id")
+	}
+
+	protoReq.UssId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uss_id", err)
+	}
+
+	msg, err := client.SetUssAvailability(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SearchOperationReferencesRequest
+func local_request_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq SetUssAvailabilityRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -696,7 +868,301 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0(ctx 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.SearchOperationReferences(ctx, &protoReq)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["uss_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "uss_id")
+	}
+
+	protoReq.UssId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "uss_id", err)
+	}
+
+	msg, err := server.SetUssAvailability(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateConstraintReferenceRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["entityid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
+	}
+
+	protoReq.Entityid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	val, ok = pathParams["ovn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ovn")
+	}
+
+	protoReq.Ovn, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ovn", err)
+	}
+
+	msg, err := client.UpdateConstraintReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateConstraintReferenceRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["entityid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
+	}
+
+	protoReq.Entityid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	val, ok = pathParams["ovn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ovn")
+	}
+
+	protoReq.Ovn, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ovn", err)
+	}
+
+	msg, err := server.UpdateConstraintReference(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateOperationalIntentReferenceRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["entityid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
+	}
+
+	protoReq.Entityid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	val, ok = pathParams["ovn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ovn")
+	}
+
+	protoReq.Ovn, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ovn", err)
+	}
+
+	msg, err := client.UpdateOperationalIntentReference(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateOperationalIntentReferenceRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["entityid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entityid")
+	}
+
+	protoReq.Entityid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entityid", err)
+	}
+
+	val, ok = pathParams["ovn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ovn")
+	}
+
+	protoReq.Ovn, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ovn", err)
+	}
+
+	msg, err := server.UpdateOperationalIntentReference(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0(ctx context.Context, marshaler runtime.Marshaler, client UTMAPIUSSDSSAndUSSUSSServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateSubscriptionRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["subscriptionid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "subscriptionid")
+	}
+
+	protoReq.Subscriptionid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "subscriptionid", err)
+	}
+
+	val, ok = pathParams["version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
+	}
+
+	protoReq.Version, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
+	}
+
+	msg, err := client.UpdateSubscription(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0(ctx context.Context, marshaler runtime.Marshaler, server UTMAPIUSSDSSAndUSSUSSServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateSubscriptionRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Params); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["subscriptionid"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "subscriptionid")
+	}
+
+	protoReq.Subscriptionid, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "subscriptionid", err)
+	}
+
+	val, ok = pathParams["version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "version")
+	}
+
+	protoReq.Version, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "version", err)
+	}
+
+	msg, err := server.UpdateSubscription(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -705,6 +1171,66 @@ func local_request_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0(ctx 
 // UnaryRPC     :call UTMAPIUSSDSSAndUSSUSSServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server UTMAPIUSSDSSAndUSSUSSServiceServer) error {
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
 
 	mux.Handle("DELETE", pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteConstraintReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -726,7 +1252,7 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux 
 
 	})
 
-	mux.Handle("DELETE", pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -735,14 +1261,14 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0(rctx, inboundMarshaler, server, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -786,7 +1312,7 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux 
 
 	})
 
-	mux.Handle("GET", pattern_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -795,14 +1321,14 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0(rctx, inboundMarshaler, server, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -826,6 +1352,26 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux 
 
 	})
 
+	mux.Handle("GET", pattern_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_UTMAPIUSSDSSAndUSSUSSService_MakeDssReport_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -843,66 +1389,6 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux 
 		}
 
 		forward_UTMAPIUSSDSSAndUSSUSSService_MakeDssReport_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0(rctx, inboundMarshaler, server, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0(rctx, inboundMarshaler, server, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0(rctx, inboundMarshaler, server, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -926,6 +1412,26 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux 
 
 	})
 
+	mux.Handle("POST", pattern_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_UTMAPIUSSDSSAndUSSUSSService_QuerySubscriptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -946,7 +1452,7 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux 
 
 	})
 
-	mux.Handle("POST", pattern_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -955,14 +1461,74 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerServer(ctx context.Context, mux 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0(rctx, inboundMarshaler, server, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1007,6 +1573,66 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandler(ctx context.Context, mux *runti
 // "UTMAPIUSSDSSAndUSSUSSServiceClient" to call the correct interceptors.
 func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client UTMAPIUSSDSSAndUSSUSSServiceClient) error {
 
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("DELETE", pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteConstraintReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1027,7 +1653,7 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 
 	})
 
-	mux.Handle("DELETE", pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1036,14 +1662,14 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1087,7 +1713,7 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 
 	})
 
-	mux.Handle("GET", pattern_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1096,14 +1722,14 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1127,6 +1753,26 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 
 	})
 
+	mux.Handle("GET", pattern_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_UTMAPIUSSDSSAndUSSUSSService_MakeDssReport_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1144,66 +1790,6 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 		}
 
 		forward_UTMAPIUSSDSSAndUSSUSSService_MakeDssReport_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1227,6 +1813,26 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 
 	})
 
+	mux.Handle("POST", pattern_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_UTMAPIUSSDSSAndUSSUSSService_QuerySubscriptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1247,7 +1853,7 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 
 	})
 
-	mux.Handle("POST", pattern_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1256,14 +1862,74 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("PUT", pattern_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1271,57 +1937,77 @@ func RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerClient(ctx context.Context, mux 
 }
 
 var (
-	pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteConstraintReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "constraint_references", "entityuuid"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "constraint_references", "entityid"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "operation_references", "entityuuid"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "operational_intent_references", "entityid"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteSubscription_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "subscriptions", "subscriptionid"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "subscriptions", "subscriptionid"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_UTMAPIUSSDSSAndUSSUSSService_GetConstraintReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "constraint_references", "entityuuid"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteConstraintReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"dss", "v1", "constraint_references", "entityid", "ovn"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "operation_references", "entityuuid"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"dss", "v1", "operational_intent_references", "entityid", "ovn"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_UTMAPIUSSDSSAndUSSUSSService_DeleteSubscription_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"dss", "v1", "subscriptions", "subscriptionid", "version"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_UTMAPIUSSDSSAndUSSUSSService_GetConstraintReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "constraint_references", "entityid"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "operational_intent_references", "entityid"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_UTMAPIUSSDSSAndUSSUSSService_GetSubscription_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "subscriptions", "subscriptionid"}, "", runtime.AssumeColonVerbOpt(true)))
 
+	pattern_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "uss_availability", "uss_id"}, "", runtime.AssumeColonVerbOpt(true)))
+
 	pattern_UTMAPIUSSDSSAndUSSUSSService_MakeDssReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"dss", "v1", "reports"}, "", runtime.AssumeColonVerbOpt(true)))
-
-	pattern_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "constraint_references", "entityuuid"}, "", runtime.AssumeColonVerbOpt(true)))
-
-	pattern_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "operation_references", "entityuuid"}, "", runtime.AssumeColonVerbOpt(true)))
-
-	pattern_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "subscriptions", "subscriptionid"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_UTMAPIUSSDSSAndUSSUSSService_QueryConstraintReferences_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"dss", "v1", "constraint_references", "query"}, "", runtime.AssumeColonVerbOpt(true)))
 
+	pattern_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"dss", "v1", "operational_intent_references", "query"}, "", runtime.AssumeColonVerbOpt(true)))
+
 	pattern_UTMAPIUSSDSSAndUSSUSSService_QuerySubscriptions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"dss", "v1", "subscriptions", "query"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"dss", "v1", "operation_references", "query"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"dss", "v1", "uss_availability", "uss_id"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"dss", "v1", "constraint_references", "entityid", "ovn"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"dss", "v1", "operational_intent_references", "entityid", "ovn"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"dss", "v1", "subscriptions", "subscriptionid", "version"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
+	forward_UTMAPIUSSDSSAndUSSUSSService_CreateConstraintReference_0 = runtime.ForwardResponseMessage
+
+	forward_UTMAPIUSSDSSAndUSSUSSService_CreateOperationalIntentReference_0 = runtime.ForwardResponseMessage
+
+	forward_UTMAPIUSSDSSAndUSSUSSService_CreateSubscription_0 = runtime.ForwardResponseMessage
+
 	forward_UTMAPIUSSDSSAndUSSUSSService_DeleteConstraintReference_0 = runtime.ForwardResponseMessage
 
-	forward_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationReference_0 = runtime.ForwardResponseMessage
+	forward_UTMAPIUSSDSSAndUSSUSSService_DeleteOperationalIntentReference_0 = runtime.ForwardResponseMessage
 
 	forward_UTMAPIUSSDSSAndUSSUSSService_DeleteSubscription_0 = runtime.ForwardResponseMessage
 
 	forward_UTMAPIUSSDSSAndUSSUSSService_GetConstraintReference_0 = runtime.ForwardResponseMessage
 
-	forward_UTMAPIUSSDSSAndUSSUSSService_GetOperationReference_0 = runtime.ForwardResponseMessage
+	forward_UTMAPIUSSDSSAndUSSUSSService_GetOperationalIntentReference_0 = runtime.ForwardResponseMessage
 
 	forward_UTMAPIUSSDSSAndUSSUSSService_GetSubscription_0 = runtime.ForwardResponseMessage
 
+	forward_UTMAPIUSSDSSAndUSSUSSService_GetUssAvailability_0 = runtime.ForwardResponseMessage
+
 	forward_UTMAPIUSSDSSAndUSSUSSService_MakeDssReport_0 = runtime.ForwardResponseMessage
-
-	forward_UTMAPIUSSDSSAndUSSUSSService_PutConstraintReference_0 = runtime.ForwardResponseMessage
-
-	forward_UTMAPIUSSDSSAndUSSUSSService_PutOperationReference_0 = runtime.ForwardResponseMessage
-
-	forward_UTMAPIUSSDSSAndUSSUSSService_PutSubscription_0 = runtime.ForwardResponseMessage
 
 	forward_UTMAPIUSSDSSAndUSSUSSService_QueryConstraintReferences_0 = runtime.ForwardResponseMessage
 
+	forward_UTMAPIUSSDSSAndUSSUSSService_QueryOperationalIntentReferences_0 = runtime.ForwardResponseMessage
+
 	forward_UTMAPIUSSDSSAndUSSUSSService_QuerySubscriptions_0 = runtime.ForwardResponseMessage
 
-	forward_UTMAPIUSSDSSAndUSSUSSService_SearchOperationReferences_0 = runtime.ForwardResponseMessage
+	forward_UTMAPIUSSDSSAndUSSUSSService_SetUssAvailability_0 = runtime.ForwardResponseMessage
+
+	forward_UTMAPIUSSDSSAndUSSUSSService_UpdateConstraintReference_0 = runtime.ForwardResponseMessage
+
+	forward_UTMAPIUSSDSSAndUSSUSSService_UpdateOperationalIntentReference_0 = runtime.ForwardResponseMessage
+
+	forward_UTMAPIUSSDSSAndUSSUSSService_UpdateSubscription_0 = runtime.ForwardResponseMessage
 )

@@ -50,7 +50,7 @@ def _make_sub_req(time_start, time_end, alt_start, alt_end, radius, scd_api):
   }
   if scd_api == scd.API_0_3_5:
     req["notify_for_operations"] = True
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req["notify_for_operational_intents"] = True
   return req
 
@@ -69,12 +69,13 @@ def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
     assert False, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
+def test_ensure_clean_workspace_v17(ids, scd_api, scd_session):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
   if resp.status_code == 200:
-    resp = scd_session.delete('/operational_intent_references/{}'.format(ids(OP_TYPE)))
+    ovn = resp.json()['operational_intent_reference']['ovn']
+    resp = scd_session.delete('/operational_intent_references/{}/{}'.format(ids(OP_TYPE), ovn), scope=SCOPE_SC)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected.
@@ -114,9 +115,9 @@ def test_create_op_v5(ids, scd_api, scd_session):
 # Create operation normally (also creates implicit Subscription)
 # Preconditions: None
 # Mutations: Operation and its implicit subscription created
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_create_op_v15(ids, scd_api, scd_session):
+def test_create_op_v17(ids, scd_api, scd_session):
   req = _make_op_req()
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
@@ -129,7 +130,7 @@ def test_create_op_v15(ids, scd_api, scd_session):
   assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
   assert op['version'] == 1
   assert 'subscription_id' in op
-  assert 'state' not in op
+  assert op['state'] == 'Accepted'
 
   # Make sure the implicit Subscription exists when queried separately
   global sub_id
@@ -142,7 +143,7 @@ def test_create_op_v15(ids, scd_api, scd_session):
 # Try to mutate subscription by shrinking its 2d area
 # Preconditions: Operation and subscription sub_id created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub_shrink_2d(scd_api, scd_session):
   if scd_session is None:
@@ -161,14 +162,17 @@ def test_mutate_sub_shrink_2d(scd_api, scd_session):
     req['old_version'] = existing_sub['version']
   req['notify_for_constraints'] = True
 
-  resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session.put('/subscriptions/{}/{}'.format(sub_id, existing_sub['version']), json=req)
   assert resp.status_code == 400, resp.content
 
 
 # Try to mutate subscription by shrinking its altitude range
 # Preconditions: Operation and subscription sub_id created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub_shrink_altitude(scd_api, scd_session):
   if scd_session is None:
@@ -187,14 +191,17 @@ def test_mutate_sub_shrink_altitude(scd_api, scd_session):
     req['old_version'] = existing_sub['version']
   req['notify_for_constraints'] = True
 
-  resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session.put('/subscriptions/{}/{}'.format(sub_id, existing_sub['version']), json=req)
   assert resp.status_code == 400, resp.content
 
 
 # Try to mutate subscription by shrinking its time range
 # Preconditions: Operation and subscription sub_id created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub_shrink_time(scd_api, scd_session):
   if scd_session is None:
@@ -213,14 +220,17 @@ def test_mutate_sub_shrink_time(scd_api, scd_session):
     req['old_version'] = existing_sub['version']
   req['notify_for_constraints'] = True
 
-  resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session.put('/subscriptions/{}/{}'.format(sub_id, existing_sub['version']), json=req)
   assert resp.status_code == 400, resp.content
 
 
 # Mutate sub, with the same 2d area
 # Preconditions: Operation and subscription sub_id created
 # Mutations: Subscription mutated to new version
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub_not_shrink(scd_api, scd_session):
   if scd_session is None:
@@ -239,7 +249,10 @@ def test_mutate_sub_not_shrink(scd_api, scd_session):
     req['old_version'] = existing_sub['version']
   req['notify_for_constraints'] = True
 
-  resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  if scd_api == scd.API_0_3_5:
+    resp = scd_session.put('/subscriptions/{}'.format(sub_id), json=req)
+  elif scd_api == scd.API_0_3_17:
+    resp = scd_session.put('/subscriptions/{}/{}'.format(sub_id, existing_sub['version']), json=req)
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
@@ -258,10 +271,13 @@ def test_delete_op_v5(ids, scd_api, scd_session):
 
 # Preconditions: Operation created
 # Mutations: Operation deleted
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_delete_op_v15(ids, scd_api, scd_session):
-  resp = scd_session.delete('/operational_intent_references/{}'.format(ids(OP_TYPE)))
+def test_delete_op_v17(ids, scd_api, scd_session):
+  resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
+  assert resp.status_code == 200, resp.content
+  ovn = resp.json()['operational_intent_reference']['ovn']
+  resp = scd_session.delete('/operational_intent_references/{}/{}'.format(ids(OP_TYPE), ovn))
   assert resp.status_code == 200, resp.content
 
 
@@ -276,27 +292,41 @@ def test_get_deleted_op_by_id_v5(ids, scd_api, scd_session):
 
 # Preconditions: Operation deleted
 # Mutations: None
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_get_deleted_op_by_id_v15(ids, scd_api, scd_session):
+def test_get_deleted_op_by_id_v17(ids, scd_api, scd_session):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
   assert resp.status_code == 404, resp.content
 
 
 # Preconditions: Subscription sub_id created
 # Mutations: Subscription sub_id deleted
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_delete_sub(scd_api, scd_session):
+def test_delete_sub_v5(scd_api, scd_session):
   if scd_session is None:
     return
   resp = scd_session.delete('/subscriptions/{}'.format(sub_id))
   assert resp.status_code == 200, resp.content
 
 
+# Preconditions: Subscription sub_id created
+# Mutations: Subscription sub_id deleted
+@for_api_versions(scd.API_0_3_17)
+@default_scope(SCOPE_SC)
+def test_delete_sub_v17(scd_api, scd_session):
+  if scd_session is None:
+    return
+  resp = scd_session.get('/subscriptions/{}'.format(sub_id))
+  assert resp.status_code == 200, resp.content
+  version = resp.json()['subscription']['version']
+  resp = scd_session.delete('/subscriptions/{}/{}'.format(sub_id, version))
+  assert resp.status_code == 200, resp.content
+
+
 # Preconditions: Subscription sub_id deleted
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_deleted_sub_by_id(scd_api, scd_session):
   if scd_session is None:

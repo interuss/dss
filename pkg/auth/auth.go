@@ -54,6 +54,13 @@ func OwnerFromContext(ctx context.Context) (models.Owner, bool) {
 	return owner, ok
 }
 
+// ManagerFromContext returns the value for manager from "ctx" and a boolean
+// indicating whether a valid value was present or not.
+func ManagerFromContext(ctx context.Context) (models.Manager, bool) {
+	owner, ok := OwnerFromContext(ctx)
+	return models.Manager(owner), ok
+}
+
 // KeyResolver abstracts resolving keys.
 type KeyResolver interface {
 	// ResolveKey returns a public or private key, most commonly an rsa.PublicKey.
