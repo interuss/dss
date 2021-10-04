@@ -68,8 +68,8 @@ type OperationalIntent struct {
 	Cells          s2.CellUnion
 }
 
-func (state OperationalIntentState) String() string {
-	return string(state)
+func (s OperationalIntentState) String() string {
+	return string(s)
 }
 
 // ToProto converts the OperationalIntent to its proto API format
