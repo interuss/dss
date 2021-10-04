@@ -17,62 +17,62 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// DeleteOperationReference deletes a single operation ref for a given ID at
+// DeleteOperationalIntentReference deletes a single operational intent ref for a given ID at
 // the specified version.
-func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.DeleteOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
-	// Retrieve Operation ID
-	id, err := dssmodels.IDFromString(req.GetEntityuuid())
+func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *scdpb.DeleteOperationalIntentReferenceRequest) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
+	// Retrieve OperationalIntent ID
+	id, err := dssmodels.IDFromString(req.GetEntityid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
 	}
 
-	var response *scdpb.ChangeOperationReferenceResponse
+	var response *scdpb.ChangeOperationalIntentReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Get Operation to delete
-		old, err := r.GetOperation(ctx, id)
+		// Get OperationalIntent to delete
+		old, err := r.GetOperationalIntent(ctx, id)
 		if err != nil {
-			return stacktrace.Propagate(err, "Unable to get Operation from repo")
+			return stacktrace.Propagate(err, "Unable to get OperationIntent from repo")
 		}
 		if old == nil {
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id)
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent %s not found", id)
 		}
 
 		// Validate deletion request
-		if old.Owner != owner {
+		if old.Manager != manager {
 			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-				"Operation owned by %s, but %s attempted to delete", old.Owner, owner)
+				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, manager)
 		}
 
-		// Get the Subscription supporting the Operation
+		// Get the Subscription supporting the OperationalIntent
 		sub, err := r.GetSubscription(ctx, old.SubscriptionID)
 		if err != nil {
-			return stacktrace.Propagate(err, "Unable to get Operation's Subscription from repo")
+			return stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
 		}
 		if sub == nil {
-			return stacktrace.NewError("Operation's Subscription missing from repo")
+			return stacktrace.NewError("OperationalIntent's Subscription missing from repo")
 		}
 
 		removeImplicitSubscription := false
 		if sub.ImplicitSubscription {
-			// Get the Subscription's dependent Operations
-			dependentOps, err := r.GetDependentOperations(ctx, sub.ID)
+			// Get the Subscription's dependent OperationalIntents
+			dependentOps, err := r.GetDependentOperationalIntents(ctx, sub.ID)
 			if err != nil {
-				return stacktrace.Propagate(err, "Could not find dependent Operations")
+				return stacktrace.Propagate(err, "Could not find dependent OperationalIntents")
 			}
 			if len(dependentOps) == 0 {
-				return stacktrace.NewError("An implicit Subscription had no dependent Operations")
+				return stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
 			} else if len(dependentOps) == 1 {
 				removeImplicitSubscription = true
 			}
 		}
 
-		// Find Subscriptions that may overlap the Operation's Volume4D
+		// Find Subscriptions that may overlap the OperationalIntent's Volume4D
 		allsubs, err := r.SearchSubscriptions(ctx, &dssmodels.Volume4D{
 			StartTime: old.StartTime,
 			EndTime:   old.EndTime,
@@ -87,10 +87,10 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 			return stacktrace.Propagate(err, "Unable to search Subscriptions in repo")
 		}
 
-		// Limit Subscription notifications to only those interested in Operations
+		// Limit Subscription notifications to only those interested in OperationalIntents
 		var subs repos.Subscriptions
 		for _, s := range allsubs {
-			if s.NotifyForOperations {
+			if s.NotifyForOperationalIntents {
 				subs = append(subs, s)
 			}
 		}
@@ -100,9 +100,9 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 			return stacktrace.Propagate(err, "Unable to increment notification indices")
 		}
 
-		// Delete Operation from repo
-		if err := r.DeleteOperation(ctx, id); err != nil {
-			return stacktrace.Propagate(err, "Unable to delete Operation from repo")
+		// Delete OperationalIntent from repo
+		if err := r.DeleteOperationalIntent(ctx, id); err != nil {
+			return stacktrace.Propagate(err, "Unable to delete OperationalIntent from repo")
 		}
 
 		if removeImplicitSubscription {
@@ -113,16 +113,16 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 			}
 		}
 
-		// Convert deleted Operation to proto
+		// Convert deleted OperationalIntent to proto
 		opProto, err := old.ToProto()
 		if err != nil {
-			return stacktrace.Propagate(err, "Could not convert Operation to proto")
+			return stacktrace.Propagate(err, "Could not convert OperationalIntent to proto")
 		}
 
 		// Return response to client
-		response = &scdpb.ChangeOperationReferenceResponse{
-			OperationReference: opProto,
-			Subscribers:        makeSubscribersToNotify(subs),
+		response = &scdpb.ChangeOperationalIntentReferenceResponse{
+			OperationalIntentReference: opProto,
+			Subscribers:                makeSubscribersToNotify(subs),
 		}
 
 		return nil
@@ -136,39 +136,39 @@ func (a *Server) DeleteOperationReference(ctx context.Context, req *scdpb.Delete
 	return response, nil
 }
 
-// GetOperationReference returns a single operation ref for the given ID.
-func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperationReferenceRequest) (*scdpb.GetOperationReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(req.GetEntityuuid())
+// GetOperationalIntentReference returns a single operation intent ref for the given ID.
+func (a *Server) GetOperationalIntentReference(ctx context.Context, req *scdpb.GetOperationalIntentReferenceRequest) (*scdpb.GetOperationalIntentReferenceResponse, error) {
+	id, err := dssmodels.IDFromString(req.GetEntityid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
 	}
 
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
 	}
 
-	var response *scdpb.GetOperationReferenceResponse
+	var response *scdpb.GetOperationalIntentReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
-		op, err := r.GetOperation(ctx, id)
+		op, err := r.GetOperationalIntent(ctx, id)
 		if err != nil {
-			return stacktrace.Propagate(err, "Unable to get Operation from repo")
+			return stacktrace.Propagate(err, "Unable to get OperationalIntent from repo")
 		}
 		if op == nil {
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation %s not found", id)
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent %s not found", id)
 		}
 
-		if op.Owner != owner {
+		if op.Manager != manager {
 			op.OVN = scdmodels.OVN("")
 		}
 
 		p, err := op.ToProto()
 		if err != nil {
-			return stacktrace.Propagate(err, "Could not convert Operation to proto")
+			return stacktrace.Propagate(err, "Could not convert OperationalIntent to proto")
 		}
 
-		response = &scdpb.GetOperationReferenceResponse{
-			OperationReference: p,
+		response = &scdpb.GetOperationalIntentReferenceResponse{
+			OperationalIntentReference: p,
 		}
 
 		return nil
@@ -182,9 +182,9 @@ func (a *Server) GetOperationReference(ctx context.Context, req *scdpb.GetOperat
 	return response, nil
 }
 
-// SearchOperationReferences queries existing operation refs in the given
+// QueryOperationalIntentsReferences queries existing operational intent refs in the given
 // bounds.
-func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.SearchOperationReferencesRequest) (*scdpb.SearchOperationReferenceResponse, error) {
+func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *scdpb.QueryOperationalIntentReferencesRequest) (*scdpb.QueryOperationalIntentReferenceResponse, error) {
 	// Retrieve the area of interest parameter
 	aoi := req.GetParams().AreaOfInterest
 	if aoi == nil {
@@ -198,30 +198,30 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
 	}
 
-	var response *scdpb.SearchOperationReferenceResponse
+	var response *scdpb.QueryOperationalIntentReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Perform search query on Store
-		ops, err := r.SearchOperations(ctx, vol4)
+		ops, err := r.SearchOperationalIntents(ctx, vol4)
 		if err != nil {
-			return stacktrace.Propagate(err, "Unable to search for Operations in repo")
+			return stacktrace.Propagate(err, "Unable to query for OperationalIntents in repo")
 		}
 
 		// Create response for client
-		response = &scdpb.SearchOperationReferenceResponse{}
+		response = &scdpb.QueryOperationalIntentReferenceResponse{}
 		for _, op := range ops {
 			p, err := op.ToProto()
 			if err != nil {
-				return stacktrace.Propagate(err, "Could not convert Operation model to proto")
+				return stacktrace.Propagate(err, "Could not convert OperationalIntent model to proto")
 			}
-			if op.Owner != owner {
+			if op.Manager != manager {
 				p.Ovn = ""
 			}
-			response.OperationReferences = append(response.OperationReferences, p)
+			response.OperationalIntentReferences = append(response.OperationalIntentReferences, p)
 		}
 
 		return nil
@@ -235,21 +235,29 @@ func (a *Server) SearchOperationReferences(ctx context.Context, req *scdpb.Searc
 	return response, nil
 }
 
-// PutOperationReference creates a single operation ref.
-func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperationReferenceRequest) (*scdpb.ChangeOperationReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(req.GetEntityuuid())
+func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *scdpb.CreateOperationalIntentReferenceRequest) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
+	return a.PutOperationalIntentReference(ctx, req.GetEntityid(), "", req.GetParams())
+}
+
+func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *scdpb.UpdateOperationalIntentReferenceRequest) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
+	return a.PutOperationalIntentReference(ctx, req.GetEntityid(), req.Ovn, req.GetParams())
+}
+
+// PutOperationalIntentReference inserts or updates an Operational Intent.
+// If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
+func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid string, ovn string, params *scdpb.PutOperationalIntentReferenceParameters) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
+	id, err := dssmodels.IDFromString(entityid)
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
 	}
 
 	var (
-		params  = req.GetParams()
 		extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
 	)
 
@@ -262,9 +270,9 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
 	}
 
-	state := scdmodels.OperationState(params.State)
+	state := scdmodels.OperationalIntentState(params.State)
 	if !state.IsValidInDSS() {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid Operation state: %s", params.State)
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid OperationalIntent state: %s", params.State)
 	}
 
 	for idx, extent := range params.GetExtents() {
@@ -287,7 +295,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 	}
 
 	if time.Now().After(*uExtent.EndTime) {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operations may not end in the past")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "OperationalIntents may not end in the past")
 	}
 
 	cells, err := uExtent.CalculateSpatialCovering()
@@ -299,8 +307,8 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is past the start time")
 	}
 
-	if params.OldVersion == 0 && params.State != "Accepted" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for version 0: `%s`", params.State)
+	if ovn == "" && params.State != "Accepted" {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for initial version: `%s`", params.State)
 	}
 
 	subscriptionID, err := dssmodels.IDFromOptionalString(params.GetSubscriptionId())
@@ -308,26 +316,32 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format for Subscription ID: `%s`", params.GetSubscriptionId())
 	}
 
-	var response *scdpb.ChangeOperationReferenceResponse
+	var response *scdpb.ChangeOperationalIntentReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Get existing Operation, if any, and validate request
-		old, err := r.GetOperation(ctx, id)
+		var version int32 // Version of the Operational Intent (0 means creation requested).
+
+		// Get existing OperationalIntent, if any, and validate request
+		old, err := r.GetOperationalIntent(ctx, id)
 		if err != nil {
-			return stacktrace.Propagate(err, "Could not get Operation from repo")
+			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
 		if old != nil {
-			if old.Owner != owner {
+			if old.Manager != manager {
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-					"Operation owned by %s, but %s attempted to modify", old.Owner, owner)
+					"OperationalIntent owned by %s, but %s attempted to modify", old.Manager, manager)
 			}
-			if old.Version != scdmodels.Version(params.OldVersion) {
+			if old.OVN != scdmodels.OVN(ovn) {
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
-					"Current version is %d but client specified version %d", old.Version, params.OldVersion)
+					"Current version is %s but client specified version %s", old.OVN, ovn)
 			}
+
+			version = int32(old.Version)
 		} else {
-			if params.OldVersion != 0 {
-				return stacktrace.NewErrorWithCode(dsserr.NotFound, "Operation does not exist and therefore is not version %d", params.OldVersion)
+			if ovn != "" {
+				return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent does not exist and therefore is not version %s", ovn)
 			}
+
+			version = 0
 		}
 
 		var sub *scdmodels.Subscription
@@ -339,18 +353,17 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			}
 
 			sub, err = r.UpsertSubscription(ctx, &scdmodels.Subscription{
-				ID:         dssmodels.ID(uuid.New().String()),
-				Owner:      owner,
-				StartTime:  uExtent.StartTime,
-				EndTime:    uExtent.EndTime,
-				AltitudeLo: uExtent.SpatialVolume.AltitudeLo,
-				AltitudeHi: uExtent.SpatialVolume.AltitudeHi,
-				Cells:      cells,
-
-				BaseURL:              params.GetNewSubscription().GetUssBaseUrl(),
-				NotifyForOperations:  true,
-				NotifyForConstraints: params.GetNewSubscription().GetNotifyForConstraints(),
-				ImplicitSubscription: true,
+				ID:                          dssmodels.ID(uuid.New().String()),
+				Manager:                     manager,
+				StartTime:                   uExtent.StartTime,
+				EndTime:                     uExtent.EndTime,
+				AltitudeLo:                  uExtent.SpatialVolume.AltitudeLo,
+				AltitudeHi:                  uExtent.SpatialVolume.AltitudeHi,
+				Cells:                       cells,
+				USSBaseURL:                  params.GetNewSubscription().GetUssBaseUrl(),
+				NotifyForOperationalIntents: true,
+				NotifyForConstraints:        params.GetNewSubscription().GetNotifyForConstraints(),
+				ImplicitSubscription:        true,
 			})
 			if err != nil {
 				return stacktrace.Propagate(err, "Failed to create implicit subscription")
@@ -365,10 +378,10 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			if sub == nil {
 				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription does not exist")
 			}
-			if sub.Owner != owner {
+			if sub.Manager != manager {
 				return stacktrace.Propagate(
 					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
-					"Subscription %s owned by %s, but %s attempted to use it for an Operation", subscriptionID, sub.Owner, owner)
+					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", subscriptionID, sub.Manager, manager)
 			}
 			updateSub := false
 			if sub.StartTime != nil && sub.StartTime.After(*uExtent.StartTime) {
@@ -376,7 +389,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 					sub.StartTime = uExtent.StartTime
 					updateSub = true
 				} else {
-					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the Operation starts")
+					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the OperationalIntent starts")
 				}
 			}
 			if sub.EndTime != nil && sub.EndTime.Before(*uExtent.EndTime) {
@@ -384,7 +397,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 					sub.EndTime = uExtent.EndTime
 					updateSub = true
 				} else {
-					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the Operation ends")
+					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the OperationalIntent ends")
 				}
 			}
 			if !sub.Cells.Contains(cells) {
@@ -392,7 +405,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 					sub.Cells = s2.CellUnionFromUnion(sub.Cells, cells)
 					updateSub = true
 				} else {
-					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not cover entire spatial area of the Operation")
+					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not cover entire spatial area of the OperationalIntent")
 				}
 			}
 			if updateSub {
@@ -410,15 +423,15 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				key[scdmodels.OVN(ovn)] = true
 			}
 
-			// Identify Operations missing from the key
-			var missingOps []*scdmodels.Operation
-			relevantOps, err := r.SearchOperations(ctx, uExtent)
+			// Identify OperationalIntents missing from the key
+			var missingOps []*scdmodels.OperationalIntent
+			relevantOps, err := r.SearchOperationalIntents(ctx, uExtent)
 			if err != nil {
 				return stacktrace.Propagate(err, "Unable to SearchOperations")
 			}
 			for _, relevantOp := range relevantOps {
 				if _, ok := key[relevantOp.OVN]; !ok {
-					if relevantOp.Owner != owner {
+					if relevantOp.Manager != manager {
 						relevantOp.OVN = ""
 					}
 					missingOps = append(missingOps, relevantOp)
@@ -434,7 +447,7 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 				}
 				for _, relevantConstraint := range constraints {
 					if _, ok := key[relevantConstraint.OVN]; !ok {
-						if relevantConstraint.Owner != owner {
+						if relevantConstraint.Manager != manager {
 							relevantConstraint.OVN = ""
 						}
 						missingConstraints = append(missingConstraints, relevantConstraint)
@@ -453,11 +466,11 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			}
 		}
 
-		// Construct the new Operation
-		op := &scdmodels.Operation{
+		// Construct the new OperationalIntent
+		op := &scdmodels.OperationalIntent{
 			ID:      id,
-			Owner:   owner,
-			Version: scdmodels.Version(params.OldVersion + 1),
+			Manager: manager,
+			Version: scdmodels.VersionNumber(version + 1),
 
 			StartTime:     uExtent.StartTime,
 			EndTime:       uExtent.EndTime,
@@ -495,10 +508,10 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			}
 		}
 
-		// Upsert the Operation
-		op, err = r.UpsertOperation(ctx, op)
+		// Upsert the OperationalIntent
+		op, err = r.UpsertOperationalIntent(ctx, op)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to upsert operation in repo")
+			return stacktrace.Propagate(err, "Failed to upsert OperationalIntent in repo")
 		}
 
 		// Find Subscriptions that may need to be notified
@@ -507,10 +520,10 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			return err
 		}
 
-		// Limit Subscription notifications to only those interested in Operations
+		// Limit Subscription notifications to only those interested in OperationalIntents
 		var subs repos.Subscriptions
 		for _, sub := range allsubs {
-			if sub.NotifyForOperations {
+			if sub.NotifyForOperationalIntents {
 				subs = append(subs, sub)
 			}
 		}
@@ -521,16 +534,16 @@ func (a *Server) PutOperationReference(ctx context.Context, req *scdpb.PutOperat
 			return err
 		}
 
-		// Convert upserted Operation to proto
+		// Convert upserted OperationalIntent to proto
 		p, err := op.ToProto()
 		if err != nil {
-			return stacktrace.Propagate(err, "Could not convert Operation to proto")
+			return stacktrace.Propagate(err, "Could not convert OperationalIntent to proto")
 		}
 
 		// Return response to client
-		response = &scdpb.ChangeOperationReferenceResponse{
-			OperationReference: p,
-			Subscribers:        makeSubscribersToNotify(subs),
+		response = &scdpb.ChangeOperationalIntentReferenceResponse{
+			OperationalIntentReference: p,
+			Subscribers:                makeSubscribersToNotify(subs),
 		}
 
 		return nil

@@ -18,15 +18,15 @@ import (
 // the specified version.
 func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.DeleteConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
 	// Retrieve Constraint ID
-	id, err := dssmodels.IDFromString(req.GetEntityuuid())
+	id, err := dssmodels.IDFromString(req.GetEntityid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
 	}
 
 	var response *scdpb.ChangeConstraintReferenceResponse
@@ -38,9 +38,9 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 		case err != nil:
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
-		case old.Owner != owner:
+		case old.Manager != manager:
 			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-				"Constraint owned by %s, but %s attempted to delete", old.Owner, owner)
+				"Constraint owned by %s, but %s attempted to delete", old.Manager, manager)
 		}
 
 		// Find Subscriptions that may overlap the Constraint's Volume4D
@@ -103,14 +103,14 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 
 // GetConstraintReference returns a single constraint ref for the given ID.
 func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConstraintReferenceRequest) (*scdpb.GetConstraintReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(req.GetEntityuuid())
+	id, err := dssmodels.IDFromString(req.GetEntityid())
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
 	}
 
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
 	}
 
 	var response *scdpb.GetConstraintReferenceResponse
@@ -123,7 +123,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
 		}
 
-		if constraint.Owner != owner {
+		if constraint.Manager != manager {
 			constraint.OVN = scdmodels.OVN("")
 		}
 
@@ -149,23 +149,30 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 	return response, nil
 }
 
-// PutConstraintReference creates a single contraint ref.
-func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(req.GetEntityuuid())
+func (a *Server) CreateConstraintReference(ctx context.Context, req *scdpb.CreateConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
+	return a.PutConstraintReference(ctx, req.GetEntityid(), "", req.GetParams())
+}
+
+func (a *Server) UpdateConstraintReference(ctx context.Context, req *scdpb.UpdateConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
+	return a.PutConstraintReference(ctx, req.GetEntityid(), req.GetOvn(), req.GetParams())
+}
+
+// PutConstraintReference inserts or updates a Constraint.
+// If the ovn argument is empty (""), it will attempt to create a new Constraint.
+func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ovn string, params *scdpb.PutConstraintReferenceParameters) (*scdpb.ChangeConstraintReferenceResponse, error) {
+	id, err := dssmodels.IDFromString(entityid)
+
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityuuid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
 	}
 
-	var (
-		params  = req.GetParams()
-		extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
-	)
+	var extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
 
 	if len(params.UssBaseUrl) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
@@ -205,26 +212,30 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 
 	var response *scdpb.ChangeConstraintReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
+		var version int32 // Version of the Constraint (0 means creation requested).
+
 		// Get existing Constraint, if any, and validate request
 		old, err := r.GetConstraint(ctx, id)
 		switch {
 		case err == sql.ErrNoRows:
 			// No existing Constraint; verify that creation was requested
-			if params.OldVersion != 0 {
-				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %d does not exist", params.OldVersion)
+			if ovn != "" {
+				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %s does not exist", ovn)
 			}
+			version = 0
 		case err != nil:
 			return stacktrace.Propagate(err, "Could not get Constraint from repo")
 		}
 		if old != nil {
-			if old.Owner != owner {
+			if old.Manager != manager {
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-					"Constraint owned by %s, but %s attempted to modify", old.Owner, owner)
+					"Constraint owned by %s, but %s attempted to modify", old.Manager, manager)
 			}
-			if old.Version != scdmodels.Version(params.OldVersion) {
+			if old.OVN != scdmodels.OVN(ovn) {
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
-					"Current version is %d but client specified version %d", old.Version, params.OldVersion)
+					"Current version is %s but client specified version %s", old.OVN, ovn)
 			}
+			version = int32(old.Version)
 		}
 
 		// Compute total affected Volume4D for notification purposes
@@ -251,8 +262,8 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 		// Upsert the Constraint
 		constraint, err := r.UpsertConstraint(ctx, &scdmodels.Constraint{
 			ID:      id,
-			Owner:   owner,
-			Version: scdmodels.Version(params.OldVersion + 1),
+			Manager: manager,
+			Version: scdmodels.VersionNumber(version + 1),
 
 			StartTime:     uExtent.StartTime,
 			EndTime:       uExtent.EndTime,
@@ -311,7 +322,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, req *scdpb.PutConst
 
 // QueryConstraintReferences queries existing contraint refs in the given
 // bounds.
-func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.QueryConstraintReferencesRequest) (*scdpb.SearchConstraintReferencesResponse, error) {
+func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.QueryConstraintReferencesRequest) (*scdpb.QueryConstraintReferencesResponse, error) {
 	// Retrieve the area of interest parameter
 	aoi := req.GetParams().AreaOfInterest
 	if aoi == nil {
@@ -325,12 +336,12 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.Query
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
 	}
 
-	var response *scdpb.SearchConstraintReferencesResponse
+	var response *scdpb.QueryConstraintReferencesResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Perform search query on Store
 		constraints, err := r.SearchConstraints(ctx, vol4)
@@ -339,13 +350,13 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.Query
 		}
 
 		// Create response for client
-		response = &scdpb.SearchConstraintReferencesResponse{}
+		response = &scdpb.QueryConstraintReferencesResponse{}
 		for _, constraint := range constraints {
 			p, err := constraint.ToProto()
 			if err != nil {
 				return err
 			}
-			if constraint.Owner != owner {
+			if constraint.Manager != manager {
 				p.Ovn = ""
 			}
 			response.ConstraintReferences = append(response.ConstraintReferences, p)

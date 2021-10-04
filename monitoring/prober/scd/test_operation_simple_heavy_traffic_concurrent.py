@@ -11,10 +11,9 @@
   - confirm deletion by get and query
 """
 
-
-import asyncio
 import datetime
-import pytest
+import concurrent.futures
+import functools
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from monitoring.monitorlib.infrastructure import default_scope
@@ -23,11 +22,6 @@ from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import for_api_versions, register_resource_type
 
-
-# To avoid `loop is already running` error.
-# https://stackoverflow.com/questions/46827007/runtimeerror-this-event-loop-is-already-running-in-python
-import nest_asyncio
-nest_asyncio.apply()
 
 # This test is implemented to fire requests concurrently, given there are several concurrent related issues:
 # - https://github.com/interuss/dss/issues/417
@@ -116,19 +110,25 @@ def _intersection(list1, list2):
   return list(set(list1) & set(list2))
 
 
-def _put_operation(req, op_id, scd_session, scd_api):
+def _put_operation(req, op_id, scd_session, scd_api, create_new: bool):
+  print('Putting: ', op_id)
   if scd_api == scd.API_0_3_5:
-    return scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
-  elif scd_api == scd.API_0_3_15:
-    return scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+    result = scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+  elif scd_api == scd.API_0_3_17:
+    if create_new:
+      result = scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+    else:
+      result = scd_session.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), json=req, scope=SCOPE_SC)
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
+  print('Put: ', op_id)
+  return result
 
 
 def _get_operation(op_id, scd_session, scd_api):
   if scd_api == scd.API_0_3_5:
     return scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     return scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
@@ -140,7 +140,7 @@ def _query_operation(idx, scd_session, scd_api):
     return scd_session.post('/operation_references/query', json={
       'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
     }, scope=SCOPE_SC)
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     return scd_session.post('/operational_intent_references/query', json={
       'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
     }, scope=SCOPE_SC)
@@ -156,7 +156,7 @@ def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
     existing_op = resp.json().get('operation_reference', None)
     assert existing_op is not None
     op_map[op_id] = existing_op
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     resp = scd_session.get('/operational_intent_references/{}'.format(op_id))
     assert resp.status_code == 200, resp.content
     existing_op = resp.json().get('operational_intent_reference', None)
@@ -180,12 +180,13 @@ def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
 def _delete_operation(op_id, scd_session, scd_api):
   if scd_api == scd.API_0_3_5:
     return scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-  elif scd_api == scd.API_0_3_15:
-    return scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+  elif scd_api == scd.API_0_3_17:
+    return scd_session.delete('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), scope=SCOPE_SC)
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 def _collect_resp_callback(key, op_resp_map, future):
+  print(f'outcome ready: {key}')
   op_resp_map[key] = future.result()
 
 
@@ -204,7 +205,7 @@ def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
         assert False, resp.content
 
 
-@for_api_versions(scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
     for op_id in map(ids, OP_TYPES):
@@ -219,35 +220,26 @@ def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
         assert False, resp.content
 
 
-async def _create_ops_concurrent(executor, loop, ids, scd_api, scd_session, op_req_map):
-  blocking_tasks = {}
-  for idx, op_id in enumerate(map(ids, OP_TYPES)):
-      req = _make_op_request(idx)
-      op_req_map[op_id] = req
-      blocking_tasks.update({
-        loop.run_in_executor(executor, _put_operation, req, op_id, scd_session, scd_api): op_id
-      })
-  responses = {}
-  for task, op_id in blocking_tasks.items():
-    responses[op_id] = await task
-  return responses
-
 # Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
-@pytest.mark.asyncio
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_ops_concurrent(ids, scd_api, scd_session):
   assert len(ovn_map) == 0
   op_req_map = {}
   op_resp_map = {}
-  # Create operations concurrently
-  event_loop = asyncio.get_event_loop()
+  # Create opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    results = event_loop.run_until_complete(_create_ops_concurrent(
-      executor, event_loop, ids, scd_api, scd_session, op_req_map))
-    for op_id, result in results.items():
-      op_resp_map[op_id] = result
+    for idx, op_id in enumerate(map(ids, OP_TYPES)):
+      req = _make_op_request(idx)
+      op_req_map[op_id] = req
+
+    futures = {
+      executor.submit(_put_operation, req, op_id, scd_session, scd_api, True): op_id 
+      for op_id, req in op_req_map.items()}
+    for fut in concurrent.futures.as_completed(list(futures)):
+      op_id = futures[fut]
+      fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
     req = op_req_map[op_id]
@@ -263,35 +255,24 @@ def test_create_ops_concurrent(ids, scd_api, scd_session):
     assert op['version'] == 1
     assert op['ovn']
     assert 'subscription_id' in op
-    assert 'state' not in op
     ovn_map[op_id] = op['ovn']
   assert len(ovn_map) == len(OP_TYPES)
 
 
-async def _get_ops_by_ids_concurrent(executor, loop, ids, scd_api, scd_session):
-  blocking_tasks = {}
-  for op_id in map(ids, OP_TYPES):
-      blocking_tasks.update(
-        {loop.run_in_executor(executor, _get_operation, op_id, scd_session, scd_api): op_id})
-  responses = {}
-  for task, op_id in blocking_tasks.items():
-    responses[op_id] = await task
-  return responses
-
-
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
-@pytest.mark.asyncio
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-async def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session, event_loop):
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
+
   # Get opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    results = event_loop.run_until_complete(
-        _get_ops_by_ids_concurrent(executor, event_loop, ids, scd_api, scd_session)
-    )
-    for op_id, result in results.items():
-      op_resp_map[op_id] = result
+    futures = {
+      executor.submit(_get_operation, op_id, scd_session, scd_api): op_id
+      for op_id in map(ids, OP_TYPES)}
+    for fut in concurrent.futures.as_completed(list(futures)):
+      op_id = futures[fut]
+      fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
@@ -304,66 +285,41 @@ async def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session, event_loop):
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
     assert op['version'] == 1
-    assert 'state' not in op
-
-
-async def _get_ops_by_search_concurrent(executor, loop, scd_api, scd_session):
-  blocking_tasks = {}
-  for idx in range(len(OP_TYPES)):
-      blocking_tasks.update(
-        {loop.run_in_executor(executor, _query_operation, idx, scd_session, scd_api): idx})
-  responses = {}
-  for task, op_id in blocking_tasks.items():
-    responses[op_id] = await task
-  return responses
 
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
-@pytest.mark.asyncio
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-async def test_get_ops_by_search_concurrent(ids, scd_api, scd_session, event_loop):
+def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
   total_found_ids = set()
+
   # Query opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    results = event_loop.run_until_complete(
-        _get_ops_by_search_concurrent(executor, event_loop, scd_api, scd_session)
-    )
-    for op_id, result in results.items():
-      op_resp_map[op_id] = result
+    futures = {
+      executor.submit(_query_operation, idx, scd_session, scd_api): idx
+      for idx in range(len(OP_TYPES))}
+    for fut in concurrent.futures.as_completed(list(futures)):
+      idx = futures[fut]
+      fut.add_done_callback(functools.partial(_collect_resp_callback, idx, op_resp_map))
 
   for idx, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
     if scd_api == scd.API_0_3_5:
       found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
     else:
-      found_ids = [op['id'] for op in resp.json().get('operational_intent_reference', [])]
+      found_ids = [op['id'] for op in resp.json().get('operational_intent_references', [])]
     total_found_ids.update(found_ids)
 
   assert len(_intersection(map(ids, OP_TYPES), total_found_ids)) == len(OP_TYPES)
 
 
-async def _mutate_ops_concurrent(executor, loop, ids, op_req_map, scd_api, scd_session):
-  blocking_tasks = {}
-  for op_id in map(ids, OP_TYPES):
-      req = op_req_map[op_id]
-      blocking_tasks.update({
-        loop.run_in_executor(executor, _put_operation, req, op_id, scd_session, scd_api): op_id
-      })
-  responses = {}
-  for task, op_id in blocking_tasks.items():
-    responses[op_id] = await task
-  return responses
-
-
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: Operations with ids in OP_IDS mutated to second version
-@pytest.mark.asyncio
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_mutate_ops_concurrent(ids, scd_api, scd_session, event_loop):
+def test_mutate_ops_concurrent(ids, scd_api, scd_session):
   op_req_map = {}
   op_resp_map = {}
   op_map = {}
@@ -375,11 +331,16 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, event_loop):
 
   # Mutate operations in parallel
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    results = event_loop.run_until_complete(
-        _mutate_ops_concurrent(executor, event_loop, ids, op_req_map, scd_api, scd_session)
-    )
-    for op_id, result in results.items():
-      op_resp_map[op_id] = result
+    for op_id in map(ids, OP_TYPES):
+      req = op_req_map[op_id]
+
+    futures = {
+      executor.submit(_put_operation, req, op_id, scd_session, scd_api, False): op_id
+      for op_id, req in op_req_map.items()}
+    for fut in concurrent.futures.as_completed(list(futures)):
+      op_id = futures[fut]
+      fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+
   ovn_map.clear()
 
   for op_id, resp in op_resp_map.items():
@@ -396,37 +357,26 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, event_loop):
     assert op['uss_base_url'] == 'https://example.com/uss2'
     assert op['version'] == 2
     assert op['subscription_id'] == existing_op['subscription_id']
-    assert 'state' not in op
 
     ovn_map[op_id] = op['ovn']
 
   assert len(ovn_map) == len(OP_TYPES)
 
 
-async def _delete_op_concurrent(executor, loop, ids, scd_api, scd_session):
-  blocking_tasks = {}
-  for op_id in map(ids, OP_TYPES):
-      blocking_tasks.update(
-        {loop.run_in_executor(executor, _delete_operation, op_id, scd_session, scd_api): op_id})
-  responses = {}
-  for task, op_id in blocking_tasks.items():
-    responses[op_id] = await task
-  return responses
-
-
 # Preconditions: Operations with ids in OP_IDS mutated to second version
 # Mutations: Operations with ids in OP_IDS deleted
-@pytest.mark.asyncio
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-async def test_delete_op_concurrent(ids, scd_api, scd_session, event_loop):
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_delete_op_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
+
   # Delete operations concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    results = event_loop.run_until_complete(
-        _delete_op_concurrent(executor, event_loop, ids, scd_api, scd_session)
-    )
-    for op_id, result in results.items():
-      op_resp_map[op_id] = result
+    futures = {
+      executor.submit(_delete_operation, op_id, scd_session, scd_api): op_id
+      for op_id in map(ids, OP_TYPES)}
+    for fut in concurrent.futures.as_completed(list(futures)):
+      op_id = futures[fut]
+      fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
   assert len(op_resp_map) == len(OP_TYPES)
 
