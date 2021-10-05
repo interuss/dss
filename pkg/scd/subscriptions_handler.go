@@ -140,7 +140,7 @@ func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, ver
 			}
 			if err := subreq.ValidateDependentOps(operations); err != nil {
 				// The provided subscription does not cover all its dependent operations
-				return stacktrace.Propagate(err, "Subscription does not cover all dependent operations")
+				return err
 			}
 		}
 
