@@ -10,23 +10,23 @@ import (
 // Subscriptions enables operations on a list of Subscriptions.
 type Subscriptions []*scdmodels.Subscription
 
-// Operation abstracts operation-specific interactions with the backing repository.
-type Operation interface {
-	// GetOperation returns the operation identified by "id".
-	GetOperation(ctx context.Context, id dssmodels.ID) (*scdmodels.Operation, error)
+// OperationalIntent abstracts operational intent-specific interactions with the backing repository.
+type OperationalIntent interface {
+	// GetOperationalIntent returns the operation identified by "id".
+	GetOperationalIntent(ctx context.Context, id dssmodels.ID) (*scdmodels.OperationalIntent, error)
 
-	// DeleteOperation deletes the operation identified by "id".
-	DeleteOperation(ctx context.Context, id dssmodels.ID) error
+	// DeleteOperationalIntent deletes the operation identified by "id".
+	DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) error
 
-	// UpsertOperation inserts or updates an operation into the store.
-	UpsertOperation(ctx context.Context, operation *scdmodels.Operation) (*scdmodels.Operation, error)
+	// UpsertOperationalIntent inserts or updates an operation into the store.
+	UpsertOperationalIntent(ctx context.Context, operation *scdmodels.OperationalIntent) (*scdmodels.OperationalIntent, error)
 
-	// SearchOperations returns all operations intersecting "v4d".
-	SearchOperations(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Operation, error)
+	// SearchOperationalIntents returns all operations intersecting "v4d".
+	SearchOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error)
 
-	// GetDependentOperations returns IDs of all operations dependent on
+	// GetDependentOperationalIntents returns IDs of all operations dependent on
 	// subscription identified by "subscriptionID".
-	GetDependentOperations(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error)
+	GetDependentOperationalIntents(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error)
 }
 
 // Subscription abstracts subscription-specific interactions with the backing repository.
@@ -73,7 +73,7 @@ type Constraint interface {
 
 // Repository aggregates all SCD-specific repo interfaces.
 type Repository interface {
-	Operation
+	OperationalIntent
 	Subscription
 	Constraint
 }

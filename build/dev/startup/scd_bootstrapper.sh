@@ -13,7 +13,7 @@ else
   echo "Bootstrapping SCD DB..."
   /usr/bin/db-manager \
     --schemas_dir /db-schemas/scd \
-    --db_version 1.0.0 \
+    --db_version "latest" \
     --cockroach_host local-dss-crdb
 
   echo "SCD DB bootstrapping complete; notifying other containers..."

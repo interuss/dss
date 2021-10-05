@@ -11,22 +11,6 @@
           "units": "M"
         }
       },
-      "outline_polygon": {
-        "vertices": [
-          {
-            "lng": -118.456,
-            "lat": 34.123
-          },
-          {
-            "lng": -118.456,
-            "lat": 34.123
-          },
-          {
-            "lng": -118.456,
-            "lat": 34.123
-          }
-        ]
-      },
       "altitude_lower": {
         "value": -8000,
         "reference": "W84",

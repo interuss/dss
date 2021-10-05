@@ -32,7 +32,7 @@ local metadata = metadataBase {
   schema_manager+: {
     image: 'VAR_SCHEMA_MANAGER_IMAGE_NAME',
     desired_rid_db_version: '3.1.1',
-    desired_scd_db_version: '1.0.0',
+    desired_scd_db_version: '2.0.0',
   },
 };
 
