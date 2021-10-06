@@ -22,7 +22,7 @@ cd "${BASEDIR}" || exit 1
 
 DC_COMMAND=${1}
 
-if [[ "$DC_COMMAND" == "up" ]] || [[ "$DC_COMMAND" == "build" ]]; then
+if [[ "$DC_COMMAND" == "up" ]] || [[ "$DC_COMMAND" == "build" ]] || [[ "$DC_COMMAND" == "stop" ]]; then
   DC_OPTIONS=""
 elif [[ "$DC_COMMAND" == "down" ]]; then
   DC_OPTIONS="--volumes --remove-orphans"
