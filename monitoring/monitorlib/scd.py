@@ -9,10 +9,18 @@ DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 EARTH_CIRCUMFERENCE_M = 40.075e6
 
 API_0_3_5 = '0.3.5'
-API_0_3_15 = '0.3.15'
+API_0_3_17 = '0.3.17'
+# In Both
 SCOPE_SC = 'utm.strategic_coordination'
 SCOPE_CM = 'utm.constraint_management'
+
+# In 0.3.5
 SCOPE_CI = 'utm.constraint_consumption'
+
+# In 0.3.17
+SCOPE_CP = 'utm.constraint_processing'
+SCOPE_CM_SA = 'utm.conformance_monitoring_sa'
+SCOPE_AA = 'utm.availability_arbitration'
 
 
 def make_vol4(
