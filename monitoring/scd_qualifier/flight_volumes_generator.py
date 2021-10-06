@@ -1,10 +1,10 @@
 from pathlib import Path
 import arrow
 from typing import List
-from shapely.geometry import LineString, Polygon
+from shapely.geometry import LineString
 from pyproj import Geod, Proj
 from monitoring.monitorlib import scd
-from monitoring.scd_qualifier.utils import Altitude, VolumePolygon, VolumeGenerationRules, PathGenerationRules, Volume3D, Volume4D, PathPayload, LatLngPoint, Time
+from monitoring.scd_qualifier.utils import Altitude, VolumePolygon, VolumeGenerationRules, PathGenerationRules, Volume3D, Volume4D, PathPayload, LatLngPoint, Time, SCDVolume4D
 import shapely.geometry
 from shapely.geometry import asShape
 import pathlib, os
@@ -122,7 +122,7 @@ class FlightVolumeGenerator():
         
         return volume3D
 
-    def transform_3d_volume_to_4d(self, volume_3d : Volume3D,volume_generation_options: VolumeGenerationRules) -> Volume4D:
+    def transform_3d_volume_to_astm_4d(self, volume_3d : Volume3D,volume_generation_options: VolumeGenerationRules) -> Volume4D:
         if volume_generation_options.intersect_time: 
             # Overlap with the control 
             three_mins_from_now = self.now.shift(minutes = 3)
@@ -180,15 +180,15 @@ class FlightVolumeGenerator():
             all_volume_rules.append(volume_generation_options)
         return all_volume_rules
 
-    def generate_4d_volumes(self,raw_paths:List[PathPayload],rules : List[PathPayload], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
-        ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
+    def generate_astm_4d_volumes(self,raw_paths:List[PathPayload],rules : List[PathPayload], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
+        ''' A method to generate ASTM specified Volume 4D payloads to submit to the system to be tested.  '''
         all_volume_4d :List[Volume4D] = []
         last_path_index = len(raw_paths) - 1 
         for path_index, raw_path in enumerate(raw_paths): 
             volume_generation_options = rules[path_index]
             
             flight_volume_3d = self.convert_path_to_volume(flight_path = raw_path.path, volume_generation_options = volume_generation_options, altitude_of_ground_level_wgs_84=altitude_of_ground_level_wgs_84)
-            flight_volume_4d = self.transform_3d_volume_to_4d(volume_3d= flight_volume_3d, volume_generation_options =  volume_generation_options)
+            flight_volume_4d = self.transform_3d_volume_to_astm_4d(volume_3d= flight_volume_3d, volume_generation_options =  volume_generation_options)
             all_volume_4d.append(flight_volume_4d)
             
         return all_volume_4d
@@ -197,36 +197,36 @@ class FlightVolumeGenerator():
 class SCDFlightPathVolumeWriter():
     """ A class to write raw Flight Paths and volumes to disk so that they can be examined / used in other software """
 
-    def __init__(self, raw_paths:List[PathPayload],  serialized_flight_volumes: List[Volume4D], all_rules: List[VolumeGenerationRules],country_code='che')-> None:
+    def __init__(self, raw_paths:List[PathPayload],  flight_volumes: List[Volume4D], all_rules: List[VolumeGenerationRules],country_code='che')-> None:
         
         self.country_code = country_code
         self.output_directory = Path('test_definitions', self.country_code)        
         # Create test_definition directory if it does not exist        
         self.output_directory.mkdir(parents=True, exist_ok=True)
-        self.output_subdirectories = (Path(self.output_directory, 'flight_volumes'), Path(self.output_directory, 'path_geojson'),Path(self.output_directory, 'scd_rules'),)
+        self.output_subdirectories = (Path(self.output_directory, 'astm_4d_volumes'), Path(self.output_directory, '4d_flight_paths'),Path(self.output_directory, 'scd_rules'),)
         for output_subdirectory in self.output_subdirectories:
             output_subdirectory.mkdir(parents=True, exist_ok=True)
         self.raw_paths = raw_paths
-        self.serialized_flight_volumes = serialized_flight_volumes
+        self.flight_volumes = flight_volumes
         self.all_rules = all_rules
 
-    def write_flight_paths(self) -> None:
+    def write_4d_flight_paths(self) -> None:
         ''' A method to write flight paths to disk as GeoJSON features '''
         
-        for path_id, path_payload in enumerate(self.raw_paths):
-            feature_collection = {"type": "FeatureCollection", "features": []}                       
+        for path_id, path_payload in enumerate(self.raw_paths):    
             line_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(path_payload.path)}
-            feature_collection['features'].append(line_feature)
-            path_file_name = 'path_%s.geojson' % str(path_id + 1)  # Avoid Zero based numbering
+            scd_volume_4d = SCDVolume4D(flight_plan= line_feature,time_start = self.flight_volumes[path_id].time_start, time_end=self.flight_volumes[path_id].time_end, altitude_lower= self.flight_volumes[path_id]['volume']['altitude_lower'], altitude_upper= self.flight_volumes[path_id]['volume']['altitude_upper'] )
+            
+            path_file_name = '4d_path_%s.json' % str(path_id + 1)  # Avoid Zero based numbering
             tracks_file_path = self.output_subdirectories[1] / path_file_name
             with open(tracks_file_path, 'w') as f:
-                f.write(json.dumps(feature_collection))
+                f.write(json.dumps(scd_volume_4d))
 
     
-    def write_flight_volumes(self) -> None:
+    def write_astm_volume_4d(self) -> None:
         ''' A method to write volume 4D objects to disk '''
 
-        for volume_id, volume in enumerate(self.serialized_flight_volumes):                     
+        for volume_id, volume in enumerate(self.flight_volumes):                     
             volume_file_name = 'volume_%s.json' % str(volume_id + 1)  # Avoid Zero based numbering           
             volume_file_path = self.output_subdirectories[0] / volume_file_name
             with open(volume_file_path, 'w') as f:
@@ -251,10 +251,10 @@ if __name__ == '__main__':
     flight_paths = my_volume_generator.generate_raw_paths(number_of_paths=6)
     all_rules = my_volume_generator.generate_path_parameters(raw_paths=flight_paths)
     
-    flight_volumes = my_volume_generator.generate_4d_volumes(raw_paths = flight_paths, rules = all_rules, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
+    flight_volumes = my_volume_generator.generate_astm_4d_volumes(raw_paths = flight_paths, rules = all_rules, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
    
-    my_flight_path_writer = SCDFlightPathVolumeWriter(raw_paths= flight_paths, serialized_flight_volumes=flight_volumes, all_rules = all_rules)
+    my_flight_path_writer = SCDFlightPathVolumeWriter(raw_paths= flight_paths, flight_volumes=flight_volumes, all_rules = all_rules)
 
-    my_flight_path_writer.write_flight_paths()    
-    my_flight_path_writer.write_flight_volumes()
+    my_flight_path_writer.write_4d_flight_paths()    
+    my_flight_path_writer.write_astm_volume_4d()
     my_flight_path_writer.write_test_rules()
