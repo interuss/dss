@@ -897,7 +897,7 @@ def test_mutate_sub2(ids, scd_api, scd_session, scd_session2):
 
   # Attempt mutation with start time that doesn't cover Op2
 
-  req['extents']['time_start'] = scd.make_time(time_now + datetime.timedelta(minutes=15))
+  req['extents']['time_start'] = scd.make_time(time_now + datetime.timedelta(minutes=5))
   resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version), json=req)
   assert resp.status_code == 400, resp.content
   req['extents']['time_start'] = scd.make_time(time_start)
