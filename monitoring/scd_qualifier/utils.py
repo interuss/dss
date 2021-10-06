@@ -71,19 +71,19 @@ class OperationalIntentDetails(ImplicitDict):
     volumes: List[Volume4D]
     priority: int
 
-class TreatmentVolumeOptions(ImplicitDict):
-    """ A class to hold configuration for developing treatments """
+class VolumeGenerationRules(ImplicitDict):
+    """ A class to hold configuration for developing rules """
     intersect_altitude: bool = 0
     intersect_time: bool = 0
     is_control: bool = 0
     expected_result: str
     
-class TreatmentPathOptions(ImplicitDict):
+class PathGenerationRules(ImplicitDict):
     """ A class to hold configuration for developing treatment flight path as GeoJSON """
     intersect_space:bool = 0
     
 class PathPayload(ImplicitDict):
     path: LineString
     is_control: bool
-    path_options: TreatmentPathOptions
+    path_options: PathGenerationRules
   
