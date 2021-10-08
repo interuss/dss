@@ -151,8 +151,7 @@ release:
 	scripts/release.sh $(VERSION)
 
 start-locally:
-	build/dev/run_locally.sh build
-	build/dev/run_locally.sh up
+	build/dev/run_locally.sh
 
 stop-locally:
 	build/dev/run_locally.sh stop
