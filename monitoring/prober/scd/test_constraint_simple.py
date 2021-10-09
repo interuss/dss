@@ -16,6 +16,8 @@ from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM, SCOPE_CP, SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import for_api_versions, register_resource_type
 
+import pytest
+
 
 BASE_URL = 'https://example.com/uss'
 CONSTRAINT_TYPE = register_resource_type(1, 'Single constraint')
@@ -32,7 +34,9 @@ def _make_c1_request():
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-def test_ensure_clean_workspace(ids, scd_api, scd_session):
+def test_ensure_clean_workspace(ids, scd_api, scd_session, scd_session_cm):
+  if not scd_session_cm:
+    pytest.skip('SCD auth1 not enabled for constraint management')
   resp = scd_session.get('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)), scope=SCOPE_CM)
   if resp.status_code == 200:
     resp = scd_session.delete('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)), scope=SCOPE_CM)
@@ -262,10 +266,10 @@ def test_mutate_constraint(ids, scd_api, scd_session):
   if scd_api == scd.API_0_3_5:
     resp = scd_session.put('/constraint_references/{}'.format(id), json=req, scope=SCOPE_SC)
     assert resp.status_code == 403, resp.content
-  
+
     resp = scd_session.put('/constraint_references/{}'.format(id), json=req, scope=SCOPE_CI)
     assert resp.status_code == 403, resp.content
-  
+
     resp = scd_session.put('/constraint_references/{}'.format(id), json=req, scope=SCOPE_CM)
     assert resp.status_code == 200, resp.content
 
@@ -275,7 +279,7 @@ def test_mutate_constraint(ids, scd_api, scd_session):
     # FIXME: OVNs are not URL safe
     resp = scd_session.put('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_SC)
     assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
-  
+
     resp = scd_session.put('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_CP)
     assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 
@@ -320,10 +324,10 @@ def test_delete_constraint(ids, scd_api, scd_session):
   if scd_api == scd.API_0_3_5:
     resp = scd_session.delete('/constraint_references/{}'.format(id), scope=SCOPE_SC)
     assert resp.status_code == 403, resp.content
-  
+
     resp = scd_session.delete('/constraint_references/{}'.format(id), scope=SCOPE_CI)
     assert resp.status_code == 403, resp.content
-  
+
     resp = scd_session.delete('/constraint_references/{}'.format(id), scope=SCOPE_CM)
     assert resp.status_code == 200, resp.content
   elif scd_api == scd.API_0_3_17:
@@ -331,7 +335,7 @@ def test_delete_constraint(ids, scd_api, scd_session):
 
     resp = scd_session.delete('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_SC)
     assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
-  
+
     resp = scd_session.delete('/constraint_references/{}/{}'.format(id, ovn), json=req, scope=SCOPE_CP)
     assert resp.status_code == 403, "ovn:{}\nresponse: {}".format(ovn, resp.content)
 

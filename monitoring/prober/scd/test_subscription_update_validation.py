@@ -22,7 +22,7 @@ from monitoring.prober.infrastructure import for_api_versions, register_resource
 
 BASE_URL = 'https://example.com/uss'
 OP_TYPE = register_resource_type(221, 'Operational intent')
-sub_id = ''
+sub_id = None
 
 
 def _make_op_req():
@@ -132,12 +132,13 @@ def test_create_op_v17(ids, scd_api, scd_session):
   assert 'subscription_id' in op
   assert op['state'] == 'Accepted'
 
-  # Make sure the implicit Subscription exists when queried separately
   global sub_id
-  sub_id = op['subscription_id']
+  if sub_id is not None:
+    # Make sure the implicit Subscription exists when queried separately
+    sub_id = op['subscription_id']
 
-  resp = scd_session.get('/subscriptions/{}'.format(sub_id))
-  assert resp.status_code == 200, resp.content
+    resp = scd_session.get('/subscriptions/{}'.format(sub_id))
+    assert resp.status_code == 200, resp.content
 
 
 # Try to mutate subscription by shrinking its 2d area
@@ -146,7 +147,8 @@ def test_create_op_v17(ids, scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub_shrink_2d(scd_api, scd_session):
-  if scd_session is None:
+  global sub_id
+  if scd_session is None or sub_id is None:
     return
 
   # GET current sub before mutation
@@ -175,7 +177,8 @@ def test_mutate_sub_shrink_2d(scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub_shrink_altitude(scd_api, scd_session):
-  if scd_session is None:
+  global sub_id
+  if scd_session is None or sub_id is None:
     return
 
   # GET current sub before mutation
@@ -204,7 +207,8 @@ def test_mutate_sub_shrink_altitude(scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub_shrink_time(scd_api, scd_session):
-  if scd_session is None:
+  global sub_id
+  if scd_session is None or sub_id is None:
     return
 
   # GET current sub before mutation
@@ -233,7 +237,8 @@ def test_mutate_sub_shrink_time(scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_mutate_sub_not_shrink(scd_api, scd_session):
-  if scd_session is None:
+  global sub_id
+  if scd_session is None or sub_id is None:
     return
 
   # GET current sub before mutation
@@ -304,7 +309,8 @@ def test_get_deleted_op_by_id_v17(ids, scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 def test_delete_sub_v5(scd_api, scd_session):
-  if scd_session is None:
+  global sub_id
+  if scd_session is None or sub_id is None:
     return
   resp = scd_session.delete('/subscriptions/{}'.format(sub_id))
   assert resp.status_code == 200, resp.content
@@ -315,7 +321,8 @@ def test_delete_sub_v5(scd_api, scd_session):
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_delete_sub_v17(scd_api, scd_session):
-  if scd_session is None:
+  global sub_id
+  if scd_session is None or sub_id is None:
     return
   resp = scd_session.get('/subscriptions/{}'.format(sub_id))
   assert resp.status_code == 200, resp.content
@@ -329,7 +336,8 @@ def test_delete_sub_v17(scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_get_deleted_sub_by_id(scd_api, scd_session):
-  if scd_session is None:
+  global sub_id
+  if scd_session is None or sub_id is None:
     return
   resp = scd_session.get('/subscriptions/{}'.format(sub_id))
   assert resp.status_code == 404, resp.content
