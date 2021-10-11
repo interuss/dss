@@ -20,9 +20,12 @@ fi
 
 cd "${BASEDIR}" || exit 1
 
-DC_COMMAND=${1:-up}
+DC_COMMAND=${1}
 
-if [[ "$DC_COMMAND" == "down" ]]; then
+if [[ ! "$DC_COMMAND" ]]; then
+  DC_COMMAND="up"
+  DC_OPTIONS="--build"
+elif [[ "$DC_COMMAND" == "down" ]]; then
   DC_OPTIONS="--volumes --remove-orphans"
 elif [[ "$DC_COMMAND" == "debug" ]]; then
   DC_COMMAND=up

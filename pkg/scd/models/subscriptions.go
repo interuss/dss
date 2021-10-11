@@ -147,9 +147,13 @@ func (s *Subscription) ValidateDependentOp(operationalIntent *OperationalIntent)
 		return stacktrace.NewError("Subscription does not cover dependent operation altitude, %s", operationalIntent.ID)
 	}
 	// validate time range
-	// Skip checking start time since subscription's start time cannot be in the past while its dependent operational intent can
+	// Check if subscription start time is no later than the maximum latency (5 minutes) gap with dependent operation start time
+	if (*s.StartTime).Sub(*operationalIntent.StartTime).Minutes() > 5 {
+		return stacktrace.NewError("Subscription start time does not cover dependent operation's start time, %s", operationalIntent.ID)
+	}
+
 	if (*operationalIntent.EndTime).After(*s.EndTime) {
-		return stacktrace.NewError("Subscription does not cover dependent operation time range, %s", operationalIntent.ID)
+		return stacktrace.NewError("Subscription does not cover dependent operation's end time, %s", operationalIntent.ID)
 	}
 	return nil
 }
