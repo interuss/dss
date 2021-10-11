@@ -239,6 +239,7 @@ def test_create_op_v17(ids, scd_api, scd_session):
   op = data['operational_intent_reference']
   assert op['id'] == ids(OP_TYPE)
   assert op['uss_base_url'] == BASE_URL
+  assert op['uss_availability'] == "Unknown"
   assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
   assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
   assert op['version'] == 1
@@ -284,6 +285,7 @@ def test_get_op_by_id_v17(ids, scd_api, scd_session):
   op = data['operational_intent_reference']
   assert op['id'] == ids(OP_TYPE)
   assert op['uss_base_url'] == BASE_URL
+  assert op['uss_availability'] == "Unknown"
   assert op['version'] == 1
   assert 'state' in op
   assert op['state'] == 'Accepted',\
@@ -539,7 +541,7 @@ def test_delete_op_v17(ids, scd_api, scd_session):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_SC)
   assert resp.status_code == 200, resp.content
   ovn = resp.json()['operational_intent_reference']['ovn']
-  
+
   resp = scd_session.delete('/operational_intent_references/{}/{}'.format(ids(OP_TYPE), ovn), scope=SCOPE_CI)
   assert resp.status_code == 403, resp.content
 

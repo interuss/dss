@@ -75,13 +75,14 @@ func (s OperationalIntentState) String() string {
 // ToProto converts the OperationalIntent to its proto API format
 func (o *OperationalIntent) ToProto() (*scdpb.OperationalIntentReference, error) {
 	result := &scdpb.OperationalIntentReference{
-		Id:             o.ID.String(),
-		Ovn:            o.OVN.String(),
-		Manager:        o.Manager.String(),
-		Version:        int32(o.Version),
-		UssBaseUrl:     o.USSBaseURL,
-		SubscriptionId: o.SubscriptionID.String(),
-		State:          o.State.String(),
+		Id:              o.ID.String(),
+		Ovn:             o.OVN.String(),
+		Manager:         o.Manager.String(),
+		Version:         int32(o.Version),
+		UssBaseUrl:      o.USSBaseURL,
+		SubscriptionId:  o.SubscriptionID.String(),
+		State:           o.State.String(),
+		UssAvailability: UssAvailabilityStateUnknown.String(),
 	}
 
 	if o.StartTime != nil {
@@ -105,8 +106,6 @@ func (o *OperationalIntent) ToProto() (*scdpb.OperationalIntentReference, error)
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
-
-	// TODO: Populate UssAvailability field
 
 	return result, nil
 }
