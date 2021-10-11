@@ -1,10 +1,12 @@
 from pathlib import Path
 import arrow
-from typing import List
-from shapely.geometry import LineString
+import random
+from typing import List, Union
+from shapely.geometry import LineString, Point
 from pyproj import Geod, Proj
+from shapely.geometry.polygon import Polygon
 from monitoring.monitorlib import scd
-from monitoring.scd_qualifier.utils import Altitude, VolumePolygon, VolumeGenerationRules, PathGenerationRules, Volume3D, Volume4D, PathPayload, LatLngPoint, Time, SCDVolume4D
+from monitoring.scd_qualifier.utils import Altitude, VolumePolygon, VolumeGenerationRules, GeometryGenerationRules, Volume3D, Volume4D, GeometryPayload, LatLngPoint, Time, SCDVolume4D
 import shapely.geometry
 from shapely.geometry import asShape
 import pathlib, os
@@ -24,13 +26,32 @@ class FlightVolumeGenerator():
 
         self.altitude_agl:float = 50.0
         self.altitude_envelope: int = 15 # the buffer in meters for converting from flight path to a volume
-        self.control_flight_path: LineString # the initial flight path against which subsequent flight paths are generated
+        self.control_flight_geometry: Union[LineString, Polygon] # the initial flight path against which subsequent flight paths are generated
                 
         
-        self.raw_paths: List[PathPayload]        
+        self.raw_geometries: List[GeometryPayload]        
         self.now = arrow.now()        
         self.geod = Geod(ellps="WGS84")
+        self.grid_cells : List[shapely.geometry.box]
         self.input_extents_valid()
+        self.generate_grid_cells()
+        
+    def generate_grid_cells(self):
+               
+        # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid.
+        N_COLS = 3
+        N_ROWS = 2
+        cell_size_x = (self.maxx - self.minx)/(N_COLS)  # create three columns
+        cell_size_y = (self.maxy - self.miny)/(N_ROWS)  # create two rows
+        grid_cells = []
+        for u0 in range(0, N_COLS):  # 3 columns
+            x0 = self.minx + (u0 * cell_size_x)
+            for v0 in range(0, N_ROWS):  # 2 rows
+                y0 = self.miny + (v0 * cell_size_y)
+                x1 = x0 + cell_size_x
+                y1 = y0 + cell_size_y
+                grid_cells.append(shapely.geometry.box(x0, y0, x1, y1))
+        self.grid_cells = grid_cells
 
     def utm_converter(self, shapely_shape: shapely.geometry, inverse:bool=False) -> shapely.geometry.shape:
         ''' A helper function to convert from lat / lon to UTM coordinates for buffering. tracks. This is the UTM projection (https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system), we use Zone 33T which encompasses Switzerland, this zone has to be set for each locale / city. Adapted from https://gis.stackexchange.com/questions/325926/buffering-geometry-with-points-in-wgs84-using-shapely '''
@@ -60,45 +81,70 @@ class FlightVolumeGenerator():
             return
         else:
             raise ValueError("The extents provided are not of the correct size, please provide extents that are less than 500m x 500m and more than 300m x 300m square")
+        
     def generate_random_flight_path(self) -> LineString:
         '''Generate a random flight path '''
-        
-        random_flight_path = geojson.utils.generate_random(featureType = "LineString", numberVertices=2,
-                    boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
+        random_flight_path = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
         
         return random_flight_path
         
-
-    def generate_single_flight_path(self, path_options:PathGenerationRules, is_control:bool= False) -> LineString: 
+    def generate_random_flight_area(self) -> Polygon:
+        '''Generate a random flight polygon '''
+ 
+        def generate_random_polygon(number, box):
+            points = []
+            
+            while len(points) < number:
+                pnt = Point(random.uniform(self.minx, self.maxx), random.uniform(self.miny, self.maxy))
+                if box.contains(pnt):
+                    points.append(pnt)
+            return Polygon(points)
+        # random_flight_area = geojson.utils.generate_random(featureType = "Polygon", numberVertices=4, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
+        box = random.choice(self.grid_cells)
+        random_flight_area = generate_random_polygon(4, box)
+        print(random_flight_area)
+        return random_flight_area
+    
+    def generate_random_area_trajectory(self):
+        ''' A method to generate either a area or trajectory '''
+        coin_flip = random.choice([0,0,0,1])
+        if coin_flip:
+            path_or_area =  self.generate_random_flight_area()
+        else: 
+            path_or_area = self.generate_random_flight_path()
+        
+        return path_or_area
+        
+    def generate_single_flight_geometry(self, geometry_generation_rules:GeometryGenerationRules, is_control:bool= False) -> LineString: 
         ''' A method to generates flight path within a geographic bounds. This method utilzies the generate_random utiltiy provided by the geojson module to generate flight paths. '''
         if is_control:
-            flight_path = self.generate_random_flight_path()
-            flight_path_shp = asShape(flight_path)
-            flight_path_utm = self.utm_converter(flight_path_shp)
-            buffer_shape_utm = flight_path_utm.buffer(15)
+            flight_geometry = self.generate_random_area_trajectory()
+            flight_geometry_shp = asShape(flight_geometry)
+            flight_geometry_utm = self.utm_converter(flight_geometry_shp)
+            buffer_shape_utm = flight_geometry_utm.buffer(15)
             buffered_shape = self.utm_converter(buffer_shape_utm, inverse=True)
             
-            self.control_flight_path = flight_path
+            self.control_flight_geometry = flight_geometry
         else: 
-            if path_options.intersect_space: 
-                path_intersects = False
-                while (path_intersects==False):
+            if geometry_generation_rules.intersect_space: 
+                geometry_intersects = False
+                while (geometry_intersects == False):
                     # We are trying to generate a path that intersects with the control, we keep generating paths till one is found that does intersect
-                    flight_path = self.generate_random_flight_path()
-                    line_shape = asShape(flight_path)
-                    intersects = self.flight_path.intersects(line_shape)
-                    path_intersects = intersects    
+                    flight_geometry = self.generate_random_area_trajectory()
+                    raw_geom = asShape(flight_geometry)
+                    intersects = self.flight_geometry.intersects(raw_geom)
+                    geometry_intersects = intersects    
             else: 
-                flight_path = self.generate_random_flight_path()
+                flight_geometry = self.generate_random_area_trajectory()
                 
-        return flight_path
+        return flight_geometry
 
-    def convert_path_to_volume(self, flight_path:LineString, volume_generation_options: VolumeGenerationRules, altitude_of_ground_level_wgs_84:int) -> Volume3D:
+    def convert_geometry_to_volume(self, flight_geometry:LineString, volume_generation_options: VolumeGenerationRules, altitude_of_ground_level_wgs_84:int) -> Volume3D:
         ''' A method to convert a GeoJSON LineString to a ASTM outline_polygon object by buffering 15m spatially '''
         
-        flight_path_shp = asShape(flight_path)
-        flight_path_utm = self.utm_converter(flight_path_shp)
-        buffer_shape_utm = flight_path_utm.buffer(15)
+        flight_geometry_shp = asShape(flight_geometry)
+        flight_geometry_utm = self.utm_converter(flight_geometry_shp)
+        buffer_shape_utm = flight_geometry_utm.buffer(15)
         
         if volume_generation_options.intersect_altitude == True:    
             alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_envelope  
@@ -143,32 +189,32 @@ class FlightVolumeGenerator():
         
         return volume_4D
     
-    def generate_raw_paths(self, number_of_paths:int = 6) -> List[PathPayload]:
+    def generate_raw_geometries(self, number_of_geometries:int = 6) -> List[GeometryPayload]:
         ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
         
-        raw_paths: List[PathPayload] = []
-        for volume_idx in range(0, number_of_paths):
+        raw_geometries: List[GeometryPayload] = []
+        for volume_idx in range(0, number_of_geometries):
             is_control = True if (volume_idx == 0) else False
-            path_generation_options = PathGenerationRules()
+            geometry_generation_rules = GeometryGenerationRules()
             
-            if (volume_idx == (number_of_paths -1)):
+            if (volume_idx == (number_of_geometries -1)):
                 should_intersect = False
-                path_generation_options.intersect_space = should_intersect
+                geometry_generation_rules.intersect_space = should_intersect
             else:
                 should_intersect = True
             
-            current_path = self.generate_single_flight_path(path_options = path_generation_options, is_control= is_control)
-            raw_path = PathPayload(path = current_path, path_options = path_generation_options, is_control = is_control)
+            current_path = self.generate_single_flight_geometry(geometry_generation_rules = geometry_generation_rules, is_control= is_control)
+            raw_path = GeometryPayload(geometry = current_path, geometry_generation_rules = geometry_generation_rules, is_control = is_control)
             # the first path is control, the last path does not intersect the control
-            raw_paths.append(raw_path)
-        return raw_paths
+            raw_geometries.append(raw_path)
+        return raw_geometries
 
-    def generate_path_parameters(self, raw_paths:List[PathPayload]) -> List[VolumeGenerationRules]: 
+    def generate_path_parameters(self, raw_geometries:List[GeometryPayload]) -> List[VolumeGenerationRules]: 
         ''' A method to generate rules for generation of new paths '''
         
         all_volume_rules: List[VolumeGenerationRules] = []
-        last_path_index = len(raw_paths) - 1 
-        for path_index, raw_path in enumerate(raw_paths): 
+        last_path_index = len(raw_geometries) - 1 
+        for path_index, raw_path in enumerate(raw_geometries): 
             if path_index in [0,last_path_index]:
                 # This the control path or the well clear path no need to have any time / atltitude interserction
                 volume_generation_options = VolumeGenerationRules(intersect_altitude= False, intersect_time= False, expected_result = 'pass')
@@ -180,14 +226,14 @@ class FlightVolumeGenerator():
             all_volume_rules.append(volume_generation_options)
         return all_volume_rules
 
-    def generate_astm_4d_volumes(self,raw_paths:List[PathPayload],rules : List[PathPayload], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
+    def generate_astm_4d_volumes(self,raw_geometries:List[GeometryPayload],rules : List[GeometryPayload], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
         ''' A method to generate ASTM specified Volume 4D payloads to submit to the system to be tested.  '''
         all_volume_4d :List[Volume4D] = []
-        last_path_index = len(raw_paths) - 1 
-        for path_index, raw_path in enumerate(raw_paths): 
+        last_path_index = len(raw_geometries) - 1 
+        for path_index, raw_geometry in enumerate(raw_geometries): 
             volume_generation_options = rules[path_index]
             
-            flight_volume_3d = self.convert_path_to_volume(flight_path = raw_path.path, volume_generation_options = volume_generation_options, altitude_of_ground_level_wgs_84=altitude_of_ground_level_wgs_84)
+            flight_volume_3d = self.convert_geometry_to_volume(flight_geometry = raw_geometry.geometry, volume_generation_options = volume_generation_options, altitude_of_ground_level_wgs_84=altitude_of_ground_level_wgs_84)
             flight_volume_4d = self.transform_3d_volume_to_astm_4d(volume_3d= flight_volume_3d, volume_generation_options =  volume_generation_options)
             all_volume_4d.append(flight_volume_4d)
             
@@ -197,25 +243,25 @@ class FlightVolumeGenerator():
 class SCDFlightPathVolumeWriter():
     """ A class to write raw Flight Paths and volumes to disk so that they can be examined / used in other software """
 
-    def __init__(self, raw_paths:List[PathPayload],  flight_volumes: List[Volume4D], all_rules: List[VolumeGenerationRules],country_code='che')-> None:
+    def __init__(self, raw_geometries:List[GeometryPayload],  flight_volumes: List[Volume4D], all_rules: List[VolumeGenerationRules],country_code='che')-> None:
         
         self.country_code = country_code
         self.output_directory = Path('test_definitions', self.country_code)        
         # Create test_definition directory if it does not exist        
         self.output_directory.mkdir(parents=True, exist_ok=True)
-        self.output_subdirectories = (Path(self.output_directory, 'astm_4d_volumes'), Path(self.output_directory, '4d_flight_paths'),Path(self.output_directory, 'scd_rules'),)
+        self.output_subdirectories = (Path(self.output_directory, 'astm_4d_volumes'), Path(self.output_directory, '4d_flight_geometries'),Path(self.output_directory, 'scd_rules'),)
         for output_subdirectory in self.output_subdirectories:
             output_subdirectory.mkdir(parents=True, exist_ok=True)
-        self.raw_paths = raw_paths
+        self.raw_geometries = raw_geometries
         self.flight_volumes = flight_volumes
         self.all_rules = all_rules
 
-    def write_4d_flight_paths(self) -> None:
+    def write_4d_flight_geometries(self) -> None:
         ''' A method to write flight paths to disk as GeoJSON features '''
         
-        for path_id, path_payload in enumerate(self.raw_paths):    
-            line_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(path_payload.path)}
-            scd_volume_4d = SCDVolume4D(flight_plan= line_feature,time_start = self.flight_volumes[path_id].time_start, time_end=self.flight_volumes[path_id].time_end, altitude_lower= self.flight_volumes[path_id]['volume']['altitude_lower'], altitude_upper= self.flight_volumes[path_id]['volume']['altitude_upper'] )
+        for path_id, raw_geometry in enumerate(self.raw_geometries):    
+            line_polygon_feature = {'type': 'Feature', 'properties': {}, 'geometry': shapely.geometry.mapping(raw_geometry.geometry)}
+            scd_volume_4d = SCDVolume4D(flight_plan= line_polygon_feature,time_start = self.flight_volumes[path_id].time_start, time_end=self.flight_volumes[path_id].time_end, altitude_lower= self.flight_volumes[path_id]['volume']['altitude_lower'], altitude_upper= self.flight_volumes[path_id]['volume']['altitude_upper'] )
             
             path_file_name = '4d_path_%s.json' % str(path_id + 1)  # Avoid Zero based numbering
             tracks_file_path = self.output_subdirectories[1] / path_file_name
@@ -248,13 +294,13 @@ if __name__ == '__main__':
     # Change directory to write test_definitions folder is created in the rid_qualifier folder.
     p = pathlib.Path(__file__).parent.absolute()
     os.chdir(p)
-    flight_paths = my_volume_generator.generate_raw_paths(number_of_paths=6)
-    all_rules = my_volume_generator.generate_path_parameters(raw_paths=flight_paths)
+    flight_geometries = my_volume_generator.generate_raw_geometries(number_of_geometries=3)
+    all_rules = my_volume_generator.generate_path_parameters(raw_geometries=flight_geometries)
     
-    flight_volumes = my_volume_generator.generate_astm_4d_volumes(raw_paths = flight_paths, rules = all_rules, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
+    flight_volumes = my_volume_generator.generate_astm_4d_volumes(raw_geometries = flight_geometries, rules = all_rules, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
    
-    my_flight_path_writer = SCDFlightPathVolumeWriter(raw_paths= flight_paths, flight_volumes=flight_volumes, all_rules = all_rules)
+    my_flight_geometry_writer = SCDFlightPathVolumeWriter(raw_geometries= flight_geometries, flight_volumes=flight_volumes, all_rules = all_rules)
 
-    my_flight_path_writer.write_4d_flight_paths()    
-    my_flight_path_writer.write_astm_volume_4d()
-    my_flight_path_writer.write_test_rules()
+    my_flight_geometry_writer.write_4d_flight_geometries()    
+    my_flight_geometry_writer.write_astm_volume_4d()
+    my_flight_geometry_writer.write_test_rules()
