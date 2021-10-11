@@ -273,7 +273,6 @@ def test_create_op1_v5(ids, scd_api, scd_session, scd_session2):
   op = data['operation_reference']
   assert op['id'] == ids(OP1_TYPE)
   assert op['uss_base_url'] == URL_OP1
-  assert op['uss_availability'] == "Unknown"
   assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
   assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
   assert op['version'] == 1
