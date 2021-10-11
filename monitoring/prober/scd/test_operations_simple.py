@@ -895,40 +895,39 @@ def test_mutate_sub2(ids, scd_api, scd_session, scd_session2):
     assert resp.status_code == 400, resp.content
     req['notify_for_operational_intents'] = True
 
-  # TODO(#386): Uncomment these tests
-  # # Attempt mutation with start time that doesn't cover Op2
-  # req['extents']['time_start'] = common.make_time(time_now + datetime.timedelta(seconds=5))
-  # resp = scd_session2.put('/subscriptions/{}'.format(Sub2), json=req)
-  # assert resp.status_code == 400, resp.content
-  # req['extents']['time_start'] = common.make_time(time_start)
-  #
-  # # Attempt mutation with end time that doesn't cover Op2
-  # req['extents']['time_end'] = common.make_time(time_now)
-  # resp = scd_session2.put('/subscriptions/{}'.format(Sub2), json=req)
-  # assert resp.status_code == 400, resp.content
-  # req['extents']['time_end'] = common.make_time(time_end)
-  #
+  # Attempt mutation with start time that doesn't cover Op2
+
+  req['extents']['time_start'] = scd.make_time(time_now + datetime.timedelta(minutes=5))
+  resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version), json=req)
+  assert resp.status_code == 400, resp.content
+  req['extents']['time_start'] = scd.make_time(time_start)
+
+  # Attempt mutation with end time that doesn't cover Op2
+  req['extents']['time_end'] = scd.make_time(time_now)
+  resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version), json=req)
+  assert resp.status_code == 400, resp.content
+  req['extents']['time_end'] = scd.make_time(time_end)
+
   # # Attempt mutation with minimum altitude that doesn't cover Op2
-  # req['extents']['altitude_lower'] = common.make_altitude(10)
-  # resp = scd_session2.put('/subscriptions/{}'.format(Sub2), json=req)
-  # assert resp.status_code == 400, resp.content
-  # req['extents']['altitude_lower'] = common.make_altitude(0)
-  #
-  # # Attempt mutation with maximum altitude that doesn't cover Op2
-  # req['extents']['altitude_upper'] = common.make_altitude(10)
-  # resp = scd_session2.put('/subscriptions/{}'.format(Sub2), json=req)
-  # assert resp.status_code == 400, resp.content
-  # req['extents']['altitude_upper'] = common.make_altitude(200)
-  #
+  req['extents']['volume']['altitude_lower'] = scd.make_altitude(10)
+  resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version), json=req)
+  assert resp.status_code == 400, resp.content
+  req['extents']['volume']['altitude_lower'] = scd.make_altitude(0)
+
+  # Attempt mutation with maximum altitude that doesn't cover Op2
+  req['extents']['volume']['altitude_upper'] = scd.make_altitude(10)
+  resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version), json=req)
+  assert resp.status_code == 400, resp.content
+  req['extents']['volume']['altitude_upper'] = scd.make_altitude(200)
+
   # # Attempt mutation with outline that doesn't cover Op2
-  # old_lat = req['extents']['outline_circle']['center']['lat']
-  # req['extents']['outline_circle']['center']['lat'] = 45
-  # resp = scd_session2.put('/subscriptions/{}'.format(Sub2), json=req)
-  # assert resp.status_code == 400, resp.content
-  # req['extents']['outline_circle']['center']['lat'] = old_lat
+  old_lat = req['extents']['volume']['outline_circle']['center']['lat']
+  req['extents']['volume']['outline_circle']['center']['lat'] = 45
+  resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version), json=req)
+  assert resp.status_code == 400, resp.content
+  req['extents']['volume']['outline_circle']['center']['lat'] = old_lat
 
   # Attempt mutation without notifying for Operations
-
   # Perform a valid mutation
   if scd_api == scd.API_0_3_5:
     resp = scd_session2.put('/subscriptions/{}'.format(ids(SUB2_TYPE)), json=req)
