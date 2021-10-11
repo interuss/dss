@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Union
 from geojson import Feature
-from shapely.geometry.linestring import LineString
+from shapely.geometry import LineString, Polygon
 from monitoring.monitorlib.typing import ImplicitDict
 import arrow
 
@@ -88,13 +88,13 @@ class SCDVolume4D(ImplicitDict):
     altitude_lower: Altitude
     altitude_upper: Altitude
     
-class PathGenerationRules(ImplicitDict):
+class GeometryGenerationRules(ImplicitDict):
     """ A class to hold configuration for developing treatment flight path """
     intersect_space:bool = 0
     
-class PathPayload(ImplicitDict):
+class GeometryPayload(ImplicitDict):
     ''' An object to hold generated flight path, is_control is a nomenclature used to see if the generated path is the first one '''
-    path: LineString
+    geometry: Union[LineString, Polygon]
     is_control: bool
-    path_options: PathGenerationRules
+    geometry_generation_rules: GeometryGenerationRules
   
