@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	// "database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -17,7 +16,7 @@ import (
 )
 
 var (
-	subscriptionFieldsWithIndices   [12]string
+	subscriptionFieldsWithIndices   [11]string
 	subscriptionFieldsWithPrefix    string
 	subscriptionFieldsWithoutPrefix string
 )
@@ -34,8 +33,7 @@ func init() {
 	subscriptionFieldsWithIndices[7] = "implicit"
 	subscriptionFieldsWithIndices[8] = "starts_at"
 	subscriptionFieldsWithIndices[9] = "ends_at"
-	subscriptionFieldsWithIndices[10] = "cells"
-	subscriptionFieldsWithIndices[11] = "updated_at"
+	subscriptionFieldsWithIndices[10] = "updated_at"
 
 	subscriptionFieldsWithoutPrefix = strings.Join(
 		subscriptionFieldsWithIndices[:], ",",
@@ -55,9 +53,9 @@ func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable
 	var (
 		cellsQuery = `
 			SELECT
-				cells
+				cell_id
 			FROM
-				scd_subscriptions
+				scd_cells_subscriptions
 			WHERE
 				subscription_id = $1
 		`
@@ -182,23 +180,23 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		  scd_subscriptions
 		  (%s)
 		VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, transaction_timestamp())
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, transaction_timestamp())
 		RETURNING
 			%s`, subscriptionFieldsWithoutPrefix, subscriptionFieldsWithPrefix)
-		// subscriptionCellQuery = `
-		// UPSERT INTO
-		// 	scd_cells_subscriptions
-		// 	(cell_id, cell_level, subscription_id)
-		// VALUES
-		// 	($1, $2, $3)
-		// `
-		// deleteLeftOverCellsForSubscriptionQuery = `
-		// 	DELETE FROM
-		// 		scd_cells_subscriptions
-		// 	WHERE
-		// 		cell_id != ALL($1)
-		// 	AND
-		// 		subscription_id = $2`
+		subscriptionCellQuery = `
+		UPSERT INTO
+			scd_cells_subscriptions
+			(cell_id, cell_level, subscription_id)
+		VALUES
+			($1, $2, $3)
+		`
+		deleteLeftOverCellsForSubscriptionQuery = `
+			DELETE FROM
+				scd_cells_subscriptions
+			WHERE
+				cell_id != ALL($1)
+			AND
+				subscription_id = $2`
 	)
 
 	cids := make([]int64, len(s.Cells))
@@ -229,15 +227,15 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 	}
 	s.Cells = cells
 
-	// for i := range cids {
-	// 	if _, err := q.ExecContext(ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID); err != nil {
-	// 		return nil, stacktrace.Propagate(err, "Error in query: %s", subscriptionCellQuery)
-	// 	}
-	// }
+	for i := range cids {
+		if _, err := q.ExecContext(ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID); err != nil {
+			return nil, stacktrace.Propagate(err, "Error in query: %s", subscriptionCellQuery)
+		}
+	}
 
-	// if _, err := q.ExecContext(ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
-	// 	return nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForSubscriptionQuery)
-	// }
+	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
+		return nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForSubscriptionQuery)
+	}
 
 	return s, nil
 }
@@ -298,23 +296,22 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 				%s
 			FROM
 				scd_subscriptions
+			JOIN
+				(SELECT DISTINCT
+					scd_cells_subscriptions.subscription_id
+				FROM
+					scd_cells_subscriptions
 				WHERE
-					-- cells = ANY($1)
-					-- 	AND
-							COALESCE(starts_at <= $3, true)
-						AND
-						COALESCE(ends_at >= $2, true)`, subscriptionFieldsWithPrefix)
-			// JOIN
-			// 	(SELECT DISTINCT
-			// 		scd_cells_subscriptions.subscription_id
-			// 	FROM
-			// 		scd_cells_subscriptions
-			// 	WHERE
-			// 		scd_cells_subscriptions.cell_id = ANY($1)
-			// 	)
-			
-			// AND
-			// 	COALESCE(ends_at >= $2, true)`, subscriptionFieldsWithPrefix)
+					scd_cells_subscriptions.cell_id = ANY($1)
+				)
+			AS
+				unique_subscription_ids
+			ON
+				scd_subscriptions.id = unique_subscription_ids.subscription_id
+			WHERE
+				COALESCE(starts_at <= $3, true)
+			AND
+				COALESCE(ends_at >= $2, true)`, subscriptionFieldsWithPrefix)
 	)
 
 	// TODO: Lazily calculate & cache spatial covering so that it is only ever

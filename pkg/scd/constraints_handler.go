@@ -118,8 +118,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 		constraint, err := r.GetConstraint(ctx, id)
 		switch {
 		case err == sql.ErrNoRows:
-			// return stacktrace.Propagate(err, "Constraint %s not found 1234", id.String())
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found 1234", id.String())
+			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 		case err != nil:
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
 		}
