@@ -13,7 +13,7 @@ for container_name in "${localhost_containers[@]}"; do
 	if [ "$( docker container inspect -f '{{.State.Status}}' "$container_name" )" == "running" ]; then
 		echo "$container_name available!"
 	else
-		echo "Error: $container_name not running. Execute run_locally.sh before running probe_local_instance.sh";
+		echo "Error: $container_name not running. Execute 'run_locally.sh up' before running probe_local_instance.sh";
 		exit 1;
 	fi
 done
