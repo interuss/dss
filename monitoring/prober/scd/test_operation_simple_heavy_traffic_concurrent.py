@@ -15,6 +15,7 @@ import datetime
 import concurrent.futures
 import functools
 from concurrent.futures.thread import ThreadPoolExecutor
+import asyncio
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
@@ -125,6 +126,21 @@ def _put_operation(req, op_id, scd_session, scd_api, create_new: bool):
   return result
 
 
+async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_new: bool):
+  print('Putting: ', op_id)
+  if scd_api == scd.API_0_3_5:
+    result = await scd_session_async.put('/operation_references/{}'.format(op_id), data=req)
+  elif scd_api == scd.API_0_3_17:
+    if create_new:
+      result = await scd_session_async.put('/operational_intent_references/{}'.format(op_id), data=req)
+    else:
+      result = await scd_session_async.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), data=req)
+  else:
+    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
+  print('Put: ', op_id)
+  return result
+
+
 def _get_operation(op_id, scd_session, scd_api):
   if scd_api == scd.API_0_3_5:
     return scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
@@ -220,26 +236,45 @@ def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
         assert False, resp.content
 
 
+async def _create_ops_concurrent(op_req_map, scd_session, scd_api):
+  tasks = {}
+  for op_id, req in op_req_map.items():
+    tasks.update({
+      op_id: asyncio.create_task(_put_operation_async(req, op_id, scd_session, scd_api, True))})
+  results = {}
+  for op_id, task in tasks.items():
+      results.update({op_id: await task})
+  return results
+
+
 # Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_create_ops_concurrent(ids, scd_api, scd_session):
+def test_create_ops_concurrent(ids, scd_api, scd_session_async):
   assert len(ovn_map) == 0
   op_req_map = {}
   op_resp_map = {}
-  # Create opetions concurrently
-  with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for idx, op_id in enumerate(map(ids, OP_TYPES)):
-      req = _make_op_request(idx)
-      op_req_map[op_id] = req
+  for idx, op_id in enumerate(map(ids, OP_TYPES)):
+    req = _make_op_request(idx)
+    op_req_map[op_id] = req
+  loop = asyncio.get_event_loop()
+  results = loop.run_until_complete(
+    asyncio.gather(*[_put_operation_async(req, op_id, scd_session_async, scd_api, True) for op_id, req in op_req_map.items()]))
+  print('results in main: ', results)
+  assert 1 == 2
+  # # Create opetions concurrently
+  # with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
+  #   for idx, op_id in enumerate(map(ids, OP_TYPES)):
+  #     req = _make_op_request(idx)
+  #     op_req_map[op_id] = req
 
-    futures = {
-      executor.submit(_put_operation, req, op_id, scd_session, scd_api, True): op_id 
-      for op_id, req in op_req_map.items()}
-    for fut in concurrent.futures.as_completed(list(futures)):
-      op_id = futures[fut]
-      fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+  #   futures = {
+  #     executor.submit(_put_operation, req, op_id, scd_session, scd_api, True): op_id 
+  #     for op_id, req in op_req_map.items()}
+  #   for fut in concurrent.futures.as_completed(list(futures)):
+  #     op_id = futures[fut]
+  #     fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
     req = op_req_map[op_id]

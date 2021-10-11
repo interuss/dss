@@ -1,7 +1,9 @@
+import aiohttp
 import datetime
 import functools
 from typing import Dict, List, Optional
 import urllib.parse
+from aiohttp import ClientSession
 
 import jwt
 import requests
@@ -108,6 +110,55 @@ class DSSTestSession(requests.Session):
 
     return super().request(method, url, **kwargs)
 
+class AsyncUTMTestSession(ClientSession):
+  """
+  Requests session that provides additional functionality for DSS tests:
+    * Adds a prefix to URLs that start with a '/'.
+    * Automatically applies authorization according to adapter, when present
+  """
+
+  def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
+    jar = aiohttp.CookieJar(unsafe=True)
+    super().__init__(cookie_jar=jar)
+
+    self._prefix_url = prefix_url[0:-1] if prefix_url[-1] == '/' else prefix_url
+    self.auth_adapter = auth_adapter
+    self.default_scopes = None
+
+  # Overrides method on requests.Session
+  def prepare_request(self, request, **kwargs):
+    # Automatically prefix any unprefixed URLs
+    if request.url.startswith('/'):
+      request.url = self._prefix_url + request.url
+
+    return super().prepare_request(request, **kwargs)
+
+  def adjust_request_kwargs(self, kwargs):
+    if self.auth_adapter:
+      scopes = None
+      if 'scopes' in kwargs:
+        scopes = kwargs['scopes']
+        del kwargs['scopes']
+      if 'scope' in kwargs:
+        scopes = [kwargs['scope']]
+        del kwargs['scope']
+      if scopes is None:
+        scopes = self.default_scopes
+      def auth(prepared_request: requests.PreparedRequest) -> requests.PreparedRequest:
+        if not scopes:
+          raise ValueError('All tests must specify auth scope for all session requests.  Either specify as an argument for each individual HTTP call, or decorate the test with @default_scope.')
+        self.auth_adapter.add_headers(prepared_request, scopes)
+        return prepared_request
+      kwargs['auth'] = auth
+    return kwargs
+
+  def request(self, method, url, **kwargs):
+    if 'auth' not in kwargs:
+      kwargs = self.adjust_request_kwargs(kwargs)
+    kwargs = self.adjust_request_kwargs(kwargs)
+
+    return super().request(method, url, **kwargs)
+
 
 def default_scopes(scopes: List[str]):
   """Decorator for tests that modifies DSSTestSession args to use scopes.
@@ -126,11 +177,11 @@ def default_scopes(scopes: List[str]):
       # Change <DSSTestSession>.default_scopes to scopes for all DSSTestSession arguments
       old_scopes = []
       for arg in args:
-        if isinstance(arg, DSSTestSession):
+        if isinstance(arg, DSSTestSession) or isinstance(arg, AsyncUTMTestSession):
           old_scopes.append(arg.default_scopes)
           arg.default_scopes = scopes
       for k, v in kwargs.items():
-        if isinstance(v, DSSTestSession):
+        if isinstance(v, DSSTestSession) or isinstance(v, AsyncUTMTestSession):
           old_scopes.append(v.default_scopes)
           v.default_scopes = scopes
 
@@ -138,11 +189,11 @@ def default_scopes(scopes: List[str]):
 
       # Restore original values of <DSSTestSession>.default_scopes for all DSSTestSession arguments
       for arg in args:
-        if isinstance(arg, DSSTestSession):
+        if isinstance(arg, DSSTestSession) or isinstance(arg, AsyncUTMTestSession):
           arg.default_scopes = old_scopes[0]
           old_scopes = old_scopes[1:]
       for k, v in kwargs.items():
-        if isinstance(v, DSSTestSession):
+        if isinstance(v, DSSTestSession) or isinstance(v, AsyncUTMTestSession):
           v.default_scopes = old_scopes[0]
           old_scopes = old_scopes[1:]
 

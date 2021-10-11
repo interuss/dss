@@ -32,6 +32,21 @@ def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] 
   s = infrastructure.DSSTestSession(dss_endpoint + endpoint_suffix, auth_adapter)
   return s
 
+def make_session_async(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[infrastructure.AsyncUTMTestSession]:
+  dss_endpoint = pytestconfig.getoption('dss_endpoint')
+  if dss_endpoint is None:
+    pytest.skip('dss-endpoint option not set')
+
+  auth_adapter = None
+  if auth_option:
+    auth_spec = pytestconfig.getoption(auth_option)
+    if not auth_spec:
+      pytest.skip('%s option not set' % auth_option)
+    auth_adapter = auth.make_auth_adapter(auth_spec)
+
+  s = infrastructure.AsyncUTMTestSession(dss_endpoint + endpoint_suffix, auth_adapter)
+  return s
+
 
 @pytest.fixture(scope='session')
 def session(pytestconfig):
@@ -46,6 +61,10 @@ def aux_session(pytestconfig):
 @pytest.fixture(scope='session')
 def scd_session(pytestconfig):
   return make_session(pytestconfig, '/dss/v1', 'scd_auth1')
+
+@pytest.fixture(scope='session')
+def scd_session_async(pytestconfig):
+  return make_session_async(pytestconfig, '/dss/v1', 'scd_auth1')
 
 
 @pytest.fixture(scope='session')
