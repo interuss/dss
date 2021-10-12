@@ -131,12 +131,12 @@ class FlightVolumeGenerator():
         buffer_shape_utm = flight_geometry_utm.buffer(15)
         
         if volume_generation_options.intersect_altitude == True:    
-            alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_envelope  
-            alt_lower = altitude_of_ground_level_wgs_84 - self.altitude_envelope
+            alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_agl +self.altitude_envelope  
+            alt_lower = altitude_of_ground_level_wgs_84 + self.altitude_agl - self.altitude_envelope
         else:
             # Raise the altitude by 50m so that they dont intersect in altitude
-            alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_envelope  + 50
-            alt_lower = altitude_of_ground_level_wgs_84 - self.altitude_envelope + 50
+            alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_agl  + 50 + self.altitude_envelope 
+            alt_lower = altitude_of_ground_level_wgs_84 + self.altitude_agl + 50 - self.altitude_envelope 
         
         buffered_shape_geo = self.utm_converter(buffer_shape_utm, inverse=True)
         
