@@ -37,7 +37,6 @@ class FlightVolumeGenerator():
         self.generate_grid_cells()
         
     def generate_grid_cells(self):
-               
         # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid.
         N_COLS = 3
         N_ROWS = 2
@@ -84,10 +83,18 @@ class FlightVolumeGenerator():
         
     def generate_random_flight_path_polygon(self, generate_polygon:bool) -> Union[LineString, Polygon]:
         '''Generate a random flight path '''
-        random_flight_path_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
-
+        
         if generate_polygon:
+            grid_cell = random.choice(self.grid_cells)
+            
+            random_flight_path_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=grid_cell.bounds)
+            
             random_flight_path_polygon = asShape(random_flight_path_polygon).envelope
+            
+        else: 
+            
+            random_flight_path_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
+
         
         return random_flight_path_polygon
                
