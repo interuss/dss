@@ -82,36 +82,20 @@ class FlightVolumeGenerator():
         else:
             raise ValueError("The extents provided are not of the correct size, please provide extents that are less than 500m x 500m and more than 300m x 300m square")
         
-    def generate_random_flight_path(self) -> LineString:
+    def generate_random_flight_path_polygon(self, generate_polygon:bool) -> Union[LineString, Polygon]:
         '''Generate a random flight path '''
-        random_flight_path = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
+        random_flight_path_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
+
+        if generate_polygon:
+            random_flight_path_polygon = asShape(random_flight_path_polygon).envelope
         
-        return random_flight_path
-        
-    def generate_random_flight_area(self) -> Polygon:
-        '''Generate a random flight polygon '''
- 
-        def generate_random_polygon(number, box):
-            points = []
-            
-            while len(points) < number:
-                pnt = Point(random.uniform(self.minx, self.maxx), random.uniform(self.miny, self.maxy))
-                if box.contains(pnt):
-                    points.append(pnt)
-            return Polygon(points)
-        # random_flight_area = geojson.utils.generate_random(featureType = "Polygon", numberVertices=4, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
-        box = random.choice(self.grid_cells)
-        random_flight_area = generate_random_polygon(4, box)
-        print(random_flight_area)
-        return random_flight_area
+        return random_flight_path_polygon
+               
     
     def generate_random_area_trajectory(self):
         ''' A method to generate either a area or trajectory '''
-        coin_flip = random.choice([0,0,0,1])
-        if coin_flip:
-            path_or_area =  self.generate_random_flight_area()
-        else: 
-            path_or_area = self.generate_random_flight_path()
+        coin_flip = random.choice([0,0,1])
+        path_or_area = self.generate_random_flight_path_polygon( generate_polygon = coin_flip)
         
         return path_or_area
         
@@ -294,7 +278,7 @@ if __name__ == '__main__':
     # Change directory to write test_definitions folder is created in the rid_qualifier folder.
     p = pathlib.Path(__file__).parent.absolute()
     os.chdir(p)
-    flight_geometries = my_volume_generator.generate_raw_geometries(number_of_geometries=3)
+    flight_geometries = my_volume_generator.generate_raw_geometries(number_of_geometries=12)
     all_rules = my_volume_generator.generate_path_parameters(raw_geometries=flight_geometries)
     
     flight_volumes = my_volume_generator.generate_astm_4d_volumes(raw_geometries = flight_geometries, rules = all_rules, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
