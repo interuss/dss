@@ -8,6 +8,40 @@ import pytest
 from monitoring.prober import utils
 
 
+_test_results = dict()
+
+
+def add_test_result(item, result):
+  global _test_results
+  _test_results[item] = result
+
+
+def depends_on(*args):
+  """Test decorator that skips a test if a dependent test didn't pass.
+
+  :param args: List of test functions that must pass before the decorated
+               function will be executed.
+  """
+  def decorator_default_scope(func):
+    prerequisites = args
+    test_module = inspect.getmodule(inspect.stack()[1][0])
+    @functools.wraps(func)
+    def wrapper_default_scope(*args, **kwargs):
+      global _test_results
+      module_results = {k.name: _test_results[k]
+                        for k in _test_results
+                        if k.fspath == test_module.__file__}
+      for prerequisite in prerequisites:
+        if prerequisite.__name__ not in module_results:
+          pytest.fail('Prerequisite test {} did not exist when evaluating the dependent test {}'.format(prerequisite.__name__, func.__name__))
+        if not module_results[prerequisite.__name__].passed:
+          pytest.skip('Prerequisite task did not pass')
+      return func(*args, **kwargs)
+
+    return wrapper_default_scope
+  return decorator_default_scope
+
+
 class VersionString(str):
   pass
 
@@ -52,7 +86,7 @@ ResourceType = int
 resource_type_code_descriptions: Dict[ResourceType, str] = {}
 
 
-# Next code: 341
+# Next code: 342
 def register_resource_type(code: int, description: str) -> ResourceType:
   """Register that the specified code refers to the described resource.
 

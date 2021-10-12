@@ -2,7 +2,7 @@ from typing import Callable, Optional
 
 from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib import auth, rid, scd
-from monitoring.prober.infrastructure import IDFactory, ResourceType, VersionString
+from monitoring.prober.infrastructure import add_test_result, IDFactory, ResourceType, VersionString
 
 import pytest
 
@@ -28,6 +28,15 @@ def pytest_addoption(parser):
   parser.addoption('--scd-auth2')
 
   parser.addoption('--scd-api-version')
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+  outcome = yield
+  result = outcome.get_result()
+
+  if result.when == 'call':
+    add_test_result(item, result)
 
 
 def _bool_value_of(pytestconfig, flag: str, default_value: bool) -> bool:
