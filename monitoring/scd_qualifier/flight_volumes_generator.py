@@ -86,16 +86,12 @@ class FlightVolumeGenerator():
         
         if generate_polygon:
             grid_cell = random.choice(self.grid_cells)
-            
             random_flight_path_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=grid_cell.bounds)
-            
             random_flight_path_polygon = asShape(random_flight_path_polygon).envelope
             
         else: 
-            
             random_flight_path_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
-
-        
+            
         return random_flight_path_polygon
                
     
