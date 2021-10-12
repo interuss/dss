@@ -101,7 +101,31 @@ def scd_session2(pytestconfig) -> DSSTestSession:
 
 
 @pytest.fixture()
-def ids(pytestconfig) -> Callable[[ResourceType], str]:
+def subscriber(pytestconfig) -> Optional[str]:
+  """Subscriber of USS making UTM API calls"""
+  if pytestconfig.getoption(OPT_RID_AUTH):
+    session = make_session(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
+    session.get('/status', scope=rid.SCOPE_READ)
+    rid_sub = session.auth_adapter.get_sub()
+    if rid_sub:
+      return rid_sub
+  if pytestconfig.getoption(OPT_SCD_AUTH1):
+    scd_session = make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH1)
+    scd_session.get('/status', scope=scd.SCOPE_SC)
+    scd_sub = scd_session.auth_adapter.get_sub()
+    if scd_sub:
+      return scd_sub
+  if pytestconfig.getoption(OPT_SCD_AUTH2):
+    scd_session2 = make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH2)
+    scd_session2.get('/status', scope=scd.SCOPE_SC)
+    scd2_sub = scd_session2.auth_adapter.get_sub()
+    if scd2_sub:
+      return scd2_sub
+  return None
+
+
+@pytest.fixture()
+def ids(pytestconfig, subscriber) -> Callable[[ResourceType], str]:
   """Fixture that converts a ResourceType into an ID for that resource.
 
   This fixture is a function that accepts a ResourceType as the argument and
@@ -111,25 +135,7 @@ def ids(pytestconfig) -> Callable[[ResourceType], str]:
   ResourceTypes to provide to this fixture, and also the "Resources" section of
   the README.
   """
-  sub = None
-  if pytestconfig.getoption(OPT_RID_AUTH):
-    session = make_session(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
-    session.get('/status', scope=rid.SCOPE_READ)
-    rid_sub = session.auth_adapter.get_sub()
-    if rid_sub:
-      sub = rid_sub
-  if sub is None and pytestconfig.getoption(OPT_SCD_AUTH1):
-    scd_session = make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH1)
-    scd_session.get('/status', scope=scd.SCOPE_SC)
-    scd_sub = scd_session.auth_adapter.get_sub()
-    if scd_sub:
-      sub = scd_sub
-  if sub is None and pytestconfig.getoption(OPT_SCD_AUTH2):
-    scd_session2 = make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH2)
-    scd_session2.get('/status', scope=scd.SCOPE_SC)
-    scd2_sub = scd_session2.auth_adapter.get_sub()
-    if scd2_sub:
-      sub = scd2_sub
+  sub = subscriber
   if sub is None:
     sub = 'unknown'
   factory = IDFactory(sub)

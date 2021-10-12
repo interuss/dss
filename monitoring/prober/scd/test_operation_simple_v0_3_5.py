@@ -49,7 +49,6 @@ def _make_op1_request():
   }
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_ensure_clean_workspace)
 def test_op_does_not_exist_get(ids, scd_api, scd_session):
@@ -57,7 +56,6 @@ def test_op_does_not_exist_get(ids, scd_api, scd_session):
   assert resp.status_code == 404, resp.content
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_ensure_clean_workspace)
 def test_op_does_not_exist_query(ids, scd_api, scd_session):
@@ -80,7 +78,6 @@ def test_op_does_not_exist_query(ids, scd_api, scd_session):
   assert resp.status_code == 403, resp.content
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_ensure_clean_workspace)
 def test_create_op_single_extent(ids, scd_api, scd_session):
@@ -90,7 +87,6 @@ def test_create_op_single_extent(ids, scd_api, scd_session):
   assert resp.status_code == 400, resp.content
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_ensure_clean_workspace)
 def test_create_op_missing_time_start(ids, scd_api, scd_session):
@@ -100,7 +96,6 @@ def test_create_op_missing_time_start(ids, scd_api, scd_session):
   assert resp.status_code == 400, resp.content
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_ensure_clean_workspace)
 def test_create_op_missing_time_end(ids, scd_api, scd_session):
@@ -110,7 +105,6 @@ def test_create_op_missing_time_end(ids, scd_api, scd_session):
   assert resp.status_code == 400, resp.content
 
 
-@for_api_versions(scd.API_0_3_5)
 @depends_on(test_ensure_clean_workspace)
 def test_create_op(ids, scd_api, scd_session):
   req = _make_op1_request()
@@ -135,7 +129,6 @@ def test_create_op(ids, scd_api, scd_session):
   assert 'state' not in op
 
 
-@for_api_versions(scd.API_0_3_5)
 @depends_on(test_create_op)
 def test_get_op_by_id(ids, scd_api, scd_session):
   resp = scd_session.get('/operation_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_CI)
@@ -155,7 +148,6 @@ def test_get_op_by_id(ids, scd_api, scd_session):
   assert 'state' not in op
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
 def test_get_op_by_search_missing_params(scd_api, scd_session):
@@ -163,7 +155,6 @@ def test_get_op_by_search_missing_params(scd_api, scd_session):
   assert resp.status_code == 400, resp.content
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
 def test_get_op_by_search(ids, scd_api, scd_session):
@@ -174,7 +165,6 @@ def test_get_op_by_search(ids, scd_api, scd_session):
   assert ids(OP_TYPE) in [x['id'] for x in resp.json().get('operation_references', [])]
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
 def test_get_op_by_search_earliest_time_included(ids, scd_api, scd_session):
@@ -186,7 +176,6 @@ def test_get_op_by_search_earliest_time_included(ids, scd_api, scd_session):
   assert ids(OP_TYPE) in [x['id'] for x in resp.json()['operation_references']]
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
 def test_get_op_by_search_earliest_time_excluded(ids, scd_api, scd_session):
@@ -198,7 +187,6 @@ def test_get_op_by_search_earliest_time_excluded(ids, scd_api, scd_session):
   assert ids(OP_TYPE) not in [x['id'] for x in resp.json()['operation_references']]
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
 def test_get_op_by_search_latest_time_included(ids, scd_api, scd_session):
@@ -210,7 +198,6 @@ def test_get_op_by_search_latest_time_included(ids, scd_api, scd_session):
   assert ids(OP_TYPE) in [x['id'] for x in resp.json()['operation_references']]
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
 def test_get_op_by_search_latest_time_excluded(ids, scd_api, scd_session):
@@ -222,7 +209,6 @@ def test_get_op_by_search_latest_time_excluded(ids, scd_api, scd_session):
   assert ids(OP_TYPE) not in [x['id'] for x in resp.json()['operation_references']]
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
 def test_mutate_op(ids, scd_api, scd_session):
@@ -260,7 +246,6 @@ def test_mutate_op(ids, scd_api, scd_session):
   assert 'state' not in op
 
 
-@for_api_versions(scd.API_0_3_5)
 @depends_on(test_mutate_op)
 def test_delete_op(ids, scd_api, scd_session):
   resp = scd_session.delete('/operation_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_CI)
@@ -273,7 +258,6 @@ def test_delete_op(ids, scd_api, scd_session):
   assert resp.status_code == 200, resp.content
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_delete_op)
 def test_get_deleted_op_by_id(ids, scd_api, scd_session):
@@ -281,7 +265,6 @@ def test_get_deleted_op_by_id(ids, scd_api, scd_session):
   assert resp.status_code == 404, resp.content
 
 
-@for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 @depends_on(test_delete_op)
 def test_get_deleted_op_by_search(ids, scd_api, scd_session):

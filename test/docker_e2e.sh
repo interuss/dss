@@ -148,6 +148,7 @@ docker run --link dummy-oauth-for-testing:oauth \
 	-v "${RESULTFILE}:/app/test_result" \
 	e2e-test \
 	"${1:-.}" \
+	-rsx \
 	--junitxml=/app/test_result \
 	--dss-endpoint http://local-gateway:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
