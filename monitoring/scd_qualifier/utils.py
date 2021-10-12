@@ -98,3 +98,20 @@ class GeometryPayload(ImplicitDict):
     is_control: bool
     geometry_generation_rules: GeometryGenerationRules
   
+class FlightAuthPayload(ImplicitDict):
+    ''' An object to hold flight authorization details '''
+    uas_serial_number:str
+    operation_mode: str
+    operation_category:str
+    uas_class:str
+    identification_technologies:List =[]
+    connectivity_methods:List = []
+    endurance_minutes: int 
+    emergency_procedure_url: str
+    operator_id:str
+
+class SCDTestPayload(ImplicitDict):
+    ''' Final payload for submission into the test infrastructure '''
+    priority:int =0
+    flight_authorisation: FlightAuthPayload
+    flight_plan: SCDVolume4D
