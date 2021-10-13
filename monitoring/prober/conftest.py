@@ -17,17 +17,48 @@ BASE_URL_AUX = '/aux/v1'
 
 
 def pytest_addoption(parser):
-  parser.addoption('--dss-endpoint')
+  parser.addoption(
+    '--dss-endpoint',
+    help='Base URL of DSS to test',
+    metavar='URL',
+    dest='dss_endpoint')
 
-  parser.addoption('--rid-auth')
+  parser.addoption(
+    '--rid-auth',
+    help='Auth spec (see Authorization section of README.md) for performing remote ID actions in the DSS',
+    metavar='SPEC',
+    dest='rid_auth')
 
-  parser.addoption('--scd-auth1')
-  parser.addoption('--scd-auth1-cp')
-  parser.addoption('--scd-auth1-cm')
+  parser.addoption(
+    '--scd-auth1',
+    help='Auth spec (see Authorization section of README.md) for performing primary strategic deconfliction actions in the DSS',
+    metavar='SPEC',
+    dest='scd_auth1')
+  parser.addoption(
+    '--scd-auth1-cp',
+    help='True if the USS specified in scd-auth1 has utm.constraint_processing privileges',
+    type=bool,
+    default=True,
+    dest='scd_auth1_cp')
+  parser.addoption(
+    '--scd-auth1-cm',
+    help='True if the USS specified in scd-auth1 has utm.constraint_management privileges',
+    type=bool,
+    default=True,
+    dest='scd_auth1_cm')
 
-  parser.addoption('--scd-auth2')
+  parser.addoption(
+    '--scd-auth2',
+    help='Auth spec (see Authorization section of README.md) for performing secondary strategic deconfliction actions (like observing primary actions, causing notification generation, etc) in the DSS',
+    metavar='SPEC',
+    dest='scd_auth2')
 
-  parser.addoption('--scd-api-version')
+  parser.addoption(
+    '--scd-api-version',
+    help='SCD API version to target',
+    choices=[scd.API_0_3_5, scd.API_0_3_17],
+    default=scd.API_0_3_5,
+    dest='scd_api_version')
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
