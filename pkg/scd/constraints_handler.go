@@ -357,7 +357,7 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.Query
 				return err
 			}
 			if constraint.Manager != manager {
-				p.Ovn = ""
+				p.Ovn = scdmodels.NoOvnPhrase
 			}
 			response.ConstraintReferences = append(response.ConstraintReferences, p)
 		}

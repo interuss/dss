@@ -225,7 +225,7 @@ def test_get_op_by_id_other_uss(ids, scd_session2):
   assert 'state' in op
   assert op['state'] == 'Accepted', \
     "The response has a state = '{}'".format(op['state'])
-  assert 'ovn' not in op, op
+  assert op.get('ovn', '') in scd.NO_OVN_PHRASES, op
 
 
 @default_scope(SCOPE_SC)
@@ -246,7 +246,7 @@ def test_get_op_by_query_other_uss(ids, scd_session2):
   assert 'state' in op
   assert op['state'] == 'Accepted', \
     "The response has a state = '{}'".format(op['state'])
-  assert 'ovn' not in op, op
+  assert op.get('ovn', '') in scd.NO_OVN_PHRASES, op
 
 
 @default_scope(SCOPE_SC)

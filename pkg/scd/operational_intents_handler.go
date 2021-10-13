@@ -159,7 +159,7 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *scdpb.G
 		}
 
 		if op.Manager != manager {
-			op.OVN = scdmodels.OVN("")
+			op.OVN = scdmodels.OVN(scdmodels.NoOvnPhrase)
 		}
 
 		p, err := op.ToProto()
@@ -219,7 +219,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *scdp
 				return stacktrace.Propagate(err, "Could not convert OperationalIntent model to proto")
 			}
 			if op.Manager != manager {
-				p.Ovn = ""
+				p.Ovn = scdmodels.NoOvnPhrase
 			}
 			response.OperationalIntentReferences = append(response.OperationalIntentReferences, p)
 		}

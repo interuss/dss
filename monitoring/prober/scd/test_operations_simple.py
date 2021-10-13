@@ -605,8 +605,10 @@ def test_read_ops_from_uss1_v17(ids, scd_api, scd_session, scd_session2):
   assert ids(OP1_TYPE) in ops
   assert ids(OP2_TYPE) in ops
 
-  assert ops[ids(OP1_TYPE)].get('ovn', '')
-  assert not ops[ids(OP2_TYPE)].get('ovn', '')
+  ovn1 = ops[ids(OP1_TYPE)].get('ovn', '')
+  ovn2 = ops[ids(OP2_TYPE)].get('ovn', '')
+  assert ovn1 not in scd.NO_OVN_PHRASES
+  assert ovn2 in scd.NO_OVN_PHRASES
 
 
 # Op1 and Op2 should both be visible to USS2, but Op1 shouldn't have an OVN
@@ -655,8 +657,10 @@ def test_read_ops_from_uss2_v17(ids, scd_api, scd_session, scd_session2):
   assert ids(OP1_TYPE) in ops
   assert ids(OP2_TYPE) in ops
 
-  assert not ops[ids(OP1_TYPE)].get('ovn', '')
-  assert ops[ids(OP2_TYPE)].get('ovn', '')
+  ovn1 = ops[ids(OP1_TYPE)].get('ovn', '')
+  ovn2 = ops[ids(OP2_TYPE)].get('ovn', '')
+  assert ovn1 in scd.NO_OVN_PHRASES
+  assert ovn2 not in scd.NO_OVN_PHRASES
 
 
 # Try (unsuccessfully) to mutate Op1 with various bad keys
