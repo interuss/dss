@@ -212,6 +212,45 @@ def test_get_op_by_search_latest_time_included(ids, scd_api, scd_session):
 
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
+def test_get_op_by_id_other_uss(ids, scd_session2):
+  resp = scd_session2.get('/operational_intent_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_SC)
+  assert resp.status_code == 200, resp.content
+
+  data = resp.json()
+  op = data['operational_intent_reference']
+  assert op['id'] == ids(OP_TYPE)
+  assert op['uss_base_url'] == BASE_URL
+  assert op['uss_availability'] == 'Unknown'
+  assert op['version'] == 1
+  assert 'state' in op
+  assert op['state'] == 'Accepted', \
+    "The response has a state = '{}'".format(op['state'])
+  assert 'ovn' not in op, op
+
+
+@default_scope(SCOPE_SC)
+@depends_on(test_create_op)
+def test_get_op_by_query_other_uss(ids, scd_session2):
+  resp = scd_session2.post('/operational_intent_references/query', json={
+    'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(-56, 178, 300))
+  })
+  assert resp.status_code == 200, resp.content
+  matching_ops = [x for x in resp.json().get('operational_intent_references', []) if x['id'] == ids(OP_TYPE)]
+  assert len(matching_ops) == 1, resp.json()
+  op = matching_ops[0]
+
+  assert op['id'] == ids(OP_TYPE)
+  assert op['uss_base_url'] == BASE_URL
+  assert op['uss_availability'] == 'Unknown'
+  assert op['version'] == 1
+  assert 'state' in op
+  assert op['state'] == 'Accepted', \
+    "The response has a state = '{}'".format(op['state'])
+  assert 'ovn' not in op, op
+
+
+@default_scope(SCOPE_SC)
+@depends_on(test_create_op)
 def test_get_op_by_search_latest_time_excluded(ids, scd_api, scd_session):
   latest_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
   resp = scd_session.post('/operational_intent_references/query', json={
