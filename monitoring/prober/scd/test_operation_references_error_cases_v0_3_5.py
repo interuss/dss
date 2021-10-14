@@ -274,7 +274,7 @@ def test_big_operation_search(scd_api, scd_session):
 
 @for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
-def test_ensure_clean_workspace(ids, scd_api, scd_session):
+def test_clean_up(ids, scd_api, scd_session):
   for op_id in (ids(OP_TYPE), ids(OP_TYPE2)):
     resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     if resp.status_code == 200:

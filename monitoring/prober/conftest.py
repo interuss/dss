@@ -1,3 +1,4 @@
+import argparse
 from typing import Callable, Optional
 
 from monitoring.monitorlib.infrastructure import DSSTestSession
@@ -14,6 +15,17 @@ OPT_SCD_AUTH2 = 'scd_auth2'
 BASE_URL_RID = '/v1/dss'
 BASE_URL_SCD = '/dss/v1'
 BASE_URL_AUX = '/aux/v1'
+
+
+def str2bool(v) -> bool:
+  if isinstance(v, bool):
+    return v
+  if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    return True
+  elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    return False
+  else:
+    raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def pytest_addoption(parser):
@@ -37,13 +49,15 @@ def pytest_addoption(parser):
   parser.addoption(
     '--scd-auth1-cp',
     help='True if the USS specified in scd-auth1 has utm.constraint_processing privileges',
-    type=bool,
+    type=str2bool,
+    nargs='?',
     default=True,
     dest='scd_auth1_cp')
   parser.addoption(
     '--scd-auth1-cm',
     help='True if the USS specified in scd-auth1 has utm.constraint_management privileges',
-    type=bool,
+    type=str2bool,
+    nargs='?',
     default=True,
     dest='scd_auth1_cm')
 
@@ -68,19 +82,6 @@ def pytest_runtest_makereport(item, call):
 
   if result.when == 'call':
     add_test_result(item, result)
-
-
-def _bool_value_of(pytestconfig, flag: str, default_value: bool) -> bool:
-  value = pytestconfig.getoption(flag)
-  if value is None:
-    return default_value
-  if isinstance(value, bool):
-    return value
-  if default_value == True and value.lower() == 'false':
-    return False
-  if default_value == False and value.lower() == 'true':
-    return True
-  return default_value
 
 
 def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[DSSTestSession]:
@@ -117,13 +118,13 @@ def scd_session(pytestconfig) -> DSSTestSession:
 @pytest.fixture(scope='session')
 def scd_session_cp(pytestconfig) -> bool:
   """True iff SCD auth1 user is authorized for constraint processing"""
-  return _bool_value_of(pytestconfig, 'scd_auth1_cp', True)
+  return pytestconfig.getoption('scd_auth1_cp')
 
 
 @pytest.fixture(scope='session')
 def scd_session_cm(pytestconfig) -> bool:
   """True iff SCD auth1 user is authorized for constraint management"""
-  return _bool_value_of(pytestconfig, 'scd_auth1_cm', True)
+  return pytestconfig.getoption('scd_auth1_cm')
 
 
 @pytest.fixture(scope='session')

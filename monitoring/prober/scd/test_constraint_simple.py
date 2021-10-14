@@ -120,7 +120,7 @@ def test_create_constraint(ids, scd_api, scd_session):
   resp = scd_session.put('/constraint_references/{}'.format(id), json=req, scope=SCOPE_SC)
   assert resp.status_code == 403, resp.content
 
-  resp = scd_session.put('/constraint_references/{}'.format(id), json=req, scope=SCOPE_CI)
+  resp = scd_session.put('/constraint_references/{}'.format(id), json=req, scope=SCOPE_CI if scd_api == scd.API_0_3_5 else SCOPE_CP)
   assert resp.status_code == 403, resp.content
 
   resp = scd_session.put('/constraint_references/{}'.format(id), json=req, scope=SCOPE_CM)
