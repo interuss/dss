@@ -168,6 +168,7 @@ def test_create_ops_v15(ids, scd_api, scd_session):
     op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
+    assert op['uss_availability'] == "Unknown"
     assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
     assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
     assert op['version'] == 1
@@ -421,6 +422,7 @@ def test_mutate_ops_v17(ids, scd_api, scd_session):
     op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == 'https://example.com/uss2'
+    assert op['uss_availability'] == "Unknown"
     assert op['version'] != existing_op['version']
     assert op['subscription_id'] == existing_op['subscription_id']
 
