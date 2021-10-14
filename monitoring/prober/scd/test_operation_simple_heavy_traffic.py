@@ -15,11 +15,11 @@ from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
-from monitoring.prober.infrastructure import for_api_versions, register_resource_type
+from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
 
 
 BASE_URL = 'https://example.com/uss'
-OP_TYPES = [register_resource_type(10 + i, 'Operational intent {}'.format(i)) for i in range(100)]
+OP_TYPES = [register_resource_type(10 + i, 'Operational intent {}'.format(i)) for i in range(20)]
 
 ovn_map = {}
 
