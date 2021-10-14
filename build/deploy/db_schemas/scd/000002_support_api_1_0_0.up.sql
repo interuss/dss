@@ -29,7 +29,7 @@ COMMIT;
 -- ALTER TABLE scd_operations ADD COLUMN IF NOT EXISTS cells INT64[];
 -- CREATE INVERTED INDEX IF NOT EXISTS cell_idx on scd_operations (cells);
 -- BEGIN;
--- 
+--
 -- WITH compact_operation_cells AS
 --     ( SELECT operation_id,
 --              array_agg(cell_id) AS cell_ids
@@ -40,7 +40,7 @@ COMMIT;
 -- FROM compact_operation_cells
 -- WHERE operation.id = compact_operation_cells.operation_id
 --     AND cells IS NULL;
--- 
+--
 -- COMMIT;
 --
 -- ALTER TABLE scd_constraints ADD COLUMN IF NOT EXISTS cells INT64[];
