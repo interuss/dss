@@ -425,7 +425,7 @@ def test_create_op2sub(ids, scd_api, scd_session, scd_session2):
     ops = data['operational_intent_references']
   assert len(ops) > 0
   op = [op for op in ops if op['id'] == ids(OP1_TYPE)][0]
-  assert not op.get('ovn', '')
+  assert op.get('ovn', '') in scd.NO_OVN_PHRASES
 
   assert data['subscription']['notification_index'] == 0
 
@@ -947,8 +947,8 @@ def test_mutate_sub2(ids, scd_api, scd_session, scd_session2):
   else:
     ops = {op['id']: op for op in data['operational_intent_references']}
   assert len(ops) >= 2
-  assert not ops[ids(OP1_TYPE)].get('ovn', '')
-  assert ops[ids(OP2_TYPE)].get('ovn', '')
+  assert ops[ids(OP1_TYPE)].get('ovn', '') in scd.NO_OVN_PHRASES
+  assert ops[ids(OP2_TYPE)].get('ovn', '') not in scd.NO_OVN_PHRASES
 
   assert data['subscription']['notification_index'] == 2
 

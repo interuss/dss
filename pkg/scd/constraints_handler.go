@@ -124,7 +124,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 		}
 
 		if constraint.Manager != manager {
-			constraint.OVN = scdmodels.OVN("")
+			constraint.OVN = scdmodels.OVN(scdmodels.NoOvnPhrase)
 		}
 
 		// Convert retrieved Constraint to proto

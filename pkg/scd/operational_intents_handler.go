@@ -432,7 +432,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			for _, relevantOp := range relevantOps {
 				if _, ok := key[relevantOp.OVN]; !ok {
 					if relevantOp.Manager != manager {
-						relevantOp.OVN = ""
+						relevantOp.OVN = scdmodels.NoOvnPhrase
 					}
 					missingOps = append(missingOps, relevantOp)
 				}
@@ -448,7 +448,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 				for _, relevantConstraint := range constraints {
 					if _, ok := key[relevantConstraint.OVN]; !ok {
 						if relevantConstraint.Manager != manager {
-							relevantConstraint.OVN = ""
+							relevantConstraint.OVN = scdmodels.NoOvnPhrase
 						}
 						missingConstraints = append(missingConstraints, relevantConstraint)
 					}
