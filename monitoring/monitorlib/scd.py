@@ -22,6 +22,8 @@ SCOPE_CP = 'utm.constraint_processing'
 SCOPE_CM_SA = 'utm.conformance_monitoring_sa'
 SCOPE_AA = 'utm.availability_arbitration'
 
+NO_OVN_PHRASES = {'', 'Available from USS'}
+
 
 def make_vol4(
     t0: Optional[datetime] = None,
