@@ -26,22 +26,22 @@ WHERE subscription.id = compact_subscription_cells.subscription_id
 
 COMMIT;
 
--- ALTER TABLE scd_operations ADD COLUMN IF NOT EXISTS cells INT64[];
--- CREATE INVERTED INDEX IF NOT EXISTS cell_idx on scd_operations (cells);
--- BEGIN;
---
--- WITH compact_operation_cells AS
---     ( SELECT operation_id,
---              array_agg(cell_id) AS cell_ids
---      FROM scd_cells_operations
---      GROUP BY operation_id)
--- UPDATE scd_operations operation
--- SET cells = compact_operation_cells.cell_ids
--- FROM compact_operation_cells
--- WHERE operation.id = compact_operation_cells.operation_id
---     AND cells IS NULL;
---
--- COMMIT;
+ALTER TABLE scd_operations ADD COLUMN IF NOT EXISTS cells INT64[];
+CREATE INVERTED INDEX IF NOT EXISTS cell_idx on scd_operations (cells);
+BEGIN;
+
+WITH compact_operation_cells AS
+    ( SELECT operation_id,
+             array_agg(cell_id) AS cell_ids
+     FROM scd_cells_operations
+     GROUP BY operation_id)
+UPDATE scd_operations operation
+SET cells = compact_operation_cells.cell_ids
+FROM compact_operation_cells
+WHERE operation.id = compact_operation_cells.operation_id
+    AND cells IS NULL;
+
+COMMIT;
 --
 -- ALTER TABLE scd_constraints ADD COLUMN IF NOT EXISTS cells INT64[];
 -- CREATE INVERTED INDEX IF NOT EXISTS cell_idx on scd_constraints (cells);
@@ -60,7 +60,7 @@ COMMIT;
 --
 -- COMMIT;
 --
--- DROP TABLE IF EXISTS scd_cells_operations;
+DROP TABLE IF EXISTS scd_cells_operations;
 -- DROP TABLE IF EXISTS scd_cells_constraints;
 DROP TABLE IF EXISTS scd_cells_subscriptions;
 
