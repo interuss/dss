@@ -159,7 +159,7 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *scdpb.G
 		}
 
 		if op.Manager != manager {
-			op.OVN = scdmodels.OVN("")
+			op.OVN = scdmodels.OVN(scdmodels.NoOvnPhrase)
 		}
 
 		p, err := op.ToProto()
@@ -219,7 +219,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *scdp
 				return stacktrace.Propagate(err, "Could not convert OperationalIntent model to proto")
 			}
 			if op.Manager != manager {
-				p.Ovn = ""
+				p.Ovn = scdmodels.NoOvnPhrase
 			}
 			response.OperationalIntentReferences = append(response.OperationalIntentReferences, p)
 		}
@@ -432,7 +432,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			for _, relevantOp := range relevantOps {
 				if _, ok := key[relevantOp.OVN]; !ok {
 					if relevantOp.Manager != manager {
-						relevantOp.OVN = ""
+						relevantOp.OVN = scdmodels.NoOvnPhrase
 					}
 					missingOps = append(missingOps, relevantOp)
 				}
@@ -448,7 +448,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 				for _, relevantConstraint := range constraints {
 					if _, ok := key[relevantConstraint.OVN]; !ok {
 						if relevantConstraint.Manager != manager {
-							relevantConstraint.OVN = ""
+							relevantConstraint.OVN = scdmodels.NoOvnPhrase
 						}
 						missingConstraints = append(missingConstraints, relevantConstraint)
 					}

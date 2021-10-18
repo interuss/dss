@@ -10,6 +10,11 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
+const (
+	// Value for OVN that should be returned for entities not owned by the client
+	NoOvnPhrase = "Available from USS"
+)
+
 type (
 	// OVN models an opaque version number.
 	OVN string
