@@ -127,14 +127,17 @@ def _put_operation(req, op_id, scd_session, scd_api, create_new: bool):
 
 
 async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_new: bool):
-  print('Putting: ', op_id)
+  print('Putting async: ', op_id)
   if scd_api == scd.API_0_3_5:
-    result = await scd_session_async.put('/operation_references/{}'.format(op_id), data=req)
+    async with scd_session_async.put('/operation_references/{}'.format(op_id), data=req) as response:
+        result = response.status, await response.json()
   elif scd_api == scd.API_0_3_17:
     if create_new:
-      result = await scd_session_async.put('/operational_intent_references/{}'.format(op_id), data=req)
+      async with scd_session_async.put('/operational_intent_references/{}'.format(op_id), data=req) as response:
+        result = response.status, await response.json()
     else:
-      result = await scd_session_async.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), data=req)
+      async with scd_session_async.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), data=req) as response:
+        result = response.status, await response.json()
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
   print('Put: ', op_id)
@@ -236,17 +239,6 @@ def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
         assert False, resp.content
 
 
-async def _create_ops_concurrent(op_req_map, scd_session, scd_api):
-  tasks = {}
-  for op_id, req in op_req_map.items():
-    tasks.update({
-      op_id: asyncio.create_task(_put_operation_async(req, op_id, scd_session, scd_api, True))})
-  results = {}
-  for op_id, task in tasks.items():
-      results.update({op_id: await task})
-  return results
-
-
 # Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
@@ -261,36 +253,28 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
   loop = asyncio.get_event_loop()
   results = loop.run_until_complete(
     asyncio.gather(*[_put_operation_async(req, op_id, scd_session_async, scd_api, True) for op_id, req in op_req_map.items()]))
-  print('results in main: ', results)
-  assert 1 == 2
-  # # Create opetions concurrently
-  # with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-  #   for idx, op_id in enumerate(map(ids, OP_TYPES)):
-  #     req = _make_op_request(idx)
-  #     op_req_map[op_id] = req
-
-  #   futures = {
-  #     executor.submit(_put_operation, req, op_id, scd_session, scd_api, True): op_id 
-  #     for op_id, req in op_req_map.items()}
-  #   for fut in concurrent.futures.as_completed(list(futures)):
-  #     op_id = futures[fut]
-  #     fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+  for op_id, resp in zip(list(op_req_map), results):
+    op_resp_map[op_id] = {}
+    op_resp_map[op_id]['status_code'] = resp[0]
+    op_resp_map[op_id]['content'] = resp[1]
+    
   for op_id, resp in op_resp_map.items():
-    assert resp.status_code == 200, resp.content
+    # assert resp['status_code'] == 200, resp['content']
     req = op_req_map[op_id]
-    data = resp.json()
-    if scd_api == scd.API_0_3_5:
-      op = data['operation_reference']
-    else:
-      op = data['operational_intent_reference']
-    assert op['id'] == op_id
-    assert op['uss_base_url'] == BASE_URL
-    assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
-    assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
-    assert op['version'] == 1
-    assert op['ovn']
-    assert 'subscription_id' in op
-    ovn_map[op_id] = op['ovn']
+    if resp['status_code'] == 200:
+      data = resp['content']
+      if scd_api == scd.API_0_3_5:
+        op = data['operation_reference']
+      else:
+        op = data['operational_intent_reference']
+      assert op['id'] == op_id
+      assert op['uss_base_url'] == BASE_URL
+      assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
+      assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
+      assert op['version'] == 1
+      assert op['ovn']
+      assert 'subscription_id' in op
+      ovn_map[op_id] = op['ovn']
   assert len(ovn_map) == len(OP_TYPES)
 
 

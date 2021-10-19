@@ -118,22 +118,13 @@ class AsyncUTMTestSession(ClientSession):
   """
 
   def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
-    jar = aiohttp.CookieJar(unsafe=True)
-    super().__init__(cookie_jar=jar)
+    super().__init__()
 
     self._prefix_url = prefix_url[0:-1] if prefix_url[-1] == '/' else prefix_url
     self.auth_adapter = auth_adapter
     self.default_scopes = None
 
-  # Overrides method on requests.Session
-  def prepare_request(self, request, **kwargs):
-    # Automatically prefix any unprefixed URLs
-    if request.url.startswith('/'):
-      request.url = self._prefix_url + request.url
-
-    return super().prepare_request(request, **kwargs)
-
-  def adjust_request_kwargs(self, kwargs):
+  def adjust_request_kwargs(self, url, kwargs):
     if self.auth_adapter:
       scopes = None
       if 'scopes' in kwargs:
@@ -144,20 +135,21 @@ class AsyncUTMTestSession(ClientSession):
         del kwargs['scope']
       if scopes is None:
         scopes = self.default_scopes
-      def auth(prepared_request: requests.PreparedRequest) -> requests.PreparedRequest:
-        if not scopes:
-          raise ValueError('All tests must specify auth scope for all session requests.  Either specify as an argument for each individual HTTP call, or decorate the test with @default_scope.')
-        self.auth_adapter.add_headers(prepared_request, scopes)
-        return prepared_request
-      kwargs['auth'] = auth
+      if not scopes:
+        raise ValueError('All tests must specify auth scope for all session requests.  Either specify as an argument for each individual HTTP call, or decorate the test with @default_scope.')
+      headers = {}
+      for k, v in self.auth_adapter.get_headers(url, scopes).items():
+        headers[k] = v
+      kwargs['headers'] = headers
+      kwargs['json'] = kwargs['data']
+      del kwargs['data']
     return kwargs
-
-  def request(self, method, url, **kwargs):
+  
+  async def _request(self, method, url, **kwargs):
+    url = self._prefix_url + url
     if 'auth' not in kwargs:
-      kwargs = self.adjust_request_kwargs(kwargs)
-    kwargs = self.adjust_request_kwargs(kwargs)
-
-    return super().request(method, url, **kwargs)
+      kwargs = self.adjust_request_kwargs(url, kwargs)
+    return await super()._request(method, url, **kwargs)
 
 
 def default_scopes(scopes: List[str]):
