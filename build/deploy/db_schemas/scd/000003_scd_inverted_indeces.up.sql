@@ -32,27 +32,9 @@ WHERE operation.id = compact_operation_cells.operation_id
     AND cells IS NULL;
 
 COMMIT;
---
--- ALTER TABLE scd_constraints ADD COLUMN IF NOT EXISTS cells INT64[];
--- CREATE INVERTED INDEX IF NOT EXISTS cell_idx on scd_constraints (cells);
--- BEGIN;
---
--- WITH compact_constraint_cells AS
---     ( SELECT constraint_id,
---              array_agg(cell_id) AS cell_ids
---      FROM scd_cells_constraints
---      GROUP BY constraint_id)
--- UPDATE scd_constraints "constraint"
--- SET cells = compact_constraint_cells.cell_ids
--- FROM compact_constraint_cells
--- WHERE "constraint".id = compact_constraint_cells.constraint_id
---     AND cells IS NULL;
---
--- COMMIT;
---
+
 DROP TABLE IF EXISTS scd_cells_operations;
--- DROP TABLE IF EXISTS scd_cells_constraints;
 DROP TABLE IF EXISTS scd_cells_subscriptions;
 
 /* Record new database version */
-UPDATE schema_versions set schema_version = 'v2.0.0' WHERE onerow_enforcer = TRUE;
+UPDATE schema_versions set schema_version = 'v3.0.0' WHERE onerow_enforcer = TRUE;

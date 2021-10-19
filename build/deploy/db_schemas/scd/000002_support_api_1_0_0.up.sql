@@ -7,3 +7,6 @@ ALTER TABLE scd_operations ADD COLUMN state operational_intent_state NOT NULL DE
 
 /* Make Subscription associated with operational intent optional */
 ALTER TABLE scd_operations ALTER COLUMN subscription_id DROP NOT NULL;
+
+/* Record new database version */
+UPDATE schema_versions set schema_version = 'v2.0.0' WHERE onerow_enforcer = TRUE;
