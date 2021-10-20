@@ -10,6 +10,7 @@ info:
  
 security:
 - TestAuthority:
+  - utm.strategic_coordination
   - scd.inject_test_data
    
 tags:
@@ -62,7 +63,6 @@ components:
         Clients must provide these access tokens in an `Authorization` header in
         the form `Bearer <token>` in accordance with RFC 6750.
   schemas:
-
     UUIDv4Format:
       description: >-
         String whose format matches a version-4 UUID according to RFC 4122.
@@ -80,7 +80,6 @@ components:
       anyOf:
       - $ref: '#/components/schemas/UUIDv4Format'
       example: 2f8343be-6482-4d1b-a474-16847e01af1e
-
     Time:
       required:
       - value
@@ -97,6 +96,7 @@ components:
           type: string
           enum:
           - RFC3339
+
     Radius:
       required:
       - value
@@ -153,7 +153,7 @@ components:
             to allow other options.
           type: string
           enum:
-          - M
+          - M       
     Latitude:
       description: >-
         Degrees of latitude north of the equator, with reference to the WGS84
@@ -259,8 +259,9 @@ components:
           anyOf:
           - $ref: '#/components/schemas/Time'
 
-
-
+    #
+    # USS-USS schema components
+    #
     OperationalIntentDetails:
       description: >-
         Details of a UTM operational intent. Note that this data is not stored
@@ -271,10 +272,13 @@ components:
           description: >-
             Volumes that wholly contain the operational intent while being as
             small as practical.
+
             Start and end times, as well as lower and upper altitudes, are
             required for each volume. The end time may not be in the past.
+
             Required with at least one item when the operational intent is
             Accepted, Activated, or Nonconforming.
+
             May not contain any items when the operational intent is Contingent.
           type: array
           items:
@@ -284,10 +288,13 @@ components:
           description: >-
             Volumes that contain the anticipated area of non-conformance while
             the aircraft is in the Nonconforming or Contingent states.
+
             Start and end times, as well as lower and upper altitudes, are
             required for each volume. The end time may not be in the past.
+
             Required with at least one item when the operational intent is
             Nonconforming or Contingent.
+
             May not contain any items when the operational intent is Accepted or
             Activated.
           type: array
@@ -319,58 +326,80 @@ components:
           $ref: '#/components/schemas/OperationalIntentReference'
         details:
           $ref: '#/components/schemas/OperationalIntentDetails'
-
+          
     UssBaseURL:
-      description: |-
-        The base URL of a USS implementation of part or all of the USS-USS API. Per the USS-USS API, the full URL
-        of a particular resource can be constructed by appending, e.g., `/uss/v1/{resource}/{id}` to this base URL.
-        Accordingly, this URL may not have a trailing '/' character.
+      description: >-
+        The base URL of a USS implementation of part or all of the USS-USS API.
+        Per the USS-USS API, the full URL of a particular resource can be
+        constructed by appending, e.g., `/uss/v1/{resource}/{id}` to this base
+        URL. Accordingly, this URL may not have a trailing '/' character.
       type: string
-      example: https://utm_uss.com/utm
+      example: https://uss.example.com/utm
 
     OperationalIntentState:
-      description: |-
+      description: >-
         State of an operational intent.
-        'Accepted': Operational intent is created and shared, but not yet in use; see standard text for more details.
-        The create or update request for this operational intent reference must include a Key containing all OVNs for
-        all relevant Entities.
-        'Activated': Operational intent is in active use; see standard text for more details.
-        The create or update request for this operational intent reference must include a Key containing all OVNs for
-        all relevant Entities.
-        'NonConforming': UA is temporarily outside its volumes, but the situation is expected to be recoverable; see
-        standard text for more details.
-        In this state, the `/uss/v1/operational_intents/{entityid}/telemetry` USS-USS endpoint should respond, if
-        available, to queries from USS peers.  The create or update request for this operational intent may omit a Key
-        in this case because the operational intent is being adjusted as flown and cannot necessarily deconflict.
-        'Contingent': UA is considered unrecoverably unable to conform with its coordinate operational intent; see
-        standard text for more details.
-        This state must transition to Ended.  In this state, the `/uss/v1/operational_intents/{entityid}/telemetry`
-        USS-USS endpoint should respond, if available, to queries from USS peers.  The create or update request for
-        this operational intent may omit a Key in this case because the operational intent is being adjusted as flown
-        and cannot necessarily deconflict.
+
+        'Accepted': Operational intent is created and shared, but not yet in
+        use; see standard text for more details.
+
+        The create or update request for this operational intent reference must
+        include a Key containing all OVNs for all relevant Entities.
+
+        'Activated': Operational intent is in active use; see standard text for
+        more details.
+
+        The create or update request for this operational intent reference must
+        include a Key containing all OVNs for all relevant Entities.
+
+        'Nonconforming': UA is temporarily outside its volumes, but the
+        situation is expected to be recoverable; see standard text for more
+        details.
+
+        In this state, the `/uss/v1/operational_intents/{entityid}/telemetry`
+        USS-USS endpoint should respond, if available, to queries from USS
+        peers.  The create or update request for this operational intent may
+        omit a Key in this case because the operational intent is being adjusted
+        as flown and cannot necessarily deconflict.
+
+        'Contingent': UA is considered unrecoverably unable to conform with its
+        coordinate operational intent; see standard text for more details.
+
+        This state must transition to Ended.  In this state, the
+        `/uss/v1/operational_intents/{entityid}/telemetry` USS-USS endpoint
+        should respond, if available, to queries from USS peers.  The create or
+        update request for this operational intent may omit a Key in this case
+        because the operational intent is being adjusted as flown and cannot
+        necessarily deconflict.
       type: string
       enum:
       - Accepted
       - Activated
-      - NonConforming
+      - Nonconforming
       - Contingent
-
     UssAvailabilityState:
       type: string
       enum:
       - Unknown
       - Normal
       - Down
-      description: |-
-        A USS is presumed to be in the Unknown state absent indication otherwise by a USS with
-        availability arbitration scope.  Upon determination via availability arbitration, a USS is
-        Down when it does not respond appropriately, and a Down USS may not perform the following
-        operations in the DSS:
-          * Create an operational intent in the Accepted or Activated states
-          * Modify an operational intent whose new or unchanged state is Accepted or Activated
-          * Delete an operational intent
-        A USS in the Unknown state possesses all the capabilities, within the DSS, of a USS in the
-        Normal state.
+      description: >-
+        A USS is presumed to be in the Unknown state absent indication otherwise
+        by a USS with availability arbitration scope.  Upon determination via
+        availability arbitration, a USS is Down when it does not respond
+        appropriately, and a Down USS may not perform the following operations
+        in the DSS:
+
+        * Create an operational intent in the Accepted or Activated states
+
+        * Modify an operational intent whose new or unchanged state is Accepted
+        or Activated
+
+        * Delete an operational intent
+
+        A USS in the Unknown state possesses all the capabilities, within the
+        DSS, of a USS in the Normal state.
+        
     EntityOVN:
       title: EntityOVN
       description: >-
@@ -386,18 +415,19 @@ components:
       maxLength: 128
       example: 9d158f59-80b7-4c11-9c0c-8a2b4d936b2d
     SubscriptionID:
-      description: |-
+      description: >-
         Identifier for a subscription communicated through the DSS.  Formatted
         as a UUIDv4.
       anyOf:
       - $ref: '#/components/schemas/UUIDv4Format'
       example: 78ea3fe8-71c2-4f5c-9b44-9c02f5563c6f
-
+      
     OperationalIntentReference:
-      description: |-
-        The high-level information of a planned or active operational intent with the URL
-        of a USS to query for details.  Note: 'OVN' is returned ONLY to the USS that
-        created the operational intent but NEVER to other USS instances.
+      description: >-
+        The high-level information of a planned or active operational intent
+        with the URL of a USS to query for details.  Note: 'ovn' is returned
+        ONLY to the USS that created the operational intent but NEVER to other
+        USS instances.
       required:
       - id
       - manager
@@ -415,30 +445,35 @@ components:
         manager:
           type: string
           example: uss1
-          description: |-
-            Created by the DSS based on creating client's ID (via access token).  Used internal
-            to the DSS for restricting mutation and deletion operations to manager.  Used by USSs
-            to reject operational intent update notifications originating from a USS that does not manage
-            the operational intent.
+          description: >-
+            Created by the DSS based on creating client's ID (via access
+            token).  Used internal to the DSS for restricting mutation and
+            deletion operations to manager.  Used by USSs to reject operational
+            intent update notifications originating from a USS that does not
+            manage the operational intent.
         uss_availability:
           $ref: '#/components/schemas/UssAvailabilityState'
         version:
           type: integer
           format: int32
           example: 1
-          description: |-
-            Numeric version of this operational intent which increments upon each change in the operational intent,
-            regardless of whether any field of the operational intent reference changes.  A USS with the
-            details of this operational intent when it was at a particular version does not need to retrieve
-            the details again until the version changes.
+          description: >-
+            Numeric version of this operational intent which increments upon
+            each change in the operational intent, regardless of whether any
+            field of the operational intent reference changes.  A USS with the
+            details of this operational intent when it was at a particular
+            version does not need to retrieve the details again until the
+            version changes.
         state:
           $ref: '#/components/schemas/OperationalIntentState'
         ovn:
-          description: |-
-            Opaque version number of this operational intent.  Populated only when the OperationalIntentReference
-            is managed by the USS retrieving or providing it.  Not populated when the
-            OperationalIntentReference is not managed by the USS retrieving or providing it (instead, the
-            USS must obtain the OVN from the details retrieved from the managing USS).
+          description: >-
+            Opaque version number of this operational intent.  Populated only
+            when the OperationalIntentReference is managed by the USS retrieving
+            or providing it.  Not populated when the OperationalIntentReference
+            is not managed by the USS retrieving or providing it (instead, the
+            USS must obtain the OVN from the details retrieved from the managing
+            USS).
           anyOf:
           - $ref: '#/components/schemas/EntityOVN'
         time_start:
@@ -452,29 +487,29 @@ components:
         uss_base_url:
           $ref: '#/components/schemas/OperationalIntentUssBaseURL'
         subscription_id:
-          description: |-
-            The ID of the subscription that is ensuring the operational intent manager receives relevant
-            airspace updates.
+          description: >-
+            The ID of the subscription that is ensuring the operational intent
+            manager receives relevant airspace updates.
           anyOf:
           - $ref: '#/components/schemas/SubscriptionID'
 
     OperationalIntentUssBaseURL:
-      description: |-
-        The base URL of a USS implementation that implements the parts of the USS-USS API necessary for
-        providing the details of this operational intent, and telemetry during non-conformance or contingency,
-        if applicable.
+      description: >-
+        The base URL of a USS implementation that implements the parts of the
+        USS-USS API necessary for providing the details of this operational
+        intent, and telemetry during non-conformance or contingency, if
+        applicable.
       anyOf:
       - $ref: '#/components/schemas/UssBaseURL'
-
+      
     SubscriptionUssBaseURL:
-      description: |-
-        The base URL of a USS implementation of the parts of the USS-USS API necessary for
-        receiving the notifications requested by this subscription.
+      description: >-
+        The base URL of a USS implementation of the parts of the USS-USS API
+        necessary for receiving the notifications requested by this
+        subscription.
       anyOf:
       - $ref: '#/components/schemas/UssBaseURL'
-
-
-
+      
     ImplicitSubscriptionParameters:
       description: >-
         Information necessary to create a subscription to serve a single
@@ -518,6 +553,7 @@ components:
         extents:
           description: >-
             Spacetime extents that bound this operational intent.
+
             Start and end times, as well as lower and upper altitudes, are
             required for each volume. The end time may not be in the past. All
             volumes, both nominal and off-nominal, must be encompassed in these
