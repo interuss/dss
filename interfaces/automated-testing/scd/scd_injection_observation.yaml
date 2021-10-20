@@ -647,6 +647,39 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OperationalIntent'
+
+    FlightNotAuthorizedResult:    
+      type: string        
+      enum: [OperationalConflict, 'CouldNotProcess']   
+      description: >
+          Sort order:
+            * `OperationalConflict` - The Flight not Authorized becuase of a conflict with another operation
+            * `CouldNotProcesss` - The OperationalIntent could not be processed by the USSP, this might be because of a number of reasons e.g. the intent is so far in the future the USSP cannot process it.
+              
+      
+    SCDResults: 
+      description: Results for the operational intents submitted to the create test endpoint
+      type: array
+      items:
+        anyOf:
+          - $ref: '#/components/schemas/OperationalIntent'
+          - $ref: '#/components/schemas/FlightNotAuthorizedResult'
+
+
+    TestResults: 
+      description: Results of the submission of the Operational Intents provided in the `/scd_tests/{test_id}` endpoint
+      type: object
+      properties:
+        test_id: 
+          description: ID provided when a test payload is submitted to the system under test
+          type: string
+          format: uuid 
+        test_results: 
+            description: The results of the tests in the same sequence as provided
+            $ref: '#/components/schemas/SCDResults'
+
+
+
 paths:
   /scd_tests/{test_id}:
     parameters:
@@ -745,15 +778,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OperationalIntentList'
+                $ref: '#/components/schemas/TestResults'
           description: Details about the requested test were retrieved successfully.
         '404':
-          description: Requested test was not found.
+          description: Requested test ID and the associated results were not found.
       operationId: getDetails
-      summary: Get Operational Intent reference details
-      description: Get the details of a operational intent identified in `/scd_qualifier_data`. The `reference.state` parameter is expected to be modified by the USSP depending on the result of de-confliction mechanisms per the standard. 
+      summary: Get test results
+      description: Get the details of a the test sequence provided in the . 
       security:
-        - RIDAuth:
+        - SCDAuth:
             - utm.strategic_coordination
 
       tags:
