@@ -112,7 +112,7 @@ class DSSTestSession(requests.Session):
 
 class AsyncUTMTestSession(ClientSession):
   """
-  Requests session that provides additional functionality for DSS tests:
+  Requests Asyncio client session that provides additional functionality for running DSS concurrency tests:
     * Adds a prefix to URLs that start with a '/'.
     * Automatically applies authorization according to adapter, when present
   """

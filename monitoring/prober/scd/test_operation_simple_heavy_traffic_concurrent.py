@@ -112,34 +112,30 @@ def _intersection(list1, list2):
 
 
 def _put_operation(req, op_id, scd_session, scd_api, create_new: bool):
-  print('Putting: ', op_id)
   if scd_api == scd.API_0_3_5:
-    result = scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+    return scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
   elif scd_api == scd.API_0_3_17:
     if create_new:
-      result = scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
+      return scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
     else:
-      result = scd_session.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), json=req, scope=SCOPE_SC)
+      return scd_session.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), json=req, scope=SCOPE_SC)
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
-  print('Put: ', op_id)
-  return result
 
 
 async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_new: bool):
   if scd_api == scd.API_0_3_5:
     async with scd_session_async.put('/operation_references/{}'.format(op_id), data=req) as response:
-        result = response.status, await response.json()
+        return response.status, await response.json()
   elif scd_api == scd.API_0_3_17:
     if create_new:
       async with scd_session_async.put('/operational_intent_references/{}'.format(op_id), data=req) as response:
-        result = response.status, await response.json()
+        return response.status, await response.json()
     else:
       async with scd_session_async.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), data=req) as response:
-        result = response.status, await response.json()
+        return response.status, await response.json()
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
-  return result
 
 
 def _get_operation(op_id, scd_session, scd_api):
@@ -203,7 +199,6 @@ def _delete_operation(op_id, scd_session, scd_api):
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
 def _collect_resp_callback(key, op_resp_map, future):
-  print(f'outcome ready: {key}')
   op_resp_map[key] = future.result()
 
 
