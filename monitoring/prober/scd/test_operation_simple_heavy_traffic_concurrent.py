@@ -21,7 +21,7 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
-from monitoring.prober.infrastructure import for_api_versions, register_resource_type
+from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
 
 
 # This test is implemented to fire requests concurrently, given there are several concurrent related issues:
@@ -223,7 +223,7 @@ def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
     for op_id in map(ids, OP_TYPES):
       resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
       if resp.status_code == 200:
-        resp = scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
+        resp = scd_session.delete('/operational_intent_references/{}/{}'.format(op_id, resp.json()['operational_intent_reference']['ovn']), scope=SCOPE_SC)
         assert resp.status_code == 200, resp.content
       elif resp.status_code == 404:
         # As expected.
@@ -273,6 +273,7 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@depends_on(test_create_ops_concurrent)
 def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
 
@@ -302,6 +303,7 @@ def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
 # Mutations: None
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
+@depends_on(test_create_ops_concurrent)
 def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
   total_found_ids = set()
@@ -330,6 +332,7 @@ def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
 # Mutations: Operations with ids in OP_IDS mutated to second version
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
+@depends_on(test_create_ops_concurrent)
 def test_mutate_ops_concurrent(ids, scd_api, scd_session):
   op_req_map = {}
   op_resp_map = {}
@@ -377,6 +380,7 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session):
 # Preconditions: Operations with ids in OP_IDS mutated to second version
 # Mutations: Operations with ids in OP_IDS deleted
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@depends_on(test_mutate_ops_concurrent)
 def test_delete_op_concurrent(ids, scd_api, scd_session):
   op_resp_map = {}
 

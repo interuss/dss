@@ -16,7 +16,7 @@ The `monitoring` directory contains a set of folders containing different test s
 
 - When running tools in the monitoring toolset for local debugging outside of Docker, the [monitoring](https://github.com/interuss/dss/tree/master/monitoring) folder must be accessible from one of the entries in your `PYTHONPATH`.  To accomplish this, add the root repo folder to your `PYTHONPATH`.
 
-- To run a DSS instance locally, see [this documentation](build/dev/stand_alone_instance.md).
+- To run a DSS instance locally, see [this documentation](build/dev/standalone_instance.md).
 
 ### Building new monitoring tools
 
@@ -28,7 +28,7 @@ When building new monitoring tools, we recommend using Docker containers as a wa
 
 - The first and largest monitoring tool is the "prober" which a full integration test. The [prober documentation](monitoring/prober/README.md) describes how to run it. It uses the `pytest` framework to perform actions on a DSS instance and verify the results.
 - With all of the monitoring tools, including prober, the deployment philosophy is that the monitoring folder is a Python package root so one can import, e.g., `monitoring.monitorlib.infrastructure`. The prober makes heavy use of the tools in side [/monitoring/monitorlib](monitoring/monitorlib/README.md) tools. Most of the time, reusable components are built in this library so other monitoring tools can use them.
-- The way to set up access to the DSS in prober is to create special requests.Sessions which automatically perform their own authorization and have their own implicit USS identity. These sessions are created for dependency injection in [conftest.py](monitoring/prober/conftest.py).  
+- The way to set up access to the DSS in prober is to create special requests.Sessions which automatically perform their own authorization and have their own implicit USS identity. These sessions are created for dependency injection in [conftest.py](monitoring/prober/conftest.py).
 - When we need requests to appear as if they are coming from two different USSs, we need to use two different Sessions. We can see that happening with `scd_session` and `scd_session2`.  The tests themselves are just functions prefixed with `test_` which is the standard way `pytest` manages test infrastructure.
 
 #### Interoperability Test
@@ -43,9 +43,9 @@ When building new monitoring tools, we recommend using Docker containers as a wa
 
 #### Tracer
 
-- The [tracer](monitoring/tracer/README.md) is actually a set of two different entry points which act as a mock USS to examine and debug UTM traffic in a non-production deployment (*it cannot be used in a production deployment*).  
-- [tracer_poll](monitoring/tracer/tracer_poll.py) periodically polls the DSS for various object types (ISAs, Operations, Constraints) and if it finds anything new or different, it then queries the owning USS for the details of that object (when appropriate).  
-- [tracer_subscribe](monitoring/tracer/tracer_subscribe.py) creates Subscriptions in the DSS for various object types (ISAs, Operations, Constraints) and then listens for incoming push notifications from other USSs when there are changes to any of those monitored object types.  tracer_subscribe also exposes a small web interface to make its logs easily accessible (the ones from both tracer_subscribe and tracer_poll, if they are both running at the same time).  
+- The [tracer](monitoring/tracer/README.md) is actually a set of two different entry points which act as a mock USS to examine and debug UTM traffic in a non-production deployment (*it cannot be used in a production deployment*).
+- [tracer_poll](monitoring/tracer/tracer_poll.py) periodically polls the DSS for various object types (ISAs, Operations, Constraints) and if it finds anything new or different, it then queries the owning USS for the details of that object (when appropriate).
+- [tracer_subscribe](monitoring/tracer/tracer_subscribe.py) creates Subscriptions in the DSS for various object types (ISAs, Operations, Constraints) and then listens for incoming push notifications from other USSs when there are changes to any of those monitored object types.  tracer_subscribe also exposes a small web interface to make its logs easily accessible (the ones from both tracer_subscribe and tracer_poll, if they are both running at the same time).
 - [tracer_subscribe](monitoring/tracer/tracer_subscribe.py) also has the capability to make a single, one-off RID poll involving querying the DSS for ISAs, and then calling out to each applicable USS's /flights endpoint (and /flights/{id}/details, when appropriate) to get the current information.
 
 #### Remote ID Qualifier

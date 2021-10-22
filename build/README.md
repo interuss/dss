@@ -117,10 +117,9 @@ a PR to that effect would be greatly appreciated.
        -  Select Zonal and [a compute-zone appropriate to your
           geography](https://cloud.google.com/compute/docs/regions-zones#available)
        -  For the "default-pool" node pool:
-          - Enter 2 for number of nodes.
-          - Check "Enable autoscaling" and enter a range of 2-10 nodes.
-       -  In the "Nodes" bullet under "default-pool", select N2 series and
-          n2-standard-8 for machine type.
+          - Enter 3 for number of nodes.
+          -  In the "Nodes" bullet under "default-pool", select N2 series and
+             n2-standard-4 for machine type.
        -  In the "Networking" bullet under "Clusters", ensure "Enable [VPC
           -native traffic](https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips)"
           is checked.

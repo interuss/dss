@@ -205,7 +205,7 @@ def test_id_conversion_bug_v5(ids, scd_api, scd_session):
       "time_end": {"value": time_end.isoformat() + "Z", "format": "RFC3339"}
     },
     "old_version": 0,
-    "uss_base_url": "http://localhost:12012/services/uss/public/uss/v1/",
+    "uss_base_url": "https://example.com/uss/v1/",
     "notify_for_constraints": True
   }
   resp = scd_session.put('/subscriptions/{}'.format(sub_uuid), json=req)

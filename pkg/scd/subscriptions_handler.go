@@ -186,7 +186,7 @@ func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, ver
 			// Attach Operations to response
 			for _, op := range relevantOperations {
 				if op.Manager != manager {
-					op.OVN = scdmodels.OVN("")
+					op.OVN = scdmodels.OVN(scdmodels.NoOvnPhrase)
 				}
 				pop, _ := op.ToProto()
 				result.OperationalIntentReferences = append(result.OperationalIntentReferences, pop)
@@ -207,7 +207,7 @@ func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, ver
 					return stacktrace.Propagate(err, "Could not convert Constraint to proto")
 				}
 				if constraint.Manager != manager {
-					p.Ovn = ""
+					p.Ovn = scdmodels.NoOvnPhrase
 				}
 				result.ConstraintReferences = append(result.ConstraintReferences, p)
 			}

@@ -1,23 +1,90 @@
-from typing import Optional
+import argparse
+from typing import Callable, Optional
 
-from monitoring.monitorlib import infrastructure
+from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib import auth, rid, scd
-from monitoring.prober.infrastructure import VersionString, IDFactory
+from monitoring.prober.infrastructure import add_test_result, IDFactory, ResourceType, VersionString
 
 import pytest
 
 
+OPT_RID_AUTH = 'rid_auth'
+OPT_SCD_AUTH1 = 'scd_auth1'
+OPT_SCD_AUTH2 = 'scd_auth2'
+
+BASE_URL_RID = '/v1/dss'
+BASE_URL_SCD = '/dss/v1'
+BASE_URL_AUX = '/aux/v1'
+
+
+def str2bool(v) -> bool:
+  if isinstance(v, bool):
+    return v
+  if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    return True
+  elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    return False
+  else:
+    raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def pytest_addoption(parser):
-  parser.addoption('--dss-endpoint')
+  parser.addoption(
+    '--dss-endpoint',
+    help='Base URL of DSS to test',
+    metavar='URL',
+    dest='dss_endpoint')
 
-  parser.addoption('--rid-auth')
-  parser.addoption('--scd-auth1')
-  parser.addoption('--scd-auth2')
-  parser.addoption('--test-owner')
-  parser.addoption('--scd-api-version')
+  parser.addoption(
+    '--rid-auth',
+    help='Auth spec (see Authorization section of README.md) for performing remote ID actions in the DSS',
+    metavar='SPEC',
+    dest='rid_auth')
+
+  parser.addoption(
+    '--scd-auth1',
+    help='Auth spec (see Authorization section of README.md) for performing primary strategic deconfliction actions in the DSS',
+    metavar='SPEC',
+    dest='scd_auth1')
+  parser.addoption(
+    '--scd-auth1-cp',
+    help='True if the USS specified in scd-auth1 has utm.constraint_processing privileges',
+    type=str2bool,
+    nargs='?',
+    default=True,
+    dest='scd_auth1_cp')
+  parser.addoption(
+    '--scd-auth1-cm',
+    help='True if the USS specified in scd-auth1 has utm.constraint_management privileges',
+    type=str2bool,
+    nargs='?',
+    default=True,
+    dest='scd_auth1_cm')
+
+  parser.addoption(
+    '--scd-auth2',
+    help='Auth spec (see Authorization section of README.md) for performing secondary strategic deconfliction actions (like observing primary actions, causing notification generation, etc) in the DSS',
+    metavar='SPEC',
+    dest='scd_auth2')
+
+  parser.addoption(
+    '--scd-api-version',
+    help='SCD API version to target',
+    choices=[scd.API_0_3_5, scd.API_0_3_17],
+    default=scd.API_0_3_5,
+    dest='scd_api_version')
 
 
-def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[infrastructure.DSSTestSession]:
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+  outcome = yield
+  result = outcome.get_result()
+
+  if result.when == 'call':
+    add_test_result(item, result)
+
+
+def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[DSSTestSession]:
   dss_endpoint = pytestconfig.getoption('dss_endpoint')
   if dss_endpoint is None:
     pytest.skip('dss-endpoint option not set')
@@ -29,7 +96,7 @@ def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] 
       pytest.skip('%s option not set' % auth_option)
     auth_adapter = auth.make_auth_adapter(auth_spec)
 
-  s = infrastructure.DSSTestSession(dss_endpoint + endpoint_suffix, auth_adapter)
+  s = DSSTestSession(dss_endpoint + endpoint_suffix, auth_adapter)
   return s
 
 def make_session_async(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[infrastructure.AsyncUTMTestSession]:
@@ -49,18 +116,18 @@ def make_session_async(pytestconfig, endpoint_suffix: str, auth_option: Optional
 
 
 @pytest.fixture(scope='session')
-def session(pytestconfig):
-  return make_session(pytestconfig, '/v1/dss', 'rid_auth')
+def session(pytestconfig) -> DSSTestSession:
+  return make_session(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
 
 
 @pytest.fixture(scope='session')
-def aux_session(pytestconfig):
-  return make_session(pytestconfig, '/aux/v1', 'rid_auth')
+def aux_session(pytestconfig) -> DSSTestSession:
+  return make_session(pytestconfig, BASE_URL_AUX, OPT_RID_AUTH)
 
 
 @pytest.fixture(scope='session')
-def scd_session(pytestconfig):
-  return make_session(pytestconfig, '/dss/v1', 'scd_auth1')
+def scd_session(pytestconfig) -> DSSTestSession:
+  return make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH1)
 
 @pytest.fixture(scope='session')
 def scd_session_async(pytestconfig):
@@ -68,12 +135,48 @@ def scd_session_async(pytestconfig):
 
 
 @pytest.fixture(scope='session')
-def scd_session2(pytestconfig):
-  return make_session(pytestconfig, '/dss/v1', 'scd_auth2')
+def scd_session_cp(pytestconfig) -> bool:
+  """True iff SCD auth1 user is authorized for constraint processing"""
+  return pytestconfig.getoption('scd_auth1_cp')
+
+
+@pytest.fixture(scope='session')
+def scd_session_cm(pytestconfig) -> bool:
+  """True iff SCD auth1 user is authorized for constraint management"""
+  return pytestconfig.getoption('scd_auth1_cm')
+
+
+@pytest.fixture(scope='session')
+def scd_session2(pytestconfig) -> DSSTestSession:
+  return make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH2)
 
 
 @pytest.fixture()
-def ids(pytestconfig, session, scd_session, scd_session2):
+def subscriber(pytestconfig) -> Optional[str]:
+  """Subscriber of USS making UTM API calls"""
+  if pytestconfig.getoption(OPT_RID_AUTH):
+    session = make_session(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
+    session.get('/status', scope=rid.SCOPE_READ)
+    rid_sub = session.auth_adapter.get_sub()
+    if rid_sub:
+      return rid_sub
+  if pytestconfig.getoption(OPT_SCD_AUTH1):
+    scd_session = make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH1)
+    scd_session.get('/status', scope=scd.SCOPE_SC)
+    scd_sub = scd_session.auth_adapter.get_sub()
+    if scd_sub:
+      return scd_sub
+  if pytestconfig.getoption(OPT_SCD_AUTH2):
+    scd_session2 = make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH2)
+    scd_session2.get('/status', scope=scd.SCOPE_SC)
+    scd2_sub = scd_session2.auth_adapter.get_sub()
+    if scd2_sub:
+      return scd2_sub
+  return None
+
+
+@pytest.fixture()
+def ids(pytestconfig, subscriber) -> Callable[[ResourceType], str]:
   """Fixture that converts a ResourceType into an ID for that resource.
 
   This fixture is a function that accepts a ResourceType as the argument and
@@ -83,22 +186,7 @@ def ids(pytestconfig, session, scd_session, scd_session2):
   ResourceTypes to provide to this fixture, and also the "Resources" section of
   the README.
   """
-  sub = None
-  if session:
-    session.get('/status', scope=rid.SCOPE_READ)
-    rid_sub = session.auth_adapter.get_sub()
-    if rid_sub:
-      sub = rid_sub
-  if sub is None and scd_session:
-    scd_session.get('/status', scope=scd.SCOPE_SC)
-    scd_sub = scd_session.auth_adapter.get_sub()
-    if scd_sub:
-      sub = scd_sub
-  if sub is None and scd_session2:
-    scd_session2.get('/status', scope=scd.SCOPE_SC)
-    scd2_sub = scd_session2.auth_adapter.get_sub()
-    if scd2_sub:
-      sub = scd2_sub
+  sub = subscriber
   if sub is None:
     sub = 'unknown'
   factory = IDFactory(sub)
@@ -106,12 +194,12 @@ def ids(pytestconfig, session, scd_session, scd_session2):
 
 
 @pytest.fixture(scope='function')
-def no_auth_session(pytestconfig):
-  return make_session(pytestconfig, '/v1/dss')
+def no_auth_session(pytestconfig) -> DSSTestSession:
+  return make_session(pytestconfig, BASE_URL_RID)
 
 
 @pytest.fixture(scope='session')
-def scd_api(pytestconfig):
+def scd_api(pytestconfig) -> str:
   api = pytestconfig.getoption('scd_api_version')
   if api is None:
     api = scd.API_0_3_5
