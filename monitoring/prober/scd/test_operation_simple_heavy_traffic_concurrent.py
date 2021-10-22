@@ -12,7 +12,6 @@
 """
 
 import datetime
-import concurrent.futures
 import functools
 from concurrent.futures.thread import ThreadPoolExecutor
 import asyncio
@@ -279,12 +278,9 @@ def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
 
   # Get opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    futures = {
-      executor.submit(_get_operation, op_id, scd_session, scd_api): op_id
-      for op_id in map(ids, OP_TYPES)}
-    for fut in concurrent.futures.as_completed(list(futures)):
-      op_id = futures[fut]
-      fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+    for op_id in map(ids, OP_TYPES):
+      future = executor.submit(_get_operation, op_id, scd_session, scd_api)
+      future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
   for op_id, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
@@ -310,12 +306,9 @@ def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
 
   # Query opetions concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    futures = {
-      executor.submit(_query_operation, idx, scd_session, scd_api): idx
-      for idx in range(len(OP_TYPES))}
-    for fut in concurrent.futures.as_completed(list(futures)):
-      idx = futures[fut]
-      fut.add_done_callback(functools.partial(_collect_resp_callback, idx, op_resp_map))
+    for idx in range(len(OP_TYPES)):
+      future = executor.submit(_query_operation, idx, scd_session, scd_api)
+      future.add_done_callback(functools.partial(_collect_resp_callback, idx, op_resp_map))
 
   for idx, resp in op_resp_map.items():
     assert resp.status_code == 200, resp.content
@@ -347,13 +340,8 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session):
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
     for op_id in map(ids, OP_TYPES):
       req = op_req_map[op_id]
-
-    futures = {
-      executor.submit(_put_operation, req, op_id, scd_session, scd_api, False): op_id
-      for op_id, req in op_req_map.items()}
-    for fut in concurrent.futures.as_completed(list(futures)):
-      op_id = futures[fut]
-      fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+      future = executor.submit(_put_operation, req, op_id, scd_session, scd_api, False)
+      future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
   ovn_map.clear()
 
@@ -386,12 +374,9 @@ def test_delete_op_concurrent(ids, scd_api, scd_session):
 
   # Delete operations concurrently
   with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    futures = {
-      executor.submit(_delete_operation, op_id, scd_session, scd_api): op_id
-      for op_id in map(ids, OP_TYPES)}
-    for fut in concurrent.futures.as_completed(list(futures)):
-      op_id = futures[fut]
-      fut.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+    for op_id in map(ids, OP_TYPES):
+      future = executor.submit(_delete_operation, op_id, scd_session, scd_api)
+      future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
 
   assert len(op_resp_map) == len(OP_TYPES)
 
