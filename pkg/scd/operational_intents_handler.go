@@ -322,7 +322,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 
 		// Get existing OperationalIntent, if any, and validate request
 		old, err := r.GetOperationalIntent(ctx, id)
-		// Define local variable to hold the subscriptionID as it changes in this transaction block without changing the subscriptionID
+		// Define local variable to hold the subscriptionID as it changes in this transaction block but it should not change the original variable subscriptionID
 		localSubscriptionID := subscriptionID
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
