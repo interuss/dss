@@ -35,7 +35,7 @@ from monitoring.prober.infrastructure import for_api_versions, register_resource
 # need to touch anything else.
 THREAD_COUNT = 1
 BASE_URL = 'https://example.com/uss'
-OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(100)]
+OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(2)]
 GROUP_SIZE = len(OP_TYPES) // 3
 
 ovn_map = {}
@@ -127,7 +127,6 @@ def _put_operation(req, op_id, scd_session, scd_api, create_new: bool):
 
 
 async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_new: bool):
-  print('Putting async: ', op_id)
   if scd_api == scd.API_0_3_5:
     async with scd_session_async.put('/operation_references/{}'.format(op_id), data=req) as response:
         result = response.status, await response.json()
@@ -140,7 +139,6 @@ async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_ne
         result = response.status, await response.json()
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
-  print('Put: ', op_id)
   return result
 
 
@@ -257,24 +255,23 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
     op_resp_map[op_id] = {}
     op_resp_map[op_id]['status_code'] = resp[0]
     op_resp_map[op_id]['content'] = resp[1]
-    
+  loop.run_until_complete(scd_session_async.close())
   for op_id, resp in op_resp_map.items():
-    # assert resp['status_code'] == 200, resp['content']
+    assert resp['status_code'] == 200, resp['content']
     req = op_req_map[op_id]
-    if resp['status_code'] == 200:
-      data = resp['content']
-      if scd_api == scd.API_0_3_5:
-        op = data['operation_reference']
-      else:
-        op = data['operational_intent_reference']
-      assert op['id'] == op_id
-      assert op['uss_base_url'] == BASE_URL
-      assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
-      assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
-      assert op['version'] == 1
-      assert op['ovn']
-      assert 'subscription_id' in op
-      ovn_map[op_id] = op['ovn']
+    data = resp['content']
+    if scd_api == scd.API_0_3_5:
+      op = data['operation_reference']
+    else:
+      op = data['operational_intent_reference']
+    assert op['id'] == op_id
+    assert op['uss_base_url'] == BASE_URL
+    assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
+    assert_datetimes_are_equal(op['time_end']['value'], req['extents'][0]['time_end']['value'])
+    assert op['version'] == 1
+    assert op['ovn']
+    assert 'subscription_id' in op
+    ovn_map[op_id] = op['ovn']
   assert len(ovn_map) == len(OP_TYPES)
 
 
