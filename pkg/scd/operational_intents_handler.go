@@ -322,8 +322,6 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 
 		// Get existing OperationalIntent, if any, and validate request
 		old, err := r.GetOperationalIntent(ctx, id)
-		// Define local variable to hold the subscriptionID as it changes in this transaction block but it should not change the original variable subscriptionID
-		localSubscriptionID := subscriptionID
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
@@ -347,7 +345,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 		}
 
 		var sub *scdmodels.Subscription
-		if localSubscriptionID.Empty() {
+		if subscriptionID.Empty() {
 			// Create implicit Subscription
 			err := scdmodels.ValidateUSSBaseURL(params.GetNewSubscription().GetUssBaseUrl())
 			if err != nil {
@@ -370,20 +368,19 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			if err != nil {
 				return stacktrace.Propagate(err, "Failed to create implicit subscription")
 			}
-			localSubscriptionID = sub.ID
 		} else {
 			// Use existing Subscription
-			sub, err = r.GetSubscription(ctx, localSubscriptionID)
+			sub, err = r.GetSubscription(ctx, subscriptionID)
 			if err != nil {
 				return stacktrace.Propagate(err, "Unable to get Subscription")
 			}
 			if sub == nil {
-				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", localSubscriptionID)
+				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", subscriptionID)
 			}
 			if sub.Manager != manager {
 				return stacktrace.Propagate(
 					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
-					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", localSubscriptionID, sub.Manager, manager)
+					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", subscriptionID, sub.Manager, manager)
 			}
 			updateSub := false
 			if sub.StartTime != nil && sub.StartTime.After(*uExtent.StartTime) {
