@@ -651,14 +651,20 @@ components:
           description: A list of operational intents provided for the test
           $ref: '#/components/schemas/OperationalIntentList'
 
-    FlightNotAuthorizedResult:    
-      type: string        
-      enum: [OperationalConflict, 'CouldNotProcess']   
-      description: >
-          Sort order:
-            * `OperationalConflict` - The Flight not Authorized becuase of a conflict with another operation
-            * `CouldNotProcesss` - The OperationalIntent could not be processed by the USSP, this might be because of a number of reasons e.g. the intent is so far in the future the USSP cannot process it.
-              
+    FlightNotAuthorizedResult:  
+      type: object
+      properties:
+        scd_processing_result:  
+          type: string        
+          enum: [OperationalConflict, 'CouldNotProcess']   
+          description: >
+              Sort order:
+                * `OperationalConflict` - The Flight not Authorized becuase of a conflict with another operation
+                * `CouldNotProcesss` - The OperationalIntent could not be processed by the USSP, this might be because of a number of reasons e.g. the intent is so far in the future the USSP cannot process it.
+        area_of_interest:
+          type: object
+          $ref: '#/components/schemas/Volume4D'
+                  
       
     SCDResults: 
       description: Results for the operational intents submitted to the create test endpoint
@@ -668,18 +674,13 @@ components:
           - $ref: '#/components/schemas/OperationalIntent'
           - $ref: '#/components/schemas/FlightNotAuthorizedResult'
 
-
-    TestResults: 
-      description: Results of the submission of the Operational Intents provided in the `/scd_tests/{test_id}` endpoint
+    QuerySCDParameters:
+      description: |-
+        Parameters for a request to find results of strategic de-confliction processing matching the provided criteria.
       type: object
       properties:
-        test_id: 
-          description: ID provided when a test payload is submitted to the system under test
-          type: string
-          format: uuid 
-        test_results: 
-            description: The results of the tests in the same sequence as provided
-            $ref: '#/components/schemas/SCDResults'
+        area_of_interest:
+          $ref: '#/components/schemas/Volume4D'
 
 
 
@@ -716,7 +717,7 @@ paths:
       operationId: createTest
       summary: Create a test
       description: >-
-        Request the creation of one or more operational intents based on injection of the provided test data.
+        Request the creation of one or more operational intents based on injection of the provided Volume4D data.
         These fields may not be modified.
       security:
         - TestAuth:
@@ -763,32 +764,26 @@ paths:
       tags:
         - Strategic Deconfliction
 
-  /scd_qualifier_data/{id}:
+  /scd_qualifier_data:    
     get:
-      parameters:
-        -
-          examples:
-            default:
-              value: '2fa86378-5915-42bf-9e87-99ff5bce543c'
-          name: id
-          description: >-
-            ID of test identified in `/scd_qualifier_data`.
-          schema:
-            type: string
-          in: path
-          required: true
+      operationId: getDetails
+      summary: Get SCD processing details 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuerySCDParameters'
+        required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TestResults'
+                $ref: '#/components/schemas/SCDResults'
           description: Details about the requested test were retrieved successfully.
         '404':
-          description: Requested test ID and the associated results were not found.
-      operationId: getDetails
-      summary: Get test results
-      description: Get the details of a the test sequence provided in the . 
+          description: Requested volume and the associated results were not found.          
+      description: Get the details of strategic de-confliction processing
       security:
         - SCDAuth:
             - utm.strategic_coordination
