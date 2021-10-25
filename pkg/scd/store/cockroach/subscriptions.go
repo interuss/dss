@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	subscriptionFieldsWithIndices   [11]string
+	subscriptionFieldsWithIndices   [12]string
 	subscriptionFieldsWithPrefix    string
 	subscriptionFieldsWithoutPrefix string
 )
@@ -33,13 +33,14 @@ func init() {
 	subscriptionFieldsWithIndices[7] = "implicit"
 	subscriptionFieldsWithIndices[8] = "starts_at"
 	subscriptionFieldsWithIndices[9] = "ends_at"
-	subscriptionFieldsWithIndices[10] = "updated_at"
+	subscriptionFieldsWithIndices[10] = "cells"
+	subscriptionFieldsWithIndices[11] = "updated_at"
 
 	subscriptionFieldsWithoutPrefix = strings.Join(
 		subscriptionFieldsWithIndices[:], ",",
 	)
 
-	withPrefix := make([]string, 11)
+	withPrefix := make([]string, 12)
 	for idx, field := range subscriptionFieldsWithIndices {
 		withPrefix[idx] = "scd_subscriptions." + field
 	}
@@ -53,11 +54,11 @@ func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable
 	var (
 		cellsQuery = `
 			SELECT
-				cell_id
+				unnest(cells) as cell_id
 			FROM
-				scd_cells_subscriptions
+				scd_subscriptions
 			WHERE
-				subscription_id = $1
+				id = $1
 		`
 	)
 
@@ -92,6 +93,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 	defer rows.Close()
 
 	var payload []*scdmodels.Subscription
+	cids := pq.Int64Array{}
 	for rows.Next() {
 		var (
 			s         = new(scdmodels.Subscription)
@@ -109,6 +111,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 			&s.ImplicitSubscription,
 			&s.StartTime,
 			&s.EndTime,
+			&cids,
 			&updatedAt,
 		)
 		if err != nil {
@@ -118,6 +121,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error generating Subscription version")
 		}
+		s.SetCells(cids)
 		payload = append(payload, s)
 	}
 	if err = rows.Err(); err != nil {
@@ -180,23 +184,9 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		  scd_subscriptions
 		  (%s)
 		VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, transaction_timestamp())
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, transaction_timestamp())
 		RETURNING
 			%s`, subscriptionFieldsWithoutPrefix, subscriptionFieldsWithPrefix)
-		subscriptionCellQuery = `
-		UPSERT INTO
-			scd_cells_subscriptions
-			(cell_id, cell_level, subscription_id)
-		VALUES
-			($1, $2, $3)
-		`
-		deleteLeftOverCellsForSubscriptionQuery = `
-			DELETE FROM
-				scd_cells_subscriptions
-			WHERE
-				cell_id != ALL($1)
-			AND
-				subscription_id = $2`
 	)
 
 	cids := make([]int64, len(s.Cells))
@@ -207,7 +197,6 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		clevels[i] = cell.Level()
 	}
 
-	cells := s.Cells
 	s, err := c.fetchSubscription(ctx, q, upsertQuery,
 		s.ID,
 		s.Manager,
@@ -218,23 +207,13 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		s.NotifyForConstraints,
 		s.ImplicitSubscription,
 		s.StartTime,
-		s.EndTime)
+		s.EndTime,
+		pq.Int64Array(cids))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Subscription from upsert query")
 	}
 	if s == nil {
 		return nil, stacktrace.NewError("Upsert query did not return a Subscription")
-	}
-	s.Cells = cells
-
-	for i := range cids {
-		if _, err := q.ExecContext(ctx, subscriptionCellQuery, cids[i], clevels[i], s.ID); err != nil {
-			return nil, stacktrace.Propagate(err, "Error in query: %s", subscriptionCellQuery)
-		}
-	}
-
-	if _, err := q.ExecContext(ctx, deleteLeftOverCellsForSubscriptionQuery, pq.Array(cids), s.ID); err != nil {
-		return nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForSubscriptionQuery)
 	}
 
 	return s, nil
@@ -296,22 +275,12 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 				%s
 			FROM
 				scd_subscriptions
-			JOIN
-				(SELECT DISTINCT
-					scd_cells_subscriptions.subscription_id
-				FROM
-					scd_cells_subscriptions
 				WHERE
-					scd_cells_subscriptions.cell_id = ANY($1)
-				)
-			AS
-				unique_subscription_ids
-			ON
-				scd_subscriptions.id = unique_subscription_ids.subscription_id
-			WHERE
-				COALESCE(starts_at <= $3, true)
-			AND
-				COALESCE(ends_at >= $2, true)`, subscriptionFieldsWithPrefix)
+					cells && $1
+				AND
+					COALESCE(starts_at <= $3, true)
+				AND
+					COALESCE(ends_at >= $2, true)`, subscriptionFieldsWithPrefix)
 	)
 
 	// TODO: Lazily calculate & cache spatial covering so that it is only ever

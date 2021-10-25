@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	operationFieldsWithIndices   [11]string
+	operationFieldsWithIndices   [12]string
 	operationFieldsWithPrefix    string
 	operationFieldsWithoutPrefix string
 )
@@ -34,6 +34,7 @@ func init() {
 	operationFieldsWithIndices[8] = "subscription_id"
 	operationFieldsWithIndices[9] = "updated_at"
 	operationFieldsWithIndices[10] = "state"
+	operationFieldsWithIndices[11] = "cells"
 
 	operationFieldsWithoutPrefix = strings.Join(
 		operationFieldsWithIndices[:], ",",
@@ -57,6 +58,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 	defer rows.Close()
 
 	var payload []*scdmodels.OperationalIntent
+	cids := pq.Int64Array{}
 	for rows.Next() {
 		var (
 			o         = &scdmodels.OperationalIntent{}
@@ -74,11 +76,13 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 			&o.SubscriptionID,
 			&updatedAt,
 			&o.State,
+			&cids,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Operation row")
 		}
 		o.OVN = scdmodels.NewOVNFromTime(updatedAt, o.ID.String())
+		o.SetCells(cids)
 		payload = append(payload, o)
 	}
 	if err := rows.Err(); err != nil {
@@ -120,10 +124,10 @@ func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id ds
 func (s *repo) populateOperationalIntentCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.OperationalIntent) error {
 	const query = `
 	SELECT
-		cell_id
+		unnest(cells) as cell_id
 	FROM
-		scd_cells_operations
-	WHERE operation_id = $1`
+		scd_operations
+	WHERE id = $1`
 
 	rows, err := q.QueryContext(ctx, query, o.ID)
 	if err != nil {
@@ -186,22 +190,9 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 				scd_operations
 				(%s)
 			VALUES
-				($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp(), $10)
+				($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp(), $10, $11)
 			RETURNING
 				%s`, operationFieldsWithoutPrefix, operationFieldsWithPrefix)
-		upsertCellsForOperationQuery = `
-			UPSERT INTO
-				scd_cells_operations
-				(cell_id, cell_level, operation_id)
-			VALUES
-				($1, $2, $3)`
-		deleteLeftOverCellsForOperationQuery = `
-			DELETE FROM
-				scd_cells_operations
-			WHERE
-				cell_id != ALL($1)
-			AND
-				operation_id = $2`
 	)
 
 	cids := make([]int64, len(operation.Cells))
@@ -224,21 +215,12 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		operation.EndTime,
 		operation.SubscriptionID,
 		operation.State,
+		pq.Int64Array(cids),
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Operation")
 	}
 	operation.Cells = cells
-
-	for i := range cids {
-		if _, err := s.q.ExecContext(ctx, upsertCellsForOperationQuery, cids[i], clevels[i], operation.ID); err != nil {
-			return nil, stacktrace.Propagate(err, "Error in query: %s", upsertCellsForOperationQuery)
-		}
-	}
-
-	if _, err := s.q.ExecContext(ctx, deleteLeftOverCellsForOperationQuery, pq.Array(cids), operation.ID); err != nil {
-		return nil, stacktrace.Propagate(err, "Error in query: %s", deleteLeftOverCellsForOperationQuery)
-	}
 
 	return operation, nil
 }
@@ -250,19 +232,9 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 				%s
 			FROM
 				scd_operations
-			JOIN
-				(SELECT DISTINCT
-					scd_cells_operations.operation_id
-				FROM
-					scd_cells_operations
-				WHERE
-					scd_cells_operations.cell_id = ANY($1)
-				)
-			AS
-				unique_operations
-			ON
-				scd_operations.id = unique_operations.operation_id
 			WHERE
+				cells && $1
+			AND
 				COALESCE(scd_operations.altitude_upper >= $2, true)
 			AND
 				COALESCE(scd_operations.altitude_lower <= $3, true)
