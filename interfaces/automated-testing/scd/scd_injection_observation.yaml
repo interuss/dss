@@ -666,7 +666,7 @@ components:
           $ref: '#/components/schemas/Volume4D'
                   
       
-    SCDResults: 
+    SCDProcessingResults: 
       description: Results for the operational intents submitted to the create test endpoint
       type: array
       items:
@@ -779,7 +779,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SCDResults'
+                $ref: '#/components/schemas/SCDProcessingResults'
           description: Details about the requested test were retrieved successfully.
         '404':
           description: Requested volume and the associated results were not found.          
