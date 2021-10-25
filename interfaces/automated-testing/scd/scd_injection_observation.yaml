@@ -609,7 +609,7 @@ components:
           - $ref: '#/components/schemas/ImplicitSubscriptionParameters'
 
     OperationalIntentList:
-      description: A list of operational intents 
+      description: A list of operational intents
       type: array
       items: 
         $ref: '#/components/schemas/OperationalIntent'
@@ -643,10 +643,13 @@ components:
       description: Collection of fully-defined operational intents
       type: object
       properties:
+        test_id: 
+          description: ID provided when a test payload is submitted to the system under test
+          type: string
+          format: uuid 
         operational_intents:
-          type: array
-          items:
-            $ref: '#/components/schemas/OperationalIntent'
+          description: A list of operational intents provided for the test
+          $ref: '#/components/schemas/OperationalIntentList'
 
     FlightNotAuthorizedResult:    
       type: string        
@@ -720,6 +723,7 @@ paths:
             - scd.inject_test_data
       tags:
         - Strategic Deconfliction
+
   /scd_tests/{test_id}/{version}:
     parameters:
       -
