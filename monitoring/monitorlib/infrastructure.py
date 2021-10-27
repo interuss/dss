@@ -123,7 +123,7 @@ class AsyncUTMTestSession(ClientSession):
     self.auth_adapter = auth_adapter
     self.default_scopes = None
 
-  def adjust_request_kwargs(self, url, kwargs):
+  def adjust_request_kwargs(self, url, method, kwargs):
     if self.auth_adapter:
       scopes = None
       if 'scopes' in kwargs:
@@ -140,14 +140,15 @@ class AsyncUTMTestSession(ClientSession):
       for k, v in self.auth_adapter.get_headers(url, scopes).items():
         headers[k] = v
       kwargs['headers'] = headers
-      kwargs['json'] = kwargs['data']
-      del kwargs['data']
+      if method == 'PUT' and kwargs.get('data'):
+        kwargs['json'] = kwargs['data']
+        del kwargs['data']
     return kwargs
   
   async def _request(self, method, url, **kwargs):
     url = self._prefix_url + url
     if 'auth' not in kwargs:
-      kwargs = self.adjust_request_kwargs(url, kwargs)
+      kwargs = self.adjust_request_kwargs(url, method, kwargs)
     return await super()._request(method, url, **kwargs)
 
 

@@ -11,10 +11,8 @@
   - confirm deletion by get and query
 """
 
-import datetime
-import functools
-from concurrent.futures.thread import ThreadPoolExecutor
 import asyncio
+import datetime
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
@@ -23,22 +21,20 @@ from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
 
 
+# TODO: verify if following issues are fixed with this PR.
 # This test is implemented to fire requests concurrently, given there are several concurrent related issues:
 # - https://github.com/interuss/dss/issues/417
 # - https://github.com/interuss/dss/issues/418
 # - https://github.com/interuss/dss/issues/419
 # - https://github.com/interuss/dss/issues/420
 # - https://github.com/interuss/dss/issues/421
-# We intended to keep the thread count to be 1 to enforce sequential execution till the above issues are resolved.
-# By then, just update the 'THREAD_COUNT' to a reasonable thread pool size and everything should still work without
-# need to touch anything else.
-THREAD_COUNT = 1
+
 BASE_URL = 'https://example.com/uss'
-# TODO: (Pratibha) Existing concurrency tests are not working in parallel as expected.
-# It will be fixed in the upcoming PR for this file. By then, number of operational 
-# intent resources have been decreased to 2 to make the test cases pass.
-OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(2)]
+OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(100)]
 GROUP_SIZE = len(OP_TYPES) // 3
+# Semaphore is added to limit the number of simultaneous requests,
+# default is 100.
+SEMAPHORE = asyncio.Semaphore(10)
 
 ovn_map = {}
 
@@ -113,54 +109,54 @@ def _intersection(list1, list2):
   return list(set(list1) & set(list2))
 
 
-def _put_operation(req, op_id, scd_session, scd_api, create_new: bool):
-  if scd_api == scd.API_0_3_5:
-    return scd_session.put('/operation_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
-  elif scd_api == scd.API_0_3_17:
-    if create_new:
-      return scd_session.put('/operational_intent_references/{}'.format(op_id), json=req, scope=SCOPE_SC)
-    else:
-      return scd_session.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), json=req, scope=SCOPE_SC)
-  else:
-    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
-
-
 async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_new: bool):
-  if scd_api == scd.API_0_3_5:
-    async with scd_session_async.put('/operation_references/{}'.format(op_id), data=req) as response:
-        return response.status, await response.json()
-  elif scd_api == scd.API_0_3_17:
-    if create_new:
-      async with scd_session_async.put('/operational_intent_references/{}'.format(op_id), data=req) as response:
-        return response.status, await response.json()
+  async with SEMAPHORE:
+    if scd_api == scd.API_0_3_5:
+      req_url = '/operation_references/{}'.format(op_id)
+      async with scd_session_async.put(req_url, data=req) as response:
+          result = response.status, await response.json()
+    elif scd_api == scd.API_0_3_17:
+      if create_new:
+        req_url = '/operational_intent_references/{}'.format(op_id)
+        async with scd_session_async.put(req_url, data=req) as response:
+          result = response.status, await response.json()
+      else:
+        req_url = '/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id])
+        async with scd_session_async.put(req_url, data=req) as response:
+          result = response.status, await response.json()
     else:
-      async with scd_session_async.put('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), data=req) as response:
-        return response.status, await response.json()
-  else:
-    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
+      raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
+  return result
 
 
-def _get_operation(op_id, scd_session, scd_api):
-  if scd_api == scd.API_0_3_5:
-    return scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-  elif scd_api == scd.API_0_3_17:
-    return scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
-  else:
-    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
+async def _get_operation_async(op_id, scd_session_async, scd_api):
+  async with SEMAPHORE:
+    if scd_api == scd.API_0_3_5:
+      async with scd_session_async.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC) as response:
+        result = response.status, await response.json()
+    elif scd_api == scd.API_0_3_17:
+      async with scd_session_async.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC) as response:
+        result = response.status, await response.json()
+    else:
+      raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
+  return result
 
 
-def _query_operation(idx, scd_session, scd_api):
+async def _query_operation_async(idx, scd_session_async, scd_api):
   lat = _calculate_lat(idx)
-  if scd_api == scd.API_0_3_5:
-    return scd_session.post('/operation_references/query', json={
-      'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
-    }, scope=SCOPE_SC)
-  elif scd_api == scd.API_0_3_17:
-    return scd_session.post('/operational_intent_references/query', json={
-      'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
-    }, scope=SCOPE_SC)
-  else:
-    raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
+  req_json = {
+    'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
+  }
+  async with SEMAPHORE:
+    if scd_api == scd.API_0_3_5:
+      async with scd_session_async.post('/operation_references/query', json=req_json, scope=SCOPE_SC) as response:
+        result = response.status, await response.json()
+    elif scd_api == scd.API_0_3_17:
+      async with scd_session_async.post('/operational_intent_references/query', json=req_json, scope=SCOPE_SC) as response:
+        result = response.status, await response.json()
+    else:
+      raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
+  return result
 
 
 def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
@@ -192,16 +188,16 @@ def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
   return req
 
 
-def _delete_operation(op_id, scd_session, scd_api):
+async def _delete_operation_async(op_id, scd_session_async, scd_api):
   if scd_api == scd.API_0_3_5:
-    return scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
+    async with scd_session_async.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC) as response:
+      result = response.status, await response.json()
   elif scd_api == scd.API_0_3_17:
-    return scd_session.delete('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), scope=SCOPE_SC)
+    async with scd_session_async.delete('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), scope=SCOPE_SC) as response:
+      result = response.status, await response.json()
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
-
-def _collect_resp_callback(key, op_resp_map, future):
-  op_resp_map[key] = future.result()
+  return result
 
 
 @for_api_versions(scd.API_0_3_5)
@@ -245,14 +241,16 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
   for idx, op_id in enumerate(map(ids, OP_TYPES)):
     req = _make_op_request(idx)
     op_req_map[op_id] = req
+
+  # Get operations concurrently
   loop = asyncio.get_event_loop()
   results = loop.run_until_complete(
     asyncio.gather(*[_put_operation_async(req, op_id, scd_session_async, scd_api, True) for op_id, req in op_req_map.items()]))
-  for op_id, resp in zip(list(op_req_map), results):
+  for req_map, resp in zip(op_req_map.items(), results):
+    op_id = req_map[0]
     op_resp_map[op_id] = {}
     op_resp_map[op_id]['status_code'] = resp[0]
     op_resp_map[op_id]['content'] = resp[1]
-  loop.run_until_complete(scd_session_async.close())
   for op_id, resp in op_resp_map.items():
     assert resp['status_code'] == 200, resp['content']
     req = op_req_map[op_id]
@@ -276,19 +274,22 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
 # Mutations: None
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @depends_on(test_create_ops_concurrent)
-def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
+def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session_async):
   op_resp_map = {}
+  # Get operations concurrently
+  loop = asyncio.get_event_loop()
+  results = loop.run_until_complete(
+    asyncio.gather(*[_get_operation_async(op_id, scd_session_async, scd_api) for op_id in map(ids, OP_TYPES)]))
 
-  # Get opetions concurrently
-  with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for op_id in map(ids, OP_TYPES):
-      future = executor.submit(_get_operation, op_id, scd_session, scd_api)
-      future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+  for op_id, resp in zip(map(ids, OP_TYPES), results):
+    op_resp_map[op_id] = {}
+    op_resp_map[op_id]['status_code'] = resp[0]
+    op_resp_map[op_id]['content'] = resp[1]
 
   for op_id, resp in op_resp_map.items():
-    assert resp.status_code == 200, resp.content
+    assert resp['status_code'] == 200, resp['content']
 
-    data = resp.json()
+    data = resp['content']
     if scd_api == scd.API_0_3_5:
       op = data['operation_reference']
     else:
@@ -303,22 +304,26 @@ def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_ops_concurrent)
-def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
+def test_get_ops_by_search_concurrent(ids, scd_api, scd_session_async):
   op_resp_map = {}
   total_found_ids = set()
 
-  # Query opetions concurrently
-  with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for idx in range(len(OP_TYPES)):
-      future = executor.submit(_query_operation, idx, scd_session, scd_api)
-      future.add_done_callback(functools.partial(_collect_resp_callback, idx, op_resp_map))
+  # Query operations concurrently
+  loop = asyncio.get_event_loop()
+  results = loop.run_until_complete(
+    asyncio.gather(*[_query_operation_async(idx, scd_session_async, scd_api) for idx in range(len(OP_TYPES))]))
+  
+  for idx, resp in zip(range(len(OP_TYPES)), results):
+    op_resp_map[idx] = {}
+    op_resp_map[idx]['status_code'] = resp[0]
+    op_resp_map[idx]['content'] = resp[1]
 
   for idx, resp in op_resp_map.items():
-    assert resp.status_code == 200, resp.content
+    assert resp['status_code'] == 200, resp['content']
     if scd_api == scd.API_0_3_5:
-      found_ids = [op['id'] for op in resp.json().get('operation_references', [])]
+      found_ids = [op['id'] for op in resp['content'].get('operation_references', [])]
     else:
-      found_ids = [op['id'] for op in resp.json().get('operational_intent_references', [])]
+      found_ids = [op['id'] for op in resp['content'].get('operational_intent_references', [])]
     total_found_ids.update(found_ids)
 
   assert len(_intersection(map(ids, OP_TYPES), total_found_ids)) == len(OP_TYPES)
@@ -329,7 +334,7 @@ def test_get_ops_by_search_concurrent(ids, scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_ops_concurrent)
-def test_mutate_ops_concurrent(ids, scd_api, scd_session):
+def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
   op_req_map = {}
   op_resp_map = {}
   op_map = {}
@@ -340,20 +345,22 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session):
   assert len(op_req_map) == len(OP_TYPES)
 
   # Mutate operations in parallel
-  with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for op_id in map(ids, OP_TYPES):
-      req = op_req_map[op_id]
-      future = executor.submit(_put_operation, req, op_id, scd_session, scd_api, False)
-      future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+  loop = asyncio.get_event_loop()
+  results = loop.run_until_complete(
+    asyncio.gather(*[_put_operation_async(req, op_id, scd_session_async, scd_api, False) for op_id, req in op_req_map.items()]))
+  for req_map, resp in zip(op_req_map.items(), results):
+    op_id = req_map[0]
+    op_resp_map[op_id] = {}
+    op_resp_map[op_id]['status_code'] = resp[0]
+    op_resp_map[op_id]['content'] = resp[1]
 
   ovn_map.clear()
 
   for op_id, resp in op_resp_map.items():
     existing_op = op_map[op_id]
     assert existing_op
-
-    assert resp.status_code == 200, resp.content
-    data = resp.json()
+    assert resp['status_code'] == 200, resp['content']
+    data = resp['content']
     if scd_api == scd.API_0_3_5:
       op = data['operation_reference']
     else:
@@ -372,16 +379,19 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session):
 # Mutations: Operations with ids in OP_IDS deleted
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @depends_on(test_mutate_ops_concurrent)
-def test_delete_op_concurrent(ids, scd_api, scd_session):
+def test_delete_op_concurrent(ids, scd_api, scd_session_async):
   op_resp_map = {}
 
   # Delete operations concurrently
-  with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for op_id in map(ids, OP_TYPES):
-      future = executor.submit(_delete_operation, op_id, scd_session, scd_api)
-      future.add_done_callback(functools.partial(_collect_resp_callback, op_id, op_resp_map))
+  loop = asyncio.get_event_loop()
+  results = loop.run_until_complete(
+    asyncio.gather(*[_delete_operation_async(op_id, scd_session_async, scd_api) for op_id in map(ids, OP_TYPES)]))
+  for op_id, resp in zip(map(ids, OP_TYPES), results):
+    op_resp_map[op_id] = {}
+    op_resp_map[op_id]['status_code'] = resp[0]
+    op_resp_map[op_id]['content'] = resp[1]
 
   assert len(op_resp_map) == len(OP_TYPES)
 
   for resp in op_resp_map.values():
-    assert resp.status_code == 200, resp.content
+    assert resp['status_code'] == 200, resp['content']
