@@ -2,7 +2,7 @@
   "extents": [
     {
       "volume": {
-        "outlinePolygon": {
+        "outline_polygon": {
           "vertices": [
             {
               "lng": 9.980582850817164,
@@ -26,31 +26,31 @@
             }
           ]
         },
-        "altitudeLower": {
+        "altitude_lower": {
           "value": -12.191999609856008,
           "reference": "W84",
           "units": "M"
         },
-        "altitudeUpper": {
+        "altitude_upper": {
           "value": 18.287999414784014,
           "reference": "W84",
           "units": "M"
         }
       },
-      "timeStart": {
+      "time_start": {
         "value": "2020-06-30T15:58:00.00Z",
         "format": "RFC3339"
       },
-      "timeEnd": {
+      "time_end": {
         "value": "2030-06-30T16:02:00.00Z",
         "format": "RFC3339"
       }
     }
   ],
-  "oldVersion": 0,
+  "old_version": 0,
   "key": [],
   "state": "Accepted",
-  "ussBaseUrl": "https://localhost:8080",
+  "uss_base_url": "https://localhost:8080",
   "subscription_id": "a0a9e3ec-5110-4bcf-b34d-1e9dfce7d2a8",
   "new_subscription": {
     "uss_base_url": "https://localhost:8080",

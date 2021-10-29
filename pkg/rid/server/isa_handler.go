@@ -9,9 +9,11 @@ import (
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
+	geoerr "github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/stacktrace"
+	"github.com/pkg/errors"
 )
 
 // GetIdentificationServiceArea returns a single ISA for a given ID.
@@ -68,6 +70,13 @@ func (s *Server) CreateIdentificationServiceArea(
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+	}
+
+	if !s.EnableHTTP {
+		err = ridmodels.ValidateURL(params.GetFlightsUrl())
+		if err != nil {
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Flight URL")
+		}
 	}
 
 	isa := &ridmodels.IdentificationServiceArea{
@@ -214,7 +223,10 @@ func (s *Server) SearchIdentificationServiceAreas(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Invalid area")
+		if errors.Is(err, geoerr.ErrAreaTooLarge) {
+			return nil, stacktrace.Propagate(err, "Invalid area")
+		}
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
 	var (

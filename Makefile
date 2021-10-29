@@ -41,7 +41,7 @@ format:
 lint:
 	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
 	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all  -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
-	find . -name '*.sh' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
+	find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
 
 pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
@@ -128,7 +128,7 @@ test:
 
 .PHONY: test-cockroach
 test-cockroach: cleanup-test-cockroach
-	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v20.1.1 start --insecure > /dev/null
+	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v20.2.0 start-single-node --insecure > /dev/null
 	go run ./cmds/db-manager/main.go --schemas_dir ./build/deploy/db_schemas/defaultdb --db_version latest --cockroach_host localhost
 	go test -count=1 -v ./pkg/rid/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
 	go test -count=1 -v ./pkg/scd/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
@@ -151,8 +151,7 @@ release:
 	scripts/release.sh $(VERSION)
 
 start-locally:
-	build/dev/run_locally.sh build
-	build/dev/run_locally.sh up
+	build/dev/run_locally.sh
 
 stop-locally:
 	build/dev/run_locally.sh stop

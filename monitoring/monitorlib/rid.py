@@ -1,6 +1,8 @@
+import datetime
 from typing import Dict, List, Optional
-
 import s2sphere
+
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 
 
 MAX_SUB_PER_AREA = 10
@@ -11,6 +13,9 @@ DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 SCOPE_READ = 'dss.read.identification_service_areas'
 SCOPE_WRITE = 'dss.write.identification_service_areas'
+NetMaxNearRealTimeDataPeriod = datetime.timedelta(seconds=60)
+NetMaxDisplayAreaDiagonal = 3.6  # km
+NetDetailsMaxDisplayAreaDiagonal = 1.0  # km
 
 # This scope is used only for experimentation during UPP2
 UPP2_SCOPE_ENHANCED_DETAILS = 'rid.read.enhanced_details'
@@ -76,3 +81,98 @@ class Subscription(dict):
   @property
   def version(self) -> Optional[str]:
     return self.get('version', None)
+
+
+# === Mirrors of types defined in ASTM remote ID standard ===
+
+class ErrorResponse(ImplicitDict):
+  message: Optional[str]
+
+
+class LatLngPoint(ImplicitDict):
+  lat: float
+  lng: float
+
+
+class RIDAuthData(ImplicitDict):
+  format: str
+  data: str
+
+
+class RIDFlightDetails(ImplicitDict):
+  id: str
+  operator_id: Optional[str]
+  operator_location: Optional[LatLngPoint]
+  operation_description: Optional[str]
+  auth_data: Optional[RIDAuthData]
+  serial_number: Optional[str]
+  registration_number: Optional[str]
+
+
+class RIDAircraftPosition(ImplicitDict):
+  lat: float
+  lng: float
+  alt: float
+  accuracy_h: str
+  accuracy_v: str
+  extrapolated: Optional[bool]
+  pressure_altitude: Optional[float]
+
+
+class RIDHeight(ImplicitDict):
+  distance: float
+  reference: str
+
+
+class RIDAircraftState(ImplicitDict):
+  timestamp: StringBasedDateTime
+  timestamp_accuracy: float
+  operational_status: Optional[str]
+  position: RIDAircraftPosition
+  track: float
+  speed: float
+  speed_accuracy: str
+  vertical_speed: float
+  height: Optional[RIDHeight]
+
+
+class RIDRecentAircraftPosition(ImplicitDict):
+  time: StringBasedDateTime
+  position: RIDAircraftPosition
+
+
+class RIDFlight(ImplicitDict):
+  id: str
+  aircraft_type: str
+  current_state: Optional[RIDAircraftState]
+  # volumes: Optional[List[Volume4D]]
+  simulated: Optional[bool]
+  recent_positions: Optional[List[RIDRecentAircraftPosition]]
+
+
+class GetFlightDetailsResponse(ImplicitDict):
+  details: RIDFlightDetails
+
+
+class GetFlightsResponse(ImplicitDict):
+  timestamp: StringBasedDateTime
+  flights: List[RIDFlight]
+
+
+class IdentificationServiceArea(ImplicitDict):
+  flights_url: str
+  owner: str
+  time_start: StringBasedDateTime
+  time_end: StringBasedDateTime
+  version: str
+  id: str
+
+
+class SubscriptionState(ImplicitDict):
+  subscription_id: str
+  notification_index: int = 0
+
+
+class SubscriberToNotify(ImplicitDict):
+  subscriptions: List[SubscriptionState] = []
+  url: str

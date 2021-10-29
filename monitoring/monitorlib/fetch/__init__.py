@@ -2,6 +2,7 @@ import datetime
 import json
 from typing import Dict, Optional
 
+import arrow
 import flask
 import requests
 import yaml
@@ -24,6 +25,17 @@ class RequestDescription(dict):
   @property
   def token(self) -> Dict:
     return infrastructure.get_token_claims(self.get('headers', {}))
+
+  @property
+  def timestamp(self) -> datetime.datetime:
+    if 'initiated_at' in self:
+      # This was an outgoing request
+      return arrow.get(self['initiated_at']).datetime
+    elif 'received_at' in self:
+      # This was an incoming request
+      return arrow.get(self['received_at']).datetime
+    else:
+      raise KeyError('RequestDescription missing both initiated_at and received_at')
 yaml.add_representer(RequestDescription, Representer.represent_dict)
 
 
@@ -66,6 +78,10 @@ class ResponseDescription(dict):
   @property
   def status_code(self) -> int:
     return self['code'] if self.get('code') is not None else 999
+
+  @property
+  def reported(self) -> datetime.datetime:
+    return arrow.get(self['reported']).datetime
 yaml.add_representer(ResponseDescription, Representer.represent_dict)
 
 
@@ -85,6 +101,10 @@ def describe_response(resp: requests.Response) -> ResponseDescription:
 
 
 class Query(dict):
+  @property
+  def request(self) -> RequestDescription:
+    return coerce(self['request'], RequestDescription)
+
   @property
   def response(self) -> ResponseDescription:
     return coerce(self['response'], ResponseDescription)

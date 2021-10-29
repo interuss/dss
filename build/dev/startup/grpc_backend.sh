@@ -7,7 +7,7 @@
 
 DEBUG_ON=${1:-0}
 
-if [[ $DEBUG_ON == 1 ]]; then
+if [ "$DEBUG_ON" = "1" ]; then
   echo "Debug Mode: on"
 
   dlv --headless --listen=:4000 --api-version=2 --accept-multiclient exec --continue /usr/bin/grpc-backend -- \
@@ -16,8 +16,9 @@ if [[ $DEBUG_ON == 1 ]]; then
   -reflect_api \
   -log_format console \
   -dump_requests \
-  -accepted_jwt_audiences localhost \
-  -enable_scd
+  -accepted_jwt_audiences localhost,host.docker.internal,local-gateway,dss_sandbox_local-dss-http-gateway_1 \
+  -enable_scd \
+  -enable_http
 else
   echo "Debug Mode: off"
 
@@ -27,6 +28,8 @@ else
   -reflect_api \
   -log_format console \
   -dump_requests \
-  -accepted_jwt_audiences localhost \
-  -enable_scd
+  -accepted_jwt_audiences localhost,host.docker.internal,local-gateway,dss_sandbox_local-dss-http-gateway_1 \
+  -enable_scd \
+  -enable_http
 fi
+

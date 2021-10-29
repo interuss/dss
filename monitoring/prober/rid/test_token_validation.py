@@ -15,16 +15,18 @@ import pytest
 from monitoring.monitorlib.auth import DummyOAuth
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
+from monitoring.prober.infrastructure import register_resource_type
 from . import common
 
-ISA_ID = '000000cc-e2e1-49e6-9102-b2a544000000'
+
+ISA_TYPE = register_resource_type(340, 'ISA')
 
 
-def test_ensure_clean_workspace(session):
-  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
+def test_ensure_clean_workspace(ids, session):
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope=SCOPE_READ)
   if resp.status_code == 200:
     version = resp.json()["service_area"]['version']
-    resp = session.delete('/identification_service_areas/{}/{}'.format(ISA_ID, version), scope=SCOPE_WRITE)
+    resp = session.delete('/identification_service_areas/{}/{}'.format(ids(ISA_TYPE), version), scope=SCOPE_WRITE)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected.
@@ -33,12 +35,12 @@ def test_ensure_clean_workspace(session):
     assert False, resp.content
 
 
-def test_put_isa_with_read_only_scope_token(session):
+def test_put_isa_with_read_only_scope_token(ids, session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/identification_service_areas/{}'.format(ISA_ID),
+      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -56,12 +58,12 @@ def test_put_isa_with_read_only_scope_token(session):
   assert resp.status_code == 403, resp.content
 
 
-def test_create_isa(session):
+def test_create_isa(ids, session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
   resp = session.put(
-      '/identification_service_areas/{}'.format(ISA_ID),
+      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -79,21 +81,32 @@ def test_create_isa(session):
   assert resp.status_code == 200, resp.content
 
 
-def test_get_isa_without_token(no_auth_session):
-  resp = no_auth_session.get('/identification_service_areas/{}'.format(ISA_ID))
+def test_get_isa_without_token(ids, no_auth_session):
+  resp = no_auth_session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)))
   assert resp.status_code == 401, resp.content
   assert resp.json()['message'] == 'Missing access token'
 
 
-def test_get_isa_with_fake_token(no_auth_session):
+def test_get_isa_with_fake_token(ids, no_auth_session):
   no_auth_session.headers['Authorization'] = 'Bearer fake_token'
-  resp = no_auth_session.get('/identification_service_areas/{}'.format(ISA_ID))
+  resp = no_auth_session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)))
   assert resp.status_code == 401, resp.content
   assert resp.json()['message'] == 'token contains an invalid number of segments'
 
 
-def test_get_isa_without_scope(session):
+def test_get_isa_without_scope(ids, session):
   if not isinstance(session.auth_adapter, DummyOAuth):
     pytest.skip('General auth providers will not usually grant tokens without any scopes')
-  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope='')
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope='')
   assert resp.status_code == 403, resp.content
+
+
+def test_delete(ids, session):
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope=SCOPE_READ)
+  if resp.status_code == 200:
+    version = resp.json()["service_area"]['version']
+    resp = session.delete('/identification_service_areas/{}/{}'.format(ids(ISA_TYPE), version), scope=SCOPE_WRITE)
+    assert resp.status_code == 200, resp.content
+  elif resp.status_code == 404:
+    # As expected.
+    pass

@@ -2,6 +2,7 @@ import datetime
 import re
 from typing import List, Optional
 import urllib.parse
+import uuid
 
 import cryptography.exceptions
 import cryptography.hazmat.backends
@@ -11,11 +12,65 @@ import cryptography.x509
 import jwcrypto.common
 import jwcrypto.jwk
 import jwcrypto.jws
+import jwcrypto.jwt
 import requests
 from google.auth.transport import requests as google_requests
 from google.oauth2 import service_account
-
 from monitoring.monitorlib.infrastructure import AuthAdapter
+
+
+_UNIX_EPOCH = datetime.datetime.utcfromtimestamp(0)
+
+
+class NoAuth(AuthAdapter):
+  """Auth adapter that generates tokens without an auth server.
+
+  While no server is used, the access tokens generated are fully valid and their
+  signatures will validate against test-certs/auth2.pem.
+  """
+
+  # This is the private key from test-certs/auth2.key.
+  dummy_private_key = jwcrypto.jwk.JWK.from_pem(
+    '-----BEGIN RSA PRIVATE KEY-----\n'
+    'MIICWwIBAAKBgHkNtpy3GB0YTCl2VCCd22i0rJwIGBSazD4QRKvH6rch0IP4igb+\n'
+    '02r7t0X//tuj0VbwtJz3cEICP8OGSqrdTSCGj5Y03Oa2gPkx/0c0V8D0eSXS/CUC\n'
+    '0qrYHnAGLqko7eW87HW0rh7nnl2bB4Lu+R8fOmQt5frCJ5eTkzwK5YczAgMBAAEC\n'
+    'gYAtSgMjGKEt6XQ9IucQmN6Iiuf1LFYOB2gYZC+88PuQblc7uJWzTk08vlXwG3l3\n'
+    'JQ/h7gY0n6JhH8RJW4m96TO8TrlHLx5aVcW8E//CtgayMn3vBgXida3wvIlAXT8G\n'
+    'WezsNsWorXLVmz5yov0glu+TIk31iWB5DMs4xXhXdH/t8QJBALQzvF+y5bZEhZin\n'
+    'qTXkiKqMsKsJbXjP1Sp/3t52VnYVfbxN3CCb7yDU9kg5QwNa3ungE3cXXNMUr067\n'
+    '9zIraekCQQCr+NSeWAXIEutWewPIykYMQilVtiJH4oFfoEpxvecVv7ulw6kM+Jsb\n'
+    'o6Pi7x86tMVkwOCzZzy/Uyo/gSHnEZq7AkEAm0hBuU2VuTzOyr8fhvtJ8X2O97QG\n'
+    'C6c8j4Tk7lqXIuZeFRga6la091vMZmxBnPB/SpX28BbHvHUEpBpBZ5AVkQJAX7Lq\n'
+    '7urg3MPafpeaNYSKkovG4NGoJgSgJgzXIJCjJfE6hTZqvrMh7bGUo9aZtFugdT74\n'
+    'TB2pKncnTYuYyDN9vQJACDVr+wvYYA2VdnA9k+/1IyGc1HHd2npQqY9EduCeOGO8\n'
+    'rXQedG6rirVOF6ypkefIayc3usipVvfadpqcS5ERhw==\n'
+    '-----END RSA PRIVATE KEY-----'.encode('UTF-8'))
+
+  EXPIRATION = 3600 # seconds
+
+  def __init__(self, sub: str = 'uss_noauth'):
+    super().__init__()
+    self.sub = sub
+
+  # Overrides method in AuthAdapter
+  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
+    timestamp = int((datetime.datetime.utcnow() - _UNIX_EPOCH).total_seconds())
+    jwt = jwcrypto.jwt.JWT(
+      header={'typ': 'JWT', 'alg': 'RS256'},
+      claims={
+        'sub': self.sub,
+        'client_id': self.sub,
+        'scope': ' '.join(scopes),
+        'aud': intended_audience,
+        'nbf': timestamp - 1,
+        'exp': timestamp + NoAuth.EXPIRATION,
+        'iss': 'NoAuth',
+        'jti': str(uuid.uuid4()),
+      },
+      algs=['RS256'])
+    jwt.make_signed_token(NoAuth.dummy_private_key)
+    return jwt.serialize()
 
 
 class DummyOAuth(AuthAdapter):
@@ -35,7 +90,7 @@ class DummyOAuth(AuthAdapter):
       urllib.parse.quote(intended_audience), self._sub)
     response = self._oauth_session.post(url)
     if response.status_code != 200:
-      raise AccessTokenError('Request to get access token returned {} {}'.format(response.status_code, response.content.decode('utf-8')))
+      raise AccessTokenError('Request to get DummyOAuth access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
@@ -59,7 +114,7 @@ class ServiceAccount(AuthAdapter):
       urllib.parse.quote(intended_audience))
     response = self._oauth_session.post(url)
     if response.status_code != 200:
-      raise AccessTokenError('Request to get access token returned {} {}'.format(response.status_code, response.content.decode('utf-8')))
+      raise AccessTokenError('Request to get ServiceAccount access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
@@ -85,7 +140,7 @@ class UsernamePassword(AuthAdapter):
       'scope': ' '.join(scopes),
     })
     if response.status_code != 200:
-      raise AccessTokenError('Request to get access token returned {} {}'.format(response.status_code, response.content.decode('utf-8')))
+      raise AccessTokenError('Request to get UsernamePassword access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
@@ -193,38 +248,59 @@ class SignedRequest(AuthAdapter):
     }
     response = requests.post(self._token_endpoint, data=payload, headers=request_headers)
     if response.status_code != 200:
-      raise AccessTokenError('Unable to retrieve access token:\n' + response.content.decode('utf-8'))
+      raise AccessTokenError('Request to get SignedRequest access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
     return response.json()['access_token']
 
 
 class ClientIdClientSecret(AuthAdapter):
-  """Auth adapter that gets JWTs using a client ID and client secret."""
+  """Auth adapter that gets JWTs using a client ID and client secret. By default, this will send the request as JSON, you can use send_request_as_data flag to send the request as form data. """
 
-  def __init__(self, token_endpoint: str, client_id: str, client_secret: str):
+  def __init__(self, token_endpoint: str, client_id: str, client_secret: str, send_request_as_data :bool=False):
     super().__init__()
 
     self._oauth_token_endpoint = token_endpoint
     self._client_id = client_id
     self._client_secret = client_secret
-
+    self._send_request_as_data = send_request_as_data
+    
   # Overrides method in AuthAdapter
   def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
-    response = requests.post(self._oauth_token_endpoint, json={
+    payload = {
       'grant_type': 'client_credentials',
       'client_id': self._client_id,
       'client_secret': self._client_secret,
       'audience': intended_audience,
       'scope': ' '.join(scopes),
-    })
+    }
+
+    if self._send_request_as_data: 
+      response = requests.post(self._oauth_token_endpoint, data=payload)
+    else:
+      response = requests.post(self._oauth_token_endpoint, json=payload)
     if response.status_code != 200:
       raise AccessTokenError('Unable to retrieve access token:\n' + response.content.decode('utf-8'))
     return response.json()['access_token']
 
 
+class FlightPassport(ClientIdClientSecret):
+  """ Auth adpater for Flight Passport OAUTH server (https://www.github.com/openskies-sh/flight_passport) """
+
+  def __init__(self, token_endpoint: str, client_id: str, client_secret: str, send_request_as_data:str = 'true'):
+    
+    send_request_as_data = (send_request_as_data.lower() == 'true')
+      
+    super(FlightPassport, self).__init__(token_endpoint, client_id, client_secret, send_request_as_data)
+  
+    self._send_request_as_data = send_request_as_data
+
+
 class AccessTokenError(RuntimeError):
   def __init__(self, msg):
     super(AccessTokenError, self).__init__(msg)
-
+        
+def all_subclasses(cls):
+    # Reference: https://stackoverflow.com/questions/3862310/how-to-find-all-the-subclasses-of-a-class-given-its-name
+    return set(cls.__subclasses__()).union([s for c in cls.__subclasses__() for s in all_subclasses(c)])
 
 def make_auth_adapter(spec: str) -> AuthAdapter:
   """Make an AuthAdapter according to a string specification.
@@ -245,8 +321,8 @@ def make_auth_adapter(spec: str) -> AuthAdapter:
   if m is None:
     raise ValueError('Auth adapter specification did not match the pattern `AdapterName(param, param, ...)`')
 
-  adapter_name = m.group(1)
-  adapter_classes = {cls.__name__: cls for cls in AuthAdapter.__subclasses__()}
+  adapter_name = m.group(1)  
+  adapter_classes = {cls.__name__: cls for cls in all_subclasses(AuthAdapter)}
   if adapter_name not in adapter_classes:
     raise ValueError('Auth adapter `%s` does not exist' % adapter_name)
   Adapter = adapter_classes[adapter_name]

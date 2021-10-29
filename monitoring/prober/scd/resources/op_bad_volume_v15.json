@@ -1,0 +1,231 @@
+{
+  "extents": [
+    {
+      "volume": {
+        "outline_circle": {
+          "center": {
+            "lng": -117.1035655786647,
+            "lat": 32.59415886402617
+          },
+          "radius": {
+            "value": 300.183,
+            "units": "M"
+          }
+        },
+        "outline_polygon": {
+          "vertices": [
+            {
+              "lng": -117.1035655786647,
+              "lat": 32.59415886402617
+            },
+            {
+              "lng": -117.1038398819344,
+              "lat": 32.59415886402617
+            },
+            {
+              "lng": -117.1038398819344,
+              "lat": 32.64920727813973
+            },
+            {
+              "lng": -117.1035655786647,
+              "lat": 32.64920727813973
+            }
+          ]
+        },
+        "altitude_lower": {
+          "value": -7.827263749527558,
+          "reference": "W84",
+          "units": "M"
+        },
+        "altitude_upper": {
+          "value": 114.09273234903256,
+          "reference": "W84",
+          "units": "M"
+        }
+      },
+      "time_start": {
+        "value": "2020-06-09T16:58:00.00Z",
+        "format": "RFC3339"
+      },
+      "time_end": {
+        "value": "2020-06-10T17:02:00.00Z",
+        "format": "RFC3339"
+      }
+    },
+    {
+      "volume": {
+        "outline_polygon": {
+          "vertices": [
+            {
+              "lng": -117.07235209637365,
+              "lat": 32.629403155814224
+            },
+            {
+              "lng": -117.07227677467183,
+              "lat": 32.62913940035541
+            },
+            {
+              "lng": -117.15071909262814,
+              "lat": 32.61019036953776
+            },
+            {
+              "lng": -117.15079458449262,
+              "lat": 32.61045408389095
+            }
+          ]
+        },
+        "altitude_lower": {
+          "value": 98.85273283671255,
+          "reference": "W84",
+          "units": "M"
+        },
+        "altitude_upper": {
+          "value": 114.09273234903256,
+          "reference": "W84",
+          "units": "M"
+        }
+      },
+      "time_start": {
+        "value": "1969-12-31T15:58:00.00Z",
+        "format": "RFC3339"
+      },
+      "time_end": {
+        "value": "1969-12-31T16:02:00.00Z",
+        "format": "RFC3339"
+      }
+    },
+    {
+      "volume": {
+        "outline_polygon": {
+          "vertices": [
+            {
+              "lng": -117.09038826289287,
+              "lat": 32.63060966167485
+            },
+            {
+              "lng": -117.09026347832622,
+              "lat": 32.630365389882776
+            },
+            {
+              "lng": -117.15717622635013,
+              "lat": 32.60141106631151
+            },
+            {
+              "lng": -117.15730113575759,
+              "lat": 32.601655284082824
+            }
+          ]
+        },
+        "altitude_lower": {
+          "value": 98.85273283671255,
+          "reference": "W84",
+          "units": "M"
+        },
+        "altitude_upper": {
+          "value": 114.09273234903256,
+          "reference": "W84",
+          "units": "M"
+        }
+      },
+      "time_start": {
+        "value": "2020-06-09T16:58:00.00Z",
+        "format": "RFC3339"
+      },
+      "time_end": {
+        "value": "2020-06-09T17:02:00.00Z",
+        "format": "RFC3339"
+      }
+    },
+    {
+      "volume": {
+        "outline_polygon": {
+          "vertices": [
+            {
+              "lng": -117.1102585196023,
+              "lat": 32.63712150700819
+            },
+            {
+              "lng": -117.11003035210928,
+              "lat": 32.636969253183054
+            },
+            {
+              "lng": -117.15104910529122,
+              "lat": 32.58489223521358
+            },
+            {
+              "lng": -117.15127729146461,
+              "lat": 32.5850444653223
+            }
+          ]
+        },
+        "altitude_lower": {
+          "value": -7.827263749527558,
+          "reference": "W84",
+          "units": "M"
+        },
+        "altitude_upper": {
+          "value": 114.09273234903256,
+          "reference": "W84",
+          "units": "M"
+        }
+      },
+      "time_start": {
+        "value": "2020-06-11T16:58:00.00Z",
+        "format": "RFC3339"
+      },
+      "time_end": {
+        "value": "2020-06-12T17:02:00.00Z",
+        "format": "RFC3339"
+      }
+    },
+    {
+      "volume": {
+        "outline_polygon": {
+          "vertices": [
+            {
+              "lng": -117.13297510795468,
+              "lat": 32.58037888894311
+            },
+            {
+              "lng": -117.13324941122436,
+              "lat": 32.58037888894311
+            },
+            {
+              "lng": -117.13324941122436,
+              "lat": 32.635427303056666
+            },
+            {
+              "lng": -117.13297510795468,
+              "lat": 32.635427303056666
+            }
+          ]
+        },
+        "altitude_lower": {
+          "value": -20.01926335938357,
+          "reference": "W84",
+          "units": "M"
+        },
+        "altitude_upper": {
+          "value": 7.412735762792458,
+          "reference": "W84",
+          "units": "M"
+        }
+      },
+      "time_start": {
+        "value": "2020-06-12T16:58:00.00Z",
+        "format": "RFC3339"
+      },
+      "time_end": {
+        "value": "2030-06-13T17:02:00.00Z",
+        "format": "RFC3339"
+      }
+    }
+  ],
+  "key": [],
+  "state": "Accepted",
+  "uss_base_url": "https://localhost:8080",
+  "new_subscription": {
+    "uss_base_url": "https://localhost:8080",
+    "notify_for_constraints": true
+  }
+}

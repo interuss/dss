@@ -7,9 +7,11 @@ import (
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
+	geoerr "github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/stacktrace"
+	"github.com/pkg/errors"
 )
 
 // DeleteSubscription deletes an existing subscription.
@@ -58,7 +60,10 @@ func (s *Server) SearchSubscriptions(
 
 	cu, err := geo.AreaToCellIDs(req.GetArea())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Invalid area")
+		if errors.Is(err, geoerr.ErrAreaTooLarge) {
+			return nil, stacktrace.Propagate(err, "Invalid area")
+		}
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
@@ -133,6 +138,14 @@ func (s *Server) CreateSubscription(
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+	}
+
+	if !s.EnableHTTP {
+		err = ridmodels.ValidateURL(params.Callbacks.IdentificationServiceAreaUrl)
+		if err != nil {
+			return nil, stacktrace.PropagateWithCode(
+				err, dsserr.BadRequest, "Failed to validate IdentificationServiceAreaUrl")
+		}
 	}
 
 	sub := &ridmodels.Subscription{

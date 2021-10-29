@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.8
 # Not -alpine because: https://stackoverflow.com/a/58028091/651139
 # The context for this image should be monitoring
 RUN mkdir /monitoring

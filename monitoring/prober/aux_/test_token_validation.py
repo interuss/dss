@@ -14,10 +14,8 @@ def test_validate(aux_session):
 
 
 @default_scope(rid.SCOPE_READ)
-def test_validate_token_good_user(aux_session):
-  if not isinstance(aux_session.auth_adapter, DummyOAuth):
-    pytest.skip('User ID is not known for general auth providers')
-  resp = aux_session.get('/validate_oauth?owner=fake_uss')
+def test_validate_token_good_user(aux_session, subscriber):
+  resp = aux_session.get('/validate_oauth?owner={}'.format(subscriber))
   assert resp.status_code == 200
 
 

@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dpjacques/clockwork"
 	"github.com/interuss/dss/pkg/cockroach"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -14,6 +13,7 @@ import (
 	"github.com/interuss/dss/pkg/rid/store"
 	ridcrdb "github.com/interuss/dss/pkg/rid/store/cockroach"
 	dssql "github.com/interuss/dss/pkg/sql"
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
 	"go.uber.org/zap"

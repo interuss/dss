@@ -18,7 +18,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/models"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -52,6 +52,13 @@ func ContextWithOwner(ctx context.Context, owner models.Owner) context.Context {
 func OwnerFromContext(ctx context.Context) (models.Owner, bool) {
 	owner, ok := ctx.Value(ContextKeyOwner).(models.Owner)
 	return owner, ok
+}
+
+// ManagerFromContext returns the value for manager from "ctx" and a boolean
+// indicating whether a valid value was present or not.
+func ManagerFromContext(ctx context.Context) (models.Manager, bool) {
+	owner, ok := OwnerFromContext(ctx)
+	return models.Manager(owner), ok
 }
 
 // KeyResolver abstracts resolving keys.

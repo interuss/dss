@@ -6,16 +6,18 @@ import time
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
+from monitoring.prober.infrastructure import register_resource_type
 from . import common
 
-ISA_ID = '00000098-ba6d-4c20-a575-6e412e000000'
+
+ISA_TYPE = register_resource_type(222, 'ISA')
 
 
-def test_ensure_clean_workspace(session):
-  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
+def test_ensure_clean_workspace(ids, session):
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope=SCOPE_READ)
   if resp.status_code == 200:
     version = resp.json()['service_area']['version']
-    resp = session.delete('/identification_service_areas/{}/{}'.format(ISA_ID, version), scope=SCOPE_WRITE)
+    resp = session.delete('/identification_service_areas/{}/{}'.format(ids(ISA_TYPE), version), scope=SCOPE_WRITE)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected.
@@ -25,12 +27,12 @@ def test_ensure_clean_workspace(session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_create(session):
+def test_create(ids, session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(seconds=5)
 
   resp = session.put(
-      '/identification_service_areas/{}'.format(ISA_ID),
+      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -49,9 +51,9 @@ def test_create(session):
 
 
 @default_scope(SCOPE_READ)
-def test_valid_immediately(session):
+def test_valid_immediately(ids, session):
   # The ISA is still valid immediately after we create it.
-  resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)))
   assert resp.status_code == 200, resp.content
 
 
@@ -61,25 +63,25 @@ def test_sleep_5_seconds():
 
 
 @default_scope(SCOPE_READ)
-def test_returned_by_id(session):
+def test_returned_by_id(ids, session):
   # We can get it explicitly by ID
-  resp = session.get('/identification_service_areas/{}'.format(ISA_ID))
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)))
   assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_READ)
-def test_not_returned_by_search(session):
+def test_not_returned_by_search(ids, session):
   # ...but it's not included in a search.
   resp = session.get('/identification_service_areas?area={}'.format(
       common.GEO_POLYGON_STRING))
   assert resp.status_code == 200, resp.content
-  assert ISA_ID not in [x['id'] for x in resp.json()['service_areas']]
+  assert ids(ISA_TYPE) not in [x['id'] for x in resp.json()['service_areas']]
 
 
 @default_scope(SCOPE_READ)
-def test_delete(session):
-  resp = session.get('/identification_service_areas/{}'.format(ISA_ID), scope=SCOPE_READ)
+def test_delete(ids, session):
+  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope=SCOPE_READ)
   assert resp.status_code == 200
   version = resp.json()['service_area']['version']
-  resp = session.delete('/identification_service_areas/{}/{}'.format(ISA_ID, version), scope=SCOPE_WRITE)
+  resp = session.delete('/identification_service_areas/{}/{}'.format(ids(ISA_TYPE), version), scope=SCOPE_WRITE)
   assert resp.status_code == 200, resp.content
