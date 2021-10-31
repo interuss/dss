@@ -17,7 +17,7 @@ import (
 
 const (
 	// currentMajorSchemaVersion is the current major schema version.
-	currentMajorSchemaVersion = 3
+	currentMajorSchemaVersion = 4
 
 	//  Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
 	expiredDurationInMin = 30
@@ -37,7 +37,7 @@ var (
 	// DatabaseName is the name of database storing remote ID data.
 	DatabaseName = "defaultdb"
 
-	v310 = *semver.New("3.1.0")
+	v400 = *semver.New("4.0.0")
 )
 
 type repo struct {

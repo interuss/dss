@@ -104,6 +104,8 @@ func createKeyResolver() (auth.KeyResolver, error) {
 }
 
 func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid.Server, error) {
+	// RID database has been renamed to rid from defaultdb 
+	ridc.DatabaseName = "rid"
 	ridCrdb, err := connectTo(ridc.DatabaseName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
