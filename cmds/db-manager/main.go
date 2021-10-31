@@ -118,8 +118,11 @@ func main() {
 			dbName := "rid"
 			ridPostgresURI := strings.Replace(postgresURI, "defaultdb", dbName, 1)
 			currentDBVersion, err = getCurrentDBVersion(ridPostgresURI, dbName)
+			if err != nil {
+				log.Fatal("Failed to get Current DB version for confirmation for db ", dbName)
+			}
 		} else {
-			log.Fatal("Failed to get Current DB version for confirmation  ")
+			log.Fatal("Failed to get Current DB version for confirmation")
 		}
 	}
 	log.Printf("DB Version: %s, Migration Step # %d, Dirty: %v", currentDBVersion, postMigrationStep, dirty)
@@ -152,7 +155,7 @@ func New(path string, dbURI string, database string) (*MyMigrate, error) {
 	if err != nil {
 		if database == "scd" {
 			// as defaultdb has been renamed to rid, db URI should consist rid instead of default null
-			noDbPostgres = strings.Replace(dbURI, fmt.Sprintf("%s", database), "rid", 1)
+			noDbPostgres = strings.Replace(dbURI, database, "rid", 1)
 			err = createDatabaseIfNotExists(noDbPostgres, database)
 			if err != nil {
 				return nil, err
