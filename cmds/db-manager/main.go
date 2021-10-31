@@ -151,7 +151,7 @@ func New(path string, dbURI string, database string) (*MyMigrate, error) {
 	err := createDatabaseIfNotExists(noDbPostgres, database)
 	if err != nil {
 		if database == "scd" {
-			// as defaultdb has been renamed to rid, so db URI should consist rid instead of default
+			// as defaultdb has been renamed to rid, db URI should consist rid instead of default null
 			noDbPostgres = strings.Replace(dbURI, fmt.Sprintf("%s", database), "rid", 1)
 			err = createDatabaseIfNotExists(noDbPostgres, database)
 			if err != nil {
