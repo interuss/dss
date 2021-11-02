@@ -57,6 +57,12 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 				subs: make(map[dssmodels.ID]*ridmodels.Subscription),
 			},
 		}, func() {}
+	} else {
+		if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
+			log.Println("... uri is set to default.")
+			*storeURI = strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
+			log.Println("... after changing url: ", *storeURI)
+		}
 	}
 	ridcrdb.DefaultClock = fakeClock
 	logger.Info("using cockroachDB.")
