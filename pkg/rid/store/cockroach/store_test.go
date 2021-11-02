@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"log"
 	"strings"
 	"testing"
 	"time"
@@ -37,9 +36,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 		t.Skip()
 	} else {
 		if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
-			log.Println("... uri is set to default store_test.")
 			*storeURI = strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
-			log.Println("... after changing url store_test: ", *storeURI)
 		}
 	}
 	// Reset the clock for every test.
@@ -56,10 +53,8 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 func newStore() (*Store, error) {
 	cdb, err := cockroach.Dial(*storeURI)
 	if err != nil {
-		log.Println("... fail 1")
 		return nil, err
 	}
-	log.Println("pass for ", *storeURI, cdb)
 	return &Store{
 		db:     cdb,
 		logger: logging.Logger,
