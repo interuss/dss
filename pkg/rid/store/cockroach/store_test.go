@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"log"
 	"testing"
 	"time"
 
@@ -48,8 +49,10 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 func newStore() (*Store, error) {
 	cdb, err := cockroach.Dial(*storeURI)
 	if err != nil {
+		log.Println("... fail 1")
 		return nil, err
 	}
+	log.Println("pass for ", *storeURI)
 	return &Store{
 		db:     cdb,
 		logger: logging.Logger,
