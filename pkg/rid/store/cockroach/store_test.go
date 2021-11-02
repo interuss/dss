@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,6 +35,12 @@ func init() {
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	if len(*storeURI) == 0 {
 		t.Skip()
+	} else {
+		if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
+			log.Println("... uri is set to default.")
+			strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
+			log.Println("... after changing url: ", *storeURI)
+		}
 	}
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
@@ -52,7 +59,7 @@ func newStore() (*Store, error) {
 		log.Println("... fail 1")
 		return nil, err
 	}
-	log.Println("pass for ", *storeURI)
+	log.Println("pass for ", *storeURI, cdb)
 	return &Store{
 		db:     cdb,
 		logger: logging.Logger,
