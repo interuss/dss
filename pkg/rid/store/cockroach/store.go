@@ -60,6 +60,12 @@ type Store struct {
 
 // NewStore returns a Store instance connected to a cockroach instance via db.
 func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store, error) {
+	log.Println("... DatabaseName in NewStore: ", DatabaseName)
+	if DatabaseName == "defaultdb" {
+		DatabaseName = "rid"
+	}
+	log.Println("... changed DatabaseName in NewStore: ", DatabaseName)
+
 	vs, err := db.GetVersion(ctx, DatabaseName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
