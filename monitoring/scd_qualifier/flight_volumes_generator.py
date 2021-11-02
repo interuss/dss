@@ -6,7 +6,7 @@ from shapely.geometry import LineString, Point
 from pyproj import Geod, Proj
 from shapely.geometry.polygon import Polygon
 from monitoring.monitorlib import scd
-from monitoring.scd_qualifier.utils import Altitude, VolumePolygon, VolumeGenerationRules, GeometryGenerationRules, Volume3D, Volume4D, GeometryPayload, LatLngPoint, Time, SCDVolume4D
+from monitoring.scd_qualifier.utils import Altitude, VolumePolygon, VolumeGenerationRule, GeometryGenerationRule, Volume3D, Volume4D, GeometryPayload, LatLngPoint, Time, SCDVolume4D
 import shapely.geometry
 from shapely.geometry import asShape
 import pathlib, os
@@ -112,42 +112,42 @@ class ProximateFlightVolumeGenerator():
                
     
         
-    def generate_single_flight_geometry(self, geometry_generation_rules:GeometryGenerationRules, is_control:bool= False) -> Union[LineString, Polygon]:
+    def generate_single_flight_geometry(self, geometry_generation_rule:GeometryGenerationRule, is_control:bool= False) -> Union[LineString, Polygon]:
         ''' A method to generates flight geometry within a geographic bounds. The geometry can be a linestring or a polygon, simple rules for generation can be specificed. At the moment the method check if the geometry should intersect with the control and based on that, linestring / polygons are created '''
         
         coin_flip = random.choice([0,0,1])         
         flight_geometry = self.generate_random_flight_path_polygon(generate_polygon = coin_flip) 
 
         if is_control:
-            self.control_flight_geometry = flight_geometry # Assign the contorl
+            self.control_flight_geometry = flight_geometry # Assign the control since this is the first time that the flight geometry is generated
         else: 
-            if geometry_generation_rules.intersect_space: # This is not the first geometry, check if it should intersect with the control
+            if geometry_generation_rule.intersect_space: # This is not the first geometry, check if it should intersect with the control
                 geometry_intersects = False
                 while (geometry_intersects == False):
                     coin_flip = random.choice([0,0,1]) 
                     # We are trying to generate a path that intersects with the control, we keep generating linestrings or polygons till one is found that does intersect
                     flight_geometry = self.generate_random_flight_path_polygon(generate_polygon = coin_flip)
-                    raw_geom = asShape(flight_geometry)
-                    intersects = self.control_flight_geometry.intersects(raw_geom)
-                    geometry_intersects = intersects    
-                    
+                    raw_geom = asShape(flight_geometry) # Generate a shape from the geometry
+                    geometry_intersects = self.control_flight_geometry.intersects(raw_geom) # Check this intersects with the control                    
                 
         return flight_geometry
 
-    def convert_geometry_to_volume(self, flight_geometry:LineString, volume_generation_options: VolumeGenerationRules, altitude_of_ground_level_wgs_84:int) -> Volume3D:
+    def convert_geometry_to_volume(self, flight_geometry:LineString, volume_generation_rule: VolumeGenerationRule, altitude_of_ground_level_wgs_84:int) -> Volume3D:
         ''' A method to convert a GeoJSON LineString or Polygon to a ASTM outline_polygon object by buffering 15m spatially '''
         
         flight_geometry_shp = asShape(flight_geometry)
         flight_geometry_utm = self.utm_converter(flight_geometry_shp)
         buffer_shape_utm = flight_geometry_utm.buffer(15)
         
-        if volume_generation_options.intersect_altitude: # If the flight should interect in altitude (altitude is same)
+        if volume_generation_rule.intersect_altitude: # If the flight should interect in altitude (altitude is kept same)
             alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_agl +self.altitude_envelope  
             alt_lower = altitude_of_ground_level_wgs_84 + self.altitude_agl - self.altitude_envelope
         else:
-            # Raise the altitude by 50m so that they do not intersect in altitude
-            alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_agl  + 50 + self.altitude_envelope 
-            alt_lower = altitude_of_ground_level_wgs_84 + self.altitude_agl + 50 - self.altitude_envelope 
+
+            raised_altitude_meters = random.choice([50,80])
+            # Raise the altitude by 50m or 80m so that the flights do not intersect in altitude
+            alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_agl  + raised_altitude_meters + self.altitude_envelope 
+            alt_lower = altitude_of_ground_level_wgs_84 + self.altitude_agl + raised_altitude_meters - self.altitude_envelope 
         
         buffered_shape_geo = self.utm_converter(buffer_shape_utm, inverse=True)
         
@@ -163,10 +163,10 @@ class ProximateFlightVolumeGenerator():
         
         return volume3D
 
-    def transform_3d_volume_to_astm_4d(self, volume_3d : Volume3D,volume_generation_options: VolumeGenerationRules) -> Volume4D:
+    def transform_3d_volume_to_astm_4d(self, volume_3d : Volume3D,volume_generation_rule: VolumeGenerationRule) -> Volume4D:
         ''' This method converts a 3D Volume to 4D Volume and checks if the volumes should intersect in time, if the time interesection flag is turned off it will shift the volume start and end time to a arbirtray number in the next 70 mins. '''
         
-        if volume_generation_options.intersect_time: 
+        if volume_generation_rule.intersect_time: 
             # Overlap with the control 
             three_mins_from_now = self.now.shift(minutes = 3)
             eight_mins_from_now = self.now.shift(minutes = 8)
@@ -191,47 +191,48 @@ class ProximateFlightVolumeGenerator():
         
         raw_geometries: List[GeometryPayload] = []
         for volume_idx in range(0, number_of_geometries):
-            is_control = True if (volume_idx == 0) else False
-            geometry_generation_rules = GeometryGenerationRules()
+            is_control = 1 if (volume_idx == 0) else 0
+            geometry_generation_rule = GeometryGenerationRule()
             
-            if (volume_idx == (number_of_geometries -1)):
+            if (volume_idx == (number_of_geometries -1)): # The first geometry is called "control" and it should not intersect with 
                 should_intersect = False
-                geometry_generation_rules.intersect_space = should_intersect
-            else:
-                should_intersect = True
+            else:   
+                coin_flip = random.choice([0,0,1]) # It can or cannot intersect
+                should_intersect = coin_flip 
+
+            geometry_generation_rule.intersect_space = should_intersect
             
-            current_path = self.generate_single_flight_geometry(geometry_generation_rules = geometry_generation_rules, is_control= is_control)
-            raw_path = GeometryPayload(geometry = current_path, geometry_generation_rules = geometry_generation_rules, is_control = is_control)
             # the first path is control, the last path does not intersect the control
+            current_path = self.generate_single_flight_geometry(geometry_generation_rule = geometry_generation_rule, is_control= is_control)
+            raw_path = GeometryPayload(geometry = current_path, geometry_generation_rule = geometry_generation_rule, is_control = is_control)
             raw_geometries.append(raw_path)
         return raw_geometries
 
-    def generate_path_parameters(self, raw_geometries:List[GeometryPayload]) -> List[VolumeGenerationRules]: 
+    def generate_volume_altitude_time_intersect_rules(self, raw_geometries:List[GeometryPayload]) -> List[VolumeGenerationRule]: 
         ''' A method to generate rules for generation of new paths '''
         
-        all_volume_rules: List[VolumeGenerationRules] = []
+        all_volume_rules: List[VolumeGenerationRule] = []
         last_path_index = len(raw_geometries) - 1 
         for path_index, raw_path in enumerate(raw_geometries): 
             if path_index in [0,last_path_index]:
                 # This the control path or the well clear path no need to have any time / atltitude interserction
-                volume_generation_options = VolumeGenerationRules(intersect_altitude= False, intersect_time= False, expected_result = 'pass')
+                volume_generation_rule = VolumeGenerationRule(intersect_altitude= 0, intersect_time=0, expected_result = 1)
                 if path_index == 0:
-                    volume_generation_options.is_control = True
+                    volume_generation_rule.is_control = 1
             else:
                 # intersect in time and / or intersect in altitude 
-                volume_generation_options = random.choice([VolumeGenerationRules(intersect_altitude=True, intersect_time= False, expected_result = 'pass'),VolumeGenerationRules(intersect_altitude=True, intersect_time= True, expected_result = 'fail'),VolumeGenerationRules(intersect_altitude=False, intersect_time= True, expected_result = 'pass')])
-            all_volume_rules.append(volume_generation_options)
+                volume_generation_rule = random.choice([VolumeGenerationRule(intersect_altitude=1, intersect_time= 0, expected_result = 1),VolumeGenerationRule(intersect_altitude=1, intersect_time= 1, expected_result = 0),VolumeGenerationRule(intersect_altitude=0, intersect_time= 1, expected_result = 1)])
+            all_volume_rules.append(volume_generation_rule)
         return all_volume_rules
 
     def generate_astm_4d_volumes(self,raw_geometries:List[GeometryPayload],rules : List[GeometryPayload], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
         ''' A method to generate ASTM specified Volume 4D payloads to submit to the system to be tested.  '''
         all_volume_4d :List[Volume4D] = []
-        last_path_index = len(raw_geometries) - 1 
         for path_index, raw_geometry in enumerate(raw_geometries): 
-            volume_generation_options = rules[path_index]
+            volume_generation_rule = rules[path_index]
             
-            flight_volume_3d = self.convert_geometry_to_volume(flight_geometry = raw_geometry.geometry, volume_generation_options = volume_generation_options, altitude_of_ground_level_wgs_84=altitude_of_ground_level_wgs_84)
-            flight_volume_4d = self.transform_3d_volume_to_astm_4d(volume_3d= flight_volume_3d, volume_generation_options =  volume_generation_options)
+            flight_volume_3d = self.convert_geometry_to_volume(flight_geometry = raw_geometry.geometry, volume_generation_rule = volume_generation_rule, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
+            flight_volume_4d = self.transform_3d_volume_to_astm_4d(volume_3d = flight_volume_3d, volume_generation_rule = volume_generation_rule)
             all_volume_4d.append(flight_volume_4d)
             
         return all_volume_4d
@@ -240,8 +241,11 @@ class ProximateFlightVolumeGenerator():
 class SCDFlightPathVolumeWriter():
     """ A class to write raw Flight Paths and volumes to disk so that they can be examined / used in other software """
 
-    def __init__(self, raw_geometries:List[GeometryPayload],  flight_volumes: List[Volume4D], all_rules: List[VolumeGenerationRules],country_code='che')-> None:
+    def __init__(self, raw_geometries:List[GeometryPayload],  flight_volumes: List[Volume4D], all_rules: List[VolumeGenerationRule],country_code='che')-> None:
+        '''
+        A method to write flight paths, volumes and volume generation rules to disk for review / submission to the test harness. All data is written in the `test_definitions` directory which is created if it does not exist.
         
+        '''
         self.country_code = country_code
         self.output_directory = Path('test_definitions', self.country_code)        
         # Create test_definition directory if it does not exist        
@@ -276,7 +280,7 @@ class SCDFlightPathVolumeWriter():
                 f.write(json.dumps(volume))
 
     def write_test_rules(self) -> None:
-        ''' A method to write test parameters to see expected outputs of a test'''
+        ''' A method to write the expected outcomes of sequential input '''
         
         volume_file_name = 'volume_rules.json'
         rule_file_path = self.output_subdirectories[2] / volume_file_name
@@ -292,7 +296,7 @@ if __name__ == '__main__':
     p = pathlib.Path(__file__).parent.absolute()
     os.chdir(p)
     flight_geometries = my_volume_generator.generate_raw_geometries(number_of_geometries=12)
-    all_rules = my_volume_generator.generate_path_parameters(raw_geometries=flight_geometries)
+    all_rules = my_volume_generator.generate_volume_altitude_time_intersect_rules(raw_geometries=flight_geometries)
     
     flight_volumes = my_volume_generator.generate_astm_4d_volumes(raw_geometries = flight_geometries, rules = all_rules, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
    

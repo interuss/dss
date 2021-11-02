@@ -69,8 +69,8 @@ class OperationalIntentDetails(ImplicitDict):
     volumes: List[Volume4D]
     priority: int
 
-class VolumeGenerationRules(ImplicitDict):
-    """ A class to hold configuration for developing rules """
+class VolumeGenerationRule(ImplicitDict):
+    """ A class to hold configuration for holding rule for volume generation """
     intersect_altitude: bool = 0
     intersect_time: bool = 0
     is_control: bool = 0
@@ -88,7 +88,7 @@ class SCDVolume4D(ImplicitDict):
     altitude_lower: Altitude
     altitude_upper: Altitude
     
-class GeometryGenerationRules(ImplicitDict):
+class GeometryGenerationRule(ImplicitDict):
     """ A class to hold configuration for developing treatment flight path """
     intersect_space:bool = 0
     
@@ -96,7 +96,7 @@ class GeometryPayload(ImplicitDict):
     ''' An object to hold generated flight path, is_control is a nomenclature used to see if the generated path is the first one '''
     geometry: Union[LineString, Polygon]
     is_control: bool
-    geometry_generation_rules: GeometryGenerationRules
+    geometry_generation_rule: GeometryGenerationRule
   
 class FlightAuthPayload(ImplicitDict):
     ''' An object to hold flight authorization details '''
