@@ -38,7 +38,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	} else {
 		if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
 			log.Println("... uri is set to default.")
-			strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
+			*storeURI = strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
 			log.Println("... after changing url: ", *storeURI)
 		}
 	}
