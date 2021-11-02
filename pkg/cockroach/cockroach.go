@@ -125,7 +125,7 @@ func Dial(uri string) (*DB, error) {
 
 // GetVersion returns the Schema Version of the requested DB Name
 func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, error) {
-	log.Error(" ... dbName in cockroach.go: ", dbName)
+	log.Println(" ... dbName in cockroach.go: ", dbName)
 	const query = `
 		SELECT EXISTS (
 			SELECT
