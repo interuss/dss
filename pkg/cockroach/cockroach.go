@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/coreos/go-semver/semver"
@@ -124,6 +125,7 @@ func Dial(uri string) (*DB, error) {
 
 // GetVersion returns the Schema Version of the requested DB Name
 func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, error) {
+	log.Error(" ... dbName in cockroach.go: ", dbName)
 	const query = `
 		SELECT EXISTS (
 			SELECT
@@ -147,7 +149,6 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 		WHERE
 			onerow_enforcer = TRUE`, dbName)
 	)
-
 	if err := db.QueryRowContext(ctx, query, dbName).Scan(&exists); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
