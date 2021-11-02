@@ -61,9 +61,9 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 		}, func() {}
 	}
 	if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
-		log.Println("... uri is set to default.")
+		log.Println("... uri is set to default app_test.")
 		*storeURI = strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
-		log.Println("... after changing url: ", *storeURI)
+		log.Println("... after changing url app_test: ", *storeURI)
 	}
 
 	ridcrdb.DefaultClock = fakeClock

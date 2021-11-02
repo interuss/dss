@@ -37,9 +37,9 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 		t.Skip()
 	} else {
 		if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
-			log.Println("... uri is set to default.")
+			log.Println("... uri is set to default store_test.")
 			*storeURI = strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
-			log.Println("... after changing url: ", *storeURI)
+			log.Println("... after changing url store_test: ", *storeURI)
 		}
 	}
 	// Reset the clock for every test.
