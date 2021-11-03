@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import functools
 from typing import Dict, List, Optional
@@ -109,7 +110,7 @@ class DSSTestSession(requests.Session):
 
     return super().request(method, url, **kwargs)
 
-class AsyncUTMTestSession(ClientSession):
+class AsyncUTMTestSession:
   """
   Requests Asyncio client session that provides additional functionality for running DSS concurrency tests:
     * Adds a prefix to URLs that start with a '/'.
@@ -117,12 +118,17 @@ class AsyncUTMTestSession(ClientSession):
   """
 
   def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
-    super().__init__()
+    self._client = None
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(self.build_session())
 
     self._prefix_url = prefix_url[0:-1] if prefix_url[-1] == '/' else prefix_url
     self.auth_adapter = auth_adapter
     self.default_scopes = None
 
+  async def build_session(self):
+    self._client = ClientSession()
+  
   def adjust_request_kwargs(self, url, method, kwargs):
     if self.auth_adapter:
       scopes = None
@@ -144,12 +150,34 @@ class AsyncUTMTestSession(ClientSession):
         kwargs['json'] = kwargs['data']
         del kwargs['data']
     return kwargs
-  
-  async def _request(self, method, url, **kwargs):
+
+  async def put(self, url, **kwargs):
     url = self._prefix_url + url
     if 'auth' not in kwargs:
-      kwargs = self.adjust_request_kwargs(url, method, kwargs)
-    return await super()._request(method, url, **kwargs)
+      kwargs = self.adjust_request_kwargs(url, 'PUT', kwargs)
+    async with self._client.put(url, **kwargs) as response:
+      return response.status, await response.json()
+  
+  async def get(self, url, **kwargs):
+    url = self._prefix_url + url
+    if 'auth' not in kwargs:
+      kwargs = self.adjust_request_kwargs(url, 'GET', kwargs)
+    async with self._client.get(url, **kwargs) as response:
+      return response.status, await response.json()
+  
+  async def post(self, url, **kwargs):
+    url = self._prefix_url + url
+    if 'auth' not in kwargs:
+      kwargs = self.adjust_request_kwargs(url, 'POST', kwargs)
+    async with self._client.post(url, **kwargs) as response:
+      return response.status, await response.json()
+  
+  async def delete(self, url, **kwargs):
+    url = self._prefix_url + url
+    if 'auth' not in kwargs:
+      kwargs = self.adjust_request_kwargs(url, 'DELETE', kwargs)
+    async with self._client.delete(url, **kwargs) as response:
+      return response.status, await response.json()
 
 
 def default_scopes(scopes: List[str]):

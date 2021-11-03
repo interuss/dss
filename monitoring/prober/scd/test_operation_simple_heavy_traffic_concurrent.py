@@ -113,17 +113,14 @@ async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_ne
   async with SEMAPHORE:
     if scd_api == scd.API_0_3_5:
       req_url = '/operation_references/{}'.format(op_id)
-      async with scd_session_async.put(req_url, data=req) as response:
-          result = response.status, await response.json()
+      result = await scd_session_async.put(req_url, data=req), req_url, req
     elif scd_api == scd.API_0_3_17:
       if create_new:
         req_url = '/operational_intent_references/{}'.format(op_id)
-        async with scd_session_async.put(req_url, data=req) as response:
-          result = response.status, await response.json()
+        result = await scd_session_async.put(req_url, data=req), req_url, req
       else:
         req_url = '/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id])
-        async with scd_session_async.put(req_url, data=req) as response:
-          result = response.status, await response.json()
+        result = await scd_session_async.put(req_url, data=req), req_url, req
     else:
       raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
   return result
@@ -132,11 +129,9 @@ async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_ne
 async def _get_operation_async(op_id, scd_session_async, scd_api):
   async with SEMAPHORE:
     if scd_api == scd.API_0_3_5:
-      async with scd_session_async.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC) as response:
-        result = response.status, await response.json()
+      result = await scd_session_async.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
     elif scd_api == scd.API_0_3_17:
-      async with scd_session_async.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC) as response:
-        result = response.status, await response.json()
+      result = await scd_session_async.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
     else:
       raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
   return result
@@ -149,11 +144,9 @@ async def _query_operation_async(idx, scd_session_async, scd_api):
   }
   async with SEMAPHORE:
     if scd_api == scd.API_0_3_5:
-      async with scd_session_async.post('/operation_references/query', json=req_json, scope=SCOPE_SC) as response:
-        result = response.status, await response.json()
+        result = await scd_session_async.post('/operation_references/query', json=req_json, scope=SCOPE_SC)
     elif scd_api == scd.API_0_3_17:
-      async with scd_session_async.post('/operational_intent_references/query', json=req_json, scope=SCOPE_SC) as response:
-        result = response.status, await response.json()
+        result = await scd_session_async.post('/operational_intent_references/query', json=req_json, scope=SCOPE_SC)
     else:
       raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
   return result
@@ -190,11 +183,9 @@ def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
 
 async def _delete_operation_async(op_id, scd_session_async, scd_api):
   if scd_api == scd.API_0_3_5:
-    async with scd_session_async.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC) as response:
-      result = response.status, await response.json()
+      result = await scd_session_async.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
   elif scd_api == scd.API_0_3_17:
-    async with scd_session_async.delete('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), scope=SCOPE_SC) as response:
-      result = response.status, await response.json()
+      result = await scd_session_async.delete('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), scope=SCOPE_SC)
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
   return result
@@ -249,8 +240,8 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
   for req_map, resp in zip(op_req_map.items(), results):
     op_id = req_map[0]
     op_resp_map[op_id] = {}
-    op_resp_map[op_id]['status_code'] = resp[0]
-    op_resp_map[op_id]['content'] = resp[1]
+    op_resp_map[op_id]['status_code'] = resp[0][0]
+    op_resp_map[op_id]['content'] = resp[0][1]
   for op_id, resp in op_resp_map.items():
     assert resp['status_code'] == 200, resp['content']
     req = op_req_map[op_id]
@@ -351,8 +342,8 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
   for req_map, resp in zip(op_req_map.items(), results):
     op_id = req_map[0]
     op_resp_map[op_id] = {}
-    op_resp_map[op_id]['status_code'] = resp[0]
-    op_resp_map[op_id]['content'] = resp[1]
+    op_resp_map[op_id]['status_code'] = resp[0][0]
+    op_resp_map[op_id]['content'] = resp[0][1]
 
   ovn_map.clear()
 
