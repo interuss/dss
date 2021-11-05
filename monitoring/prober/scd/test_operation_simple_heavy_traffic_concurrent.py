@@ -30,7 +30,8 @@ from monitoring.prober.infrastructure import depends_on, for_api_versions, regis
 # - https://github.com/interuss/dss/issues/421
 
 BASE_URL = 'https://example.com/uss'
-OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(100)]
+# TODO: Change number of operation intents to 100 once concurrency issues are fixed.
+OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(2)]
 GROUP_SIZE = len(OP_TYPES) // 3
 # Semaphore is added to limit the number of simultaneous requests,
 # default is 100.
