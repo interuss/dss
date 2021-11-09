@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"flag"
-	"strings"
 	"testing"
 	"time"
 
@@ -59,7 +58,6 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 			},
 		}, func() {}
 	}
-
 	ridcrdb.DefaultClock = fakeClock
 	logger.Info("using cockroachDB.")
 

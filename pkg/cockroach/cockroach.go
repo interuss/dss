@@ -147,6 +147,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 		WHERE
 			onerow_enforcer = TRUE`, dbName)
 	)
+
 	if err := db.QueryRowContext(ctx, query, dbName).Scan(&exists); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
