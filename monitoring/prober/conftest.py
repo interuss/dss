@@ -1,7 +1,7 @@
 import argparse
 from typing import Callable, Optional
 
-from monitoring.monitorlib.infrastructure import DSSTestSession
+from monitoring.monitorlib.infrastructure import DSSTestSession, AsyncUTMTestSession
 from monitoring.monitorlib import auth, rid, scd
 from monitoring.prober.infrastructure import add_test_result, IDFactory, ResourceType, VersionString
 
@@ -99,6 +99,21 @@ def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] 
   s = DSSTestSession(dss_endpoint + endpoint_suffix, auth_adapter)
   return s
 
+def make_session_async(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[AsyncUTMTestSession]:
+  dss_endpoint = pytestconfig.getoption('dss_endpoint')
+  if dss_endpoint is None:
+    pytest.skip('dss-endpoint option not set')
+
+  auth_adapter = None
+  if auth_option:
+    auth_spec = pytestconfig.getoption(auth_option)
+    if not auth_spec:
+      pytest.skip('%s option not set' % auth_option)
+    auth_adapter = auth.make_auth_adapter(auth_spec)
+
+  s = AsyncUTMTestSession(dss_endpoint + endpoint_suffix, auth_adapter)
+  return s
+
 
 @pytest.fixture(scope='session')
 def session(pytestconfig) -> DSSTestSession:
@@ -113,6 +128,10 @@ def aux_session(pytestconfig) -> DSSTestSession:
 @pytest.fixture(scope='session')
 def scd_session(pytestconfig) -> DSSTestSession:
   return make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH1)
+
+@pytest.fixture(scope='session')
+def scd_session_async(pytestconfig):
+  return make_session_async(pytestconfig, '/dss/v1', 'scd_auth1')
 
 
 @pytest.fixture(scope='session')

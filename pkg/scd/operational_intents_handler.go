@@ -368,7 +368,6 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			if err != nil {
 				return stacktrace.Propagate(err, "Failed to create implicit subscription")
 			}
-			subscriptionID = sub.ID
 		} else {
 			// Use existing Subscription
 			sub, err = r.GetSubscription(ctx, subscriptionID)
@@ -376,7 +375,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 				return stacktrace.Propagate(err, "Unable to get Subscription")
 			}
 			if sub == nil {
-				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription does not exist")
+				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", subscriptionID)
 			}
 			if sub.Manager != manager {
 				return stacktrace.Propagate(
