@@ -35,7 +35,7 @@ var (
 	DefaultTimeout = 10 * time.Second
 
 	// DatabaseName is the name of database storing remote ID data.
-	DatabaseName = "defaultdb"
+	DatabaseName = "rid"
 
 	v400 = *semver.New("4.0.0")
 )
@@ -59,9 +59,6 @@ type Store struct {
 
 // NewStore returns a Store instance connected to a cockroach instance via db.
 func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store, error) {
-	if DatabaseName == "defaultdb" {
-		DatabaseName = "rid"
-	}
 	vs, err := db.GetVersion(ctx, DatabaseName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get database schema version for remote ID")
@@ -166,9 +163,6 @@ func (s *Store) CleanUp(ctx context.Context) error {
 // If the DB was is not bootstrapped using the schema manager we throw and error
 func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
 	if s.version == nil {
-		if DatabaseName == "defaultdb" {
-			DatabaseName = "rid"
-		}
 		vs, err := s.db.GetVersion(ctx, DatabaseName)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to get database schema version for remote ID")

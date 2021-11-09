@@ -74,6 +74,10 @@ func main() {
 	params := flags.ConnectParameters()
 	params.ApplicationName = "SchemaManager"
 	params.DBName = filepath.Base(*path)
+	if params.DBName == "rid" {
+		// Create defaultdb instead of rid for db migration backward compatibility
+		params.DBName = "defaultdb"
+	}
 	postgresURI, err := params.BuildURI()
 	if err != nil {
 		log.Panic("Failed to build URI", zap.Error(err))
@@ -111,19 +115,14 @@ func main() {
 		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMoves), preMigrationStep, postMigrationStep)
 	}
 
+	// Post-migration defaultdb is renamed to `rid`, so replace it in db name and uri. 
+	if params.DBName == "defaultdb" {
+		params.DBName = "rid"
+	}
+	postgresURI, err = params.BuildURI()
 	currentDBVersion, err := getCurrentDBVersion(postgresURI, params.DBName)
 	if err != nil {
-		if params.DBName == "defaultdb" {
-			// defaultdb has been renamed to rid through DB migration step 8
-			dbName := "rid"
-			ridPostgresURI := strings.Replace(postgresURI, "defaultdb", dbName, 1)
-			currentDBVersion, err = getCurrentDBVersion(ridPostgresURI, dbName)
-			if err != nil {
-				log.Fatal("Failed to get Current DB version for confirmation for db ", dbName)
-			}
-		} else {
-			log.Fatal("Failed to get Current DB version for confirmation")
-		}
+		log.Fatal("Failed to get Current DB version for confirmation")
 	}
 	log.Printf("DB Version: %s, Migration Step # %d, Dirty: %v", currentDBVersion, postMigrationStep, dirty)
 }
@@ -153,8 +152,8 @@ func New(path string, dbURI string, database string) (*MyMigrate, error) {
 	noDbPostgres := strings.Replace(dbURI, fmt.Sprintf("/%s", database), "", 1)
 	err := createDatabaseIfNotExists(noDbPostgres, database)
 	if err != nil {
+		// There exists a defaultdb with name rid before scd database gets created, so `rid` is added to dbURI
 		if database == "scd" {
-			// as defaultdb has been renamed to rid, db URI should consist rid instead of default null
 			noDbPostgres = strings.Replace(dbURI, database, "rid", 1)
 			err = createDatabaseIfNotExists(noDbPostgres, database)
 			if err != nil {

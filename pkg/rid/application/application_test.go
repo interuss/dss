@@ -59,9 +59,6 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 			},
 		}, func() {}
 	}
-	if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
-		*storeURI = strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
-	}
 
 	ridcrdb.DefaultClock = fakeClock
 	logger.Info("using cockroachDB.")
