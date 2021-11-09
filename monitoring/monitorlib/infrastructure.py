@@ -1,7 +1,9 @@
+import asyncio
 import datetime
 import functools
 from typing import Dict, List, Optional
 import urllib.parse
+from aiohttp import ClientSession
 
 import jwt
 import requests
@@ -108,6 +110,75 @@ class DSSTestSession(requests.Session):
 
     return super().request(method, url, **kwargs)
 
+class AsyncUTMTestSession:
+  """
+  Requests Asyncio client session that provides additional functionality for running DSS concurrency tests:
+    * Adds a prefix to URLs that start with a '/'.
+    * Automatically applies authorization according to adapter, when present
+  """
+
+  def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
+    self._client = None
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(self.build_session())
+
+    self._prefix_url = prefix_url[0:-1] if prefix_url[-1] == '/' else prefix_url
+    self.auth_adapter = auth_adapter
+    self.default_scopes = None
+
+  async def build_session(self):
+    self._client = ClientSession()
+  
+  def adjust_request_kwargs(self, url, method, kwargs):
+    if self.auth_adapter:
+      scopes = None
+      if 'scopes' in kwargs:
+        scopes = kwargs['scopes']
+        del kwargs['scopes']
+      if 'scope' in kwargs:
+        scopes = [kwargs['scope']]
+        del kwargs['scope']
+      if scopes is None:
+        scopes = self.default_scopes
+      if not scopes:
+        raise ValueError('All tests must specify auth scope for all session requests.  Either specify as an argument for each individual HTTP call, or decorate the test with @default_scope.')
+      headers = {}
+      for k, v in self.auth_adapter.get_headers(url, scopes).items():
+        headers[k] = v
+      kwargs['headers'] = headers
+      if method == 'PUT' and kwargs.get('data'):
+        kwargs['json'] = kwargs['data']
+        del kwargs['data']
+    return kwargs
+
+  async def put(self, url, **kwargs):
+    url = self._prefix_url + url
+    if 'auth' not in kwargs:
+      kwargs = self.adjust_request_kwargs(url, 'PUT', kwargs)
+    async with self._client.put(url, **kwargs) as response:
+      return response.status, await response.json()
+  
+  async def get(self, url, **kwargs):
+    url = self._prefix_url + url
+    if 'auth' not in kwargs:
+      kwargs = self.adjust_request_kwargs(url, 'GET', kwargs)
+    async with self._client.get(url, **kwargs) as response:
+      return response.status, await response.json()
+  
+  async def post(self, url, **kwargs):
+    url = self._prefix_url + url
+    if 'auth' not in kwargs:
+      kwargs = self.adjust_request_kwargs(url, 'POST', kwargs)
+    async with self._client.post(url, **kwargs) as response:
+      return response.status, await response.json()
+  
+  async def delete(self, url, **kwargs):
+    url = self._prefix_url + url
+    if 'auth' not in kwargs:
+      kwargs = self.adjust_request_kwargs(url, 'DELETE', kwargs)
+    async with self._client.delete(url, **kwargs) as response:
+      return response.status, await response.json()
+
 
 def default_scopes(scopes: List[str]):
   """Decorator for tests that modifies DSSTestSession args to use scopes.
@@ -126,11 +197,11 @@ def default_scopes(scopes: List[str]):
       # Change <DSSTestSession>.default_scopes to scopes for all DSSTestSession arguments
       old_scopes = []
       for arg in args:
-        if isinstance(arg, DSSTestSession):
+        if isinstance(arg, DSSTestSession) or isinstance(arg, AsyncUTMTestSession):
           old_scopes.append(arg.default_scopes)
           arg.default_scopes = scopes
       for k, v in kwargs.items():
-        if isinstance(v, DSSTestSession):
+        if isinstance(v, DSSTestSession) or isinstance(v, AsyncUTMTestSession):
           old_scopes.append(v.default_scopes)
           v.default_scopes = scopes
 
@@ -138,11 +209,11 @@ def default_scopes(scopes: List[str]):
 
       # Restore original values of <DSSTestSession>.default_scopes for all DSSTestSession arguments
       for arg in args:
-        if isinstance(arg, DSSTestSession):
+        if isinstance(arg, DSSTestSession) or isinstance(arg, AsyncUTMTestSession):
           arg.default_scopes = old_scopes[0]
           old_scopes = old_scopes[1:]
       for k, v in kwargs.items():
-        if isinstance(v, DSSTestSession):
+        if isinstance(v, DSSTestSession) or isinstance(v, AsyncUTMTestSession):
           v.default_scopes = old_scopes[0]
           old_scopes = old_scopes[1:]
 
