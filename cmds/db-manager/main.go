@@ -115,11 +115,14 @@ func main() {
 		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMoves), preMigrationStep, postMigrationStep)
 	}
 
-	// Post-migration defaultdb is renamed to `rid`, so replace it in db name and uri. 
+	// Post-migration defaultdb is renamed to `rid`, so replace it in db name and uri.
 	if params.DBName == "defaultdb" {
 		params.DBName = "rid"
 	}
 	postgresURI, err = params.BuildURI()
+	if err != nil {
+		log.Panic("Failed to build URI", zap.Error(err))
+	}
 	currentDBVersion, err := getCurrentDBVersion(postgresURI, params.DBName)
 	if err != nil {
 		log.Fatal("Failed to get Current DB version for confirmation")
