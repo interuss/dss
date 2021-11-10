@@ -149,7 +149,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 	)
 
 	if err := db.QueryRowContext(ctx, query, dbName).Scan(&exists); err != nil {
-		return nil, stacktrace.Propagate(err, "Error scanning table listing row %s", dbName)
+		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
 
 	if !exists {
