@@ -18,8 +18,9 @@ U-Space specific:
 The DSS is a simple and open service used by separate USSs, often in different organizations, to communicate information about UAS operations and coordinate with each other. This service is described in the ASTM remote ID standard. This flexible and distributed system is used to connect multiple USSs operating in the same general area to share information while protecting operator and consumer privacy. The system is focused on facilitating communication amongst actively operating USSs without details about UAS operations stored or processed in the DSS.
 
 - [Introduction to the DSS implementation](./README_DSS.md)
-- [Conceptual Background on the DSS and services](./concepts.md)
-- [DSS Implementation Details](./implementation_details.md)
+- [Building and deploying a DSS instance](./build/README.md)
+- [Conceptual background on the DSS and services](./concepts.md)
+- [DSS implementation details](./implementation_details.md)
 
 ## Monitoring and UAS Service Suppliers (USS) testing
 
@@ -39,5 +40,5 @@ In addition to the DSS, this repository contains tools for USSs to test and vali
 <!-- - [Contribution Guidelines]() -->
 
 - [Introduction to the repository](./introduction_to_repository.md)
-- [Release Process](./RELEASE.md)
+- [Release process](./RELEASE.md)
 <!-- - [Governance]() -->
