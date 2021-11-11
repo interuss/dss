@@ -37,6 +37,10 @@ authentication. This backend talks directly to CockroachDB.
 Individual CockroachDB nodes hosting sharded data of the DAR. More information about CockroachDB
 [here](https://www.cockroachlabs.com/docs/stable/architecture/overview.html).
 
+The current implementation relies on CockroachDB for data storage and synchronization
+between DSS participants. See [implementation details](implementation_details.md) for
+more information.
+
 ### DB Manager
 
 Component responsible for performing orderly database schema migrations, including database bootstrapping. Invoked automatically on first run along with the CRDB cluster-init job, or when requested manually by a user.
