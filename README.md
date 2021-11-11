@@ -1,72 +1,43 @@
 # USS to USS Communication and Synchronization [![Build Status](https://dev.azure.com/astm/dss/_apis/build/status/interuss.dss?branchName=master)](https://dev.azure.com/astm/dss/_build/latest?definitionId=2&branchName=master) [![GoDoc](https://godoc.org/github.com/interuss/dss?status.svg)](https://godoc.org/github.com/interuss/dss)
-This repository contains a simple and open service used by separate UAS
-Service Suppliers (USSs), often in different organizations, to
-communicate information about UAS operations and coordinate with each
-other.  This service is a Discovery and Synchronization Service (DSS) as
-described in the ASTM remote ID standard.  This flexible and distributed
-system is used to connect multiple USSs operating in the same general
-area to share information while protecting operator and consumer
-privacy. The system is focused on facilitating communication amongst
-actively operating USSs without details about UAS operations stored or
-processed in the DSS.
 
-## Concepts
+This repository contains the implementation of the Discovery and Synchronization Service (DSS) and a monitoring framework to test UAS Service Suppliers (USS). See the [InterUSS website](https://interuss.org) for background information.
 
-Conceptual background on the DSS and services it supports may be found [here](concepts.md).
+**Standards and Regulations**
 
-## Simplified architecture
+The DSS implementation and associated monitoring tools comply with the following standards and regulations:
 
-### Overview
-![Simplified architecture diagram](assets/generated/simple_architecture.png)
+- [ASTM F3411-19](https://www.astm.org/Standards/F3411.htm): Remote ID. [See OpenAPI interface](./interfaces/uastech/standards/remoteid)
+- [ASTM WK63418](https://www.astm.org/DATABASE.CART/WORKITEMS/WK63418.htm): UAS Traffic Management (UTM) UAS Service Supplier (USS) Interoperability Specification. [See OpenAPI interface](./interfaces/astm-utm)
 
-A "DSS Region" consists of one or more DSS instances sharing the same
-DSS Airspace Representation (DAR) by forming a single CockroachDB
-cluster.  In the simplified diagram above, two DSS instances share the
-same DAR via CRDB certificates and configuration which means the two
-HTTPS frontends may be used interchangeably.  USS 1 chooses to use only
-instance 1 while USS 2 uses both instances for improved resilience to
-failures.
+U-Space specific:
 
-### HTTPS frontend
+- [COMMISSION IMPLEMENTING REGULATION (EU) 2021/664](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1) *(work in progress)*
 
-Serves as an HTTPS gateway to the business logic, translating between
-HTTPS request and gRPC to allow users to communicate to the DSS via
-simple HTTPS calls. This code is currently generated via
-[grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway), and does
-not do much other than translation.  See the [API specification
-here](https://tiny.cc/dssapi_rid).
+## Discovery and Synchronization Service (DSS)
 
-### gRPC backend
+The DSS is a simple and open service used by separate USSs, often in different organizations, to communicate information about UAS operations and coordinate with each other. This service is described in the ASTM remote ID standard. This flexible and distributed system is used to connect multiple USSs operating in the same general area to share information while protecting operator and consumer privacy. The system is focused on facilitating communication amongst actively operating USSs without details about UAS operations stored or processed in the DSS.
 
-Component responsible for all the business logic as well as
-authentication. This backend talks directly to CockroachDB.
+- [Introduction to the DSS implementation](./README_DSS.md)
+- [Conceptual Background on the DSS and services](./CONCEPTS.md)
+- [Implementation Details](./implementation_details.md)
 
-### CockroachDB (CRDB)
+## Monitoring and UAS Service Suppliers (USS) testing
 
-Individual CockroachDB nodes hosting sharded data of the DAR. More information about CockroachDB
-[here](https://www.cockroachlabs.com/docs/stable/architecture/overview.html).
+In addition to the DSS, this repository contains tools for USSs to test and validate their implementation of the services such as Remote ID (ASTM F3411) and Strategic Conflict Detection defined in ASTM WK63418, UAS Traffic Management (UTM) UAS Service Supplier (USS) Interoperability Specification.
 
-### DB Manager
+- [Introduction to monitoring, conformance and interoperability testing](./monitoring/README.md)<br>Modules:
+  - [DSS load tester](./monitoring/loadtest)
+  - [DSSs interoperability](./monitoring/interoperability)
+  - [DSS prober](./monitoring/prober)
+  - [USS Remote ID qualifier](./monitoring/rid_qualifier)
+  <!-- - [USS SCD qualifier](./monitoring/scd_qualifier) -->
+  - [Tracer](./monitoring/tracer)
 
-Component responsible for performing orderly database schema migrations, including database bootstrapping. Invoked automatically on first run along with the CRDB cluster-init job, or when requested manually by a user.
+## Development Practices
 
-## Directories of Interest:
-*   [`build/`](build) has all of the configuration required to build and
-    deploy a DSS instance. The README in that directory contains more
-    information.
-*   [`pkg/`](pkg) contains all of the source code for the DSS. See the
-    README in that directory for more information.
-*   [`cmds/`](cmds) contains entry points and docker files for the
-    actual binaries (the `http-gateway` and `grpc-backend`)
-*   [`test/`](test) contains some tests; see [the README](test/README.md)
-    for more information about testing.
+<!-- - [Getting Started]() -->
+<!-- - [Contribution Guidelines]() -->
 
-## Detailed introduction to the repository
-
-If you are new to the project, read this document to get a long form introduction [about repository structure](introduction_to_repository.md)
-
-## Notes
-
-*   The current implementation relies on CockroachDB for data storage
-    and synchronization between DSS participants.  See [implementation
-    details](implementation_details.md) for more information.
+- [Introduction to the repository](./introduction_to_repository.md)
+- [Release Process](./RELEASE.md)
+<!-- - [Governance]() -->
