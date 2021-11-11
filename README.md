@@ -18,20 +18,20 @@ U-Space specific:
 The DSS is a simple and open service used by separate USSs, often in different organizations, to communicate information about UAS operations and coordinate with each other. This service is described in the ASTM remote ID standard. This flexible and distributed system is used to connect multiple USSs operating in the same general area to share information while protecting operator and consumer privacy. The system is focused on facilitating communication amongst actively operating USSs without details about UAS operations stored or processed in the DSS.
 
 - [Introduction to the DSS implementation](./README_DSS.md)
-- [Conceptual Background on the DSS and services](./CONCEPTS.md)
-- [Implementation Details](./implementation_details.md)
+- [Conceptual Background on the DSS and services](./concepts.md)
+- [DSS Implementation Details](./implementation_details.md)
 
 ## Monitoring and UAS Service Suppliers (USS) testing
 
 In addition to the DSS, this repository contains tools for USSs to test and validate their implementation of the services such as Remote ID (ASTM F3411) and Strategic Conflict Detection defined in ASTM WK63418, UAS Traffic Management (UTM) UAS Service Supplier (USS) Interoperability Specification.
 
 - [Introduction to monitoring, conformance and interoperability testing](./monitoring/README.md)<br>Modules:
-  - [DSS load tester](./monitoring/loadtest)
-  - [DSSs interoperability](./monitoring/interoperability)
-  - [DSS prober](./monitoring/prober)
   - [USS Remote ID qualifier](./monitoring/rid_qualifier)
   <!-- - [USS SCD qualifier](./monitoring/scd_qualifier) -->
-  - [Tracer](./monitoring/tracer)
+  - [DSSs interoperability tests](./monitoring/interoperability)
+  - [DSS integration test: prober](./monitoring/prober)
+  - [DSS load tester](./monitoring/loadtest)
+  - [Diagnostic tool to monitor DSS and USS interactions: tracer](./monitoring/tracer)
 
 ## Development Practices
 
