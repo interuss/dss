@@ -30,7 +30,7 @@ In addition to the DSS, this repository contains tools for USSs to test and vali
   <!-- - [USS SCD qualifier](./monitoring/scd_qualifier) -->
   - [DSSs interoperability tests](./monitoring/interoperability)
   - [DSS integration test: prober](./monitoring/prober)
-  - [DSS load tester](./monitoring/loadtest)
+  - [DSS load test](./monitoring/loadtest)
   - [Diagnostic tool to monitor DSS and USS interactions: tracer](./monitoring/tracer)
 
 ## Development Practices
