@@ -1,6 +1,7 @@
 # USS to USS Communication and Synchronization [![Build Status](https://dev.azure.com/astm/dss/_apis/build/status/interuss.dss?branchName=master)](https://dev.azure.com/astm/dss/_build/latest?definitionId=2&branchName=master) [![GoDoc](https://godoc.org/github.com/interuss/dss?status.svg)](https://godoc.org/github.com/interuss/dss)
 
-This repository contains the implementation of the Discovery and Synchronization Service (DSS) and a monitoring framework to test UAS Service Suppliers (USS). See the [InterUSS website](https://interuss.org) for background information.
+This repository contains the implementation of the Discovery and Synchronization Service (DSS) and a monitoring
+framework to test UAS Service Suppliers (USS). See the [InterUSS website](https://interuss.org) for background information.
 
 ## Standards and Regulations
 
