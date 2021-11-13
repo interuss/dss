@@ -1,7 +1,7 @@
 
 ## DSS
 
-Conceptual background on the DSS and services it supports may be found [here](../CONCEPTS.md).
+Conceptual background on the DSS and services it supports may be found [here](../concepts.md).
 
 ## Simplified architecture
 
