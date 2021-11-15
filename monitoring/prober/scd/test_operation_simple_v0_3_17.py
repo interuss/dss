@@ -210,6 +210,15 @@ def test_get_op_by_search_latest_time_included(ids, scd_api, scd_session):
   assert ids(OP_TYPE) in [x['id'] for x in resp.json()['operational_intent_references']]
 
 
+
+@default_scope(SCOPE_SC)
+@depends_on(test_create_op)
+def test_set_uss_availability(ids, scd_session2):
+  resp = scd_session2.put(f'/uss_availability/uss1', scope=SCOPE_SC)
+  # TODO: assert commented until response implemented.
+  # assert resp.status_code == 200, resp.content
+
+
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
 def test_get_op_by_id_other_uss(ids, scd_session2):
