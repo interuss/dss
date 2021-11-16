@@ -7,17 +7,16 @@ info:
 
     Unless otherwise specified, fields specified in a message but not declared in the API shall be ignored.
   version: "0.0.1"
- 
-security:
-- TestAuthority:
-  - utm.strategic_coordination
-  - scd.inject_test_data
-   
-tags:
-- name: Strategic Deconfliction
-  description: |-
-    Endpoints exposed by the USS for interaction with strategic deconfliction test suite (`scd_qualifier`)
 
+security:
+  - TestAuthority:
+      - utm.strategic_coordination
+      - scd.inject_test_data
+
+tags:
+  - name: Strategic Deconfliction
+    description: |-
+      Endpoints exposed by the USS for interaction with strategic deconfliction test suite (`scd_qualifier`)
 
 components:
   securitySchemes:
@@ -30,7 +29,7 @@ components:
             utm.strategic_coordination: >-
               Client may perform actions encompassed by the strategic
               coordination role including strategic conflict detection.
-              
+
       description: >-
         Authorization from, or on behalf of, an authorization authority.  This
         authority will issue access tokens that are JSON Web Tokens as defined
@@ -78,12 +77,12 @@ components:
         Identifier for an Entity communicated through the DSS.  Formatted as a
         UUIDv4.
       anyOf:
-      - $ref: '#/components/schemas/UUIDv4Format'
+        - $ref: "#/components/schemas/UUIDv4Format"
       example: 2f8343be-6482-4d1b-a474-16847e01af1e
     Time:
       required:
-      - value
-      - format
+        - value
+        - format
       type: object
       properties:
         value:
@@ -91,16 +90,16 @@ components:
           description: >-
             RFC3339-formatted time/date string.  The time zone must be 'Z'.
           format: date-time
-          example: '1985-04-12T23:20:50.52Z'
+          example: "1985-04-12T23:20:50.52Z"
         format:
           type: string
           enum:
-          - RFC3339
+            - RFC3339
 
     Radius:
       required:
-      - value
-      - units
+        - value
+        - units
       type: object
       properties:
         value:
@@ -117,13 +116,13 @@ components:
           description: >-
             FIXM-compatible units.  Only meters ("M") are acceptable for UTM.
           enum:
-          - M
+            - M
     Altitude:
       type: object
       required:
-      - value
-      - reference
-      - units
+        - value
+        - reference
+        - units
       properties:
         value:
           description: >-
@@ -145,7 +144,7 @@ components:
             'SFC' which is equivalent to AGL.
           type: string
           enum:
-          - W84
+            - W84
         units:
           description: >-
             The reference quantities used to express the value of altitude. See
@@ -153,7 +152,7 @@ components:
             to allow other options.
           type: string
           enum:
-          - M       
+            - M
     Latitude:
       description: >-
         Degrees of latitude north of the equator, with reference to the WGS84
@@ -188,33 +187,33 @@ components:
         Vertices may not be duplicated.  In particular, the final polygon vertex
         must not be identical to the first vertex.
       required:
-      - vertices
+        - vertices
       type: object
       properties:
         vertices:
           minItems: 3
           type: array
           items:
-            $ref: '#/components/schemas/LatLngPoint'
+            $ref: "#/components/schemas/LatLngPoint"
     LatLngPoint:
       description: Point on the earth's surface.
       required:
-      - lat
-      - lng
+        - lat
+        - lng
       type: object
       properties:
         lng:
-          $ref: '#/components/schemas/Longitude'
+          $ref: "#/components/schemas/Longitude"
         lat:
-          $ref: '#/components/schemas/Latitude'
+          $ref: "#/components/schemas/Latitude"
     Circle:
       description: A circular area on the surface of the earth.
       type: object
       properties:
         center:
-          $ref: '#/components/schemas/LatLngPoint'
+          $ref: "#/components/schemas/LatLngPoint"
         radius:
-          $ref: '#/components/schemas/Radius'
+          $ref: "#/components/schemas/Radius"
     Volume3D:
       description: >-
         A three-dimensional geographic volume consisting of a
@@ -223,11 +222,11 @@ components:
       properties:
         outline_circle:
           anyOf:
-          - $ref: '#/components/schemas/Circle'
+            - $ref: "#/components/schemas/Circle"
           description: A circular geographic shape on the surface of the earth.
         outline_polygon:
           anyOf:
-          - $ref: '#/components/schemas/Polygon'
+            - $ref: "#/components/schemas/Polygon"
           description: >-
             A polygonal geographic shape on the surface of the earth.
         altitude_lower:
@@ -235,29 +234,29 @@ components:
             Minimum bounding altitude of this volume. Must be less than
             altitude_upper, if specified.
           anyOf:
-          - $ref: '#/components/schemas/Altitude'
+            - $ref: "#/components/schemas/Altitude"
         altitude_upper:
           description: >-
             Maximum bounding altitude of this volume. Must be greater than
             altitude_lower, if specified.
           anyOf:
-          - $ref: '#/components/schemas/Altitude'
+            - $ref: "#/components/schemas/Altitude"
     Volume4D:
       description: Contiguous block of geographic spacetime.
       required:
-      - volume
+        - volume
       type: object
       properties:
         volume:
-          $ref: '#/components/schemas/Volume3D'
+          $ref: "#/components/schemas/Volume3D"
         time_start:
           description: Beginning time of this volume. Must be before time_end.
           anyOf:
-          - $ref: '#/components/schemas/Time'
+            - $ref: "#/components/schemas/Time"
         time_end:
           description: End time of this volume. Must be after time_start.
           anyOf:
-          - $ref: '#/components/schemas/Time'
+            - $ref: "#/components/schemas/Time"
 
     #
     # USS-USS schema components
@@ -282,8 +281,8 @@ components:
             May not contain any items when the operational intent is Contingent.
           type: array
           items:
-            $ref: '#/components/schemas/Volume4D'
-          default: [ ]
+            $ref: "#/components/schemas/Volume4D"
+          default: []
         off_nominal_volumes:
           description: >-
             Volumes that contain the anticipated area of non-conformance while
@@ -299,10 +298,10 @@ components:
             Activated.
           type: array
           items:
-            $ref: '#/components/schemas/Volume4D'
-          default: [ ]
+            $ref: "#/components/schemas/Volume4D"
+          default: []
         priority:
-          $ref: '#/components/schemas/Priority'
+          $ref: "#/components/schemas/Priority"
     Priority:
       description: >-
         Ordinal priority of the operational intent, as defined by the
@@ -318,15 +317,15 @@ components:
     OperationalIntent:
       description: Full description of a UTM operational intent.
       required:
-      - reference
-      - details
+        - reference
+        - details
       type: object
       properties:
         reference:
-          $ref: '#/components/schemas/OperationalIntentReference'
+          $ref: "#/components/schemas/OperationalIntentReference"
         details:
-          $ref: '#/components/schemas/OperationalIntentDetails'
-          
+          $ref: "#/components/schemas/OperationalIntentDetails"
+
     UssBaseURL:
       description: >-
         The base URL of a USS implementation of part or all of the USS-USS API.
@@ -373,16 +372,16 @@ components:
         necessarily deconflict.
       type: string
       enum:
-      - Accepted
-      - Activated
-      - Nonconforming
-      - Contingent
+        - Accepted
+        - Activated
+        - Nonconforming
+        - Contingent
     UssAvailabilityState:
       type: string
       enum:
-      - Unknown
-      - Normal
-      - Down
+        - Unknown
+        - Normal
+        - Down
       description: >-
         A USS is presumed to be in the Unknown state absent indication otherwise
         by a USS with availability arbitration scope.  Upon determination via
@@ -399,7 +398,7 @@ components:
 
         A USS in the Unknown state possesses all the capabilities, within the
         DSS, of a USS in the Normal state.
-        
+
     EntityOVN:
       title: EntityOVN
       description: >-
@@ -419,9 +418,9 @@ components:
         Identifier for a subscription communicated through the DSS.  Formatted
         as a UUIDv4.
       anyOf:
-      - $ref: '#/components/schemas/UUIDv4Format'
+        - $ref: "#/components/schemas/UUIDv4Format"
       example: 78ea3fe8-71c2-4f5c-9b44-9c02f5563c6f
-      
+
     OperationalIntentReference:
       description: >-
         The high-level information of a planned or active operational intent
@@ -429,19 +428,19 @@ components:
         ONLY to the USS that created the operational intent but NEVER to other
         USS instances.
       required:
-      - id
-      - manager
-      - uss_availability
-      - version
-      - state
-      - time_start
-      - time_end
-      - uss_base_url
-      - subscription_id
+        - id
+        - manager
+        - uss_availability
+        - version
+        - state
+        - time_start
+        - time_end
+        - uss_base_url
+        - subscription_id
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/EntityID'
+          $ref: "#/components/schemas/EntityID"
         manager:
           type: string
           example: uss1
@@ -452,7 +451,7 @@ components:
             intent update notifications originating from a USS that does not
             manage the operational intent.
         uss_availability:
-          $ref: '#/components/schemas/UssAvailabilityState'
+          $ref: "#/components/schemas/UssAvailabilityState"
         version:
           type: integer
           format: int32
@@ -465,7 +464,7 @@ components:
             version does not need to retrieve the details again until the
             version changes.
         state:
-          $ref: '#/components/schemas/OperationalIntentState'
+          $ref: "#/components/schemas/OperationalIntentState"
         ovn:
           description: >-
             Opaque version number of this operational intent.  Populated only
@@ -475,23 +474,23 @@ components:
             USS must obtain the OVN from the details retrieved from the managing
             USS).
           anyOf:
-          - $ref: '#/components/schemas/EntityOVN'
+            - $ref: "#/components/schemas/EntityOVN"
         time_start:
           description: Beginning time of operational intent.
           anyOf:
-          - $ref: '#/components/schemas/Time'
+            - $ref: "#/components/schemas/Time"
         time_end:
           description: End time of operational intent.
           anyOf:
-          - $ref: '#/components/schemas/Time'
+            - $ref: "#/components/schemas/Time"
         uss_base_url:
-          $ref: '#/components/schemas/OperationalIntentUssBaseURL'
+          $ref: "#/components/schemas/OperationalIntentUssBaseURL"
         subscription_id:
           description: >-
             The ID of the subscription that is ensuring the operational intent
             manager receives relevant airspace updates.
           anyOf:
-          - $ref: '#/components/schemas/SubscriptionID'
+            - $ref: "#/components/schemas/SubscriptionID"
 
     OperationalIntentUssBaseURL:
       description: >-
@@ -500,23 +499,23 @@ components:
         intent, and telemetry during non-conformance or contingency, if
         applicable.
       anyOf:
-      - $ref: '#/components/schemas/UssBaseURL'
-      
+        - $ref: "#/components/schemas/UssBaseURL"
+
     SubscriptionUssBaseURL:
       description: >-
         The base URL of a USS implementation of the parts of the USS-USS API
         necessary for receiving the notifications requested by this
         subscription.
       anyOf:
-      - $ref: '#/components/schemas/UssBaseURL'
-      
+        - $ref: "#/components/schemas/UssBaseURL"
+
     ImplicitSubscriptionParameters:
       description: >-
         Information necessary to create a subscription to serve a single
         operational intent's notification needs.
       type: object
       required:
-      - uss_base_url
+        - uss_base_url
       properties:
         uss_base_url:
           description: >-
@@ -525,7 +524,7 @@ components:
             intent must be aware of.  This includes, at least, notifications for
             relevant changes in operational intents.
           anyOf:
-          - $ref: '#/components/schemas/SubscriptionUssBaseURL'
+            - $ref: "#/components/schemas/SubscriptionUssBaseURL"
         notify_for_constraints:
           description: >-
             True if this operational intent's subscription should trigger
@@ -545,9 +544,9 @@ components:
         'subscription_id' to use. Note: The implicit subscription is managed by
         the DSS, not the USS.
       required:
-      - extents
-      - state
-      - uss_base_url
+        - extents
+        - state
+        - uss_base_url
       type: object
       properties:
         extents:
@@ -562,7 +561,7 @@ components:
             provided instead, for instance.
           type: array
           items:
-            $ref: '#/components/schemas/Volume4D'
+            $ref: "#/components/schemas/Volume4D"
           minItems: 1
         key:
           description: >-
@@ -579,11 +578,11 @@ components:
             constraints.  The key does not need to contain the OVN for the
             operational intent being updated.
           anyOf:
-          - $ref: '#/components/schemas/Key'
+            - $ref: "#/components/schemas/Key"
         state:
-          $ref: '#/components/schemas/OperationalIntentState'
+          $ref: "#/components/schemas/OperationalIntentState"
         uss_base_url:
-          $ref: '#/components/schemas/OperationalIntentUssBaseURL'
+          $ref: "#/components/schemas/OperationalIntentUssBaseURL"
         subscription_id:
           description: >-
             The ID of an existing subscription that the USS will use to keep the
@@ -596,7 +595,7 @@ components:
             which this operational intent is conducted, and it must provide
             notifications for operational intents.
           anyOf:
-          - $ref: '#/components/schemas/EntityID'
+            - $ref: "#/components/schemas/EntityID"
         new_subscription:
           description: >-
             If an existing subscription is not specified in `subscription_id`,
@@ -606,13 +605,30 @@ components:
             associated with this operational intent, and will generally be
             deleted automatically upon the deletion of this operational intent.
           anyOf:
-          - $ref: '#/components/schemas/ImplicitSubscriptionParameters'
+            - $ref: "#/components/schemas/ImplicitSubscriptionParameters"
 
-    OperationalIntentList:
-      description: A list of operational intents
-      type: array
-      items: 
-        $ref: '#/components/schemas/OperationalIntent'
+    #########
+    # The definition before this seperator are from the standard SCD API (https://github.com/astm-utm/Protocol/blob/master/utm.yaml), the definitions speicfic for the automated testing suite follow below.
+    #########
+
+    OperationalIntentTestInjection: 
+        type: object
+        properties:
+          operational_intent:
+              $ref: "#/components/schemas/OperationalIntent"
+          injection_id:
+            description: 'ID of the injected test flight.  Remains the same regardless of the flight ID/UTM ID reported in the system.'
+            type: string
+            example: 'edb7695f-8737-4b9f-91f8-e2afbb333f41'
+
+    OperationalIntentSubmitParameters: 
+        type: object
+        properties:
+          operational_intents:
+            description: A list of operational intents provided for the test
+            type: array
+            items:
+              $ref: "#/components/schemas/OperationalIntentTestInjection"
     Key:
       description: >-
         Proof that a client has obtained the latest airspace content, used to
@@ -624,55 +640,51 @@ components:
         contents of this data structure are generated by the client.
       type: array
       items:
-        $ref: '#/components/schemas/EntityOVN'
-      default: [ ]
+        $ref: "#/components/schemas/EntityOVN"
+      default: []
     DeleteTestResponse:
-      description: ''
+      description: ""
       required:
         - operational_intents
       type: object
       properties:
         operational_intents:
-          description: 'The complete set of test data deleted.'
+          description: "The complete set of test data deleted."
           type: array
           items:
-            $ref: '#/components/schemas/OperationalIntent'
-
+            $ref: "#/components/schemas/OperationalIntent"
 
     CreateTestParameters:
       description: Collection of fully-defined operational intents
       type: object
       properties:
-        test_id: 
+        test_id:
           description: ID provided when a test payload is submitted to the system under test
           type: string
-          format: uuid 
-        operational_intents:
-          description: A list of operational intents provided for the test
-          $ref: '#/components/schemas/OperationalIntentList'
+          format: uuid
 
-    FlightNotAuthorizedResult:  
+
+    FlightNotAuthorizedResult:
       type: object
       properties:
-        scd_processing_result:  
-          type: string        
-          enum: [OperationalConflict, 'CouldNotProcess']   
+        scd_processing_result:
+          type: string
+          enum: [OperationalConflict, "CouldNotProcess"]
           description: >
-              Sort order:
-                * `OperationalConflict` - The Flight not Authorized becuase of a conflict with another operation
-                * `CouldNotProcesss` - The OperationalIntent could not be processed by the USSP, this might be because of a number of reasons e.g. the intent is so far in the future the USSP cannot process it.
+            Sort order:
+              * `OperationalConflict` - The Flight not Authorized becuase of a conflict with another operation
+              * `CouldNotProcesss` - The OperationalIntent could not be processed by the USSP, this might be because of a number of reasons e.g. the intent is so far in the future the USSP cannot process it.
         area_of_interest:
           type: object
-          $ref: '#/components/schemas/Volume4D'
-                  
-      
-    SCDProcessingResults: 
+          $ref: "#/components/schemas/Volume4D"
+
+    SCDProcessingResults:
       description: Results for the operational intents submitted to the create test endpoint
       type: array
       items:
         anyOf:
-          - $ref: '#/components/schemas/OperationalIntent'
-          - $ref: '#/components/schemas/FlightNotAuthorizedResult'
+          - $ref: "#/components/schemas/OperationalIntent"
+          - $ref: "#/components/schemas/FlightNotAuthorizedResult"
 
     QuerySCDParameters:
       description: |-
@@ -680,17 +692,14 @@ components:
       type: object
       properties:
         area_of_interest:
-          $ref: '#/components/schemas/Volume4D'
-
-
+          $ref: "#/components/schemas/Volume4D"
 
 paths:
   /scd_tests/{test_id}:
     parameters:
-      -
-        examples:
+      - examples:
           default:
-            value: '2979bd18-7f06-441c-bda6-e82c841c35d6'
+            value: "2979bd18-7f06-441c-bda6-e82c841c35d6"
         name: test_id
         description: >-
           The ID of the test.
@@ -703,16 +712,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTestParameters'
+              $ref: "#/components/schemas/OperationalIntentSubmitparameters"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateTestParameters'
+                $ref: "#/components/schemas/OperationalIntentSubmitparameters"
           description: Requested test was created successfully.
-        '409':
+        "409":
           description: Test already exists.
       operationId: createTest
       summary: Create a test
@@ -727,10 +736,9 @@ paths:
 
   /scd_tests/{test_id}/{version}:
     parameters:
-      -
-        examples:
+      - examples:
           default:
-            value: 'b8e57460-f72d-4a8c-bb4e-b5ce1f5009c4'
+            value: "b8e57460-f72d-4a8c-bb4e-b5ce1f5009c4"
         name: test_id
         description: >-
           The ID of the test.
@@ -738,8 +746,7 @@ paths:
           type: string
         in: query
         required: true
-      -
-        name: version
+      - name: version
         description: >-
           Current version of the test.
         schema:
@@ -748,11 +755,11 @@ paths:
         required: true
     delete:
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteTestResponse'
+                $ref: "#/components/schemas/DeleteTestResponse"
           description: Requested test was deleted successfully.
       operationId: deleteTest
       summary: Delete test
@@ -760,29 +767,29 @@ paths:
       security:
         - TestAuth:
             - scd.inject_test_data
-            
+
       tags:
         - Strategic Deconfliction
 
-  /scd_qualifier_data:    
+  /scd_qualifier_data:
     get:
       operationId: getDetails
-      summary: Get SCD processing details 
+      summary: Get SCD processing details
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QuerySCDParameters'
+              $ref: "#/components/schemas/QuerySCDParameters"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SCDProcessingResults'
+                $ref: "#/components/schemas/SCDProcessingResults"
           description: Details about the requested test were retrieved successfully.
-        '404':
-          description: Requested volume and the associated results were not found.          
+        "404":
+          description: Requested volume and the associated results were not found.
       description: Get the details of strategic de-confliction processing
       security:
         - SCDAuth:
