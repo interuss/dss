@@ -58,7 +58,8 @@ func main() {
 		log.Panic("Must specify one of [db_version, migration_step] to goto, use --help to see options")
 	}
 	latest := strings.ToLower(*dbVersion) == "latest"
-
+	// Migration step at which `defaultdb` is renamed to `rid`
+	var ridDbRenameStep uint = 8
 	var (
 		desiredVersion *semver.Version
 	)
@@ -74,10 +75,6 @@ func main() {
 	params := flags.ConnectParameters()
 	params.ApplicationName = "SchemaManager"
 	params.DBName = filepath.Base(*path)
-	if params.DBName == "rid" {
-		// Create defaultdb instead of rid for db migration backward compatibility
-		params.DBName = "defaultdb"
-	}
 	postgresURI, err := params.BuildURI()
 	if err != nil {
 		log.Panic("Failed to build URI", zap.Error(err))
@@ -114,9 +111,8 @@ func main() {
 	} else {
 		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMoves), preMigrationStep, postMigrationStep)
 	}
-
 	// Post-migration defaultdb is renamed to `rid`, so replace it in db name and uri.
-	if params.DBName == "defaultdb" {
+	if params.DBName == "defaultdb" && postMigrationStep >= ridDbRenameStep {
 		params.DBName = "rid"
 	}
 	postgresURI, err = params.BuildURI()
@@ -153,12 +149,12 @@ func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int) 
 // New instantiates a new migrate object
 func New(path string, dbURI string, database string) (*MyMigrate, error) {
 	noDbPostgres := strings.Replace(dbURI, fmt.Sprintf("/%s", database), "", 1)
-	err := createDatabaseIfNotExists(noDbPostgres, database)
+	db, err := createDatabaseIfNotExists(&noDbPostgres, database)
 	if err != nil {
 		// There exists a defaultdb with name rid before scd database gets created, so `rid` is added to dbURI
-		if database == "scd" {
+		if database == "scd" && strings.Contains(err.Error(), "defaultdb") {
 			noDbPostgres = strings.Replace(dbURI, database, "rid", 1)
-			err = createDatabaseIfNotExists(noDbPostgres, database)
+			db, err = createDatabaseIfNotExists(&noDbPostgres, database)
 			if err != nil {
 				return nil, err
 			}
@@ -167,6 +163,9 @@ func New(path string, dbURI string, database string) (*MyMigrate, error) {
 		}
 	}
 	path = fmt.Sprintf("file://%v", path)
+	if db == "defaultdb" {
+		dbURI = strings.Replace(dbURI, "/rid?", "/defaultdb?", 1)
+	}
 	crdbURI := strings.Replace(dbURI, "postgresql", "cockroachdb", 1)
 	migrater, err := migrate.New(path, crdbURI)
 	if err != nil {
@@ -190,10 +189,10 @@ func intAbs(x int) int {
 	return int(math.Abs(float64(x)))
 }
 
-func createDatabaseIfNotExists(crdbURI string, database string) error {
-	crdb, err := cockroach.Dial(crdbURI)
+func createDatabaseIfNotExists(crdbURI *string, database string) (string, error) {
+	crdb, err := cockroach.Dial(*crdbURI)
 	if err != nil {
-		return fmt.Errorf("Failed to dial CRDB to check DB exists: %v", err)
+		return "", fmt.Errorf("Failed to dial CRDB to check DB exists: %v", err)
 	}
 	defer func() {
 		crdb.Close()
@@ -209,18 +208,26 @@ func createDatabaseIfNotExists(crdbURI string, database string) error {
 	var exists bool
 
 	if err := crdb.QueryRow(checkDbQuery, database).Scan(&exists); err != nil {
-		return err
+		return "", err
 	}
 
+	if err != nil {
+		return "", err
+	}
 	if !exists {
+		// if db == rid and rid db doesn't exist, then create defaultdb instead to support older version.
+		if database == "rid" {
+			database = "defaultdb"
+			*crdbURI = strings.Replace(*crdbURI, "?", "/defaultdb?", 1)
+		}
 		log.Printf("Database \"%s\" doesn't exist, attempting to create", database)
 		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", database)
 		_, err := crdb.Exec(createDB)
 		if err != nil {
-			return fmt.Errorf("Failed to Create Database: %v", err)
+			return "", fmt.Errorf("Failed to Create Database: %v", err)
 		}
 	}
-	return nil
+	return database, nil
 }
 
 func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, error) {
