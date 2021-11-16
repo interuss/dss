@@ -41,5 +41,5 @@ End users of remote ID (members of the general public) access remote ID through 
 ![Remote ID telemetry consumption sequence diagram](assets/generated/rid_display.png)
 
 ## Strategic deconfliction
-
+<!-- TODO: Needs update -->
 Although it is envisioned that the DSS will also coordinate strategic deconfliction during flight planning, this functionality is not currently supported in this implementation of a DSS.  In the future, strategic deconfliction will likely be supported through the use of new types of Entities representing flight operations and non-operation constraints, as well as a synchronization system that ensures anyone planning a new flight operation was aware of all relevant information while planning.
