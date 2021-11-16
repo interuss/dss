@@ -607,28 +607,6 @@ components:
           anyOf:
             - $ref: "#/components/schemas/ImplicitSubscriptionParameters"
 
-    #########
-    # The definition before this seperator are from the standard SCD API (https://github.com/astm-utm/Protocol/blob/master/utm.yaml), the definitions speicfic for the automated testing suite follow below.
-    #########
-
-    OperationalIntentTestInjection: 
-        type: object
-        properties:
-          operational_intent:
-              $ref: "#/components/schemas/OperationalIntent"
-          injection_id:
-            description: 'ID of the injected test flight.  Remains the same regardless of the flight ID/UTM ID reported in the system.'
-            type: string
-            example: 'edb7695f-8737-4b9f-91f8-e2afbb333f41'
-
-    OperationalIntentSubmitParameters: 
-        type: object
-        properties:
-          operational_intents:
-            description: A list of operational intents provided for the test
-            type: array
-            items:
-              $ref: "#/components/schemas/OperationalIntentTestInjection"
     Key:
       description: >-
         Proof that a client has obtained the latest airspace content, used to
@@ -654,14 +632,46 @@ components:
           items:
             $ref: "#/components/schemas/OperationalIntent"
 
-    CreateTestParameters:
-      description: Collection of fully-defined operational intents
+    #########
+    # The definitions before this seperator are from the standard UTM API (https://github.com/astm-utm/Protocol/blob/master/utm.yaml), the definitions specific for the automated testing suite follow below.
+    #########
+
+    OperationalIntentTestInjection: 
+        type: object
+        properties:
+          operational_intent:
+              $ref: "#/components/schemas/OperationalIntent"
+          injection_id:
+            description: 'ID of the injected test flight.  Remains the same regardless of the flight ID/UTM ID reported in the system.'
+            type: string
+            example: 'edb7695f-8737-4b9f-91f8-e2afbb333f41'
+
+    OperationalIntentCreateParameters: 
+        type: object
+        properties:
+          operational_intents:
+            description: A list of operational intents provided for the test
+            type: array
+            items:
+              $ref: "#/components/schemas/OperationalIntentTestInjection"
+         
+         
+    SCDCreateTestResponse:
+      description: Response to a SCD qualification data processing request 
       type: object
       properties:
         test_id:
           description: ID provided when a test payload is submitted to the system under test
           type: string
           format: uuid
+        injected_operational_intents: 
+          type: array
+          items:
+            $ref: "#/components/schemas/OperationalIntent"
+        processing_results: 
+          type: array
+          items:
+            $ref: "#/components/schemas/SCDProcessingResults"
 
 
     FlightNotAuthorizedResult:
@@ -669,7 +679,7 @@ components:
       properties:
         scd_processing_result:
           type: string
-          enum: [OperationalConflict, "CouldNotProcess"]
+          enum: ["OperationalConflict", "CouldNotProcess"]
           description: >
             Sort order:
               * `OperationalConflict` - The Flight not Authorized becuase of a conflict with another operation
@@ -712,15 +722,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/OperationalIntentSubmitparameters"
+              $ref: "#/components/schemas/OperationalIntentCreateParameters"
         required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OperationalIntentSubmitparameters"
-          description: Requested test was created successfully.
+                $ref: "#/components/schemas/SCDCreateTestResponse"
+          description: Requested operational intents were processed successfully.
         "409":
           description: Test already exists.
       operationId: createTest
@@ -767,33 +777,6 @@ paths:
       security:
         - TestAuth:
             - scd.inject_test_data
-
-      tags:
-        - Strategic Deconfliction
-
-  /scd_qualifier_data:
-    get:
-      operationId: getDetails
-      summary: Get SCD processing details
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/QuerySCDParameters"
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SCDProcessingResults"
-          description: Details about the requested test were retrieved successfully.
-        "404":
-          description: Requested volume and the associated results were not found.
-      description: Get the details of strategic de-confliction processing
-      security:
-        - SCDAuth:
-            - utm.strategic_coordination
 
       tags:
         - Strategic Deconfliction
