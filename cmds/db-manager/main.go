@@ -79,7 +79,7 @@ func main() {
 	if err != nil {
 		log.Panic("Failed to build URI", zap.Error(err))
 	}
-	myMigrater, err := New(*path, postgresURI, params.DBName)
+	myMigrater, err := New(*path, &postgresURI, params.DBName)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -111,9 +111,12 @@ func main() {
 	} else {
 		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMoves), preMigrationStep, postMigrationStep)
 	}
-	// Post-migration defaultdb is renamed to `rid`, so replace it in db name and uri.
+	// Post-migration if migration is older than Step 8 rid db name is `defaultdb`
+	//  For versions higher than Step 8 it is renamed to `rid`.
 	if params.DBName == "defaultdb" && postMigrationStep >= ridDbRenameStep {
 		params.DBName = "rid"
+	} else if params.DBName == "rid" && postMigrationStep < ridDbRenameStep {
+		params.DBName = "defaultdb"
 	}
 	postgresURI, err = params.BuildURI()
 	if err != nil {
@@ -121,7 +124,7 @@ func main() {
 	}
 	currentDBVersion, err := getCurrentDBVersion(postgresURI, params.DBName)
 	if err != nil {
-		log.Fatal("Failed to get Current DB version for confirmation")
+		log.Fatal("Failed to get Current DB version for confirmation ", postgresURI, " ", params.DBName)
 	}
 	log.Printf("DB Version: %s, Migration Step # %d, Dirty: %v", currentDBVersion, postMigrationStep, dirty)
 }
@@ -147,31 +150,22 @@ func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int) 
 }
 
 // New instantiates a new migrate object
-func New(path string, dbURI string, database string) (*MyMigrate, error) {
-	noDbPostgres := strings.Replace(dbURI, fmt.Sprintf("/%s", database), "", 1)
+func New(path string, dbURI *string, database string) (*MyMigrate, error) {
+	noDbPostgres := strings.Replace(*dbURI, fmt.Sprintf("/%s", database), "", 1)
 	db, err := createDatabaseIfNotExists(&noDbPostgres, database)
 	if err != nil {
-		// There exists a defaultdb with name rid before scd database gets created, so `rid` is added to dbURI
-		if database == "scd" && strings.Contains(err.Error(), "defaultdb") {
-			noDbPostgres = strings.Replace(dbURI, database, "rid", 1)
-			db, err = createDatabaseIfNotExists(&noDbPostgres, database)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	path = fmt.Sprintf("file://%v", path)
 	if db == "defaultdb" {
-		dbURI = strings.Replace(dbURI, "/rid?", "/defaultdb?", 1)
+		*dbURI = strings.Replace(*dbURI, "/rid?", "/defaultdb?", 1)
 	}
-	crdbURI := strings.Replace(dbURI, "postgresql", "cockroachdb", 1)
+	crdbURI := strings.Replace(*dbURI, "postgresql", "cockroachdb", 1)
 	migrater, err := migrate.New(path, crdbURI)
 	if err != nil {
 		return nil, err
 	}
-	myMigrater := &MyMigrate{migrater, dbURI, database}
+	myMigrater := &MyMigrate{migrater, *dbURI, database}
 	// handle Ctrl+c
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT)
