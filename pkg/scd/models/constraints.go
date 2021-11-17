@@ -34,6 +34,7 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 		Manager:    c.Manager.String(),
 		Version:    int32(c.Version),
 		UssBaseUrl: c.USSBaseURL,
+    UssAvailability: UssAvailabilityStateUnknown.String(),
 	}
 
 	if c.StartTime != nil {
