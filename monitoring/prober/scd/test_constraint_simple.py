@@ -130,6 +130,7 @@ def test_create_constraint(ids, scd_api, scd_session):
   constraint = data['constraint_reference']
   assert constraint['id'] == id
   assert constraint['uss_base_url'] == BASE_URL
+  assert constraint['uss_availability'] == 'Unknown'
   assert_datetimes_are_equal(constraint['time_start']['value'], req['extents'][0]['time_start']['value'])
   assert_datetimes_are_equal(constraint['time_end']['value'], req['extents'][0]['time_end']['value'])
   assert constraint['version'] == 1
@@ -153,6 +154,7 @@ def test_get_constraint_by_id(ids, scd_api, scd_session):
     constraint = data['constraint_reference']
     assert constraint['id'] == id
     assert constraint['uss_base_url'] == BASE_URL
+    assert constraint['uss_availability'] == 'Unknown'
     assert constraint['version'] == 1
 
 
@@ -281,6 +283,7 @@ def test_mutate_constraint(ids, scd_api, scd_session):
   constraint = data['constraint_reference']
   assert constraint['id'] == id
   assert constraint['uss_base_url'] == 'https://example.com/uss2'
+  assert constraint['uss_availability'] == 'Unknown'
   assert constraint['version'] == 2
 
 
