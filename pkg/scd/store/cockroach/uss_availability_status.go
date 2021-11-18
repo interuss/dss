@@ -4,15 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
+	"strings"
+	"time"
 )
 
 var (
-	availabilityFieldsWithIndices   [2]string
+	availabilityFieldsWithIndices   [3]string
 	availabilityFieldsWithPrefix    string
 	availabilityFieldsWithoutPrefix string
 )
@@ -21,6 +22,7 @@ var (
 func init() {
 	availabilityFieldsWithIndices[0] = "id"
 	availabilityFieldsWithIndices[1] = "availability"
+	availabilityFieldsWithIndices[2] = "updated_at"
 
 	availabilityFieldsWithoutPrefix = strings.Join(
 		availabilityFieldsWithIndices[:], ",",
@@ -57,7 +59,7 @@ func (u *repo) UpsertUssAvailability(ctx context.Context, s *scdmodels.UssAvaila
 		uss_availability
 		  (%s)
 		VALUES
-			($1, $2)
+			($1, $2, transaction_timestamp())
 		RETURNING
 			%s`, availabilityFieldsWithoutPrefix, availabilityFieldsWithPrefix)
 	)
@@ -82,10 +84,12 @@ func (u *repo) fetchAvailabilities(ctx context.Context, q dsssql.Queryable, quer
 	for rows.Next() {
 		var (
 			u         = new(scdmodels.UssAvailabilityStatus)
+			updatedAt time.Time
 		)
 		err := rows.Scan(
 			&u.Uss,
 			&u.Availability,
+			&updatedAt,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Constraint row")
@@ -111,7 +115,6 @@ func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query 
 	}
 	return availabilities[0], nil
 }
-
 
 // GetUssAvailability returns the Availability status identified by "id".
 func (c *repo) GetUssAvailability(ctx context.Context, id dssmodels.ID) (*scdmodels.UssAvailabilityStatus, error) {

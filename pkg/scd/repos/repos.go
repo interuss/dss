@@ -56,7 +56,7 @@ type Subscription interface {
 type UssAvailability interface {
 	GetUssAvailability(ctx context.Context, id dssmodels.ID) (*scdmodels.UssAvailabilityStatus, error)
 
-	UpsertUssAvailability(ctx context.Context, sub *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error)
+	UpsertUssAvailability(ctx context.Context, ussa *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error)
 }
 
 // repos.Constraint abstracts constraint-specific interactions with the backing store.
