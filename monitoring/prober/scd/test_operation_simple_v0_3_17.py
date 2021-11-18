@@ -13,7 +13,7 @@ import datetime
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
-from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM, SCOPE_CP
+from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM, SCOPE_CP, SCOPE_AA
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
 
@@ -211,10 +211,10 @@ def test_get_op_by_search_latest_time_included(ids, scd_api, scd_session):
 
 
 
-@default_scope(SCOPE_SC)
+@default_scope(SCOPE_AA)
 @depends_on(test_create_op)
 def test_set_uss_availability(ids, scd_session2):
-  resp = scd_session2.put(f'/uss_availability/uss1', scope=SCOPE_SC)
+  resp = scd_session2.put(f'/uss_availability/uss1', scope=SCOPE_AA)
   # TODO: assert commented until response implemented.
   # assert resp.status_code == 200, resp.content
 
