@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
-
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 import s2sphere
 
 
@@ -115,3 +115,60 @@ class Subscription(dict):
   @property
   def version(self) -> Optional[int]:
     return self.get('version', None)
+
+
+# These mirror the types defined in the ASTM standard
+
+class LatLngPoint(ImplicitDict):
+    '''A class to hold information about a location as Latitude / Longitude pair'''
+    lat: float
+    lng: float
+
+class Radius(ImplicitDict):
+    ''' A class to hold the radius of a circle for the outline_circle object as specified per the ASTM standard '''
+    value: float
+    units:str
+
+class VolumePolygon(ImplicitDict):
+    ''' A class to hold the polygon object, used in the outline_polygon of the Volume3D object as specified in the ASTM standard '''
+    vertices: List[LatLngPoint] # A minimum of three LatLngPoints
+
+class Circle(ImplicitDict):
+    ''' Hold the details of a circle object used in the outline_circle object as specified in the ASTM standard '''
+    center: LatLngPoint 
+    radius: Radius
+
+
+class Altitude(ImplicitDict):
+    ''' A class to hold altitude per ASTM standard '''
+    value:int
+    reference:str 
+    units: str 
+
+class Time(ImplicitDict):
+    ''' A class to hold Time per ASTM standard'''
+    value: str
+    format:str 
+
+class OperationalIntentReference(ImplicitDict):
+    """Class for keeping track of an operational intent reference"""
+    id: str
+
+class Volume3D(ImplicitDict):
+    '''A class to hold Volume3D objects '''
+    
+    outline_polygon: VolumePolygon
+    altitude_lower: Altitude
+    altitude_upper: Altitude
+
+class Volume4D(ImplicitDict):
+    '''A class to hold ASTM Volume4D objects '''
+    volume: Volume3D
+    time_start: StringBasedDateTime
+    time_end: StringBasedDateTime
+
+
+class OperationalIntentDetails(ImplicitDict):
+    """Class for holding details of an operational intent reference """
+    volumes: List[Volume4D]
+    priority: int

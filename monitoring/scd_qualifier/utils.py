@@ -1,50 +1,16 @@
+from pathlib import Path
 from typing import List, Union
 from geojson import Feature
 from shapely.geometry import LineString, Polygon
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
+from monitoring.monitorlib.scd import Altitude, VolumePolygon, Volume4D, Volume3D
 import arrow
+from pathlib import Path
 
-class StringBasedDateTime(str):
-  """String that only allows values which describe a datetime."""
-  def __new__(cls, value):
-    if isinstance(value, str):
-      t = arrow.get(value).datetime
-    else:
-      t = value
-    str_value = str.__new__(cls, arrow.get(t).to('UTC').format('YYYY-MM-DDTHH:mm:ss.SSSSSS') + 'Z')
-    str_value.datetime = t
-    return str_value
-
-class LatLngPoint(ImplicitDict):
-    '''A class to hold information about a location as Latitude / Longitude pair'''
-    lat: float
-    lng: float
-
-class Radius(ImplicitDict):
-    ''' A class to hold the radius of a circle for the outline_circle object as specified per the ASTM standard '''
-    value: float
-    units:str
-
-class VolumePolygon(ImplicitDict):
-    ''' A class to hold the polygon object, used in the outline_polygon of the Volume3D object as specified in the ASTM standard '''
-    vertices: List[LatLngPoint] # A minimum of three LatLngPoints
-
-class Circle(ImplicitDict):
-    ''' Hold the details of a circle object used in the outline_circle object as specified in the ASTM standard '''
-    center: LatLngPoint 
-    radius: Radius
-
-
-class Altitude(ImplicitDict):
-    ''' A class to hold altitude per ASTM standard '''
-    value:int
-    reference:str 
-    units: str 
-
-class Time(ImplicitDict):
-    ''' A class to hold Time per ASTM standard'''
-    value: str
-    format:str 
+class OutputSubDirectories(ImplicitDict):
+    ''' A class to hold information about output directories that will be generated when writing the files to disk. '''
+    astm_4d_volumes: Path
+    scd_rules: Path
 
 class OperationalIntentReference(ImplicitDict):
     """Class for keeping track of an operational intent reference"""
@@ -63,7 +29,6 @@ class Volume4D(ImplicitDict):
     time_start: StringBasedDateTime
     time_end: StringBasedDateTime
 
-
 class OperationalIntentDetails(ImplicitDict):
     """Class for holding details of an operational intent reference """
     volumes: List[Volume4D]
@@ -75,14 +40,10 @@ class VolumeGenerationRule(ImplicitDict):
     intersect_time: bool = 0
     is_control: bool = 0
     expected_result: str
-
-class GeoJSONFeature(ImplicitDict):
-    ''' A class to hold GeoJSON Feature flight plan, at this moment we are using a LineString but it could be a LineString or Polygon '''
-    geojson: Feature
     
 class SCDVolume4D(ImplicitDict):
     ''' A class to hold a volume 4D with path and time details and GeoJSON flight plan, USSP will have to transform flight plan to a  '''
-    flight_plan: GeoJSONFeature
+    flight_plan: Feature
     time_start: StringBasedDateTime
     time_end: StringBasedDateTime
     altitude_lower: Altitude
@@ -104,7 +65,7 @@ class FlightAuthPayload(ImplicitDict):
     operation_mode: str
     operation_category:str
     uas_class:str
-    identification_technologies:List =[]
+    identification_technologies:List = []
     connectivity_methods:List = []
     endurance_minutes: int 
     emergency_procedure_url: str
@@ -112,6 +73,6 @@ class FlightAuthPayload(ImplicitDict):
 
 class SCDTestPayload(ImplicitDict):
     ''' Final payload for submission into the test infrastructure '''
-    priority:int =0
+    priority:int = 0
     flight_authorisation: FlightAuthPayload
     flight_plan: SCDVolume4D
