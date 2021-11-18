@@ -38,7 +38,7 @@ func init() {
 	)
 }
 
-// GetussAvailability implements repos.Availability.GetUssAvailabilityStatus.
+// GetussAvailability implements repos.UssAvailability.GetUssAvailabilityStatus.
 func (u *repo) GetUssAvailabilityStatus(ctx context.Context, ussID dssmodels.ID) (*scdmodels.UssAvailabilityStatus, error) {
 	var ussAvailabilityQuery = `
       SELECT
