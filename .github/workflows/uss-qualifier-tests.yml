@@ -16,6 +16,7 @@ jobs:
           echo "Host: ${{ runner.os }}"
           echo "Repository: ${{ github.repository }}"
           echo "Branch: ${{ github.ref }}"
+          docker images
       - name: Checkout
         uses: actions/checkout@v2
       - name: Run Qualifier tests

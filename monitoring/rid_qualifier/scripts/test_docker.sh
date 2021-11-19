@@ -18,12 +18,12 @@ docker-compose -f docker-compose_qualifier_mocks.yaml -p $project_name up --remo
 echo "Wait for mocks to be healthy"
 echo "============="
 
-services=( $(docker-compose -f docker-compose_qualifier_mocks.yaml config --services) )
+services=( "$(docker-compose -f docker-compose_qualifier_mocks.yaml config --services)" )
 for service_name in "${services[@]}"; do
     container_name="${project_name}_${service_name}_1"
     retry=0
     max_retry=3
-    until [ "$(docker inspect -f {{.State.Health.Status}} $container_name)" == "healthy" ]; do
+    until [ "$(docker inspect -f \{\{.State.Health.Status\}\} "${container_name}")" == "healthy" ]; do
         if [ "$retry" -gt "$max_retry" ]; then
             echo "$container_name didn't properly start. Exit." && exit 1
         fi
