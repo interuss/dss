@@ -1,4 +1,5 @@
 package scd
+
 import "log"
 import "context"
 import "github.com/interuss/dss/pkg/api/v1/scdpb"
