@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - rid-qualifier-test-runner
 jobs:
   uss-qualifier-tests:
     name: USS Qualifier Tests
@@ -17,7 +16,6 @@ jobs:
           echo "Host: ${{ runner.os }}"
           echo "Repository: ${{ github.repository }}"
           echo "Branch: ${{ github.ref }}"
-          docker images
       - name: Checkout
         uses: actions/checkout@v2
       - name: Run Qualifier tests
