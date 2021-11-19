@@ -7,7 +7,7 @@ from pyproj import Geod, Proj
 from shapely.geometry.polygon import Polygon
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import LatLngPoint, Time, Volume3D, Volume4D, Altitude
-from monitoring.scd_qualifier.utils import VolumePolygon, VolumeGenerationRule, GeometryGenerationRule,  GeometryPayload, SCDVolume4D, OutputSubDirectories
+from monitoring.scd_qualifier.utils import VolumePolygon, VolumeGenerationRule, GeometryGenerationRule,  GeneratedGeometry, SCDVolume4D, OutputSubDirectories
 import shapely.geometry
 import os
 from shapely.geometry import asShape
@@ -47,7 +47,7 @@ class ProximateFlightVolumeGenerator():
         self.altitude_envelope: int = 15 # the buffer in meters for flight when a path is converted into a volume
         self.control_flight_geometry: Union[LineString, Polygon] # the initial flight path or geometry against which subsequent flight paths are generated, this flag
         
-        self.raw_geometries: List[GeometryPayload] # Object to hold polyons or linestrings, and the rule that generated the geometry (e.g. should this geometry intersect with the control)
+        self.raw_geometries: List[GeneratedGeometry] # Object to hold polyons or linestrings, and the rule that generated the geometry (e.g. should this geometry intersect with the control)
         self.now = arrow.now()        
         self.geod = Geod(ellps="WGS84")
         self.grid_cells : List[shapely.geometry.box] # When a bounding box is given, it is split into smaller boxes this object holds the grids
@@ -99,26 +99,31 @@ class ProximateFlightVolumeGenerator():
         else:
             raise ValueError("The extents provided are not of the correct size, please provide extents that are less than 500m x 500m and more than 300m x 300m square")
         
-    def _generate_random_flight_path_polygon(self, generate_polygon:bool) -> Union[LineString, Polygon]:
-        '''Generate a random flight path or polygon, if a polygon is specified then this method picks one of the grid cells to generate the flight path within that, this is to ensure that a polygon geometry does not take over the entire bounding box. This code uses the `generate_random` method (https://github.com/jazzband/geojson/blob/master/geojson/utils.py#L131) to generate the initial linestring.  '''
+    def _generate_random_flight_path(self) -> LineString:
+        '''Generate a random flight path. this code uses the `generate_random` method (https://github.com/jazzband/geojson/blob/master/geojson/utils.py#L131) to generate the initial linestring.  '''
         
-        if generate_polygon:
-            grid_cell = random.choice(self.grid_cells) # Pick a random grid cell
-            random_flight_path_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=grid_cell.bounds)
-            random_flight_path_polygon = asShape(random_flight_path_polygon).envelope # Get the envelope of the linestring and create a box
+        random_flight_path = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
             
-        else: 
-            random_flight_path_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
-            
-        return random_flight_path_polygon
+        return random_flight_path
                
+    def _generate_random_flight_polygon(self) -> Polygon:
+        '''Generate a random polygon, if a polygon is specified then this method picks one of the grid cells to generate the flight path within that, this is to ensure that a polygon geometry does not take over the entire bounding box. '''        
+        
+        grid_cell = random.choice(self.grid_cells) # Pick a random grid cell
+        random_flight_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=grid_cell.bounds)
+        random_flight_polygon = asShape(random_flight_polygon).envelope # Get the envelope of the linestring and create a box
+            
+        return random_flight_polygon
     
         
     def _generate_single_flight_geometry(self, geometry_generation_rule:GeometryGenerationRule, is_control:bool= False) -> Union[LineString, Polygon]:
         ''' A method to generates flight geometry within a geographic bounds. The geometry can be a linestring or a polygon, simple rules for generation can be specificed. At the moment the method check if the geometry should intersect with the control and based on that, linestring / polygons are created '''
         
         coin_flip = random.choice([0,0,1])         
-        flight_geometry = self._generate_random_flight_path_polygon(generate_polygon = coin_flip) 
+        if coin_flip:
+            flight_geometry = self._generate_random_flight_polygon()
+        else:
+            flight_geometry = self._generate_random_flight_path()
 
         if is_control:
             self.control_flight_geometry = asShape(flight_geometry) # Assign the control since this is the first time that the flight geometry is generated
@@ -128,7 +133,11 @@ class ProximateFlightVolumeGenerator():
                 while (geometry_intersects == False):
                     coin_flip = random.choice([0,0,1]) 
                     # We are trying to generate a path that intersects with the control, we keep generating linestrings or polygons till one is found that does intersect
-                    flight_geometry = self._generate_random_flight_path_polygon(generate_polygon = coin_flip)
+                    if coin_flip:
+                        flight_geometry = self._generate_random_flight_polygon()
+                    else:
+                        flight_geometry = self._generate_random_flight_path()
+                        
                     raw_geom = asShape(flight_geometry) # Generate a shape from the geometry
                     geometry_intersects = self.control_flight_geometry.intersects(raw_geom) # Check this intersects with the control                    
                 
@@ -188,10 +197,10 @@ class ProximateFlightVolumeGenerator():
         
         return volume_4D
     
-    def generate_raw_geometries(self, number_of_geometries:int = 6) -> List[GeometryPayload]:
+    def generate_raw_geometries(self, number_of_geometries:int = 6) -> List[GeneratedGeometry]:
         ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
         
-        raw_geometries: List[GeometryPayload] = []
+        raw_geometries: List[GeneratedGeometry] = []
         for volume_idx in range(0, number_of_geometries):
             is_control = 1 if (volume_idx == 0) else 0
             geometry_generation_rule = GeometryGenerationRule()
@@ -206,11 +215,11 @@ class ProximateFlightVolumeGenerator():
             
             # the first path is control, the last path does not intersect the control
             current_path = self._generate_single_flight_geometry(geometry_generation_rule = geometry_generation_rule, is_control= is_control)
-            raw_path = GeometryPayload(geometry = current_path, geometry_generation_rule = geometry_generation_rule, is_control = is_control)
+            raw_path = GeneratedGeometry(geometry = current_path, geometry_generation_rule = geometry_generation_rule, is_control = is_control)
             raw_geometries.append(raw_path)
         return raw_geometries
 
-    def generate_volume_altitude_time_intersect_rules(self, raw_geometries:List[GeometryPayload]) -> List[VolumeGenerationRule]: 
+    def generate_volume_altitude_time_intersect_rules(self, raw_geometries:List[GeneratedGeometry]) -> List[VolumeGenerationRule]: 
         ''' A method to generate rules for generation of new paths '''
         
         all_volume_rules: List[VolumeGenerationRule] = []
@@ -227,7 +236,7 @@ class ProximateFlightVolumeGenerator():
             all_volume_rules.append(volume_generation_rule)
         return all_volume_rules
 
-    def generate_astm_4d_volumes(self,raw_geometries:List[GeometryPayload],rules : List[GeometryPayload], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
+    def generate_astm_4d_volumes(self,raw_geometries:List[GeneratedGeometry],rules : List[GeneratedGeometry], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
         ''' A method to generate ASTM specified Volume 4D payloads to submit to the system to be tested.  '''
         all_volume_4d :List[Volume4D] = []
         for path_index, raw_geometry in enumerate(raw_geometries): 
@@ -243,7 +252,7 @@ class ProximateFlightVolumeGenerator():
 class SCDFlightPathVolumeWriter():
     """ A class to write raw Flight Paths and volumes to disk so that they can be examined / used in other software """
 
-    def __init__(self, raw_geometries:List[GeometryPayload],  flight_volumes: List[Volume4D], all_rules: List[VolumeGenerationRule],country_code='che')-> None:
+    def __init__(self, raw_geometries:List[GeneratedGeometry],  flight_volumes: List[Volume4D], all_rules: List[VolumeGenerationRule],country_code='che')-> None:
         '''
         A method to write flight paths, volumes and volume generation rules to disk for review / submission to the test harness. All data is written in the `test_definitions` directory which is created if it does not exist.
         

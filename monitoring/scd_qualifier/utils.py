@@ -4,7 +4,6 @@ from geojson import Feature
 from shapely.geometry import LineString, Polygon
 from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 from monitoring.monitorlib.scd import Altitude, VolumePolygon, Volume4D, Volume3D
-import arrow
 from pathlib import Path
 
 class OutputSubDirectories(ImplicitDict):
@@ -53,13 +52,13 @@ class GeometryGenerationRule(ImplicitDict):
     """ A class to hold configuration for developing treatment flight path """
     intersect_space:bool = 0
     
-class GeometryPayload(ImplicitDict):
+class GeneratedGeometry(ImplicitDict):
     ''' An object to hold generated flight path, is_control is a nomenclature used to see if the generated path is the first one '''
     geometry: Union[LineString, Polygon]
     is_control: bool
     geometry_generation_rule: GeometryGenerationRule
   
-class FlightAuthPayload(ImplicitDict):
+class FlightAuthPartialRequestDetails(ImplicitDict):
     ''' An object to hold flight authorization details '''
     uas_serial_number:str
     operation_mode: str
@@ -70,9 +69,3 @@ class FlightAuthPayload(ImplicitDict):
     endurance_minutes: int 
     emergency_procedure_url: str
     operator_id:str
-
-class SCDTestPayload(ImplicitDict):
-    ''' Final payload for submission into the test infrastructure '''
-    priority:int = 0
-    flight_authorisation: FlightAuthPayload
-    flight_plan: SCDVolume4D
