@@ -5,7 +5,7 @@ import json, os
 import uuid
 from pathlib import Path
 from monitoring.monitorlib import fetch
-from monitoring.uss_qualifier.utils import FullFlightRecord
+from monitoring.uss_qualifier.rid.utils import FullFlightRecord
 from monitoring.uss_qualifier.rid import reports
 from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlightDetails, TestFlight, CreateTestParameters, SCOPE_RID_QUALIFIER_INJECT
 from monitoring.monitorlib.typing import ImplicitDict
@@ -13,7 +13,7 @@ import arrow
 import pathlib
 
 from typing import List, Optional
-from monitoring.uss_qualifier.utils import RIDQualifierTestConfiguration
+from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
 
 class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''

@@ -4,7 +4,7 @@ import rq
 from . import resources
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid import test_executor
-from monitoring.uss_qualifier.utils import RIDQualifierTestConfiguration
+from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
 from monitoring.uss_qualifier.rid.simulator import flight_state_from_kml
 from monitoring.uss_qualifier.test_data import test_report
 

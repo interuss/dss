@@ -7,7 +7,7 @@ from typing import List
 import arrow
 import datetime
 from datetime import datetime, timedelta
-from monitoring.uss_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight, FlightDetails, FullFlightRecord
+from monitoring.uss_qualifier.rid.utils import QueryBoundingBox, FlightPoint, GridCellFlight, FlightDetails, FullFlightRecord
 from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition, RIDFlightDetails
 from monitoring.uss_qualifier.rid.simulator import operator_flight_details as details_generator
 import os

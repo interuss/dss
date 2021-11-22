@@ -5,7 +5,7 @@ import s2sphere
 
 from monitoring.monitorlib import fetch
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.uss_qualifier.utils import InjectedFlight, RIDQualifierTestConfiguration
+from monitoring.uss_qualifier.rid.utils import InjectedFlight, RIDQualifierTestConfiguration
 
 
 class Severity(object):

@@ -11,8 +11,8 @@ import uuid
 from datetime import datetime, timedelta
 from shapely.geometry import LineString, Point, Polygon
 from monitoring.monitorlib.geo import flatten, unflatten
-from monitoring.uss_qualifier import kml
-from monitoring.uss_qualifier.utils import FlightDetails, FullFlightRecord
+from monitoring.uss_qualifier.rid.simulator import kml
+from monitoring.uss_qualifier.rid.utils import FlightDetails, FullFlightRecord
 from monitoring.monitorlib.rid import RIDAircraftState, RIDAircraftPosition, RIDFlightDetails, LatLngPoint
 from typing import List
 

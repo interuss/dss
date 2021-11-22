@@ -6,7 +6,7 @@ import sys
 import argparse
 from urllib.parse import urlparse
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.uss_qualifier.utils import RIDQualifierTestConfiguration
+from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
 import monitoring.uss_qualifier.rid.test_executor as test_executor
 
 def is_url(url_string):
