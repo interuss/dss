@@ -291,7 +291,7 @@ class TrackWriter():
         country_code: An ISO 3166-1 alpha-3 code for a country
 
         Outputs:
-        GeoJSON files for bboxes created in the `test_definitions/{country_code}` folder
+        GeoJSON files for bboxes created in the `test_definitions/rid/{country_code}` folder
 
 
     """
@@ -306,7 +306,7 @@ class TrackWriter():
         self.country_code = country_code
 
 
-        self.output_directory = Path('../../test_definitions', self.country_code)
+        self.output_directory = Path('../../test_definitions/rid', self.country_code)
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
         self.output_subdirectories = (Path(self.output_directory, 'tracks'), Path(self.output_directory, 'query_bboxes'))
@@ -371,7 +371,7 @@ class RIDAircraftStateWriter():
         self.flight_telemetry_check()
 
 
-        self.output_directory = Path('../../test_definitions', self.country_code)
+        self.output_directory = Path('../../test_definitions/rid', self.country_code)
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
         self.output_subdirectories = (Path(self.output_directory, 'aircraft_states'),)
@@ -388,7 +388,7 @@ class RIDAircraftStateWriter():
             raise ValueError("At least one flight track is necessary to create a AircraftState and a test JSON, please generate the tracks first using AdjacentCircularFlightsSimulator class")
 
     def write_rid_state(self):
-        ''' This method iterates over flight tracks and geneates AircraftState JSON objects and writes to disk in the test_definitions folder, these files can be used to submit the data in the test harness '''
+        ''' This method iterates over flight tracks and generates AircraftState JSON objects and writes to disk in the test_definitions/rid folder, these files can be used to submit the data in the test harness '''
 
         for flight_id, single_flight in enumerate(self.flights):
             rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering
@@ -414,7 +414,7 @@ if __name__ == '__main__':
 
     query_bboxes = my_path_generator.query_bboxes
 
-    # Change directory to write test_definitions folder is created in the uss_qualifier folder.
+    # Change directory to write test_definitions/rid folder is created in the uss_qualifier folder.
     p = pathlib.Path(__file__).parent.absolute()
     os.chdir(p)
 

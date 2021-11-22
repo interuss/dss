@@ -31,7 +31,7 @@ class TestBuilder():
         self.disk_flight_records: List[FullFlightRecord] =[]
         if not aircraft_state_files:
             aircraft_states_directory = Path(
-                '../test_definitions', test_configuration.locale, 'aircraft_states')
+                '../test_definitions/rid', test_configuration.locale, 'aircraft_states')
             aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
 
             for uss_index, uss in enumerate(usses):
