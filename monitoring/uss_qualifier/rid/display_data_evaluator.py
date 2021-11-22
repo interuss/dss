@@ -9,7 +9,7 @@ import s2sphere
 from monitoring.monitorlib import fetch, geo, rid
 from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.uss_qualifier.reports import Findings
+from monitoring.uss_qualifier.rid.reports import Findings
 from monitoring.uss_qualifier.utils import EvaluationConfiguration, InjectedFlight
 from monitoring.monitorlib.rid_automated_testing import observation_api
 from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlight

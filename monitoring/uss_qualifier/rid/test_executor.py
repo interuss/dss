@@ -1,9 +1,9 @@
 import json
 import uuid
 from typing import List, Optional
-from monitoring.uss_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
+from monitoring.uss_qualifier.rid.aircraft_state_replayer import TestHarness, TestBuilder
 from monitoring.uss_qualifier.utils import RIDQualifierTestConfiguration, InjectedFlight
-from monitoring.uss_qualifier import display_data_evaluator, reports
+from monitoring.uss_qualifier.rid import display_data_evaluator, reports
 from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib.auth import make_auth_adapter
 
@@ -39,6 +39,6 @@ def main(
     display_data_evaluator.evaluate_system(
         injected_flights, observers, test_configuration.evaluation,
         report.findings)
-    with open('report.json', 'w') as f:
+    with open('../report.json', 'w') as f:
         json.dump(report, f)
     return report

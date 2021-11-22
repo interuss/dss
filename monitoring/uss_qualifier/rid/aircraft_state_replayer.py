@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 from monitoring.monitorlib import fetch
 from monitoring.uss_qualifier.utils import FullFlightRecord
-from monitoring.uss_qualifier import reports
+from monitoring.uss_qualifier.rid import reports
 from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlightDetails, TestFlight, CreateTestParameters, SCOPE_RID_QUALIFIER_INJECT
 from monitoring.monitorlib.typing import ImplicitDict
 import arrow
@@ -31,7 +31,7 @@ class TestBuilder():
         self.disk_flight_records: List[FullFlightRecord] =[]
         if not aircraft_state_files:
             aircraft_states_directory = Path(
-                'test_definitions', test_configuration.locale, 'aircraft_states')
+                '../test_definitions', test_configuration.locale, 'aircraft_states')
             aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
 
             for uss_index, uss in enumerate(usses):
