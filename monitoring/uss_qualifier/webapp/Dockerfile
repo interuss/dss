@@ -4,11 +4,11 @@ FROM python:3.8
 RUN apt-get update && apt-get install openssl && apt-get install ca-certificates
 RUN mkdir -p /app/rid-host-files
 RUN mkdir -p /app/monitoring/monitorlib
-RUN mkdir -p /app/monitoring/rid_qualifier/host
+RUN mkdir -p /app/monitoring/uss_qualifier/webapp
 COPY monitorlib/requirements.txt /app/monitoring/monitorlib/requirements.txt
-COPY rid_qualifier/requirements.txt /app/monitoring/rid_qualifier/requirements.txt
-COPY rid_qualifier/host/requirements.txt /app/monitoring/rid_qualifier/host/requirements.txt
-WORKDIR /app/monitoring/rid_qualifier/host
+COPY uss_qualifier/requirements.txt /app/monitoring/uss_qualifier/requirements.txt
+COPY uss_qualifier/webapp/requirements.txt /app/monitoring/uss_qualifier/webapp/requirements.txt
+WORKDIR /app/monitoring/uss_qualifier/webapp
 RUN pip install -r requirements.txt
 RUN rm -rf __pycache__
 ADD . /app/monitoring

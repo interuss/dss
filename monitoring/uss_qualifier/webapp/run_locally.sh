@@ -10,7 +10,7 @@ else
 fi
 cd "${BASEDIR}/../../.." || exit 1
 
-# Run monitoring/rid_qualifier/mock/run_locally.sh to produce a mock RID system
+# Run monitoring/uss_qualifier/rid/mock/run_locally.sh to produce a mock RID system
 # for use with rid_qualifier
 AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
@@ -19,7 +19,7 @@ RID_HOST="http://localhost:${PORT}"
 
 docker build \
   -t local-interuss/rid-host \
-  -f monitoring/rid_qualifier/host/Dockerfile \
+  -f monitoring/uss_qualifier/webapp/Dockerfile \
   monitoring \
   || exit 1
 
@@ -62,4 +62,4 @@ docker run --name rid-host \
     --preload \
     --workers=2 \
     --bind=0.0.0.0:5000 \
-    monitoring.rid_qualifier.host:webapp
+    monitoring.uss_qualifier.webapp:webapp
