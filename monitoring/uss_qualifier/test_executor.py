@@ -1,9 +1,9 @@
 import json
 import uuid
 from typing import List, Optional
-from monitoring.rid_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
-from monitoring.rid_qualifier.utils import RIDQualifierTestConfiguration, InjectedFlight
-from monitoring.rid_qualifier import display_data_evaluator, reports
+from monitoring.uss_qualifier.aircraft_state_replayer import TestHarness, TestBuilder
+from monitoring.uss_qualifier.utils import RIDQualifierTestConfiguration, InjectedFlight
+from monitoring.uss_qualifier import display_data_evaluator, reports
 from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib.auth import make_auth_adapter
 

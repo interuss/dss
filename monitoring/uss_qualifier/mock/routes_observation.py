@@ -7,8 +7,8 @@ import s2sphere
 
 from monitoring.monitorlib import geo, rid
 from monitoring.monitorlib.rid_automated_testing import injection_api, observation_api
-from monitoring.rid_qualifier.mock import behavior
-from monitoring.rid_qualifier.mock.database import db
+from monitoring.uss_qualifier.mock import behavior
+from monitoring.uss_qualifier.mock.database import db
 from . import clustering, webapp
 
 

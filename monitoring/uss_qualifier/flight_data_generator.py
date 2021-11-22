@@ -7,9 +7,9 @@ from typing import List
 import arrow
 import datetime
 from datetime import datetime, timedelta
-from monitoring.rid_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight, FlightDetails, FullFlightRecord
+from monitoring.uss_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight, FlightDetails, FullFlightRecord
 from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition, RIDFlightDetails
-from monitoring.rid_qualifier import operator_flight_details_generator as details_generator
+from monitoring.uss_qualifier import operator_flight_details_generator as details_generator
 import os
 import pathlib
 
@@ -414,7 +414,7 @@ if __name__ == '__main__':
 
     query_bboxes = my_path_generator.query_bboxes
 
-    # Change directory to write test_definitions folder is created in the rid_qualifier folder.
+    # Change directory to write test_definitions folder is created in the uss_qualifier folder.
     p = pathlib.Path(__file__).parent.absolute()
     os.chdir(p)
 

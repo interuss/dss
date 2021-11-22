@@ -11,8 +11,8 @@ import uuid
 from datetime import datetime, timedelta
 from shapely.geometry import LineString, Point, Polygon
 from monitoring.monitorlib.geo import flatten, unflatten
-from monitoring.rid_qualifier import kml
-from monitoring.rid_qualifier.utils import FlightDetails, FullFlightRecord
+from monitoring.uss_qualifier import kml
+from monitoring.uss_qualifier.utils import FlightDetails, FullFlightRecord
 from monitoring.monitorlib.rid import RIDAircraftState, RIDAircraftPosition, RIDFlightDetails, LatLngPoint
 from typing import List
 
@@ -150,7 +150,7 @@ def output_coordinates_to_file(flight_state_coords, filename):
         filename: Output file name.
     """
     flight_state_vertices_str = '\n'.join(flight_state_coords)
-    with open(f'monitoring/rid_qualifier/test_data/{filename}.txt', 'w') as text_file:
+    with open(f'monitoring/uss_qualifier/test_data/{filename}.txt', 'w') as text_file:
         text_file.write(flight_state_vertices_str)
 
 def generate_flight_record(
@@ -343,7 +343,7 @@ def get_flight_records(kml_content, output_folder, debug_mode=False):
     return json.dumps(flight_records)
 
 def main(kml_file, output_folder, debug_mode=None, from_string=False):
-    # kml_file = 'monitoring/rid_qualifier/test_data/dcdemo.kml'
+    # kml_file = 'monitoring/uss_qualifier/test_data/dcdemo.kml'
     try:
         kml_content = kml.get_kml_content(kml_file, from_string)
     except ValueError as e:

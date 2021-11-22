@@ -1,6 +1,6 @@
 import sys
 
-from monitoring.rid_qualifier.webapp import webapp
+from monitoring.uss_qualifier.webapp import webapp
 from . import config
 
 
