@@ -5,8 +5,8 @@ import flask
 
 from monitoring.monitorlib.rid_automated_testing import injection_api
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.uss_qualifier.mock import database
-from monitoring.uss_qualifier.mock.database import db
+from monitoring.uss_qualifier.rid.mock import database
+from monitoring.uss_qualifier.rid.mock.database import db
 from . import webapp
 
 

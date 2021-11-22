@@ -1,6 +1,6 @@
 #!env/bin/python3
 
-from monitoring.uss_qualifier.mock import webapp
+from monitoring.uss_qualifier.rid.mock import webapp
 
 
 if __name__ == "__main__":

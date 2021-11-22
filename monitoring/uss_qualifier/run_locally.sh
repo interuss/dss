@@ -12,7 +12,7 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-CONFIG_LOCATION="monitoring/rid_qualifier/config.json"
+CONFIG_LOCATION="monitoring/uss_qualifier/config.json"
 
 AUTH='--auth NoAuth()'
 # NB: A prerequisite to run this command locally is to have a running instance of the rid_qualifier/mock (/monitoring/rid_qualifier/mock/run_locally.sh)

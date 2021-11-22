@@ -20,7 +20,7 @@ listening at localhost:8070.  Press CTRL/CMD-C to stop the system mock.
 ### RID Service Providers
 This mock supports any number of RID Service Providers, and they do not need to
 be declared before use.  The RID Service Provider named `RIDSP` implements the
-[injection API](../../../interfaces/automated-testing/rid/README.md) at
+[injection API](../../../../interfaces/automated-testing/rid/README.md) at
 `http://hostname/sp/RIDSP`.  So, for instance, if an instance of this RID system
 mock is accessible at localhost:8070, then data can be injected into the `uss1`
 virtual RID Service Provider by making a PUT call to, e.g.,
@@ -34,7 +34,7 @@ collection (in Testing below).
 ### RID Display Providers
 This mock supports any number of RID Display Providers, and they do not need to
 be declared before use.  The RID Display Provider named `RIDDP` implements the
-[observation API](../../../interfaces/automated-testing/rid) at
+[observation API](../../../../interfaces/automated-testing/rid) at
 `http://hostname/dp/RIDDP`.  So, for instance, if an instance of this RID system
 mock is accessible at localhost:8070, then the current flights visible to the
 `uss1` virtual Display Provider can be queried by making a GET call to

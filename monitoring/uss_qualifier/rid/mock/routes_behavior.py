@@ -3,8 +3,8 @@ from typing import Tuple
 import flask
 
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.uss_qualifier.mock import behavior
-from monitoring.uss_qualifier.mock.database import db
+from monitoring.uss_qualifier.rid.mock import behavior
+from monitoring.uss_qualifier.rid.mock.database import db
 from . import webapp
 
 

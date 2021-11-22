@@ -11,18 +11,21 @@ else
 fi
 
 # Always start from the repo folder root
-cd "${BASEDIR}/../../.." || exit 1
+cd "${BASEDIR}/../../../.." || exit 1
 
-echo Building rid_qualifier mock...
+DOCKER_FILE="monitoring/uss_qualifier/rid/mock/Dockerfile"
+DOCKER_TAG="interuss/uss-qualifier/rid-mock"
+
+echo Building RID mock...
 docker build \
-    -f monitoring/rid_qualifier/mock/Dockerfile \
-    -t interuss/automated-testing/rid-qualifier/mock \
+    -f "${DOCKER_FILE}" \
+    -t "${DOCKER_TAG}" \
     --build-arg version="$(scripts/git/commit.sh)" \
     monitoring \
     || exit 1
 
-echo Running rid_qualifier mock...
-docker run --name rid_qualifier_mock \
+echo Running RID mock...
+docker run --name uss_qualifier_rid_mock \
   --rm \
   -p ${PORT}:5000 \
-  interuss/automated-testing/rid-qualifier/mock
+  "${DOCKER_TAG}"

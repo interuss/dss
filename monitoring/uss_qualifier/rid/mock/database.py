@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from monitoring.monitorlib.rid_automated_testing import injection_api
-from monitoring.uss_qualifier.mock import behavior
+from monitoring.uss_qualifier.rid.mock import behavior
 
 
 class TestRecord(object):
