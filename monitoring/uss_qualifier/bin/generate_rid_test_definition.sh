@@ -10,7 +10,7 @@ if [[ "$OS" == "Darwin" ]]; then
 else
 	BASEDIR=$(readlink -e "$(dirname "$0")")
 fi
-cd "${BASEDIR}/../.." || exit 1
+cd "${BASEDIR}/../../.." || exit 1
 
 docker build \
     -f monitoring/uss_qualifier/Dockerfile \

@@ -35,7 +35,7 @@ done
 echo "Generate simulation data and run the qualifier."
 echo "============="
 pushd ..
-./run_flight_data_generator.sh
+./bin/generate_rid_test_definition.sh
 ./run_locally.sh
 popd
 

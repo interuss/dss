@@ -8,7 +8,7 @@ if [[ "$OS" == "Darwin" ]]; then
 else
 	BASEDIR=$(readlink -e "$(dirname "$0")")
 fi
-cd "${BASEDIR}/../.." || exit 1
+cd "${BASEDIR}/../../.." || exit 1
 
 IN_FILE=$1   # Input filename.
 
@@ -19,6 +19,11 @@ fi
 
 OUT_PATH=$2  # Output folder path.
 
+if ! [[ ${OUT_PATH} ]]; then
+    echo "Output path not provided."
+    exit 1
+fi
+
 debug=false
 
 if [[ "$3" == '-d' ]]; then
@@ -27,16 +32,16 @@ if [[ "$3" == '-d' ]]; then
 fi
 
 docker build \
-    -f monitoring/rid_qualifier/Dockerfile \
-    -t interuss/dss/rid_qualifier \
+    -f monitoring/uss_qualifier/Dockerfile \
+    -t interuss/uss_qualifier \
     --build-arg version="$(scripts/git/commit.sh)" \
     monitoring
 
-docker run -i  -t --name flight_state \
+docker run -i  -t --name flight_state_from_kml \
   --rm \
   --tty \
   -e PYTHONBUFFERED=1 \
   -v "${IN_FILE}:/app/kml-input/${IN_FILE}" \
   -v "${OUT_PATH}:/app/flight-states" \
-  interuss/dss/rid_qualifier \
-  python create_flight_record_from_kml.py -f "/app/kml-input/${IN_FILE}" -o /app/flight-states -d ${debug}
+  interuss/rid_qualifier \
+  python rid/simulator/flight_state_from_kml.py -f "/app/kml-input/${IN_FILE}" -o /app/flight-states -d ${debug}
