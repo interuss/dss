@@ -10,7 +10,7 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-CONFIG_LOCATION="monitoring/rid_qualifier/config.json"
+CONFIG_LOCATION="monitoring/uss_qualifier/config.json"
 
 AUTH='--auth DummyOAuth(http://host.docker.internal:8085/token,sub=testing_uss)'
 
@@ -35,23 +35,23 @@ CONFIG='--config config.json'
 RID_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
 # report.json must already exist to share correctly with the Docker container
-touch "$(pwd)/monitoring/rid_qualifier/report.json"
+touch "$(pwd)/monitoring/uss_qualifier/report.json"
 
 docker build \
-    -f monitoring/rid_qualifier/Dockerfile \
-    -t interuss/dss/rid_qualifier \
+    -f monitoring/uss_qualifier/Dockerfile \
+    -t interuss/uss_qualifier \
     --build-arg version="$(scripts/git/commit.sh)" \
     monitoring
 
 # shellcheck disable=SC2086
-docker run --name rid_qualifier \
+docker run --name uss_qualifier \
   --rm \
   --tty \
   -e RID_QUALIFIER_OPTIONS="${RID_QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
-  -v "$(pwd)/monitoring/rid_qualifier/report.json:/app/monitoring/rid_qualifier/report.json" \
+  -v "$(pwd)/monitoring/uss_qualifier/report.json:/app/monitoring/uss_qualifier/report.json" \
   -v "$(pwd)/${CONFIG_LOCATION}:/app/${CONFIG_LOCATION}" \
-  interuss/dss/rid_qualifier \
-  python rid_qualifier_entry.py $RID_QUALIFIER_OPTIONS
+  interuss/uss_qualifier \
+  python rid/main.py $RID_QUALIFIER_OPTIONS
 
 rm ${CONFIG_LOCATION}
