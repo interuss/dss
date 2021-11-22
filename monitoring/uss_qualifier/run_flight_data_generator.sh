@@ -13,8 +13,8 @@ fi
 cd "${BASEDIR}/../.." || exit 1
 
 docker build \
-    -f monitoring/rid_qualifier/Dockerfile \
-    -t interuss/dss/rid_qualifier \
+    -f monitoring/uss_qualifier/Dockerfile \
+    -t interuss/uss_qualifier \
     --build-arg version="$(scripts/git/commit.sh)" \
     monitoring
 
@@ -27,6 +27,6 @@ fi
 docker run ${docker_args} --name flight_data_generator \
   --rm \
   -e PYTHONBUFFERED=1 \
-  -v "$(pwd)/monitoring/rid_qualifier/test_definitions:/app/monitoring/rid_qualifier/test_definitions" \
-  interuss/dss/rid_qualifier \
-  python flight_data_generator.py
+  -v "$(pwd)/monitoring/uss_qualifier/test_definitions:/app/monitoring/uss_qualifier/test_definitions" \
+  interuss/uss_qualifier \
+  python rid/simulator/flight_state.py

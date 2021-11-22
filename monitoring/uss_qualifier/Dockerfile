@@ -5,8 +5,8 @@ RUN apt-get update && apt-get install openssl && apt-get install ca-certificates
 RUN mkdir -p /app/monitoring/rid_qualifier
 RUN mkdir /app/monitoring/monitorlib
 COPY monitorlib/requirements.txt /app/monitoring/monitorlib/requirements.txt
-COPY rid_qualifier/requirements.txt /app/monitoring/rid_qualifier/requirements.txt
-WORKDIR /app/monitoring/rid_qualifier
+COPY uss_qualifier/requirements.txt /app/monitoring/uss_qualifier/requirements.txt
+WORKDIR /app/monitoring/uss_qualifier
 RUN pip install -r requirements.txt
 RUN rm -rf __pycache__
 ADD . /app/monitoring

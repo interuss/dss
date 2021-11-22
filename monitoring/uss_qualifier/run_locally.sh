@@ -15,7 +15,7 @@ cd "${BASEDIR}/../.." || exit 1
 CONFIG_LOCATION="monitoring/uss_qualifier/config.json"
 
 AUTH='--auth NoAuth()'
-# NB: A prerequisite to run this command locally is to have a running instance of the rid_qualifier/mock (/monitoring/rid_qualifier/mock/run_locally.sh)
+# NB: A prerequisite to run this command locally is to have a running instance of the uss_qualifier/rid/mock (/monitoring/uss_qualifier/rid/mock/run_locally.sh)
 
 echo '{
   "locale": "che",
@@ -45,12 +45,13 @@ CONFIG='--config config.json'
 
 RID_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
+REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report.json"
 # report.json must already exist to share correctly with the Docker container
-touch "$(pwd)/monitoring/rid_qualifier/report.json"
+touch "${REPORT_FILE}"
 
 docker build \
-    -f monitoring/rid_qualifier/Dockerfile \
-    -t interuss/dss/rid_qualifier \
+    -f monitoring/uss_qualifier/Dockerfile \
+    -t interuss/uss_qualifier \
     --build-arg version="$(scripts/git/commit.sh)" \
     monitoring
 
@@ -61,13 +62,13 @@ else
 fi
 
 # shellcheck disable=SC2086
-docker run ${docker_args} --name rid_qualifier \
+docker run ${docker_args} --name uss_qualifier \
   --rm \
   -e RID_QUALIFIER_OPTIONS="${RID_QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
-  -v "$(pwd)/monitoring/rid_qualifier/report.json:/app/monitoring/rid_qualifier/report.json" \
+  -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
   -v "$(pwd)/${CONFIG_LOCATION}:/app/${CONFIG_LOCATION}" \
-  interuss/dss/rid_qualifier \
-  python rid_qualifier_entry.py $RID_QUALIFIER_OPTIONS
+  interuss/uss_qualifier \
+  python rid/main.py $RID_QUALIFIER_OPTIONS
 
 rm ${CONFIG_LOCATION}

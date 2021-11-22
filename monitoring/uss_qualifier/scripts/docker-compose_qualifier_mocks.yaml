@@ -3,8 +3,8 @@ services:
   mock:
     build:
       context: ../../
-      dockerfile: rid_qualifier/mock/Dockerfile
-    image: interuss/automated-testing/rid-qualifier/mock
+      dockerfile: uss_qualifier/rid/mock/Dockerfile
+    image: interuss/uss-qualifier/rid/mock
     ports:
       - "8070:5000"
     networks:
