@@ -9,7 +9,7 @@ import datetime
 from datetime import datetime, timedelta
 from monitoring.uss_qualifier.utils import QueryBoundingBox, FlightPoint, GridCellFlight, FlightDetails, FullFlightRecord
 from monitoring.monitorlib.rid import RIDHeight, RIDAircraftState, RIDAircraftPosition, RIDFlightDetails
-from monitoring.uss_qualifier import operator_flight_details_generator as details_generator
+from monitoring.uss_qualifier.rid.simulator import operator_flight_details as details_generator
 import os
 import pathlib
 
@@ -306,7 +306,7 @@ class TrackWriter():
         self.country_code = country_code
 
 
-        self.output_directory = Path('test_definitions', self.country_code)
+        self.output_directory = Path('../../test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
         self.output_subdirectories = (Path(self.output_directory, 'tracks'), Path(self.output_directory, 'query_bboxes'))
@@ -371,7 +371,7 @@ class RIDAircraftStateWriter():
         self.flight_telemetry_check()
 
 
-        self.output_directory = Path('test_definitions', self.country_code)
+        self.output_directory = Path('../../test_definitions', self.country_code)
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
         self.output_subdirectories = (Path(self.output_directory, 'aircraft_states'),)

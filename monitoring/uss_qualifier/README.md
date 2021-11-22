@@ -11,7 +11,7 @@ This directory contains a series of tests for qualifying Network Remote ID compl
 4. **Display Data Evaluator**: Once test aircraft state data is sent to each Remote ID Service Provider's injection test harness to be injected into their systems, the state of the RID system must be queried and then the results of those queries compared against expected results. This module performs the latter tasks of querying the RID system through each specified Remote ID Display Provider's observation test harness, and comparing those query results against expectations. [Flight Blender](https://github.com/openskies-sh/flight-blender) is an open-source Remote ID Display Provider that will implement an observation test harness, and therefore can be used to test compliance.
 
 # Create Flight Record from KML
-[create_flight_record_from_kml.py](create_flight_record_from_kml.py) accepts a KML file with one/many flights defined in the KML folders and produce a set of JSON files for each such flight, snapshoting the aircraft's state every sample_rate. Every flight needs exactly one path (LineString) and this is the path the aircraft takes over the ground. Speed and altitude of the flight  are defined by the polygons surrounding the path.
+[create_flight_record_from_kml.py](rid/generators/flight_state_from_kml.py) accepts a KML file with one/many flights defined in the KML folders and produce a set of JSON files for each such flight, snapshoting the aircraft's state every sample_rate. Every flight needs exactly one path (LineString) and this is the path the aircraft takes over the ground. Speed and altitude of the flight  are defined by the polygons surrounding the path.
 
 Following are the specifications for input KML:
 

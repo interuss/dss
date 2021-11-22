@@ -387,3 +387,4 @@ if __name__ == '__main__':
             raise 'Invalid file path.'
         debug_mode = args.debug
         main(kml_file, args.output_path, debug_mode=debug_mode)
+

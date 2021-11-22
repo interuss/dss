@@ -5,7 +5,7 @@ from . import resources
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier import test_executor
 from monitoring.uss_qualifier.utils import RIDQualifierTestConfiguration
-from monitoring.uss_qualifier import create_flight_record_from_kml
+from monitoring.uss_qualifier.rid.simulator import flight_state_from_kml
 from monitoring.uss_qualifier.test_data import test_report
 
 
@@ -35,4 +35,4 @@ def call_test_executor(user_config_json, auth_spec, input_files, debug=False):
     return json.dumps(report)
 
 def call_kml_processor(kml_content, output_path):
-    return create_flight_record_from_kml.main(kml_content, output_path, from_string=True)
+    return flight_state_from_kml.main(kml_content, output_path, from_string=True)
