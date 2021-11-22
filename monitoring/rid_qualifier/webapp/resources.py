@@ -1,6 +1,6 @@
 import rq
 from redis import Redis
-from monitoring.rid_qualifier.host import webapp
+from monitoring.rid_qualifier.webapp import webapp
 from . import config
 
 

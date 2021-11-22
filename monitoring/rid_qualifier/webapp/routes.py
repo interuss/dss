@@ -19,7 +19,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
 
 from monitoring.monitorlib import versioning, auth_validation
-from monitoring.rid_qualifier.host import webapp
+from monitoring.rid_qualifier.webapp import webapp
 
 
 client_secrets_file = os.path.join(
@@ -96,7 +96,7 @@ def logout():
 
 def _start_background_task(user_config, auth_spec, input_files, debug):
     job = resources.qualifier_queue.enqueue(
-        'monitoring.rid_qualifier.host.tasks.call_test_executor',
+        'monitoring.rid_qualifier.webapp.tasks.call_test_executor',
         user_config, auth_spec, input_files, debug)
     return job.get_id()
 
@@ -108,7 +108,7 @@ def _get_running_jobs():
 
 def _process_kml_files_task(kml_content, output_path):
     job = resources.qualifier_queue.enqueue(
-        'monitoring.rid_qualifier.host.tasks.call_kml_processor',
+        'monitoring.rid_qualifier.webapp.tasks.call_kml_processor',
         kml_content, output_path)
     return job.get_id()
 
