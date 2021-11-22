@@ -43,5 +43,5 @@ docker run -i  -t --name flight_state_from_kml \
   -e PYTHONBUFFERED=1 \
   -v "${IN_FILE}:/app/kml-input/${IN_FILE}" \
   -v "${OUT_PATH}:/app/flight-states" \
-  interuss/rid_qualifier \
+  interuss/uss_qualifier \
   python rid/simulator/flight_state_from_kml.py -f "/app/kml-input/${IN_FILE}" -o /app/flight-states -d ${debug}

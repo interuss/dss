@@ -40,7 +40,7 @@ observed.
 
 ![rid_qualifier system](../assets/rid_qualifier_system.png)
 
-[rid_qualifier](rid_qualifier) is an automated test suite intended to verify
+[rid_qualifier](uss_qualifier/rid/README.md) is an automated test suite intended to verify
 correct functionality of the entire RID ecosystem by injecting known test data
 into one or more RID Service Providers, observing the resulting system state via
 one or more RID Display Providers, and verifying that the expected results were
@@ -87,12 +87,12 @@ via the
 [InterUSS RID automated testing interface](../interfaces/automated-testing/rid)
 observation API.
 
-### rid_qualifier/mock
+### uss_qualifier/rid/mock
 
 ![rid_qualifier mock system](../assets/rid_qualifier_mock_system.png)
 
-The [rid_qualifier's mock](rid_qualifier/mock) is a stand-alone test system that
+The [rid_qualifier's mock](uss_qualifier/rid/mock) is a stand-alone test system that
 presents the injection interfaces of one or more RID Service Providers along
 with the observation interfaces of one or more RID Display Providers without the
 need for any other dependencies (such as a DSS instance).  It is intended to
-make rid_qualifier behavior easy to test.
+make uss_qualifier behavior easy to test.
