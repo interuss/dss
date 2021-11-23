@@ -61,12 +61,7 @@ type Store struct {
 func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store, error) {
 	vs, err := db.GetVersion(ctx, DatabaseName)
 	if err != nil {
-		// for older versions try getting db version for defaultdb.
-		DatabaseName = "defaultdb"
-		vs, err = db.GetVersion(ctx, DatabaseName)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to get database schema version for remote ID for db : %s", DatabaseName)
-		}
+		return nil, stacktrace.Propagate(err, "Failed to get database schema version for remote ID for db : %s", DatabaseName)
 	}
 
 	store := &Store{

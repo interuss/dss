@@ -54,9 +54,10 @@ func main() {
 	if *path == "" {
 		log.Panic("Must specify schemas_dir path")
 	}
-	if (*dbVersion == "" && *step == 0) || (*dbVersion != "" && *step != 0) {
-		log.Panic("Must specify one of [db_version, migration_step] to goto, use --help to see options")
-	}
+	// TODO: Fix initializing desiredVersion for condition true. 
+	// if (*dbVersion == "" && *step == 0) || (*dbVersion != "" && *step != 0) {
+	// 	log.Panic("Must specify one of [db_version, migration_step] to goto, use --help to see options")
+	// }
 	latest := strings.ToLower(*dbVersion) == "latest"
 	// Migration step at which `defaultdb` is renamed to `rid`
 	var ridDbRenameStep uint = 8
