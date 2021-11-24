@@ -13,7 +13,7 @@ In order to maximize the quality of contributions while keeping the time and ene
 
 1. Before your PR can be accepted, you must submit a Contributor License Agreement (CLA). See [here](https://github.com/interuss/tsc/blob/main/CONTRIBUTING.md#contributor-license-agreement-cla) for more details.
 
-1. The size of individual PRs is a key factor with respect to the quality and efficiency of the reviews. While [Large Contributions](#large-contributions) are required, they should be structured as a series of small and focused PRs. Here are some helpful references:
+1. The size of individual PRs is a key factor with respect to the quality and efficiency of the reviews. When [Large Contributions](#large-contributions) are required, they should be structured as a series of small and focused PRs. Here are some helpful references:
     - [Strategies For Small, Focused Pull Requests, Steve Hicks](https://artsy.github.io/blog/2021/03/09/strategies-for-small-focused-pull-requests/)
     - [The Art of Small Pull Requests, David Wilson](https://essenceofcode.com/2019/10/29/the-art-of-small-pull-requests/)
 
@@ -21,7 +21,7 @@ In order to maximize the quality of contributions while keeping the time and ene
 Given the critical nature of the content of this repository, contributions require careful review. To ensure that large contributions don't have a negative impact on the quality of the reviews, the following steps help ensure your contribution gets merged progressively, maximizing knowledge sharing between contributors and committers.
 
 #### Initial discussion
-Get in touch with an [InterUSS committer](https://github.com/interuss/tsc/blob/main/CONTRIBUTING.md#committers) so they know what to expect and can provide early feedback and guidance.
+Get in touch with an [InterUSS committer](https://github.com/interuss/tsc/blob/main/CONTRIBUTING.md#committers) using the [mailing list](https://github.com/interuss/tsc#mailing-list) or [Slack](https://github.com/interuss/tsc#slack) so they know what to expect and can provide early feedback and guidance.
 
 #### Design document
 Following the initial discussion, the next step will be to create a design document that provides a detailed description of the contribution and outlines clearly how it will integrate and interact with the existing components. The expected content of this design document includes a narrative, overall architecture description, sequence diagrams, and test plans. If applicable, based on the advice of an [InterUSS committer](https://github.com/interuss/tsc/blob/main/CONTRIBUTING.md#committers), this material should be submitted as a PR to the repository in a DESIGN.md file or design directory.
