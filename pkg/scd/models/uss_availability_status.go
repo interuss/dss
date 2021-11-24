@@ -14,8 +14,8 @@ type UssAvailabilityState string
 
 // UssAvailabilityStatus models an uss availability status.
 type UssAvailabilityStatus struct {
-	Uss          dssmodels.Manager
 	Availability UssAvailabilityState
+	Uss          dssmodels.Manager
 }
 
 func (u UssAvailabilityState) String() string {

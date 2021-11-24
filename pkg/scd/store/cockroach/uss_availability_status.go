@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
@@ -39,7 +38,7 @@ func init() {
 }
 
 // GetussAvailability implements repos.UssAvailability.GetUssAvailabilityStatus.
-func (u *repo) GetUssAvailabilityStatus(ctx context.Context, ussID dssmodels.ID) (*scdmodels.UssAvailabilityStatus, error) {
+func (u *repo) GetUssAvailabilityStatus(ctx context.Context, ussID string) (*scdmodels.UssAvailabilityStatus, error) {
 	var ussAvailabilityQuery = `
       SELECT
         availability
@@ -117,7 +116,7 @@ func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query 
 }
 
 // GetUssAvailability returns the Availability status identified by "id".
-func (c *repo) GetUssAvailability(ctx context.Context, id dssmodels.ID) (*scdmodels.UssAvailabilityStatus, error) {
+func (c *repo) GetUssAvailability(ctx context.Context, id string) (*scdmodels.UssAvailabilityStatus, error) {
 	sub, err := c.GetUssAvailabilityStatus(ctx, id)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
