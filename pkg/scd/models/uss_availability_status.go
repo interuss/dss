@@ -1,7 +1,5 @@
 package models
 
-import dssmodels "github.com/interuss/dss/pkg/models"
-
 // Aggregates constants for uss availability.
 const (
 	UssAvailabilityStateUnknown UssAvailabilityState = "Unknown"
@@ -15,7 +13,8 @@ type UssAvailabilityState string
 // UssAvailabilityStatus models an uss availability status.
 type UssAvailabilityStatus struct {
 	Availability UssAvailabilityState
-	Uss          dssmodels.Manager
+	Uss          string
+	Version      OVN
 }
 
 func (u UssAvailabilityState) String() string {

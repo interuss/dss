@@ -29,7 +29,7 @@ func init() {
 
 	withPrefix := make([]string, len(availabilityFieldsWithIndices))
 	for idx, field := range availabilityFieldsWithIndices {
-		withPrefix[idx] = "scd_availabilities." + field
+		withPrefix[idx] = "uss_availability." + field
 	}
 
 	availabilityFieldsWithPrefix = strings.Join(
@@ -41,7 +41,7 @@ func init() {
 func (u *repo) GetUssAvailabilityStatus(ctx context.Context, ussID string) (*scdmodels.UssAvailabilityStatus, error) {
 	var ussAvailabilityQuery = `
       SELECT
-        availability
+        id, availability, updated_at
       FROM
         uss_availability
       WHERE
@@ -50,7 +50,7 @@ func (u *repo) GetUssAvailabilityStatus(ctx context.Context, ussID string) (*scd
 	return u.fetchAvailability(ctx, u.q, ussAvailabilityQuery, ussID)
 }
 
-// Implements repos.Availability.UpsertAvailability
+// Implements repos.UssAvailability.UpsertAvailability
 func (u *repo) UpsertUssAvailability(ctx context.Context, s *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error) {
 	var (
 		upsertQuery = fmt.Sprintf(`
@@ -91,7 +91,7 @@ func (u *repo) fetchAvailabilities(ctx context.Context, q dsssql.Queryable, quer
 			&updatedAt,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error scanning Constraint row")
+			return nil, stacktrace.Propagate(err, "Error scanning UssAvailability row")
 		}
 		payload = append(payload, u)
 	}
@@ -117,11 +117,11 @@ func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query 
 
 // GetUssAvailability returns the Availability status identified by "id".
 func (c *repo) GetUssAvailability(ctx context.Context, id string) (*scdmodels.UssAvailabilityStatus, error) {
-	sub, err := c.GetUssAvailabilityStatus(ctx, id)
+	ussa, err := c.GetUssAvailabilityStatus(ctx, id)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
-	} else if sub == nil {
+	} else if ussa == nil {
 		return nil, nil
 	}
-	return sub, nil
+	return ussa, nil
 }
