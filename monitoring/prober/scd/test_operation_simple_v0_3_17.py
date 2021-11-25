@@ -213,17 +213,18 @@ def test_get_op_by_search_latest_time_included(ids, scd_api, scd_session):
 @default_scope(SCOPE_AA)
 @depends_on(test_create_op)
 def test_set_uss_availability(ids, scd_session2):
-  resp = scd_session2.put(f'/uss_availability/uss1', scope=SCOPE_AA)
-  # TODO: assert commented until response is implemented.
+  resp = scd_session2.put(
+    f'/uss_availability/uss1', scope=SCOPE_AA, json={'availability': 'Normal'})
+  # Uncomment once endpoint is implemented.
   # assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_AA)
-@depends_on(test_create_op)
+@depends_on(test_set_uss_availability)
 def test_get_uss_availability(ids, scd_session2):
   resp = scd_session2.get(f'/uss_availability/uss1', scope=SCOPE_AA)
-  # TODO: assert commented until response is implemented.
-  # assert resp.status_code == 200, resp.content
+  # Uncomment once endpoint is implemented.
+  assert resp.status_code == 200, resp.content
 
 
 @default_scope(SCOPE_SC)
