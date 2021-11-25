@@ -116,8 +116,8 @@ func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query 
 }
 
 // GetUssAvailability returns the Availability status identified by "id".
-func (c *repo) GetUssAvailability(ctx context.Context, id string) (*scdmodels.UssAvailabilityStatus, error) {
-	ussa, err := c.GetUssAvailabilityStatus(ctx, id)
+func (u *repo) GetUssAvailability(ctx context.Context, id string) (*scdmodels.UssAvailabilityStatus, error) {
+	ussa, err := u.GetUssAvailabilityStatus(ctx, id)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	} else if ussa == nil {
