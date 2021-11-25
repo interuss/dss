@@ -52,8 +52,8 @@ func (a *Server) SetUssAvailability(ctx context.Context, request *scdpb.SetUssAv
 	return a.PutUssAvailability(ctx, request.GetUssId(), "", request.GetParams())
 }
 
-func (a *Server) PutUssAvailability(ctx context.Context, ussId string, version string, params *scdpb.SetUssAvailabilityStatusParameters) (*scdpb.UssAvailabilityStatusResponse, error) {
-	if ussId == "" {
+func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version string, params *scdpb.SetUssAvailabilityStatusParameters) (*scdpb.UssAvailabilityStatusResponse, error) {
+	if ussID == "" {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "ussID not provided.")
 	}
 	// Retrieve USS availability status from request params
@@ -63,7 +63,7 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussId string, version s
 		availability = "Unknown"
 	}
 	ussareq := &scdmodels.UssAvailabilityStatus{
-		Uss:          ussId,
+		Uss:          ussID,
 		Availability: scdmodels.UssAvailabilityState(availability),
 	}
 
@@ -74,12 +74,12 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussId string, version s
 			return stacktrace.Propagate(err, "Could not upsert UssAvailability into repo")
 		}
 		if ussa == nil {
-			return stacktrace.NewError("UssAvailability returned no Uss for ID: %s", ussId)
+			return stacktrace.NewError("UssAvailability returned no Uss for ID: %s", ussID)
 		}
 		result = &scdpb.UssAvailabilityStatusResponse{
 			Status: &scdpb.UssAvailabilityStatus{
 				Availability: ussa.Availability.String(),
-				Uss:          ussId},
+				Uss:          ussID},
 		}
 		return nil
 	}
