@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eo pipefail
+
 # Find and change to repo root directory
 OS=$(uname)
 if [[ "$OS" == "Darwin" ]]; then
@@ -52,10 +54,15 @@ docker build \
     --build-arg version="$(scripts/git/commit.sh)" \
     monitoring
 
+if [ "$CI" == "true" ]; then
+  docker_args="--add-host host.docker.internal:host-gateway" # Required to reach other containers in Ubuntu (used for Github Actions)
+else
+  docker_args="-it"
+fi
+
 # shellcheck disable=SC2086
-docker run --name rid_qualifier \
+docker run ${docker_args} --name rid_qualifier \
   --rm \
-  --tty \
   -e RID_QUALIFIER_OPTIONS="${RID_QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
   -v "$(pwd)/monitoring/rid_qualifier/report.json:/app/monitoring/rid_qualifier/report.json" \

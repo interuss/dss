@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  mock:
+    build:
+      context: ../../
+      dockerfile: rid_qualifier/mock/Dockerfile
+    image: interuss/automated-testing/rid-qualifier/mock
+    ports:
+      - "8070:5000"
+    networks:
+      - default
+    healthcheck:
+      test: curl -f http://localhost:5000/status || exit 1
+      interval: 2s
