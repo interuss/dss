@@ -16,7 +16,7 @@ import (
 
 const (
 	// currentMajorSchemaVersion is the current major schema version.
-	currentMajorSchemaVersion = 1
+	currentMajorSchemaVersion = 3
 )
 
 var (

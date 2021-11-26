@@ -86,7 +86,7 @@ docker run --rm --name scd-db-manager \
 	-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
 	local-db-manager \
 	--schemas_dir db-schemas/scd \
-	--db_version 1.0.0 \
+	--db_version "latest" \
 	--cockroach_host crdb
 
 sleep 1
@@ -148,11 +148,13 @@ docker run --link dummy-oauth-for-testing:oauth \
 	-v "${RESULTFILE}:/app/test_result" \
 	e2e-test \
 	"${1:-.}" \
+	-rsx \
 	--junitxml=/app/test_result \
 	--dss-endpoint http://local-gateway:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
-	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"
+	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
+	--scd-api-version 0.3.17
 
 echo "Cleaning up http-gateway container"
 docker stop http-gateway-for-testing > /dev/null

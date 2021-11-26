@@ -9,12 +9,12 @@ import datetime
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
-from monitoring.prober.infrastructure import for_api_versions
+from monitoring.prober.infrastructure import for_api_versions, register_resource_type
 
 
-SUB1_ID = '00000088-b268-481c-a32d-6be442000000'
-SUB2_ID = '00000017-a3fe-42d6-9f3b-83dec2000000'
-SUB3_ID = '0000001b-9c8a-475e-a82d-d81922000000'
+SUB1_TYPE = register_resource_type(216, 'Subscription 1')
+SUB2_TYPE = register_resource_type(217, 'Subscription 2')
+SUB3_TYPE = register_resource_type(218, 'Subscription 3')
 
 
 LAT0 = 23
@@ -36,7 +36,7 @@ def _make_sub1_req(scd_api):
   }
   if scd_api == scd.API_0_3_5:
     req.update({"old_version": 0, "notify_for_operations": True})
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req.update({"notify_for_operational_intents": True})
   return req
 
@@ -53,7 +53,7 @@ def _make_sub2_req(scd_api):
   }
   if scd_api == scd.API_0_3_5:
     req.update({"old_version": 0, "notify_for_operations": True})
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req.update({"notify_for_operational_intents": True})
   return req
 
@@ -69,14 +69,14 @@ def _make_sub3_req(scd_api):
   }
   if scd_api == scd.API_0_3_5:
     req.update({"old_version": 0, "notify_for_operations": True})
-  elif scd_api == scd.API_0_3_15:
+  elif scd_api == scd.API_0_3_17:
     req.update({"notify_for_operational_intents": True})
   return req
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
-def test_ensure_clean_workspace(scd_api, scd_session):
-  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_ensure_clean_workspace(ids, scd_api, scd_session):
+  for sub_id in (ids(SUB1_TYPE), ids(SUB2_TYPE), ids(SUB3_TYPE)):
     resp = scd_session.get('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
     if resp.status_code == 200:
       resp = scd_session.delete('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
@@ -90,48 +90,48 @@ def test_ensure_clean_workspace(scd_api, scd_session):
 
 # Preconditions: No named Subscriptions exist
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_subs_do_not_exist_get(scd_api, scd_session):
-  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
+def test_subs_do_not_exist_get(ids, scd_api, scd_session):
+  for sub_id in (ids(SUB1_TYPE), ids(SUB2_TYPE), ids(SUB3_TYPE)):
     resp = scd_session.get('/subscriptions/{}'.format(sub_id))
     assert resp.status_code == 404, resp.content
 
 
 # Preconditions: No named Subscriptions exist
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_subs_do_not_exist_query(scd_api, scd_session):
+def test_subs_do_not_exist_query(ids, scd_api, scd_session):
   resp = scd_session.post('/subscriptions/query', json={
     'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(LAT0, LNG0, FOOTPRINT_SPACING_M))
   })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
+  for sub_id in (ids(SUB1_TYPE), ids(SUB2_TYPE), ids(SUB3_TYPE)):
     assert sub_id not in result_ids
 
 
 # Preconditions: No named Subscriptions exist
 # Mutations: Subscriptions 1, 2, and 3 created
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_create_subs(scd_api, scd_session):
-  resp = scd_session.put('/subscriptions/{}'.format(SUB1_ID), json=_make_sub1_req(scd_api))
+def test_create_subs(ids, scd_api, scd_session):
+  resp = scd_session.put('/subscriptions/{}'.format(ids(SUB1_TYPE)), json=_make_sub1_req(scd_api))
   assert resp.status_code == 200, resp.content
 
-  resp = scd_session.put('/subscriptions/{}'.format(SUB2_ID), json=_make_sub2_req(scd_api))
+  resp = scd_session.put('/subscriptions/{}'.format(ids(SUB2_TYPE)), json=_make_sub2_req(scd_api))
   assert resp.status_code == 200, resp.content
 
-  resp = scd_session.put('/subscriptions/{}'.format(SUB3_ID), json=_make_sub3_req(scd_api))
+  resp = scd_session.put('/subscriptions/{}'.format(ids(SUB3_TYPE)), json=_make_sub3_req(scd_api))
   assert resp.status_code == 200, resp.content
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_search_find_all_subs(scd_api, scd_session):
+def test_search_find_all_subs(ids, scd_api, scd_session):
   resp = scd_session.post(
       '/subscriptions/query',
       json={
@@ -140,15 +140,15 @@ def test_search_find_all_subs(scd_api, scd_session):
       })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
+  for sub_id in (ids(SUB1_TYPE), ids(SUB2_TYPE), ids(SUB3_TYPE)):
     assert sub_id in result_ids
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_search_footprint(scd_api, scd_session):
+def test_search_footprint(ids, scd_api, scd_session):
   lat = LAT0 - scd.latitude_degrees(FOOTPRINT_SPACING_M)
   print(lat)
   resp = scd_session.post(
@@ -159,9 +159,9 @@ def test_search_footprint(scd_api, scd_session):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert SUB1_ID in result_ids
-  assert SUB2_ID not in result_ids
-  assert SUB3_ID not in result_ids
+  assert ids(SUB1_TYPE) in result_ids
+  assert ids(SUB2_TYPE) not in result_ids
+  assert ids(SUB3_TYPE) not in result_ids
 
   resp = scd_session.post(
     '/subscriptions/query',
@@ -171,16 +171,16 @@ def test_search_footprint(scd_api, scd_session):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert SUB1_ID not in result_ids
-  assert SUB2_ID in result_ids
-  assert SUB3_ID not in result_ids
+  assert ids(SUB1_TYPE) not in result_ids
+  assert ids(SUB2_TYPE) in result_ids
+  assert ids(SUB3_TYPE) not in result_ids
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_search_time(scd_api, scd_session):
+def test_search_time(ids, scd_api, scd_session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=1)
 
@@ -192,9 +192,9 @@ def test_search_time(scd_api, scd_session):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert SUB1_ID in result_ids
-  assert SUB2_ID not in result_ids
-  assert SUB3_ID not in result_ids
+  assert ids(SUB1_TYPE) in result_ids
+  assert ids(SUB2_TYPE) not in result_ids
+  assert ids(SUB3_TYPE) not in result_ids
 
   resp = scd_session.post(
     '/subscriptions/query',
@@ -204,9 +204,9 @@ def test_search_time(scd_api, scd_session):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert SUB1_ID in result_ids
-  assert SUB2_ID not in result_ids
-  assert SUB3_ID not in result_ids
+  assert ids(SUB1_TYPE) in result_ids
+  assert ids(SUB2_TYPE) not in result_ids
+  assert ids(SUB3_TYPE) not in result_ids
 
   time_start = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
   time_end = time_start + datetime.timedelta(minutes=1)
@@ -219,9 +219,9 @@ def test_search_time(scd_api, scd_session):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert SUB1_ID not in result_ids
-  assert SUB2_ID not in result_ids
-  assert SUB3_ID in result_ids
+  assert ids(SUB1_TYPE) not in result_ids
+  assert ids(SUB2_TYPE) not in result_ids
+  assert ids(SUB3_TYPE) in result_ids
 
   resp = scd_session.post(
     '/subscriptions/query',
@@ -231,16 +231,16 @@ def test_search_time(scd_api, scd_session):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert SUB1_ID not in result_ids
-  assert SUB2_ID not in result_ids
-  assert SUB3_ID in result_ids
+  assert ids(SUB1_TYPE) not in result_ids
+  assert ids(SUB2_TYPE) not in result_ids
+  assert ids(SUB3_TYPE) in result_ids
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_search_time_footprint(scd_api, scd_session):
+def test_search_time_footprint(ids, scd_api, scd_session):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(hours=2.5)
   lat = LAT0 + scd.latitude_degrees(FOOTPRINT_SPACING_M)
@@ -252,17 +252,23 @@ def test_search_time_footprint(scd_api, scd_session):
     })
   assert resp.status_code == 200, resp.content
   result_ids = [x['id'] for x in resp.json()['subscriptions']]
-  assert SUB1_ID not in result_ids
-  assert SUB2_ID in result_ids
-  assert SUB3_ID not in result_ids
-
+  assert ids(SUB1_TYPE) not in result_ids
+  assert ids(SUB2_TYPE) in result_ids
+  assert ids(SUB3_TYPE) not in result_ids
 
 
 # Preconditions: Subscriptions 1, 2, and 3 created
 # Mutations: Subscriptions 1, 2, and 3 deleted
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_15)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_delete_subs(scd_api, scd_session):
-  for sub_id in (SUB1_ID, SUB2_ID, SUB3_ID):
-    resp = scd_session.delete('/subscriptions/{}'.format(sub_id))
+def test_delete_subs(ids, scd_api, scd_session):
+  for sub_id in (ids(SUB1_TYPE), ids(SUB2_TYPE), ids(SUB3_TYPE)):
+    if scd_api == scd.API_0_3_5:
+      resp = scd_session.delete('/subscriptions/{}'.format(sub_id))
+    elif scd_api == scd.API_0_3_17:
+      resp = scd_session.get('/subscriptions/{}'.format(sub_id))
+      assert resp.status_code == 200
+      resp = scd_session.delete('/subscriptions/{}/{}'.format(sub_id, resp.json()['subscription']['version']))
+    else:
+      raise NotImplementedError('Unsupported API version {}'.format(scd_api))
     assert resp.status_code == 200, resp.content

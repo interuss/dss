@@ -19,23 +19,29 @@ var (
 	DefaultClock = clockwork.NewRealClock()
 )
 
+func (a *Server) CreateSubscription(ctx context.Context, req *scdpb.CreateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
+	return a.PutSubscription(ctx, req.GetSubscriptionid(), "", req.GetParams())
+}
+
+func (a *Server) UpdateSubscription(ctx context.Context, req *scdpb.UpdateSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
+	version := req.GetVersion()
+	return a.PutSubscription(ctx, req.GetSubscriptionid(), version, req.GetParams())
+}
+
 // PutSubscription creates a single subscription.
-func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscriptionRequest) (*scdpb.PutSubscriptionResponse, error) {
+func (a *Server) PutSubscription(ctx context.Context, subscriptionid string, version string, params *scdpb.PutSubscriptionParameters) (*scdpb.PutSubscriptionResponse, error) {
 	// Retrieve Subscription ID
-	id, err := dssmodels.IDFromString(req.GetSubscriptionid())
+	id, err := dssmodels.IDFromString(subscriptionid)
+
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetSubscriptionid())
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", subscriptionid)
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
 		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
-
-	var (
-		params = req.GetParams()
-	)
 
 	if !a.EnableHTTP {
 		err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
@@ -61,8 +67,8 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 
 	subreq := &scdmodels.Subscription{
 		ID:      id,
-		Owner:   owner,
-		Version: scdmodels.Version(params.OldVersion),
+		Manager: manager,
+		Version: scdmodels.OVN(version),
 
 		StartTime:  extents.StartTime,
 		EndTime:    extents.EndTime,
@@ -70,15 +76,17 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		AltitudeHi: extents.SpatialVolume.AltitudeHi,
 		Cells:      cells,
 
-		BaseURL:              params.UssBaseUrl,
-		NotifyForOperations:  params.NotifyForOperations,
-		NotifyForConstraints: params.NotifyForConstraints,
+		USSBaseURL:                  params.UssBaseUrl,
+		NotifyForOperationalIntents: params.NotifyForOperationalIntents,
+		NotifyForConstraints:        params.NotifyForConstraints,
 	}
 
 	// Validate requested Subscription
-	if !subreq.NotifyForOperations && !subreq.NotifyForConstraints {
+	if !subreq.NotifyForOperationalIntents && !subreq.NotifyForConstraints {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "No notification triggers requested for Subscription")
 	}
+
+	// TODO: Check scopes to verify requested information (op intents or constraints) may be requested
 
 	var result *scdpb.PutSubscriptionResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
@@ -97,31 +105,31 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 
 		if old == nil {
 			// There is no previous Subscription (this is a creation attempt)
-			if !subreq.Version.Empty() {
+			if subreq.Version.String() != "" {
 				// The user wants to update an existing Subscription, but one wasn't found.
 				return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", subreq.ID.String())
 			}
 		} else {
 			// There is a previous Subscription (this is an update attempt)
 			switch {
-			case subreq.Version.Empty():
+			case subreq.Version.String() == "":
 				// The user wants to create a new Subscription but it already exists.
 				return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Subscription %s already exists", subreq.ID.String())
-			case !subreq.Version.Matches(old.Version):
+			case subreq.Version.String() != old.Version.String():
 				// The user wants to update a Subscription but the version doesn't match.
 				return stacktrace.Propagate(
-					stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %d is not current", subreq.Version),
-					"Current version is %d but client specified version %d", old.Version, subreq.Version)
-			case old.Owner != subreq.Owner:
+					stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", subreq.Version),
+					"Current version is %s but client specified version %s", old.Version, subreq.Version)
+			case old.Manager != subreq.Manager:
 				return stacktrace.Propagate(
 					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
-					"Subscription owned by %s, but %s attempted to modify", old.Owner, subreq.Owner)
+					"Subscription owned by %s, but %s attempted to modify", old.Manager, subreq.Manager)
 			}
 
 			subreq.NotificationIndex = old.NotificationIndex
 
 			// Validate Subscription against DependentOperations
-			dependentOpIds, err = r.GetDependentOperations(ctx, subreq.ID)
+			dependentOpIds, err = r.GetDependentOperationalIntents(ctx, subreq.ID)
 			if err != nil {
 				return stacktrace.Propagate(err, "Could not find dependent Operation Ids")
 			}
@@ -146,9 +154,9 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 		}
 
 		// Find relevant Operations
-		var relevantOperations []*scdmodels.Operation
+		var relevantOperations []*scdmodels.OperationalIntent
 		if len(sub.Cells) > 0 {
-			ops, err := r.SearchOperations(ctx, &dssmodels.Volume4D{
+			ops, err := r.SearchOperationalIntents(ctx, &dssmodels.Volume4D{
 				StartTime: sub.StartTime,
 				EndTime:   sub.EndTime,
 				SpatialVolume: &dssmodels.Volume3D{
@@ -174,14 +182,14 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 			Subscription: p,
 		}
 
-		if sub.NotifyForOperations {
+		if sub.NotifyForOperationalIntents {
 			// Attach Operations to response
 			for _, op := range relevantOperations {
-				if op.Owner != owner {
-					op.OVN = scdmodels.OVN("")
+				if op.Manager != manager {
+					op.OVN = scdmodels.OVN(scdmodels.NoOvnPhrase)
 				}
 				pop, _ := op.ToProto()
-				result.Operations = append(result.Operations, pop)
+				result.OperationalIntentReferences = append(result.OperationalIntentReferences, pop)
 			}
 		}
 
@@ -198,10 +206,10 @@ func (a *Server) PutSubscription(ctx context.Context, req *scdpb.PutSubscription
 				if err != nil {
 					return stacktrace.Propagate(err, "Could not convert Constraint to proto")
 				}
-				if constraint.Owner != owner {
-					p.Ovn = ""
+				if constraint.Manager != manager {
+					p.Ovn = scdmodels.NoOvnPhrase
 				}
-				result.Constraints = append(result.Constraints, p)
+				result.ConstraintReferences = append(result.ConstraintReferences, p)
 			}
 		}
 
@@ -226,7 +234,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
 		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
@@ -243,14 +251,14 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 		}
 
 		// Check if the client is authorized to view this Subscription
-		if owner != sub.Owner {
+		if manager != sub.Manager {
 			return stacktrace.Propagate(
 				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
-				"Subscription owned by %s, but %s attempted to view", sub.Owner, owner)
+				"Subscription owned by %s, but %s attempted to view", sub.Manager, manager)
 		}
 
 		// Get dependent Operations
-		dependentOps, err := r.GetDependentOperations(ctx, id)
+		dependentOps, err := r.GetDependentOperationalIntents(ctx, id)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not find dependent Operations")
 		}
@@ -278,7 +286,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *scdpb.GetSubscription
 }
 
 // QuerySubscriptions queries existing subscriptions in the given bounds.
-func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscriptionsRequest) (*scdpb.SearchSubscriptionsResponse, error) {
+func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscriptionsRequest) (*scdpb.QuerySubscriptionsResponse, error) {
 	// Retrieve the area of interest parameter
 	aoi := req.GetParams().AreaOfInterest
 	if aoi == nil {
@@ -292,12 +300,12 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
 		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
 
-	var response *scdpb.SearchSubscriptionsResponse
+	var response *scdpb.QuerySubscriptionsResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Perform search query on Store
 		subs, err := r.SearchSubscriptions(ctx, vol4)
@@ -306,11 +314,11 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *scdpb.QuerySubscri
 		}
 
 		// Return response to client
-		response = &scdpb.SearchSubscriptionsResponse{}
+		response = &scdpb.QuerySubscriptionsResponse{}
 		for _, sub := range subs {
-			if sub.Owner == owner {
+			if sub.Manager == manager {
 				// Get dependent Operations
-				dependentOps, err := r.GetDependentOperations(ctx, sub.ID)
+				dependentOps, err := r.GetDependentOperationalIntents(ctx, sub.ID)
 				if err != nil {
 					return stacktrace.Propagate(err, "Could not find dependent Operations")
 				}
@@ -343,7 +351,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 	}
 
 	// Retrieve ID of client making call
-	owner, ok := auth.OwnerFromContext(ctx)
+	manager, ok := auth.ManagerFromContext(ctx)
 	if !ok {
 		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
 	}
@@ -357,14 +365,14 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 			return stacktrace.Propagate(err, "Could not get Subscription from repo")
 		case old == nil: // Return a 404 here.
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
-		case old.Owner != owner:
+		case old.Manager != manager:
 			return stacktrace.Propagate(
 				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
-				"Subscription owned by %s, but %s attempted to delete", old.Owner, owner)
+				"Subscription owned by %s, but %s attempted to delete", old.Manager, manager)
 		}
 
 		// Get dependent Operations
-		dependentOps, err := r.GetDependentOperations(ctx, id)
+		dependentOps, err := r.GetDependentOperationalIntents(ctx, id)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not find dependent Operations")
 		}
@@ -403,10 +411,10 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *scdpb.DeleteSubscr
 }
 
 // GetOperations gets operations by given ids
-func GetOperations(ctx context.Context, r repos.Repository, opIDs []dssmodels.ID) ([]*scdmodels.Operation, error) {
-	var res []*scdmodels.Operation
+func GetOperations(ctx context.Context, r repos.Repository, opIDs []dssmodels.ID) ([]*scdmodels.OperationalIntent, error) {
+	var res []*scdmodels.OperationalIntent
 	for _, opID := range opIDs {
-		operation, err := r.GetOperation(ctx, opID)
+		operation, err := r.GetOperationalIntent(ctx, opID)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Could not retrieve dependent Operation %s", opID)
 		}
