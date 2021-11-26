@@ -54,7 +54,7 @@ func main() {
 	if *path == "" {
 		log.Panic("Must specify schemas_dir path")
 	}
-	// TODO: Fix initializing desiredVersion for condition true. 
+	// TODO: Fix initializing desiredVersion for condition true.
 	// if (*dbVersion == "" && *step == 0) || (*dbVersion != "" && *step != 0) {
 	// 	log.Panic("Must specify one of [db_version, migration_step] to goto, use --help to see options")
 	// }
