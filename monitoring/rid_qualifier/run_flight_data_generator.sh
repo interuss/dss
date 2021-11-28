@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eo pipefail
+
 # Find and change to repo root directory
 OS=$(uname)
 if [[ "$OS" == "Darwin" ]]; then
@@ -16,9 +18,14 @@ docker build \
     --build-arg version="$(scripts/git/commit.sh)" \
     monitoring
 
-docker run -i -t --name flight_data_generator \
+if [ "$CI" == "true" ]; then
+  docker_args=""
+else
+  docker_args="-it"
+fi
+
+docker run ${docker_args} --name flight_data_generator \
   --rm \
-  --tty \
   -e PYTHONBUFFERED=1 \
   -v "$(pwd)/monitoring/rid_qualifier/test_definitions:/app/monitoring/rid_qualifier/test_definitions" \
   interuss/dss/rid_qualifier \
