@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 set -eo pipefail
 
 echo "Re/Create e2e_test_result file"
