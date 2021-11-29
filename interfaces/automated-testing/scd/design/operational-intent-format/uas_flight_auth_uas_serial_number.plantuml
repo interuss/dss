@@ -1,0 +1,15 @@
+@startuml
+center header Operational Intent Format
+title UAS Flight Auth uas_serial_number
+
+participant "Test Driver" as TD
+participant "USS under test" as USS
+
+== Invalid ==
+TD --> USS: PUT /inject/operational_intent\nwith invalid uas_serial_number
+TD <-- USS: 400 Bad Format
+
+== Valid ==
+TD --> USS: PUT /inject/operational_intent\nwith valid uas_serial_number
+TD <-- USS: 200 Ok
+@enduml
