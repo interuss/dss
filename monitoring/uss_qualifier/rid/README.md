@@ -30,4 +30,4 @@ Example: `./run_flight_state_locally.sh <kml-file> <local-output-folder>`
 
 ## Running locally
 
-This tool can be run locally on your system via the [run_locally.sh](../run_locally.sh) script. Please review that file to see the different options that can be configured before running instance locally. NB: A remote ID system to test must be available and configured before `run_locally.sh` is executed. A full mock RID system can be brought up locally using the [mock](mock/README.md)
+This tool can be run locally on your system via the [../run_locally.sh](../run_locally.sh) script. Please review that file to see the different options that can be configured before running instance locally. NB: A remote ID system to test must be available and configured before `./run_locally.sh` is executed. A full mock RID system can be brought up locally using the [mock](mock/README.md)
