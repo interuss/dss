@@ -7,7 +7,7 @@ from pyproj import Geod, Proj
 from shapely.geometry.polygon import Polygon
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import LatLngPoint, Time, Volume3D, Volume4D, Altitude
-from monitoring.scd_qualifier.utils import VolumePolygon, VolumeGenerationRule, GeometryGenerationRule,  GeneratedGeometry, SCDVolume4D, OutputSubDirectories
+from monitoring.scd_qualifier.utils import VolumePolygon, VolumeGenerationRule, GeometryGenerationRule,  GeneratedGeometry, OutputSubDirectories, PartialOperationalIntentReferenceDetails
 import shapely.geometry
 import os
 from shapely.geometry import asShape
@@ -112,7 +112,6 @@ class ProximateFlightVolumeGenerator():
         grid_cell = random.choice(self.grid_cells) # Pick a random grid cell
         random_flight_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=grid_cell.bounds)
         random_flight_polygon = asShape(random_flight_polygon).envelope # Get the envelope of the linestring and create a box
-            
         return random_flight_polygon
     
         
@@ -247,12 +246,20 @@ class ProximateFlightVolumeGenerator():
             all_volume_4d.append(flight_volume_4d)
             
         return all_volume_4d
-
+    
+    def generate_partial_operational_intent_references(self, volumes:List[Volume4D]) -> List[PartialOperationalIntentReferenceDetails]:
+        ''' A method to generate Operational Intent references given a list of Volume 4Ds '''
+        all_operational_intent_references= []
+        for current_volume in volumes: 
+            current_operational_intent_reference = PartialOperationalIntentReferenceDetails(extents = current_volume, key = [], state = "Accepted", uss_base_url = "")
+            all_operational_intent_references.append(current_operational_intent_reference)
+            
+        return all_operational_intent_references
 
 class SCDFlightPathVolumeWriter():
     """ A class to write raw Flight Paths and volumes to disk so that they can be examined / used in other software """
 
-    def __init__(self, raw_geometries:List[GeneratedGeometry],  flight_volumes: List[Volume4D], all_rules: List[VolumeGenerationRule],country_code='che')-> None:
+    def __init__(self, partial_operational_intent_references: List[PartialOperationalIntentReferenceDetails], all_rules: List[VolumeGenerationRule],country_code='che')-> None:
         '''
         A method to write flight paths, volumes and volume generation rules to disk for review / submission to the test harness. All data is written in the `test_definitions` directory which is created if it does not exist.
         
@@ -262,23 +269,22 @@ class SCDFlightPathVolumeWriter():
         # Create test_definition directory if it does not exist        
         self.output_directory.mkdir(parents=True, exist_ok=True)
         # The generator creates two sub-directories to write the files, the 4D Volumes are written in the astm_4d_volumes directory and the rules regarding the generation and the expected output from processing the Volume 4D sequentially. Since the DSS is a First In First Out system, we expect the first volume processing to be accepted.
-        self.output_subdirectories = OutputSubDirectories(astm_4d_volumes= Path(self.output_directory, 'astm_4d_volumes'), scd_rules=Path(self.output_directory, 'scd_rules'))
+        self.output_subdirectories = OutputSubDirectories(partial_operational_intent_references= Path(self.output_directory, 'partial_operational_intent_references'), scd_rules=Path(self.output_directory, 'scd_rules'))
         
-        self.output_subdirectories.astm_4d_volumes.mkdir(parents=True, exist_ok=True)
+        self.output_subdirectories.partial_operational_intent_references.mkdir(parents=True, exist_ok=True)
         self.output_subdirectories.scd_rules.mkdir(parents=True, exist_ok=True)
 
-        self.raw_geometries = raw_geometries
-        self.flight_volumes = flight_volumes
+        self.partial_operational_intent_references = partial_operational_intent_references
         self.all_rules = all_rules
     
-    def write_astm_volume_4d(self) -> None:
-        ''' A method to write volume 4D objects to disk '''
+    def write_partial_operational_intent_references(self) -> None:
+        ''' A method to write partial operational intents to disk '''
 
-        for volume_id, volume in enumerate(self.flight_volumes):                     
-            volume_file_name = 'volume_%s.json' % str(volume_id + 1)  # Avoid Zero based numbering           
-            volume_file_path = self.output_subdirectories['astm_4d_volumes'] / volume_file_name
+        for partial_operational_intent_reference_id, partial_operational_intent_reference in enumerate(self.partial_operational_intent_references):                     
+            volume_file_name = 'partial_operational_intent_%s.json' % str(partial_operational_intent_reference_id + 1)  # Avoid Zero based numbering           
+            volume_file_path = self.output_subdirectories['partial_operational_intent_references'] / volume_file_name
             with open(volume_file_path, 'w') as f:
-                f.write(json.dumps(volume))
+                f.write(json.dumps(partial_operational_intent_reference))
 
     def write_test_rules(self) -> None:
         ''' A method to write the expected outcomes of sequential input '''
@@ -300,8 +306,10 @@ if __name__ == '__main__':
     all_rules = my_volume_generator.generate_volume_altitude_time_intersect_rules(raw_geometries=flight_geometries)
     
     flight_volumes = my_volume_generator.generate_astm_4d_volumes(raw_geometries = flight_geometries, rules = all_rules, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
-   
-    my_flight_geometry_writer = SCDFlightPathVolumeWriter(raw_geometries= flight_geometries, flight_volumes=flight_volumes, all_rules = all_rules)
     
-    my_flight_geometry_writer.write_astm_volume_4d()
+    all_operational_intents = my_volume_generator.generate_partial_operational_intent_references(volumes = flight_volumes)
+   
+    my_flight_geometry_writer = SCDFlightPathVolumeWriter(partial_operational_intent_references=all_operational_intents, all_rules = all_rules)
+    
+    my_flight_geometry_writer.write_partial_operational_intent_references()
     my_flight_geometry_writer.write_test_rules()
