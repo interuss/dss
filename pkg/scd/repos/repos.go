@@ -54,7 +54,7 @@ type Subscription interface {
 }
 
 type UssAvailability interface {
-	GetUssAvailability(ctx context.Context, id string) (*scdmodels.UssAvailabilityStatus, error)
+	GetUssAvailability(ctx context.Context, id dssmodels.Manager) (*scdmodels.UssAvailabilityStatus, error)
 
 	UpsertUssAvailability(ctx context.Context, ussa *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error)
 }

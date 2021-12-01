@@ -2,6 +2,8 @@ package cockroach
 
 import (
 	"context"
+
+	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"log"
 )
@@ -13,7 +15,7 @@ func (u *repo) UpsertUssAvailability(ctx context.Context, s *scdmodels.UssAvaila
 }
 
 // GetUssAvailability returns the Availability status identified by "id".
-func (u *repo) GetUssAvailability(ctx context.Context, id string) (*scdmodels.UssAvailabilityStatus, error) {
+func (u *repo) GetUssAvailability(ctx context.Context, id dssmodels.Manager) (*scdmodels.UssAvailabilityStatus, error) {
 	// todo: yet to implement
 	return &scdmodels.UssAvailabilityStatus{Availability: "Unknown"}, nil
 }
