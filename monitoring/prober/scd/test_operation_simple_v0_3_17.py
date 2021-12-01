@@ -215,16 +215,33 @@ def test_get_op_by_search_latest_time_included(ids, scd_api, scd_session):
 def test_set_uss_availability(ids, scd_session2):
   resp = scd_session2.put(
     f'/uss_availability/uss1', scope=SCOPE_AA, json={'availability': 'Normal'})
-  # Uncomment once endpoint is implemented.
+  # #TODO: Uncomment once endpoint is implemented.
   # assert resp.status_code == 200, resp.content
+  # data = resp.json()
+  # assert data['status']['uss'] == 'uss1'
+  # assert data['status']['availability'] == 'Normal'
+  # # TODO: implement version update
+  # assert data['version'] == ''
 
 
 @default_scope(SCOPE_AA)
 @depends_on(test_set_uss_availability)
 def test_get_uss_availability(ids, scd_session2):
   resp = scd_session2.get(f'/uss_availability/uss1', scope=SCOPE_AA)
-  # Uncomment once endpoint is implemented.
+  # # TODO: Uncomment once endpoint is implemented.
   # assert resp.status_code == 200, resp.content
+  # data = resp.json()
+  # assert data['status']['uss'] == 'uss1'
+  # assert data['status']['availability'] == 'Normal'
+  # # TODO: implement version update
+  # assert data['version'] == ''
+
+  # resp = scd_session2.get(f'/uss_availability/unknown_uss2', scope=SCOPE_AA)
+  # print('uss_availability: ', resp.content)
+  # assert resp.status_code == 200, resp.content
+  # data = resp.json()
+  # assert data['status']['availability'] == 'Unknown'
+
 
 
 @default_scope(SCOPE_SC)
