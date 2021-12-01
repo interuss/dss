@@ -9,20 +9,20 @@ participant "DSS"
 
 == TD injects via USS1 non-conflicting Operational Intent 1 ==
 
-TD --> USS1: PUT /inject/operational_intent
-TD <-- USS1: 200 OK - Operational Intent 1 created
+TD -> USS1: PUT /inject/operational_intent
+TD <- USS1: 200 OK - Operational Intent 1 created
 
-TD --> DSS: POST /dss/v1/operational_intent_references/query\nwith area_of_interest encompassing Operational Intent 1
-TD <-- DSS: 200 OK - returns Operational Intent Reference 1 with entityid1 managed by USS1
+TD -> DSS: POST /dss/v1/operational_intent_references/query\nwith area_of_interest encompassing Operational Intent 1
+TD <- DSS: 200 OK - returns Operational Intent Reference 1 with entityid1 managed by USS1
 
-TD --> USS1: GET /uss/v1/operational_intents/{entityid1}
-TD <-- USS1: 200 OK - returns Operational Intent 1
+TD -> USS1: GET /uss/v1/operational_intents/{entityid1}
+TD <- USS1: 200 OK - returns Operational Intent 1
 
 ...
 
 == TD injects via USS2 a conflicting Operational Intent (time, altitude, priority and area) ==
 
-TD --> USS2: PUT /inject/operational_intent
-TD <-- USS2: 409 Conflict - Operational Intent 2 rejected
+TD -> USS2: PUT /inject/operational_intent
+TD <- USS2: 409 Conflict - Operational Intent 2 rejected
 
 @enduml
