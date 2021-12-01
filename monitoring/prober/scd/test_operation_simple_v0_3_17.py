@@ -237,7 +237,6 @@ def test_get_uss_availability(ids, scd_session2):
   # assert data['version'] == ''
 
   # resp = scd_session2.get(f'/uss_availability/unknown_uss2', scope=SCOPE_AA)
-  # print('uss_availability: ', resp.content)
   # assert resp.status_code == 200, resp.content
   # data = resp.json()
   # assert data['status']['availability'] == 'Unknown'
