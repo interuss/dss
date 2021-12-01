@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
@@ -80,6 +81,7 @@ func (u *repo) fetchAvailabilities(ctx context.Context, q dsssql.Queryable, quer
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning UssAvailability row")
 		}
+		u.Version = scdmodels.NewOVNFromTime(updatedAt, u.Uss.String())
 		payload = append(payload, u)
 	}
 	if err := rows.Err(); err != nil {
@@ -103,14 +105,13 @@ func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query 
 }
 
 // GetUssAvailability returns the Availability status identified by "id".
-func (u *repo) GetUssAvailability(ctx context.Context, ussID string) (*scdmodels.UssAvailabilityStatus, error) {
-	var ussAvailabilityQuery = `
-      SELECT
-        id, availability, updated_at
+func (u *repo) GetUssAvailability(ctx context.Context, ussID dssmodels.Manager) (*scdmodels.UssAvailabilityStatus, error) {
+	var ussAvailabilityQuery = fmt.Sprintf(`
+      SELECT %s
       FROM
         scd_uss_availability
       WHERE
-        id = $1`
+        id = $1`, availabilityFieldsWithoutPrefix)
 
 	ussa, err := u.fetchAvailability(ctx, u.q, ussAvailabilityQuery, ussID)
 	if err != nil {
