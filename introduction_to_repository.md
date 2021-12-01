@@ -50,6 +50,6 @@ When building new monitoring tools, we recommend using Docker containers as a wa
 
 #### Remote ID Qualifier
 
-- The [rid_qualifier](../dss/monitoring/rid_qualifier/README.md) is a test suite for testing / qualifying remote-ID performance and qualification, this is useful for testing out USS compliance with RemoteID standard.
+- The [rid_qualifier](monitoring/uss_qualifier/rid/README.md) is a test suite for testing / qualifying remote-ID performance and qualification, this is useful for testing out USS compliance with RemoteID standard.
 - The RemoteID qualifier develops flight tracks for a geographical bounding and a payload object based on these tracks.
 - The test suite then performs various queries based on the bounding boxes to test output data from the USS.
