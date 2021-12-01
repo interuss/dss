@@ -7,7 +7,7 @@ from pyproj import Geod, Proj
 from shapely.geometry.polygon import Polygon
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import LatLngPoint, Time, Volume3D, Volume4D, Altitude
-from monitoring.scd_qualifier.utils import VolumePolygon, VolumeGenerationRule, GeometryGenerationRule,  GeneratedGeometry, OutputSubDirectories, PartialOperationalIntentReferenceDetails
+from monitoring.uss_qualifier.scd.utils import VolumePolygon, VolumeGenerationRule, GeometryGenerationRule,  GeneratedGeometry, OutputSubDirectories, PartialOperationalIntentReferenceDetails
 import shapely.geometry
 import os
 from shapely.geometry import asShape
