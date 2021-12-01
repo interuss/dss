@@ -1,0 +1,178 @@
+---
+openapi: "3.0.3"
+info:
+  title: "Operator Data Qualification API"
+  description: |-
+    This interface is implemented by USS wishing to be tested by the Flight Authorization testing suite. The automated testing suite calls this interface to inject operator details data into the USS system under test. 
+
+    Unless otherwise specified, fields specified in a message but not declared in the API shall be ignored.
+  version: "0.0.1"
+ 
+security:
+- TestAuthority:
+  - utm.strategic_coordination
+  - scd.inject_test_data
+   
+components:
+  securitySchemes:
+    Authority:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://token_vendor.com/oauth/token
+          scopes:
+            utm.negotiation: |-
+              Client may perform negotiations and other related activities.
+
+      description: |-
+        Authorization from, or on behalf of, an authorization authority.  This authority shall issue access tokens that are JSON Web Tokens as defined in RFC 7519, using the `RS256` algorithm for the signature, publish to all providers the public key for verifying that signature, and implement standard OAuth server discovery mechanisms as described in RFC 8414.
+        The following fields shall be included in the JWT claim for access tokens issued by this authority:
+        * `iss`, with the URL at which the token generation request was received.
+        * `exp`, with a time no further than 1 hour in the future.
+        * `sub`, with unique ID of the client requesting the access token.
+        * `scope`, with a string composed of a space-separated list of strings indicating the scopes granted, per RFC 6749.
+        * `jti`, according to RFC 7519.
+        Following the principle of least privilege, only one of the scopes enumerated in this document shall be granted in a single token (though other scopes may accompany it).  The tokens granted by this authority shall protect against reuse of received tokens to impersonate the sender to other recipients (via use of the `aud` claim or other means).
+        When using the `aud` claim to protect against the reuse of received tokens, and absent guidance on behalf of the competent authority to the contrary, the JWT `aud` claim requested by the client shall be included in each access token and shall contain the fully qualified domain name of the URL the access token will be used to access.  For example, if a USS were querying the endpoint at https://dss.example.com:8888/rid/v2/dss/identification_service_areas, the access token included in the request should specify `"aud": "dss.example.com"`.
+        Clients shall provide these access tokens in an `Authorization` header in the form `Bearer <token>` in accordance with RFC 6750.
+
+  schemas:
+  
+    OperatorDataFormat:
+      description: |-
+        Parameters for a request to start a negotiation request.
+      type: object
+      properties:
+        uas_serial_number:
+          type: string
+          example: "T4S6BBMSZV4H0650"
+          description: Serial number of the UAS per the CTA-2063-A standard
+        operation_mode:   
+          type: string      
+          anyOf:
+            - $ref: '#/components/schemas/OperationMode'
+        operation_category:
+          type: string
+          example: "normal"
+          description: |-
+            Specify if the flight is "special" or has a specific priority.
+        uas_class: 
+          type: string
+          anyOf:
+            - $ref: '#/components/schemas/UASClass'
+        identification_technologies: 
+          type: string
+          anyOf:
+            - $ref: '#/components/schemas/IdentificationTechnology'
+        connectivity_methods:
+          type: array
+          $ref: '#/components/schemas/ArrayOfConnectivityMethods'
+        endurance_minutes: 
+          type: integer
+          description: A number to specify the endurance of the drone in minutes
+        emergency_procedure_url:
+          type: string
+          format: url
+        operator_id:
+          type: string
+          example: "CHE0n4fujx7nwanb-fwi"
+          description: ID assigned to the operator per the EN4709-02 standard
+      required:
+      - uas_serial_number
+      - operation_mode
+      - uas_class
+      - identification_technologies
+      - operator_id
+
+    ArrayOfConnectivityMethods:
+      type: array
+      items:
+        type: string
+      example: ['http://ussp.com/emergency']
+
+    OperationMode:
+      type: string
+      enum:
+        - vlos
+        - bvlos
+      description: Specify if the operation is `vlos` or `bvlos` operations
+
+    UASClass:
+      type: string
+      enum:
+        - C0
+        - C1
+        - C2
+        - C3
+        - C4
+      description: Specify the class of the UAS to be flown, for classes bey
+
+    IdentificationTechnology:
+      type: string
+      enum:
+        - network
+        - broadcast
+      description: Specify a Identification technology
+  
+    OperatorDataProcessingPassResponse:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/ProcessingPass'
+
+    OperatorDataProcessingFailResponse:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/ProcessingFail'
+
+    ProcessingPass:
+      type: string
+      enum:
+        - pass
+      description: The operator data was processed
+
+    ProcessingFail:
+      type: string
+      enum:
+        - fail
+      description: The operator data was not processed
+
+paths:
+  
+  /operator_auth_test:
+    summary: Create a Test and process data
+    
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OperatorDataFormat'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperatorDataProcessingPassResponse'
+          description: Requested data was processed successfully 
+          
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperatorDataProcessingFailResponse'
+          description: Requested data could not be processed
+          
+      operationId: createTest
+      summary: Create a test and process data
+      description: >-
+        Request the creation of one or more operational intents based on injection of the provided Volume4D data.
+        These fields may not be modified.
+      security:
+        - TestAuth:
+            - scd.inject_test_data
+      tags:
+        - Strategic Deconfliction Operator Data
+
