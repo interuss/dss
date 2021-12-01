@@ -16,6 +16,7 @@ type UssAvailabilityState string
 type UssAvailabilityStatus struct {
 	Uss          dssmodels.Manager
 	Availability UssAvailabilityState
+	Version      OVN
 }
 
 func (u UssAvailabilityState) String() string {
