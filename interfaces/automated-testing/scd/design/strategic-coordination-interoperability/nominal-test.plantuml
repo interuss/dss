@@ -10,7 +10,7 @@ participant "DSS"
 == TD injects via USS1 non-conflicting Operational Intent 1 ==
 
 TD -> USS1: PUT /inject/operational_intent
-TD <- USS1: 200 Ok - Operational Intent 1 created
+TD <- USS1: 200 Ok - Operational Intent 1 created\n{"message": "flight was successfully planned"}
 
 TD -> DSS: POST /dss/v1/operational_intent_references/query\nwith area_of_interest encompassing Operational Intent 1
 TD <- DSS: 200 Ok - returns Operational Intent Reference 1 with entityid1 managed by USS1
