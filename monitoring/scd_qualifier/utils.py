@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Literal
 from geojson import Feature
+import enum
 from shapely.geometry import LineString, Polygon
 from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 from monitoring.monitorlib.scd import Altitude, VolumePolygon, Volume4D, Volume3D
@@ -8,7 +9,7 @@ from pathlib import Path
 
 class OutputSubDirectories(ImplicitDict):
     ''' A class to hold information about output directories that will be generated when writing the files to disk. '''
-    astm_4d_volumes: Path
+    partial_operational_intent_references: Path
     scd_rules: Path
 
 class OperationalIntentReference(ImplicitDict):
@@ -69,3 +70,24 @@ class FlightAuthPartialRequestDetails(ImplicitDict):
     endurance_minutes: int 
     emergency_procedure_url: str
     operator_id:str
+
+class OperationalIntentState(str, enum.Enum):
+    ''' A enum to hold all states of a negotiation proposal state '''
+    Accepted = 'Accepted'
+    Activated = 'Activated'
+    Nonconforming = 'Nonconforming'
+    Contingent = 'Contingent'
+
+class ImplicitSubscriptionParameters(ImplicitDict):
+    uss_base_url: str
+    notify_for_constraints: bool
+
+class PartialOperationalIntentReferenceDetails(ImplicitDict):
+    ''' A class to hold data about operational intent creation that the USS submits to the DSS '''
+    extents: List[Volume4D]
+    key: List[str]
+    state: Literal[OperationalIntentState.Accepted,OperationalIntentState.Activated,OperationalIntentState.Nonconforming, OperationalIntentState.Contingent]
+    uss_base_url: str
+    # the following two fields are not used beccuase they are specific to the operator but are a part of the Opreational Intent Reference creation details.
+    # subsription_id: str
+    # new_subscription: ImplicitSubscriptionParameters
