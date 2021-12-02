@@ -26,5 +26,5 @@ end note
 
 == Valid ==
 TD -> USS: PUT /inject/flight\nwith valid request
-TD <- USS: 200 Ok
+TD <- USS: 200 Ok\n{"result": "planned"}
 @enduml
