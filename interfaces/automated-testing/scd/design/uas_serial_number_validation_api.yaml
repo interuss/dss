@@ -96,7 +96,7 @@ components:
           example: The UAS Serial Numbers provided could not be processed
 paths:
   
-  /uas_serial_number_test:
+  /inject/flight_authorisation:
     summary: Create a Test and process data
     
     put:
