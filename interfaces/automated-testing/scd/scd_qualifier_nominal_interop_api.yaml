@@ -1,9 +1,9 @@
 ---
 openapi: "3.0.3"
 info:
-  title: "SCD Qualifier Injection API"
+  title: "SCD Qualifier Nominal Interoperability API"
   description: |-
-    This interface is implemented by USS wishing to be tested by the Flight Authorization testing suite. The automated testing suite calls this interface to inject flight-related test data into the USS system under test. 
+    This interface is implemented by USS wishing to be tested by the Strategic Deconfliction (SCD) testing suite. The automated testing suite calls this interface to inject flight-related test data into the USS system under test. 
 
     Unless otherwise specified, fields specified in a message but not declared in the API shall be ignored.
   version: "0.0.1"
@@ -14,7 +14,7 @@ security:
       - scd.inject_test_data
 
 tags:
-  - name: Strategic Deconfliction
+  - name: SCD Interoperability Nominal Test
     description: |-
       Endpoints exposed by the USS for interaction with strategic deconfliction test suite (`scd_qualifier`)
 
@@ -426,7 +426,7 @@ components:
         uss_base_url:
           $ref: '#/components/schemas/OperationalIntentUssBaseURL'
 
-        ### The following two parameters are not necessary as a part of test injection
+        ### The following two parameters are part of the standard definitions but are not necessary as a part of test injection
         # subscription_id:
         #   description: >-
         #     The ID of an existing subscription that the USS will use to keep the
@@ -451,16 +451,31 @@ components:
         #   anyOf:
         #   - $ref: '#/components/schemas/ImplicitSubscriptionParameters'
     
-    
+    PartialOperationalIntentsCreateTest:
+      type: object
+      properties:
+        partial_operational_intent: 
+          description: A list of Partial Operational Intents provided for the test, the USS is expected to populate the `key` and the `uss_base_url` parameter by the USS and submited to the DSS
+          type: object
+          $ref: "#/components/schemas/PartialOperationalIntentsTestInjection"
+        injection_id: 
+          description: 'ID of this partial operational intent.  Remains the same regardless of the flight ID/UTM ID reported in the system.'
+          type: string
+          example: 'edb7695f-8737-4b9f-91f8-e2afbb333f41'
+
+      required:
+        - partial_operational_intent
+        - injection_id
+
+
     SCDCreateTestParameters: 
-        type: object
-        properties:
-          partial_operational_intents:
-            description: A list of Partial Operational Intents provided for the test, the USS is expected to populate the `key` and the `uss_base_url` parameter by the USS and submited to the DSS
-            type: array
-            items:
-              $ref: "#/components/schemas/PartialOperationalIntentsTestInjection"
-         
+      description: A list of partial operational intents that will be submitted to the USS under test.
+      type: array
+      items:
+        $ref: "#/components/schemas/PartialOperationalIntentsCreateTest"
+
+
+
     SCDCreateTestResponse:
       description: Response to a SCD qualification data processing request 
       type: object
@@ -470,10 +485,7 @@ components:
           type: string
           format: uuid
           example: a32db672-e968-42aa-9a99-49c583f94a98
-        injected_partial_operational_intents: 
-          type: array
-          items:
-            $ref: "#/components/schemas/PartialOperationalIntentsTestInjection"
+
         processing_results: 
           type: array
           items:
@@ -482,7 +494,7 @@ components:
     FlightNotAuthorizedResult:
       type: object
       properties:
-        scd_processing_result:
+        processing_result:
           type: string
           enum: ["OperationalConflict", "CouldNotProcess"]
           description: >
@@ -501,13 +513,13 @@ components:
     FlightAuthorizedResult:
       type: object
       properties:
-        scd_processing_result:
+        processing_result:
           type: string
           enum: ["Success"]
           description: >
             Sort order:
               * `Success` - A operational intent was created with the supplied data and submitted to the successfully to the DSS
-        volume_4D:
+        partial_operational_intent:
           type: object
           $ref: "#/components/schemas/PartialOperationalIntentsTestInjection"
         
@@ -568,7 +580,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SCDCreateTestResponse"
-          description: Requested areas of interest were processed successfully.
+          description: Submitted Operational Intents were processed successfully.
         "409":
           description: Test already exists.
       operationId: createTest
@@ -580,7 +592,7 @@ paths:
         - TestAuth:
             - scd.inject_test_data
       tags:
-        - Strategic Deconfliction
+        - SCD Interoperability Nominal Test
 
   /scd_tests/{test_id}/{version}:
     parameters:
@@ -616,4 +628,4 @@ paths:
         - TestAuth:
             - scd.inject_test_data
       tags:
-        - Strategic Deconfliction
+        - SCD Interoperability Nominal Test
