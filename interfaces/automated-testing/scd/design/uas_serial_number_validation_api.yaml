@@ -1,0 +1,138 @@
+---
+openapi: "3.0.3"
+info:
+  title: "UAS Serial Number Validation API"
+  description: |-
+    This interface is implemented by USS wishing to be tested for ability to process UAS Serial Numbers per the CTA-2063-A standard. The automated testing suite calls this interface to inject serial number details into the USS system under test. 
+
+    Unless otherwise specified, fields specified in a message but not declared in the API shall be ignored.
+  version: "0.0.1"
+ 
+security:
+- TestAuthority:
+  - utm.strategic_coordination
+  - scd.inject_test_data
+   
+components:
+  securitySchemes:
+    Authority:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://token_vendor.com/oauth/token
+          scopes:
+            utm.strategic_coordination: |-
+              Client may perform strategic deconfliction and other related activities.
+
+      description: |-
+        Authorization from, or on behalf of, an authorization authority.  This authority shall issue access tokens that are JSON Web Tokens as defined in RFC 7519, using the `RS256` algorithm for the signature, publish to all providers the public key for verifying that signature, and implement standard OAuth server discovery mechanisms as described in RFC 8414.
+        The following fields shall be included in the JWT claim for access tokens issued by this authority:
+        * `iss`, with the URL at which the token generation request was received.
+        * `exp`, with a time no further than 1 hour in the future.
+        * `sub`, with unique ID of the client requesting the access token.
+        * `scope`, with a string composed of a space-separated list of strings indicating the scopes granted, per RFC 6749.
+        * `jti`, according to RFC 7519.
+        Following the principle of least privilege, only one of the scopes enumerated in this document shall be granted in a single token (though other scopes may accompany it).  The tokens granted by this authority shall protect against reuse of received tokens to impersonate the sender to other recipients (via use of the `aud` claim or other means).
+        When using the `aud` claim to protect against the reuse of received tokens, and absent guidance on behalf of the competent authority to the contrary, the JWT `aud` claim requested by the client shall be included in each access token and shall contain the fully qualified domain name of the URL the access token will be used to access.  For example, if a USS were querying the endpoint at https://dss.example.com:8888/rid/v2/dss/identification_service_areas, the access token included in the request should specify `"aud": "dss.example.com"`.
+        Clients shall provide these access tokens in an `Authorization` header in the form `Bearer <token>` in accordance with RFC 6750.
+
+  schemas:
+  
+    UASSerialNumberTestData:
+      description: |-
+        Parameters for a request to start a negotiation request.
+      type: object
+      properties:
+        uas_serial_number:
+          type: string
+          example: "T4S6BBMSZV4H0650"
+          description: A string, which may contain a valid serial number of the UAS per the CTA-2063-A standard.
+        injection_id:
+          type: string
+          format: uuid          
+          description: An ID of the generated test data
+          
+      required:
+      - uas_serial_number
+      - injection_id
+
+
+    ProcessingPass:
+      type: string
+      enum:
+        - pass
+      description: The operator data was processed
+
+    ProcessingFail:
+      type: string
+      enum:
+        - fail
+      description: The operator data was not processed
+
+    SerialNumberProcessingSuccessResponse:
+      type: object
+      properties:
+        uas_serial_number:
+          type: string
+          example: "T4S6BBMSZV4H0650"
+          description: A string, which may contain a valid serial number of the UAS per the CTA-2063-A standard.
+        injection_id:
+          type: string
+          format: uuid          
+          description: An ID of the generated test data
+        result:
+          oneOf:            
+            - $ref: '#/components/schemas/ProcessingPass'
+            - $ref: '#/components/schemas/ProcessingFail'
+    SerialNumberProcessingErrorResponse:
+      description: >-
+        Response sent when the UAS Serial Number provided 
+      type: object
+      properties:
+        message:
+          description: >-
+            A description of why the data could not be processed
+          type: string
+          example: The UAS Serial Numbers provided could not be processed
+paths:
+  
+  /uas_serial_number_test:
+    summary: Create a Test and process data
+    
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/UASSerialNumberTestData'
+        required: true
+      responses:
+        '200':          
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SerialNumberProcessingSuccessResponse'
+          description: Requested data was processed successfully 
+          
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SerialNumberProcessingErrorResponse'
+          description: Requested data could not be processed
+          
+      operationId: createTest
+      summary: Create a test and process data
+      description: >-
+        Request the processing of one or more UAS serial numbers based on injection of the provided serial number data.
+        These fields may not be modified.
+      security:
+        - TestAuth:
+            - scd.inject_test_data
+      tags:
+        - UAS Serial Number Validation Data
+
