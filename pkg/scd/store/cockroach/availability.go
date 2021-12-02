@@ -104,7 +104,7 @@ func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query 
 	return availabilities[0], nil
 }
 
-// GetUssAvailability returns the Availability status identified by "id".
+// GetUssAvailability returns the Availability status identified by "ussID".
 func (u *repo) GetUssAvailability(ctx context.Context, ussID dssmodels.Manager) (*scdmodels.UssAvailabilityStatus, error) {
 	var ussAvailabilityQuery = fmt.Sprintf(`
       SELECT %s
