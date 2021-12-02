@@ -549,7 +549,7 @@ components:
         $ref: "#/components/schemas/PartialOperationalIntentsCreateTest"
 
 paths:
-  /scd_tests/{test_id}:
+  /inject/flight/{test_id}:
     parameters:
       - examples:
           default:
@@ -588,7 +588,7 @@ paths:
       tags:
         - SCD Interoperability Nominal Test
 
-  /scd_tests/{test_id}/{version}:
+  /inject/flight/{test_id}/{version}:
     parameters:
       - examples:
           default:
