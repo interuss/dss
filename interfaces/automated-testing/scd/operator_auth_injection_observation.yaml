@@ -43,10 +43,6 @@ components:
         Parameters for a request to start a negotiation request.
       type: object
       properties:
-        uas_serial_number:
-          type: string
-          example: "T4S6BBMSZV4H0650"
-          description: Serial number of the UAS per the CTA-2063-A standard
         operation_mode:   
           type: string      
           anyOf:
@@ -78,7 +74,6 @@ components:
           example: "CHE0n4fujx7nwanb-fwi"
           description: ID assigned to the operator per the EN4709-02 standard
       required:
-      - uas_serial_number
       - operation_mode
       - uas_class
       - identification_technologies
