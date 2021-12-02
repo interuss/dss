@@ -126,7 +126,7 @@ paths:
           description: Requested data could not be processed
           
       operationId: createTest
-      summary: Create a test and process data
+      summary: Process validation data
       description: >-
         Request the processing of one or more UAS serial numbers based on injection of the provided serial number data.
         These fields may not be modified.
@@ -134,5 +134,5 @@ paths:
         - TestAuth:
             - scd.inject_test_data
       tags:
-        - UAS Serial Number Validation Data
+        - UAS Serial Number Validation Test
 
