@@ -1,0 +1,25 @@
+name: USS Qualifier Tests
+on:
+  pull_request: # All
+  push:
+    branches:
+      - master
+jobs:
+  uss-qualifier-tests:
+    name: USS Qualifier Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Job information
+        run: |
+          echo "Job information"
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Host: ${{ runner.os }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref }}"
+          docker images
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run Qualifier tests
+        run: |
+          cd monitoring/uss_qualifier
+          make test

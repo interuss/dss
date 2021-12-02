@@ -53,6 +53,12 @@ type Subscription interface {
 	IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error)
 }
 
+type UssAvailability interface {
+	GetUssAvailability(ctx context.Context, id dssmodels.Manager) (*scdmodels.UssAvailabilityStatus, error)
+
+	UpsertUssAvailability(ctx context.Context, ussa *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error)
+}
+
 // repos.Constraint abstracts constraint-specific interactions with the backing store.
 type Constraint interface {
 	// SearchConstraints returns all Constraints in "v4d".
@@ -76,6 +82,7 @@ type Repository interface {
 	OperationalIntent
 	Subscription
 	Constraint
+	UssAvailability
 }
 
 // IncrementNotificationIndices is a utility function that extracts the IDs from

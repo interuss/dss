@@ -29,11 +29,12 @@ type Constraint struct {
 // ToProto converts the Constraint to its proto API format
 func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 	result := &scdpb.ConstraintReference{
-		Id:         c.ID.String(),
-		Ovn:        c.OVN.String(),
-		Manager:    c.Manager.String(),
-		Version:    int32(c.Version),
-		UssBaseUrl: c.USSBaseURL,
+		Id:              c.ID.String(),
+		Ovn:             c.OVN.String(),
+		Manager:         c.Manager.String(),
+		Version:         int32(c.Version),
+		UssBaseUrl:      c.USSBaseURL,
+		UssAvailability: UssAvailabilityStateUnknown.String(),
 	}
 
 	if c.StartTime != nil {
@@ -57,8 +58,6 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
-
-	// TODO: Populate UssAvailability field
 
 	return result, nil
 }
