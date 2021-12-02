@@ -1,14 +1,14 @@
 @startuml
-title UAS Flight Authorisation format tests
+title UAS Flight Authorisation format tests (U-Space only)
 
 participant "Test Driver" as TD
 participant "USS under test" as USS
 
 == Invalid uas_serial_number ==
-TD -> USS: PUT /inject/flight_authorisation\nwith invalid uas_serial_number
-TD <- USS: 400 Bad Format\n{ "message": "Invalid uas_serial_number" }
+TD -> USS: PUT /inject/flight\nwith invalid authorisation.uas_serial_number
+TD <- USS: 400 Bad Format\n{ "message": "Invalid authorisation.uas_serial_number" }
 
 == Valid ==
-TD -> USS: PUT /inject/flight_authorisation\nwith valid request
+TD -> USS: PUT /inject/flight\nwith valid request
 TD <- USS: 200 Ok
 @enduml

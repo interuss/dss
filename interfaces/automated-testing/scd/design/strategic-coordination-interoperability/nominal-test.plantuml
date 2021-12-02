@@ -9,7 +9,7 @@ participant "DSS"
 
 == TD injects via USS1 non-conflicting Operational Intent 1 ==
 
-TD -> USS1: PUT /inject/operational_intent
+TD -> USS1: PUT /inject/flight
 TD <- USS1: 200 Ok - Operational Intent 1 created\n{"message": "flight was successfully planned"}
 
 TD -> DSS: POST /dss/v1/operational_intent_references/query\nwith area_of_interest encompassing Operational Intent 1
@@ -22,7 +22,7 @@ TD <- USS1: 200 Ok - returns Operational Intent 1
 
 == TD injects via USS2 a conflicting Operational Intent (time, altitude, priority or area) ==
 
-TD -> USS2: PUT /inject/operational_intent
+TD -> USS2: PUT /inject/flight
 TD <- USS2: 200 Ok\n{"message": "flight could not be planned due to a conflict"}
 
 @enduml
