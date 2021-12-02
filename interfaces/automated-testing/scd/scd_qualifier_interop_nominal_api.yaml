@@ -544,15 +544,9 @@ components:
 
     DeleteTestResponse:
       description: ""
-      required:
-        - areas_of_interest
-      type: object
-      properties:
-        areas_of_interest:
-          description: "The complete set of test data deleted."
-          type: array
-          items:
-            $ref: "#/components/schemas/PartialOperationalIntentsTestInjection"
+      type: array
+      items:
+        $ref: "#/components/schemas/PartialOperationalIntentsCreateTest"
 
 paths:
   /scd_tests/{test_id}:
