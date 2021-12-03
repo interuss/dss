@@ -25,7 +25,7 @@ components:
           example: ready
 
 paths:
-  /uss/v1/test/scd/status:
+  /v1/status:
     get:
       responses:
         '200':
