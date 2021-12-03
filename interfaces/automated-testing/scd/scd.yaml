@@ -7,6 +7,18 @@ info:
     The automated testing suite calls this interface to inject test data into the USS system under test.
 
 components:
+  securitySchemes:
+    Authority:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            utm.inject_test_data: |-
+              Client may inject test data into a USS for the purpose of conducting automated tests.
+      description: |-
+        Authorization from, or on behalf of, an authorization authority, augmenting standard scd authorization for the purpose of automated testing.
+
   schemas:
     StatusResponse:
       type: object
@@ -27,6 +39,9 @@ components:
 paths:
   /v1/status:
     get:
+      security:
+        - Authority:
+            - utm.inject_test_data
       responses:
         '200':
           content:
@@ -35,6 +50,10 @@ paths:
                 $ref: '#/components/schemas/StatusResponse'
           description: >-
             The USS automated testing interface is activated and its status was retrieved successfully.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
         '404':
           description: The USS automated testing interface is not activated.
       summary: Retrieve the status of the USS automated testing interface
