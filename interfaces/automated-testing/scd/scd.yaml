@@ -17,21 +17,7 @@ components:
             utm.inject_test_data: |-
               Client may inject test data into a USS for the purpose of conducting automated tests.
       description: |-
-        Authorization from, or on behalf of, an authorization authority.  This authority will issue access tokens that are JSON Web Tokens as defined in RFC 7519, using the `RS256` algorithm for the signature, publish to all providers the public key for verifying that signature, and implement standard OAuth server discovery mechanisms as described in RFC 8414.
-
-        The following fields must be included in the JWT claim for access tokens issued by this authority:
-
-        * `iss`, with the URL at which the token generation request was received.
-        * `exp`, with a time no further than 1 hour in the future.
-        * `sub`, with unique ID of the client requesting the access token.
-        * `scope`, with a string composed of a space-separated list of strings indicating the scopes granted, per RFC 6749.
-        * `jti`, according to RFC 7519.
-
-        Following the principle of least privilege, only one of the scopes enumerated in this document should be granted in a single token (though other scopes may accompany it).  The tokens granted by this authority must protect against reuse of received tokens to impersonate the sender to other recipients (via use of the `aud` claim or other means).
-
-        When using the `aud` claim to protect against the reuse of received tokens, and absent guidance on behalf of the competent authority to the contrary, the JWT `aud` claim requested by the client must be included in each access token and must contain the fully qualified domain name of the URL the access token will be used to access.  For example, if a USS were querying the endpoint at https://dss.example.com:8888/rid/v2/dss/identification_service_areas, the access token included in the request should specify `"aud": "dss.example.com"`.
-
-        Clients must provide these access tokens in an `Authorization` header in the form `Bearer <token>` in accordance with RFC 6750.
+        Authorization from, or on behalf of, an authorization authority, augmenting standard scd authorization for the purpose of automated testing.
 
   schemas:
     StatusResponse:
