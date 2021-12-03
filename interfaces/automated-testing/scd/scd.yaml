@@ -17,12 +17,12 @@ components:
           description: >-
             The status of the USS automated testing interface.
 
-            - `starting`: the USS is starting and the automated test driver should wait before sending requests.
+            - `Starting`: the USS is starting and the automated test driver should wait before sending requests.
 
-            - `ready`: the USS is ready to receive test requests.
+            - `Ready`: the USS is ready to receive test requests.
           type: string
-          enum: [starting, ready]
-          example: ready
+          enum: [Starting, Ready]
+          example: Ready
 
 paths:
   /v1/status:
