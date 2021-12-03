@@ -52,6 +52,8 @@ paths:
             The USS automated testing interface is activated and its status was retrieved successfully.
         '401':
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
         '404':
           description: The USS automated testing interface is not activated.
       summary: Retrieve the status of the USS automated testing interface
