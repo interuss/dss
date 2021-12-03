@@ -1,0 +1,41 @@
+openapi: 3.0.2
+info:
+  title: Strategic Coordination Test Data Injection
+  version: 0.0.1
+  description: >-
+    This interface is implemented by every USS wishing to be tested by the automated testing framework.
+    The automated testing suite calls this interface to inject test data into the USS system under test.
+
+components:
+  schemas:
+    StatusResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          description: >-
+            The status of the USS automated testing interface.
+
+            - `Starting`: the USS is starting and the automated test driver should wait before sending requests.
+
+            - `Ready`: the USS is ready to receive test requests.
+          type: string
+          enum: [Starting, Ready]
+          example: Ready
+
+paths:
+  /v1/status:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+          description: >-
+            The USS automated testing interface is activated and its status was retrieved successfully.
+        '404':
+          description: The USS automated testing interface is not activated.
+      summary: Retrieve the status of the USS automated testing interface
+      description: Get the status of the USS automated testing interface
