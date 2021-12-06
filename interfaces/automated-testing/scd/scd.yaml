@@ -36,6 +36,25 @@ components:
           enum: [Starting, Ready]
           example: Ready
 
+    InjectFlightResponse:
+      type: object
+      required:
+        - results
+      properties: 
+        result: 
+          description: >-
+            The result of the flight submission
+
+              - `Planned`: The flight submission data was correct and the operational intent was successfully accepted by the DSS.
+
+              - `Rejected`: The flight submission data was incorrect and / or the USS was not able to successfully submit the operational intent to the DSS.
+
+              - `Conflict`: The flight submission data was correct but an operational intent could not be created because of conflicting operational intent.
+
+          type: string
+          enum: [Planned, Rejected, Conflict]
+          example: Planned
+
 paths:
   /v1/status:
     get:
@@ -58,3 +77,25 @@ paths:
           description: The USS automated testing interface is not activated.
       summary: Retrieve the status of the USS automated testing interface
       description: Get the status of the USS automated testing interface
+
+  /inject/flight:
+    summary: Process operator details
+    put:      
+      security:
+        - Authority:
+            - utm.inject_test_data
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InjectFlightResponse'
+          description: Requested data was processed successfully
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+
+      summary: Inject test flight
+      description: >-
+        This endpoint simulates the operator intention to submit a flight operation / flight request.
