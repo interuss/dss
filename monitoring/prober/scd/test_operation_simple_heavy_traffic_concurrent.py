@@ -30,8 +30,7 @@ from monitoring.prober.infrastructure import depends_on, for_api_versions, regis
 # - https://github.com/interuss/dss/issues/421
 
 BASE_URL = 'https://example.com/uss'
-# TODO: Change number of operation intents to 100 once concurrency issues are fixed.
-OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(2)]
+OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(100)]
 GROUP_SIZE = len(OP_TYPES) // 3
 # Semaphore is added to limit the number of simultaneous requests,
 # default is 100.
@@ -86,9 +85,9 @@ def _make_op_request_differ_in_altitude(idx):
 # Generate request with volumes that cover the circle area that centered at (-56, 178), with altitude 0 to 120
 # The operation lasts 9 mins and the time window is one after one per sequential idx change
 # The 2D area and altitude won't change with idx
-def _make_op_request_differ_in_time(idx):
+def _make_op_request_differ_in_time(idx, time_gap):
   delta = 10
-  time_start = datetime.datetime.utcnow() + datetime.timedelta(minutes=20) + datetime.timedelta(minutes=delta * idx)
+  time_start = datetime.datetime.utcnow() + datetime.timedelta(minutes=20 + time_gap) + datetime.timedelta(minutes=delta * idx)
   time_end = time_start + datetime.timedelta(minutes=delta - 1)
 
   vol4 = scd.make_vol4(time_start, time_end, 0, 120, scd.make_circle(-56, 178, 50))
@@ -97,13 +96,13 @@ def _make_op_request_differ_in_time(idx):
 
 # Generate request with non-overlapping operations in volume4d.
 # 1/3 operations will be generated with different 2d areas, altitude ranges and time windows respectively
-def _make_op_request(idx):
+def _make_op_request(idx, time_gap=0):
   if idx < GROUP_SIZE:
     return _make_op_request_differ_in_2d(idx)
   elif idx < GROUP_SIZE * 2:
     return _make_op_request_differ_in_altitude(idx)
   else:
-    return _make_op_request_differ_in_time(idx)
+    return _make_op_request_differ_in_time(idx, time_gap)
 
 
 def _intersection(list1, list2):
@@ -170,7 +169,7 @@ def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
-  req = _make_op_request(idx)
+  req = _make_op_request(idx, time_gap=idx * 10)
   req = {
     'key': [existing_op["ovn"]],
     'extents': req['extents'],
