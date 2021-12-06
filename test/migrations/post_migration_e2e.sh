@@ -13,6 +13,33 @@ fi
 echo "Run Post migration Setup"
 CRDB_MIGRATION_CONTAINER="dss-crdb-for-migration-testing"
 
+function gather_logs() {
+	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
+	docker logs grpc-backend-for-testing 2> grpc-backend-for-testing.log
+}
+
+function cleanup() {
+	# ----------- clean up -----------
+	echo "Stopping dummy oauth container"
+	docker rm -f dummy-oauth-for-testing &> /dev/null || true
+
+	echo "Stopping http gateway container"
+	docker kill -f http-gateway-for-testing &> /dev/null || true
+
+	echo "Stopping grpc-backend container"
+	docker kill -f grpc-backend-for-testing &> /dev/null || true
+
+	echo "Stopping crdb docker"
+	docker rm -f $CRDB_MIGRATION_CONTAINER &> /dev/null || true
+}
+
+function on_exit() {
+	gather_logs || true
+	cleanup
+}
+
+trap on_exit   EXIT
+
 if [ "$( docker container inspect -f '{{.State.Status}}' "$CRDB_MIGRATION_CONTAINER" )" == "running" ]; then
     echo "$CRDB_MIGRATION_CONTAINER available!"
 else
