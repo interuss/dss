@@ -2,14 +2,6 @@
 
 set -eo pipefail
 
-OS=$(uname)
-if [[ $OS == "Darwin" ]]; then
-	# OSX uses BSD readlink
-	BASEDIR="$(dirname "$0")/.."
-else
-	BASEDIR=$(readlink -e "$(dirname "$0")/..")
-fi
-
 echo "Run Post migration Setup"
 CRDB_MIGRATION_CONTAINER="dss-crdb-for-migration-testing"
 

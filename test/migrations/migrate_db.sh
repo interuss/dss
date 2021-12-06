@@ -2,14 +2,6 @@
 
 set -eo pipefail
 
-OS=$(uname)
-if [[ $OS == "Darwin" ]]; then
-	# OSX uses BSD readlink
-	BASEDIR="$(dirname "$0")/.."
-else
-	BASEDIR=$(readlink -e "$(dirname "$0")/..")
-fi
-
 db_name=$1
 version=$2
 echo "Migrating ${db_name} database to version ${version}"
@@ -24,6 +16,6 @@ docker run --rm --name migration-testing-db-manager \
   --link dss-crdb-for-migration-testing:crdb \
   -v "$(pwd)/build/deploy/db_schemas/${db_name}:/db-schemas/${db_name}" \
   local-db-manager \
-  --schemas_dir db-schemas/${db_name} \
-  --db_version ${version} \
+  --schemas_dir db-schemas/"${db_name}" \
+  --db_version "${version}" \
   --cockroach_host crdb
