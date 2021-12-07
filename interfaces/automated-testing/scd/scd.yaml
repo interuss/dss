@@ -451,8 +451,6 @@ components:
           description: A set of data about the operator to authorize a flight
           $ref: '#/components/schemas/FlightAutorizationData'
                     
-        # TODO: Add Flight Authorization in a seperate PR.
-
     InjectFlightResponse:
       type: object
       required:
