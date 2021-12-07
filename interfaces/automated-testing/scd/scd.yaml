@@ -78,12 +78,19 @@ paths:
       summary: Retrieve the status of the USS automated testing interface
       description: Get the status of the USS automated testing interface
 
-  /inject/flight:
-    summary: Process operator details
+  /v1/flights/{flight_id}:    
     put:      
       security:
         - Authority:
             - utm.inject_test_data
+      parameters:
+        - name: flight_id
+          in: path
+          required: true
+          description: A UUID string identifying the injected flight.
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
           content:
