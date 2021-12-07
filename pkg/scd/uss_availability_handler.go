@@ -1,13 +1,35 @@
 package scd
 
-import "context"
-import "github.com/interuss/dss/pkg/api/v1/scdpb"
-import "github.com/interuss/stacktrace"
+import (
+	"context"
+
+	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/stacktrace"
+)
 
 func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAvailabilityRequest) (*scdpb.UssAvailabilityStatusResponse, error) {
-	return nil, stacktrace.NewError("Not implemented")
+	id := request.GetUssId()
+	if id == "" {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "UssId not provided")
+	}
+	response := &scdpb.UssAvailabilityStatusResponse{
+		Status: &scdpb.UssAvailabilityStatus{
+			Availability: "Unknown",
+			Uss:          id},
+	}
+	return response, nil
 }
 
 func (a *Server) SetUssAvailability(ctx context.Context, request *scdpb.SetUssAvailabilityRequest) (*scdpb.UssAvailabilityStatusResponse, error) {
-	return nil, stacktrace.NewError("Not implemented")
+	id := request.GetUssId()
+	if id == "" {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "UssId not provided")
+	}
+	result := &scdpb.UssAvailabilityStatusResponse{
+		Status: &scdpb.UssAvailabilityStatus{
+			Availability: "Unknown",
+			Uss:          id},
+	}
+	return result, nil
 }
