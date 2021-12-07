@@ -39,7 +39,7 @@ components:
     InjectFlightResponse:
       type: object
       required:
-        - results
+        - result
       properties: 
         result: 
           description: >-
