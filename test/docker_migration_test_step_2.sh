@@ -23,6 +23,7 @@ function gather_logs() {
 	docker logs grpc-backend-for-testing 2> grpc-backend-for-testing.log
 }
 
+
 function cleanup() {
 	# ----------- clean up -----------
 	echo "Stopping dummy oauth container"
@@ -51,25 +52,6 @@ function on_sigint() {
 trap on_exit   EXIT
 trap on_sigint SIGINT
 
-
-echo " -------------- BOOTSTRAP ----------------- "
-echo "Building local container for testing (see grpc-backend-build.log for details)"
-docker build --rm . -t local-interuss-dss-image > grpc-backend-build.log
-echo "Building db-manager container for testing"
-docker build --rm -f cmds/db-manager/Dockerfile . -t local-db-manager > db-manager-build.log
-
-echo " ---------------- CRDB -------------------- "
-echo "cleaning up any crdb pre-existing containers"
-docker rm -f dss-crdb-for-debugging &> /dev/null || echo "No CRDB to clean up"
-
-echo "Starting cockroachdb with admin port on :8080"
-docker run -d --rm --name dss-crdb-for-debugging \
-	-p 26257:26257 \
-	-p 8080:8080 \
-	cockroachdb/cockroach:v20.2.0 start-single-node \
-	--insecure > /dev/null
-
-sleep 1
 echo "Bootstrapping RID Database tables"
 docker run --rm --name rid-db-manager \
 	--link dss-crdb-for-debugging:crdb \

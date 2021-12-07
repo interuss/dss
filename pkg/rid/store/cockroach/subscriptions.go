@@ -26,7 +26,7 @@ const (
 )
 
 func NewISASubscriptionRepo(ctx context.Context, db dssql.Queryable, dbVersion semver.Version, logger *zap.Logger, clock clockwork.Clock) repos.Subscription {
-	if dbVersion.Compare(v310) >= 0 {
+	if dbVersion.Compare(v400) >= 0 {
 		return &subscriptionRepo{
 			Queryable: db,
 			logger:    logger,

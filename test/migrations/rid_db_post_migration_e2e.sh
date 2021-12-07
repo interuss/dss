@@ -2,21 +2,8 @@
 
 set -eo pipefail
 
-echo "Re/Create e2e_test_result file"
-RESULTFILE="$(pwd)/e2e_test_result"
-touch "${RESULTFILE}"
-cat /dev/null > "${RESULTFILE}"
-
-OS=$(uname)
-if [[ $OS == "Darwin" ]]; then
-	# OSX uses BSD readlink
-	BASEDIR="$(dirname "$0")/.."
-else
-	BASEDIR=$(readlink -e "$(dirname "$0")/..")
-fi
-
-echo "e2e base directory is ${BASEDIR}"
-cd "${BASEDIR}"
+echo "Run Post migration Setup"
+CRDB_MIGRATION_CONTAINER="dss-crdb-for-migration-testing"
 
 function gather_logs() {
 	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
@@ -35,7 +22,7 @@ function cleanup() {
 	docker kill -f grpc-backend-for-testing &> /dev/null || true
 
 	echo "Stopping crdb docker"
-	docker rm -f dss-crdb-for-debugging &> /dev/null || true
+	docker rm -f $CRDB_MIGRATION_CONTAINER &> /dev/null || true
 }
 
 function on_exit() {
@@ -43,46 +30,18 @@ function on_exit() {
 	cleanup
 }
 
-function on_sigint() {
-	cleanup
-	exit
-}
-
 trap on_exit   EXIT
-trap on_sigint SIGINT
 
+if [ "$( docker container inspect -f '{{.State.Status}}' "$CRDB_MIGRATION_CONTAINER" )" == "running" ]; then
+    echo "$CRDB_MIGRATION_CONTAINER available!"
+else
+    echo "Error: $CRDB_MIGRATION_CONTAINER not running. Execute 'clear_db.sh and migrate_db.sh' before running post_migration_e2e.sh";
+    exit 1;
+fi
 
-echo " -------------- BOOTSTRAP ----------------- "
-echo "Building local container for testing (see grpc-backend-build.log for details)"
-docker build --rm . -t local-interuss-dss-image > grpc-backend-build.log
-echo "Building db-manager container for testing"
-docker build --rm -f cmds/db-manager/Dockerfile . -t local-db-manager > db-manager-build.log
-
-echo " ---------------- CRDB -------------------- "
-echo "cleaning up any crdb pre-existing containers"
-docker rm -f dss-crdb-for-debugging &> /dev/null || echo "No CRDB to clean up"
-
-echo "Starting cockroachdb with admin port on :8080"
-docker run -d --rm --name dss-crdb-for-debugging \
-	-p 26257:26257 \
-	-p 8080:8080 \
-	cockroachdb/cockroach:v20.2.0 start-single-node \
-	--insecure > /dev/null
-
-sleep 1
-echo "Bootstrapping RID Database tables"
-docker run --rm --name rid-db-manager \
-	--link dss-crdb-for-debugging:crdb \
-	-v "$(pwd)/build/deploy/db_schemas/rid:/db-schemas/rid" \
-	local-db-manager \
-	--schemas_dir db-schemas/rid \
-	--db_version "latest" \
-	--cockroach_host crdb
-
-sleep 1
 echo "Bootstrapping SCD Database tables"
 docker run --rm --name scd-db-manager \
-	--link dss-crdb-for-debugging:crdb \
+	--link $CRDB_MIGRATION_CONTAINER:crdb \
 	-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
 	local-db-manager \
 	--schemas_dir db-schemas/scd \
@@ -96,7 +55,7 @@ docker rm -f grpc-backend-for-testing &> /dev/null || echo "No grpc backend to c
 
 echo "Starting grpc backend on :8081"
 docker run -d --name grpc-backend-for-testing \
-	--link dss-crdb-for-debugging:crdb \
+	--link $CRDB_MIGRATION_CONTAINER:crdb \
 	-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
 	local-interuss-dss-image \
 	grpc-backend \

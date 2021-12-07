@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"strings"
 	"testing"
 	"time"
 
@@ -33,6 +34,10 @@ func init() {
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	if len(*storeURI) == 0 {
 		t.Skip()
+	} else {
+		if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
+			*storeURI = strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
+		}
 	}
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
