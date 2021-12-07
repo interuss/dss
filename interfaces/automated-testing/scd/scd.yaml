@@ -372,6 +372,10 @@ components:
           type: boolean
           default: false
           
+    #########
+    # The definitions before this seperator are from the standard UTM API (https://github.com/astm-utm/Protocol/blob/master/utm.yaml), the definitions specific for the automated testing suite follow below.
+    #########
+    
     OperationalIntentTestInjection:
       description: >-
         Parameters for a request to create an OperationalIntentReference in the
@@ -442,10 +446,6 @@ components:
             deleted automatically upon the deletion of this operational intent.
           anyOf:
           - $ref: '#/components/schemas/ImplicitSubscriptionParameters'
-
-    #########
-    # The definitions before this seperator are from the standard UTM API (https://github.com/astm-utm/Protocol/blob/master/utm.yaml), the definitions specific for the automated testing suite follow below.
-    #########
     
     InjectFlightRequest:
       type: object      
@@ -454,7 +454,6 @@ components:
           description: 'ID of this partial operational intent.  Remains the same regardless of the flight ID/UTM ID reported in the system.'
           type: string
           example: 'edb7695f-8737-4b9f-91f8-e2afbb333f41'
-
         operational_intent:
           description: A Operational Intent for a flight provided for the test
           $ref: '#/components/schemas/OperationalIntentTestInjection'
