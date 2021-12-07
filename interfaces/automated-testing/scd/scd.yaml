@@ -45,14 +45,16 @@ components:
           description: >-
             The result of the flight submission
 
-              - `Planned`: The flight submission data was correct and the operational intent was successfully accepted by the DSS.
+              - `Planned`: The flight submission data was valid and the flight was successfully processed by the USS and is now authorized.
 
-              - `Rejected`: The flight submission data was incorrect and / or the USS was not able to successfully submit the operational intent to the DSS.
+              - `Rejected`: The flight submission data provided was invalid and/or could not be used to attempt to authorize the flight.
 
-              - `Conflict`: The flight submission data was correct but an operational intent could not be created because of conflicting operational intent.
+              - `ConflictWithFlight`: The flight submission data was valid, but the flight could not be authorized because of a disallowed conflict with another flight.
+
+              - `Failed`: The USS was not able to successfully authorize the flight due to a problem with the USS or a downstream system
 
           type: string
-          enum: [Planned, Rejected, Conflict]
+          enum: [Planned, Rejected, ConflictWithFlight, Failed]
           example: Planned
 
 paths:
