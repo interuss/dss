@@ -418,17 +418,145 @@ components:
             $ref: '#/components/schemas/Volume4D'
         off_nominal_volumes:
           description: >-
-            Off-Nominal volumes, as would be reported by a USS's operational_intents endpoint.
+            Proof that the USS creating or mutating this operational intent was
+            aware of the current state of the airspace, with the expectation
+            that this operational intent is therefore deconflicted from all
+            relevant features in the airspace.  This field is not required when
+            declaring an operational intent Nonconforming or Contingent, or when
+            there are no relevant Entities in the airspace, but is otherwise
+            required. OVNs for constraints are required if and only if the USS
+            managing this operational intent is performing the constraint
+            processing role, which is indicated by whether the subscription
+            associated with this operational intent triggers notifications for
+            constraints.  The key does not need to contain the OVN for the
+            operational intent being updated.
+          anyOf:
+          - $ref: '#/components/schemas/Key'
+        state:
+          $ref: '#/components/schemas/OperationalIntentState'
+        uss_base_url:
+          $ref: '#/components/schemas/OperationalIntentUssBaseURL'
+
+        subscription_id:
+          description: >-
+            The ID of an existing subscription that the USS will use to keep the
+            operator informed about updates to relevant airspace information. If
+            this field is not provided when the operational intent is in the
+            Activated, Nonconforming, or Contingent state, then the
+            `new_subscription` field must be provided in order to provide
+            notification capability for the operational intent.  The
+            subscription specified by this ID must cover at least the area over
+            which this operational intent is conducted, and it must provide
+            notifications for operational intents.
+          anyOf:
+          - $ref: '#/components/schemas/EntityID'
+        new_subscription:
+          description: >-
+            If an existing subscription is not specified in `subscription_id`,
+            and the operational intent is in the Activated, Nonconforming, or
+            Contingent state, then this field must be populated.  When this
+            field is populated, an implicit subscription will be created and
+            associated with this operational intent, and will generally be
+            deleted automatically upon the deletion of this operational intent.
+          anyOf:
+          - $ref: '#/components/schemas/ImplicitSubscriptionParameters'
+
+    #########
+    # The definitions before this seperator are from the standard UTM API (https://github.com/astm-utm/Protocol/blob/master/utm.yaml), the definitions specific for the automated testing suite follow below.
+    #########
+    
+    FlightAutorizationData:
+      description: |-
+        A dataset to hold deatils of a UAS flight authorization request matching some of the requirements of Annex IV of the U-Space regulation 2021/664
+      type: object
+      properties:
+        uas_serial_number:
+          type: string
+          example: "T4S6BBMSZV4H0650"
+          description: Serial number of the UAS per the CTA-2063-A standard
+        operation_mode:   
+          type: string      
+          anyOf:
+            - $ref: '#/components/schemas/OperationMode'
+        operation_category:
+          type: string
+          example: "normal"
+          description: |-
+            Specify if the flight is "special" or has a specific priority, please refer the appropriate regulation for specifiying priority.
+        uas_class: 
+          type: string
+          anyOf:
+            - $ref: '#/components/schemas/UASClass'
+        identification_technologies: 
+          type: string
+          anyOf:
+            - $ref: '#/components/schemas/IdentificationTechnology'
+        connectivity_methods:
           type: array
-          items:
-            $ref: '#/components/schemas/Volume4D'
-          default: [ ]
+          $ref: '#/components/schemas/ArrayOfConnectivityMethods'
+        endurance_minutes: 
+          type: integer
+          description: A number to specify the endurance of the drone in minutes
+        emergency_procedure_url:
+          type: string
+          format: url
+          description: A valid url to contact in case of emergencies
+        operator_id:
+          type: string
+          example: "CHE0n4fujx7nwanb-fwi"
+          description: ID assigned to the operator per the EN4709-02 standard
+      required:
+      - uas_serial_number
+      - operation_mode
+      - uas_class
+      - identification_technologies
+      - operator_id
+
+    ArrayOfConnectivityMethods:
+      type: array
+      items:
+        type: string
+      example: ['http://ussp.com/emergency']
+
+    OperationMode:
+      type: string
+      enum:
+        - vlos
+        - bvlos
+      description: Specify if the operation is a `vlos` or `bvlos` operation
+
+    UASClass:
+      type: string
+      enum:
+        - C0
+        - C1
+        - C2
+        - C3
+        - C4
+      description: Specify the class of the UAS to be flown, the specifition matches EASA class identification label categories, for more information see EASA website
+
+    IdentificationTechnology:
+      type: string
+      enum:
+        - network
+        - broadcast
+      description: Specify an identification technology that will be used for this flight
+    
     InjectFlightRequest:
       type: object      
       properties: 
+        injection_id: 
+          description: 'ID of this injection.  Remains the same regardless of the flight ID reported in the system.'
+          type: string
+          example: 'edb7695f-8737-4b9f-91f8-e2afbb333f41'
+
         operational_intent:
           description: A Operational Intent for a flight provided for the test
           $ref: '#/components/schemas/OperationalIntentTestInjection'
+
+        flight_authorization:
+          description: A set of data about the operator to authorize a flight
+          $ref: '#/components/schemas/FlightAutorizationData'
                     
         # TODO: Add Flight Authorization in a seperate PR.
 
