@@ -80,6 +80,7 @@ paths:
 
   /v1/flights/{flight_id}:    
     put:      
+      # TODO: Add the details of a requestBody for this endpoint
       security:
         - Authority:
             - utm.inject_test_data
