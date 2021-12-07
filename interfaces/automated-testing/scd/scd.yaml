@@ -447,9 +447,9 @@ components:
           anyOf:
           - $ref: '#/components/schemas/ImplicitSubscriptionParameters'
 
-    FlightAutorizationData:
+    FlightAuthorisationData:
       description: |-
-        A dataset to hold deatils of a UAS flight authorization request matching some of the requirements of Annex IV of the U-Space regulation 2021/664
+        A dataset to hold details of a UAS flight authorization request matching some of the requirements of Annex IV of the U-Space regulation 2021/664
       type: object
       properties:
         uas_serial_number:
@@ -457,27 +457,29 @@ components:
           example: "T4S6BBMSZV4H0650"
           description: Serial number of the UAS per the CTA-2063-A standard
         operation_mode:   
-          type: string      
-          anyOf:
-            - $ref: '#/components/schemas/OperationMode'
+          $ref: '#/components/schemas/OperationMode'
         operation_category:
           type: string
           example: "normal"
           description: |-
-            Specify if the flight is "special" or has a specific priority, please refer the appropriate regulation for specifiying priority.
+            Specify if the flight is "special" or has a specific priority.
         uas_class: 
-          type: string
-          anyOf:
-            - $ref: '#/components/schemas/UASClass'
+          $ref: '#/components/schemas/UASClass'
         identification_technologies: 
-          type: string
-          anyOf:
-            - $ref: '#/components/schemas/IdentificationTechnology'
+          type: array
+          items:
+            type: string
+            enum:
+              - network
+              - broadcast
+            description: Specify an identification technology that will be used for this flight
         connectivity_methods:
           type: array
-          $ref: '#/components/schemas/ArrayOfConnectivityMethods'
+          items:
+            type: string
+          example: ['http://ussp.com/emergency']
         endurance_minutes: 
-          type: integer
+          type: number
           description: A number to specify the endurance of the drone in minutes
         emergency_procedure_url:
           type: string
@@ -493,12 +495,6 @@ components:
       - uas_class
       - identification_technologies
       - operator_id
-
-    ArrayOfConnectivityMethods:
-      type: array
-      items:
-        type: string
-      example: ['http://ussp.com/emergency']
 
     OperationMode:
       type: string
@@ -538,7 +534,7 @@ components:
 
         flight_authorization:
           description: A set of data about the operator to authorize a flight
-          $ref: '#/components/schemas/FlightAutorizationData'
+          $ref: '#/components/schemas/FlightAuthorisationData'
                     
     InjectFlightResponse:
       type: object
