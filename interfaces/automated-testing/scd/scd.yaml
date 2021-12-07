@@ -35,7 +35,10 @@ components:
           type: string
           enum: [Starting, Ready]
           example: Ready
-
+    ################################################################################
+    #################### Start of ASTM-standard definitions    #####################
+    #################### interfaces/astm-utm/Protocol/utm.yaml #####################
+    ################################################################################
     UUIDv4Format:
       description: >-
         String whose format matches a version-4 UUID according to RFC 4122.
@@ -371,89 +374,72 @@ components:
             true.
           type: boolean
           default: false
-          
-    #########
-    # The definitions before this seperator are from the standard UTM API (https://github.com/astm-utm/Protocol/blob/master/utm.yaml), the definitions specific for the automated testing suite follow below.
-    #########
-    
+    Priority:
+      description: >-
+        Ordinal priority of the operational intent, as defined by the
+        regulator.  Operational intents with lesser values are lower priority
+        than all operational intents with greater values.  A lower-priority
+        operational intent may not create a conflict with a higher-priority
+        operational intent.  A higher-priority operational intent may create a
+        conflict with a lower-priority operational intent.  The regulator
+        specifies whether an operational intent may create a conflict with other
+        operational intents of the same priority.
+      type: integer
+      default: 0
+    ################################################################################
+    ####################### End of ASTM-standard definitions #######################
+    ################################################################################
+
     OperationalIntentTestInjection:
       description: >-
-        Parameters for a request to create an OperationalIntentReference in the
-        DSS. A subscription to changes overlapping this volume may be implicitly
-        created, but this can be overridden by providing the (optional)
-        'subscription_id' to use. Note: The implicit subscription is managed by
-        the DSS, not the USS.
+        Parameters that define an operational intent: this injection is used to
+        create a operational intent reference in the DSS and also responding to 
+        requests for details of that operational intent (by other USSes or the 
+        test driver). The USS under test will need to process this data to both
+        create a valid operational intent reference and responding to a query for  
+        details. 
       required:
       - extents
       - state
-      - uss_base_url
+      - priority
+      - volumes
+      - off_nominal_volumes
+      
       type: object
       properties:
-        extents:
+        state:
+          $ref: '#/components/schemas/OperationalIntentState'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        volumes:
           description: >-
-            Spacetime extents that bound this operational intent.
+            Volumes that wholly contain the operational intent while being as
+            small as practical.
             Start and end times, as well as lower and upper altitudes, are
-            required for each volume. The end time may not be in the past. All
-            volumes, both nominal and off-nominal, must be encompassed in these
-            extents. However, these extents do not need to match the precise
-            volumes of the operational intent; a single bounding extent may be
-            provided instead, for instance.
+            required for each volume. The end time may not be in the past.
+            Required with at least one item when the operational intent is
+            Accepted, Activated, or Nonconforming.
+            May not contain any items when the operational intent is Contingent.
           type: array
           items:
             $ref: '#/components/schemas/Volume4D'
-          minItems: 1
-        key:
+        off_nominal_volumes:
           description: >-
-            Proof that the USS creating or mutating this operational intent was
-            aware of the current state of the airspace, with the expectation
-            that this operational intent is therefore deconflicted from all
-            relevant features in the airspace.  This field is not required when
-            declaring an operational intent Nonconforming or Contingent, or when
-            there are no relevant Entities in the airspace, but is otherwise
-            required. OVNs for constraints are required if and only if the USS
-            managing this operational intent is performing the constraint
-            processing role, which is indicated by whether the subscription
-            associated with this operational intent triggers notifications for
-            constraints.  The key does not need to contain the OVN for the
-            operational intent being updated.
-          anyOf:
-          - $ref: '#/components/schemas/Key'
-        state:
-          $ref: '#/components/schemas/OperationalIntentState'
-        uss_base_url:
-          $ref: '#/components/schemas/OperationalIntentUssBaseURL'
-
-        subscription_id:
-          description: >-
-            The ID of an existing subscription that the USS will use to keep the
-            operator informed about updates to relevant airspace information. If
-            this field is not provided when the operational intent is in the
-            Activated, Nonconforming, or Contingent state, then the
-            `new_subscription` field must be provided in order to provide
-            notification capability for the operational intent.  The
-            subscription specified by this ID must cover at least the area over
-            which this operational intent is conducted, and it must provide
-            notifications for operational intents.
-          anyOf:
-          - $ref: '#/components/schemas/EntityID'
-        new_subscription:
-          description: >-
-            If an existing subscription is not specified in `subscription_id`,
-            and the operational intent is in the Activated, Nonconforming, or
-            Contingent state, then this field must be populated.  When this
-            field is populated, an implicit subscription will be created and
-            associated with this operational intent, and will generally be
-            deleted automatically upon the deletion of this operational intent.
-          anyOf:
-          - $ref: '#/components/schemas/ImplicitSubscriptionParameters'
-    
+            Volumes that contain the anticipated area of non-conformance while
+            the aircraft is in the Nonconforming or Contingent states.
+            Start and end times, as well as lower and upper altitudes, are
+            required for each volume. The end time may not be in the past.
+            Required with at least one item when the operational intent is
+            Nonconforming or Contingent.
+            May not contain any items when the operational intent is Accepted or
+            Activated.
+          type: array
+          items:
+            $ref: '#/components/schemas/Volume4D'
+          default: [ ]
     InjectFlightRequest:
       type: object      
       properties: 
-        injection_id: 
-          description: 'ID of this partial operational intent.  Remains the same regardless of the flight ID/UTM ID reported in the system.'
-          type: string
-          example: 'edb7695f-8737-4b9f-91f8-e2afbb333f41'
         operational_intent:
           description: A Operational Intent for a flight provided for the test
           $ref: '#/components/schemas/OperationalIntentTestInjection'
