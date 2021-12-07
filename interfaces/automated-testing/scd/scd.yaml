@@ -586,6 +586,7 @@ paths:
 
   /v1/flights/{flight_id}:    
     put:  
+
       security:
         - Authority:
             - utm.inject_test_data
