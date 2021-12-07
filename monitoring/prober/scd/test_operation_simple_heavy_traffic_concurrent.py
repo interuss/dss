@@ -87,7 +87,7 @@ def _make_op_request_differ_in_altitude(idx):
 # The 2D area and altitude won't change with idx
 def _make_op_request_differ_in_time(idx, time_gap):
   delta = 10
-  time_start = datetime.datetime.utcnow() + datetime.timedelta(minutes=20 + time_gap) + datetime.timedelta(minutes=delta * idx)
+  time_start = datetime.datetime.utcnow() +  time_gap + datetime.timedelta(minutes=delta * idx)
   time_end = time_start + datetime.timedelta(minutes=delta - 1)
 
   vol4 = scd.make_vol4(time_start, time_end, 0, 120, scd.make_circle(-56, 178, 50))
@@ -96,12 +96,15 @@ def _make_op_request_differ_in_time(idx, time_gap):
 
 # Generate request with non-overlapping operations in volume4d.
 # 1/3 operations will be generated with different 2d areas, altitude ranges and time windows respectively
-def _make_op_request(idx, time_gap=0):
+# additional_time_gap is given to keep a time gap between `create` operational_content and `mutate` operational content 
+# requests, so these two types of requests do not overlap at any time.
+def _make_op_request(idx, additional_time_gap=0):
   if idx < GROUP_SIZE:
     return _make_op_request_differ_in_2d(idx)
   elif idx < GROUP_SIZE * 2:
     return _make_op_request_differ_in_altitude(idx)
   else:
+    time_gap = datetime.timedelta(minutes=20 + additional_time_gap)
     return _make_op_request_differ_in_time(idx, time_gap)
 
 
@@ -169,7 +172,9 @@ def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
 
-  req = _make_op_request(idx, time_gap=idx * 10)
+  # mutate requests should be constructed at a good time gap from the create requests.
+  additional_time_gap = idx * 10
+  req = _make_op_request(idx, additional_time_gap=additional_time_gap)
   req = {
     'key': [existing_op["ovn"]],
     'extents': req['extents'],
