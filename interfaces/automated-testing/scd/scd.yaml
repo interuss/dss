@@ -340,9 +340,9 @@ components:
         identification_technologies:
           type: array
           items:
-            type: string
-            description: Specify an identification technology that will be used for this flight
+            type: string            
           example: ['ADS-B', 'ASTMNetRID']
+          description: Specify an identification technology that will be used for this flight
         uas_type_certificate:
           description: |-
             Provisional field. Not applicable as of September 2021.
