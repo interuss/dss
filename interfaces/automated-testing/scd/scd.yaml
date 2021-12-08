@@ -311,48 +311,10 @@ components:
             $ref: '#/components/schemas/Volume4D'
         off_nominal_volumes:
           description: >-
-            Proof that the USS creating or mutating this operational intent was
-            aware of the current state of the airspace, with the expectation
-            that this operational intent is therefore deconflicted from all
-            relevant features in the airspace.  This field is not required when
-            declaring an operational intent Nonconforming or Contingent, or when
-            there are no relevant Entities in the airspace, but is otherwise
-            required. OVNs for constraints are required if and only if the USS
-            managing this operational intent is performing the constraint
-            processing role, which is indicated by whether the subscription
-            associated with this operational intent triggers notifications for
-            constraints.  The key does not need to contain the OVN for the
-            operational intent being updated.
-          anyOf:
-          - $ref: '#/components/schemas/Key'
-        state:
-          $ref: '#/components/schemas/OperationalIntentState'
-        uss_base_url:
-          $ref: '#/components/schemas/OperationalIntentUssBaseURL'
-
-        subscription_id:
-          description: >-
-            The ID of an existing subscription that the USS will use to keep the
-            operator informed about updates to relevant airspace information. If
-            this field is not provided when the operational intent is in the
-            Activated, Nonconforming, or Contingent state, then the
-            `new_subscription` field must be provided in order to provide
-            notification capability for the operational intent.  The
-            subscription specified by this ID must cover at least the area over
-            which this operational intent is conducted, and it must provide
-            notifications for operational intents.
-          anyOf:
-          - $ref: '#/components/schemas/EntityID'
-        new_subscription:
-          description: >-
-            If an existing subscription is not specified in `subscription_id`,
-            and the operational intent is in the Activated, Nonconforming, or
-            Contingent state, then this field must be populated.  When this
-            field is populated, an implicit subscription will be created and
-            associated with this operational intent, and will generally be
-            deleted automatically upon the deletion of this operational intent.
-          anyOf:
-          - $ref: '#/components/schemas/ImplicitSubscriptionParameters'
+            Off-Nominal volumes, as would be reported by a USS's operational_intents endpoint.
+          type: array
+          items:
+            $ref: '#/components/schemas/Volume4D'
 
     FlightAuthorisationData:
       description: |-
