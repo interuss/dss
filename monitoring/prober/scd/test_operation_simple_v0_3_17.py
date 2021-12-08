@@ -13,7 +13,7 @@ import datetime
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
-from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CI, SCOPE_CM, SCOPE_CP
+from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CM, SCOPE_CP
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
 

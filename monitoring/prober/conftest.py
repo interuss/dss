@@ -121,6 +121,11 @@ def session(pytestconfig) -> DSSTestSession:
 
 
 @pytest.fixture(scope='session')
+def session_async(pytestconfig):
+  return make_session_async(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
+
+
+@pytest.fixture(scope='session')
 def aux_session(pytestconfig) -> DSSTestSession:
   return make_session(pytestconfig, BASE_URL_AUX, OPT_RID_AUTH)
 

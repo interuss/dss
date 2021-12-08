@@ -463,7 +463,7 @@ Pick a username and create an account:
 
 Access the [CockrachDB SQL terminal](#Accessing-a-CockroachDB-SQL-terminal) then create user with sql command
 
-    root@:26257/defaultdb> CREATE USER foo WITH PASSWORD 'foobar';
+    root@:26257/rid> CREATE USER foo WITH PASSWORD 'foobar';
 
 #### Access the web UI
 

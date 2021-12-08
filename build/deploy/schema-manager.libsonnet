@@ -1,6 +1,6 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
-local defaultdb_schema = import "db_schemas/defaultdb.libsonnet";
+local rid_schema = import "db_schemas/rid.libsonnet";
 local scd_schema = import "db_schemas/scd.libsonnet";
 
 local rid_schema_vol = {
@@ -13,7 +13,7 @@ local rid_schema_vol = {
 local rid_schema_mount = {
   name: 'db-rid-schema',
   readOnly: false,
-  mountPath: '/db-schemas/defaultdb',
+  mountPath: '/db-schemas/rid',
 };
 
 local scd_schema_vol = {
@@ -33,7 +33,7 @@ local scd_schema_mount = {
   all(metadata): {
     assert metadata.cockroach.shouldInit == true && metadata.cockroach.JoinExisting == [] : "If shouldInit is True, JoinExisiting should be empty",
     rid_schema: base.ConfigMap(metadata, 'db-rid-schema') {
-      data: defaultdb_schema.data
+      data: rid_schema.data
     },
     scd_schema: if metadata.enableScd then base.ConfigMap(metadata, 'db-scd-schema') {
       data: scd_schema.data
