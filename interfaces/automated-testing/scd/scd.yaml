@@ -49,13 +49,6 @@ components:
       pattern: >-
         ^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$
       example: 03e5572a-f733-49af-bc14-8a18bd53ee39
-    EntityID:
-      description: >-
-        Identifier for an Entity communicated through the DSS.  Formatted as a
-        UUIDv4.
-      anyOf:
-        - $ref: "#/components/schemas/UUIDv4Format"
-      example: 2f8343be-6482-4d1b-a474-16847e01af1e
     Time:
       required:
         - value
@@ -387,8 +380,8 @@ paths:
           required: true
           description: A UUID string identifying the injected flight.
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/UUIDv4Format'
+            
       requestBody:
         content:
           application/json:
