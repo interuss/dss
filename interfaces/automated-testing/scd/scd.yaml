@@ -394,9 +394,9 @@ components:
       type: string
       enum:
         - Undeclared
-        - VLOS
-        - BLVOS
-      description: Specify if the operation is a `vlos` or `bvlos` operation. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 2.
+        - Vlos
+        - Bvlos
+      description: Specify if the operation is a `VLOS` or `BVLOS` operation. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 2.
 
     UASClass:
       type: string
