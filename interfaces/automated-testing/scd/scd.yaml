@@ -322,8 +322,8 @@ components:
       properties:
         uas_serial_number:
           type: string
-          example: 'T4S6BBMSZV4H0650'
           description: Unique serial number of the unmanned aircraft or, if the unmanned aircraft is privately built, the unique serial number of the add-on. This is expressed in the ANSI/CTA-2063 Physical Serial Number format. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1.
+          example: MFR1C123456789ABC
         operation_mode:
           $ref: '#/components/schemas/OperationMode'
         operation_category:
@@ -332,17 +332,17 @@ components:
             - Open
             - Specific
             - Certified
-          example: 'Open'
           description: |-
             Category of UAS operation (‘open’, ‘specific’, ‘certified’) as defined in COMMISSION DELEGATED REGULATION (EU) 2019/945. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 4.
+          example: Open
         uas_class:
           $ref: '#/components/schemas/UASClass'
         identification_technologies:
           type: array
           items:
             type: string            
-          example: ['ADS-B', 'ASTMNetRID']
           description: Specify an identification technology that will be used for this flight
+          example: ['ADS-B', 'ASTMNetRID']
         uas_type_certificate:
           description: |-
             Provisional field. Not applicable as of September 2021.
@@ -354,23 +354,26 @@ components:
           type: array
           items:
             type: string
-          example: ['radio']
           description: Connectivity methods. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 7.
+          example: ['cellular']
         endurance_minutes:
-          type: number
           description: Endurance of the UAS. This is expressed in minutes. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 8.
+          type: number
+          format: int32
+          example: 20
         emergency_procedure_url:
           type: string
           format: url
           description: The URL at which the applicable emergency procedure in case of a loss of command and control link may be retrieved. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 9.
+          example: https://utm_uss.com/emergency_procedure
         operator_id:
           type: string
-          example: 'FIN87astrdge12k8'
           description: |-
             Registration number of the UAS operator.
             The format is defined in EASA Easy Access Rules for Unmanned Aircraft Systems GM1 to AMC1
             Article 14(6) Registration of UAS operators and ‘certified’ UAS.
             Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 10.
+          example: FIN87astrdge12k8
         uas_id:
           description: |-
             When applicable, the registration number of the unmanned aircraft.
@@ -397,6 +400,7 @@ components:
         - Vlos
         - Bvlos
       description: Specify if the operation is a `VLOS` or `BVLOS` operation. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 2.
+      example: Vlos
 
     UASClass:
       type: string
@@ -410,6 +414,7 @@ components:
         - C5
         - C6
       description: Specify the class of the UAS to be flown, the specifition matches EASA class identification label categories. UAS aircraft class as defined in COMMISSION DELEGATED REGULATION (EU) 2019/945 (C0 to C4) and COMMISSION DELEGATED REGULATION (EU) 2020/1058 (C5 and C6). This field is required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 4.
+      example: C0
 
     InjectFlightRequest:
       type: object
