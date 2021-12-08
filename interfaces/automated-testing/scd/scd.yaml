@@ -399,7 +399,6 @@ components:
         create a valid operational intent reference and responding to a query for  
         details. 
       required:
-      - extents
       - state
       - priority
       - volumes
@@ -413,26 +412,13 @@ components:
           $ref: '#/components/schemas/Priority'
         volumes:
           description: >-
-            Volumes that wholly contain the operational intent while being as
-            small as practical.
-            Start and end times, as well as lower and upper altitudes, are
-            required for each volume. The end time may not be in the past.
-            Required with at least one item when the operational intent is
-            Accepted, Activated, or Nonconforming.
-            May not contain any items when the operational intent is Contingent.
+            Nominal volumes, as would be reported by a USS's operational_intents endpoint.
           type: array
           items:
             $ref: '#/components/schemas/Volume4D'
         off_nominal_volumes:
           description: >-
-            Volumes that contain the anticipated area of non-conformance while
-            the aircraft is in the Nonconforming or Contingent states.
-            Start and end times, as well as lower and upper altitudes, are
-            required for each volume. The end time may not be in the past.
-            Required with at least one item when the operational intent is
-            Nonconforming or Contingent.
-            May not contain any items when the operational intent is Accepted or
-            Activated.
+            Off-Nominal volumes, as would be reported by a USS's operational_intents endpoint.
           type: array
           items:
             $ref: '#/components/schemas/Volume4D'
