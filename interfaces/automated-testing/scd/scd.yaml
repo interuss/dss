@@ -515,7 +515,6 @@ components:
         - C4
       description: Specify the class of the UAS to be flown, the specifition matches EASA class identification label categories, for more information see EASA website
 
-
     InjectFlightRequest:
       type: object      
       properties: 
