@@ -342,7 +342,7 @@ components:
           items:
             type: string
             description: Specify an identification technology that will be used for this flight
-            example: ['Broadcast', 'Network']
+          example: ['ADS-B', 'ASTMNetRID']
         uas_type_certificate:
           description: |-
             Provisional field. Not applicable as of September 2021.
@@ -394,8 +394,8 @@ components:
       type: string
       enum:
         - Undeclared
-        - Vlos
-        - Bvlos
+        - VLOS
+        - BLVOS
       description: Specify if the operation is a `vlos` or `bvlos` operation. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 2.
 
     UASClass:
