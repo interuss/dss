@@ -227,13 +227,6 @@ components:
           description: End time of this volume. Must be after time_start.
           anyOf:
             - $ref: '#/components/schemas/Time'
-    SubscriptionID:
-      description: >-
-        Identifier for a subscription communicated through the DSS.  Formatted
-        as a UUIDv4.
-      anyOf:
-        - $ref: '#/components/schemas/UUIDv4Format'
-      example: 78ea3fe8-71c2-4f5c-9b44-9c02f5563c6f
     OperationalIntentState:
       description: >-
         State of an operational intent.
@@ -314,7 +307,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Volume4D'
-
     FlightAuthorisationData:
       description: |-
         A dataset to hold details of a UAS flight authorization request. Full description of a flight authorisation including mandatory information required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664 for an UAS flight authorisation request. Reference: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1
@@ -399,7 +391,7 @@ components:
         - Bvlos
       description: Specify if the operation is a `VLOS` or `BVLOS` operation. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 2.
       example: Vlos
-
+      
     UASClass:
       type: string
       enum:
@@ -413,17 +405,16 @@ components:
         - C6
       description: Specify the class of the UAS to be flown, the specifition matches EASA class identification label categories. UAS aircraft class as defined in COMMISSION DELEGATED REGULATION (EU) 2019/945 (C0 to C4) and COMMISSION DELEGATED REGULATION (EU) 2020/1058 (C5 and C6). This field is required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 4.
       example: C0
-
     InjectFlightRequest:
       type: object
       properties:
         operational_intent:
           description: A Operational Intent for a flight provided for the test
           $ref: '#/components/schemas/OperationalIntentTestInjection'
+
         flight_authorisation:
           description: A set of data about the operator to authorize a flight
           $ref: '#/components/schemas/FlightAuthorisationData'
-
     InjectFlightResponse:
       type: object
       required:

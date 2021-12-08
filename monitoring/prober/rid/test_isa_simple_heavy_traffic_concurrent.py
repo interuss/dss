@@ -6,10 +6,9 @@
   - delete concurrently
 """
 
+import asyncio
 import datetime
-import functools
 import re
-from concurrent.futures.thread import ThreadPoolExecutor
 
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.infrastructure import default_scope
@@ -22,6 +21,9 @@ from . import common
 THREAD_COUNT = 10
 FLIGHTS_URL = 'https://example.com/dss'
 ISA_TYPES = [register_resource_type(224 + i, 'Operational intent {}'.format(i)) for i in range(100)]
+# Semaphore is added to limit the number of simultaneous requests,
+# default is 100.
+SEMAPHORE = asyncio.Semaphore(20)
 
 
 def _intersection(list1, list2):
@@ -45,20 +47,19 @@ def _make_isa_request(time_start, time_end):
   }
 
 
-def _put_isa(isa_id, req, session):
-  return session.put('/identification_service_areas/{}'.format(isa_id), json=req, scope=SCOPE_WRITE)
+async def _put_isa(isa_id, req, session):
+  async with SEMAPHORE:
+    return isa_id, await session.put('/identification_service_areas/{}'.format(isa_id), json=req, scope=SCOPE_WRITE)
+
+async def _get_isa(isa_id, session):
+  async with SEMAPHORE:
+    return isa_id, await session.get('/identification_service_areas/{}'.format(isa_id), scope=SCOPE_READ)
 
 
-def _get_isa(isa_id, session):
-  return session.get('/identification_service_areas/{}'.format(isa_id), scope=SCOPE_READ)
+async def _delete_isa(isa_id, version, session):
+  async with SEMAPHORE:
+    return isa_id, await session.delete('/identification_service_areas/{}/{}'.format(isa_id, version), scope=SCOPE_WRITE)
 
-
-def _delete_isa(isa_id, version, session):
-  return session.delete('/identification_service_areas/{}/{}'.format(isa_id, version), scope=SCOPE_WRITE)
-
-
-def _collect_resp_callback(key, resp_map, future):
-  resp_map[key] = future.result()
 
 
 def test_ensure_clean_workspace(ids, session):
@@ -76,21 +77,19 @@ def test_ensure_clean_workspace(ids, session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_create_isa_concurrent(ids, session):
+def test_create_isa_concurrent(ids, session_async):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
   req = _make_isa_request(time_start, time_end)
   resp_map = {}
 
   # Create ISAs concurrently
-  with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for isa_id in map(ids, ISA_TYPES):
-      future = executor.submit(_put_isa, isa_id, req, session)
-      future.add_done_callback(functools.partial(_collect_resp_callback, isa_id, resp_map))
-
-  for isa_id, resp in resp_map.items():
-    assert resp.status_code == 200, resp.content
-    data = resp.json()
+  loop = asyncio.get_event_loop()
+  results = loop.run_until_complete(
+    asyncio.gather(*[_put_isa(isa_id, req, session_async) for isa_id in map(ids, ISA_TYPES)]))
+  for isa_id, resp in results:
+    assert resp[0] == 200, resp[1]
+    data = resp[1]
     assert data['service_area']['id'] == isa_id
     assert data['service_area']['flights_url'] == 'https://example.com/dss'
     assert_datetimes_are_equal(data['service_area']['time_start'], req['extents']['time_start'])
@@ -100,19 +99,17 @@ def test_create_isa_concurrent(ids, session):
 
 
 @default_scope(SCOPE_READ)
-def test_get_isa_by_ids_concurrent(ids, session):
+def test_get_isa_by_ids_concurrent(ids, session_async):
   resp_map = {}
 
   # Get ISAs concurrently
-  with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for isa_id in map(ids, ISA_TYPES):
-      future = executor.submit(_get_isa, isa_id, session)
-      future.add_done_callback(functools.partial(_collect_resp_callback, isa_id, resp_map))
+  loop = asyncio.get_event_loop()
+  results = loop.run_until_complete(
+    asyncio.gather(*[_get_isa(isa_id, session_async) for isa_id in map(ids, ISA_TYPES)]))
+  for isa_id, resp in results:
+    assert resp[0] == 200, resp[1]
 
-  for isa_id, resp in resp_map.items():
-    assert resp.status_code == 200, resp.content
-
-    data = resp.json()
+    data = resp[1]
     assert data['service_area']['id'] == isa_id
     assert data['service_area']['flights_url'] == FLIGHTS_URL
 
@@ -126,28 +123,25 @@ def test_get_isa_by_search(ids, session):
   assert len(_intersection(map(ids, ISA_TYPES), found_isa_ids)) == len(ISA_TYPES)
 
 
-def test_delete_isa_concurrent(ids, session):
+def test_delete_isa_concurrent(ids, session_async):
   resp_map = {}
   version_map = {}
 
   # GET ISAs concurrently to find their versions
-  with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for isa_id in map(ids, ISA_TYPES):
-      future = executor.submit(_get_isa, isa_id, session)
-      future.add_done_callback(functools.partial(_collect_resp_callback, isa_id, resp_map))
+  loop = asyncio.get_event_loop()
+  results = loop.run_until_complete(
+    asyncio.gather(*[_get_isa(isa_id, session_async) for isa_id in map(ids, ISA_TYPES)]))
 
-  for isa_id, resp in resp_map.items():
-    assert resp.status_code == 200, resp.content
-    version = resp.json()['service_area']['version']
+  for isa_id, resp in results:
+    assert resp[0] == 200, resp[1]
+    version = resp[1]['service_area']['version']
     version_map[isa_id] = version
 
-  resp_map = {}
 
   # Delete ISAs concurrently
-  with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-    for isa_id in map(ids, ISA_TYPES):
-      future = executor.submit(_delete_isa, isa_id, version_map[isa_id], session)
-      future.add_done_callback(functools.partial(_collect_resp_callback, isa_id, resp_map))
+  loop = asyncio.get_event_loop()
+  results = loop.run_until_complete(
+    asyncio.gather(*[_delete_isa(isa_id, version_map[isa_id], session_async) for isa_id in map(ids, ISA_TYPES)]))
 
-  for isa_id, resp in resp_map.items():
-    assert resp.status_code == 200, resp.content
+  for isa_id, resp in results:
+    assert resp[0], resp[1]
