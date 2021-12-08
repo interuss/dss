@@ -6,13 +6,14 @@ import (
 
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/stacktrace"
 )
 
 func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAvailabilityRequest) (*scdpb.UssAvailabilityStatusResponse, error) {
-	id := request.GetUssId()
+	id := dssmodels.ManagerFromString(request.GetUssId())
 	if id == "" {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "UssId not provided")
 	}
@@ -29,14 +30,14 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 			response = &scdpb.UssAvailabilityStatusResponse{
 				Status: &scdpb.UssAvailabilityStatus{
 					Availability: "Unknown",
-					Uss:          id},
+					Uss:          id.String()},
 			}
 			return nil
 		}
 		response = &scdpb.UssAvailabilityStatusResponse{
 			Status: &scdpb.UssAvailabilityStatus{
 				Availability: ussa.Availability.String(),
-				Uss:          id},
+				Uss:          id.String()},
 		}
 		return nil
 	}
@@ -63,7 +64,7 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version s
 		availability = "Unknown"
 	}
 	ussareq := &scdmodels.UssAvailabilityStatus{
-		Uss:          ussID,
+		Uss:          dssmodels.ManagerFromString(ussID),
 		Availability: scdmodels.UssAvailabilityState(availability),
 	}
 

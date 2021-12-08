@@ -73,9 +73,9 @@ sleep 1
 echo "Bootstrapping RID Database tables"
 docker run --rm --name rid-db-manager \
 	--link dss-crdb-for-debugging:crdb \
-	-v "$(pwd)/build/deploy/db_schemas/defaultdb:/db-schemas/defaultdb" \
+	-v "$(pwd)/build/deploy/db_schemas/rid:/db-schemas/rid" \
 	local-db-manager \
-	--schemas_dir db-schemas/defaultdb \
+	--schemas_dir db-schemas/rid \
 	--db_version "latest" \
 	--cockroach_host crdb
 
