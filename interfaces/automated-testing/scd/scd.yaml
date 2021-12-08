@@ -391,11 +391,9 @@ components:
           description: 'ID of this injection.  Remains the same regardless of the flight ID reported in the system.'
           type: string
           example: 'edb7695f-8737-4b9f-91f8-e2afbb333f41'
-
         operational_intent:
           description: A Operational Intent for a flight provided for the test
           $ref: '#/components/schemas/OperationalIntentTestInjection'
-
         flight_authorisation:
           description: A set of data about the operator to authorize a flight
           $ref: '#/components/schemas/FlightAuthorisationData'
