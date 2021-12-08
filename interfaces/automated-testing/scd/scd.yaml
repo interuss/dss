@@ -470,14 +470,15 @@ components:
           items:
             type: string
             enum:
-              - network
-              - broadcast
+              - Undeclared
+              - Network
+              - Broadcast
             description: Specify an identification technology that will be used for this flight
         connectivity_methods:
           type: array
           items:
             type: string
-          example: ['http://ussp.com/emergency']
+          example: ['radio']
         endurance_minutes: 
           type: number
           description: A number to specify the endurance of the drone in minutes
@@ -499,8 +500,9 @@ components:
     OperationMode:
       type: string
       enum:
-        - vlos
-        - bvlos
+        - Undeclared
+        - Vlos
+        - Bvlos
       description: Specify if the operation is a `vlos` or `bvlos` operation
 
     UASClass:
@@ -513,13 +515,7 @@ components:
         - C4
       description: Specify the class of the UAS to be flown, the specifition matches EASA class identification label categories, for more information see EASA website
 
-    IdentificationTechnology:
-      type: string
-      enum:
-        - network
-        - broadcast
-      description: Specify an identification technology that will be used for this flight
-    
+
     InjectFlightRequest:
       type: object      
       properties: 
@@ -532,7 +528,7 @@ components:
           description: A Operational Intent for a flight provided for the test
           $ref: '#/components/schemas/OperationalIntentTestInjection'
 
-        flight_authorization:
+        flight_authorisation:
           description: A set of data about the operator to authorize a flight
           $ref: '#/components/schemas/FlightAuthorisationData'
                     
