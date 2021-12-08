@@ -35,13 +35,296 @@ components:
           type: string
           enum: [Starting, Ready]
           example: Ready
+    ################################################################################
+    #################### Start of ASTM-standard definitions    #####################
+    #################### interfaces/astm-utm/Protocol/utm.yaml #####################
+    ################################################################################
+    UUIDv4Format:
+      description: >-
+        String whose format matches a version-4 UUID according to RFC 4122.
+      maxLength: 36
+      minLength: 36
+      type: string
+      format: uuid
+      pattern: >-
+        ^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$
+      example: 03e5572a-f733-49af-bc14-8a18bd53ee39
+    Time:
+      required:
+        - value
+        - format
+      type: object
+      properties:
+        value:
+          type: string
+          description: >-
+            RFC3339-formatted time/date string.  The time zone must be 'Z'.
+          format: date-time
+          example: '1985-04-12T23:20:50.52Z'
+        format:
+          type: string
+          enum:
+            - RFC3339
+
+    Radius:
+      required:
+        - value
+        - units
+      type: object
+      properties:
+        value:
+          format: float
+          description: >-
+            Distance from the centerpoint of a circular area, along the WGS84
+            ellipsoid.
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          example: 300.183
+        units:
+          type: string
+          description: >-
+            FIXM-compatible units.  Only meters ("M") are acceptable for UTM.
+          enum:
+            - M
+    Altitude:
+      type: object
+      required:
+        - value
+        - reference
+        - units
+      properties:
+        value:
+          description: >-
+            The numeric value of the altitude. Note that min and max values are
+            added as a sanity check. As use cases evolve and more options are
+            made available in terms of units of measure or reference systems,
+            these bounds may be re-evaluated.
+          type: number
+          format: double
+          minimum: -8000
+          exclusiveMinimum: false
+          maximum: 100000
+          exclusiveMaximum: false
+        reference:
+          description: >-
+            A code indicating the reference for a vertical distance. See AIXM
+            5.1 and FIXM 4.2.0. Currently, UTM only allows WGS84 with no
+            immediate plans to allow other options. FIXM and AIXM allow for
+            'SFC' which is equivalent to AGL.
+          type: string
+          enum:
+            - W84
+        units:
+          description: >-
+            The reference quantities used to express the value of altitude. See
+            FIXM 4.2. Currently, UTM only allows meters with no immediate plans
+            to allow other options.
+          type: string
+          enum:
+            - M
+    Latitude:
+      description: >-
+        Degrees of latitude north of the equator, with reference to the WGS84
+        ellipsoid.
+      maximum: 90
+      exclusiveMaximum: false
+      minimum: -90
+      exclusiveMinimum: false
+      type: number
+      format: double
+      example: 34.123
+    Longitude:
+      description: >-
+        Degrees of longitude east of the Prime Meridian, with reference to the
+        WGS84 ellipsoid.
+      minimum: -180
+      exclusiveMaximum: false
+      maximum: 180
+      exclusiveMinimum: false
+      type: number
+      format: double
+      example: -118.456
+    Polygon:
+      description: >-
+        An enclosed area on the earth. The bounding edges of this polygon are
+        defined to be the shortest paths between connected vertices.  This
+        means, for instance, that the edge between two points both defined at a
+        particular latitude is not generally contained at that latitude. The
+        winding order must be interpreted as the order which produces the
+        smaller area. The path between two vertices is defined to be the
+        shortest possible path between those vertices. Edges may not cross.
+        Vertices may not be duplicated.  In particular, the final polygon vertex
+        must not be identical to the first vertex.
+      required:
+        - vertices
+      type: object
+      properties:
+        vertices:
+          minItems: 3
+          type: array
+          items:
+            $ref: '#/components/schemas/LatLngPoint'
+    LatLngPoint:
+      description: Point on the earth's surface.
+      required:
+        - lat
+        - lng
+      type: object
+      properties:
+        lng:
+          $ref: '#/components/schemas/Longitude'
+        lat:
+          $ref: '#/components/schemas/Latitude'
+    Circle:
+      description: A circular area on the surface of the earth.
+      type: object
+      properties:
+        center:
+          $ref: '#/components/schemas/LatLngPoint'
+        radius:
+          $ref: '#/components/schemas/Radius'
+    Volume3D:
+      description: >-
+        A three-dimensional geographic volume consisting of a
+        vertically-extruded shape. Exactly one outline must be specified.
+      type: object
+      properties:
+        outline_circle:
+          anyOf:
+            - $ref: '#/components/schemas/Circle'
+          description: A circular geographic shape on the surface of the earth.
+        outline_polygon:
+          anyOf:
+            - $ref: '#/components/schemas/Polygon'
+          description: >-
+            A polygonal geographic shape on the surface of the earth.
+        altitude_lower:
+          description: >-
+            Minimum bounding altitude of this volume. Must be less than
+            altitude_upper, if specified.
+          anyOf:
+            - $ref: '#/components/schemas/Altitude'
+        altitude_upper:
+          description: >-
+            Maximum bounding altitude of this volume. Must be greater than
+            altitude_lower, if specified.
+          anyOf:
+            - $ref: '#/components/schemas/Altitude'
+    Volume4D:
+      description: Contiguous block of geographic spacetime.
+      required:
+        - volume
+      type: object
+      properties:
+        volume:
+          $ref: '#/components/schemas/Volume3D'
+        time_start:
+          description: Beginning time of this volume. Must be before time_end.
+          anyOf:
+            - $ref: '#/components/schemas/Time'
+        time_end:
+          description: End time of this volume. Must be after time_start.
+          anyOf:
+            - $ref: '#/components/schemas/Time'
+      example: 78ea3fe8-71c2-4f5c-9b44-9c02f5563c6f
+    OperationalIntentState:
+      description: >-
+        State of an operational intent.
+        'Accepted': Operational intent is created and shared, but not yet in
+        use; see standard text for more details.
+        The create or update request for this operational intent reference must
+        include a Key containing all OVNs for all relevant Entities.
+        'Activated': Operational intent is in active use; see standard text for
+        more details.
+        The create or update request for this operational intent reference must
+        include a Key containing all OVNs for all relevant Entities.
+        'Nonconforming': UA is temporarily outside its volumes, but the
+        situation is expected to be recoverable; see standard text for more
+        details.
+        In this state, the `/uss/v1/operational_intents/{entityid}/telemetry`
+        USS-USS endpoint should respond, if available, to queries from USS
+        peers.  The create or update request for this operational intent may
+        omit a Key in this case because the operational intent is being adjusted
+        as flown and cannot necessarily deconflict.
+        'Contingent': UA is considered unrecoverably unable to conform with its
+        coordinate operational intent; see standard text for more details.
+        This state must transition to Ended.  In this state, the
+        `/uss/v1/operational_intents/{entityid}/telemetry` USS-USS endpoint
+        should respond, if available, to queries from USS peers.  The create or
+        update request for this operational intent may omit a Key in this case
+        because the operational intent is being adjusted as flown and cannot
+        necessarily deconflict.
+      type: string
+      enum:
+        - Accepted
+        - Activated
+        - Nonconforming
+        - Contingent
+    Priority:
+      description: >-
+        Ordinal priority of the operational intent, as defined by the
+        regulator.  Operational intents with lesser values are lower priority
+        than all operational intents with greater values.  A lower-priority
+        operational intent may not create a conflict with a higher-priority
+        operational intent.  A higher-priority operational intent may create a
+        conflict with a lower-priority operational intent.  The regulator
+        specifies whether an operational intent may create a conflict with other
+        operational intents of the same priority.
+      type: integer
+      default: 0
+    ################################################################################
+    ####################### End of ASTM-standard definitions #######################
+    ################################################################################
+
+    OperationalIntentTestInjection:
+      description: >-
+        Parameters that define an operational intent: this injection is used to
+        create a operational intent reference in the DSS and also responding to 
+        requests for details of that operational intent (by other USSes or the 
+        test driver). The USS under test will need to process this data to both
+        create a valid operational intent reference and responding to a query for  
+        details.
+      required:
+        - state
+        - priority
+        - volumes
+        - off_nominal_volumes
+
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/OperationalIntentState'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        volumes:
+          description: >-
+            Nominal volumes, as would be reported by a USS's operational_intents endpoint.
+          type: array
+          items:
+            $ref: '#/components/schemas/Volume4D'
+        off_nominal_volumes:
+          description: >-
+            Off-Nominal volumes, as would be reported by a USS's operational_intents endpoint.
+          type: array
+          items:
+            $ref: '#/components/schemas/Volume4D'
+          default: []
+    InjectFlightRequest:
+      type: object
+      properties:
+        operational_intent:
+          description: A Operational Intent for a flight provided for the test
+          $ref: '#/components/schemas/OperationalIntentTestInjection'
+
+        # TODO: Add Flight Authorization in a seperate PR.
 
     InjectFlightResponse:
       type: object
       required:
         - result
-      properties: 
-        result: 
+      properties:
+        result:
           description: >-
             The result of the flight submission
 
@@ -80,9 +363,8 @@ paths:
       summary: Retrieve the status of the USS automated testing interface
       description: Get the status of the USS automated testing interface
 
-  /v1/flights/{flight_id}:    
-    put:      
-      # TODO: Add the details of a requestBody for this endpoint
+  /v1/flights/{flight_id}:
+    put:
       security:
         - Authority:
             - utm.inject_test_data
@@ -92,8 +374,14 @@ paths:
           required: true
           description: A UUID string identifying the injected flight.
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/UUIDv4Format'
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InjectFlightRequest'
+        required: true
       responses:
         '200':
           content:
