@@ -227,12 +227,6 @@ components:
           description: End time of this volume. Must be after time_start.
           anyOf:
             - $ref: "#/components/schemas/Time"
-    SubscriptionID:
-      description: >-
-        Identifier for a subscription communicated through the DSS.  Formatted
-        as a UUIDv4.
-      anyOf:
-        - $ref: "#/components/schemas/UUIDv4Format"
       example: 78ea3fe8-71c2-4f5c-9b44-9c02f5563c6f
     OperationalIntentState:
       description: >-
