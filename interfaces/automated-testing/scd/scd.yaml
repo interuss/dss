@@ -341,13 +341,11 @@ components:
           type: array
           items:
             type: string            
-          description: Specify an identification technology that will be used for this flight
+          description: Technology used to identify the UAS. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 6.
           example: ['ADS-B', 'ASTMNetRID']
         uas_type_certificate:
           description: |-
-            Provisional field. Not applicable as of September 2021.
-            Required only if `uas_class` is set to `other` by ANNEX IV of COMMISSION IMPLEMENTING
-            REGULATION (EU) 2021/664, paragraph 4.
+            Provisional field. Not applicable as of September 2021. Required only if `uas_class` is set to `other` by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 4.
           type: string
           example: ''
         connectivity_methods:
