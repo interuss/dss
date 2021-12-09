@@ -67,7 +67,7 @@ def main():
   while len(newly_relevant) > 0:
     next_relevant: Set[str] = set()
     for n in newly_relevant:
-      for p in parents.get(n, set()):
+      for p in children.get(n, set()):
         if p not in relevant:
           relevant.add(p)
           next_relevant.add(p)
@@ -83,8 +83,9 @@ def main():
         f.write('  "{}" -> "{}"\n'.format(connection[0], connection[1]))
     f.write('}\n')
 
-  img_gen = subprocess.check_output(['dot', '-Tpng', '-ogo_mod_graph.png', 'go_mod_graph.gv']).decode('utf8')
-  print(img_gen)
+  # TODO: check if `dot` is present in the system.
+  # img_gen = subprocess.check_output(['dot', '-Tpng', '-ogo_mod_graph.png', 'go_mod_graph.gv']).decode('utf8')
+  # print(img_gen)
 
 
 if __name__ == '__main__':
