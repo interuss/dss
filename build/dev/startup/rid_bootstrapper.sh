@@ -12,7 +12,7 @@ else
 
   echo "Bootstrapping RID DB..."
   /usr/bin/db-manager \
-    --schemas_dir /db-schemas/defaultdb \
+    --schemas_dir /db-schemas/rid \
     --db_version "latest" \
     --cockroach_host local-dss-crdb
 

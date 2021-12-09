@@ -27,7 +27,7 @@ const (
 )
 
 func NewISARepo(ctx context.Context, db dssql.Queryable, dbVersion semver.Version, logger *zap.Logger) repos.ISA {
-	if dbVersion.Compare(v310) >= 0 {
+	if dbVersion.Compare(v400) >= 0 {
 		return &isaRepo{
 			Queryable: db,
 			logger:    logger,

@@ -111,7 +111,16 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 
 	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
+		// try DatabaseName with defaultdb for older versions.
+		ridc.DatabaseName = "defaultdb"
+		ridCrdb, err := connectTo(ridc.DatabaseName)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database for older version <defaultdb>; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
+		}
+		ridStore, err = ridc.NewStore(ctx, ridCrdb, logger)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
+		}
 	}
 
 	repo, err := ridStore.Interact(ctx)

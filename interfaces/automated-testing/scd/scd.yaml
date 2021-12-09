@@ -1,0 +1,495 @@
+openapi: 3.0.2
+info:
+  title: Strategic Coordination Test Data Injection
+  version: 0.0.1
+  description: >-
+    This interface is implemented by every USS wishing to be tested by the automated testing framework.
+    The automated testing suite calls this interface to inject test data into the USS system under test.
+
+components:
+  securitySchemes:
+    Authority:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            utm.inject_test_data: |-
+              Client may inject test data into a USS for the purpose of conducting automated tests.
+      description: |-
+        Authorization from, or on behalf of, an authorization authority, augmenting standard scd authorization for the purpose of automated testing.
+
+  schemas:
+    StatusResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          description: >-
+            The status of the USS automated testing interface.
+
+            - `Starting`: the USS is starting and the automated test driver should wait before sending requests.
+
+            - `Ready`: the USS is ready to receive test requests.
+          type: string
+          enum: [Starting, Ready]
+          example: Ready
+    ################################################################################
+    #################### Start of ASTM-standard definitions    #####################
+    #################### interfaces/astm-utm/Protocol/utm.yaml #####################
+    ################################################################################
+    UUIDv4Format:
+      description: >-
+        String whose format matches a version-4 UUID according to RFC 4122.
+      maxLength: 36
+      minLength: 36
+      type: string
+      format: uuid
+      pattern: >-
+        ^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$
+      example: 03e5572a-f733-49af-bc14-8a18bd53ee39
+    Time:
+      required:
+        - value
+        - format
+      type: object
+      properties:
+        value:
+          type: string
+          description: >-
+            RFC3339-formatted time/date string.  The time zone must be 'Z'.
+          format: date-time
+          example: '1985-04-12T23:20:50.52Z'
+        format:
+          type: string
+          enum:
+            - RFC3339
+
+    Radius:
+      required:
+        - value
+        - units
+      type: object
+      properties:
+        value:
+          format: float
+          description: >-
+            Distance from the centerpoint of a circular area, along the WGS84
+            ellipsoid.
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          example: 300.183
+        units:
+          type: string
+          description: >-
+            FIXM-compatible units.  Only meters ("M") are acceptable for UTM.
+          enum:
+            - M
+    Altitude:
+      type: object
+      required:
+        - value
+        - reference
+        - units
+      properties:
+        value:
+          description: >-
+            The numeric value of the altitude. Note that min and max values are
+            added as a sanity check. As use cases evolve and more options are
+            made available in terms of units of measure or reference systems,
+            these bounds may be re-evaluated.
+          type: number
+          format: double
+          minimum: -8000
+          exclusiveMinimum: false
+          maximum: 100000
+          exclusiveMaximum: false
+        reference:
+          description: >-
+            A code indicating the reference for a vertical distance. See AIXM
+            5.1 and FIXM 4.2.0. Currently, UTM only allows WGS84 with no
+            immediate plans to allow other options. FIXM and AIXM allow for
+            'SFC' which is equivalent to AGL.
+          type: string
+          enum:
+            - W84
+        units:
+          description: >-
+            The reference quantities used to express the value of altitude. See
+            FIXM 4.2. Currently, UTM only allows meters with no immediate plans
+            to allow other options.
+          type: string
+          enum:
+            - M
+    Latitude:
+      description: >-
+        Degrees of latitude north of the equator, with reference to the WGS84
+        ellipsoid.
+      maximum: 90
+      exclusiveMaximum: false
+      minimum: -90
+      exclusiveMinimum: false
+      type: number
+      format: double
+      example: 34.123
+    Longitude:
+      description: >-
+        Degrees of longitude east of the Prime Meridian, with reference to the
+        WGS84 ellipsoid.
+      minimum: -180
+      exclusiveMaximum: false
+      maximum: 180
+      exclusiveMinimum: false
+      type: number
+      format: double
+      example: -118.456
+    Polygon:
+      description: >-
+        An enclosed area on the earth. The bounding edges of this polygon are
+        defined to be the shortest paths between connected vertices.  This
+        means, for instance, that the edge between two points both defined at a
+        particular latitude is not generally contained at that latitude. The
+        winding order must be interpreted as the order which produces the
+        smaller area. The path between two vertices is defined to be the
+        shortest possible path between those vertices. Edges may not cross.
+        Vertices may not be duplicated.  In particular, the final polygon vertex
+        must not be identical to the first vertex.
+      required:
+        - vertices
+      type: object
+      properties:
+        vertices:
+          minItems: 3
+          type: array
+          items:
+            $ref: '#/components/schemas/LatLngPoint'
+    LatLngPoint:
+      description: Point on the earth's surface.
+      required:
+        - lat
+        - lng
+      type: object
+      properties:
+        lng:
+          $ref: '#/components/schemas/Longitude'
+        lat:
+          $ref: '#/components/schemas/Latitude'
+    Circle:
+      description: A circular area on the surface of the earth.
+      type: object
+      properties:
+        center:
+          $ref: '#/components/schemas/LatLngPoint'
+        radius:
+          $ref: '#/components/schemas/Radius'
+    Volume3D:
+      description: >-
+        A three-dimensional geographic volume consisting of a
+        vertically-extruded shape. Exactly one outline must be specified.
+      type: object
+      properties:
+        outline_circle:
+          anyOf:
+            - $ref: '#/components/schemas/Circle'
+          description: A circular geographic shape on the surface of the earth.
+        outline_polygon:
+          anyOf:
+            - $ref: '#/components/schemas/Polygon'
+          description: >-
+            A polygonal geographic shape on the surface of the earth.
+        altitude_lower:
+          description: >-
+            Minimum bounding altitude of this volume. Must be less than
+            altitude_upper, if specified.
+          anyOf:
+            - $ref: '#/components/schemas/Altitude'
+        altitude_upper:
+          description: >-
+            Maximum bounding altitude of this volume. Must be greater than
+            altitude_lower, if specified.
+          anyOf:
+            - $ref: '#/components/schemas/Altitude'
+    Volume4D:
+      description: Contiguous block of geographic spacetime.
+      required:
+        - volume
+      type: object
+      properties:
+        volume:
+          $ref: '#/components/schemas/Volume3D'
+        time_start:
+          description: Beginning time of this volume. Must be before time_end.
+          anyOf:
+            - $ref: '#/components/schemas/Time'
+        time_end:
+          description: End time of this volume. Must be after time_start.
+          anyOf:
+            - $ref: '#/components/schemas/Time'
+    OperationalIntentState:
+      description: >-
+        State of an operational intent.
+        'Accepted': Operational intent is created and shared, but not yet in
+        use; see standard text for more details.
+        The create or update request for this operational intent reference must
+        include a Key containing all OVNs for all relevant Entities.
+        'Activated': Operational intent is in active use; see standard text for
+        more details.
+        The create or update request for this operational intent reference must
+        include a Key containing all OVNs for all relevant Entities.
+        'Nonconforming': UA is temporarily outside its volumes, but the
+        situation is expected to be recoverable; see standard text for more
+        details.
+        In this state, the `/uss/v1/operational_intents/{entityid}/telemetry`
+        USS-USS endpoint should respond, if available, to queries from USS
+        peers.  The create or update request for this operational intent may
+        omit a Key in this case because the operational intent is being adjusted
+        as flown and cannot necessarily deconflict.
+        'Contingent': UA is considered unrecoverably unable to conform with its
+        coordinate operational intent; see standard text for more details.
+        This state must transition to Ended.  In this state, the
+        `/uss/v1/operational_intents/{entityid}/telemetry` USS-USS endpoint
+        should respond, if available, to queries from USS peers.  The create or
+        update request for this operational intent may omit a Key in this case
+        because the operational intent is being adjusted as flown and cannot
+        necessarily deconflict.
+      type: string
+      enum:
+        - Accepted
+        - Activated
+        - Nonconforming
+        - Contingent
+    Priority:
+      description: >-
+        Ordinal priority of the operational intent, as defined by the
+        regulator.  Operational intents with lesser values are lower priority
+        than all operational intents with greater values.  A lower-priority
+        operational intent may not create a conflict with a higher-priority
+        operational intent.  A higher-priority operational intent may create a
+        conflict with a lower-priority operational intent.  The regulator
+        specifies whether an operational intent may create a conflict with other
+        operational intents of the same priority.
+      type: integer
+      default: 0
+    ################################################################################
+    ####################### End of ASTM-standard definitions #######################
+    ################################################################################
+
+    OperationalIntentTestInjection:
+      description: >-
+        Parameters that define an operational intent: this injection is used to
+        create a operational intent reference in the DSS and also responding to 
+        requests for details of that operational intent (by other USSes or the 
+        test driver). The USS under test will need to process this data to both
+        create a valid operational intent reference and responding to a query for  
+        details.
+      required:
+        - state
+        - priority
+        - volumes
+        - off_nominal_volumes
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/OperationalIntentState'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        volumes:
+          description: >-
+            Nominal volumes, as would be reported by a USS's operational_intents endpoint.
+          type: array
+          items:
+            $ref: '#/components/schemas/Volume4D'
+        off_nominal_volumes:
+          description: >-
+            Off-Nominal volumes, as would be reported by a USS's operational_intents endpoint.
+          type: array
+          items:
+            $ref: '#/components/schemas/Volume4D'
+    FlightAuthorisationData:
+      description: |-
+        A dataset to hold details of a UAS flight authorization request. Full description of a flight authorisation including mandatory information required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664 for an UAS flight authorisation request. Reference: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1
+      type: object
+      properties:
+        uas_serial_number:
+          type: string
+          description: Unique serial number of the unmanned aircraft or, if the unmanned aircraft is privately built, the unique serial number of the add-on. This is expressed in the ANSI/CTA-2063 Physical Serial Number format. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1.
+          example: MFR1C123456789ABC
+        operation_mode:
+          $ref: '#/components/schemas/OperationMode'
+        operation_category:
+          type: string
+          enum:
+            - Open
+            - Specific
+            - Certified
+          description: |-
+            Category of UAS operation (‘open’, ‘specific’, ‘certified’) as defined in COMMISSION DELEGATED REGULATION (EU) 2019/945. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 4.
+          example: Open
+        uas_class:
+          $ref: '#/components/schemas/UASClass'
+        identification_technologies:
+          type: array
+          items:
+            type: string            
+          description: Technology used to identify the UAS. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 6.
+          example: ['ADS-B', 'ASTMNetRID']
+        uas_type_certificate:
+          description: |-
+            Provisional field. Not applicable as of September 2021. Required only if `uas_class` is set to `other` by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 4.
+          type: string
+          example: ''
+        connectivity_methods:
+          type: array
+          items:
+            type: string
+          description: Connectivity methods. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 7.
+          example: ['cellular']
+        endurance_minutes:
+          description: Endurance of the UAS. This is expressed in minutes. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 8.
+          type: number
+          format: int32
+          example: 20
+        emergency_procedure_url:
+          type: string
+          format: url
+          description: The URL at which the applicable emergency procedure in case of a loss of command and control link may be retrieved. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 9.
+          example: https://utm_uss.com/emergency_procedure
+        operator_id:
+          type: string
+          description: |-
+            Registration number of the UAS operator.
+            The format is defined in EASA Easy Access Rules for Unmanned Aircraft Systems GM1 to AMC1
+            Article 14(6) Registration of UAS operators and ‘certified’ UAS.
+            Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 10.
+          example: FIN87astrdge12k8
+        uas_id:
+          description: |-
+            When applicable, the registration number of the unmanned aircraft.
+            This is expressed using the nationality and registration mark of the unmanned aircraft in
+            line with ICAO Annex 7.
+            Specified by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 10.
+          type: string
+          example: HB-XXXX
+      required:
+        - uas_serial_number
+        - operation_mode
+        - uas_class
+        - identification_technologies
+        - operator_id
+        - operation_category
+        - connectivity_methods
+        - endurance_minutes
+        - emergency_procedure_url
+
+    OperationMode:
+      type: string
+      enum:
+        - Undeclared
+        - Vlos
+        - Bvlos
+      description: Specify if the operation is a `VLOS` or `BVLOS` operation. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 2.
+      example: Vlos
+      
+    UASClass:
+      type: string
+      enum:
+        - Other
+        - C0
+        - C1
+        - C2
+        - C3
+        - C4
+        - C5
+        - C6
+      description: Specify the class of the UAS to be flown, the specifition matches EASA class identification label categories. UAS aircraft class as defined in COMMISSION DELEGATED REGULATION (EU) 2019/945 (C0 to C4) and COMMISSION DELEGATED REGULATION (EU) 2020/1058 (C5 and C6). This field is required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 4.
+      example: C0
+    InjectFlightRequest:
+      type: object
+      properties:
+        operational_intent:
+          description: A Operational Intent for a flight provided for the test
+          $ref: '#/components/schemas/OperationalIntentTestInjection'
+
+        flight_authorisation:
+          description: A set of data about the operator to authorize a flight
+          $ref: '#/components/schemas/FlightAuthorisationData'
+    InjectFlightResponse:
+      type: object
+      required:
+        - result
+      properties:
+        result:
+          description: >-
+            The result of the flight submission
+
+              - `Planned`: The flight submission data was valid and the flight was successfully processed by the USS and is now authorized.
+
+              - `Rejected`: The flight submission data provided was invalid and/or could not be used to attempt to authorize the flight.
+
+              - `ConflictWithFlight`: The flight submission data was valid, but the flight could not be authorized because of a disallowed conflict with another flight.
+
+              - `Failed`: The USS was not able to successfully authorize the flight due to a problem with the USS or a downstream system
+
+          type: string
+          enum: [Planned, Rejected, ConflictWithFlight, Failed]
+          example: Planned
+
+paths:
+  /v1/status:
+    get:
+      security:
+        - Authority:
+            - utm.inject_test_data
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+          description: >-
+            The USS automated testing interface is activated and its status was retrieved successfully.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+        '404':
+          description: The USS automated testing interface is not activated.
+      summary: Retrieve the status of the USS automated testing interface
+      description: Get the status of the USS automated testing interface
+
+  /v1/flights/{flight_id}:
+    put:
+      security:
+        - Authority:
+            - utm.inject_test_data
+      parameters:
+        - name: flight_id
+          in: path
+          required: true
+          description: A UUID string identifying the injected flight.
+          schema:
+            $ref: '#/components/schemas/UUIDv4Format'
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InjectFlightRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InjectFlightResponse'
+          description: Requested data was processed successfully
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+
+      summary: Inject test flight
+      description: >-
+        This endpoint simulates the operator intention to submit a flight operation / flight request.

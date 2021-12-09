@@ -9,7 +9,7 @@ according to what the changes do.  schema_versions.schema_version should be
 updated as the last step of each transition; see existing .sql files for
 examples.
 
-The two new .sql files must be added to scd.libsonnet or defaultdb.libsonnet
+The two new .sql files must be added to scd.libsonnet or rid.libsonnet
 (for remote ID) in this folder.
 
 When a new database version is created, it needs to be targeted in a number of
