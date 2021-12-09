@@ -31,6 +31,7 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 				Status: &scdpb.UssAvailabilityStatus{
 					Availability: "Unknown",
 					Uss:          id.String()},
+					Version:	"",
 			}
 			return nil
 		}
@@ -38,6 +39,7 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 			Status: &scdpb.UssAvailabilityStatus{
 				Availability: ussa.Availability.String(),
 				Uss:          id.String()},
+				Version:	ussa.Version.String(),
 		}
 		return nil
 	}
@@ -81,6 +83,7 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version s
 			Status: &scdpb.UssAvailabilityStatus{
 				Availability: ussa.Availability.String(),
 				Uss:          ussID},
+				Version:	ussa.Version.String(),
 		}
 		return nil
 	}
