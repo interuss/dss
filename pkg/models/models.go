@@ -58,7 +58,7 @@ func IDFromString(s string) (ID, error) {
 	return ID(id.String()), nil
 }
 
-func ManagerFromString(s string) (Manager) {
+func ManagerFromString(s string) Manager {
 	return Manager(s)
 }
 
