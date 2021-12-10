@@ -4,10 +4,13 @@ import json
 import os
 import sys
 import argparse
+from pathlib import Path
 from urllib.parse import urlparse
+
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
-import monitoring.uss_qualifier.rid.test_executor as test_executor
+from monitoring.uss_qualifier.rid.simulator import flight_state
+from monitoring.uss_qualifier.rid import test_executor, aircraft_state_replayer
 
 def is_url(url_string):
     try:
@@ -49,8 +52,18 @@ def main() -> int:
     for injection_target in config.injection_targets:
         is_url(injection_target.injection_base_url)
 
-    # Run test
-    test_executor.main(test_configuration=config, auth_spec=auth_spec)
+    # Load aircraft state files
+    aircraft_states_directory = Path(os.getcwd(), 'rid/test_definitions', config.locale, 'aircraft_states')
+    try:
+      flight_records = aircraft_state_replayer.get_full_flight_records(aircraft_states_directory)
+    except ValueError:
+      print('No aircraft state files found; generating them via simulator now')
+      flight_state.generate_aircraft_states()
+      flight_records = aircraft_state_replayer.get_full_flight_records(aircraft_states_directory)
+
+    # Run RID tests
+    test_executor.test_rid(test_configuration=config, auth_spec=auth_spec,
+                           flight_records=flight_records)
 
     return os.EX_OK
 

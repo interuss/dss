@@ -10,53 +10,42 @@ from monitoring.uss_qualifier.rid import reports
 from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlightDetails, TestFlight, CreateTestParameters, SCOPE_RID_QUALIFIER_INJECT
 from monitoring.monitorlib.typing import ImplicitDict
 import arrow
-import pathlib
 
-from typing import List, Optional
+from typing import List
 from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
+
+
+def get_full_flight_records(aircraft_states_directory: Path) -> List[FullFlightRecord]:
+    """Gets full flight records from the specified directory if they exist"""
+
+    if not os.path.exists(aircraft_states_directory):
+        raise ValueError('The aircraft states directory does not exist: {}'.format(aircraft_states_directory))
+
+    all_files = os.listdir(aircraft_states_directory)
+    files = [os.path.join(aircraft_states_directory,f) for f in all_files if os.path.isfile(os.path.join(aircraft_states_directory, f))]
+
+    if not files:
+        raise ValueError('The there are no states in the states directory, create states first using the flight_data_generator module.')
+
+    flight_records: List[FullFlightRecord] = []
+    for file in files:
+        with open(file, 'r') as f:
+            flight_records.append(ImplicitDict.parse(json.load(f), FullFlightRecord))
+
+    return flight_records
+
 
 class TestBuilder():
     ''' A class to setup the test data and create the objects ready to be submitted to the test harness '''
 
     def __init__(
             self, test_configuration: RIDQualifierTestConfiguration,
-            aircraft_state_files: Optional[list] = None) -> None:
+            flight_records: List[FullFlightRecord]) -> None:
         self.test_configuration = test_configuration
-        # Change directory to read the test_definitions folder appropriately
-        p = pathlib.Path(__file__).parent.absolute()
-        os.chdir(p)
-
         usses = self.test_configuration.injection_targets
-
-        self.disk_flight_records: List[FullFlightRecord] =[]
-        if not aircraft_state_files:
-            aircraft_states_directory = Path(
-                '../test_definitions/rid', test_configuration.locale, 'aircraft_states')
-            aircraft_state_files = self.get_aircraft_states(aircraft_states_directory)
-
-            for uss_index, uss in enumerate(usses):
-                aircraft_states_path = Path(aircraft_state_files[uss_index])
-                with open(aircraft_states_path, 'rb') as generated_rid_state:
-                    disk_flight_record = ImplicitDict.parse(json.load(generated_rid_state), FullFlightRecord)
-                    self.disk_flight_records.append(disk_flight_record)
-        else:
-            for uss_index, uss in enumerate(usses):
-                generated_rid_state = aircraft_state_files[uss_index]
-                disk_flight_record = ImplicitDict.parse(json.loads(generated_rid_state), FullFlightRecord)
-                self.disk_flight_records.append(disk_flight_record)
-
-
-    def get_aircraft_states (self, aircraft_states_directory: Path):
-
-        ''' This method checks if there are tracks in the tracks directory '''
-
-        all_files = os.listdir(aircraft_states_directory)
-        files = [os.path.join(aircraft_states_directory,f) for f in all_files if os.path.isfile(os.path.join(aircraft_states_directory, f))]
-
-        if files:
-            return files
-        else:
-            raise ValueError("The there are no tracks in the tracks directory, create tracks first using the flight_data_generator module. ")
+        if len(usses) > len(flight_records):
+            raise ValueError('There are not enough flight records ({}) to test the specified USSes ({})'.format(len(usses), len(flight_records)))
+        self.disk_flight_records: List[FullFlightRecord] = flight_records
 
     def build_test_payloads(self) -> List[CreateTestParameters]:
         ''' This is the main method to process the test configuration and build RID payload object, maxium of one flight is allocated to each USS. '''
@@ -111,21 +100,5 @@ class TestHarness():
 
         if response.status_code == 200:
             print("New test with ID %s created" % test_id)
-
-        elif response.status_code == 409:
-            raise RuntimeError("Test with ID %s already exists" % test_id)
-
-        elif response.status_code == 404:
-            raise RuntimeError("Test with ID %s not submitted, the requested endpoint was not found on the server" % test_id)
-
-        elif response.status_code == 401:
-            raise RuntimeError("Test with ID %s not submitted, the access token was not provided in the Authorization header, or the token could not be decoded, or token was invalid" % test_id)
-
-        elif response.status_code == 403:
-            raise RuntimeError("Test with ID %s not submitted, the access token was decoded successfully but did not include the appropriate scope" % test_id)
-
-        elif response.status_code == 413:
-            raise RuntimeError("Test with ID %s not submitted, the injection payload was too large" % test_id)
-
         else:
-            raise RuntimeError("Test with ID %(test_id)s not submitted, the server returned the following HTTP error code: %(status_code)d %(msg)s" % {'test_id': test_id, 'status_code': response.status_code, 'msg': response.content})
+            raise RuntimeError('Error {} submitting test ID {}: {}'.format(response.status_code, test_id, response.content.decode('utf-8')))
