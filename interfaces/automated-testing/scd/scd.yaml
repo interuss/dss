@@ -416,11 +416,9 @@ components:
       type: object
       properties:
         operational_intent:
-          description: A Operational Intent for a flight provided for the test
           $ref: '#/components/schemas/OperationalIntentTestInjection'
 
         flight_authorisation:
-          description: A set of data about the operator to authorize a flight
           $ref: '#/components/schemas/FlightAuthorisationData'
     InjectFlightResponse:
       type: object
@@ -444,7 +442,8 @@ components:
           example: Planned
         operational_intent_id:
           description: The id of the operational intent communicated to the DSS. This value is only required when the result of the flight submission is `Planned`.
-          $ref: '#/components/schemas/EntityID'
+          anyOf:
+            - $ref: '#/components/schemas/EntityID'
 
 paths:
   /v1/status:
