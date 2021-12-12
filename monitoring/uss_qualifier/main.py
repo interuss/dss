@@ -62,8 +62,8 @@ def main() -> int:
       flight_records = aircraft_state_replayer.get_full_flight_records(aircraft_states_directory)
 
     # Run RID tests
-    test_executor.test_rid(test_configuration=config, auth_spec=auth_spec,
-                           flight_records=flight_records)
+    test_executor.run_rid_tests(test_configuration=config, auth_spec=auth_spec,
+                                flight_records=flight_records)
 
     return os.EX_OK
 

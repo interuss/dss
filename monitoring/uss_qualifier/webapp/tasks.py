@@ -35,7 +35,7 @@ def call_test_executor(user_config_json: str, auth_spec: str, flight_record_json
     if debug:
         report = test_report.test_data
     else:
-        report = test_executor.test_rid(user_config, auth_spec, flight_records)
+        report = test_executor.run_rid_tests(user_config, auth_spec, flight_records)
     return json.dumps(report)
 
 def call_kml_processor(kml_content, output_path):

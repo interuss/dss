@@ -8,9 +8,9 @@ from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib.auth import make_auth_adapter
 
 
-def test_rid(test_configuration: RIDQualifierTestConfiguration,
-             auth_spec: str,
-             flight_records: List[FullFlightRecord]) -> reports.Report:
+def run_rid_tests(test_configuration: RIDQualifierTestConfiguration,
+                  auth_spec: str,
+                  flight_records: List[FullFlightRecord]) -> reports.Report:
     my_test_builder = TestBuilder(test_configuration=test_configuration, flight_records=flight_records)
     test_payloads = my_test_builder.build_test_payloads()
     test_id = str(uuid.uuid4())

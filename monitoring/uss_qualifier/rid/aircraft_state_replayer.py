@@ -25,7 +25,7 @@ def get_full_flight_records(aircraft_states_directory: Path) -> List[FullFlightR
     files = [os.path.join(aircraft_states_directory,f) for f in all_files if os.path.isfile(os.path.join(aircraft_states_directory, f))]
 
     if not files:
-        raise ValueError('The there are no states in the states directory, create states first using the flight_data_generator module.')
+        raise ValueError('There are no states in the states directory, create states first using the simulator/flight_state module.')
 
     flight_records: List[FullFlightRecord] = []
     for file in files:
@@ -88,6 +88,7 @@ class TestHarness():
     def __init__(self, auth_spec:str, injection_base_url:str):
 
         auth_adapter = make_auth_adapter(auth_spec)
+        self._base_url = injection_base_url
         self.uss_session = DSSTestSession(injection_base_url, auth_adapter)
 
     def submit_test(self, payload: CreateTestParameters, test_id: str, setup: reports.Setup) -> None:
@@ -101,4 +102,5 @@ class TestHarness():
         if response.status_code == 200:
             print("New test with ID %s created" % test_id)
         else:
-            raise RuntimeError('Error {} submitting test ID {}: {}'.format(response.status_code, test_id, response.content.decode('utf-8')))
+            raise RuntimeError('Error {} submitting test ID {} to {}: {}'.format(
+                response.status_code, test_id, self._base_url, response.content.decode('utf-8')))
