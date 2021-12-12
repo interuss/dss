@@ -49,6 +49,13 @@ components:
       pattern: >-
         ^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$
       example: 03e5572a-f733-49af-bc14-8a18bd53ee39
+    EntityID:
+      description: >-
+        Identifier for an Entity communicated through the DSS.  Formatted as a
+        UUIDv4.
+      anyOf:
+        - $ref: '#/components/schemas/UUIDv4Format'
+      example: 2f8343be-6482-4d1b-a474-16847e01af1e
     Time:
       required:
         - value
@@ -279,10 +286,10 @@ components:
     OperationalIntentTestInjection:
       description: >-
         Parameters that define an operational intent: this injection is used to
-        create a operational intent reference in the DSS and also responding to 
-        requests for details of that operational intent (by other USSes or the 
+        create a operational intent reference in the DSS and also responding to
+        requests for details of that operational intent (by other USSes or the
         test driver). The USS under test will need to process this data to both
-        create a valid operational intent reference and responding to a query for  
+        create a valid operational intent reference and responding to a query for
         details.
       required:
         - state
@@ -332,7 +339,7 @@ components:
         identification_technologies:
           type: array
           items:
-            type: string            
+            type: string
           description: Technology used to identify the UAS. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 6.
           example: ['ADS-B', 'ASTMNetRID']
         uas_type_certificate:
@@ -391,7 +398,7 @@ components:
         - Bvlos
       description: Specify if the operation is a `VLOS` or `BVLOS` operation. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 2.
       example: Vlos
-      
+
     UASClass:
       type: string
       enum:
@@ -409,11 +416,9 @@ components:
       type: object
       properties:
         operational_intent:
-          description: A Operational Intent for a flight provided for the test
           $ref: '#/components/schemas/OperationalIntentTestInjection'
 
         flight_authorisation:
-          description: A set of data about the operator to authorize a flight
           $ref: '#/components/schemas/FlightAuthorisationData'
     InjectFlightResponse:
       type: object
@@ -435,6 +440,10 @@ components:
           type: string
           enum: [Planned, Rejected, ConflictWithFlight, Failed]
           example: Planned
+        operational_intent_id:
+          description: The id of the operational intent communicated to the DSS. This value is only required when the result of the flight submission is `Planned`.
+          anyOf:
+            - $ref: '#/components/schemas/EntityID'
 
 paths:
   /v1/status:
