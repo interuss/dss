@@ -260,6 +260,9 @@ components:
         - Activated
         - Nonconforming
         - Contingent
+    ################################################################################
+    ####################### End of ASTM-standard definitions #######################
+    ################################################################################
     Priority:
       description: >-
         Ordinal priority of the operational intent, as defined by the
@@ -270,19 +273,22 @@ components:
         conflict with a lower-priority operational intent.  The regulator
         specifies whether an operational intent may create a conflict with other
         operational intents of the same priority.
+
+        For U-Space UAS flight authorisation requests, priority is required
+        by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 3.
+        The following values are allowed:
+        - 0: Normal operation.
+        - 100: Special operations as defined in accordance with Article 4 of Implementing Regulation (EU) No 923/2012.
       type: integer
       default: 0
-    ################################################################################
-    ####################### End of ASTM-standard definitions #######################
-    ################################################################################
 
     OperationalIntentTestInjection:
       description: >-
         Parameters that define an operational intent: this injection is used to
-        create a operational intent reference in the DSS and also responding to 
-        requests for details of that operational intent (by other USSes or the 
+        create a operational intent reference in the DSS and also responding to
+        requests for details of that operational intent (by other USSes or the
         test driver). The USS under test will need to process this data to both
-        create a valid operational intent reference and responding to a query for  
+        create a valid operational intent reference and responding to a query for
         details.
       required:
         - state
@@ -298,6 +304,9 @@ components:
         volumes:
           description: >-
             Nominal volumes, as would be reported by a USS's operational_intents endpoint.
+
+            For U-Space UAS flight authorisation requests, volumes are required by ANNEX IV
+            of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 5.
           type: array
           items:
             $ref: '#/components/schemas/Volume4D'
@@ -332,7 +341,7 @@ components:
         identification_technologies:
           type: array
           items:
-            type: string            
+            type: string
           description: Technology used to identify the UAS. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 6.
           example: ['ADS-B', 'ASTMNetRID']
         uas_type_certificate:
@@ -391,7 +400,7 @@ components:
         - Bvlos
       description: Specify if the operation is a `VLOS` or `BVLOS` operation. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 2.
       example: Vlos
-      
+
     UASClass:
       type: string
       enum:
