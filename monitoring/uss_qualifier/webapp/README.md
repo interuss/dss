@@ -27,7 +27,7 @@ When KML files are provided as input, `Flight records json` files are generated 
 
 When the user requests the execution of a test, the rid_qualifier host sends it as a message to the `redis` server Message Queue, which is then handled by the worker process running on the `rq-worker`. This job takes some amount of time, during this time UI keeps sending requests to rid_qualifier server to check the job status. rid_qualifier host then checks the Redis container for the job progress and returns current status to the UI. Once job finishes successfully, RID Host generates resulting report from the job response and keep it in user specific `tests` folder on rid-host, and sends it as a response to the UI.
 
-All the tests run by a user are the available to download from the UI.
+All the tests run by a user are then available to download from the UI.
 
 ## Run via Docker
 
