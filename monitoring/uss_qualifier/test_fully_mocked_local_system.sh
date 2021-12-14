@@ -10,7 +10,15 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-CONFIG_LOCATION="monitoring/uss_qualifier/config.json"
+echo '################################################################################'
+echo '## NOTE: Prerequisites to run this command are:                               ##'
+echo '## 1. Local DSS instance + Dummy OAuth server (/build/dev/run_locally.sh)     ##'
+echo '## 2. Local mock RID service provider (/monitoring/mock_ridsp/run_locally.sh) ##'
+echo '## 3. Local mock RID display provider (/monitoring/mock_riddp/run_locally.sh) ##'
+echo '################################################################################'
+
+CONFIG_LOCATION="monitoring/uss_qualifier/config_test_fully_mocked_local_system.json"
+CONFIG='--config config_test_fully_mocked_local_system.json'
 
 AUTH='--auth DummyOAuth(http://host.docker.internal:8085/token,sub=testing_uss)'
 
@@ -29,8 +37,6 @@ echo '{
     }
   ]
 }' > ${CONFIG_LOCATION}
-
-CONFIG='--config config.json'
 
 RID_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
@@ -52,6 +58,6 @@ docker run --name uss_qualifier \
   -v "$(pwd)/monitoring/uss_qualifier/report.json:/app/monitoring/uss_qualifier/report.json" \
   -v "$(pwd)/${CONFIG_LOCATION}:/app/${CONFIG_LOCATION}" \
   interuss/uss_qualifier \
-  python rid/main.py $RID_QUALIFIER_OPTIONS
+  python main.py $RID_QUALIFIER_OPTIONS
 
 rm ${CONFIG_LOCATION}
