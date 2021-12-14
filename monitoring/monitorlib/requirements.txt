@@ -3,7 +3,7 @@ cryptography==3.3.2
 flask==1.1.2
 google-auth==1.6.3
 jwcrypto==0.7
-lxml==4.6.3
+lxml==4.6.5
 pyjwt==1.7.1
 pykml==0.2.0
 pytest==6.2.4
