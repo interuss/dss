@@ -80,7 +80,7 @@ def display_data() -> Tuple[str, int]:
   isas_response: fetch.FetchedISAs = fetch.isas(resources.utm_client, view, t, t)
   if not isas_response.success:
     response = rid.ErrorResponse(message='Unable to fetch ISAs from DSS')
-    response['errors'] = [isas_response.error]
+    response['errors'] = [isas_response]
     return flask.jsonify(response), 412
 
   # Fetch flights from each unique flights URL
@@ -91,7 +91,7 @@ def display_data() -> Tuple[str, int]:
     flights_response = fetch.flights(resources.utm_client, flights_url, view, True)
     if not flights_response.success:
       response = rid.ErrorResponse(message='Error querying {}'.format(flights_url))
-      response['errors'] = flights_response.errors
+      response['errors'] = [flights_response]
       return flask.jsonify(response), 412
     for flight in flights_response.flights:
       try:
