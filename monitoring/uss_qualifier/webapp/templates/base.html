@@ -41,6 +41,11 @@
             // Animate loader off screen
             $(".loader").fadeOut("2000");;
           });
+
+          // To prevent Form resubmission on refresh.
+          if ( window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+          }
         </script>
         <div class="loader"></div>
         <main role="main" class="container-fluid">

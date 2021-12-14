@@ -86,6 +86,7 @@
             });
             xhrPool.push(current_request);
             if(task_status === 'finished' || task_status === 'failed') {
+                clearInterval(refreshIntervalId);
                 $.each(xhrPool, function(idx, jqXHR) {
                     console.log('Aborting additional requests');
                     jqXHR.abort();

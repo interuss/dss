@@ -2,3 +2,5 @@ config_run_locally.json
 config_test_fully_mocked_local_system.json
 report.json
 client_secret.json
+test_flights
+test_definitions

@@ -151,7 +151,7 @@ def evaluate_system(
     _evaluate_system_instantaneously(
       injected_flights, observers, config, findings, rect)
     print('After observation at {}, {}'.format(arrow.utcnow(), findings))
-    print(json.dumps(findings.issues, indent=2))
+    # print(json.dumps(findings.issues, indent=2))
 
     # Wait until minimum polling interval elapses
     while t_next < arrow.utcnow():

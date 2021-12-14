@@ -26,6 +26,7 @@ client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent,
     'client_secret.json')
 
+
 try:
     flow = Flow.from_client_secrets_file(
         client_secrets_file=client_secrets_file,
@@ -103,6 +104,14 @@ def _start_background_task(user_config, auth_spec, input_files, debug):
 def _get_running_jobs():
     registry = resources.qualifier_queue.started_job_registry
     running_job = registry.get_job_ids()
+    print('len of current queue: %s', len(running_job))
+    deffered_reg = resources.qualifier_queue.deferred_job_registry
+    deffered_jobs = deffered_reg.get_job_ids()
+    print('deffered_jobs: %s', deffered_jobs)
+    
+    scheduled_reg = resources.qualifier_queue.scheduled_job_registry
+    scheduled_jobs = scheduled_reg.get_job_ids()
+    print('scheduled_jobs: %s', scheduled_jobs)
     if running_job:
         return running_job[0]
 
@@ -166,11 +175,11 @@ def tests():
                 filepath = f'{input_files_location}/{filename}'
                 with open(filepath) as fo:
                     file_objs.append(fo.read())
-                job_id = _start_background_task(
-                    form.user_config.data,
-                    form.auth_spec.data,
-                    file_objs,
-                    form.sample_report.data)
+            job_id = _start_background_task(
+                form.user_config.data,
+                form.auth_spec.data,
+                file_objs,
+                form.sample_report.data)
             if request.method == 'POST':
                 data.update({
                     'job_id': job_id,
