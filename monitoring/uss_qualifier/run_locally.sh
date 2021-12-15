@@ -12,10 +12,15 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-CONFIG_LOCATION="monitoring/uss_qualifier/config.json"
+echo '################################################################################'
+echo '## NOTE: A prerequisite for running this command locally is to have a running ##'
+echo '## instance of the uss_qualifier RID system mock (rid/mock/run_locally.sh)    ##'
+echo '################################################################################'
+
+CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally.json"
+CONFIG='--config config_run_locally.json'
 
 AUTH='--auth NoAuth()'
-# NB: A prerequisite to run this command locally is to have a running instance of the uss_qualifier/rid/mock (/monitoring/uss_qualifier/rid/mock/run_locally.sh)
 
 echo '{
   "locale": "che",
@@ -40,8 +45,6 @@ echo '{
     }
   ]
 }' > ${CONFIG_LOCATION}
-
-CONFIG='--config config.json'
 
 RID_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
@@ -69,6 +72,6 @@ docker run ${docker_args} --name uss_qualifier \
   -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
   -v "$(pwd)/${CONFIG_LOCATION}:/app/${CONFIG_LOCATION}" \
   interuss/uss_qualifier \
-  python rid/main.py $RID_QUALIFIER_OPTIONS
+  python main.py $RID_QUALIFIER_OPTIONS
 
 rm ${CONFIG_LOCATION}
