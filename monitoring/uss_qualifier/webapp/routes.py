@@ -104,14 +104,6 @@ def _start_background_task(user_config, auth_spec, input_files, debug):
 def _get_running_jobs():
     registry = resources.qualifier_queue.started_job_registry
     running_job = registry.get_job_ids()
-    print('len of current queue: %s', len(running_job))
-    deffered_reg = resources.qualifier_queue.deferred_job_registry
-    deffered_jobs = deffered_reg.get_job_ids()
-    print('deffered_jobs: %s', deffered_jobs)
-    
-    scheduled_reg = resources.qualifier_queue.scheduled_job_registry
-    scheduled_jobs = scheduled_reg.get_job_ids()
-    print('scheduled_jobs: %s', scheduled_jobs)
     if running_job:
         return running_job[0]
 

@@ -1,4 +1,3 @@
-import arrow
 import json
 import uuid
 from typing import List
@@ -16,7 +15,6 @@ def run_rid_tests(test_configuration: RIDQualifierTestConfiguration,
     test_payloads = my_test_builder.build_test_payloads()
     test_id = str(uuid.uuid4())
     report = reports.Report(setup=reports.Setup(configuration=test_configuration))
-    print('main called !! ', arrow.utcnow())
     # Inject flights into all USSs
     injected_flights = []
     for i, target in enumerate(test_configuration.injection_targets):

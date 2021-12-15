@@ -30,25 +30,15 @@ def parseArgs() -> argparse.Namespace:
         "--config",
         required=True,
         help="Configuration of test to be conducted; either JSON describing a utils.RIDQualifierTestConfig, or the name of a file with that content")
-    
-    parser.add_argument(
-        "--flight-records",
-        required=True,
-        help="Path to flight records input files")
 
     return parser.parse_args()
 
 
 def main() -> int:
     args = parseArgs()
+
     auth_spec = args.auth
-    input_path = args.flight_records
-    flight_records = [f for f in os.listdir(input_path) if f.endswith('.json')]
-    file_objs = []
-    for f in flight_records:
-        filepath = f'{input_path}/{f}'
-        with open(filepath) as fo:
-            file_objs.append(fo.read())
+
     # Load/parse configuration
     config_input = args.config
     if config_input.lower().endswith('.json'):

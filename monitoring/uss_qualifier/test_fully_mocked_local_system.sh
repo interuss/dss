@@ -38,9 +38,7 @@ echo '{
   ]
 }' > ${CONFIG_LOCATION}
 
-FLIGHT_RECORDS_PATH='--flight-records /app/monitoring/uss_qualifier/test_flights'
-
-RID_QUALIFIER_OPTIONS="$AUTH $CONFIG $FLIGHT_RECORDS_PATH"
+RID_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
 # report.json must already exist to share correctly with the Docker container
 touch "$(pwd)/monitoring/uss_qualifier/report.json"
@@ -58,7 +56,6 @@ docker run --name uss_qualifier \
   -e RID_QUALIFIER_OPTIONS="${RID_QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
   -v "$(pwd)/monitoring/uss_qualifier/report.json:/app/monitoring/uss_qualifier/report.json" \
-  -v "$(pwd)/monitoring/uss_qualifier/test_flights:/app/monitoring/uss_qualifier/test_flights" \
   -v "$(pwd)/${CONFIG_LOCATION}:/app/${CONFIG_LOCATION}" \
   interuss/uss_qualifier \
   python main.py $RID_QUALIFIER_OPTIONS
