@@ -86,6 +86,7 @@
             });
             xhrPool.push(current_request);
             if(task_status === 'finished' || task_status === 'failed') {
+                clearInterval(refreshIntervalId);
                 $.each(xhrPool, function(idx, jqXHR) {
                     console.log('Aborting additional requests');
                     jqXHR.abort();
@@ -178,7 +179,7 @@
                                 {% else %}
                                     {% for subfield in form.flight_records %}
                                         <div class="parent">
-                                            {{ subfield(class="form-control-sm") }}
+                                            {{ subfield(class="form-control-sm", checked=true) }}
                                             {{ subfield.label(class="form-check-label") }}
                                             <button type="button" class="close child" aria-label="Close" style="float: none !important;">
                                                 <span aria-hidden="true">&times;</span>

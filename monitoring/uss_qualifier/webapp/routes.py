@@ -26,6 +26,7 @@ client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent,
     'client_secret.json')
 
+
 try:
     flow = Flow.from_client_secrets_file(
         client_secrets_file=client_secrets_file,
@@ -166,11 +167,11 @@ def tests():
                 filepath = f'{input_files_location}/{filename}'
                 with open(filepath) as fo:
                     file_objs.append(fo.read())
-                job_id = _start_background_task(
-                    form.user_config.data,
-                    form.auth_spec.data,
-                    file_objs,
-                    form.sample_report.data)
+            job_id = _start_background_task(
+                form.user_config.data,
+                form.auth_spec.data,
+                file_objs,
+                form.sample_report.data)
             if request.method == 'POST':
                 data.update({
                     'job_id': job_id,
