@@ -24,26 +24,28 @@ AUTH='--auth NoAuth()'
 
 echo '{
   "locale": "che",
-  "injection_targets": [
-    {
-      "name": "uss1",
-      "injection_base_url": "http://host.docker.internal:8070/sp/uss1"
-    },
-    {
-      "name": "uss2",
-      "injection_base_url": "http://host.docker.internal:8070/sp/uss2"
-    }
-  ],
-  "observers": [
-    {
-      "name": "uss2",
-      "observation_base_url": "http://host.docker.internal:8070/dp/uss2"
-    },
-    {
-      "name": "uss3",
-      "observation_base_url": "http://host.docker.internal:8070/dp/uss3"
-    }
-  ]
+  "rid": {
+    "injection_targets": [
+      {
+        "name": "uss1",
+        "injection_base_url": "http://host.docker.internal:8070/sp/uss1"
+      },
+      {
+        "name": "uss2",
+        "injection_base_url": "http://host.docker.internal:8070/sp/uss2"
+      }
+    ],
+    "observers": [
+      {
+        "name": "uss2",
+        "observation_base_url": "http://host.docker.internal:8070/dp/uss2"
+      },
+      {
+        "name": "uss3",
+        "observation_base_url": "http://host.docker.internal:8070/dp/uss3"
+      }
+    ]
+  }
 }' > ${CONFIG_LOCATION}
 
 RID_QUALIFIER_OPTIONS="$AUTH $CONFIG"

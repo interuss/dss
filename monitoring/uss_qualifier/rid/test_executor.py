@@ -1,11 +1,34 @@
 import json
+import os
 import uuid
+from pathlib import Path
 from typing import List
-from monitoring.uss_qualifier.rid.aircraft_state_replayer import TestHarness, TestBuilder
-from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration, InjectedFlight, FullFlightRecord
-from monitoring.uss_qualifier.rid import display_data_evaluator, reports
-from monitoring.monitorlib.infrastructure import DSSTestSession
+
 from monitoring.monitorlib.auth import make_auth_adapter
+from monitoring.monitorlib.infrastructure import DSSTestSession
+from monitoring.uss_qualifier.rid import display_data_evaluator, reports, aircraft_state_replayer
+from monitoring.uss_qualifier.rid.aircraft_state_replayer import TestHarness, TestBuilder
+from monitoring.uss_qualifier.rid.simulator import flight_state
+from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration, InjectedFlight, FullFlightRecord
+from monitoring.uss_qualifier.utils import is_url
+
+
+def load_rid_test_definitions(locale: str):
+  aircraft_states_directory = Path(os.getcwd(), 'rid/test_definitions', locale, 'aircraft_states')
+  try:
+    flight_records = aircraft_state_replayer.get_full_flight_records(aircraft_states_directory)
+  except ValueError:
+    print('[RID] No aircraft state files found; generating them via simulator now')
+    flight_state.generate_aircraft_states()
+    flight_records = aircraft_state_replayer.get_full_flight_records(aircraft_states_directory)
+  return flight_records
+
+def validate_configuration(test_configuration: RIDQualifierTestConfiguration):
+  try:
+    for injection_target in test_configuration.injection_targets:
+      is_url(injection_target.injection_base_url)
+  except ValueError:
+    raise ValueError("A valid url for injection_target must be passed")
 
 
 def run_rid_tests(test_configuration: RIDQualifierTestConfiguration,
