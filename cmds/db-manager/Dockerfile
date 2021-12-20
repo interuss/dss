@@ -1,4 +1,4 @@
-FROM golang:1.14.3-alpine AS build
+FROM golang:1.17.5-alpine AS build
 RUN apk add git bash make
 RUN mkdir /app
 WORKDIR /app

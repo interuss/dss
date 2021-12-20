@@ -4,12 +4,13 @@
 # container for this image, the desired binary must be specified (either
 # /usr/bin/grpc-backend or /usr/bin/http-gateway).
 
-FROM golang:1.14.3-alpine AS build
+FROM golang:1.17.5-alpine AS build
 RUN apk add git bash make
 RUN mkdir /app
 COPY go.mod go.sum /app/
 # Intend to run delve download outside the go module directory to prevent it
 # from being added as a dependency
+RUN apk add --update --no-cache ca-certificates make git build-base
 RUN go get github.com/go-delve/delve/cmd/dlv
 WORKDIR /app
 
