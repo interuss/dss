@@ -98,3 +98,7 @@ class FlightAuthorizationData(ImplicitDict):
     emergency_procedure_url: str
     operator_id: str
     uas_id: str    
+
+class InjectionResults(ImplicitDict):
+    result: Literal[InjectionStatus.Planned, InjectionStatus.Rejected, InjectionStatus.ConflictWithFlight, InjectionStatus]
+    operational_intent_id: str
