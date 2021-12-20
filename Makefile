@@ -116,7 +116,7 @@ protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpb/rid.pb.gw.go pkg/
 
 .PHONY: install-staticcheck
 install-staticcheck:
-	go get honnef.co/go/tools/cmd/staticcheck
+	go install honnef.co/go/tools/cmd/staticcheck
 
 .PHONY: staticcheck
 staticcheck: install-staticcheck

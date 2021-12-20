@@ -11,7 +11,7 @@ COPY go.mod go.sum /app/
 # Intend to run delve download outside the go module directory to prevent it
 # from being added as a dependency
 RUN apk add --update --no-cache ca-certificates make git build-base
-RUN go get github.com/go-delve/delve/cmd/dlv
+RUN go install github.com/go-delve/delve/cmd/dlv
 WORKDIR /app
 
 # Get dependencies - will also be cached if we won't change mod/sum
