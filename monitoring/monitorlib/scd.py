@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Literal
 from .typing import ImplicitDict, StringBasedDateTime
-import enum
+
 import s2sphere
 
 
@@ -155,17 +155,17 @@ class Circle(ImplicitDict):
 class Altitude(ImplicitDict):
     ''' A class to hold altitude information '''
     value:float
-    reference:str
+    reference:Literal['W84']
     units: str 
 
 class Time(ImplicitDict):
     ''' A class to hold Time details '''
     value: StringBasedDateTime 
-    format:str 
+    format:Literal['RFC3339'] 
 
 class Volume3D(ImplicitDict):
     '''A class to hold Volume3D objects '''
-    
+    outline_circle: Circle
     outline_polygon: Polygon
     altitude_lower: Altitude
     altitude_upper: Altitude
@@ -175,14 +175,6 @@ class Volume4D(ImplicitDict):
     volume: Volume3D
     time_start: Time
     time_end: Time
-
-
-class OperationalIntentState(str, enum.Enum):
-    ''' A enum to hold all states of an operational intent '''
-    Accepted = 'Accepted'
-    Activated = 'Activated'
-    Nonconforming = 'Nonconforming'
-    Contingent = 'Contingent'
 
 ################################################################################
 #################### End of ASTM-standard definitions    #####################
