@@ -2,6 +2,36 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_observation_api i
 
 from typing import List
 import random
+from shapely.geometry.polygon import Polygon
+from shapely.geometry import LineString, asShape
+
+class ProximateOperationalIntentGenerator():
+    ''' A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. Further test'''
+
+    def __init__(self, minx: float, miny: float, maxx: float, maxy: float, utm_zone:str) -> None:
+        """ Create a ProximateVolumeGenerator within a given geographic bounding box. 
+
+        Once these extents are specified, a grid will be created with two rows. A combination of LineStrings and Polygons will be generated withing these bounds. While linestrings can extend to the full boundaries of the box, polygon areas are generated within the grid. 
+
+        Args:
+        minx: Western edge of bounding box (degrees longitude)
+        maxx: Eastern edge of bounding box (degrees longitude)
+        miny: Southern edge of bounding box (degrees latitude)
+        maxy: Northern edge of bounding box (degrees latitude)
+        utm_zone: UTM Zone string for the location, see https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system to identify the zone for the location.
+
+
+        Raises:
+        ValueError : If the bounding box is more than 500m x 500m square
+        
+        
+        """
+        pass
+
+    def generate_raw_geometries(self, number_of_geometries:int = 6) -> List[GeneratedGeometry]:
+        ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
+        
+        raise NotImplementedError("")
 
 class ProximateOperationalIntentGenerator():
     ''' A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. Further test'''
