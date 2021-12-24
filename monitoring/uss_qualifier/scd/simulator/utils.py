@@ -35,5 +35,6 @@ class GeneratedFlightPlan(ImplicitDict):
     altitude_upper: Altitude
     
 class InjectFlightResponse(ImplicitDict):
+    ''' A class to hold test status response '''
     result: Literal[InjectionStatus.Planned, InjectionStatus.Rejected, InjectionStatus.ConflictWithFlight, InjectionStatus.Failed]
     operational_intent_id: str
