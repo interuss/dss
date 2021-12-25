@@ -1,25 +1,18 @@
 #!env/bin/python3
 
+import argparse
 import json
 import os
 import sys
-import argparse
-from pathlib import Path
-from urllib.parse import urlparse
 
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
-from monitoring.uss_qualifier.rid.simulator import flight_state
-from monitoring.uss_qualifier.rid import test_executor, aircraft_state_replayer
+from monitoring.uss_qualifier.rid import test_executor as rid_test_executor
+from monitoring.uss_qualifier.scd import test_executor as scd_test_executor
+from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
 
-def is_url(url_string):
-    try:
-        urlparse(url_string)
-    except ValueError:
-        raise ValueError("A valid injection_url must be passed")
 
 def parseArgs() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Exceute RID_Qualifier for a locale")
+    parser = argparse.ArgumentParser(description="Execute USS Qualifier for a locale")
 
     parser.add_argument(
         "--auth",
@@ -29,7 +22,7 @@ def parseArgs() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         required=True,
-        help="Configuration of test to be conducted; either JSON describing a utils.RIDQualifierTestConfig, or the name of a file with that content")
+        help="Configuration of test to be conducted; either JSON describing a utils.USSQualifierTestConfig, or the name of a file with that content")
 
     return parser.parse_args()
 
@@ -46,24 +39,23 @@ def main() -> int:
           config_json = json.load(f)
     else:
         config_json = json.loads(config_input)
-    config: RIDQualifierTestConfiguration = ImplicitDict.parse(config_json, RIDQualifierTestConfiguration)
+    config: USSQualifierTestConfiguration = ImplicitDict.parse(config_json, USSQualifierTestConfiguration)
 
-    # Validate configuration
-    for injection_target in config.injection_targets:
-        is_url(injection_target.injection_base_url)
+    if "rid" in config:
+        print(f"[RID] Configuration provided with {len(config.rid.injection_targets)} injection targets.")
+        rid_test_executor.validate_configuration(config.rid)
+        rid_flight_records = rid_test_executor.load_rid_test_definitions(config.locale)
+        rid_test_executor.run_rid_tests(test_configuration=config.rid, auth_spec=auth_spec,
+                                        flight_records=rid_flight_records)
+    else:
+        print("[RID] No configuration provided.")
 
-    # Load aircraft state files
-    aircraft_states_directory = Path(os.getcwd(), 'rid/test_definitions', config.locale, 'aircraft_states')
-    try:
-      flight_records = aircraft_state_replayer.get_full_flight_records(aircraft_states_directory)
-    except ValueError:
-      print('No aircraft state files found; generating them via simulator now')
-      flight_state.generate_aircraft_states()
-      flight_records = aircraft_state_replayer.get_full_flight_records(aircraft_states_directory)
-
-    # Run RID tests
-    test_executor.run_rid_tests(test_configuration=config, auth_spec=auth_spec,
-                                flight_records=flight_records)
+    if "scd" in config:
+        print(f"[SCD] Configuration provided with {len(config.scd.injection_targets)} injection targets.")
+        scd_test_executor.validate_configuration(config.scd)
+        scd_test_executor.run_scd_tests(locale=config.locale, test_configuration=config.scd, auth_spec=auth_spec)
+    else:
+        print("[SCD] No configuration provided.")
 
     return os.EX_OK
 
