@@ -4,7 +4,7 @@
 # container for this image, the desired binary must be specified (either
 # /usr/bin/grpc-backend or /usr/bin/http-gateway).
 
-FROM golang:1.17.5-alpine AS build
+FROM golang:1.16-alpine3.13 AS build
 RUN apk add git bash make
 RUN mkdir /app
 COPY go.mod go.sum /app/
