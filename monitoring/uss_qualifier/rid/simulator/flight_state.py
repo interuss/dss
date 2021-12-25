@@ -291,12 +291,12 @@ class TrackWriter():
         country_code: An ISO 3166-1 alpha-3 code for a country
 
         Outputs:
-        GeoJSON files for bboxes created in the `test_definitions/rid/{country_code}` folder
+        GeoJSON files for bboxes created in the `TEST_DEFINITION_FOLDER/{country_code}` folder
 
 
     """
 
-    def __init__(self, grid_tracks: List[GridCellFlight], bboxes: List[QueryBoundingBox], country_code='CHE') -> None:
+    def __init__(self, output_path: str, grid_tracks: List[GridCellFlight], bboxes: List[QueryBoundingBox], country_code='CHE') -> None:
         ''' This class uses the same output directory as the AdjacentCircularFlightsSimulator class and requires the path points (Tracks) and the bounding boxes from that class.
 
         '''
@@ -306,7 +306,7 @@ class TrackWriter():
         self.country_code = country_code
 
 
-        self.output_directory = Path('../../test_definitions/rid', self.country_code)
+        self.output_directory = Path(os.path.join(output_path, self.country_code))
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
         self.output_subdirectories = (Path(self.output_directory, 'tracks'), Path(self.output_directory, 'query_bboxes'))
@@ -356,7 +356,7 @@ class RIDAircraftStateWriter():
 
     """
 
-    def __init__(self, flights: List[FullFlightRecord], country_code='che') -> None:
+    def __init__(self, output_path: str, flights: List[FullFlightRecord], country_code='che') -> None:
         """ Atleast single flight points array is necessary and a ouptut directory
         Args:
         country_code: An ISO 3166-1 alpha-3 code for a country, this is used to create a sub-directory to store output.
@@ -371,7 +371,7 @@ class RIDAircraftStateWriter():
         self.flight_telemetry_check()
 
 
-        self.output_directory = Path('../../test_definitions/rid', self.country_code)
+        self.output_directory = Path(os.path.join(output_path, self.country_code))
         # Create test_definition directory if it does not exist
         self.output_directory.mkdir(parents=True, exist_ok=True)
         self.output_subdirectories = (Path(self.output_directory, 'aircraft_states'),)
@@ -388,7 +388,7 @@ class RIDAircraftStateWriter():
             raise ValueError("At least one flight track is necessary to create a AircraftState and a test JSON, please generate the tracks first using AdjacentCircularFlightsSimulator class")
 
     def write_rid_state(self):
-        ''' This method iterates over flight tracks and generates AircraftState JSON objects and writes to disk in the test_definitions/rid folder, these files can be used to submit the data in the test harness '''
+        ''' This method iterates over flight tracks and generates AircraftState JSON objects and writes to disk in the TEST_DEFINITION_FOLDER, these files can be used to submit the data in the test harness '''
 
         for flight_id, single_flight in enumerate(self.flights):
             rid_test_file_name = 'flight_' + str(flight_id + 1) + '_rid_aircraft_state' + '.json' # Add 1 to avoid zero based numbering
@@ -398,7 +398,7 @@ class RIDAircraftStateWriter():
                 f.write(json.dumps(single_flight))
 
 
-if __name__ == '__main__':
+def generate_aircraft_states():
     # TODO: accept these parameters as values so that other locations can be supplied
     my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
@@ -414,13 +414,15 @@ if __name__ == '__main__':
 
     query_bboxes = my_path_generator.query_bboxes
 
-    # Change directory to write test_definitions/rid folder is created in the uss_qualifier folder.
-    p = pathlib.Path(__file__).parent.absolute()
-    os.chdir(p)
+    output_path = os.path.join(pathlib.Path(__file__).parent.absolute(), '../test_definitions')
 
-    my_track_writer = TrackWriter(grid_tracks=grid_tracks, bboxes=query_bboxes, country_code=COUNTRY_CODE)
+    my_track_writer = TrackWriter(output_path=output_path, grid_tracks=grid_tracks, bboxes=query_bboxes, country_code=COUNTRY_CODE)
     my_track_writer.write_bboxes()
     my_track_writer.write_tracks()
 
-    my_state_generator = RIDAircraftStateWriter(flights=flights, country_code=COUNTRY_CODE)
+    my_state_generator = RIDAircraftStateWriter(output_path=output_path, flights=flights, country_code=COUNTRY_CODE)
     my_state_generator.write_rid_state()
+
+
+if __name__ == '__main__':
+    generate_aircraft_states()

@@ -34,12 +34,6 @@ class EvaluationConfiguration(ImplicitDict):
 
 
 class RIDQualifierTestConfiguration(ImplicitDict):
-    locale: str
-    """A three letter ISO 3166 country code to run the qualifier against.
-
-    This should be the same one used to simulate the flight_data in
-    the flight_data_generator.py module."""
-
     injection_targets: List[InjectionTargetConfiguration]
     """Set of Service Providers into which data should be injected"""
 
