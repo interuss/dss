@@ -12,7 +12,7 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-func GetDefaultAvailabilityResponse(id dssmodels.Manager) (*scdpb.UssAvailabilityStatusResponse) {
+func GetDefaultAvailabilityResponse(id dssmodels.Manager) *scdpb.UssAvailabilityStatusResponse {
 	return &scdpb.UssAvailabilityStatusResponse{
 		Status: &scdpb.UssAvailabilityStatus{
 			Availability: "Unknown",
@@ -33,12 +33,12 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 		// Get USS availability from Store
 		ussa, err := r.GetUssAvailability(ctx, id)
 		if err != nil && err != sql.ErrNoRows {
-				return stacktrace.Propagate(err, "Could not get USS availability from repo")
-			}
-			if ussa == nil {
-				// Return default availability status "Unknown"
-				response = GetDefaultAvailabilityResponse(id)
-				return nil
+			return stacktrace.Propagate(err, "Could not get USS availability from repo")
+		}
+		if ussa == nil {
+			// Return default availability status "Unknown"
+			response = GetDefaultAvailabilityResponse(id)
+			return nil
 		}
 		response = &scdpb.UssAvailabilityStatusResponse{
 			Status: &scdpb.UssAvailabilityStatus{
@@ -97,7 +97,7 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version s
 		}
 		return nil
 	}
-	if ussa != nil{
+	if ussa != nil {
 		err := a.Store.Transact(ctx, action)
 		if err != nil {
 			return nil, err // No need to Propagate this error as this is not a useful stacktrace line
