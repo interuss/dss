@@ -3,13 +3,13 @@ package scd
 import (
 	"context"
 	"database/sql"
-
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/stacktrace"
+	"strings"
 )
 
 func GetDefaultAvailabilityResponse(id dssmodels.Manager) *scdpb.UssAvailabilityStatusResponse {
@@ -28,7 +28,6 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 	}
 
 	var response *scdpb.UssAvailabilityStatusResponse
-	var ussa *scdmodels.UssAvailabilityStatus
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Get USS availability from Store
 		ussa, err := r.GetUssAvailability(ctx, id)
@@ -49,13 +48,13 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 		return nil
 	}
 
-	if ussa != nil {
-		err := a.Store.Transact(ctx, action)
-		if err != nil {
+	err := a.Store.Transact(ctx, action)
+	if err != nil {
+		if strings.Contains(err.Error(), "does not exist") {
+			response = GetDefaultAvailabilityResponse(id)
+		} else {
 			return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 		}
-	} else {
-		response = GetDefaultAvailabilityResponse(id)
 	}
 	return response, nil
 }
@@ -80,7 +79,6 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version s
 	}
 
 	var result *scdpb.UssAvailabilityStatusResponse
-	var ussa *scdmodels.UssAvailabilityStatus
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		ussa, err := r.UpsertUssAvailability(ctx, ussareq)
 		if err != nil {
@@ -97,13 +95,13 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version s
 		}
 		return nil
 	}
-	if ussa != nil {
-		err := a.Store.Transact(ctx, action)
-		if err != nil {
+	err := a.Store.Transact(ctx, action)
+	if err != nil {
+		if strings.Contains(err.Error(), "does not exist") {
+			result = GetDefaultAvailabilityResponse(dssmodels.ManagerFromString(ussID))
+		} else {
 			return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 		}
-	} else {
-		result = GetDefaultAvailabilityResponse(dssmodels.ManagerFromString(ussID))
 	}
 
 	// Return response to client
