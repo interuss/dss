@@ -1,4 +1,4 @@
-from monitoring.monitorlib.scd_automated_testing.scd_injection_observation_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest
 
 from typing import List
 import random
