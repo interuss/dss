@@ -1,17 +1,11 @@
-import enum
 from monitoring.monitorlib.typing import ImplicitDict
 from typing import List, Literal
 from monitoring.monitorlib.scd import Volume4D
 
 SCOPE_SCD_QUALIFIER_INJECT = 'utm.inject_test_data'
 
-class InjectionStatus(str, enum.Enum):
-    ''' A enum to hold results of flight processing as defined by the SCD test API '''
-    Planned = 'Planned'
-    Rejected = 'Rejected'
-    ConflictWithFlight = 'ConflictWithFlight'
-    Failed = 'Failed'
-
+## Definitions around operational intent data that need to be submitted to the test injection interface
+  
 class OperationalIntentTestInjection(ImplicitDict):
     ''' A class to hold data for operational intent data that will be submitted to the SCD testing interface. '''
     state: str
@@ -19,10 +13,12 @@ class OperationalIntentTestInjection(ImplicitDict):
     volumes: List[Volume4D]
     off_nominal_volumes: List[Volume4D]= []
 
+### End of definitions around operational intent data
+
 ## Definitions around flight authorisation data that need to be submitted to the test injection interface
    
 class FlightAuthorisationData(ImplicitDict):
-    '''A class to hold information about Flight Authorisation Test, for more information see https://github.com/interuss/dss/blob/master/interfaces/automated-testing/scd/scd.yaml#L317'''
+    '''A class to hold information about Flight Authorisation Test '''
     
     uas_serial_number: str
     operation_mode: str
@@ -36,8 +32,10 @@ class FlightAuthorisationData(ImplicitDict):
     operator_id: str
     uas_id: str    
 
+### End of definitions around flight authorisation data
+
 class InjectFlightRequest(ImplicitDict):
     ''' A class to hold the details of a test injection payload '''
-    flight_id: str
+
     operation_intent: OperationalIntentTestInjection
     flight_authorisation: FlightAuthorisationData
