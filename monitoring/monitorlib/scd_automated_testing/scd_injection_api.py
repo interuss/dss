@@ -1,5 +1,5 @@
 from monitoring.monitorlib.typing import ImplicitDict
-from typing import List, Literal
+from typing import List
 from monitoring.monitorlib.scd import Volume4D
 
 SCOPE_SCD_QUALIFIER_INJECT = 'utm.inject_test_data'
@@ -36,6 +36,10 @@ class FlightAuthorisationData(ImplicitDict):
 
 class InjectFlightRequest(ImplicitDict):
     ''' A class to hold the details of a test injection payload '''
-
-    operation_intent: OperationalIntentTestInjection
+    operational_intent: OperationalIntentTestInjection
     flight_authorisation: FlightAuthorisationData
+
+class InjectFlightResponse(ImplicitDict):
+    ''' A class to hold test flight submission response '''
+    result: str
+    operational_intent_id: str
