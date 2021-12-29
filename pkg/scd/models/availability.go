@@ -1,6 +1,11 @@
 package models
 
-import dssmodels "github.com/interuss/dss/pkg/models"
+import (
+	dsserr "github.com/interuss/dss/pkg/errors"
+	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/stacktrace"
+	"strings"
+)
 
 // Aggregates constants for uss availability.
 const (
@@ -21,4 +26,18 @@ type UssAvailabilityStatus struct {
 
 func (u UssAvailabilityState) String() string {
 	return string(u)
+}
+
+func UssAvailabilityStateFromString(s string) (UssAvailabilityState, error) {
+	if s == "" {
+		// Set availability default to Unknown
+		s = "Unknown"
+	} else {
+		s = strings.Title(strings.ToLower(s))
+	}
+	switch UssAvailabilityState(s) {
+	case UssAvailabilityStateUnknown, UssAvailabilityStateNormal, UssAvailabilityStateDown:
+		return UssAvailabilityState(s), nil
+	}
+	return "", stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid USS availability state")
 }

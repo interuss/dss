@@ -50,6 +50,7 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 
 	err := a.Store.Transact(ctx, action)
 	if err != nil {
+		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
 			response = GetDefaultAvailabilityResponse(id)
 		} else {
@@ -68,14 +69,13 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version s
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "ussID not provided.")
 	}
 	// Retrieve USS availability status from request params
-	availability := params.GetAvailability()
-	if availability == "" {
-		// Set availability default to Unknown
-		availability = "Unknown"
+	availability, err := scdmodels.UssAvailabilityStateFromString(params.GetAvailability())
+	if err != nil {
+		return nil, err
 	}
 	ussareq := &scdmodels.UssAvailabilityStatus{
 		Uss:          dssmodels.ManagerFromString(ussID),
-		Availability: scdmodels.UssAvailabilityState(availability),
+		Availability: availability,
 	}
 
 	var result *scdpb.UssAvailabilityStatusResponse
@@ -95,8 +95,9 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version s
 		}
 		return nil
 	}
-	err := a.Store.Transact(ctx, action)
+	err = a.Store.Transact(ctx, action)
 	if err != nil {
+		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
 			result = GetDefaultAvailabilityResponse(dssmodels.ManagerFromString(ussID))
 		} else {
