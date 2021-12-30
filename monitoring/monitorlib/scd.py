@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Literal
+from .typing import ImplicitDict, StringBasedDateTime
 
 import s2sphere
 
@@ -125,3 +126,57 @@ class Subscription(dict):
   @property
   def version(self) -> Optional[int]:
     return self.get('version', None)
+
+
+################################################################################
+#################### Start of ASTM-standard definitions    #####################
+#################### interfaces/astm-utm/Protocol/utm.yaml #####################
+################################################################################
+
+class LatLngPoint(ImplicitDict):
+    '''A class to hold information about a location as Latitude / Longitude pair '''
+    lat: float
+    lng: float
+
+class Radius(ImplicitDict):
+    ''' A class to hold the radius of a circle for the outline_circle object '''
+    value: float
+    units: str
+
+class Polygon(ImplicitDict):
+    ''' A class to hold the polygon object, used in the outline_polygon of the Volume3D object '''
+    vertices: List[LatLngPoint] # A minimum of three LatLngPoints are required
+
+class Circle(ImplicitDict):
+    ''' A class the details of a circle object used in the outline_circle object '''
+    center: LatLngPoint 
+    radius: Radius
+
+class Altitude(ImplicitDict):
+    ''' A class to hold altitude information '''
+    value:float
+    reference:Literal['W84']
+    units: str 
+
+class Time(ImplicitDict):
+    ''' A class to hold Time details '''
+    value: StringBasedDateTime 
+    format:Literal['RFC3339'] 
+
+class Volume3D(ImplicitDict):
+    '''A class to hold Volume3D objects '''
+    outline_circle: Circle
+    outline_polygon: Polygon
+    altitude_lower: Altitude
+    altitude_upper: Altitude
+
+class Volume4D(ImplicitDict):
+    '''A class to hold Volume4D objects '''
+    volume: Volume3D
+    time_start: Time
+    time_end: Time
+
+################################################################################
+#################### End of ASTM-standard definitions    #####################
+#################### interfaces/astm-utm/Protocol/utm.yaml #####################
+################################################################################
