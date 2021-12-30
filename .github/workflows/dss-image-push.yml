@@ -1,4 +1,4 @@
-name: USS Qualifier Tests
+name: DSS Build and Push to Docker Hub
 on:
   pull_request: # All
   push:
