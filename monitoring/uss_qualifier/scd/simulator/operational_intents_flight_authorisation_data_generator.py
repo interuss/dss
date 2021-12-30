@@ -2,8 +2,6 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import Operat
 
 from typing import List
 import random
-from shapely.geometry.polygon import Polygon
-from shapely.geometry import LineString, asShape
 
 class ProximateOperationalIntentGenerator():
     ''' A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. Further test'''
