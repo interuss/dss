@@ -2,10 +2,9 @@ GOPATH := $(shell go env GOPATH 2> /dev/null)
 GOBIN := $(GOPATH)/bin
 COMMIT := $(shell scripts/git/commit.sh)
 # RELEASE_TAG determines the version of the DSS and is baked into
-# the executable using linker flags. If the commit is not
-# directly tag, the abbreviated version name is used to
-# indicate a release of a non-tagged commit using the closest
-# tag reference (ie v0.0.1-3-g6a64c20).
+# the executable using linker flags. If the commit is not a tag,
+# the release_tag will contain information about the closest tag
+# reference (ie v0.0.1-3-g6a64c20, see RELEASE.md for more details).
 RELEASE_TAG := $(shell git describe --tags --match='v*' 2> /dev/null | grep -E 'v[0-9]+\.[0-9]+\.[0-9]+')
 RELEASE_TAG := $(or $(RELEASE_TAG), v0.0.0)
 
