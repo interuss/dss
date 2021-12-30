@@ -27,6 +27,6 @@ fi
 docker run ${docker_args} --name flight_data_generator \
   --rm \
   -e PYTHONBUFFERED=1 \
-  -v "$(pwd)/monitoring/uss_qualifier/test_definitions/rid:/app/monitoring/uss_qualifier/test_definitions/rid" \
+  -v "$(pwd)/monitoring/uss_qualifier/rid/test_definitions:/app/monitoring/uss_qualifier/rid/test_definitions" \
   interuss/uss_qualifier \
   python rid/simulator/flight_state.py
