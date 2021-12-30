@@ -4,9 +4,10 @@ on:
   push:
     branches:
       - master
+      - SUSI-*
 jobs:
   docker-hub-push:
-    name: DSS Build and Push
+    name: DSS Build and Push to Docker Hub
     runs-on: ubuntu-latest
     steps:
       - name: Job information
@@ -26,7 +27,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build image
+      - name: Build and push image
         run: |
           DOCKER_URL=${{ secrets.DOCKER_URL }} build/build.sh
 
