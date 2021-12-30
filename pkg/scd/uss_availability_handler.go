@@ -71,7 +71,7 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version s
 	// Retrieve USS availability status from request params
 	availability, err := scdmodels.UssAvailabilityStateFromString(params.GetAvailability())
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid availability state")
 	}
 	ussareq := &scdmodels.UssAvailabilityStatus{
 		Uss:          dssmodels.ManagerFromString(ussID),
