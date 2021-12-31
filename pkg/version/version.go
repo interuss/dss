@@ -16,7 +16,7 @@ func init() {
 		major, minor, patch int64
 	)
 
-	if n, err := fmt.Sscanf("v%d.%d.%d", tag, &major, &minor, &patch); n == 3 && err == nil {
+	if n, err := fmt.Sscanf(tag, "v%d.%d.%d", &major, &minor, &patch); n == 3 && err == nil {
 		current.Major = major
 		current.Minor = minor
 		current.Patch = patch
