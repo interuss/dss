@@ -58,6 +58,10 @@ func IDFromString(s string) (ID, error) {
 	return ID(id.String()), nil
 }
 
+func ManagerFromString(s string) Manager {
+	return Manager(s)
+}
+
 func IDFromOptionalString(s string) (ID, error) {
 	if s == "" {
 		return ID(""), nil
