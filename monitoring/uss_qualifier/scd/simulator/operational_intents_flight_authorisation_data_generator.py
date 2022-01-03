@@ -1,14 +1,18 @@
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest
-from .utils import GeneratedGeometry, VolumeGenerationRule, RequiredResults,TestInjectionRequiredResult
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest, 
+from .utils import GeneratedGeometry, GeometryGenerationRule,VolumeGenerationRule, RequiredResults,TestInjectionRequiredResult
+from shapely.geometry import asShape
 from shapely.geometry import LineString
-from monitoring.monitorlib import Volume3D, Volume4D
+from monitoring.monitorlib.scd import Time, Volume3D, Volume4D
 from typing import List
 import random
+from typing import List, Union
+import shapely.geometry
+from shapely.geometry.polygon import Polygon
 
 class ProximateOperationalIntentGenerator():
-    ''' A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. Further test'''
+    ''' A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. '''
 
-    def __init__() -> None:
+    def __init__(self, minx: float, miny: float, maxx: float, maxy: float, utm_zone:str) -> None:
         """ Create a ProximateVolumeGenerator within a given geographic bounding box. 
 
         Once these extents are specified, a grid will be created with two rows. A combination of LineStrings and Polygons will be generated withing these bounds. While linestrings can extend to the full boundaries of the box, polygon areas are generated within the grid. 
@@ -26,34 +30,224 @@ class ProximateOperationalIntentGenerator():
         
         
         """
-        pass
+        self.minx = minx
+        self.miny = miny
+        self.maxx = maxx
+        self.maxy = maxy
+        self.utm_zone = utm_zone
 
-    def generate_raw_geometries(self, number_of_geometries:int = 6) -> List[GeneratedGeometry]:
-        ''' A method to generate Volume 4D data '''
+        self.altitude_agl:float = 50.0
+        self.altitude_envelope: int = 15 # the buffer in meters for flight when a path is converted into a volume
+        self.control_flight_geometry: Union[LineString, Polygon] # the initial flight path or geometry against which subsequent flight paths are generated, this flag
         
-        raise NotImplementedError("")
+        self.raw_geometries: List[GeneratedGeometry] # Object to hold polyons or linestrings, and the rule that generated the geometry (e.g. should this geometry intersect with the control)
+        self.now = arrow.now()        
+        self.geod = Geod(ellps="WGS84")
+        self.grid_cells : List[shapely.geometry.box] # When a bounding box is given, it is split into smaller boxes this object holds the grids
+        self._input_extents_valid()
+        self._generate_grid_cells()
+        
+    def _generate_grid_cells(self):
+        # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid.
+        N_COLS = 3
+        N_ROWS = 2
+        cell_size_x = (self.maxx - self.minx)/(N_COLS)  # create three columns
+        cell_size_y = (self.maxy - self.miny)/(N_ROWS)  # create two rows
+        grid_cells = []
+        for u0 in range(0, N_COLS):  # 3 columns
+            x0 = self.minx + (u0 * cell_size_x)
+            for v0 in range(0, N_ROWS):  # 2 rows
+                y0 = self.miny + (v0 * cell_size_y)
+                x1 = x0 + cell_size_x
+                y1 = y0 + cell_size_y
+                grid_cells.append(shapely.geometry.box(x0, y0, x1, y1))
+        self.grid_cells = grid_cells
 
-    def convert_geometry_to_volume_3D(self, flight_geometry:LineString, volume_generation_rule: VolumeGenerationRule, altitude_of_ground_level_wgs_84:int) -> Volume3D:
+    def utm_converter(self, shapely_shape: shapely.geometry, inverse:bool=False) -> shapely.geometry.shape:
+        ''' A helper function to convert from lat / lon to UTM coordinates for buffering. tracks. This is the UTM projection (https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system), we use Zone 33T which encompasses Switzerland, this zone has to be set for each locale / city. Adapted from https://gis.stackexchange.com/questions/325926/buffering-geometry-with-points-in-wgs84-using-shapely '''
+
+        proj = Proj(proj="utm", zone=self.utm_zone, ellps="WGS84", datum="WGS84")
+
+        geo_interface = shapely_shape.__geo_interface__
+        feature_type = geo_interface['type']
+        coordinates = geo_interface['coordinates']
+        if feature_type == 'Polygon':
+            new_coordinates = [[proj(*point, inverse=inverse) for point in linring] for linring in coordinates]
+        elif feature_type == 'LineString':
+            new_coordinates = [proj(*point, inverse=inverse) for point in coordinates]
+        else:
+            raise RuntimeError('Unexpected geo_interface type: {}'.format(feature_type))
+
+        return shapely.geometry.shape({'type': feature_type, 'coordinates': tuple(new_coordinates)})
+
+    def _input_extents_valid(self) -> None:
+        ''' This method checks if the input extents are valid i.e. small enough, if the extent is too large, we reject them, at the moment it checks for extents less than 500m x 500m square but can be changed as necessary.'''
+
+        box = shapely.geometry.box(self.minx, self.miny, self.maxx, self.maxy)
+        area = abs(self.geod.geometry_area_perimeter(box)[0])
+
+        # Have a area less than 500m x 500m square and more than 300m x 300m square to ensure enough space for tracks
+        if (area) < 250000 and (area) > 90000:
+            return
+        else:
+            raise ValueError("The extents provided are not of the correct size, please provide extents that are less than 500m x 500m and more than 300m x 300m square")
+        
+    def _generate_random_flight_path(self) -> LineString:
+        '''Generate a random flight path. this code uses the `generate_random` method (https://github.com/jazzband/geojson/blob/master/geojson/utils.py#L131) to generate the initial linestring.  '''
+        
+        random_flight_path = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
+            
+        return random_flight_path
+               
+    def _generate_random_flight_polygon(self) -> Polygon:
+        '''Generate a random polygon, if a polygon is specified then this method picks one of the grid cells to generate the flight path within that, this is to ensure that a polygon geometry does not take over the entire bounding box. '''        
+        
+        grid_cell = random.choice(self.grid_cells) # Pick a random grid cell
+        random_flight_polygon = geojson.utils.generate_random(featureType = "LineString", numberVertices=2, boundingBox=grid_cell.bounds)
+        random_flight_polygon = asShape(random_flight_polygon).envelope # Get the envelope of the linestring and create a box
+        return random_flight_polygon
+    
+        
+    def _generate_single_flight_geometry(self, geometry_generation_rule:GeometryGenerationRule, is_control:bool= False) -> Union[LineString, Polygon]:
+        ''' A method to generates flight geometry within a geographic bounds. The geometry can be a linestring or a polygon, simple rules for generation can be specificed. At the moment the method check if the geometry should intersect with the control and based on that, linestring / polygons are created '''
+        
+        coin_flip = random.choice([0,0,1])         
+        if coin_flip:
+            flight_geometry = self._generate_random_flight_polygon()
+        else:
+            flight_geometry = self._generate_random_flight_path()
+
+        if is_control:
+            self.control_flight_geometry = asShape(flight_geometry) # Assign the control since this is the first time that the flight geometry is generated
+        else: 
+            if geometry_generation_rule.intersect_space: # This is not the first geometry, check if it should intersect with the control
+                geometry_intersects = False
+                while (geometry_intersects == False):
+                    coin_flip = random.choice([0,0,1]) 
+                    # We are trying to generate a path that intersects with the control, we keep generating linestrings or polygons till one is found that does intersect
+                    if coin_flip:
+                        flight_geometry = self._generate_random_flight_polygon()
+                    else:
+                        flight_geometry = self._generate_random_flight_path()
+                        
+                    raw_geom = asShape(flight_geometry) # Generate a shape from the geometry
+                    geometry_intersects = self.control_flight_geometry.intersects(raw_geom) # Check this intersects with the control                    
+                
+        return flight_geometry
+
+    def convert_geometry_to_volume(self, flight_geometry:LineString, volume_generation_rule: VolumeGenerationRule, altitude_of_ground_level_wgs_84:int) -> Volume3D:
         ''' A method to convert a GeoJSON LineString or Polygon to a ASTM outline_polygon object by buffering 15m spatially '''
-
-        raise NotImplementedError("")
         
-    def generate_astm_4d_volumes(self,raw_geometries:List[GeneratedGeometry],rules : List[GeneratedGeometry], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
-        ''' A method to generate ASTM specified Volume 4D payloads to submit to the system to be tested.  '''
+        flight_geometry_shp = asShape(flight_geometry)
+        flight_geometry_utm = self.utm_converter(flight_geometry_shp)
+        buffer_shape_utm = flight_geometry_utm.buffer(15)
         
-        raise NotImplementedError("")
+        if volume_generation_rule.intersect_altitude: # If the flight should interect in altitude (altitude is kept same)
+            alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_agl +self.altitude_envelope  
+            alt_lower = altitude_of_ground_level_wgs_84 + self.altitude_agl - self.altitude_envelope
+        else:
 
-    def generate_operational_intent_test_injection(self, astm_4d_volumes:List[Volume4D]) -> List[OperationalIntentTestInjection]:
-        ''' A method to generate Operational Intent references given a list of Volume 4Ds '''
+            raised_altitude_meters = random.choice([50,80])
+            # Raise the altitude by 50m or 80m so that the flights do not intersect in altitude
+            alt_upper = altitude_of_ground_level_wgs_84 + self.altitude_agl  + raised_altitude_meters + self.altitude_envelope 
+            alt_lower = altitude_of_ground_level_wgs_84 + self.altitude_agl + raised_altitude_meters - self.altitude_envelope 
+        
+        buffered_shape_geo = self.utm_converter(buffer_shape_utm, inverse=True)
+        
+        all_vertices = []
+        altitude_upper = Altitude(value= alt_upper, reference = "W84", units="M")
+        altitude_lower = Altitude(value=alt_lower, reference = "W84", units="M")
+        for vertex in list(buffered_shape_geo.exterior.coords):
+            coord = LatLngPoint(lat = vertex[0] , lng = vertex[1])
+            all_vertices.append(coord)
+        p = VolumePolygon(vertices=all_vertices)
+        
+        volume3D = Volume3D(outline_polygon = p, altitude_lower=altitude_lower, altitude_upper=altitude_upper)
+        
+        return volume3D
 
-        raise NotImplementedError("")
+    def transform_3d_volume_to_astm_4d(self, volume_3d : Volume3D,volume_generation_rule: VolumeGenerationRule) -> Volume4D:
+        ''' This method converts a 3D Volume to 4D Volume and checks if the volumes should intersect in time, if the time interesection flag is turned off it will shift the volume start and end time to a arbirtray number in the next 70 mins. '''
+        
+        if volume_generation_rule.intersect_time: 
+            # Overlap with the control 
+            three_mins_from_now = self.now.shift(minutes = 3)
+            eight_mins_from_now = self.now.shift(minutes = 8)
+            start_time = Time(value = three_mins_from_now.isoformat(), format = "RFC3339")
+            end_time = Time(value = eight_mins_from_now.isoformat(), format = "RFC3339")
+
+        else: 
+            mins = [10,15,20,25,30,25,40,45,50,55,60,65,70]
+            future_minutes = random.choice(mins)
+            future_start = self.now.shift(minutes = future_minutes)
+            future_end = self.now.shift(minutes = (future_minutes+ 4))
+            start_time = Time(value = future_start.isoformat(), format = "RFC3339")
+            end_time = Time(value = future_end.isoformat(), format = "RFC3339")
+
+    
+        volume_4D = Volume4D(volume=volume_3d, time_start= start_time, time_end=end_time)
+        
+        return volume_4D
+    
+    def generate_raw_geometries(self, number_of_geometries:int = 6) -> List[GeneratedGeometry]:
+        ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
+        
+        raw_geometries: List[GeneratedGeometry] = []
+        for volume_idx in range(0, number_of_geometries):
+            is_control = 1 if (volume_idx == 0) else 0
+            geometry_generation_rule = GeometryGenerationRule()
+            
+            if (volume_idx == (number_of_geometries -1)): # The first geometry is called "control" and it should not intersect with 
+                should_intersect = False
+            else:   
+                coin_flip = random.choice([0,0,1]) # It can or cannot intersect
+                should_intersect = coin_flip 
+
+            geometry_generation_rule.intersect_space = should_intersect
+            
+            # the first path is control, the last path does not intersect the control
+            current_path = self._generate_single_flight_geometry(geometry_generation_rule = geometry_generation_rule, is_control= is_control)
+            raw_path = GeneratedGeometry(geometry = current_path, geometry_generation_rule = geometry_generation_rule, is_control = is_control)
+            raw_geometries.append(raw_path)
+        return raw_geometries
 
     def generate_volume_altitude_time_intersect_rules(self, raw_geometries:List[GeneratedGeometry]) -> List[VolumeGenerationRule]: 
         ''' A method to generate rules for generation of new paths '''
+        
+        all_volume_rules: List[VolumeGenerationRule] = []
+        last_path_index = len(raw_geometries) - 1 
+        for path_index, raw_path in enumerate(raw_geometries): 
+            if path_index in [0,last_path_index]:
+                # This the control path or the well clear path no need to have any time / atltitude interserction
+                volume_generation_rule = VolumeGenerationRule(intersect_altitude= 0, intersect_time=0, expected_result = 1)
+                if path_index == 0:
+                    volume_generation_rule.is_control = 1
+            else:
+                # intersect in time and / or intersect in altitude 
+                volume_generation_rule = random.choice([VolumeGenerationRule(intersect_altitude=1, intersect_time= 0, expected_result = 1),VolumeGenerationRule(intersect_altitude=1, intersect_time= 1, expected_result = 0),VolumeGenerationRule(intersect_altitude=0, intersect_time= 1, expected_result = 1)])
+            all_volume_rules.append(volume_generation_rule)
+        return all_volume_rules
 
-        raise NotImplementedError("")
-
-
+    def generate_astm_4d_volumes(self,raw_geometries:List[GeneratedGeometry],rules : List[GeneratedGeometry], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
+        ''' A method to generate ASTM specified Volume 4D payloads to submit to the system to be tested.  '''
+        all_volume_4d :List[Volume4D] = []
+        for path_index, raw_geometry in enumerate(raw_geometries): 
+            volume_generation_rule = rules[path_index]
+            
+            flight_volume_3d = self.convert_geometry_to_volume(flight_geometry = raw_geometry.geometry, volume_generation_rule = volume_generation_rule, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
+            flight_volume_4d = self.transform_3d_volume_to_astm_4d(volume_3d = flight_volume_3d, volume_generation_rule = volume_generation_rule)
+            all_volume_4d.append(flight_volume_4d)
+            
+        return all_volume_4d
+    
+    def generate_injection_operational_intents(self, astm_4d_volumes:List[Volume4D]) -> List[OperationalIntentTestInjection]:
+        ''' A method to generate Operational Intent references given a list of Volume 4Ds '''
+        all_operational_intent_references= []
+        for current_volume in astm_4d_volumes: 
+            current_operational_intent_reference = OperationalIntentTestInjection(volumes = [current_volume], key = [], state = "Accepted", off_nominal_volumes = [], priority =0)
+            all_operational_intent_references.append(current_operational_intent_reference)
+            
+        return all_operational_intent_references
 
 class FlightAuthorisationDataGenerator():
     ''' A class to generate data for flight authorisation per the ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664 for an UAS flight authorisation request. Reference: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1 
