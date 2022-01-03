@@ -240,7 +240,7 @@ class ProximateOperationalIntentGenerator():
             
         return all_volume_4d
     
-    def generate_injection_operational_intents(self, astm_4d_volumes:List[Volume4D]) -> List[OperationalIntentTestInjection]:
+    def generate_injection_operational_intents(self, astm_4d_volumes:List[Volume4D]) -> List[OperationalIntentTestInjection ]:
         ''' A method to generate Operational Intent references given a list of Volume 4Ds '''
         all_operational_intent_references= []
         for current_volume in astm_4d_volumes: 
