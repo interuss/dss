@@ -137,31 +137,29 @@ func ConnectTo(connectParameters ConnectParameters) (*DB, error) {
 
 // GetVersion returns the Schema Version of the requested DB Name
 func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, error) {
-	const query = `
-		SELECT EXISTS (
-			SELECT
-				*
-			FROM
-				information_schema.tables
-			WHERE
-				table_name = 'schema_versions'
-			AND
-				table_catalog = $1
-		)
-	`
-
 	var (
+		checkTableQuery = fmt.Sprintf(`
+      SELECT EXISTS (
+        SELECT
+          *
+        FROM
+          %s.information_schema.tables
+        WHERE
+          table_name = 'schema_versions'
+        AND
+          table_catalog = $1
+      )`, dbName)
 		exists          bool
 		getVersionQuery = fmt.Sprintf(`
-		SELECT
-			schema_version
-		FROM
-			%s.schema_versions
-		WHERE
-			onerow_enforcer = TRUE`, dbName)
+      SELECT
+        schema_version
+      FROM
+        %s.schema_versions
+      WHERE
+        onerow_enforcer = TRUE`, dbName)
 	)
 
-	if err := db.QueryRowContext(ctx, query, dbName).Scan(&exists); err != nil {
+	if err := db.QueryRowContext(ctx, checkTableQuery, dbName).Scan(&exists); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
 
