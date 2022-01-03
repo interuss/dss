@@ -1,0 +1,1 @@
+-- TODO: Populate with down migration (issue #574)

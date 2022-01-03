@@ -46,7 +46,6 @@ func (d Direction) String() string {
 var (
 	path      = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
 	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version")
-	step      = flag.Int("migration_step", 0, "the db migration step to go to")
 )
 
 func main() {
