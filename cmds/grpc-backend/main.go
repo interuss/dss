@@ -58,21 +58,6 @@ var (
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
-func connectTo(dbName string) (*cockroach.DB, error) {
-	connectParameters := flags.ConnectParameters()
-	connectParameters.DBName = dbName
-
-	uri, err := connectParameters.BuildURI()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error building URI")
-	}
-	db, err := cockroach.Dial(uri)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error dialing CockroachDB database at %s", uri)
-	}
-	return db, nil
-}
-
 func pingDB(ctx context.Context, db *cockroach.DB, databaseName string) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 	if err := db.PingContext(ctx); err != nil {
@@ -104,7 +89,9 @@ func createKeyResolver() (auth.KeyResolver, error) {
 }
 
 func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid.Server, error) {
-	ridCrdb, err := connectTo(ridc.DatabaseName)
+	connectParameters := flags.ConnectParameters()
+	connectParameters.DBName = ridc.DatabaseName
+	ridCrdb, err := cockroach.ConnectTo(connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
@@ -113,7 +100,8 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	if err != nil {
 		// try DatabaseName with defaultdb for older versions.
 		ridc.DatabaseName = "defaultdb"
-		ridCrdb, err := connectTo(ridc.DatabaseName)
+		connectParameters.DBName = ridc.DatabaseName
+		ridCrdb, err := cockroach.ConnectTo(connectParameters)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database for older version <defaultdb>; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 		}
@@ -152,7 +140,9 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 }
 
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
-	scdCrdb, err := connectTo(scdc.DatabaseName)
+	connectParameters := flags.ConnectParameters()
+	connectParameters.DBName = scdc.DatabaseName
+	scdCrdb, err := cockroach.ConnectTo(connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
