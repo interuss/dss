@@ -10,7 +10,6 @@ require (
 	github.com/cockroachdb/cockroach-go v0.0.0-20200504194139-73ffeee90b62
 	github.com/coreos/go-semver v0.3.0
 	github.com/golang-jwt/jwt v3.2.1+incompatible
-	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec
 	github.com/golang/protobuf v1.4.3
 	github.com/google/uuid v1.2.0
