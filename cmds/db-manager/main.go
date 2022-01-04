@@ -49,7 +49,7 @@ func main() {
 		log.Panicf("Failed to read schema version migration definitions: %v", err)
 	}
 	if len(steps) == 0 {
-		log.Panicf("No migration definitions found in schemas_dir=%s", path)
+		log.Panicf("No migration definitions found in schemas_dir=%s", *path)
 	}
 
 	// Determine target version
