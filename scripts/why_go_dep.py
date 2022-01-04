@@ -62,7 +62,6 @@ def main():
       if kw in parent:
         key_nodes.add(parent)
 
-  print('key_nodes: ', key_nodes)
   if len(key_nodes) >= 2:
     source = list(key_nodes)[0]
     destination = list(key_nodes)[1]
@@ -91,6 +90,10 @@ def write_to_gv_file(key_nodes, all_paths):
     for pair in set(pairs):
         f.write('  "{}" -> "{}"\n'.format(pair[0], pair[1]))
     f.write('}\n')
+  
+  # TODO: check if `dot` is installed
+  # img_gen = subprocess.check_output(['dot', '-Tpng', '-ogo_mod_graph.png', 'go_mod_graph.gv']).decode('utf8')
+  # print(img_gen)
 
 def get_path(parents, dest, base, path, all_paths):
     if dest not in path:
