@@ -32,7 +32,7 @@ var (
 
 var (
 	path      = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
-	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version")
+	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version or leave blank to print the current version")
 )
 
 func main() {
@@ -56,6 +56,9 @@ func main() {
 	var targetVersion *semver.Version
 	if strings.ToLower(*dbVersion) == "latest" {
 		targetVersion = &steps[len(steps)-1].version
+	} else if strings.TrimSpace(*dbVersion) == "" {
+	  // User just wants to print the current version
+	  targetVersion = nil
 	} else {
 		targetVersion, err = semver.NewVersion(*dbVersion)
 		if err != nil {
@@ -105,6 +108,9 @@ func main() {
 		log.Panicf("Failed to get current database version for %s: %v", dbName, err)
 	}
 	log.Printf("Initial %s database schema version is %v, target is %v", dbName, currentVersion, targetVersion)
+	if targetVersion == nil {
+	  return
+	}
 
 	// Compute index of current version
 	var currentStepIndex int = -1

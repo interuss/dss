@@ -10,9 +10,10 @@ if [[ -z $(command -v docker) ]]; then
   exit 1
 fi
 
-if [ -z ${1} ] || [ -z ${2} ]; then
-  echo "Usage: ${0} <rid|scd> <DB version>"
+if [[ -z ${1} ]]; then
+  echo "Usage: ${0} <rid|scd> [DB version]"
   echo "  Example: ${0} rid 3.1.1"
+  echo "  Example: ${0} rid"
   echo "  Example: ${0} scd latest"
   exit 1
 fi
@@ -27,6 +28,12 @@ fi
 
 cd "${BASEDIR}/../.." || exit 1
 
+if [[ -z ${2} ]]; then
+  DBVERSION_FLAG=""
+else
+  DBVERSION_FLAG="--db_version ${2}"
+fi
+
 pwd
 docker image build -f cmds/db-manager/Dockerfile -t interuss-local/db-manager . || exit 1
 docker container run \
@@ -35,5 +42,5 @@ docker container run \
     --network dss_sandbox_default \
     interuss-local/db-manager \
          --schemas_dir /db-schemas/${1} \
-         --db_version ${2} \
+         ${DBVERSION_FLAG} \
          --cockroach_host local-dss-crdb || exit 1

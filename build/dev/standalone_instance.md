@@ -125,6 +125,9 @@ ID prior to schema version 4.0.0, and `scd` instead of `rid` if wiping SCD:
 docker container exec -i dss_sandbox_local-dss-crdb_1 cockroach sql --insecure <<< 'use postgres; drop database rid cascade;'
 ```
 
+To just determine the current version of a database schema, simply omit the
+target version parameter to `migrate_local_db.sh`.
+
 ## Troubleshooting
 
 If one or more of the necessary ports are not available, identify the process
