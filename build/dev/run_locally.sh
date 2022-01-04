@@ -20,7 +20,7 @@ fi
 
 cd "${BASEDIR}" || exit 1
 
-DC_COMMAND="$@"
+DC_COMMAND=$@
 
 if [[ ! "$DC_COMMAND" ]]; then
   DC_COMMAND="up"

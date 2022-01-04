@@ -36,11 +36,12 @@ fi
 
 pwd
 docker image build -f cmds/db-manager/Dockerfile -t interuss-local/db-manager . || exit 1
+# shellcheck disable=SC2086 (DBVERSION_FLAG should word-split)
 docker container run \
-    -v $(pwd)/build/deploy/db_schemas:/db-schemas:ro \
-    -v $(pwd)/build/dev/local-dss-data:/var/local-dss-data \
+    -v "$(pwd)"/build/deploy/db_schemas:/db-schemas:ro \
+    -v "$(pwd)"/build/dev/local-dss-data:/var/local-dss-data \
     --network dss_sandbox_default \
     interuss-local/db-manager \
-         --schemas_dir /db-schemas/${1} \
+         --schemas_dir /db-schemas/"${1}" \
          ${DBVERSION_FLAG} \
          --cockroach_host local-dss-crdb || exit 1
