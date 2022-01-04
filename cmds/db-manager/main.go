@@ -57,8 +57,8 @@ func main() {
 	if strings.ToLower(*dbVersion) == "latest" {
 		targetVersion = &steps[len(steps)-1].version
 	} else if strings.TrimSpace(*dbVersion) == "" {
-	  // User just wants to print the current version
-	  targetVersion = nil
+		// User just wants to print the current version
+		targetVersion = nil
 	} else {
 		targetVersion, err = semver.NewVersion(*dbVersion)
 		if err != nil {
@@ -109,7 +109,7 @@ func main() {
 	}
 	log.Printf("Initial %s database schema version is %v, target is %v", dbName, currentVersion, targetVersion)
 	if targetVersion == nil {
-	  return
+		return
 	}
 
 	// Compute index of current version
@@ -183,13 +183,13 @@ func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {
 	if err != nil {
 		return make([]MigrationStep, 0), stacktrace.Propagate(err, "Failed to read schema files directory")
 	}
-	r, err := regexp.Compile(migrationStepRegexp)
+	r := regexp.MustCompile(migrationStepRegexp)
 	for _, file := range files {
 		if !file.IsDir() {
 			match := r.FindStringSubmatch(file.Name())
 			if len(match) > 0 {
 				v := *semver.New(match[2])
-				step, _ := steps[v]
+				step := steps[v]
 				step.version = v
 				if match[1] == "upto" {
 					step.upToFile = file.Name()
