@@ -4,7 +4,6 @@ from monitoring.monitorlib.typing import ImplicitDict
 from pathlib import Path
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
 
-
 class GeometryGenerationRule(ImplicitDict):
     """ A class to hold configuration for developing treatment flight path """
     intersect_space:bool = 0
@@ -15,7 +14,6 @@ class GeneratedGeometry(ImplicitDict):
     is_control: bool
     geometry_generation_rule: GeometryGenerationRule
   
-
 class RequiredResults(ImplicitDict):
     ''' A class to evaluate results / response to an injection of test flight data (TestFlightRequest) '''
     expected_response: str # One of "Planned", "Rejected", "ConflictWithFlight" or "Failed"
