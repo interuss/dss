@@ -35,7 +35,6 @@ def main():
 
   for line in lines:
     cols = line.split(' ')
-    # print(cols)
     if len(cols) != 2:
       continue
     parent, child = cols
