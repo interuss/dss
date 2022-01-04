@@ -27,12 +27,3 @@ require (
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/square/go-jose.v2 v2.5.1
 )
-
-// This replacement should actually be for v3.2.1 to fix the second-level
-// dependency issue with go-migrate eventually depending on the obsolete
-// dgrijalva package, but Go will not allow this giving an error of:
-//   go: github.com/golang-jwt/jwt@v3.2.1+incompatible used for two different
-//   module paths (github.com/dgrijalva/jwt-go and github.com/golang-jwt/jwt)
-// TODO: Remove this replace statement after the bug below is resolved:
-//       https://github.com/golang-migrate/migrate/issues/569
-replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.0+incompatible
