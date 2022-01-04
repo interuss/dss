@@ -1,3 +1,4 @@
+import copy
 import subprocess
 import sys
 from typing import Dict, Set, Tuple
@@ -34,6 +35,7 @@ def main():
 
   for line in lines:
     cols = line.split(' ')
+    # print(cols)
     if len(cols) != 2:
       continue
     parent, child = cols
@@ -61,31 +63,50 @@ def main():
       if kw in parent:
         key_nodes.add(parent)
 
-  # Nodes are relevant if one of their descendents is a module of interest
-  relevant: Set[str] = {n for n in key_nodes}
-  newly_relevant: Set[str] = {n for n in relevant}
-  while len(newly_relevant) > 0:
-    next_relevant: Set[str] = set()
-    for n in newly_relevant:
-      for p in children.get(n, set()):
-        if p not in relevant:
-          relevant.add(p)
-          next_relevant.add(p)
-    newly_relevant = next_relevant
+  print('key_nodes: ', key_nodes)
+  if len(key_nodes) >= 2:
+    source = list(key_nodes)[0]
+    destination = list(key_nodes)[1]
+    # get path from source to destination
+    all_paths = []
+    get_path(parents, destination, source, [], all_paths)
+    if not all_paths:
+      # check if relation exists in reverse order.
+      source, destination = destination, source
+      get_path(parents, destination, source, [], all_paths)
+      write_to_gv_file(key_nodes, all_paths)
+    
+  else:
+    print('Source and destination modules not provided')
 
-  with open('go_mod_graph.gv', 'w') as f:
+
+def write_to_gv_file(key_nodes, all_paths):
+  with open('go_mod_graph2.gv', 'w') as f:
     f.write('digraph g {\n')
     f.write('  node [shape=box]\n')
     for kn in key_nodes:
-      f.write('  "{}" [color=red]\n'.format(kn))
-    for connection in connections:
-      if connection[0] in relevant and connection[1] in relevant:
-        f.write('  "{}" -> "{}"\n'.format(connection[0], connection[1]))
+        f.write('  "{}" [color=red]\n'.format(kn))
+    pairs = []
+    for path in all_paths:
+        pairs.extend([(x,y) for x,y in zip(list(reversed(path))[:-1], list(reversed(path))[1:])])
+    for pair in set(pairs):
+        f.write('  "{}" -> "{}"\n'.format(pair[0], pair[1]))
     f.write('}\n')
 
-  # TODO: check if `dot` is present in the system.
-  # img_gen = subprocess.check_output(['dot', '-Tpng', '-ogo_mod_graph.png', 'go_mod_graph.gv']).decode('utf8')
-  # print(img_gen)
+def get_path(parents, dest, base, path, all_paths):
+    if dest not in path:
+        path.append(dest)
+    if dest in parents:
+        for parent in parents[dest]:
+            curr_path = copy.copy(path)
+            if parent not in curr_path:
+                curr_path.append(parent)
+            else:
+                continue  # case of cyclic path.
+            if parent == base:
+                all_paths.append(curr_path)
+            else:
+                get_path(parents, parent, base, curr_path, all_paths)
 
 
 if __name__ == '__main__':
