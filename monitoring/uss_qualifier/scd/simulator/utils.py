@@ -10,15 +10,14 @@ class GeometryGenerationRule(ImplicitDict):
     
 class GeneratedGeometry(ImplicitDict):
     ''' An object to hold generated flight path, is_control is a nomenclature used to see if the generated path is the first one '''
-    geometry: Union[LineString, Polygon]
-    is_control: bool
+    geometry: Union[LineString, Polygon]    
     geometry_generation_rule: GeometryGenerationRule
   
 class RequiredResults(ImplicitDict):
     ''' A class to evaluate results / response to an injection of test flight data (TestFlightRequest) '''
     expected_response: str # One of "Planned", "Rejected", "ConflictWithFlight" or "Failed"
-    authorisation_data_fields_to_check: List[str]
-    operational_intent_validation_checks: List[str]
+    authorisation_data_fields_to_evaluate: List[str]
+    operational_intent_processing_result: str
 
 class TestInjectionRequiredResult(ImplicitDict):
     test_injection: InjectFlightRequest

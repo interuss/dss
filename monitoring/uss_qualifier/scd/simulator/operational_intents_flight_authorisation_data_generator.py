@@ -40,7 +40,7 @@ class ProximateOperationalIntentGenerator():
 
         self.altitude_agl:float = 50.0
         self.altitude_envelope: int = 15 # the buffer in meters for flight when a path is converted into a volume
-        self.control_flight_geometry: Union[LineString, Polygon] # the initial flight path or geometry against which subsequent flight paths are generated, this flag
+        self.first_flight_geometry: Union[LineString, Polygon] # the initial flight path or geometry against which subsequent flight paths are generated, this flag
         
         self.raw_geometries: List[GeneratedGeometry] # Object to hold polyons or linestrings, and the rule that generated the geometry (e.g. should this geometry intersect with the control)
         self.now = arrow.now()        
@@ -109,7 +109,7 @@ class ProximateOperationalIntentGenerator():
         random_flight_polygon = asShape(random_flight_polygon).envelope # Get the envelope of the linestring and create a box
         return random_flight_polygon
         
-    def _generate_single_flight_geometry(self, geometry_generation_rule:GeometryGenerationRule, is_control:bool= False) -> Union[LineString, Polygon]:
+    def _generate_single_flight_geometry(self, geometry_generation_rule:GeometryGenerationRule) -> Union[LineString, Polygon]:
         ''' A method to generates flight geometry within a geographic bounds. The geometry can be a linestring or a polygon, simple rules for generation can be specificed. At the moment the method check if the geometry should intersect with the control and based on that, linestring / polygons are created '''
         
         coin_flip = random.choice([0,0,1])         
@@ -118,22 +118,19 @@ class ProximateOperationalIntentGenerator():
         else:
             flight_geometry = self._generate_random_flight_path()
 
-        if is_control:
-            self.control_flight_geometry = asShape(flight_geometry) # Assign the control since this is the first time that the flight geometry is generated
-        else: 
-            if geometry_generation_rule.intersect_space: # This is not the first geometry, check if it should intersect with the control
-                geometry_intersects = False
-                while (geometry_intersects == False):
-                    coin_flip = random.choice([0,0,1]) 
-                    # We are trying to generate a path that intersects with the control, we keep generating linestrings or polygons till one is found that does intersect
-                    if coin_flip:
-                        flight_geometry = self._generate_random_flight_polygon()
-                    else:
-                        flight_geometry = self._generate_random_flight_path()
-                        
-                    raw_geom = asShape(flight_geometry) # Generate a shape from the geometry
-                    geometry_intersects = self.control_flight_geometry.intersects(raw_geom) # Check this intersects with the control                    
-                
+        if geometry_generation_rule.intersect_space: # This is not the first geometry, check if it should intersect with the control
+            geometry_intersects = False
+            while (geometry_intersects == False):
+                coin_flip = random.choice([0,0,1]) 
+                # We are trying to generate a path that intersects with the control, we keep generating linestrings or polygons till one is found that does intersect
+                if coin_flip:
+                    flight_geometry = self._generate_random_flight_polygon()
+                else:
+                    flight_geometry = self._generate_random_flight_path()
+                    
+                raw_geom = asShape(flight_geometry) # Generate a shape from the geometry
+                geometry_intersects = self.first_flight_geometry.intersects(raw_geom) # Check this intersects with the control     
+            
         return flight_geometry
 
     def convert_geometry_to_volume(self, flight_geometry:LineString, altitude_of_ground_level_wgs_84:int) -> Volume3D:
@@ -173,47 +170,31 @@ class ProximateOperationalIntentGenerator():
         
         return volume_4D
     
-    def generate_raw_geometries(self, number_of_geometries:int = 6) -> List[GeneratedGeometry]:
-        ''' A method to generate Volume 4D payloads to submit to the system to be tested.  '''
+    def generate_nominal_test_geometry(self, geometry_generation_rule:GeometryGenerationRule) -> GeneratedGeometry:
+        ''' A method to generate two Volume 4D payloads to submit to the system to be tested.  '''
         
-        raw_geometries: List[GeneratedGeometry] = []
-        for volume_idx in range(0, number_of_geometries):
-            is_control = 1 if (volume_idx == 0) else 0
-            
-            
-            if (volume_idx == (number_of_geometries -1)): # The first geometry is called 'control' and it should not intersect with 
-                should_intersect = False
-            else:   
-                coin_flip = random.choice([0,0,1]) # It can or cannot intersect
-                should_intersect = coin_flip
-
-            geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
-            # the first path is control, the last path does not intersect the control
-            current_path = self._generate_single_flight_geometry(geometry_generation_rule = geometry_generation_rule, is_control= is_control)
-            raw_path = GeneratedGeometry(geometry = current_path, geometry_generation_rule = geometry_generation_rule, is_control = is_control)
-            raw_geometries.append(raw_path)
-        return raw_geometries
+        
+        # the first path is control, the last path does not intersect the control
+        flight_path_geometry = self._generate_single_flight_geometry(geometry_generation_rule = geometry_generation_rule)
+        raw_geometry = GeneratedGeometry(geometry = flight_path_geometry, geometry_generation_rule = geometry_generation_rule)
+        
+        return raw_geometry
 
 
-    def generate_astm_4d_volumes(self,raw_geometries:List[GeneratedGeometry], altitude_of_ground_level_wgs_84 :int) -> List[Volume4D]:
+    def generate_astm_4d_volumes(self,raw_geometry:GeneratedGeometry, altitude_of_ground_level_wgs_84 :int) -> Volume4D:
         ''' A method to generate ASTM specified Volume 4D payloads to submit to the system to be tested.  '''
-
-        all_volume_4d :List[Volume4D] = []
-        for path_index, raw_geometry in enumerate(raw_geometries):            
-            
-            flight_volume_3d = self.convert_geometry_to_volume(flight_geometry = raw_geometry.geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
-            flight_volume_4d = self.transform_3d_volume_to_astm_4d(volume_3d = flight_volume_3d)
-            all_volume_4d.append(flight_volume_4d)            
-        return all_volume_4d
+        
+        flight_volume_3d = self.convert_geometry_to_volume(flight_geometry = raw_geometry.geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
+        flight_volume_4d = self.transform_3d_volume_to_astm_4d(volume_3d = flight_volume_3d)
+        
+        return flight_volume_4d
     
-    def generate_injection_operational_intents(self, astm_4d_volumes:List[Volume4D]) -> List[OperationalIntentTestInjection ]:
+    def generate_injection_operational_intents(self, astm_4d_volume:Volume4D) -> OperationalIntentTestInjection:
         ''' A method to generate Operational Intent references given a list of Volume 4Ds '''
 
-        all_operational_intent_references= []
-        for current_volume in astm_4d_volumes: 
-            current_operational_intent_reference = OperationalIntentTestInjection(volumes = [current_volume], key = [], state = 'Accepted', off_nominal_volumes = [], priority =0)
-            all_operational_intent_references.append(current_operational_intent_reference)            
-        return all_operational_intent_references
+        
+        current_operational_intent_reference = OperationalIntentTestInjection(volumes = [astm_4d_volume], key = [], state = 'Accepted', off_nominal_volumes = [], priority =0)            
+        return current_operational_intent_reference
 
 class FlightAuthorisationDataGenerator():
     ''' A class to generate data for flight authorisation per the ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664 for an UAS flight authorisation request. Reference: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1 
@@ -259,13 +240,14 @@ class FlightAuthorisationDataGenerator():
 
 class TestInjectionRequiredResultsGenerator(): 
     '''A class to generate TestInjection and the associated results '''
-    def __init__(self, num_injections:int):
-        self.num_injections = num_injections
+    
 
-    def generate_injections_results(self) -> List[TestInjectionRequiredResult]:
+    def generate_nominal_test_injections_results(self) -> List[TestInjectionRequiredResult]:
         all_injections_results = []
-
-        for injection_number in range(0,self.num_injections):
+        
+        num_injections = 2
+        for injection_number in range(0,num_injections):
+            
             my_flight_authorisation_data_generator = FlightAuthorisationDataGenerator()
 
             my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')
@@ -282,24 +264,31 @@ class TestInjectionRequiredResultsGenerator():
                     serial_number = my_flight_authorisation_data_generator.generate_incorrect_serial_number(valid_serial_number = serial_number)
             
             flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category='Open', operation_mode = 'Vlos',uas_class='C0', identification_technologies = ['ASTMNetRID'], connectivity_methods = ['cellular'], endurance_minutes = 30 , emergency_procedure_url = 'https://uav.com/emergency', operator_id = 'SUSz8k1ukxjfv463-brq', uas_id= '', uas_type_certificate = '')
+        
+            should_intersect = False
+            if injection_number !=0:   
+                coin_flip = random.choice([0,0,1]) # It may or may not intersect
+                should_intersect = coin_flip
 
-            flight_geometries = my_operational_intent_generator.generate_raw_geometries(number_of_geometries=1)            
+            geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
 
-            flight_volumes = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometries = flight_geometries, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
+            flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule)            
+        
+            flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
             
-            operational_intent_test_injection = my_operational_intent_generator.generate_injection_operational_intents(astm_4d_volumes = flight_volumes)
+            operational_intent_test_injection = my_operational_intent_generator.generate_injection_operational_intents(astm_4d_volume = [flight_volume])
         
             inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
-            authorisation_data_fields_to_check = []
-            operational_intent_validation_checks = []
+            authorisation_data_fields_to_evaluate = []
+            operational_intent_processing_result = []
 
             if make_incorrect: 
                 expected_injection_result = 'Rejected'    
-                authorisation_data_fields_to_check = ['uas_serial_number']
+                authorisation_data_fields_to_evaluate = ['uas_serial_number']
             else:
                 expected_injection_result = 'Planned'
             
-            required_result = RequiredResults(expected_response=expected_injection_result,authorisation_data_fields_to_check = authorisation_data_fields_to_check, operational_intent_validation_checks=operational_intent_validation_checks)
+            required_result = RequiredResults(expected_response=expected_injection_result,authorisation_data_fields_to_evaluate = authorisation_data_fields_to_evaluate, operational_intent_processing_result=operational_intent_processing_result)
             
             all_injections_results.append(TestInjectionRequiredResult(test_injection=inject_flight_request,required_result=required_result))
 
@@ -307,6 +296,6 @@ class TestInjectionRequiredResultsGenerator():
            
 
 if __name__ == '__main__':    
-    my_test_injection_results_generator = TestInjectionRequiredResultsGenerator(num_injections =2)
-    injections_results = my_test_injection_results_generator.generate_injections_results()    
+    my_test_injection_results_generator = TestInjectionRequiredResultsGenerator()
+    injections_results = my_test_injection_results_generator.generate_nominal_test_injections_results()    
     print(injections_results)
