@@ -3,13 +3,13 @@ local volumes = import 'volumes.libsonnet';
 
 {
   all(metadata): {
-    service: base.Service(metadata, 'grpc-backend') {
-      app:: 'grpc-backend',
+    service: base.Service(metadata, 'core-service') {
+      app:: 'core-service',
       port:: metadata.backend.port,
       enable_monitoring:: false,
     },
 
-    deployment: base.Deployment(metadata, 'grpc-backend') {
+    deployment: base.Deployment(metadata, 'core-service') {
       apiVersion: 'apps/v1',
       kind: 'Deployment',
       metadata+: {
@@ -19,7 +19,7 @@ local volumes = import 'volumes.libsonnet';
         template+: {
           spec+: {
             volumes: volumes.backendVolumes,
-            soloContainer:: base.Container('grpc-backend') {
+            soloContainer:: base.Container('core-service') {
               image: metadata.backend.image,
               imagePullPolicy: 'Always',
               ports: [
@@ -29,7 +29,7 @@ local volumes = import 'volumes.libsonnet';
                 },
               ],
               volumeMounts: volumes.backendMounts,
-              command: ['grpc-backend'],
+              command: ['core-service'],
               args_:: {
                 addr: ':' + metadata.backend.port,
                 gcp_prof_service_name: metadata.backend.prof_grpc_name,

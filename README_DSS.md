@@ -27,7 +27,7 @@ here:
 - [Network Remote ID](https://tiny.cc/dssapi_rid)
 - [Strategic Coordination and Deconfliction](https://tiny.cc/dssapi_rid)
 
-### gRPC backend
+### Core Service
 
 Component responsible for all the business logic as well as
 authentication. This backend talks directly to CockroachDB.
@@ -52,6 +52,6 @@ Component responsible for performing orderly database schema migrations, includi
 *   [`pkg/`](pkg) contains all of the source code for the DSS. See the
     README in that directory for more information.
 *   [`cmds/`](cmds) contains entry points and docker files for the
-    actual binaries (the `http-gateway` and `grpc-backend`)
+    actual binaries (the `http-gateway` and `core-service`)
 *   [`test/`](test) contains some tests; see [the README](test/README.md)
     for more information about testing.
