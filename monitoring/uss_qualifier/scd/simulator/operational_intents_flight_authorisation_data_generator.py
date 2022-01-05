@@ -290,16 +290,16 @@ class TestInjectionRequiredResultsGenerator():
             operational_intent_test_injection = my_operational_intent_generator.generate_injection_operational_intents(astm_4d_volumes = flight_volumes)
         
             inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
-            authorisation_data_validation_checks = []
+            authorisation_data_fields_to_check = []
             operational_intent_validation_checks = []
 
             if make_incorrect: 
                 expected_injection_result = 'Rejected'    
-                authorisation_data_validation_checks = ['uas_serial_number']
+                authorisation_data_fields_to_check = ['uas_serial_number']
             else:
                 expected_injection_result = 'Planned'
             
-            required_result = RequiredResults(expected_response=expected_injection_result,authorisation_data_validation_checks = authorisation_data_validation_checks, operational_intent_validation_checks=operational_intent_validation_checks)
+            required_result = RequiredResults(expected_response=expected_injection_result,authorisation_data_fields_to_check = authorisation_data_fields_to_check, operational_intent_validation_checks=operational_intent_validation_checks)
             
             all_injections_results.append(TestInjectionRequiredResult(test_injection=inject_flight_request,required_result=required_result))
 

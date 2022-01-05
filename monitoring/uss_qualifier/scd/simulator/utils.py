@@ -17,7 +17,7 @@ class GeneratedGeometry(ImplicitDict):
 class RequiredResults(ImplicitDict):
     ''' A class to evaluate results / response to an injection of test flight data (TestFlightRequest) '''
     expected_response: str # One of "Planned", "Rejected", "ConflictWithFlight" or "Failed"
-    authorisation_data_validation_checks: List[str]
+    authorisation_data_fields_to_check: List[str]
     operational_intent_validation_checks: List[str]
 
 class TestInjectionRequiredResult(ImplicitDict):
