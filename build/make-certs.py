@@ -63,8 +63,8 @@ def parse_args():
                         default=[], help='extra addresses to add to the node certificate')
     parser.add_argument('--ca-cert-to-join', metavar='FILENAME',
                         help='file containing an existing CA cert of a cluster to join.')
-    parser.add_argument('--keep-ca-cert', action='store_true', default=False,
-                        help='True to use the existing CA, false to generate a new one')
+    parser.add_argument('--overwrite-ca-cert', action='store_true', default=False,
+                        help='True to generate new CA certs, false to use the existing one')
     return parser.parse_args()
 
 
@@ -77,7 +77,7 @@ def main():
     os.makedirs('workspace', exist_ok=True)
     os.makedirs(cr.directory, exist_ok=True)
 
-    if not args.keep_ca_cert:
+    if args.overwrite_ca_cert:
       # Create a new CA.
       # Delete and recreate the ca_certs_dir.
       shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
@@ -92,7 +92,7 @@ def main():
     os.mkdir(cr.client_certs_dir)
     os.mkdir(cr.node_certs_dir)
 
-    if not args.keep_ca_cert:
+    if args.overwrite_ca_cert:
       # Create the CA.
       subprocess.check_call([
           'cockroach', 'cert', 'create-ca',
@@ -111,7 +111,7 @@ def main():
                 new_certs_fh.write(join_ca_cert_fh.read())
                 new_certs_fh.write('\n')
 
-    if cr.ca_cert_to_join or not args.keep_ca_cert:
+    if cr.ca_cert_to_join and args.overwrite_ca_cert:
       print('Created new CA certificate in {}'.format(cr.ca_certs_dir))
 
     subprocess.check_call([
