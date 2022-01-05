@@ -1,4 +1,4 @@
-// Bootstrap script for Database deployment and migration
+// Script for Database bootstrap deployment and migration
 
 package main
 
@@ -6,254 +6,233 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
-	"math"
-	"os"
-	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strings"
-	"syscall"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/golang-migrate/migrate/v4"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/cockroach/flags"
-	"go.uber.org/zap"
-
-	_ "github.com/golang-migrate/migrate/v4/database/cockroachdb" // Force registration of cockroachdb backend
-	_ "github.com/golang-migrate/migrate/v4/source/file"          // Force registration of file source
+	"github.com/interuss/stacktrace"
+	_ "github.com/lib/pq"
 )
 
-// MyMigrate is an alias for extending migrate.Migrate
-type MyMigrate struct {
-	*migrate.Migrate
-	postgresURI string
-	database    string
-}
-
-// Direction is an alias for int indicating the direction and steps of migration
-type Direction int
-
-func (d Direction) String() string {
-	if d > 0 {
-		return "Up"
-	} else if d < 0 {
-		return "Down"
-	}
-	return "No Change"
+type MigrationStep struct {
+	version      semver.Version
+	upToFile     string
+	downFromFile string
 }
 
 var (
+	// Pattern to match files describing migration steps
+	migrationStepRegexp = "(upto|downfrom)-v(\\d+\\.\\d+\\.\\d+)-(.*)\\.sql"
+)
+
+var (
 	path      = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
-	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version")
-	step      = flag.Int("migration_step", 0, "the db migration step to go to")
+	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version or leave blank to print the current version")
 )
 
 func main() {
+	// Read and validate schemas_dir input
 	flag.Parse()
 	if *path == "" {
 		log.Panic("Must specify schemas_dir path")
 	}
-	// TODO: Fix initializing desiredVersion for condition true.
-	// if (*dbVersion == "" && *step == 0) || (*dbVersion != "" && *step != 0) {
-	// 	log.Panic("Must specify one of [db_version, migration_step] to goto, use --help to see options")
-	// }
-	latest := strings.ToLower(*dbVersion) == "latest"
-	// Migration step at which `defaultdb` is renamed to `rid`
-	var ridDbRenameStep uint = 8
-	var (
-		desiredVersion *semver.Version
-	)
+	dbName := filepath.Base(*path)
 
-	if *dbVersion != "" && !latest {
-		if v, err := semver.NewVersion(*dbVersion); err == nil {
-			desiredVersion = v
-		} else {
-			log.Panic("db_version must be in a valid format ex: 1.2.3", err)
-		}
+	// Enumerate schema versions
+	steps, err := enumerateMigrationSteps(path)
+	if err != nil {
+		log.Panicf("Failed to read schema version migration definitions: %v", err)
+	}
+	if len(steps) == 0 {
+		log.Panicf("No migration definitions found in schemas_dir=%s", *path)
 	}
 
-	params := flags.ConnectParameters()
-	params.ApplicationName = "SchemaManager"
-	params.DBName = filepath.Base(*path)
-	postgresURI, err := params.BuildURI()
-	if err != nil {
-		log.Panic("Failed to build URI", zap.Error(err))
-	}
-	myMigrater, err := New(*path, &postgresURI, params.DBName)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer func() {
-		if _, err := myMigrater.Close(); err != nil {
-			log.Println(err)
-		}
-	}()
-	preMigrationStep, _, err := myMigrater.Version()
-	if err != migrate.ErrNilVersion && err != nil {
-		log.Panic(err)
-	}
-	if latest {
-		if err := myMigrater.Up(); err != nil {
-			log.Panic(err)
-		}
+	// Determine target version
+	var targetVersion *semver.Version
+	if strings.ToLower(*dbVersion) == "latest" {
+		targetVersion = &steps[len(steps)-1].version
+	} else if strings.TrimSpace(*dbVersion) == "" {
+		// User just wants to print the current version
+		targetVersion = nil
 	} else {
-		if err := myMigrater.DoMigrate(*desiredVersion, *step); err != nil {
-			log.Panic(err)
-		}
-	}
-	postMigrationStep, dirty, err := myMigrater.Version()
-	if err != nil {
-		log.Fatal("Failed to get Migration Step for confirmation")
-	}
-	totalMoves := int(postMigrationStep - preMigrationStep)
-	if totalMoves == 0 && !latest {
-		log.Println("No Changes")
-	} else {
-		log.Printf("Moved %d step(s) in total from Step %d to Step %d", intAbs(totalMoves), preMigrationStep, postMigrationStep)
-	}
-	// Post-migration if migration is older than Step 8 rid db name is `defaultdb`
-	//  For versions higher than Step 8 it is renamed to `rid`.
-	if params.DBName == "defaultdb" && postMigrationStep >= ridDbRenameStep {
-		params.DBName = "rid"
-	} else if params.DBName == "rid" && postMigrationStep < ridDbRenameStep {
-		params.DBName = "defaultdb"
-	}
-	postgresURI, err = params.BuildURI()
-	if err != nil {
-		log.Panic("Failed to build URI", zap.Error(err))
-	}
-	currentDBVersion, err := getCurrentDBVersion(postgresURI, params.DBName)
-	if err != nil {
-		log.Fatal("Failed to get Current DB version for confirmation ", postgresURI, " ", params.DBName)
-	}
-	log.Printf("DB Version: %s, Migration Step # %d, Dirty: %v", currentDBVersion, postMigrationStep, dirty)
-}
-
-// DoMigrate performs the migration given the desired state we want to reach
-func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int) error {
-	migrateDirection, err := m.MigrationDirection(desiredDBVersion, desiredStep)
-	if err != nil {
-		return err
-	}
-	for migrateDirection != 0 {
-		err = m.Steps(int(migrateDirection))
+		targetVersion, err = semver.NewVersion(*dbVersion)
 		if err != nil {
-			return err
-		}
-		log.Printf("Migrated %s by %d step", migrateDirection.String(), intAbs(int(migrateDirection)))
-		migrateDirection, err = m.MigrationDirection(desiredDBVersion, *step)
-		if err != nil {
-			return err
+			log.Panicf("Failed to parse desired db_version: %v", err)
 		}
 	}
-	return nil
-}
 
-// New instantiates a new migrate object
-func New(path string, dbURI *string, database string) (*MyMigrate, error) {
-	noDbPostgres := strings.Replace(*dbURI, fmt.Sprintf("/%s", database), "", 1)
-	db, err := createDatabaseIfNotExists(&noDbPostgres, database)
+	// Connect to database server
+	connectParameters := flags.ConnectParameters()
+	connectParameters.ApplicationName = "db-manager"
+	connectParameters.DBName = "postgres" // Use an initial database that is known to always be present
+	crdb, err := cockroach.ConnectTo(connectParameters)
 	if err != nil {
-		return nil, err
-	}
-	path = fmt.Sprintf("file://%v", path)
-	if db == "defaultdb" {
-		*dbURI = strings.Replace(*dbURI, "/rid?", "/defaultdb?", 1)
-	}
-	crdbURI := strings.Replace(*dbURI, "postgresql", "cockroachdb", 1)
-	migrater, err := migrate.New(path, crdbURI)
-	if err != nil {
-		return nil, err
-	}
-	myMigrater := &MyMigrate{migrater, *dbURI, database}
-	// handle Ctrl+c
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGINT)
-	go func() {
-		for range signals {
-			log.Println("Stopping after this running migration ...")
-			myMigrater.GracefulStop <- true
-			return
-		}
-	}()
-	return myMigrater, err
-}
-
-func intAbs(x int) int {
-	return int(math.Abs(float64(x)))
-}
-
-func createDatabaseIfNotExists(crdbURI *string, database string) (string, error) {
-	crdb, err := cockroach.Dial(*crdbURI)
-	if err != nil {
-		return "", fmt.Errorf("Failed to dial CRDB to check DB exists: %v", err)
+		log.Panicf("Failed to connect to database with %+v: %v", connectParameters, err)
 	}
 	defer func() {
 		crdb.Close()
 	}()
-	const checkDbQuery = `
-		SELECT EXISTS (
-			SELECT *
-				FROM pg_database
-			WHERE datname = $1
-		)
-	`
 
-	var exists bool
-
-	if err := crdb.QueryRow(checkDbQuery, database).Scan(&exists); err != nil {
-		return "", err
-	}
-
+	// Make sure specified database exists
+	exists, err := doesDatabaseExist(crdb, dbName)
 	if err != nil {
-		return "", err
+		log.Panicf("Failed to check whether database %s exists: %v", dbName, err)
+	}
+	if !exists && dbName == "rid" {
+		// In the special case of rid, the database was previously named defaultdb
+		log.Printf("Database %s does not exist; checking for older \"defaultdb\" database", dbName)
+		dbName = "defaultdb"
+		exists, err = doesDatabaseExist(crdb, dbName)
+		if err != nil {
+			log.Panicf("Failed to check whether old defaultdb database exists: %v", err)
+		}
 	}
 	if !exists {
-		// if db == rid and rid db doesn't exist, then create defaultdb instead to support older version.
-		if database == "rid" {
-			database = "defaultdb"
-			*crdbURI = strings.Replace(*crdbURI, "?", "/defaultdb?", 1)
+		log.Printf("Database %s does not exist; creating now", dbName)
+		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName)
+		if _, err := crdb.Exec(createDB); err != nil {
+			log.Panicf("Failed to create new database %s: %v", dbName, err)
 		}
-		log.Printf("Database \"%s\" doesn't exist, attempting to create", database)
-		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", database)
-		_, err := crdb.Exec(createDB)
+	} else {
+		log.Printf("Database %s already exists; reading current state", dbName)
+	}
+
+	// Read current schema version of database
+	currentVersion, err := crdb.GetVersion(context.Background(), dbName)
+	if err != nil {
+		log.Panicf("Failed to get current database version for %s: %v", dbName, err)
+	}
+	log.Printf("Initial %s database schema version is %v, target is %v", dbName, currentVersion, targetVersion)
+	if targetVersion == nil {
+		return
+	}
+
+	// Compute index of current version
+	var currentStepIndex int = -1
+	for i, version := range steps {
+		if version.version == *currentVersion {
+			currentStepIndex = i
+		}
+	}
+
+	// Perform migration steps until current version matches target version
+	for !currentVersion.Equal(*targetVersion) {
+		// Compute which migration step to run next and how it will change the schema version
+		var newCurrentStepIndex int
+		var sqlFile string
+		var newVersion *semver.Version
+		if currentVersion.LessThan(*targetVersion) {
+			// Migrate up to next version
+			sqlFile = steps[currentStepIndex+1].upToFile
+			newVersion = &steps[currentStepIndex+1].version
+			newCurrentStepIndex = currentStepIndex + 1
+		} else {
+			// Migrate down from current version
+			sqlFile = steps[currentStepIndex].downFromFile
+			newCurrentStepIndex = currentStepIndex - 1
+			newVersion = &steps[newCurrentStepIndex].version
+		}
+		log.Printf("Running %s to migrate %v to %v", sqlFile, currentVersion, newVersion)
+
+		// Read migration SQL into string
+		fullFilePath := filepath.Join(*path, sqlFile)
+		rawMigrationSQL, err := ioutil.ReadFile(fullFilePath)
 		if err != nil {
-			return "", fmt.Errorf("Failed to Create Database: %v", err)
+			log.Panicf("Failed to load SQL content from %s: %v", fullFilePath, err)
 		}
+		migrationSQL := fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
+
+		// Execute migration step
+		if _, err := crdb.Exec(migrationSQL); err != nil {
+			log.Panicf("Failed to execute %s migration step %s: %v", dbName, fullFilePath, err)
+		}
+
+		// Update current state
+		if dbName == "defaultdb" && newVersion.String() == "4.0.0" && newCurrentStepIndex > currentStepIndex {
+			// RID database changes from `defaultdb` to `rid` when moving up to 4.0.0
+			dbName = "rid"
+		}
+		if dbName == "defaultdb" && currentVersion.String() == "4.0.0" && newCurrentStepIndex < currentStepIndex {
+			// RID database changes from `rid` to `defaultdb` when moving down from 4.0.0
+			dbName = "defaultdb"
+		}
+		actualVersion, err := crdb.GetVersion(context.Background(), dbName)
+		if err != nil {
+			log.Panicf("Failed to get current database version for %s: %v", dbName, err)
+		}
+		if !actualVersion.Equal(*newVersion) {
+			log.Panicf("Migration %s should have migrated %s schema version %v to %v, but instead resulted in %v", fullFilePath, dbName, currentVersion, newVersion, currentVersion)
+		}
+		currentVersion = actualVersion
+		currentStepIndex = newCurrentStepIndex
 	}
-	return database, nil
+
+	log.Printf("Final %s version: %v", dbName, currentVersion)
 }
 
-func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, error) {
-	crdb, err := cockroach.Dial(crdbURI)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
-	}
-	defer func() {
-		crdb.Close()
-	}()
+func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {
+	steps := make(map[semver.Version]MigrationStep)
 
-	return crdb.GetVersion(context.Background(), database)
+	// Identify files defining version migration steps
+	files, err := ioutil.ReadDir(*path)
+	if err != nil {
+		return make([]MigrationStep, 0), stacktrace.Propagate(err, "Failed to read schema files directory")
+	}
+	r := regexp.MustCompile(migrationStepRegexp)
+	for _, file := range files {
+		if !file.IsDir() {
+			match := r.FindStringSubmatch(file.Name())
+			if len(match) > 0 {
+				v := *semver.New(match[2])
+				step := steps[v]
+				step.version = v
+				if match[1] == "upto" {
+					step.upToFile = file.Name()
+				} else if match[1] == "downfrom" {
+					step.downFromFile = file.Name()
+				} else {
+					return make([]MigrationStep, 0), fmt.Errorf("Unexpected migration step prefix: %s", match[1])
+				}
+				steps[v] = step
+			}
+		}
+	}
+
+	// Sort versions in ascending order
+	versions := make([]*semver.Version, len(steps))
+	i := 0
+	for k := range steps {
+		v := steps[k].version
+		versions[i] = &v
+		i++
+	}
+	semver.Sort(versions)
+
+	// Render sorted step list
+	result := make([]MigrationStep, len(versions)+1)
+	result[0].version = *semver.New("0.0.0")
+	for i := 0; i < len(versions); i++ {
+		result[i+1] = steps[*versions[i]]
+	}
+
+	return result, nil
 }
 
-// MigrationDirection reads our custom DB version string as well as the Migration Steps from the framework
-// and returns a signed integer value of the Direction and count to migrate the db
-func (m *MyMigrate) MigrationDirection(desiredVersion semver.Version, desiredStep int) (Direction, error) {
-	if desiredStep != 0 {
-		currentStep, dirty, err := m.Version()
-		if err != migrate.ErrNilVersion && err != nil {
-			return 0, fmt.Errorf("Failed to get Migration Step to determine migration direction: %v", err)
-		}
-		if dirty {
-			log.Fatal("DB in Dirty state, Please fix before migrating")
-		}
-		return Direction(desiredStep - int(currentStep)), nil
-	}
-	currentVersion, err := getCurrentDBVersion(m.postgresURI, m.database)
-	if err != nil {
-		return 0, fmt.Errorf("Failed to get current DB version to determine migration direction: %v", err)
+func doesDatabaseExist(crdb *cockroach.DB, database string) (bool, error) {
+	const checkDbQuery = `
+		SELECT EXISTS (
+			SELECT * FROM pg_database WHERE datname = $1
+		)`
+
+	var exists bool
+	if err := crdb.QueryRow(checkDbQuery, database).Scan(&exists); err != nil {
+		return false, err
 	}
 
-	return Direction(desiredVersion.Compare(*currentVersion)), nil
+	return exists, nil
 }
