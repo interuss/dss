@@ -10,7 +10,7 @@ DEBUG_ON=${1:-0}
 if [ "$DEBUG_ON" = "1" ]; then
   echo "Debug Mode: on"
 
-  dlv --headless --listen=:4000 --api-version=2 --accept-multiclient exec --continue /usr/bin/grpc-backend -- \
+  dlv --headless --listen=:4000 --api-version=2 --accept-multiclient exec --continue /usr/bin/core-service -- \
   -cockroach_host local-dss-crdb \
   -public_key_files /var/test-certs/auth2.pem \
   -reflect_api \
@@ -22,7 +22,7 @@ if [ "$DEBUG_ON" = "1" ]; then
 else
   echo "Debug Mode: off"
 
-  /usr/bin/grpc-backend \
+  /usr/bin/core-service \
   -cockroach_host local-dss-crdb \
   -public_key_files /var/test-certs/auth2.pem \
   -reflect_api \

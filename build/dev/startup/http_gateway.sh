@@ -5,12 +5,12 @@
 
 /startup/wait_for_bootstrapping.sh
 
-echo "Allowing time for gRPC backend to come up..."
+echo "Allowing time for Core Service to come up..."
 sleep 3
 
 echo "Starting HTTP gateway..."
 /usr/bin/http-gateway \
-  -grpc-backend local-dss-grpc-backend:8081 \
+  -core-service local-dss-core-service:8081 \
   -addr :8082 \
   -trace-requests \
   -enable_scd
