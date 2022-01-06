@@ -49,7 +49,7 @@ docker run --rm --name scd-db-manager \
 	--cockroach_host crdb
 
 sleep 1
-echo " ------------ GRPC BACKEND ---------------- "
+echo " ------------ CORE SERVICE ---------------- "
 echo "Cleaning up any pre-existing core-service container"
 docker rm -f core-service-for-testing &> /dev/null || echo "No core service to clean up"
 
