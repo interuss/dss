@@ -85,7 +85,7 @@ as an example:
 
 All Set, let's start the debug configuration created in the step 1 and we are able
 to debug any request sent to the local DSS endpoints hosted at `localhost:8082`.
- 
+
 - Drop breakpoints and diagnose in real time
 
     ![Debug_result_1](../../assets/debug/debug_result_1.png)
@@ -102,6 +102,31 @@ The system can be removed entirely with `run_locally.sh down`.
 See all `docker-compose` verbs
 [here](https://docs.docker.com/compose/reference/overview/).
 
+## Database migration and versioning
+
+`run_locally.sh` automatically creates a database with the latest schema
+versions.  To migrate to a different version, use
+[`migrate_local_db.sh`](migrate_local_db.sh).  It accepts two arguments: the
+database name ([`rid`](../deploy/db_schemas/rid) for remote ID or
+[`scd`](../deploy/db_schemas/rid) for SCD) and the desired schema version (see
+[`db_schemas`](../deploy/db_schemas) for options).  The desired schema version
+may also be `latest`.  For example:
+
+```bash
+./migrate_local_db.sh rid 3.1.0
+./migrate_local_db.sh scd latest
+```
+
+If a downgrade step is not yet implemented, the database can be removed using a
+command like the one below, using `defaultdb` instead of `rid` if wiping remote
+ID prior to schema version 4.0.0, and `scd` instead of `rid` if wiping SCD:
+
+```bash
+docker container exec -i dss_sandbox_local-dss-crdb_1 cockroach sql --insecure <<< 'use postgres; drop database rid cascade;'
+```
+
+To just determine the current version of a database schema, simply omit the
+target version parameter to `migrate_local_db.sh`.
 
 ## Troubleshooting
 

@@ -1,3 +1,10 @@
+-- Add inverted indices
+ALTER TABLE identification_service_areas ADD COLUMN IF NOT EXISTS cells INT64[];
+CREATE INVERTED INDEX IF NOT EXISTS cell_idx on identification_service_areas (cells);
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cells INT64[];
+CREATE INVERTED INDEX IF NOT EXISTS cell_idx on subscriptions (cells);
+
+-- Migrate data to index
 BEGIN;
 
 WITH compact_isa_cells AS
@@ -34,3 +41,8 @@ ALTER TABLE identification_service_areas ADD CONSTRAINT isa_cells_not_null CHECK
 ALTER TABLE subscriptions ADD CONSTRAINT subs_cells_not_null CHECK (array_length(cells, 1) IS NOT NULL);
 ALTER TABLE identification_service_areas DROP CONSTRAINT IF EXISTS cells_not_null;
 ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS cells_not_null;
+
+-- Drop cells table
+DROP TABLE IF EXISTS cells_identification_service_areas;
+DROP TABLE IF EXISTS cells_subscriptions;
+UPDATE schema_versions set schema_version = 'v2.0.0' WHERE onerow_enforcer = TRUE;
