@@ -3,7 +3,7 @@ from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
 import datetime
 
-class Issue(ImplicitDict):
+class SCDTestIssue(ImplicitDict):
     ''' A class to hold a message that the test executor can provide to the USS in cases when the USS provides a response that is not same as the expected result. '''
     timestamp: Optional[str]
 
@@ -17,15 +17,14 @@ class Issue(ImplicitDict):
     '''Human-readable description of the issue'''
 
     def __init__(self, **kwargs):
-        super(Issue, self).__init__(**kwargs)
+        super(SCDTestIssue, self).__init__(**kwargs)
         if 'timestamp' not in kwargs:
             self.timestamp = datetime.datetime.utcnow().isoformat()
 
 class RequiredResult(ImplicitDict):
     ''' A class to evaluate results / response to an injection of test flight data (TestFlightRequest) '''
     expected_result: str
-    issue_details: Optional[Issue]
-           
+    incorrect_result_details: Optional[SCDTestIssue]
 
 class TestInjectionRequiredResult(ImplicitDict):
     test_injection: InjectFlightRequest
