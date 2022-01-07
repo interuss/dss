@@ -8,7 +8,7 @@ version: '3.8'
 services:
 
   local-dss-crdb:
-    image: cockroachdb/cockroach:v20.2.0
+    image: cockroachdb/cockroach:v21.2.3
     command: start-single-node --insecure
     expose:
       - 26257
