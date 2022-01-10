@@ -1,6 +1,6 @@
 local cockroachAuxiliary = import 'cockroachdb-auxiliary.libsonnet';
 local cockroachdb = import 'cockroachdb.libsonnet';
-local backend = import 'grpc-backend.libsonnet';
+local backend = import 'core-service.libsonnet';
 local gateway = import 'http-gateway.libsonnet';
 local base = import 'base.libsonnet';
 local prometheus = import 'prometheus.libsonnet';

@@ -31,9 +31,9 @@ simply add its name as the first argument to `docker_e2e.sh`.  For example:
 ./docker_e2e.sh scd/test_constraint_simple.py::test_constraint_does_not_exist_get
 ```
 
-### Examining gRPC backend logs
-After a `docker_e2e.sh` run, the gRPC backend logs are automatically captured
-to [grpc-backend-for-testing.log](../grpc-backend-for-testing.log).
+### Examining Core Service logs
+After a `docker_e2e.sh` run, the Core Service logs are automatically captured
+to [core-service-for-testing.log](../core-service-for-testing.log).
 
 ## Lint checks
 One of the continuous integration presubmit checks on this repository checks Go

@@ -8,7 +8,7 @@ version: '3.8'
 services:
 
   local-dss-crdb:
-    image: cockroachdb/cockroach:v20.2.0
+    image: cockroachdb/cockroach:v21.2.3
     command: start-single-node --insecure
     expose:
       - 26257
@@ -42,7 +42,7 @@ services:
     depends_on:
       - local-dss-crdb
 
-  local-dss-grpc-backend:
+  local-dss-core-service:
     build:
       context: ../..
       dockerfile: Dockerfile
@@ -51,7 +51,7 @@ services:
       - $PWD/../test-certs:/var/test-certs:ro
       - local-dss-data:/var/local-dss-data
       - $PWD/startup:/startup:ro
-    command: /startup/grpc_backend.sh ${DEBUG_ON:-0}
+    command: /startup/core_service.sh ${DEBUG_ON:-0}
     expose:
       - 8081
     ports:
@@ -73,7 +73,7 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - local-dss-grpc-backend
+      - local-dss-core-service
 
   local-dss-dummy-oauth:
     build:

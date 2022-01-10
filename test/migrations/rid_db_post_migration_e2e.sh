@@ -7,7 +7,7 @@ CRDB_MIGRATION_CONTAINER="dss-crdb-for-migration-testing"
 
 function gather_logs() {
 	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
-	docker logs grpc-backend-for-testing 2> grpc-backend-for-testing.log
+	docker logs core-service-for-testing 2> core-service-for-testing.log
 }
 
 function cleanup() {
@@ -18,8 +18,8 @@ function cleanup() {
 	echo "Stopping http gateway container"
 	docker kill -f http-gateway-for-testing &> /dev/null || true
 
-	echo "Stopping grpc-backend container"
-	docker kill -f grpc-backend-for-testing &> /dev/null || true
+	echo "Stopping core-service container"
+	docker kill -f core-service-for-testing &> /dev/null || true
 
 	echo "Stopping crdb docker"
 	docker rm -f $CRDB_MIGRATION_CONTAINER &> /dev/null || true
@@ -49,16 +49,16 @@ docker run --rm --name scd-db-manager \
 	--cockroach_host crdb
 
 sleep 1
-echo " ------------ GRPC BACKEND ---------------- "
-echo "Cleaning up any pre-existing grpc-backend container"
-docker rm -f grpc-backend-for-testing &> /dev/null || echo "No grpc backend to clean up"
+echo " ------------ CORE SERVICE ---------------- "
+echo "Cleaning up any pre-existing core-service container"
+docker rm -f core-service-for-testing &> /dev/null || echo "No core service to clean up"
 
-echo "Starting grpc backend on :8081"
-docker run -d --name grpc-backend-for-testing \
+echo "Starting core service on :8081"
+docker run -d --name core-service-for-testing \
 	--link $CRDB_MIGRATION_CONTAINER:crdb \
 	-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
 	local-interuss-dss-image \
-	grpc-backend \
+	core-service \
 	--cockroach_host crdb \
 	-public_key_files /app/test.crt \
 	-reflect_api \
@@ -75,10 +75,10 @@ docker rm -f http-gateway-for-testing &> /dev/null || echo "No http gateway to c
 
 echo "Starting http-gateway on :8082"
 docker run -d --name http-gateway-for-testing -p 8082:8082 \
-	--link grpc-backend-for-testing:grpc \
+	--link core-service-for-testing:grpc \
 	local-interuss-dss-image \
 	http-gateway \
-	-grpc-backend grpc:8081 \
+	-core-service grpc:8081 \
 	-addr :8082 \
 	-trace-requests \
 	-enable_scd
@@ -119,6 +119,6 @@ echo "Cleaning up http-gateway container"
 docker stop http-gateway-for-testing > /dev/null
 test "$(docker inspect http-gateway-for-testing --format='{{.State.ExitCode}}')" = 0
 
-echo "Cleaning up grpc-backend container"
-docker stop grpc-backend-for-testing > /dev/null
-test "$(docker inspect grpc-backend-for-testing --format='{{.State.ExitCode}}')" = 0
+echo "Cleaning up core-service container"
+docker stop core-service-for-testing > /dev/null
+test "$(docker inspect core-service-for-testing --format='{{.State.ExitCode}}')" = 0

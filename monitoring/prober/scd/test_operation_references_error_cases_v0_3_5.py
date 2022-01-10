@@ -262,7 +262,7 @@ def test_missing_conflicted_operation(ids, scd_api, scd_session):
 def test_big_operation_search(scd_api, scd_session):
   """
   This test reproduces a case where a search resulted in 503 because the
-  underlying gRPC backend had crashed.
+  underlying Core Service had crashed.
   """
   with open('./scd/resources/op_big_operation.json', 'r') as f:
     req = json.load(f)
