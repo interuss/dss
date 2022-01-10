@@ -80,7 +80,9 @@ func main() {
 	if err != nil {
 		log.Panic("Failed to build URI", zap.Error(err))
 	}
-	myMigrater, err := New(*path, &postgresURI, params.DBName)
+	log.Println("params in main.. ", params)
+	log.Println("params.DBName in main.. ", params.DBName)
+	myMigrater, err := New(*path, &postgresURI, params.DBName, params)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -98,7 +100,7 @@ func main() {
 			log.Panic(err)
 		}
 	} else {
-		if err := myMigrater.DoMigrate(*desiredVersion, *step); err != nil {
+		if err := myMigrater.DoMigrate(*desiredVersion, *step, params); err != nil {
 			log.Panic(err)
 		}
 	}
@@ -123,7 +125,7 @@ func main() {
 	if err != nil {
 		log.Panic("Failed to build URI", zap.Error(err))
 	}
-	currentDBVersion, err := getCurrentDBVersion(postgresURI, params.DBName)
+	currentDBVersion, err := getCurrentDBVersion(postgresURI, params.DBName, params)
 	if err != nil {
 		log.Fatal("Failed to get Current DB version for confirmation ", postgresURI, " ", params.DBName)
 	}
@@ -131,8 +133,8 @@ func main() {
 }
 
 // DoMigrate performs the migration given the desired state we want to reach
-func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int) error {
-	migrateDirection, err := m.MigrationDirection(desiredDBVersion, desiredStep)
+func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int, params cockroach.ConnectParameters) error {
+	migrateDirection, err := m.MigrationDirection(desiredDBVersion, desiredStep, params)
 	if err != nil {
 		return err
 	}
@@ -142,7 +144,7 @@ func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int) 
 			return err
 		}
 		log.Printf("Migrated %s by %d step", migrateDirection.String(), intAbs(int(migrateDirection)))
-		migrateDirection, err = m.MigrationDirection(desiredDBVersion, *step)
+		migrateDirection, err = m.MigrationDirection(desiredDBVersion, *step, params)
 		if err != nil {
 			return err
 		}
@@ -151,17 +153,21 @@ func (m *MyMigrate) DoMigrate(desiredDBVersion semver.Version, desiredStep int) 
 }
 
 // New instantiates a new migrate object
-func New(path string, dbURI *string, database string) (*MyMigrate, error) {
+func New(path string, dbURI *string, database string, params cockroach.ConnectParameters) (*MyMigrate, error) {
 	noDbPostgres := strings.Replace(*dbURI, fmt.Sprintf("/%s", database), "", 1)
-	db, err := createDatabaseIfNotExists(&noDbPostgres, database)
+	params.DBName = "defaultdb"
+	db, err := createDatabaseIfNotExists(&noDbPostgres, database, params)
 	if err != nil {
+		log.Println("Error 1: ", err)
 		return nil, err
 	}
 	path = fmt.Sprintf("file://%v", path)
+	log.Println("db in New: ", db)
 	if db == "defaultdb" {
 		*dbURI = strings.Replace(*dbURI, "/rid?", "/defaultdb?", 1)
 	}
 	crdbURI := strings.Replace(*dbURI, "postgresql", "cockroachdb", 1)
+	log.Println("crdbURI in New: ", crdbURI)
 	migrater, err := migrate.New(path, crdbURI)
 	if err != nil {
 		return nil, err
@@ -184,9 +190,12 @@ func intAbs(x int) int {
 	return int(math.Abs(float64(x)))
 }
 
-func createDatabaseIfNotExists(crdbURI *string, database string) (string, error) {
-	crdb, err := cockroach.Dial(*crdbURI)
+func createDatabaseIfNotExists(crdbURI *string, database string, params cockroach.ConnectParameters) (string, error) {
+	log.Println("params in createDatabase: ", params)
+	log.Println("crdbURI in createDatabase: ", *crdbURI)
+	crdb, err := cockroach.Dial(context.Background(), params)
 	if err != nil {
+		log.Println("Err 2: ", err)
 		return "", fmt.Errorf("Failed to dial CRDB to check DB exists: %v", err)
 	}
 	defer func() {
@@ -202,11 +211,13 @@ func createDatabaseIfNotExists(crdbURI *string, database string) (string, error)
 
 	var exists bool
 
-	if err := crdb.QueryRow(checkDbQuery, database).Scan(&exists); err != nil {
+	if err := crdb.QueryRow(context.Background(), checkDbQuery, database).Scan(&exists); err != nil {
+		log.Println("Err 3: ", err)
 		return "", err
 	}
 
 	if err != nil {
+		log.Println("Err 4: ", err)
 		return "", err
 	}
 	if !exists {
@@ -217,16 +228,17 @@ func createDatabaseIfNotExists(crdbURI *string, database string) (string, error)
 		}
 		log.Printf("Database \"%s\" doesn't exist, attempting to create", database)
 		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", database)
-		_, err := crdb.Exec(createDB)
+		_, err := crdb.Exec(context.Background(), createDB)
 		if err != nil {
+		log.Println("Err 5: ", err)
 			return "", fmt.Errorf("Failed to Create Database: %v", err)
 		}
 	}
 	return database, nil
 }
 
-func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, error) {
-	crdb, err := cockroach.Dial(crdbURI)
+func getCurrentDBVersion(crdbURI string, database string, params cockroach.ConnectParameters) (*semver.Version, error) {
+	crdb, err := cockroach.Dial(context.Background(), params)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to dial CRDB while getting DB version: %v", err)
 	}
@@ -239,7 +251,7 @@ func getCurrentDBVersion(crdbURI string, database string) (*semver.Version, erro
 
 // MigrationDirection reads our custom DB version string as well as the Migration Steps from the framework
 // and returns a signed integer value of the Direction and count to migrate the db
-func (m *MyMigrate) MigrationDirection(desiredVersion semver.Version, desiredStep int) (Direction, error) {
+func (m *MyMigrate) MigrationDirection(desiredVersion semver.Version, desiredStep int, params cockroach.ConnectParameters) (Direction, error) {
 	if desiredStep != 0 {
 		currentStep, dirty, err := m.Version()
 		if err != migrate.ErrNilVersion && err != nil {
@@ -250,7 +262,7 @@ func (m *MyMigrate) MigrationDirection(desiredVersion semver.Version, desiredSte
 		}
 		return Direction(desiredStep - int(currentStep)), nil
 	}
-	currentVersion, err := getCurrentDBVersion(m.postgresURI, m.database)
+	currentVersion, err := getCurrentDBVersion(m.postgresURI, m.database, params)
 	if err != nil {
 		return 0, fmt.Errorf("Failed to get current DB version to determine migration direction: %v", err)
 	}

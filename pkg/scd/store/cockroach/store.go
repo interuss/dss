@@ -2,15 +2,19 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
+	// "database/sql"
 
-	"github.com/cockroachdb/cockroach-go/crdb"
+	// "github.com/cockroachdb/cockroach-go/crdb"
+	// TODO: issue with below link: https://githubhelp.com/cockroachdb/cockroach-go/issues/65?ref=https://githubhelp.com
+	// "github.com/cockroachdb/cockroach-go/crdb/crdbpgx"
+	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
 	"github.com/jonboulle/clockwork"
+	"github.com/jackc/pgx/v4"
 	"go.uber.org/zap"
 )
 
@@ -86,7 +90,7 @@ func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
 
 // Transact implements store.Transactor interface.
 func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repository) error) error {
-	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
+	return crdbpgx.ExecuteTx(ctx, s.db, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return f(ctx, &repo{
 			q:      tx,
 			logger: s.logger,
@@ -97,7 +101,8 @@ func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repo
 
 // Close closes the underlying DB connection.
 func (s *Store) Close() error {
-	return s.db.Close()
+	s.db.Close()
+	return nil
 }
 
 // GetVersion returns the Version string for the Database.

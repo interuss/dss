@@ -2,12 +2,14 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
+	// "database/sql"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 var (
@@ -35,6 +37,8 @@ type (
 		DBName          string
 		Credentials     Credentials
 		SSL             SSL
+		MaxOpenConns       int
+		MaxConnIdleSeconds int
 	}
 )
 
@@ -60,6 +64,8 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 			Mode: m["ssl_mode"],
 			Dir:  m["ssl_dir"],
 		},
+		MaxOpenConns:       int(parsePortOrDefault(m["max_open_conns"], 4)),
+		MaxConnIdleSeconds: int(parsePortOrDefault(m["max_conn_idle_secs"], 40)),
 	}
 }
 
@@ -105,20 +111,38 @@ func (p ConnectParameters) BuildURI() (string, error) {
 
 // DB models a connection to a CRDB instance.
 type DB struct {
-	*sql.DB
+	*pgxpool.Pool
 }
 
 // Dial returns a DB instance connected to a cockroach instance available at
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html
-func Dial(uri string) (*DB, error) {
-	db, err := sql.Open("postgres", uri)
+func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
+	uri, err := connParams.BuildURI()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error building URI")
+	}
+
+	config, err := pgxpool.ParseConfig(uri)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to parse connection config for pgx")
+	}
+
+	if connParams.SSL.Mode == "enable" {
+		config.ConnConfig.TLSConfig.ServerName = connParams.Host
+	}
+	config.MaxConns = int32(connParams.MaxOpenConns)
+	config.MaxConnIdleTime = (time.Duration(connParams.MaxConnIdleSeconds) * time.Second)
+	config.HealthCheckPeriod = (1 * time.Second)
+	config.MinConns = 1
+
+	db, err := pgxpool.ConnectConfig(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
 	return &DB{
-		DB: db,
+		db,
 	}, nil
 }
 
@@ -148,7 +172,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 			onerow_enforcer = TRUE`, dbName)
 	)
 
-	if err := db.QueryRowContext(ctx, query, dbName).Scan(&exists); err != nil {
+	if err := db.QueryRow(ctx, query, dbName).Scan(&exists); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
 
@@ -158,7 +182,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 	}
 
 	var dbVersion string
-	if err := db.QueryRowContext(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
+	if err := db.QueryRow(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning version row")
 	}
 	if len(dbVersion) > 0 && dbVersion[0] == 'v' {

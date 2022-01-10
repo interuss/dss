@@ -2,12 +2,14 @@ package sql
 
 import (
 	"context"
-	"database/sql"
+	// "database/sql"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
 )
 
 // Queryable abstracts common operations on sql.DB and sql.Tx instances.
 type Queryable interface {
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
+	QueryRow(ctx context.Context, query string, args ...interface{}) pgx.Row
+	Exec(ctx context.Context, query string, args ...interface{}) (pgconn.CommandTag, error)
 }

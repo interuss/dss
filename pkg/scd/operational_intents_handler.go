@@ -467,7 +467,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 
 		// Construct the new OperationalIntent
 		op := &scdmodels.OperationalIntent{
-			ID:      id,
+			ID:      dssmodels.ID(id),
 			Manager: manager,
 			Version: scdmodels.VersionNumber(version + 1),
 

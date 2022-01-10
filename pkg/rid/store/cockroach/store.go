@@ -2,10 +2,13 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
+	// "database/sql"
 	"time"
 
-	"github.com/cockroachdb/cockroach-go/crdb"
+	// "github.com/cockroachdb/cockroach-go/crdb/crdbpgx"
+	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
+    "github.com/jackc/pgx/v4"
+	// "github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
@@ -124,7 +127,7 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 	if err != nil {
 		return stacktrace.Propagate(err, "Error determining database RID schema version")
 	}
-	return crdb.ExecuteTx(ctx, s.db.DB, nil /* nil txopts */, func(tx *sql.Tx) error {
+	return crdbpgx.ExecuteTx(ctx, s.db, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
@@ -136,12 +139,13 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 
 // Close closes the underlying DB connection.
 func (s *Store) Close() error {
-	return s.db.Close()
+	s.db.Close()
+	return nil
 }
 
-func recoverRollbackRepanic(ctx context.Context, tx *sql.Tx) {
+func recoverRollbackRepanic(ctx context.Context, tx pgx.Tx) {
 	if p := recover(); p != nil {
-		if err := tx.Rollback(); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
 			logging.WithValuesFromContext(ctx, logging.Logger).Error(
 				"failed to rollback transaction", zap.Error(err),
 			)
@@ -155,7 +159,7 @@ func (s *Store) CleanUp(ctx context.Context) error {
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.db.ExecContext(ctx, query)
+	_, err := s.db.Exec(ctx, query)
 	return err
 }
 

@@ -61,7 +61,7 @@ func (u *repo) UpsertUssAvailability(ctx context.Context, s *scdmodels.UssAvaila
 }
 
 func (u *repo) fetchAvailabilities(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.UssAvailabilityStatus, error) {
-	rows, err := q.QueryContext(ctx, query, args...)
+	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
