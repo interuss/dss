@@ -1,0 +1,15 @@
+import (
+    "encoding/json"
+    "fmt"
+	"io"
+	"net/http"
+	"regexp"
+)
+
+func writeJson(w http.ResponseWriter, code int, obj interface{}) {
+    w.Header().Set("Content-Type", "application/json; charset=utf-8")
+    w.WriteHeader(code)
+    if err := json.NewEncoder(w).Encode(obj); err != nil {
+        io.WriteString(w, fmt.Sprintf("{\"error_message\": \"Error encoding JSON: %s\"}", err.Error()))
+    }
+}
