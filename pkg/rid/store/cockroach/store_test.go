@@ -42,7 +42,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
-	store, err := newStore()
+	store, err := newStore(ctx)
 	require.NoError(t, err)
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
@@ -50,8 +50,8 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newStore() (*Store, error) {
-	cdb, err := cockroach.Dial(*storeURI)
+func newStore(ctx context.Context) (*Store, error) {
+	cdb, err := cockroach.Dial(ctx, *storeURI)
 	if err != nil {
 		return nil, err
 	}

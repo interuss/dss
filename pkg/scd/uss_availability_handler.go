@@ -2,7 +2,6 @@ package scd
 
 import (
 	"context"
-	// "database/sql"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"

@@ -62,7 +62,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	logger.Info("using cockroachDB.")
 
 	// Use a real store.
-	cdb, err := cockroach.Dial(*storeURI)
+	cdb, err := cockroach.Dial(ctx, *storeURI)
 	require.NoError(t, err)
 
 	store, err := ridcrdb.NewStore(ctx, cdb, logger)

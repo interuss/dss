@@ -2,19 +2,17 @@ package cockroach
 
 import (
 	"context"
-	// "database/sql"
 	"time"
 
-	// TODO: issue with below link: https://githubhelp.com/cockroachdb/cockroach-go/issues/65?ref=https://githubhelp.com
+	// TODO: issue with below library: https://githubhelp.com/cockroachdb/cockroach-go/issues/65?ref=https://githubhelp.com
 	// "github.com/cockroachdb/cockroach-go/crdb/crdbpgx"
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
-	"github.com/jackc/pgx/v4"
-	// "github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v4"
 	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 )

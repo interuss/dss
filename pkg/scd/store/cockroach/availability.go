@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	// "database/sql"
 	"fmt"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
