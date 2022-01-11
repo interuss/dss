@@ -2,12 +2,13 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
+	// "database/sql"
 	"fmt"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v4"
 	"strings"
 	"time"
 )
@@ -61,7 +62,7 @@ func (u *repo) UpsertUssAvailability(ctx context.Context, s *scdmodels.UssAvaila
 }
 
 func (u *repo) fetchAvailabilities(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.UssAvailabilityStatus, error) {
-	rows, err := q.QueryContext(ctx, query, args...)
+	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
@@ -99,7 +100,7 @@ func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query 
 		return nil, stacktrace.NewError("Query returned %d availabilities when only 0 or 1 was expected", len(availabilities))
 	}
 	if len(availabilities) == 0 {
-		return nil, sql.ErrNoRows
+		return nil, pgx.ErrNoRows
 	}
 	return availabilities[0], nil
 }

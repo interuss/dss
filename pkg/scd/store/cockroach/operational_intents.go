@@ -12,7 +12,7 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
 )
 
 var (
@@ -51,14 +51,14 @@ func init() {
 }
 
 func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.OperationalIntent, error) {
-	rows, err := q.QueryContext(ctx, query, args...)
+	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
 	var payload []*scdmodels.OperationalIntent
-	cids := pq.Int64Array{}
+	pgCids := pgtype.Int8Array{}
 	for rows.Next() {
 		var (
 			o         = &scdmodels.OperationalIntent{}
@@ -76,10 +76,14 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 			&o.SubscriptionID,
 			&updatedAt,
 			&o.State,
-			&cids,
+			&pgCids,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Operation row")
+		}
+		var cids []int64
+		if err := pgCids.AssignTo(&cids); err != nil {
+			return nil, stacktrace.Propagate(err, "Error Converting jackc/pgtype to array")
 		}
 		o.OVN = scdmodels.NewOVNFromTime(updatedAt, o.ID.String())
 		o.SetCells(cids)
@@ -118,7 +122,7 @@ func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id ds
 			scd_operations
 		WHERE
 			id = $1`, operationFieldsWithoutPrefix)
-	return s.fetchOperationalIntent(ctx, q, query, id)
+	return s.fetchOperationalIntent(ctx, q, query, id.PgUUID())
 }
 
 func (s *repo) populateOperationalIntentCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.OperationalIntent) error {
@@ -129,7 +133,7 @@ func (s *repo) populateOperationalIntentCells(ctx context.Context, q dsssql.Quer
 		scd_operations
 	WHERE id = $1`
 
-	rows, err := q.QueryContext(ctx, query, o.ID)
+	rows, err := q.Query(ctx, query, o.ID.PgUUID())
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
@@ -167,15 +171,12 @@ func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) err
 		`
 	)
 
-	res, err := s.q.ExecContext(ctx, deleteOperationQuery, id)
+	res, err := s.q.Exec(ctx, deleteOperationQuery, id.PgUUID())
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", deleteOperationQuery)
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not get RowsAffected")
-	}
-	if rows == 0 {
+
+	if res.RowsAffected() == 0 {
 		return stacktrace.NewError("Could not delete Operation that does not exist")
 	}
 
@@ -203,9 +204,13 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		clevels[i] = cell.Level()
 	}
 
-	cells := operation.Cells
-	operation, err := s.fetchOperationalIntent(ctx, s.q, upsertOperationsQuery,
-		operation.ID,
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+	operation, err = s.fetchOperationalIntent(ctx, s.q, upsertOperationsQuery,
+		operation.ID.PgUUID(),
 		operation.Manager,
 		operation.Version,
 		operation.USSBaseURL,
@@ -213,14 +218,13 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		operation.AltitudeUpper,
 		operation.StartTime,
 		operation.EndTime,
-		operation.SubscriptionID,
+		operation.SubscriptionID.PgUUID(),
 		operation.State,
-		pq.Int64Array(cids),
+		pgCids,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Operation")
 	}
-	operation.Cells = cells
 
 	return operation, nil
 }
@@ -260,9 +264,14 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 		cids[i] = int64(cid)
 	}
 
+	var pgCids pgtype.Int8Array
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
 	result, err := s.fetchOperationalIntents(
 		ctx, q, operationsIntersectingVolumeQuery,
-		pq.Array(cids),
+		pgCids,
 		v4d.SpatialVolume.AltitudeLo,
 		v4d.SpatialVolume.AltitudeHi,
 		v4d.StartTime,
@@ -290,7 +299,7 @@ func (s *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionI
       WHERE
         subscription_id = $1`
 
-	rows, err := s.q.QueryContext(ctx, dependentOperationsQuery, subscriptionID)
+	rows, err := s.q.Query(ctx, dependentOperationsQuery, subscriptionID.PgUUID())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", dependentOperationsQuery)
 	}
