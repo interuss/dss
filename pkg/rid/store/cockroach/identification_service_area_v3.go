@@ -95,7 +95,11 @@ func (c *isaRepoV3) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Ide
 			identification_service_areas
 		WHERE
 			id = $1`, isaFieldsV3)
-	return c.processOne(ctx, query, id.PgUUID())
+	*uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, query, *uid)
 }
 
 // InsertISA inserts the IdentificationServiceArea identified by "id" and owned
@@ -131,7 +135,11 @@ func (c *isaRepoV3) InsertISA(ctx context.Context, isa *ridmodels.Identification
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
-	return c.processOne(ctx, insertAreasQuery, isa.ID.PgUUID(), isa.Owner, isa.URL, pgCids, isa.StartTime, isa.EndTime)
+	*uid, err := isa.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, insertAreasQuery, *uid, isa.Owner, isa.URL, pgCids, isa.StartTime, isa.EndTime)
 }
 
 // UpdateISA updates the IdentificationServiceArea identified by "id" and owned
@@ -167,7 +175,11 @@ func (c *isaRepoV3) UpdateISA(ctx context.Context, isa *ridmodels.Identification
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	return c.processOne(ctx, updateAreasQuery, isa.ID.PgUUID(), isa.URL, pgCids, isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
+	*uid, err := isa.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, updateAreasQuery, *uid, isa.URL, pgCids, isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
@@ -184,7 +196,11 @@ func (c *isaRepoV3) DeleteISA(ctx context.Context, isa *ridmodels.Identification
 				updated_at = $2
 			RETURNING %s`, isaFieldsV3)
 	)
-	return c.processOne(ctx, deleteQuery, isa.ID.PgUUID(), isa.Version.ToTimestamp())
+	*uid, err := isa.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, deleteQuery, *uid, isa.Version.ToTimestamp())
 }
 
 // SearchISAs searches IdentificationServiceArea
