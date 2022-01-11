@@ -15,7 +15,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
-	"github.com/jackc/pgtype"
+	// "github.com/jackc/pgtype"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
@@ -136,7 +136,7 @@ func TestTxnRetrier(t *testing.T) {
 		// can query within this
 		count++
 		// Postgre retryable error
-		return &pgtype.PgError{Code: "40001"}
+		return &pgx.PgError{Code: "40001"}
 	})
 	require.Error(t, err)
 	// Ensure it was retried.
