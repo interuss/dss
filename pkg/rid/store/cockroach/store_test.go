@@ -136,7 +136,7 @@ func TestTxnRetrier(t *testing.T) {
 		// can query within this
 		count++
 		// Postgre retryable error
-		return &pqtype.Error{Code: "40001"}
+		return &pgtype.Error{Code: "40001"}
 	})
 	require.Error(t, err)
 	// Ensure it was retried.
@@ -213,7 +213,7 @@ func TestBasicTxn(t *testing.T) {
 	subscription1 := subscriptionsPool[0].input
 	subscription2 := subscriptionsPool[1].input
 
-	tx1, err := store.db.Begin()
+	tx1, err := store.db.Begin(ctx)
 	require.NoError(t, err)
 	s1 := &repo{
 		ISA: &isaRepo{
@@ -227,7 +227,7 @@ func TestBasicTxn(t *testing.T) {
 		},
 	}
 
-	tx2, err := store.db.Begin()
+	tx2, err := store.db.Begin(ctx)
 	require.NoError(t, err)
 	s2 := &repo{
 		ISA: &isaRepo{
@@ -256,8 +256,8 @@ func TestBasicTxn(t *testing.T) {
 	_, err = s2.InsertSubscription(ctx, subscription2)
 	require.NoError(t, err)
 
-	require.Error(t, tx1.Commit())
-	require.NoError(t, tx2.Commit())
+	require.Error(t, tx1.Commit(ctx))
+	require.NoError(t, tx2.Commit(ctx))
 
 	repo, err := store.Interact(ctx)
 	require.NoError(t, err)
