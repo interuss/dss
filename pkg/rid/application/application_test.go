@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/cockroach/flags" // Force command line flag registration
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
@@ -21,6 +22,7 @@ import (
 
 var (
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
+	fakeDB    = "fakedb"
 	fakeClock = clockwork.NewFakeClock()
 	startTime = fakeClock.Now().Add(-time.Minute)
 	endTime   = fakeClock.Now().Add(time.Hour)
@@ -61,8 +63,10 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	ridcrdb.DefaultClock = fakeClock
 	logger.Info("using cockroachDB.")
 
-	// Use a real store.
-	cdb, err := cockroach.Dial(ctx, *storeURI)
+	// Use a test db.
+	connectParameters := flags.ConnectParameters()
+	connectParameters.DBName = fakeDB
+	cdb, err := cockroach.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 
 	store, err := ridcrdb.NewStore(ctx, cdb, logger)
