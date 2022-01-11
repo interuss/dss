@@ -13,6 +13,7 @@ jobs:
   docker-hub-push:
     name: DSS Build and Push to Docker Hub
     runs-on: ubuntu-latest
+    if: github.repository == 'interuss/dss'
     steps:
       - name: Job information
         run: |
@@ -40,4 +41,3 @@ jobs:
           DOCKER_URL: ${{ secrets.DOCKER_URL }}
         run: |
           build/build.sh
-
