@@ -35,9 +35,12 @@ const (
 	versionBase = 32
 )
 
-func (id ID) PgUUID() pgtype.UUID {
+func (id ID) PgUUID() (pgtype.UUID, error) {
 	var pgUUID pgtype.UUID
-	pgUUID.Set(id.String())
+	err := pgUUID.Set(id.String())
+	if err != nil {
+		return ID(""), stacktrace.Propagate(err, "Error converting ID to PgUUID format")
+	}
 	return pgUUID
 }
 
