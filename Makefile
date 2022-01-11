@@ -1,18 +1,17 @@
 GOPATH := $(shell go env GOPATH 2> /dev/null)
 GOBIN := $(GOPATH)/bin
 COMMIT := $(shell scripts/git/commit.sh)
-# RELEASE_TAG determines the version of the DSS and is baked into
+# DSS_VERSION_TAG determines the version of the DSS components and is baked into
 # the executable using linker flags. If the commit is not a tag,
-# the release_tag will contain information about the closest tag
-# reference (ie v0.0.1-3-g6a64c20, see RELEASE.md for more details).
-RELEASE_TAG := $(shell git describe --tags --match='v*' 2> /dev/null | grep -E 'v[0-9]+\.[0-9]+\.[0-9]+')
-RELEASE_TAG := $(or $(RELEASE_TAG), v0.0.0)
+# the version_tag will contain information about the closest tag
+# (ie v0.0.1-g6a64c20, see RELEASE.md for more details).
+DSS_VERSION_TAG := $(shell scripts/git/version.sh dss)
 
-GENERATOR_TAG := generator:$(RELEASE_TAG)
+GENERATOR_TAG := generator:${DSS_VERSION_TAG}
 
 # Build and version information is baked into the executable itself.
 BUILD_LDFLAGS := -X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/build.commit=$(COMMIT) -X github.com/interuss/dss/pkg/build.host=$(shell hostname)
-VERSION_LDFLAGS := -X github.com/interuss/dss/pkg/version.tag=$(RELEASE_TAG) -X github.com/interuss/dss/pkg/version.commit=$(COMMIT)
+VERSION_LDFLAGS := -X github.com/interuss/dss/pkg/version.tag=$(DSS_VERSION_TAG) -X github.com/interuss/dss/pkg/version.commit=$(COMMIT)
 LDFLAGS := $(BUILD_LDFLAGS) $(VERSION_LDFLAGS)
 
 ifeq ($(OS),Windows_NT)
@@ -149,9 +148,6 @@ release: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
 
 release:
 	scripts/release.sh $(VERSION)
-
-release-tag:
-	@echo $(RELEASE_TAG)
 
 start-locally:
 	build/dev/run_locally.sh
