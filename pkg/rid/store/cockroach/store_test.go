@@ -137,7 +137,7 @@ func TestTxnRetrier(t *testing.T) {
 		// can query within this
 		count++
 		// Postgre retryable error
-		return &pgx.PgError{Code: "40001"}
+		return pgx.PgError{Code: "40001"}
 	})
 	require.Error(t, err)
 	// Ensure it was retried.
