@@ -1,4 +1,4 @@
-# This workflow build and push the docker images required to deploy the DSS.
+# This workflow build and push the docker images when a release tag is pushed.
 # The following secrets must be provided:
 # DOCKER_USERNAME: The username to log into the registry.
 # DOCKER_PASSWORD: The access token of the user to log into the registry.
