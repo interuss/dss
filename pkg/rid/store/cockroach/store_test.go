@@ -22,7 +22,7 @@ import (
 
 var (
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
-	fakeDB    = "fakedb"
+	fakeDB    = "rid"
 	fakeClock = clockwork.NewFakeClock()
 	startTime = fakeClock.Now().Add(-time.Minute)
 	endTime   = fakeClock.Now().Add(time.Hour)
