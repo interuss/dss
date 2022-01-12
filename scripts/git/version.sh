@@ -1,23 +1,14 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # This script prints the current version of a component in the repository based on the tags
 # of the upstream repository (remote origin) matching the following convention:
-# remote_origin/component/version. Examples of values:
-# - remote_origin: interuss
+# owner/component/version. Examples of values:
+# - owner: interuss (automatically extracted from the remote origin url)
 # - component: rid, scd, aux, uss_qualifier
 # - version: v3.0.1[-hash][-dirty]
 #    - [-hash] (example: -8a493ef8 ) is added when commits have been added to the latest version tagged.
 #    - [-dirty] (example: -dirty) when the workspace is not clean.
 # Only versions without [-hash] and without [-dirty] shall be released.
-
-OS=$(uname)
-if [[ "$OS" == "Darwin" ]]; then
-	# OSX uses BSD readlink
-	BASEDIR="$(dirname "$0")"
-else
-	BASEDIR=$(readlink -e "$(dirname "$0")")
-fi
-cd "${BASEDIR}"
 
 if [[ $# == 0 ]]; then
   echo "Usage: $0 <COMPONENT> [--long]"
@@ -26,6 +17,9 @@ if [[ $# == 0 ]]; then
   exit 1
 fi
 
+# Set working directory
+cd "$(dirname "$0")"
+
 COMPONENT=${1:?"Component must be provided as environment variable. (example: scd, rid, aux, uss_qualifier)"}
 
 RELEASE_FORMAT=false
@@ -33,7 +27,7 @@ if [[ $2 == "--long" ]]; then
   RELEASE_FORMAT=true
 fi
 
-UPSTREAM_ORG=$(./upstream_organization.sh)
+UPSTREAM_ORG=$(./upstream_owner.sh)
 
 # Look for the last tag of the component
 LAST_VERSION_TAG=$(git describe --abbrev=1 --tags --match="${UPSTREAM_ORG}/${COMPONENT}/*" 2> /dev/null)
@@ -60,6 +54,7 @@ if [[ "$LAST_VERSION" == *"-"* ]]; then
 fi
 
 # Set the dirty flag if the workspace is not clean.
+DIRTY=""
 if  test -n "$(git status -s)"; then
     DIRTY="-dirty"
 fi
