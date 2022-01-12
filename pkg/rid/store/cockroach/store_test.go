@@ -62,6 +62,9 @@ func newStore(ctx context.Context) (*Store, error) {
 	connectParameters.SSL.Mode = "disable"
 	connectParameters.DBName = ""
 	connectParameters.SSL.Dir = "/tmp/ca.crt"
+	if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
+		connectParameters.DBName = "rid"
+	}
 	// connectParameters.DBName = fakeDB
 	// connectParameters.Host = "localhost"
 	cdb, err := cockroach.Dial(ctx, connectParameters)
