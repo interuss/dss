@@ -69,7 +69,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	connectParameters.Port = 26257
 	connectParameters.Credentials.Username = "root"
 	connectParameters.SSL.Mode = "disable"
-	connectParameters.DBName = "rid"
+	connectParameters.DBName = ""
 	connectParameters.SSL.Dir = "/tmp/ca.crt"
 	cdb, err := cockroach.Dial(ctx, connectParameters)
 	require.NoError(t, err)
