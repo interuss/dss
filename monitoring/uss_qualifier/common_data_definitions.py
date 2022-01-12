@@ -1,7 +1,3 @@
-
-
-
-
 class Severity(object):
   Critical = 'Critical'
   """The system does not function correctly on a basic level."""
@@ -11,3 +7,4 @@ class Severity(object):
 
   Low = 'Low'
   """The system behaves correctly, but could be improved."""
+  
