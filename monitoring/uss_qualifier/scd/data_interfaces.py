@@ -40,17 +40,14 @@ class RequiredResult(ImplicitDict):
   
 class InjectionTarget(ImplicitDict):
     ''' A class to hold details of the USS under test '''
-    uss_sequence_id: int
+    uss_sequence_number: int
     name: str
 
-class SCDTestConfiguration(ImplicitDict):
-    ''' A class to hold test configuration, injection target data  '''
-    injection_targets: List[InjectionTarget]
-
 class FlightInjectionAttempt(ImplicitDict):
-    ''' A class to hold details of the test injection and the expected result of processing the flight request '''
+    ''' A class to hold details of the test injection, the injection target and the expected result of processing the flight request '''
     test_injection: InjectFlightRequest
     required_result: RequiredResult
+    injection_target: InjectionTarget
 
 class TestDetails(ImplicitDict):
     ''' A class to hold details of different test structures '''
