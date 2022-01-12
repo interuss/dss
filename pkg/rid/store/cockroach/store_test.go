@@ -56,6 +56,7 @@ func newStore(ctx context.Context) (*Store, error) {
 	// Use a test db.
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = fakeDB
+	connectParameters.Host = "localhost"
 	cdb, err := cockroach.Dial(ctx, connectParameters)
 	if err != nil {
 		return nil, err
