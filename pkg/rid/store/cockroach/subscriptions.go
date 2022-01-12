@@ -157,7 +157,11 @@ func (c *subscriptionRepo) GetSubscription(ctx context.Context, id dssmodels.ID)
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
 		WHERE id = $1`, subscriptionFields)
-	return c.processOne(ctx, query, id.PgUUID())
+	uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, query, uid)
 }
 
 // UpdateSubscription updates the Subscription.. not yet implemented.
@@ -188,8 +192,12 @@ func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
+	id, err := s.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
 	return c.processOne(ctx, updateQuery,
-		s.ID.PgUUID(),
+		id,
 		s.URL,
 		s.NotificationIndex,
 		pgCids,
@@ -228,8 +236,12 @@ func (c *subscriptionRepo) InsertSubscription(ctx context.Context, s *ridmodels.
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
+	id, err := s.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
 	return c.processOne(ctx, insertQuery,
-		s.ID.PgUUID(),
+		id,
 		s.Owner,
 		s.URL,
 		s.NotificationIndex,
@@ -252,7 +264,11 @@ func (c *subscriptionRepo) DeleteSubscription(ctx context.Context, s *ridmodels.
 			AND updated_at = $2
 		RETURNING %s`, subscriptionFields)
 	)
-	return c.processOne(ctx, query, s.ID.PgUUID(), s.Version.ToTimestamp())
+	id, err := s.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, query, id, s.Version.ToTimestamp())
 }
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.

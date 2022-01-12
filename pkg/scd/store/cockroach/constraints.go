@@ -122,7 +122,11 @@ func (c *repo) GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.C
 			WHERE
 				id = $1`, constraintFieldsWithoutPrefix)
 	)
-	return c.fetchConstraint(ctx, c.q, query, id.PgUUID())
+	uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.fetchConstraint(ctx, c.q, query, uid)
 }
 
 // Implements scd.repos.Constraint.UpsertConstraint
@@ -152,8 +156,12 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	s, err := c.fetchConstraint(ctx, c.q, upsertQuery,
-		s.ID.PgUUID(),
+	id, err := s.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	s, err = c.fetchConstraint(ctx, c.q, upsertQuery,
+		id,
 		s.Manager,
 		s.Version,
 		s.USSBaseURL,
@@ -179,7 +187,11 @@ func (c *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
 			id = $1`
 	)
 
-	res, err := c.q.Exec(ctx, query, id.PgUUID())
+	uid, err := id.PgUUID()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	res, err := c.q.Exec(ctx, query, uid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}

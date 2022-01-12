@@ -62,7 +62,11 @@ func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable
 		`
 	)
 
-	rows, err := q.Query(ctx, cellsQuery, id.PgUUID())
+	uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	rows, err := q.Query(ctx, cellsQuery, uid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", cellsQuery)
 	}
@@ -159,7 +163,11 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 			WHERE
 				id = $1`, subscriptionFieldsWithPrefix)
 	)
-	result, err := c.fetchSubscription(ctx, q, query, id.PgUUID())
+	uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	result, err := c.fetchSubscription(ctx, q, query, uid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Subscription")
 	}
@@ -206,8 +214,12 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	s, err := c.fetchSubscription(ctx, q, upsertQuery,
-		s.ID.PgUUID(),
+	id, err := s.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	s, err = c.fetchSubscription(ctx, q, upsertQuery,
+		id,
 		s.Manager,
 		0,
 		s.USSBaseURL,
@@ -261,7 +273,11 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 			id = $1`
 	)
 
-	res, err := c.q.Exec(ctx, query, id.PgUUID())
+	uid, err := id.PgUUID()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	res, err := c.q.Exec(ctx, query, uid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}

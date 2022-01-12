@@ -122,7 +122,11 @@ func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id ds
 			scd_operations
 		WHERE
 			id = $1`, operationFieldsWithoutPrefix)
-	return s.fetchOperationalIntent(ctx, q, query, id.PgUUID())
+	uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return s.fetchOperationalIntent(ctx, q, query, uid)
 }
 
 func (s *repo) populateOperationalIntentCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.OperationalIntent) error {
@@ -133,7 +137,11 @@ func (s *repo) populateOperationalIntentCells(ctx context.Context, q dsssql.Quer
 		scd_operations
 	WHERE id = $1`
 
-	rows, err := q.Query(ctx, query, o.ID.PgUUID())
+	uid, err := o.ID.PgUUID()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	rows, err := q.Query(ctx, query, uid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
@@ -171,7 +179,11 @@ func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) err
 		`
 	)
 
-	res, err := s.q.Exec(ctx, deleteOperationQuery, id.PgUUID())
+	uid, err := id.PgUUID()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	res, err := s.q.Exec(ctx, deleteOperationQuery, uid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", deleteOperationQuery)
 	}
@@ -209,8 +221,16 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
+	opid, err := operation.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	subid, err := operation.SubscriptionID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
 	operation, err = s.fetchOperationalIntent(ctx, s.q, upsertOperationsQuery,
-		operation.ID.PgUUID(),
+		opid,
 		operation.Manager,
 		operation.Version,
 		operation.USSBaseURL,
@@ -218,7 +238,7 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		operation.AltitudeUpper,
 		operation.StartTime,
 		operation.EndTime,
-		operation.SubscriptionID.PgUUID(),
+		subid,
 		operation.State,
 		pgCids,
 	)
@@ -299,7 +319,11 @@ func (s *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionI
       WHERE
         subscription_id = $1`
 
-	rows, err := s.q.Query(ctx, dependentOperationsQuery, subscriptionID.PgUUID())
+	subid, err := subscriptionID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	rows, err := s.q.Query(ctx, dependentOperationsQuery, subid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", dependentOperationsQuery)
 	}
