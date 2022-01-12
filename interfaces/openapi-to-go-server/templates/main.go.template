@@ -3,3 +3,9 @@ import (
 	"net/http"
 	"time"
 )
+
+type PermissiveAuthorizer struct{}
+
+func (*PermissiveAuthorizer) Authorize(w http.ResponseWriter, r *http.Request, schemes *map[string]SecurityScheme) AuthorizationResult {
+  return AuthorizationResult{}
+}

@@ -7,119 +7,125 @@ import (
 	"time"
 )
 
+type PermissiveAuthorizer struct{}
+
+func (*PermissiveAuthorizer) Authorize(w http.ResponseWriter, r *http.Request, schemes *map[string]SecurityScheme) AuthorizationResult {
+	return AuthorizationResult{}
+}
+
 type ExampleImplementation struct{}
 
-func (*ExampleImplementation) QueryOperationalIntentReferences(body QueryOperationalIntentReferenceParameters, bodyParseError *error) QueryOperationalIntentReferencesResponseSet {
+func (*ExampleImplementation) QueryOperationalIntentReferences(req *QueryOperationalIntentReferencesRequest) QueryOperationalIntentReferencesResponseSet {
 	response := QueryOperationalIntentReferencesResponseSet{}
 	response.Response200 = &QueryOperationalIntentReferenceResponse{}
 	return response
 }
 
-func (*ExampleImplementation) CreateOperationalIntentReference(entityid EntityID, body PutOperationalIntentReferenceParameters, bodyParseError *error) CreateOperationalIntentReferenceResponseSet {
-	response := CreateOperationalIntentReferenceResponseSet{}
-	response.Response201 = &ChangeOperationalIntentReferenceResponse{}
-	return response
-}
-
-func (*ExampleImplementation) GetOperationalIntentReference(entityid EntityID) GetOperationalIntentReferenceResponseSet {
+func (*ExampleImplementation) GetOperationalIntentReference(req *GetOperationalIntentReferenceRequest) GetOperationalIntentReferenceResponseSet {
 	response := GetOperationalIntentReferenceResponseSet{}
 	response.Response200 = &GetOperationalIntentReferenceResponse{}
 	return response
 }
 
-func (*ExampleImplementation) DeleteOperationalIntentReference(entityid EntityID, ovn EntityOVN) DeleteOperationalIntentReferenceResponseSet {
-	response := DeleteOperationalIntentReferenceResponseSet{}
-	response.Response200 = &ChangeOperationalIntentReferenceResponse{}
+func (*ExampleImplementation) CreateOperationalIntentReference(req *CreateOperationalIntentReferenceRequest) CreateOperationalIntentReferenceResponseSet {
+	response := CreateOperationalIntentReferenceResponseSet{}
+	response.Response201 = &ChangeOperationalIntentReferenceResponse{}
 	return response
 }
 
-func (*ExampleImplementation) UpdateOperationalIntentReference(entityid EntityID, ovn EntityOVN, body PutOperationalIntentReferenceParameters, bodyParseError *error) UpdateOperationalIntentReferenceResponseSet {
+func (*ExampleImplementation) UpdateOperationalIntentReference(req *UpdateOperationalIntentReferenceRequest) UpdateOperationalIntentReferenceResponseSet {
 	response := UpdateOperationalIntentReferenceResponseSet{}
 	response.Response200 = &ChangeOperationalIntentReferenceResponse{}
 	return response
 }
 
-func (*ExampleImplementation) QueryConstraintReferences(body QueryConstraintReferenceParameters, bodyParseError *error) QueryConstraintReferencesResponseSet {
+func (*ExampleImplementation) DeleteOperationalIntentReference(req *DeleteOperationalIntentReferenceRequest) DeleteOperationalIntentReferenceResponseSet {
+	response := DeleteOperationalIntentReferenceResponseSet{}
+	response.Response200 = &ChangeOperationalIntentReferenceResponse{}
+	return response
+}
+
+func (*ExampleImplementation) QueryConstraintReferences(req *QueryConstraintReferencesRequest) QueryConstraintReferencesResponseSet {
 	response := QueryConstraintReferencesResponseSet{}
 	response.Response200 = &QueryConstraintReferencesResponse{}
 	return response
 }
 
-func (*ExampleImplementation) CreateConstraintReference(entityid EntityID, body PutConstraintReferenceParameters, bodyParseError *error) CreateConstraintReferenceResponseSet {
-	response := CreateConstraintReferenceResponseSet{}
-	response.Response201 = &ChangeConstraintReferenceResponse{}
-	return response
-}
-
-func (*ExampleImplementation) GetConstraintReference(entityid EntityID) GetConstraintReferenceResponseSet {
+func (*ExampleImplementation) GetConstraintReference(req *GetConstraintReferenceRequest) GetConstraintReferenceResponseSet {
 	response := GetConstraintReferenceResponseSet{}
 	response.Response200 = &GetConstraintReferenceResponse{}
 	return response
 }
 
-func (*ExampleImplementation) DeleteConstraintReference(entityid EntityID, ovn EntityOVN) DeleteConstraintReferenceResponseSet {
-	response := DeleteConstraintReferenceResponseSet{}
-	response.Response200 = &ChangeConstraintReferenceResponse{}
+func (*ExampleImplementation) CreateConstraintReference(req *CreateConstraintReferenceRequest) CreateConstraintReferenceResponseSet {
+	response := CreateConstraintReferenceResponseSet{}
+	response.Response201 = &ChangeConstraintReferenceResponse{}
 	return response
 }
 
-func (*ExampleImplementation) UpdateConstraintReference(entityid EntityID, ovn EntityOVN, body PutConstraintReferenceParameters, bodyParseError *error) UpdateConstraintReferenceResponseSet {
+func (*ExampleImplementation) UpdateConstraintReference(req *UpdateConstraintReferenceRequest) UpdateConstraintReferenceResponseSet {
 	response := UpdateConstraintReferenceResponseSet{}
 	response.Response200 = &ChangeConstraintReferenceResponse{}
 	return response
 }
 
-func (*ExampleImplementation) QuerySubscriptions(body QuerySubscriptionParameters, bodyParseError *error) QuerySubscriptionsResponseSet {
+func (*ExampleImplementation) DeleteConstraintReference(req *DeleteConstraintReferenceRequest) DeleteConstraintReferenceResponseSet {
+	response := DeleteConstraintReferenceResponseSet{}
+	response.Response200 = &ChangeConstraintReferenceResponse{}
+	return response
+}
+
+func (*ExampleImplementation) QuerySubscriptions(req *QuerySubscriptionsRequest) QuerySubscriptionsResponseSet {
 	response := QuerySubscriptionsResponseSet{}
 	response.Response200 = &QuerySubscriptionsResponse{}
 	return response
 }
 
-func (*ExampleImplementation) CreateSubscription(subscriptionid SubscriptionID, body PutSubscriptionParameters, bodyParseError *error) CreateSubscriptionResponseSet {
-	response := CreateSubscriptionResponseSet{}
-	response.Response200 = &PutSubscriptionResponse{}
-	return response
-}
-
-func (*ExampleImplementation) GetSubscription(subscriptionid SubscriptionID) GetSubscriptionResponseSet {
+func (*ExampleImplementation) GetSubscription(req *GetSubscriptionRequest) GetSubscriptionResponseSet {
 	response := GetSubscriptionResponseSet{}
 	response.Response200 = &GetSubscriptionResponse{}
 	return response
 }
 
-func (*ExampleImplementation) DeleteSubscription(subscriptionid SubscriptionID, version string) DeleteSubscriptionResponseSet {
-	response := DeleteSubscriptionResponseSet{}
-	response.Response200 = &DeleteSubscriptionResponse{}
+func (*ExampleImplementation) CreateSubscription(req *CreateSubscriptionRequest) CreateSubscriptionResponseSet {
+	response := CreateSubscriptionResponseSet{}
+	response.Response200 = &PutSubscriptionResponse{}
 	return response
 }
 
-func (*ExampleImplementation) UpdateSubscription(subscriptionid SubscriptionID, version string, body PutSubscriptionParameters, bodyParseError *error) UpdateSubscriptionResponseSet {
+func (*ExampleImplementation) UpdateSubscription(req *UpdateSubscriptionRequest) UpdateSubscriptionResponseSet {
 	response := UpdateSubscriptionResponseSet{}
 	response.Response200 = &PutSubscriptionResponse{}
 	return response
 }
 
-func (*ExampleImplementation) MakeDssReport(body ErrorReport, bodyParseError *error) MakeDssReportResponseSet {
+func (*ExampleImplementation) DeleteSubscription(req *DeleteSubscriptionRequest) DeleteSubscriptionResponseSet {
+	response := DeleteSubscriptionResponseSet{}
+	response.Response200 = &DeleteSubscriptionResponse{}
+	return response
+}
+
+func (*ExampleImplementation) MakeDssReport(req *MakeDssReportRequest) MakeDssReportResponseSet {
 	response := MakeDssReportResponseSet{}
 	response.Response201 = &ErrorReport{}
 	return response
 }
 
-func (*ExampleImplementation) SetUssAvailability(uss_id string, body SetUssAvailabilityStatusParameters, bodyParseError *error) SetUssAvailabilityResponseSet {
-	response := SetUssAvailabilityResponseSet{}
-	response.Response200 = &UssAvailabilityStatusResponse{}
-	return response
-}
-
-func (*ExampleImplementation) GetUssAvailability(uss_id string) GetUssAvailabilityResponseSet {
+func (*ExampleImplementation) GetUssAvailability(req *GetUssAvailabilityRequest) GetUssAvailabilityResponseSet {
 	response := GetUssAvailabilityResponseSet{}
 	response.Response200 = &UssAvailabilityStatusResponse{}
 	return response
 }
 
+func (*ExampleImplementation) SetUssAvailability(req *SetUssAvailabilityRequest) SetUssAvailabilityResponseSet {
+	response := SetUssAvailabilityResponseSet{}
+	response.Response200 = &UssAvailabilityStatusResponse{}
+	return response
+}
+
 func main() {
-	router1 := MakeRouter(&ExampleImplementation{})
-	multiRouter := MultiRouter{Routers: []*Router{&router1}}
+	router1 := MakeAPIRouter(&ExampleImplementation{}, &PermissiveAuthorizer{})
+	multiRouter := MultiRouter{Routers: []*APIRouter{&router1}}
 	s := &http.Server{
 		Addr:           ":8080",
 		Handler:        &multiRouter,

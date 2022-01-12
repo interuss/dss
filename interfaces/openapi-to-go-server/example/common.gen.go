@@ -13,13 +13,23 @@ type Route struct {
 	Handler Handler
 }
 
-type Router struct {
-	Routes         []*Route
-	Implementation Implementation
+type AuthorizationResult struct {
+	ClientID *string
+	Error    error
 }
 
-func (s *Router) Handle(w http.ResponseWriter, r *http.Request) bool {
-	for _, route := range s.Routes {
+type Authorizer interface {
+	Authorize(w http.ResponseWriter, r *http.Request, schemes *map[string]SecurityScheme) AuthorizationResult
+}
+
+type APIRouter struct {
+	Routes         []*Route
+	Implementation Implementation
+	Authorizer     Authorizer
+}
+
+func (a *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
+	for _, route := range a.Routes {
 		if route.Pattern.MatchString(r.URL.Path) {
 			route.Handler(route.Pattern, w, r)
 			return true
@@ -29,7 +39,7 @@ func (s *Router) Handle(w http.ResponseWriter, r *http.Request) bool {
 }
 
 type MultiRouter struct {
-	Routers []*Router
+	Routers []*APIRouter
 }
 
 func (m *MultiRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
