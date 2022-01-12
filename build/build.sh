@@ -16,7 +16,7 @@ else
 fi
 cd "${BASEDIR}"
 
-VERSION=$(./scripts/git/version.sh dss --long)
+VERSION=$(./scripts/git/version.sh dss)
 
 if [[ -z "${DOCKER_URL}" ]]; then
   echo "DOCKER_URL environment variable is not set; building image to interuss-local/dss..."

@@ -1,15 +1,15 @@
 # Release Management
 
-Releases of the DSS are based on git tags in the format `v[0-9]+\.[0-9]+\.[0-9]+`.
-When either an executable or image is built from a `git` checkout of the source, the [reference](https://git-scm.com/docs/git-describe#:~:text=If%20the%20tag%20points%20to%20the%20commit%2C%20then%20only%20the%20tag%20is%20shown.%20Otherwise%2C%20it%20suffixes%20the%20tag%20name%20with%20the%20number%20of%20additional%20commits%20on%20top%20of%20the%20tagged%20object%20and%20the%20abbreviated%20object%20name%20of%20the%20most%20recent%20commit.)
-as returned by `git describe` is used:
-> If the tag points to the commit, then only the tag is shown. Otherwise, it suffixes the tag name with the number of additional commits on top of the tagged object and the abbreviated object name of the most recent commit.
-
-If no such tags exists, the build system defaults to v0.0.0.
+Releases of the DSS are based on git tags in the format `interuss/dss/v[0-9]+\.[0-9]+\.[0-9]+`.
+When either an executable or image is built from a `git` checkout of the source, the most recent tag
+is used. If no such tag exists, the build system defaults to v0.0.0. If commits have been added to the tag,
+the commit hash is appended to the version. If the workspace is not clean, `-dirty` is appended to it.
+The version tag is computed by `scripts/git/version.sh`.
 
 With that, releasing a DSS version and producing release artifacts requires the following steps:
-* Create a tag `vX.Y.Z` on master and push it to the remote using `make release MAJOR=X MINOR=Y PATCH=Z`
-* Optionally, build the main docker image, tag it with `vX.Y.Z` and push it out to an image registry of your choice. The official upstream image for a given release is made available at https://hub.docker.com/repository/docker/interuss/dss.
+* Create a tag `interuss/dss/vX.Y.Z` on master and push it to the remote using `make tag MAJOR=X MINOR=Y PATCH=Z`
+* The github workflow ([.github/workflows/dss-image-push.yml](.github/workflows/dss-image-push.yml)) is triggered by the tag and should build and publish the dss to the [official docker registry](https://hub.docker.com/repository/docker/interuss/dss):
+* Optionally, build the main docker image, tag it with `vX.Y.Z` and push it out to an image registry of your choice.
 
 # CockroachDB Version
 
