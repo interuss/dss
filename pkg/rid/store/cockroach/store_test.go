@@ -22,7 +22,7 @@ import (
 
 var (
 	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
-	fakeDB    = "rid"
+	// fakeDB    = "rid"
 	fakeClock = clockwork.NewFakeClock()
 	startTime = fakeClock.Now().Add(-time.Minute)
 	endTime   = fakeClock.Now().Add(time.Hour)
@@ -55,8 +55,15 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 func newStore(ctx context.Context) (*Store, error) {
 	// Use a test db.
 	connectParameters := flags.ConnectParameters()
-	connectParameters.DBName = fakeDB
+	connectParameters.ApplicationName = ""
 	connectParameters.Host = "localhost"
+	connectParameters.Port = "26257"
+	connectParameters.Credentials.Username = "root"
+	connectParameters.SSL.Mode = "disable"
+	connectParameters.DBName = ""
+	connectParameters.SSL.Dir = "/tmp/ca.crt"
+	// connectParameters.DBName = fakeDB
+	// connectParameters.Host = "localhost"
 	cdb, err := cockroach.Dial(ctx, connectParameters)
 	if err != nil {
 		return nil, err
