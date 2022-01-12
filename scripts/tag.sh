@@ -12,6 +12,10 @@ if test "${branch}" != "master"; then
   echo "releases are only supported on master" && false
 fi
 
+if test -n "$(git status -s)"; then
+  echo "releases are only supported on clean workspace" && false
+fi
+
 if test -z "${version}"; then
   echo "${1} does not match .+/.+/v[0-9]+\.[0-9]+\.[0-9]+" && false
 fi
