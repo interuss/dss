@@ -10,6 +10,6 @@ UPSTREAM_REPO=$(git remote get-url origin)
 # Replace `:` by `/` to handle git@github.com:interuss/dss.git remote reference.
 UPSTREAM_REPO=${UPSTREAM_REPO//:/\/}
 # Remove hostname part
-UPSTREAM_OWNER=$(dirname ${UPSTREAM_REPO#*github.com/*})
+UPSTREAM_OWNER=$(dirname "${UPSTREAM_REPO#*github.com/*}")
 
-echo $UPSTREAM_OWNER
+echo "$UPSTREAM_OWNER"

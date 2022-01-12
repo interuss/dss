@@ -13,19 +13,19 @@
 if [[ $# == 0 ]]; then
   echo "Usage: $0 <COMPONENT> [--long]"
   echo "Print the component's version number. (ie v0.0.1)"
-  echo "[--long]: Print the component's version using the long format including the upstream organization (ie interuss/scd/v0.0.1)."
+  echo "[--long]: Print the component's version using the long format including the upstream owner (ie interuss/scd/v0.0.1)."
   exit 1
 fi
 
-# Set working directory
-cd "$(dirname "$0")"
-
-COMPONENT=${1:?"Component must be provided as environment variable. (example: scd, rid, aux, uss_qualifier)"}
+COMPONENT=${1}
 
 RELEASE_FORMAT=false
 if [[ $2 == "--long" ]]; then
   RELEASE_FORMAT=true
 fi
+
+# Set working directory
+cd "$(dirname "$0")" || exit 1
 
 UPSTREAM_ORG=$(./upstream_owner.sh)
 
@@ -60,7 +60,7 @@ if  test -n "$(git status -s)"; then
 fi
 
 if [[ "$RELEASE_FORMAT" == "true" ]]; then
-  echo ${UPSTREAM_ORG}/${COMPONENT}/${LAST_VERSION}${DIRTY}
+  echo "${UPSTREAM_ORG}"/"${COMPONENT}"/"${LAST_VERSION}""${DIRTY}"
 else
-  echo ${LAST_VERSION}${DIRTY}
+  echo "${LAST_VERSION}""${DIRTY}"
 fi

@@ -3,7 +3,7 @@ GOBIN := $(GOPATH)/bin
 
 UPSTREAM_OWNER := $(shell scripts/git/upstream_owner.sh)
 COMMIT := $(shell scripts/git/commit.sh)
-# DSS_VERSION_TAG determines the version of the DSS components and is baked into
+# DSS_VERSION_TAG determines the version of the DSS and is baked into
 # the executable using linker flags. If the commit is not a tag,
 # the version_tag will contain information about the closest tag
 # (ie v0.0.1-g6a64c20, see RELEASE.md for more details).
