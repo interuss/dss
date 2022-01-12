@@ -1,5 +1,11 @@
 #!/usr/bin/env sh
 
+# This script prints the organization of the upstream repository using the remote origin url.
+# It expects a github.com remote defined as origin and the following url formats:
+# 1. git@github.com:interuss/dss.git
+# 2. git@github.com/interuss/dss.git
+# 3. https://github.com/interuss/dss.git
+
 OS=$(uname)
 if [[ "$OS" == "Darwin" ]]; then
 	# OSX uses BSD readlink
@@ -8,12 +14,6 @@ else
 	BASEDIR=$(readlink -e "$(dirname "$0")")
 fi
 cd "${BASEDIR}"
-
-# Retrieve the upstream repository using the remote origin url.
-# It only supports github.com remote and the following url formats:
-# 1. git@github.com:interuss/dss.git
-# 2. git@github.com/interuss/dss.git
-# 3. https://github.com/interuss/dss.git
 
 UPSTREAM_REPO=$(git remote get-url origin)
 # Replace `:` by `/` to handle git@github.com:interuss/dss.git remote reference.

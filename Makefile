@@ -1,5 +1,7 @@
 GOPATH := $(shell go env GOPATH 2> /dev/null)
 GOBIN := $(GOPATH)/bin
+
+UPSTREAM_ORG := $(shell scripts/git/upstream_organization.sh)
 COMMIT := $(shell scripts/git/commit.sh)
 # DSS_VERSION_TAG determines the version of the DSS components and is baked into
 # the executable using linker flags. If the commit is not a tag,
@@ -144,10 +146,10 @@ cleanup-test-cockroach:
 test-e2e:
 	test/docker_e2e.sh
 
-release: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
+tag: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
 
-release:
-	scripts/release.sh $(VERSION)
+tag:
+	scripts/tag.sh $(UPSTREAM_ORG)/dss/$(VERSION)
 
 start-locally:
 	build/dev/run_locally.sh
