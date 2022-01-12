@@ -57,7 +57,7 @@ func newStore(ctx context.Context) (*Store, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.ApplicationName = ""
 	connectParameters.Host = "localhost"
-	connectParameters.Port = "26257"
+	connectParameters.Port = 26257
 	connectParameters.Credentials.Username = "root"
 	connectParameters.SSL.Mode = "disable"
 	connectParameters.DBName = ""
