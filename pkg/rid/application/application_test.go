@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/interuss/dss/pkg/cockroach"
-	"github.com/interuss/dss/pkg/cockroach/flags" // Force command line flag registration
+	// "github.com/interuss/dss/pkg/cockroach/flags" // Force command line flag registration
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/rid/store"
 	ridcrdb "github.com/interuss/dss/pkg/rid/store/cockroach"
 	dssql "github.com/interuss/dss/pkg/sql"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
@@ -63,17 +64,23 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	logger.Info("using cockroachDB.")
 
 	// Use a test db.
-	connectParameters := flags.ConnectParameters()
-	connectParameters.ApplicationName = ""
-	connectParameters.Host = "localhost"
-	connectParameters.Port = 26257
-	connectParameters.Credentials.Username = "root"
-	connectParameters.SSL.Mode = "disable"
-	connectParameters.DBName = ""
-	connectParameters.SSL.Dir = "/tmp/ca.crt"
-	cdb, err := cockroach.Dial(ctx, connectParameters)
+	// connectParameters := flags.ConnectParameters()
+	// connectParameters.ApplicationName = ""
+	// connectParameters.Host = "localhost"
+	// connectParameters.Port = 26257
+	// connectParameters.Credentials.Username = "root"
+	// connectParameters.SSL.Mode = "disable"
+	// connectParameters.DBName = ""
+	// connectParameters.SSL.Dir = "/tmp/ca.crt"
+	// cdb, err := cockroach.Dial(ctx, connectParameters)
+
+	config, err := pgxpool.ParseConfig(*storeURI)
 	require.NoError(t, err)
 
+	db, err := pgxpool.ConnectConfig(ctx, config)
+	require.NoError(t, err)
+
+	cdb := &cockroach.DB{db}
 	store, err := ridcrdb.NewStore(ctx, cdb, logger)
 	require.NoError(t, err)
 
