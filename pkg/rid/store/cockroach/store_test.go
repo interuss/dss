@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"log"
 	"strings"
 	"testing"
 	"time"
@@ -47,7 +48,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	store, err := newStore(ctx)
 	require.NoError(t, err)
 	return store, func() {
-		require.NoError(t, CleanUp(ctx, store))
+		require.NoError(t, CleanUp(store))
 		require.NoError(t, store.Close())
 	}
 }
@@ -69,6 +70,7 @@ func newStore(ctx context.Context) (*Store, error) {
 	// connectParameters.Host = "localhost"
 	cdb, err := cockroach.Dial(ctx, connectParameters)
 	if err != nil {
+		log.Println("Err in NewStore: ", err)
 		return nil, err
 	}
 	return &Store{
@@ -79,12 +81,12 @@ func newStore(ctx context.Context) (*Store, error) {
 }
 
 // CleanUp drops all required tables from the store, useful for testing.
-func CleanUp(ctx context.Context, s *Store) error {
+func CleanUp(s *Store) error {
 	const query = `
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.db.Exec(ctx, query)
+	_, err := s.db.Exec(context.Background(), query)
 	return err
 }
 
