@@ -4,26 +4,24 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"log"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/cockroach"
-	"github.com/interuss/dss/pkg/cockroach/flags" // Force command line flag registration
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	storeURI = flag.String("store-uri", "", "URI pointing to a Cockroach node")
-	// fakeDB    = "rid"
+	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	fakeClock = clockwork.NewFakeClock()
 	startTime = fakeClock.Now().Add(-time.Minute)
 	endTime   = fakeClock.Now().Add(time.Hour)
@@ -48,45 +46,36 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	store, err := newStore(ctx)
 	require.NoError(t, err)
 	return store, func() {
-		require.NoError(t, CleanUp(store))
+		require.NoError(t, CleanUp(ctx, store))
 		require.NoError(t, store.Close())
 	}
 }
 
 func newStore(ctx context.Context) (*Store, error) {
-	// Use a test db.
-	connectParameters := flags.ConnectParameters()
-	connectParameters.ApplicationName = ""
-	connectParameters.Host = "localhost"
-	connectParameters.Port = 26257
-	connectParameters.Credentials.Username = "root"
-	connectParameters.SSL.Mode = "disable"
-	connectParameters.DBName = ""
-	connectParameters.SSL.Dir = "/tmp/ca.crt"
-	if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
-		connectParameters.DBName = "rid"
-	}
-	// connectParameters.DBName = fakeDB
-	// connectParameters.Host = "localhost"
-	cdb, err := cockroach.Dial(ctx, connectParameters)
+	// cdb, err := cockroach.Dial(*storeURI)
+	config, err := pgxpool.ParseConfig(*storeURI)
 	if err != nil {
-		log.Println("Err in NewStore: ", err)
 		return nil, err
 	}
+	db, err := pgxpool.ConnectConfig(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Store{
-		db:     cdb,
+		db:     &cockroach.DB{db},
 		logger: logging.Logger,
 		clock:  fakeClock,
 	}, nil
 }
 
 // CleanUp drops all required tables from the store, useful for testing.
-func CleanUp(s *Store) error {
+func CleanUp(ctx context.Context, s *Store) error {
 	const query = `
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.db.Exec(context.Background(), query)
+	_, err := s.db.Exec(ctx, query)
 	return err
 }
 
