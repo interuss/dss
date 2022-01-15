@@ -3,6 +3,7 @@ package cockroach
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/coreos/go-semver/semver"
@@ -60,9 +61,11 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 		i := new(ridmodels.IdentificationServiceArea)
 
 		var updateTime time.Time
-		if i.StartTime.IsZero() {
-			*i.StartTime = time.Now()
-		}
+		fmt.Println("myStartTime: ", i.StartTime)
+		log.Println("2myStartTime: ", i.StartTime)
+		// if i.StartTime.IsZero() {
+		// 	i.StartTime = time.Now()
+		// }
 
 		err := rows.Scan(
 			&i.ID,
