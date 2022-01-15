@@ -395,11 +395,11 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 
 			if !r.wantStartTime.IsZero() {
 				require.NotNil(t, sub.StartTime)
-				require.Equal(t, r.wantStartTime, *sub.StartTime)
+				require.Equal(t, r.wantStartTime, (*sub.StartTime).UTC())
 			}
 			if !r.wantEndTime.IsZero() {
 				require.NotNil(t, sub.EndTime)
-				require.Equal(t, r.wantEndTime, *sub.EndTime)
+				require.Equal(t, r.wantEndTime, (*sub.EndTime).UTC())
 			}
 		})
 	}
