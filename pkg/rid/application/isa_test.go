@@ -313,7 +313,7 @@ func TestUpdateISA(t *testing.T) {
 			// }
 			if !r.wantEndTime.IsZero() {
 				require.NotNil(t, isa.EndTime)
-				require.Equal(t, r.wantEndTime, *isa.EndTime.UTC())
+				require.Equal(t, r.wantEndTime, (*isa.EndTime).UTC())
 			}
 		})
 	}
