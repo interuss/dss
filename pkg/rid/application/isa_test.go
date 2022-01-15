@@ -197,8 +197,6 @@ func TestInsertISA(t *testing.T) {
 				Owner: dssmodels.Owner(uuid.New().String()),
 				Cells: s2.CellUnion{12494535935418957824},
 			}
-			fmt.Println("mywantStartTime: ", r.wantStartTime)
-			fmt.Println("myStartTime: ", *isa.StartTime)
 			if !r.startTime.IsZero() {
 				sa.StartTime = &r.startTime
 			}
@@ -206,13 +204,15 @@ func TestInsertISA(t *testing.T) {
 				sa.EndTime = &r.endTime
 			}
 			isa, _, err := app.InsertISA(ctx, sa)
-
+			
 			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
 				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
 			}
-
+				
+			fmt.Println("mywantStartTime: ", r.wantStartTime)
+			fmt.Println("myStartTime: ", *isa.StartTime)
 			if !r.wantStartTime.IsZero() {
 				require.NotNil(t, isa.StartTime)
 				require.Equal(t, r.wantStartTime, *isa.StartTime)
