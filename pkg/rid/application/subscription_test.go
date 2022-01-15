@@ -293,7 +293,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			}
 			if !r.wantEndTime.IsZero() {
 				require.NotNil(t, sub.EndTime)
-				require.Equal(t, r.wantEndTime, *sub.EndTime)
+				require.Equal(t, r.wantEndTime, (*sub.EndTime).UTC())
 			}
 		})
 	}
