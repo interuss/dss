@@ -204,13 +204,13 @@ func TestInsertISA(t *testing.T) {
 				sa.EndTime = &r.endTime
 			}
 			isa, _, err := app.InsertISA(ctx, sa)
-			
+
 			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
 				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
 			}
-				
+
 			fmt.Println("mywantStartTime: ", r.wantStartTime)
 			fmt.Println("myStartTime: ", *isa.StartTime)
 			if !r.wantStartTime.IsZero() {
