@@ -60,6 +60,9 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 		i := new(ridmodels.IdentificationServiceArea)
 
 		var updateTime time.Time
+		if i.StartTime.IsZero() {
+			*i.StartTime = time.Time{}
+		}
 
 		err := rows.Scan(
 			&i.ID,
