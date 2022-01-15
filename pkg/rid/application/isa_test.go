@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -196,6 +197,8 @@ func TestInsertISA(t *testing.T) {
 				Owner: dssmodels.Owner(uuid.New().String()),
 				Cells: s2.CellUnion{12494535935418957824},
 			}
+			fmt.Println("mywantStartTime: ", r.wantStartTime)
+			fmt.Println("myStartTime: ", *isa.StartTime)
 			if !r.startTime.IsZero() {
 				sa.StartTime = &r.startTime
 			}
