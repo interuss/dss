@@ -61,7 +61,7 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 
 		var updateTime time.Time
 		if i.StartTime.IsZero() {
-			*i.StartTime = time.Time{}
+			*i.StartTime = time.Now()
 		}
 
 		err := rows.Scan(
