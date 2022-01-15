@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	// "fmt"
 	"testing"
 	"time"
 
@@ -213,6 +212,9 @@ func TestInsertISA(t *testing.T) {
 
 			if !r.wantStartTime.IsZero() {
 				require.NotNil(t, isa.StartTime)
+				// time.Time times are represented with loc==nil. The nil location means UTC.
+				// for test equality, it has to be explicitly converted to UTC.
+				// similar issue: https://github.com/golang/go/issues/19486
 				require.Equal(t, r.wantStartTime, (*isa.StartTime).UTC())
 			}
 			if !r.wantEndTime.IsZero() {

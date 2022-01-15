@@ -52,7 +52,6 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 }
 
 func newStore(ctx context.Context) (*Store, error) {
-	// cdb, err := cockroach.Dial(*storeURI)
 	config, err := pgxpool.ParseConfig(*storeURI)
 	if err != nil {
 		return nil, err

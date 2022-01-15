@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	// TODO: issue with below library: https://githubhelp.com/cockroachdb/cockroach-go/issues/65?ref=https://githubhelp.com
-	// "github.com/cockroachdb/cockroach-go/crdb/crdbpgx"
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/cockroach"
