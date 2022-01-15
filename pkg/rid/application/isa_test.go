@@ -212,7 +212,7 @@ func TestInsertISA(t *testing.T) {
 			}
 
 			fmt.Println("mywantStartTime: ", r.wantStartTime)
-			fmt.Println("myStartTime: ", *isa.StartTime)
+			fmt.Println("myStartTime: ", isa.StartTime)
 			if !r.wantStartTime.IsZero() {
 				require.NotNil(t, isa.StartTime)
 				require.Equal(t, r.wantStartTime, *isa.StartTime)
