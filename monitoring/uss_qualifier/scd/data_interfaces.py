@@ -28,9 +28,9 @@ class KnownIssueFields(ImplicitDict):
     '''Human-readable description of the issue'''
 
 class KnownResponses(ImplicitDict):
-    ''' A class to evaluate results / response to an injection of test flight data (TestFlightRequest). Holds information about the "result" response provided by the test interface of the USS under test. Per the SCD Testing API this should be one of "Planned", "Rejected", "ConflictWithFlight" or "Failed". In the case where the USS under test provides a result that is not the same as expected result then the test driver can provide a message detailing why the expected result was populated the way it was. This should help the USS under test debug specific parts of their internal systems. '''
+    ''' A class to evaluate results / response to an injection of test flight data (TestFlightRequest). This calls holds information about the "result" response provided by the test interface of the USS under test. Per the SCD Testing API this should be one of "Planned", "Rejected", "ConflictWithFlight" or "Failed". In the case where the USS under test provides a result that is not the same as expected result then the test driver can provide a message detailing why the expected result was populated the way it was. This should help the USS under test debug specific parts of their internal systems. '''
     acceptable_results: List[str] 
-    incorrect_result_details: Optional[Dict[Result, KnownIssueFields]]
+    incorrect_result_details: Optional[Dict[str, KnownIssueFields]]
     response_wait_time_secs: int # amount of time the test driver should wait before expecting a response
     response_timeout_message: KnownIssueFields
 
