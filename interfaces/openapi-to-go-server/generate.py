@@ -6,11 +6,11 @@ import os
 import yaml
 
 import data_types
-import endpoints
+import operations
 import rendering
 
 
-def parse_args():
+def _parse_args():
     parser = argparse.ArgumentParser(description='Preprocess an OpenAPI YAML')
 
     # Input/output specifications
@@ -46,11 +46,12 @@ def parse_args():
     parser.add_argument('--include_example', dest='include_example',
                         default=False, action='store_true',
                         help='Generate example implementation (main.gen.go)')
+
     return parser.parse_args()
 
 
 def main():
-    args = parse_args()
+    args = _parse_args()
     with open(args.input_yaml, mode='r') as f:
         spec = yaml.full_load(f)
 
@@ -77,22 +78,22 @@ def main():
     if 'paths' not in spec:
         raise ValueError('Missing `paths` in YAML')
     paths = spec['paths']
-    declared_endpoints = []
+    declared_operations = []
     for name, schema in paths.items():
-        new_endpoints = endpoints.make_endpoints(name, schema)
-        declared_endpoints.extend(new_endpoints)
+        new_endpoints = operations.make_operations(name, schema)
+        declared_operations.extend(new_endpoints)
 
     # Filter endpoints by tags, if specified
     if args.include_endpoint_tags:
         tags = args.include_endpoint_tags.split(',')
-        declared_endpoints = [endpoint for endpoint in declared_endpoints
+        declared_operations = [endpoint for endpoint in declared_operations
                               if not all(tag not in endpoint.tags for tag in tags)]
 
     # Generate Go handler implementation interface
     if args.include_interface:
         with open(os.path.join(args.output_folder, 'interface.gen.go'), 'w') as f:
             f.write('\n'.join(rendering.header(args.package)) + '\n'*2)
-            f.write('\n'.join(rendering.implementation_interface(declared_endpoints)))
+            f.write('\n'.join(rendering.implementation_interface(declared_operations)))
             f.write('\n')
 
     # Generate Go server factory
@@ -102,7 +103,7 @@ def main():
             with open('templates/server.go.template', 'r') as t:
                 f.write(t.read())
             f.write('\n')
-            f.write('\n'.join(rendering.routes(declared_endpoints, args.path_prefix)))
+            f.write('\n'.join(rendering.routes(declared_operations, args.path_prefix)))
             f.write('\n')
 
     # Generate Go main (executable) example
@@ -112,14 +113,14 @@ def main():
             with open('templates/main.go.template', 'r') as t:
                 f.write(t.read())
             f.write('\n')
-            f.write('\n'.join(rendering.example(declared_endpoints)))
+            f.write('\n'.join(rendering.example(declared_operations)))
             f.write('\n')
 
     # Generate Go utilities common to any API generated with this tool
     if args.include_common:
         with open(os.path.join(args.output_folder, 'common.gen.go'), 'w') as f:
             f.write('\n'.join(rendering.header(args.package)) + '\n'*2)
-            with open('templates/router.go.template', 'r') as t:
+            with open('templates/common.go.template', 'r') as t:
                 f.write(t.read())
             f.write('\n')
 

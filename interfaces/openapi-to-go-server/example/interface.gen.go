@@ -1,18 +1,6 @@
 // This file is auto-generated; do not change as any changes will be overwritten
 package main
 
-type EmptyResponseBody struct{}
-
-type InternalServerErrorBody struct {
-	ErrorMessage string `json:"error_message"`
-}
-
-// Security requirements
-type AuthorizationOption struct {
-	RequiredScopes []string
-}
-type SecurityScheme []AuthorizationOption
-
 var (
 	QueryOperationalIntentReferencesSecurity = map[string]SecurityScheme{
 		"Authority": []AuthorizationOption{

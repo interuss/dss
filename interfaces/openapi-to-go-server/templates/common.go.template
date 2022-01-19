@@ -3,12 +3,15 @@ import (
 	"regexp"
 )
 
-type Handler func (exp *regexp.Regexp, w http.ResponseWriter, r *http.Request)
+// --- Interface definitions ---
 
-type Route struct {
-    Pattern *regexp.Regexp
-    Handler Handler
+type EmptyResponseBody struct {}
+
+type InternalServerErrorBody struct {
+    ErrorMessage string `json:"error_message"`
 }
+
+// --- Authorization definitions ---
 
 type AuthorizationResult struct {
     ClientID *string
@@ -17,6 +20,21 @@ type AuthorizationResult struct {
 
 type Authorizer interface {
     Authorize(w http.ResponseWriter, r *http.Request, schemes *map[string]SecurityScheme) AuthorizationResult
+}
+
+type AuthorizationOption struct {
+    RequiredScopes []string
+}
+
+type SecurityScheme []AuthorizationOption
+
+// --- API router definitions ---
+
+type Handler func (exp *regexp.Regexp, w http.ResponseWriter, r *http.Request)
+
+type Route struct {
+    Pattern *regexp.Regexp
+    Handler Handler
 }
 
 type APIRouter struct {
@@ -34,6 +52,8 @@ func (a *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
     }
     return false
 }
+
+// --- Multi-router definitions ---
 
 type MultiRouter struct {
     Routers []*APIRouter

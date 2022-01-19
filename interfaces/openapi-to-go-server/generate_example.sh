@@ -21,9 +21,12 @@ docker container run -it \
 	  -v $(pwd)/example:/resources/out \
 	  openapi-to-go-server \
 	      --input_yaml /resources/in/utm.yaml \
+	      --path_prefix /scd \
 	      --output_folder /resources/out \
 	      --include_endpoint_tags dss \
 	      --package main \
-	      --include_example \
+	      --include_types \
+	      --include_interface \
+	      --include_server \
 	      --include_common \
-	      --path_prefix /scd
+	      --include_example
