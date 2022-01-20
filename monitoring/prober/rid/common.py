@@ -22,7 +22,7 @@ VERTICES = [
 
 CLOSER_POLYGON_VERTICES = [
     {
-        'lng': 130.6205,
+        'lng': 130.6305,
         'lat': -23.6558
     },
     {
@@ -34,7 +34,7 @@ CLOSER_POLYGON_VERTICES = [
         'lat': -23.6209
     },
     {
-        'lng': 130.6466,
+        'lng': 130.6566,
         'lat': -23.6407
     },
 ]
