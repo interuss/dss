@@ -1,4 +1,5 @@
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest
+from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt, InjectionTarget, KnownIssueFields, KnownResponses
 from utils import GeneratedGeometry, GeometryGenerationRule, RequiredResults,TestInjectionRequiredResult
 from shapely.geometry import asShape
 from shapely.geometry import LineString
@@ -242,8 +243,8 @@ class TestInjectionRequiredResultsGenerator():
     '''A class to generate TestInjection and the associated results '''
     
 
-    def generate_nominal_test_injections_results(self) -> List[TestInjectionRequiredResult]:
-        all_injections_results = []
+    def generate_flight_injection_attempts(self) -> List[TestInjectionRequiredResult]:
+        flight_injection_attempts = []
         
         num_injections = 2
         for injection_number in range(0,num_injections):
@@ -279,23 +280,28 @@ class TestInjectionRequiredResultsGenerator():
             operational_intent_test_injection = my_operational_intent_generator.generate_injection_operational_intents(astm_4d_volume = [flight_volume])
         
             inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
-            authorisation_data_fields_to_evaluate = []
             operational_intent_processing_result = []
-
+            incorrect_result_details = {}
             if make_incorrect: 
-                expected_injection_result = 'Rejected'    
-                authorisation_data_fields_to_evaluate = ['uas_serial_number']
+                expected_flight_authorisation_processing_result = 'Rejected'   
+                issue_field = KnownIssueFields(test_code = 'uas_serial_number', relevant_requirements = ['UAS Serial number should adhere to the ANSI CTA standard'], severity= 1, subject='UAS Serial Number is incorrect', summary ="The UAS serial number provided in the injection attempt was incorrect", details = "The UAS serial number does not adhere to the one prescribed in the standard and should be rejected.")
+                
+                incorrect_result_details = {'Planned': issue_field}
             else:
-                expected_injection_result = 'Planned'
-            
-            required_result = RequiredResults(expected_response=expected_injection_result,authorisation_data_fields_to_evaluate = authorisation_data_fields_to_evaluate, operational_intent_processing_result=operational_intent_processing_result)
-            
-            all_injections_results.append(TestInjectionRequiredResult(test_injection=inject_flight_request,required_result=required_result))
+                expected_flight_authorisation_processing_result = 'Planned'
 
-        return all_injections_results
+            if should_intersect: 
+                operational_intent_processing_result = 'ConflictWithFlight'
+            else: 
+                operational_intent_processing_result= 'Planned'
+            injection_target = InjectionTarget(uss_role = 'Submitting USS')
+            known_responses = [KnownResponses(acceptable_results=[expected_flight_authorisation_processing_result, operational_intent_processing_result], incorrect_result_details= incorrect_result_details)]
+            flight_injection_attempt = FlightInjectionAttempt(test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target)
+            flight_injection_attempts.append(flight_injection_attempt)
+        return flight_injection_attempts
            
 
 if __name__ == '__main__':    
     my_test_injection_results_generator = TestInjectionRequiredResultsGenerator()
-    injections_results = my_test_injection_results_generator.generate_nominal_test_injections_results()    
+    injections_results = my_test_injection_results_generator.generate_flight_injection_attempts()    
     print(injections_results)
