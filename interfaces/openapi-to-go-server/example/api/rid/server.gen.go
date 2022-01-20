@@ -14,6 +14,7 @@ type APIRouter struct {
 	Authorizer     api.Authorizer
 }
 
+// *rid.APIRouter (type defined above) implements the api.APIRouter interface
 func (a *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 	for _, route := range a.Routes {
 		if route.Pattern.MatchString(r.URL.Path) {

@@ -139,6 +139,7 @@ def main():
             api.filter_operations(tags)
         api_list.append(api)
 
+    # Render Go code
     if args.api_folder:
         _generate_apis(api_list, args.api_folder, args.api_import, True)
         os.system('cd {} && gofmt -s -w .'.format(args.api_folder))
