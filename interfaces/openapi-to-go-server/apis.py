@@ -12,9 +12,41 @@ class API:
     operations: List[operations.Operation]
 
     def filter_operations(self, tags: Set[str]):
+        # Select only the applicable operations
         self.operations = [op for op in self.operations
                            if not all(tag not in op.tags for tag in tags)]
-        # TODO: Remove unnecessary DataTypes
+
+        # Determine the necessary data types
+        required_data_types: Set[str] = set()
+        for op in self.operations:
+            for p in op.path_parameters + op.query_parameters:
+                required_data_types.add(p.go_type)
+            if op.json_request_body_type:
+                required_data_types.add(op.json_request_body_type)
+            for response in op.responses:
+                if response.json_body_type:
+                    required_data_types.add(response.json_body_type)
+
+        data_types_by_name: Dict[str, data_types.DataType] = {dt.name: dt for dt in self.data_types}
+        data_types_to_check = [dt for dt in required_data_types]
+        while data_types_to_check:
+            data_type_name = data_types_to_check.pop()
+            base_data_type = data_type_name[2:] if data_type_name.startswith('[]') else data_type_name
+            required_data_types.add(base_data_type)
+            data_type = data_types_by_name.get(base_data_type, None)
+            if not data_type:
+                continue
+            if data_type.go_type not in required_data_types:
+                required_data_types.add(data_type.go_type)
+                data_types_to_check.append(data_type.go_type)
+            for field in data_type.fields:
+                if field.go_type not in required_data_types:
+                    required_data_types.add(field.go_type)
+                    data_types_to_check.append(field.go_type)
+
+        # Select only the necessary data types
+        self.data_types = [dt for dt in self.data_types
+                           if dt.name in required_data_types]
 
 
 def make_api(package: str, spec: Dict) -> API:
