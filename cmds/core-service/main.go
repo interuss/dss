@@ -40,20 +40,21 @@ import (
 )
 
 var (
-	address           = flag.String("addr", ":8081", "address")
-	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
-	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
-	jwksKeyIDs        = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
-	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
-	timeout           = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
-	reflectAPI        = flag.Bool("reflect_api", false, "Whether to reflect the API.")
-	logFormat         = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
-	logLevel          = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
-	dumpRequests      = flag.Bool("dump_requests", false, "Log request and response protos")
-	profServiceName   = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
-	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
-	enableHTTP        = flag.Bool("enable_http", false, "Enables http scheme for Strategic Conflict Detection API")
-	locality          = flag.String("locality", "", "self-identification string used as CRDB table writer column")
+	address             = flag.String("addr", ":8081", "address")
+	pkFile              = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
+	jwksEndpoint        = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
+	jwksKeyIDs          = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
+	keyRefreshTimeout   = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
+	timeout             = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
+	reflectAPI          = flag.Bool("reflect_api", false, "Whether to reflect the API.")
+	logFormat           = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
+	logLevel            = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
+	dumpRequests        = flag.Bool("dump_requests", false, "Log request and response protos")
+	profServiceName     = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
+	enableSCD           = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
+	enableHTTP          = flag.Bool("enable_http", false, "Enables http scheme for Strategic Conflict Detection API")
+	locality            = flag.String("locality", "", "self-identification string used as CRDB table writer column")
+	garbageColletorSpec = flag.String("garbage_collector_spec", "@every 30m", "Garbage collector schedule. The value must follow robfig/cron format. See https://godoc.org/github.com/robfig/cron#hdr-Usage for more detail.")
 
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
@@ -125,8 +126,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	}
 
 	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
-	// TODO(supicha): make the 30m configurable
-	if _, err = ridCron.AddJob("@every 30m", cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
+	if _, err = ridCron.AddJob(*garbageColletorSpec, cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
 	}
 	ridCron.Start()
