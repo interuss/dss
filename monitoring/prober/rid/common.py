@@ -20,6 +20,25 @@ VERTICES = [
     },
 ]
 
+CLOSER_POLYGON_VERTICES = [
+    {
+        'lng': 130.6205,
+        'lat': -23.6558
+    },
+    {
+        'lng': 130.6201,
+        'lat': -23.6298
+    },
+    {
+        'lng': 130.6500,
+        'lat': -23.6209
+    },
+    {
+        'lng': 130.6466,
+        'lat': -23.6407
+    },
+]
+
 GEO_POLYGON_STRING = rid.geo_polygon_string(VERTICES)
 
 HUGE_VERTICES = [
