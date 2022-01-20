@@ -68,7 +68,9 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	db, err := pgxpool.ConnectConfig(ctx, config)
 	require.NoError(t, err)
 
-	cdb := &cockroach.DB{db}
+	cdb := &cockroach.DB{
+		dbHandler: db,
+	}
 	store, err := ridcrdb.NewStore(ctx, cdb, logger)
 	require.NoError(t, err)
 
