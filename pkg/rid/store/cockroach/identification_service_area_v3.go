@@ -13,7 +13,8 @@ import (
 	"github.com/golang/geo/s2"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
+
 	"go.uber.org/zap"
 )
 
@@ -31,31 +32,38 @@ type isaRepoV3 struct {
 }
 
 func (c *isaRepoV3) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
-	rows, err := c.QueryContext(ctx, query, args...)
+	rows, err := c.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
 	defer rows.Close()
 
 	var payload []*ridmodels.IdentificationServiceArea
-	cids := pq.Int64Array{}
+	pgCids := pgtype.Int8Array{}
 
 	for rows.Next() {
 		i := new(ridmodels.IdentificationServiceArea)
+
+		var updateTime time.Time
 
 		err := rows.Scan(
 			&i.ID,
 			&i.Owner,
 			&i.URL,
-			&cids,
+			&pgCids,
 			&i.StartTime,
 			&i.EndTime,
-			&i.Version,
+			&updateTime,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning ISA row")
 		}
+		var cids []int64
+		if err := pgCids.AssignTo(cids); err != nil {
+			return nil, stacktrace.Propagate(err, "Error Converting jackc/pgtype to array")
+		}
 		i.SetCells(cids)
+		i.Version = dssmodels.VersionFromTime(updateTime)
 		payload = append(payload, i)
 	}
 	if err := rows.Err(); err != nil {
@@ -87,7 +95,11 @@ func (c *isaRepoV3) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Ide
 			identification_service_areas
 		WHERE
 			id = $1`, isaFieldsV3)
-	return c.processOne(ctx, query, id)
+	uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, query, uid)
 }
 
 // InsertISA inserts the IdentificationServiceArea identified by "id" and owned
@@ -118,7 +130,16 @@ func (c *isaRepoV3) InsertISA(ctx context.Context, isa *ridmodels.Identification
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime)
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+	uid, err := isa.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, insertAreasQuery, uid, isa.Owner, isa.URL, pgCids, isa.StartTime, isa.EndTime)
 }
 
 // UpdateISA updates the IdentificationServiceArea identified by "id" and owned
@@ -148,7 +169,17 @@ func (c *isaRepoV3) UpdateISA(ctx context.Context, isa *ridmodels.Identification
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	uid, err := isa.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, updateAreasQuery, uid, isa.URL, pgCids, isa.StartTime, isa.EndTime, isa.Version.ToTimestamp())
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
@@ -165,7 +196,11 @@ func (c *isaRepoV3) DeleteISA(ctx context.Context, isa *ridmodels.Identification
 				updated_at = $2
 			RETURNING %s`, isaFieldsV3)
 	)
-	return c.processOne(ctx, deleteQuery, isa.ID, isa.Version.ToTimestamp())
+	uid, err := isa.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, deleteQuery, uid, isa.Version.ToTimestamp())
 }
 
 // SearchISAs searches IdentificationServiceArea
@@ -201,7 +236,13 @@ func (c *isaRepoV3) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest
 		cids[i] = int64(cid)
 	}
 
-	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	return c.process(ctx, isasInCellsQuery, earliest, latest, pgCids)
 }
 
 // ListExpiredISAs returns empty. We don't support thi function in store v3.0 because db doesn't have 'writer' field.

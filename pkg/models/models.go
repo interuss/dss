@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgtype"
 )
 
 type (
@@ -33,6 +34,15 @@ const (
 	// although changes to this will result in RMW errors.
 	versionBase = 32
 )
+
+func (id *ID) PgUUID() (*pgtype.UUID, error) {
+	var pgUUID pgtype.UUID
+	err := pgUUID.Set(id.String())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error converting ID to PgUUID format")
+	}
+	return &pgUUID, nil
+}
 
 func (id ID) String() string {
 	return string(id)

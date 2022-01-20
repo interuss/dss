@@ -14,8 +14,9 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jonboulle/clockwork"
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,7 +43,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
-	store, err := newStore()
+	store, err := newStore(ctx)
 	require.NoError(t, err)
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
@@ -50,13 +51,18 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newStore() (*Store, error) {
-	cdb, err := cockroach.Dial(*storeURI)
+func newStore(ctx context.Context) (*Store, error) {
+	config, err := pgxpool.ParseConfig(*storeURI)
 	if err != nil {
 		return nil, err
 	}
+	db, err := pgxpool.ConnectConfig(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Store{
-		db:     cdb,
+		db:     &cockroach.DB{db},
 		logger: logging.Logger,
 		clock:  fakeClock,
 	}, nil
@@ -68,7 +74,7 @@ func CleanUp(ctx context.Context, s *Store) error {
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.db.ExecContext(ctx, query)
+	_, err := s.db.Exec(ctx, query)
 	return err
 }
 
@@ -131,7 +137,7 @@ func TestTxnRetrier(t *testing.T) {
 		// can query within this
 		count++
 		// Postgre retryable error
-		return &pq.Error{Code: "40001"}
+		return &pgconn.PgError{Code: "40001"}
 	})
 	require.Error(t, err)
 	// Ensure it was retried.
@@ -208,7 +214,7 @@ func TestBasicTxn(t *testing.T) {
 	subscription1 := subscriptionsPool[0].input
 	subscription2 := subscriptionsPool[1].input
 
-	tx1, err := store.db.Begin()
+	tx1, err := store.db.Begin(ctx)
 	require.NoError(t, err)
 	s1 := &repo{
 		ISA: &isaRepo{
@@ -222,7 +228,7 @@ func TestBasicTxn(t *testing.T) {
 		},
 	}
 
-	tx2, err := store.db.Begin()
+	tx2, err := store.db.Begin(ctx)
 	require.NoError(t, err)
 	s2 := &repo{
 		ISA: &isaRepo{
@@ -251,8 +257,8 @@ func TestBasicTxn(t *testing.T) {
 	_, err = s2.InsertSubscription(ctx, subscription2)
 	require.NoError(t, err)
 
-	require.Error(t, tx1.Commit())
-	require.NoError(t, tx2.Commit())
+	require.Error(t, tx1.Commit(ctx))
+	require.NoError(t, tx2.Commit(ctx))
 
 	repo, err := store.Interact(ctx)
 	require.NoError(t, err)
