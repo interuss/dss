@@ -30,6 +30,18 @@ func (s *APIRouter) SearchIdentificationServiceAreas(exp *regexp.Regexp, w http.
 	// Authorize request
 	req.Auth = s.Authorizer.Authorize(w, r, &SearchIdentificationServiceAreasSecurity)
 
+	// Copy query parameters
+	query := r.URL.Query()
+	if query.Has("area") {
+		req.Area = GeoPolygonString(query.Get("area"))
+	}
+	if query.Has("earliest_time") {
+		req.EarliestTime = query.Get("earliest_time")
+	}
+	if query.Has("latest_time") {
+		req.LatestTime = query.Get("latest_time")
+	}
+
 	// Call implementation
 	response := s.Implementation.SearchIdentificationServiceAreas(&req)
 
@@ -254,6 +266,12 @@ func (s *APIRouter) SearchSubscriptions(exp *regexp.Regexp, w http.ResponseWrite
 
 	// Authorize request
 	req.Auth = s.Authorizer.Authorize(w, r, &SearchSubscriptionsSecurity)
+
+	// Copy query parameters
+	query := r.URL.Query()
+	if query.Has("area") {
+		req.Area = GeoPolygonString(query.Get("area"))
+	}
 
 	// Call implementation
 	response := s.Implementation.SearchSubscriptions(&req)

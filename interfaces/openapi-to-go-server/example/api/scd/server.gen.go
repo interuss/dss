@@ -828,7 +828,7 @@ func (s *APIRouter) GetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
-	req.Uss_id = pathMatch[1]
+	req.UssId = pathMatch[1]
 
 	// Call implementation
 	response := s.Implementation.GetUssAvailability(&req)
@@ -869,7 +869,7 @@ func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
-	req.Uss_id = pathMatch[1]
+	req.UssId = pathMatch[1]
 
 	// Parse request body
 	req.Body = new(SetUssAvailabilityStatusParameters)

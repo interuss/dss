@@ -716,7 +716,7 @@ type MakeDssReportResponseSet struct {
 
 type GetUssAvailabilityRequest struct {
 	// Client ID (matching their `sub` in access tokens) of the USS to which this availability applies.
-	Uss_id string
+	UssId string
 
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
@@ -743,7 +743,7 @@ type GetUssAvailabilityResponseSet struct {
 
 type SetUssAvailabilityRequest struct {
 	// Client ID (matching their `sub` in access tokens) of the USS to which this availability applies.
-	Uss_id string
+	UssId string
 
 	// The data contained in the body of this request, if it parsed correctly
 	Body *SetUssAvailabilityStatusParameters

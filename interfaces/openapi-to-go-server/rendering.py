@@ -138,7 +138,7 @@ def implementation_interface(api: apis.API, api_package: str, ensure_500: bool) 
         for p in operation.path_parameters + operation.query_parameters:
             if p.description:
                 body.extend(comment(p.description.split('\n')))
-            body.append('{} {}'.format(p.go_field_name, p.go_type))
+            body.append('{} {}{}'.format(p.go_field_name, '*' if p in operation.query_parameters else '', p.go_type))
             body.append('')
         if operation.json_request_body_type:
             body.extend(comment(['The data contained in the body of this request, if it parsed correctly']))
@@ -240,8 +240,21 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
                                                             p.go_type, i + 1))
             body.append('')
 
-        # Parse any query parameters
-        # TODO
+        # Capture any query parameters
+        if operation.query_parameters:
+            body.extend(comment(['Copy query parameters']))
+            body.append('query := r.URL.Query()')
+            for q in operation.query_parameters:
+                body.append('if query.Has("%s") {' % q.name)
+                if_body: List[str] = []
+                if q.go_type == 'string':
+                    if_body.append('v := query.Get("{}")'.format(q.name))
+                else:
+                    if_body.append('v := {}(query.Get("{}"))'.format(q.go_type, q.name))
+                if_body.append('req.{} = &v'.format(q.go_field_name))
+                body.extend(indent(if_body, 1))
+                body.append('}')
+            body.append('')
 
         # Attempt to parse the request body JSON, if defined
         if operation.json_request_body_type:

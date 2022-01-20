@@ -59,6 +59,15 @@ var (
 )
 
 type SearchIdentificationServiceAreasRequest struct {
+	// The area in which to search for Identification Service Areas.  Some Identification Service Areas near this area but wholly outside it may also be returned.
+	Area *GeoPolygonString
+
+	// If specified, indicates non-interest in any Identification Service Areas that end before this time.  RFC 3339 format, per OpenAPI specification.
+	EarliestTime *string
+
+	// If specified, indicates non-interest in any Identification Service Areas that start after this time.  RFC 3339 format, per OpenAPI specification.
+	LatestTime *string
+
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
@@ -224,6 +233,9 @@ type DeleteIdentificationServiceAreaResponseSet struct {
 }
 
 type SearchSubscriptionsRequest struct {
+	// The area in which to search for Subscriptions.  Some Subscriptions near this area but wholly outside it may also be returned.
+	Area *GeoPolygonString
+
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }

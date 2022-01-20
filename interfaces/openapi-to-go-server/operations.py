@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import data_types
 import formatting
@@ -21,7 +21,7 @@ class StringParameter:
     @property
     def go_field_name(self) -> str:
         """Go-style field name for this parameter in the Operation's `request_type_name`"""
-        return formatting.capitalize_first_letter(self.name)
+        return formatting.snake_case_to_pascal_case(self.name)
 
 
 @dataclasses.dataclass
@@ -117,19 +117,14 @@ class Operation:
         return self.interface_name + 'Request'
 
 
-def make_operations(path: str, schema: Dict) -> List[Operation]:
-    """Parse all operations defined within the specified path definition.
-    
-    :param path: Relative path of operations described in `schema`
-    :param schema: Definition of operations accessible at `path`
-    :return: Operations defined by `schema`
+def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringParameter]]:
+    """Parse operation parameters from an OpenAPI schema for path or verb
+
+    :param schema: Schema for an OpenAPI path or an OpenAPI verb
+    :return: Parameters discovered including:
+      * Path parameters
+      * Query parameters
     """
-    endpoints: List[Operation] = []
-
-    summary = schema.get('summary', '')
-    description = schema.get('description', '')
-
-    # Parse common parameters for all operations in schema
     path_parameters: List[StringParameter] = []
     query_parameters: List[StringParameter] = []
     for parameter in schema.get('parameters', []):
@@ -161,6 +156,24 @@ def make_operations(path: str, schema: Dict) -> List[Operation]:
                     parameter_in,
                     parameter_name))
 
+    return path_parameters, query_parameters
+
+
+def make_operations(path: str, schema: Dict) -> List[Operation]:
+    """Parse all operations defined within the specified path definition.
+    
+    :param path: Relative path of operations described in `schema`
+    :param schema: Definition of operations accessible at `path`
+    :return: Operations defined by `schema`
+    """
+    declared_operations: List[Operation] = []
+
+    summary = schema.get('summary', '')
+    description = schema.get('description', '')
+
+    # Parse common parameters for all operations in schema
+    common_path_parameters, common_query_parameters = _parse_parameters(schema)
+
     # Parse each operation defined in schema
     for verb in ('get', 'put', 'post', 'delete'):
         if verb not in schema:
@@ -172,6 +185,10 @@ def make_operations(path: str, schema: Dict) -> List[Operation]:
         tags = action.get('tags', [])
         component_name = action.get('requestBody', {}).get('content', {}).get('application/json', {}).get('schema', {}).get('$ref', '')
         request_body_type = data_types.get_data_type_name(component_name, 'requestBody')
+
+        path_parameters, query_parameters = _parse_parameters(action)
+        path_parameters += common_path_parameters
+        query_parameters += common_query_parameters
 
         security = Security(schemes={})
         for security_option in action.get('security', []):
@@ -189,7 +206,7 @@ def make_operations(path: str, schema: Dict) -> List[Operation]:
                 description=response.get('description', ''),
                 json_body_type=json_body_type))
 
-        endpoints.append(Operation(
+        declared_operations.append(Operation(
             path=path,
             summary=verb_summary,
             description=verb_description,
@@ -203,4 +220,4 @@ def make_operations(path: str, schema: Dict) -> List[Operation]:
             responses=responses
         ))
 
-    return endpoints
+    return declared_operations
