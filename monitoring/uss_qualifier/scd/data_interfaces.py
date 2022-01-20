@@ -48,7 +48,7 @@ class FlightInjectionAttempt(ImplicitDict):
     ''' Details of the USS under test as mapped to the test type '''
 
 class AutomatedTest(ImplicitDict):
-    ''' A class to hold injection attempts and test definitions '''
+    ''' A class to hold injection attempts by the test exceutor, multiple attempts may be made per test '''
 
     injection_attempts: List[FlightInjectionAttempt]
     ''' Details of attempts of submitting test data to the interface of USS under test '''
