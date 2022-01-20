@@ -30,7 +30,7 @@ class KnownResponses(ImplicitDict):
     
 
 class InjectionTarget(ImplicitDict):
-    ''' A class to hold sequential assignment of the USS as per the SCD test API '''
+    ''' A class to hold the role of the USS under test '''
     uss_role: str
 
 class FlightInjectionAttempt(ImplicitDict):
