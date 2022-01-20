@@ -2,6 +2,7 @@
 package rid
 
 import (
+	"context"
 	"encoding/json"
 	"example/api"
 	"net/http"
@@ -47,7 +48,9 @@ func (s *APIRouter) SearchIdentificationServiceAreas(exp *regexp.Regexp, w http.
 	}
 
 	// Call implementation
-	response := s.Implementation.SearchIdentificationServiceAreas(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.SearchIdentificationServiceAreas(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -88,7 +91,9 @@ func (s *APIRouter) GetIdentificationServiceArea(exp *regexp.Regexp, w http.Resp
 	req.Id = EntityUUID(pathMatch[1])
 
 	// Call implementation
-	response := s.Implementation.GetIdentificationServiceArea(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.GetIdentificationServiceArea(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -134,7 +139,9 @@ func (s *APIRouter) CreateIdentificationServiceArea(exp *regexp.Regexp, w http.R
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.CreateIdentificationServiceArea(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.CreateIdentificationServiceArea(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -185,7 +192,9 @@ func (s *APIRouter) UpdateIdentificationServiceArea(exp *regexp.Regexp, w http.R
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.UpdateIdentificationServiceArea(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.UpdateIdentificationServiceArea(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -231,7 +240,9 @@ func (s *APIRouter) DeleteIdentificationServiceArea(exp *regexp.Regexp, w http.R
 	req.Version = pathMatch[2]
 
 	// Call implementation
-	response := s.Implementation.DeleteIdentificationServiceArea(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.DeleteIdentificationServiceArea(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -279,7 +290,9 @@ func (s *APIRouter) SearchSubscriptions(exp *regexp.Regexp, w http.ResponseWrite
 	}
 
 	// Call implementation
-	response := s.Implementation.SearchSubscriptions(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.SearchSubscriptions(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -320,7 +333,9 @@ func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r
 	req.Id = SubscriptionUUID(pathMatch[1])
 
 	// Call implementation
-	response := s.Implementation.GetSubscription(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.GetSubscription(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -366,7 +381,9 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.CreateSubscription(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.CreateSubscription(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -417,7 +434,9 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.UpdateSubscription(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.UpdateSubscription(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -463,7 +482,9 @@ func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	req.Version = pathMatch[2]
 
 	// Call implementation
-	response := s.Implementation.DeleteSubscription(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.DeleteSubscription(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {

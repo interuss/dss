@@ -2,6 +2,7 @@
 package rid
 
 import (
+	"context"
 	"example/api"
 )
 
@@ -406,60 +407,60 @@ type Implementation interface {
 	// /dss/identification_service_areas
 	// ---
 	// Retrieve all Identification Service Areas in the DAR for a given area during the given time.  Note that some Identification Service Areas returned may lie entirely outside the requested area.
-	SearchIdentificationServiceAreas(req *SearchIdentificationServiceAreasRequest) SearchIdentificationServiceAreasResponseSet
+	SearchIdentificationServiceAreas(ctx context.Context, req *SearchIdentificationServiceAreasRequest) SearchIdentificationServiceAreasResponseSet
 
 	// /dss/identification_service_areas/{id}
 	// ---
 	// Retrieve full information of an Identification Service Area owned by the client.
-	GetIdentificationServiceArea(req *GetIdentificationServiceAreaRequest) GetIdentificationServiceAreaResponseSet
+	GetIdentificationServiceArea(ctx context.Context, req *GetIdentificationServiceAreaRequest) GetIdentificationServiceAreaResponseSet
 
 	// /dss/identification_service_areas/{id}
 	// ---
 	// Create a new Identification Service Area.  This call will fail if an Identification Service Area with the same ID already exists.
 	//
 	// The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.
-	CreateIdentificationServiceArea(req *CreateIdentificationServiceAreaRequest) CreateIdentificationServiceAreaResponseSet
+	CreateIdentificationServiceArea(ctx context.Context, req *CreateIdentificationServiceAreaRequest) CreateIdentificationServiceAreaResponseSet
 
 	// /dss/identification_service_areas/{id}/{version}
 	// ---
 	// Update an Identification Service Area.  The full content of the existing Identification Service Area will be replaced with the provided information as only the most recent version is retained.
 	//
 	// The DSS assumes the USS has already added the appropriate retention period to operation end time in `time_end` field before storing it.  Updating `time_start` is not allowed if it is before the current time.
-	UpdateIdentificationServiceArea(req *UpdateIdentificationServiceAreaRequest) UpdateIdentificationServiceAreaResponseSet
+	UpdateIdentificationServiceArea(ctx context.Context, req *UpdateIdentificationServiceAreaRequest) UpdateIdentificationServiceAreaResponseSet
 
 	// /dss/identification_service_areas/{id}/{version}
 	// ---
 	// Delete an Identification Service Area.  USSs should not delete Identification Service Areas before the end of the last managed flight plus the retention period.
-	DeleteIdentificationServiceArea(req *DeleteIdentificationServiceAreaRequest) DeleteIdentificationServiceAreaResponseSet
+	DeleteIdentificationServiceArea(ctx context.Context, req *DeleteIdentificationServiceAreaRequest) DeleteIdentificationServiceAreaResponseSet
 
 	// /dss/subscriptions
 	// ---
 	// Retrieve subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
 	//
 	// Only Subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of Subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing Subscriptions in an area.
-	SearchSubscriptions(req *SearchSubscriptionsRequest) SearchSubscriptionsResponseSet
+	SearchSubscriptions(ctx context.Context, req *SearchSubscriptionsRequest) SearchSubscriptionsResponseSet
 
 	// /dss/subscriptions/{id}
 	// ---
 	// Verify the existence/valdity and state of a particular subscription.
-	GetSubscription(req *GetSubscriptionRequest) GetSubscriptionResponseSet
+	GetSubscription(ctx context.Context, req *GetSubscriptionRequest) GetSubscriptionResponseSet
 
 	// /dss/subscriptions/{id}
 	// ---
 	// Create a subscription.  This call will fail if a Subscription with the same ID already exists.
 	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	CreateSubscription(req *CreateSubscriptionRequest) CreateSubscriptionResponseSet
+	CreateSubscription(ctx context.Context, req *CreateSubscriptionRequest) CreateSubscriptionResponseSet
 
 	// /dss/subscriptions/{id}/{version}
 	// ---
 	// Update a Subscription.  The full content of the existing Subscription will be replaced with the provided information as only the most recent version is retained.
 	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	UpdateSubscription(req *UpdateSubscriptionRequest) UpdateSubscriptionResponseSet
+	UpdateSubscription(ctx context.Context, req *UpdateSubscriptionRequest) UpdateSubscriptionResponseSet
 
 	// /dss/subscriptions/{id}/{version}
 	// ---
 	// Delete a subscription.
-	DeleteSubscription(req *DeleteSubscriptionRequest) DeleteSubscriptionResponseSet
+	DeleteSubscription(ctx context.Context, req *DeleteSubscriptionRequest) DeleteSubscriptionResponseSet
 }

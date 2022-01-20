@@ -2,6 +2,7 @@
 package scd
 
 import (
+	"context"
 	"example/api"
 )
 
@@ -783,19 +784,19 @@ type Implementation interface {
 	// for HTTP GET requests is non-standard and not supported by some
 	// architectures.  POST is used here instead of GET to ensure robust
 	// support for the use of a request body.
-	QueryOperationalIntentReferences(req *QueryOperationalIntentReferencesRequest) QueryOperationalIntentReferencesResponseSet
+	QueryOperationalIntentReferences(ctx context.Context, req *QueryOperationalIntentReferencesRequest) QueryOperationalIntentReferencesResponseSet
 
 	// Retrieve the specified operational intent reference from the DSS.
-	GetOperationalIntentReference(req *GetOperationalIntentReferenceRequest) GetOperationalIntentReferenceResponseSet
+	GetOperationalIntentReference(ctx context.Context, req *GetOperationalIntentReferenceRequest) GetOperationalIntentReferenceResponseSet
 
 	// Create the specified operational intent reference in the DSS.
-	CreateOperationalIntentReference(req *CreateOperationalIntentReferenceRequest) CreateOperationalIntentReferenceResponseSet
+	CreateOperationalIntentReference(ctx context.Context, req *CreateOperationalIntentReferenceRequest) CreateOperationalIntentReferenceResponseSet
 
 	// Update the specified operational intent reference in the DSS.
-	UpdateOperationalIntentReference(req *UpdateOperationalIntentReferenceRequest) UpdateOperationalIntentReferenceResponseSet
+	UpdateOperationalIntentReference(ctx context.Context, req *UpdateOperationalIntentReferenceRequest) UpdateOperationalIntentReferenceResponseSet
 
 	// Remove the specified operational intent reference from the DSS.
-	DeleteOperationalIntentReference(req *DeleteOperationalIntentReferenceRequest) DeleteOperationalIntentReferenceResponseSet
+	DeleteOperationalIntentReference(ctx context.Context, req *DeleteOperationalIntentReferenceRequest) DeleteOperationalIntentReferenceResponseSet
 
 	// Query all constraint references in the specified area/volume from the DSS.
 	// ---
@@ -805,19 +806,19 @@ type Implementation interface {
 	// for HTTP GET requests is non-standard and not supported by some
 	// architectures.  POST is used here instead of GET to ensure robust
 	// support for the use of a request body.
-	QueryConstraintReferences(req *QueryConstraintReferencesRequest) QueryConstraintReferencesResponseSet
+	QueryConstraintReferences(ctx context.Context, req *QueryConstraintReferencesRequest) QueryConstraintReferencesResponseSet
 
 	// Retrieve the specified constraint reference from the DSS.
-	GetConstraintReference(req *GetConstraintReferenceRequest) GetConstraintReferenceResponseSet
+	GetConstraintReference(ctx context.Context, req *GetConstraintReferenceRequest) GetConstraintReferenceResponseSet
 
 	// Create the specified constraint reference in the DSS.
-	CreateConstraintReference(req *CreateConstraintReferenceRequest) CreateConstraintReferenceResponseSet
+	CreateConstraintReference(ctx context.Context, req *CreateConstraintReferenceRequest) CreateConstraintReferenceResponseSet
 
 	// Update the specified constraint reference in the DSS.
-	UpdateConstraintReference(req *UpdateConstraintReferenceRequest) UpdateConstraintReferenceResponseSet
+	UpdateConstraintReference(ctx context.Context, req *UpdateConstraintReferenceRequest) UpdateConstraintReferenceResponseSet
 
 	// Delete the specified constraint reference from the DSS.
-	DeleteConstraintReference(req *DeleteConstraintReferenceRequest) DeleteConstraintReferenceResponseSet
+	DeleteConstraintReference(ctx context.Context, req *DeleteConstraintReferenceRequest) DeleteConstraintReferenceResponseSet
 
 	// Query all subscriptions in the specified area/volume from the DSS.
 	// ---
@@ -833,19 +834,19 @@ type Implementation interface {
 	// Only subscriptions belonging to the caller are returned.  This endpoint would be
 	// used if a USS lost track of subscriptions they had created and/or wanted to resolve
 	// an error indicating that they had too many existing subscriptions in an area.
-	QuerySubscriptions(req *QuerySubscriptionsRequest) QuerySubscriptionsResponseSet
+	QuerySubscriptions(ctx context.Context, req *QuerySubscriptionsRequest) QuerySubscriptionsResponseSet
 
 	// Retrieve the specified subscription from the DSS.
 	// ---
 	// Retrieve a specific subscription.
-	GetSubscription(req *GetSubscriptionRequest) GetSubscriptionResponseSet
+	GetSubscription(ctx context.Context, req *GetSubscriptionRequest) GetSubscriptionResponseSet
 
 	// Create the specified subscription in the DSS.
 	// ---
 	// Create a subscription.
 	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	CreateSubscription(req *CreateSubscriptionRequest) CreateSubscriptionResponseSet
+	CreateSubscription(ctx context.Context, req *CreateSubscriptionRequest) CreateSubscriptionResponseSet
 
 	// Update the specified subscription in the DSS.
 	// ---
@@ -854,21 +855,21 @@ type Implementation interface {
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
 	//
 	// The standard requires each operational intent to have a subscription that cover the 4D volume of the operational intent.  If a USS attempts to update a subscription upon which an operational intent depends, and this update would cause the operational intent to lose subscription coverage, the update will be rejected by the DSS as a bad request.
-	UpdateSubscription(req *UpdateSubscriptionRequest) UpdateSubscriptionResponseSet
+	UpdateSubscription(ctx context.Context, req *UpdateSubscriptionRequest) UpdateSubscriptionResponseSet
 
 	// Remove the specified subscription from the DSS.
 	// ---
 	// The standard requires each operational intent to have a subscription that cover the 4D volume of the operational intent.  If a USS attempts to delete a subscription upon which an operational intent depends, the deletion will be rejected by the DSS as a bad request.
-	DeleteSubscription(req *DeleteSubscriptionRequest) DeleteSubscriptionResponseSet
+	DeleteSubscription(ctx context.Context, req *DeleteSubscriptionRequest) DeleteSubscriptionResponseSet
 
 	// Report information about communication issues to a DSS.
 	// ---
 	// Report issues to a DSS. Data sent to this endpoint is archived.
-	MakeDssReport(req *MakeDssReportRequest) MakeDssReportResponseSet
+	MakeDssReport(ctx context.Context, req *MakeDssReportRequest) MakeDssReportResponseSet
 
 	// Get availability status of a USS.
-	GetUssAvailability(req *GetUssAvailabilityRequest) GetUssAvailabilityResponseSet
+	GetUssAvailability(ctx context.Context, req *GetUssAvailabilityRequest) GetUssAvailabilityResponseSet
 
 	// Set availability status of a USS.
-	SetUssAvailability(req *SetUssAvailabilityRequest) SetUssAvailabilityResponseSet
+	SetUssAvailability(ctx context.Context, req *SetUssAvailabilityRequest) SetUssAvailabilityResponseSet
 }

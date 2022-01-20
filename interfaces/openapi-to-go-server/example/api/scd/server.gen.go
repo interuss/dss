@@ -2,6 +2,7 @@
 package scd
 
 import (
+	"context"
 	"encoding/json"
 	"example/api"
 	"net/http"
@@ -37,7 +38,9 @@ func (s *APIRouter) QueryOperationalIntentReferences(exp *regexp.Regexp, w http.
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.QueryOperationalIntentReferences(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.QueryOperationalIntentReferences(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -82,7 +85,9 @@ func (s *APIRouter) GetOperationalIntentReference(exp *regexp.Regexp, w http.Res
 	req.Entityid = EntityID(pathMatch[1])
 
 	// Call implementation
-	response := s.Implementation.GetOperationalIntentReference(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.GetOperationalIntentReference(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -132,7 +137,9 @@ func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.CreateOperationalIntentReference(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.CreateOperationalIntentReference(ctx, &req)
 
 	// Write response to client
 	if response.Response201 != nil {
@@ -191,7 +198,9 @@ func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.UpdateOperationalIntentReference(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.UpdateOperationalIntentReference(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -245,7 +254,9 @@ func (s *APIRouter) DeleteOperationalIntentReference(exp *regexp.Regexp, w http.
 	req.Ovn = EntityOVN(pathMatch[2])
 
 	// Call implementation
-	response := s.Implementation.DeleteOperationalIntentReference(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.DeleteOperationalIntentReference(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -299,7 +310,9 @@ func (s *APIRouter) QueryConstraintReferences(exp *regexp.Regexp, w http.Respons
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.QueryConstraintReferences(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.QueryConstraintReferences(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -344,7 +357,9 @@ func (s *APIRouter) GetConstraintReference(exp *regexp.Regexp, w http.ResponseWr
 	req.Entityid = EntityID(pathMatch[1])
 
 	// Call implementation
-	response := s.Implementation.GetConstraintReference(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.GetConstraintReference(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -394,7 +409,9 @@ func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.Respons
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.CreateConstraintReference(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.CreateConstraintReference(ctx, &req)
 
 	// Write response to client
 	if response.Response201 != nil {
@@ -449,7 +466,9 @@ func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.Respons
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.UpdateConstraintReference(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.UpdateConstraintReference(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -499,7 +518,9 @@ func (s *APIRouter) DeleteConstraintReference(exp *regexp.Regexp, w http.Respons
 	req.Ovn = EntityOVN(pathMatch[2])
 
 	// Call implementation
-	response := s.Implementation.DeleteConstraintReference(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.DeleteConstraintReference(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -549,7 +570,9 @@ func (s *APIRouter) QuerySubscriptions(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.QuerySubscriptions(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.QuerySubscriptions(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -594,7 +617,9 @@ func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r
 	req.Subscriptionid = SubscriptionID(pathMatch[1])
 
 	// Call implementation
-	response := s.Implementation.GetSubscription(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.GetSubscription(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -644,7 +669,9 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.CreateSubscription(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.CreateSubscription(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -695,7 +722,9 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.UpdateSubscription(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.UpdateSubscription(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -741,7 +770,9 @@ func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	req.Version = pathMatch[2]
 
 	// Call implementation
-	response := s.Implementation.DeleteSubscription(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.DeleteSubscription(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -791,7 +822,9 @@ func (s *APIRouter) MakeDssReport(exp *regexp.Regexp, w http.ResponseWriter, r *
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.MakeDssReport(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.MakeDssReport(ctx, &req)
 
 	// Write response to client
 	if response.Response201 != nil {
@@ -832,7 +865,9 @@ func (s *APIRouter) GetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 	req.UssId = pathMatch[1]
 
 	// Call implementation
-	response := s.Implementation.GetUssAvailability(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.GetUssAvailability(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -878,7 +913,9 @@ func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	response := s.Implementation.SetUssAvailability(&req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	response := s.Implementation.SetUssAvailability(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {

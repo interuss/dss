@@ -186,9 +186,9 @@ def implementation_interface(api: apis.API, api_package: str, ensure_500: bool) 
             comments.extend(operation.description.split('\n'))
         body.extend(comment(comments))
 
-        body.append('{}(req *{}) {}'.format(operation.interface_name,
-                                            operation.request_type_name,
-                                            operation.response_type_name))
+        body.append('{}(ctx context.Context, req *{}) {}'.format(
+            operation.interface_name, operation.request_type_name,
+            operation.response_type_name))
         body.append('')
     body.pop()
     lines.extend(indent(body, 1))
@@ -268,7 +268,9 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
 
         # Actually invoke the API Implementation with the processed request to obtain the response
         body.extend(comment(['Call implementation']))
-        body.append('response := s.Implementation.{}(&req)'.format(
+        body.append('ctx, cancel := context.WithCancel(context.Background())')
+        body.append('defer cancel()')
+        body.append('response := s.Implementation.{}(ctx, &req)'.format(
             operation.interface_name))
         body.append('')
 
@@ -308,8 +310,7 @@ def routing(api: apis.API, api_package: str) -> List[str]:
     lines.append('')
     first_assignment = True
     for i, operation in enumerate(api.operations):
-        path_regex = '/' + api.package + re.sub(r'{([^}]*)}', r'(?P<\1>[^/]*)',
-                                          operation.path)
+        path_regex = '/' + api.package + re.sub(r'{([^}]*)}', r'(?P<\1>[^/]*)', operation.path)
         lines.append('pattern {}= regexp.MustCompile("^{}$")'.format(
             ':' if first_assignment else '', path_regex))
         lines.append(
@@ -340,7 +341,7 @@ def example_implementation(api: apis.API, implementation_name: str) -> List[str]
     lines.append('type %s struct {}' % implementation_name)
     lines.append('')
     for operation in api.operations:
-        lines.append('func (*{}) {}(req *{}) {} {{'.format(
+        lines.append('func (*{}) {}(ctx context.Context, req *{}) {} {{'.format(
             implementation_name, operation.interface_name,
             api.package + '.' + operation.request_type_name,
             api.package + '.' + operation.response_type_name))
