@@ -61,8 +61,8 @@ Download & install the following tools to your workstation:
 
 ## Docker images
 
-The application logic of the DSS is located in grpc-backend and translation
-between external HTTPS requests and internal gRPC requests to grpc-backend is
+The application logic of the DSS is located in core-service and translation
+between external HTTPS requests and internal gRPC requests to core-service is
 accomplished with http-gateway.  Both of these binaries are provided in a single
 Docker image which is built locally and then pushed to a Docker registry of your
 choice.  All major cloud providers have a docker registry service, or you can

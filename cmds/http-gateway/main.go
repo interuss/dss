@@ -33,7 +33,7 @@ import (
 var (
 	address         = flag.String("addr", ":8080", "Local address that the gateway binds to and listens on for incoming connections")
 	traceRequests   = flag.Bool("trace-requests", false, "Logs HTTP request/response pairs to stderr if true")
-	grpcBackend     = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
+	coreService     = flag.String("core-service", "", "Endpoint for core service. Only to be set if run in proxy mode")
 	profServiceName = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
 	enableSCD       = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
 )
@@ -183,7 +183,7 @@ func myCodeToHTTPStatus(code codes.Code) int {
 // we initially only needed to add 1 extra Code to handle but since they didn't
 // export HTTPStatusFromCode we had to copy the whole thing.  Since then, we have added
 // custom error handling to return additional content for certain errors.  This handler
-// is invoked whenever the call to the gRPC backend results in an error (thus returning
+// is invoked whenever the call to the Core Service results in an error (thus returning
 // a Status err).  Because an error has occurred, the normal response body is not returned.
 func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, _ *http.Request, err error) {
 	errID := errors.MakeErrID()
@@ -220,7 +220,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 			body, ok := s.Details()[0].(*scdpb.AirspaceConflictResponse)
 			if ok {
 				buf, marshalingErr = marshaler.Marshal(body)
-				grpclog.Errorf("Error %s was an AirspaceConflictResponse from the gRPC backend", errID)
+				grpclog.Errorf("Error %s was an AirspaceConflictResponse from the Core Service", errID)
 			} else {
 				marshalingErr = stacktrace.NewError("Unable to cast s.Details()[0] from %s to *scdpb.AirspaceConflictResponse", reflect.TypeOf(s.Details()[0]))
 			}
@@ -231,7 +231,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 		result, ok := s.Details()[0].(*auxpb.StandardErrorResponse)
 		if ok {
 			buf, marshalingErr = marshaler.Marshal(result)
-			grpclog.Errorf("Error %s was a StandardErrorResponse from the gRPC backend", errID)
+			grpclog.Errorf("Error %s was a StandardErrorResponse from the Core Service", errID)
 			handled = true
 		}
 	}
@@ -320,7 +320,7 @@ func main() {
 		}
 	}
 
-	switch err := RunHTTPProxy(ctx, cancel, *address, *grpcBackend); err {
+	switch err := RunHTTPProxy(ctx, cancel, *address, *coreService); err {
 	case nil, context.Canceled, http.ErrServerClosed:
 		logger.Info("Shutting down gracefully")
 	default:
