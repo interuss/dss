@@ -1,4 +1,7 @@
 import (
+    "encoding/json"
+    "fmt"
+	"io"
 	"net/http"
 	"regexp"
 )
@@ -13,8 +16,21 @@ type InternalServerErrorBody struct {
 
 // --- Authorization definitions ---
 
+type AuthorizationOption struct {
+    // All of these scopes must be presented simultaneously to use this option
+    RequiredScopes []string
+}
+
+type SecurityScheme []AuthorizationOption
+
 type AuthorizationResult struct {
+    // ID of the client making the operation request
     ClientID *string
+
+    // Scopes granted to client making the operation request
+    Scopes []string
+
+    // If authorization was not successful, the problem with the authorization
     Error error
 }
 
@@ -22,11 +38,15 @@ type Authorizer interface {
     Authorize(w http.ResponseWriter, r *http.Request, schemes *map[string]SecurityScheme) AuthorizationResult
 }
 
-type AuthorizationOption struct {
-    RequiredScopes []string
-}
+// --- Utilities ---
 
-type SecurityScheme []AuthorizationOption
+func WriteJson(w http.ResponseWriter, code int, obj interface{}) {
+    w.Header().Set("Content-Type", "application/json; charset=utf-8")
+    w.WriteHeader(code)
+    if err := json.NewEncoder(w).Encode(obj); err != nil {
+        io.WriteString(w, fmt.Sprintf("{\"error_message\": \"Error encoding JSON: %s\"}", err.Error()))
+    }
+}
 
 // --- API router definitions ---
 
@@ -37,26 +57,14 @@ type Route struct {
     Handler Handler
 }
 
-type APIRouter struct {
-    Routes []*Route
-    Implementation Implementation
-    Authorizer Authorizer
-}
-
-func (a *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
-    for _, route := range a.Routes {
-        if route.Pattern.MatchString(r.URL.Path) {
-            route.Handler(route.Pattern, w, r)
-            return true
-        }
-    }
-    return false
+type APIRouter interface {
+    Handle(w http.ResponseWriter, r *http.Request) bool
 }
 
 // --- Multi-router definitions ---
 
 type MultiRouter struct {
-    Routers []*APIRouter
+    Routers []APIRouter
 }
 
 func (m *MultiRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {

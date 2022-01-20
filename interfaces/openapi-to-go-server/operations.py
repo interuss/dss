@@ -2,14 +2,11 @@ import dataclasses
 from typing import Dict, List
 
 import data_types
-
-
-def capitalize_first_letter(s: str) -> str:
-    return s[0].upper() + s[1:] if s else s
+import formatting
 
 
 @dataclasses.dataclass
-class PathParameter:
+class StringParameter:
     """Single parameter to an operation found in the path used to invoke the operation"""
 
     name: str
@@ -24,7 +21,7 @@ class PathParameter:
     @property
     def go_field_name(self) -> str:
         """Go-style field name for this parameter in the Operation's `request_type_name`"""
-        return capitalize_first_letter(self.name)
+        return formatting.capitalize_first_letter(self.name)
 
 
 @dataclasses.dataclass
@@ -87,8 +84,11 @@ class Operation:
     verb: str
     """HTTP verb for this operation"""
 
-    path_parameters: List[PathParameter]
+    path_parameters: List[StringParameter]
     """Parameters found in the path when invoking this operation"""
+
+    query_parameters: List[StringParameter]
+    """Parameters found in the query when invoking this operation"""
 
     json_request_body_type: str
     """Request body type, if an application/json request body is defined for this operation (blank otherwise)"""
@@ -100,10 +100,10 @@ class Operation:
     def interface_name(self) -> str:
         """Go-style name of this operation, as would appear in an interface"""
         if self.operation_id:
-            return capitalize_first_letter(self.operation_id)
+            return formatting.capitalize_first_letter(self.operation_id)
         else:
-            return capitalize_first_letter(
-                self.verb.lower()) + data_types.snake_case_to_pascal_case(
+            return formatting.capitalize_first_letter(
+                self.verb.lower()) + formatting.snake_case_to_pascal_case(
                 self.path.replace('{', '').replace('}', '').replace('/', '_'))
 
     @property
@@ -117,12 +117,11 @@ class Operation:
         return self.interface_name + 'Request'
 
 
-def make_operations(path: str, schema: Dict, ensure_500: bool = True) -> List[Operation]:
+def make_operations(path: str, schema: Dict) -> List[Operation]:
     """Parse all operations defined within the specified path definition.
     
     :param path: Relative path of operations described in `schema`
     :param schema: Definition of operations accessible at `path`
-    :param ensure_500: If true, make sure the *ResponseSet for each operation contains a response for HTTP 500 (internal server error) to return in the case of unexpected errors
     :return: Operations defined by `schema`
     """
     endpoints: List[Operation] = []
@@ -130,8 +129,9 @@ def make_operations(path: str, schema: Dict, ensure_500: bool = True) -> List[Op
     summary = schema.get('summary', '')
     description = schema.get('description', '')
 
-    # Parse common path parameters for all operations in schema
-    path_parameters: List[PathParameter] = []
+    # Parse common parameters for all operations in schema
+    path_parameters: List[StringParameter] = []
+    query_parameters: List[StringParameter] = []
     for parameter in schema.get('parameters', []):
         parameter_name = parameter['name']
         parameter_description = parameter.get('description', '')
@@ -147,9 +147,14 @@ def make_operations(path: str, schema: Dict, ensure_500: bool = True) -> List[Op
             parameter_type = 'string'
         if parameter_in == 'path':
             path_parameters.append(
-                PathParameter(name=parameter_name,
-                              description=parameter_description,
-                              go_type=parameter_type))
+                StringParameter(name=parameter_name,
+                                description=parameter_description,
+                                go_type=parameter_type))
+        elif parameter_in == 'query':
+            query_parameters.append(
+                StringParameter(name=parameter_name,
+                                description=parameter_description,
+                                go_type=parameter_type))
         else:
             raise NotImplementedError(
                 'Parameter in "{}" (`{}`) not yet implemented'.format(
@@ -183,10 +188,6 @@ def make_operations(path: str, schema: Dict, ensure_500: bool = True) -> List[Op
                 code=int(code),
                 description=response.get('description', ''),
                 json_body_type=json_body_type))
-        if ensure_500 and 500 not in {r.code for r in responses}:
-            responses.append(
-                Response(code=500, description='Internal server error',
-                         json_body_type='InternalServerErrorBody'))
 
         endpoints.append(Operation(
             path=path,
@@ -197,6 +198,7 @@ def make_operations(path: str, schema: Dict, ensure_500: bool = True) -> List[Op
             security=security,
             verb=verb,
             path_parameters=path_parameters,
+            query_parameters=query_parameters,
             json_request_body_type=request_body_type,
             responses=responses
         ))

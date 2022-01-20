@@ -1,98 +1,102 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package main
+package scd
+
+import (
+	"example/api"
+)
 
 var (
-	QueryOperationalIntentReferencesSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	QueryOperationalIntentReferencesSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
 		},
 	}
-	GetOperationalIntentReferenceSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	GetOperationalIntentReferenceSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
 		},
 	}
-	CreateOperationalIntentReferenceSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	CreateOperationalIntentReferenceSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 			{RequiredScopes: []string{"utm.strategic_coordination", "utm.constraint_processing"}},
 			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
 		},
 	}
-	UpdateOperationalIntentReferenceSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	UpdateOperationalIntentReferenceSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 			{RequiredScopes: []string{"utm.strategic_coordination", "utm.constraint_processing"}},
 			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
 		},
 	}
-	DeleteOperationalIntentReferenceSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	DeleteOperationalIntentReferenceSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
 		},
 	}
-	QueryConstraintReferencesSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	QueryConstraintReferencesSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_management"}},
 			{RequiredScopes: []string{"utm.constraint_processing"}},
 		},
 	}
-	GetConstraintReferenceSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	GetConstraintReferenceSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_management"}},
 			{RequiredScopes: []string{"utm.constraint_processing"}},
 		},
 	}
-	CreateConstraintReferenceSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	CreateConstraintReferenceSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_management"}},
 		},
 	}
-	UpdateConstraintReferenceSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	UpdateConstraintReferenceSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_management"}},
 		},
 	}
-	DeleteConstraintReferenceSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	DeleteConstraintReferenceSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_management"}},
 		},
 	}
-	QuerySubscriptionsSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	QuerySubscriptionsSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_processing"}},
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 		},
 	}
-	GetSubscriptionSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	GetSubscriptionSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_processing"}},
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 		},
 	}
-	CreateSubscriptionSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	CreateSubscriptionSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_processing"}},
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 		},
 	}
-	UpdateSubscriptionSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	UpdateSubscriptionSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_processing"}},
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 		},
 	}
-	DeleteSubscriptionSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	DeleteSubscriptionSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_processing"}},
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 		},
 	}
-	MakeDssReportSecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	MakeDssReportSecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.constraint_management"}},
 			{RequiredScopes: []string{"utm.constraint_processing"}},
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
@@ -100,15 +104,15 @@ var (
 			{RequiredScopes: []string{"utm.availability_arbitration"}},
 		},
 	}
-	GetUssAvailabilitySecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	GetUssAvailabilitySecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.availability_arbitration"}},
 			{RequiredScopes: []string{"utm.strategic_coordination"}},
 			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
 		},
 	}
-	SetUssAvailabilitySecurity = map[string]SecurityScheme{
-		"Authority": []AuthorizationOption{
+	SetUssAvailabilitySecurity = map[string]api.SecurityScheme{
+		"Authority": []api.AuthorizationOption{
 			{RequiredScopes: []string{"utm.availability_arbitration"}},
 		},
 	}
@@ -122,7 +126,7 @@ type QueryOperationalIntentReferencesRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type QueryOperationalIntentReferencesResponseSet struct {
 	// Operational intents were successfully retrieved.
@@ -143,8 +147,8 @@ type QueryOperationalIntentReferencesResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type GetOperationalIntentReferenceRequest struct {
@@ -152,7 +156,7 @@ type GetOperationalIntentReferenceRequest struct {
 	Entityid EntityID
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type GetOperationalIntentReferenceResponseSet struct {
 	// Operational intent reference was retrieved successfully.
@@ -173,8 +177,8 @@ type GetOperationalIntentReferenceResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type CreateOperationalIntentReferenceRequest struct {
@@ -188,7 +192,7 @@ type CreateOperationalIntentReferenceRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type CreateOperationalIntentReferenceResponseSet struct {
 	// An operational intent reference was created successfully in the DSS.
@@ -217,8 +221,8 @@ type CreateOperationalIntentReferenceResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type UpdateOperationalIntentReferenceRequest struct {
@@ -235,7 +239,7 @@ type UpdateOperationalIntentReferenceRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type UpdateOperationalIntentReferenceResponseSet struct {
 	// An operational intent reference was updated successfully in the DSS.
@@ -265,8 +269,8 @@ type UpdateOperationalIntentReferenceResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type DeleteOperationalIntentReferenceRequest struct {
@@ -277,7 +281,7 @@ type DeleteOperationalIntentReferenceRequest struct {
 	Ovn EntityOVN
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type DeleteOperationalIntentReferenceResponseSet struct {
 	// The specified operational intent was successfully removed from the DSS.
@@ -306,8 +310,8 @@ type DeleteOperationalIntentReferenceResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type QueryConstraintReferencesRequest struct {
@@ -318,7 +322,7 @@ type QueryConstraintReferencesRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type QueryConstraintReferencesResponseSet struct {
 	// Constraint references were successfully retrieved.
@@ -339,8 +343,8 @@ type QueryConstraintReferencesResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type GetConstraintReferenceRequest struct {
@@ -348,7 +352,7 @@ type GetConstraintReferenceRequest struct {
 	Entityid EntityID
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type GetConstraintReferenceResponseSet struct {
 	// Constraint reference was retrieved successfully.
@@ -369,8 +373,8 @@ type GetConstraintReferenceResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type CreateConstraintReferenceRequest struct {
@@ -384,7 +388,7 @@ type CreateConstraintReferenceRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type CreateConstraintReferenceResponseSet struct {
 	// A constraint reference was created successfully in the DSS.
@@ -410,8 +414,8 @@ type CreateConstraintReferenceResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type UpdateConstraintReferenceRequest struct {
@@ -428,7 +432,7 @@ type UpdateConstraintReferenceRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type UpdateConstraintReferenceResponseSet struct {
 	// A constraint reference was updated successfully in the DSS.
@@ -454,8 +458,8 @@ type UpdateConstraintReferenceResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type DeleteConstraintReferenceRequest struct {
@@ -466,7 +470,7 @@ type DeleteConstraintReferenceRequest struct {
 	Ovn EntityOVN
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type DeleteConstraintReferenceResponseSet struct {
 	// The constraint was successfully removed from the DSS.
@@ -492,8 +496,8 @@ type DeleteConstraintReferenceResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type QuerySubscriptionsRequest struct {
@@ -504,7 +508,7 @@ type QuerySubscriptionsRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type QuerySubscriptionsResponseSet struct {
 	// Subscriptions were retrieved successfully.
@@ -525,8 +529,8 @@ type QuerySubscriptionsResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type GetSubscriptionRequest struct {
@@ -534,7 +538,7 @@ type GetSubscriptionRequest struct {
 	Subscriptionid SubscriptionID
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type GetSubscriptionResponseSet struct {
 	// Subscription information was retrieved successfully.
@@ -555,8 +559,8 @@ type GetSubscriptionResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type CreateSubscriptionRequest struct {
@@ -570,7 +574,7 @@ type CreateSubscriptionRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type CreateSubscriptionResponseSet struct {
 	// A new subscription was created successfully.
@@ -594,8 +598,8 @@ type CreateSubscriptionResponseSet struct {
 	// The client may have issued too many requests within a small period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type UpdateSubscriptionRequest struct {
@@ -612,7 +616,7 @@ type UpdateSubscriptionRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type UpdateSubscriptionResponseSet struct {
 	// A subscription was updated successfully.
@@ -637,8 +641,8 @@ type UpdateSubscriptionResponseSet struct {
 	// The client may have issued too many requests within a small period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type DeleteSubscriptionRequest struct {
@@ -649,7 +653,7 @@ type DeleteSubscriptionRequest struct {
 	Version string
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type DeleteSubscriptionResponseSet struct {
 	// Subscription was successfully removed from DSS.
@@ -675,8 +679,8 @@ type DeleteSubscriptionResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type MakeDssReportRequest struct {
@@ -687,7 +691,7 @@ type MakeDssReportRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type MakeDssReportResponseSet struct {
 	// A new Report was created successfully (and archived).
@@ -706,8 +710,8 @@ type MakeDssReportResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type GetUssAvailabilityRequest struct {
@@ -715,7 +719,7 @@ type GetUssAvailabilityRequest struct {
 	Uss_id string
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type GetUssAvailabilityResponseSet struct {
 	// Availability status of specified USS was successfully retrieved.
@@ -733,8 +737,8 @@ type GetUssAvailabilityResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type SetUssAvailabilityRequest struct {
@@ -748,7 +752,7 @@ type SetUssAvailabilityRequest struct {
 	BodyParseError error
 
 	// The result of attempting to authorize this request
-	Auth AuthorizationResult
+	Auth api.AuthorizationResult
 }
 type SetUssAvailabilityResponseSet struct {
 	// Availability status of specified USS was successfully updated.
@@ -766,8 +770,8 @@ type SetUssAvailabilityResponseSet struct {
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
 
-	// Internal server error
-	Response500 *InternalServerErrorBody
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
 }
 
 type Implementation interface {

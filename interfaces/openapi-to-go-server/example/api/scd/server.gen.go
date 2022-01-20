@@ -1,20 +1,27 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package main
+package scd
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
+	"example/api"
 	"net/http"
 	"regexp"
 )
 
-func writeJson(w http.ResponseWriter, code int, obj interface{}) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code)
-	if err := json.NewEncoder(w).Encode(obj); err != nil {
-		io.WriteString(w, fmt.Sprintf("{\"error_message\": \"Error encoding JSON: %s\"}", err.Error()))
+type APIRouter struct {
+	Routes         []*api.Route
+	Implementation Implementation
+	Authorizer     api.Authorizer
+}
+
+func (a *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
+	for _, route := range a.Routes {
+		if route.Pattern.MatchString(r.URL.Path) {
+			route.Handler(route.Pattern, w, r)
+			return true
+		}
 	}
+	return false
 }
 
 func (s *APIRouter) QueryOperationalIntentReferences(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -33,34 +40,34 @@ func (s *APIRouter) QueryOperationalIntentReferences(exp *regexp.Regexp, w http.
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response413 != nil {
-		writeJson(w, 413, response.Response413)
+		api.WriteJson(w, 413, response.Response413)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -78,34 +85,34 @@ func (s *APIRouter) GetOperationalIntentReference(exp *regexp.Regexp, w http.Res
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		writeJson(w, 404, response.Response404)
+		api.WriteJson(w, 404, response.Response404)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -128,42 +135,42 @@ func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.
 
 	// Write response to client
 	if response.Response201 != nil {
-		writeJson(w, 201, response.Response201)
+		api.WriteJson(w, 201, response.Response201)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		writeJson(w, 409, response.Response409)
+		api.WriteJson(w, 409, response.Response409)
 		return
 	}
 	if response.Response412 != nil {
-		writeJson(w, 412, response.Response412)
+		api.WriteJson(w, 412, response.Response412)
 		return
 	}
 	if response.Response413 != nil {
-		writeJson(w, 413, response.Response413)
+		api.WriteJson(w, 413, response.Response413)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -187,42 +194,42 @@ func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		writeJson(w, 409, response.Response409)
+		api.WriteJson(w, 409, response.Response409)
 		return
 	}
 	if response.Response412 != nil {
-		writeJson(w, 412, response.Response412)
+		api.WriteJson(w, 412, response.Response412)
 		return
 	}
 	if response.Response413 != nil {
-		writeJson(w, 413, response.Response413)
+		api.WriteJson(w, 413, response.Response413)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) DeleteOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -241,42 +248,42 @@ func (s *APIRouter) DeleteOperationalIntentReference(exp *regexp.Regexp, w http.
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		writeJson(w, 404, response.Response404)
+		api.WriteJson(w, 404, response.Response404)
 		return
 	}
 	if response.Response409 != nil {
-		writeJson(w, 409, response.Response409)
+		api.WriteJson(w, 409, response.Response409)
 		return
 	}
 	if response.Response412 != nil {
-		writeJson(w, 412, response.Response412)
+		api.WriteJson(w, 412, response.Response412)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) QueryConstraintReferences(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -295,34 +302,34 @@ func (s *APIRouter) QueryConstraintReferences(exp *regexp.Regexp, w http.Respons
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response413 != nil {
-		writeJson(w, 413, response.Response413)
+		api.WriteJson(w, 413, response.Response413)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -340,34 +347,34 @@ func (s *APIRouter) GetConstraintReference(exp *regexp.Regexp, w http.ResponseWr
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		writeJson(w, 404, response.Response404)
+		api.WriteJson(w, 404, response.Response404)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -390,38 +397,38 @@ func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.Respons
 
 	// Write response to client
 	if response.Response201 != nil {
-		writeJson(w, 201, response.Response201)
+		api.WriteJson(w, 201, response.Response201)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		writeJson(w, 409, response.Response409)
+		api.WriteJson(w, 409, response.Response409)
 		return
 	}
 	if response.Response413 != nil {
-		writeJson(w, 413, response.Response413)
+		api.WriteJson(w, 413, response.Response413)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -445,38 +452,38 @@ func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.Respons
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		writeJson(w, 409, response.Response409)
+		api.WriteJson(w, 409, response.Response409)
 		return
 	}
 	if response.Response413 != nil {
-		writeJson(w, 413, response.Response413)
+		api.WriteJson(w, 413, response.Response413)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) DeleteConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -495,38 +502,38 @@ func (s *APIRouter) DeleteConstraintReference(exp *regexp.Regexp, w http.Respons
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		writeJson(w, 404, response.Response404)
+		api.WriteJson(w, 404, response.Response404)
 		return
 	}
 	if response.Response409 != nil {
-		writeJson(w, 409, response.Response409)
+		api.WriteJson(w, 409, response.Response409)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) QuerySubscriptions(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -545,34 +552,34 @@ func (s *APIRouter) QuerySubscriptions(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response413 != nil {
-		writeJson(w, 413, response.Response413)
+		api.WriteJson(w, 413, response.Response413)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -590,34 +597,34 @@ func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		writeJson(w, 404, response.Response404)
+		api.WriteJson(w, 404, response.Response404)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -640,34 +647,34 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		writeJson(w, 409, response.Response409)
+		api.WriteJson(w, 409, response.Response409)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -691,34 +698,34 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		writeJson(w, 409, response.Response409)
+		api.WriteJson(w, 409, response.Response409)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -737,38 +744,38 @@ func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		writeJson(w, 404, response.Response404)
+		api.WriteJson(w, 404, response.Response404)
 		return
 	}
 	if response.Response409 != nil {
-		writeJson(w, 409, response.Response409)
+		api.WriteJson(w, 409, response.Response409)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) MakeDssReport(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -787,30 +794,30 @@ func (s *APIRouter) MakeDssReport(exp *regexp.Regexp, w http.ResponseWriter, r *
 
 	// Write response to client
 	if response.Response201 != nil {
-		writeJson(w, 201, response.Response201)
+		api.WriteJson(w, 201, response.Response201)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -828,30 +835,30 @@ func (s *APIRouter) GetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -874,88 +881,88 @@ func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Write response to client
 	if response.Response200 != nil {
-		writeJson(w, 200, response.Response200)
+		api.WriteJson(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		writeJson(w, 400, response.Response400)
+		api.WriteJson(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		writeJson(w, 401, response.Response401)
+		api.WriteJson(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		writeJson(w, 403, response.Response403)
+		api.WriteJson(w, 403, response.Response403)
 		return
 	}
 	if response.Response429 != nil {
-		writeJson(w, 429, response.Response429)
+		api.WriteJson(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		writeJson(w, 500, response.Response500)
+		api.WriteJson(w, 500, response.Response500)
 		return
 	}
-	writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
-func MakeAPIRouter(impl Implementation, auth Authorizer) APIRouter {
-	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*Route, 18)}
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 18)}
 
 	pattern := regexp.MustCompile("^/scd/dss/v1/operational_intent_references/query$")
-	router.Routes[0] = &Route{Pattern: pattern, Handler: router.QueryOperationalIntentReferences}
+	router.Routes[0] = &api.Route{Pattern: pattern, Handler: router.QueryOperationalIntentReferences}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)$")
-	router.Routes[1] = &Route{Pattern: pattern, Handler: router.GetOperationalIntentReference}
+	router.Routes[1] = &api.Route{Pattern: pattern, Handler: router.GetOperationalIntentReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)$")
-	router.Routes[2] = &Route{Pattern: pattern, Handler: router.CreateOperationalIntentReference}
+	router.Routes[2] = &api.Route{Pattern: pattern, Handler: router.CreateOperationalIntentReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[3] = &Route{Pattern: pattern, Handler: router.UpdateOperationalIntentReference}
+	router.Routes[3] = &api.Route{Pattern: pattern, Handler: router.UpdateOperationalIntentReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[4] = &Route{Pattern: pattern, Handler: router.DeleteOperationalIntentReference}
+	router.Routes[4] = &api.Route{Pattern: pattern, Handler: router.DeleteOperationalIntentReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/query$")
-	router.Routes[5] = &Route{Pattern: pattern, Handler: router.QueryConstraintReferences}
+	router.Routes[5] = &api.Route{Pattern: pattern, Handler: router.QueryConstraintReferences}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)$")
-	router.Routes[6] = &Route{Pattern: pattern, Handler: router.GetConstraintReference}
+	router.Routes[6] = &api.Route{Pattern: pattern, Handler: router.GetConstraintReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)$")
-	router.Routes[7] = &Route{Pattern: pattern, Handler: router.CreateConstraintReference}
+	router.Routes[7] = &api.Route{Pattern: pattern, Handler: router.CreateConstraintReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[8] = &Route{Pattern: pattern, Handler: router.UpdateConstraintReference}
+	router.Routes[8] = &api.Route{Pattern: pattern, Handler: router.UpdateConstraintReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[9] = &Route{Pattern: pattern, Handler: router.DeleteConstraintReference}
+	router.Routes[9] = &api.Route{Pattern: pattern, Handler: router.DeleteConstraintReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/query$")
-	router.Routes[10] = &Route{Pattern: pattern, Handler: router.QuerySubscriptions}
+	router.Routes[10] = &api.Route{Pattern: pattern, Handler: router.QuerySubscriptions}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)$")
-	router.Routes[11] = &Route{Pattern: pattern, Handler: router.GetSubscription}
+	router.Routes[11] = &api.Route{Pattern: pattern, Handler: router.GetSubscription}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)$")
-	router.Routes[12] = &Route{Pattern: pattern, Handler: router.CreateSubscription}
+	router.Routes[12] = &api.Route{Pattern: pattern, Handler: router.CreateSubscription}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[13] = &Route{Pattern: pattern, Handler: router.UpdateSubscription}
+	router.Routes[13] = &api.Route{Pattern: pattern, Handler: router.UpdateSubscription}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[14] = &Route{Pattern: pattern, Handler: router.DeleteSubscription}
+	router.Routes[14] = &api.Route{Pattern: pattern, Handler: router.DeleteSubscription}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/reports$")
-	router.Routes[15] = &Route{Pattern: pattern, Handler: router.MakeDssReport}
+	router.Routes[15] = &api.Route{Pattern: pattern, Handler: router.MakeDssReport}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/uss_availability/(?P<uss_id>[^/]*)$")
-	router.Routes[16] = &Route{Pattern: pattern, Handler: router.GetUssAvailability}
+	router.Routes[16] = &api.Route{Pattern: pattern, Handler: router.GetUssAvailability}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/uss_availability/(?P<uss_id>[^/]*)$")
-	router.Routes[17] = &Route{Pattern: pattern, Handler: router.SetUssAvailability}
+	router.Routes[17] = &api.Route{Pattern: pattern, Handler: router.SetUssAvailability}
 
 	return router
 }

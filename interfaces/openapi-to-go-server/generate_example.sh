@@ -10,23 +10,16 @@ fi
 
 cd ${BASEDIR}
 
-if [[ ! -f "$FILE" ]]; then
-    curl https://raw.githubusercontent.com/astm-utm/Protocol/v1.0.0/utm.yaml > utm.yaml
-fi
-
 docker image build -t openapi-to-go-server .
 
 docker container run -it \
-  	-v $(pwd):/resources/in \
-	  -v $(pwd)/example:/resources/out \
+  	-v $(pwd)/../astm-utm/Protocol/utm.yaml:/resources/utm.yaml \
+  	-v $(pwd)/../uastech/standards/remoteid/augmented.yaml:/resources/rid.yaml \
+	  -v $(pwd)/example:/resources/example \
 	  openapi-to-go-server \
-	      --input_yaml /resources/in/utm.yaml \
-	      --path_prefix /scd \
-	      --output_folder /resources/out \
-	      --include_endpoint_tags dss \
-	      --package main \
-	      --include_types \
-	      --include_interface \
-	      --include_server \
-	      --include_common \
-	      --include_example
+	      --api_import example/api \
+	      --api /resources/utm.yaml@scd \
+	      --api /resources/rid.yaml@rid \
+	      --api_folder /resources/example/api \
+	      --example_folder /resources/example \
+	      --include_endpoint_tags dss

@@ -1,6 +1,7 @@
 import re
-from typing import List, Optional
+from typing import Dict, List
 
+import apis
 import data_types
 import operations
 
@@ -27,17 +28,22 @@ def indent(lines: List[str], level: int) -> List[str]:
         return ['  ' * level + line if line else '' for line in lines]
 
 
-def header(package: str) -> List[str]:
-    """Generate a Go file header for a file in the specified package.
+def imports(import_list: List[str]) -> str:
+    return '\n'.join(indent(['"{}"'.format(i) for i in import_list], 2))
 
-    :param package: Name of package in which the Go file is located
-    :return: Lines of text constituting the requested Go file header
+
+def template_content(template_name: str, template_vars: Dict[str, str]) -> str:
+    """Fill in a template with provided values and return the entire content.
+
+    :param template_name: Name of template file in `templates` folder (e.g., 'common' reads from `templates/common.go.template`)
+    :param template_vars: Mapping of key (sentinel in template) to value (what to replace the sentinel with)
+    :return: Template content with filled values
     """
-    lines: List[str] = []
-    lines.extend(comment(['This file is auto-generated; do not change as any changes will be overwritten']))
-    lines.append('package {}'.format(package))
-    lines.append('')
-    return lines
+    with open('templates/{}.go.template'.format(template_name), 'r') as f:
+        content = f.read()
+    for k, v in template_vars.items():
+        content = content.replace(k, v)
+    return content
 
 
 def data_type(d_type: data_types.DataType) -> List[str]:
@@ -86,10 +92,12 @@ def _object_field(field: data_types.ObjectField) -> List[str]:
     return lines
 
 
-def implementation_interface(declared_operations: List[operations.Operation]) -> List[str]:
+def implementation_interface(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
     """Generate Go code defining the interface an API implementation must implement.
 
-    :param declared_operations: Operations to be included in the interface
+    :param api: API to be rendered into an interface
+    :param api_package: Name of root/common API package
+    :param ensure_500: If True, add a 500 response to all operations that don't already define a 500 response
     :return: Lines of Go code defining the interface
     """
     lines: List[str] = []
@@ -98,16 +106,18 @@ def implementation_interface(declared_operations: List[operations.Operation]) ->
     lines.append('var (')
 
     var_body: List[str] = []
-    for endpoint in declared_operations:
+    for operation in api.operations:
         var_body.append(
-            '%sSecurity = map[string]SecurityScheme{' % endpoint.interface_name)
+            '%sSecurity = map[string]%s.SecurityScheme{' % (operation.interface_name, api_package))
 
         init_body: List[str] = []
-        for scheme, options in endpoint.security.schemes.items():
-            init_body.append('"%s": []AuthorizationOption{' % scheme)
+        for scheme, options in operation.security.schemes.items():
+            init_body.append('"%s": []%s.AuthorizationOption{' % (scheme, api_package))
             init_body.extend(indent([
-                'AuthorizationOption{RequiredScopes: []string{%s}},' % ', '.join(
-                    '"{}"'.format(scope) for scope in option.required_scopes)
+                '%s.AuthorizationOption{RequiredScopes: []string{%s}},' % (
+                    api_package,
+                    ', '.join('"{}"'.format(scope)
+                              for scope in option.required_scopes))
                 for option in options], 1))
             init_body.append('},')
         var_body.extend(indent(init_body, 1))
@@ -117,45 +127,48 @@ def implementation_interface(declared_operations: List[operations.Operation]) ->
 
     lines.append(')')
 
-    # Declare request & response types for all endpoints
-    for endpoint in declared_operations:
+    # Declare request & response types for all operations
+    for operation in api.operations:
         lines.append('')
 
-        # Declare request type for query
-        lines.append('type {} struct {{'.format(endpoint.request_type_name))
+        # Declare request type for operation
+        lines.append('type {} struct {{'.format(operation.request_type_name))
 
         body: List[str] = []
-        for p in endpoint.path_parameters:
+        for p in operation.path_parameters + operation.query_parameters:
             if p.description:
                 body.extend(comment(p.description.split('\n')))
             body.append('{} {}'.format(p.go_field_name, p.go_type))
             body.append('')
-        if endpoint.json_request_body_type:
+        if operation.json_request_body_type:
             body.extend(comment(['The data contained in the body of this request, if it parsed correctly']))
-            body.append('Body *{}'.format(endpoint.json_request_body_type))
+            body.append('Body *{}'.format(operation.json_request_body_type))
             body.append('')
             body.extend(comment(['The error encountered when attempting to parse the body of this request']))
             body.append('BodyParseError error')
             body.append('')
         body.extend(
             comment(['The result of attempting to authorize this request']))
-        body.append('Auth AuthorizationResult')
+        body.append('Auth {}.AuthorizationResult'.format(api_package))
         lines.extend(indent(body, 1))
 
         lines.append('}')
 
-        # Declare response type for query
-        lines.append('type {} struct {{'.format(endpoint.response_type_name))
+        # Declare response type for operation
+        lines.append('type {} struct {{'.format(operation.response_type_name))
 
-        for response in endpoint.responses:
+        body: List[str] = []
+        responses = [r for r in operation.responses]
+        if ensure_500 and 500 not in {r.code for r in responses}:
+            responses.append(operations.Response(code=500, description='Auto-generated internal server error response', json_body_type='{}.InternalServerErrorBody'.format(api_package)))
+        for response in responses:
             if response.description:
-                lines.extend(
-                    indent(comment(response.description.split('\n')), 1))
+                body.extend(comment(response.description.split('\n')))
             body_type = response.json_body_type if response.json_body_type else 'EmptyResponseBody'
-            lines.extend(indent(
-                ['{} *{}'.format(response.response_set_field, body_type)], 1))
-            lines.append('')
-        lines.pop()
+            body.extend(['{} *{}'.format(response.response_set_field, body_type)])
+            body.append('')
+        body.pop()
+        lines.extend(indent(body, 1))
 
         lines.append('}')
 
@@ -163,19 +176,19 @@ def implementation_interface(declared_operations: List[operations.Operation]) ->
     lines.append('type Implementation interface {')
 
     body: List[str] = []
-    for endpoint in declared_operations:
+    for operation in api.operations:
         comments: List[str] = []
-        if endpoint.summary and endpoint.summary != endpoint.description:
-            comments.extend(endpoint.summary.split('\n'))
-        if endpoint.summary and endpoint.description and endpoint.summary != endpoint.description:
+        if operation.summary and operation.summary != operation.description:
+            comments.extend(operation.summary.split('\n'))
+        if operation.summary and operation.description and operation.summary != operation.description:
             comments.append('---')
-        if endpoint.description:
-            comments.extend(endpoint.description.split('\n'))
+        if operation.description:
+            comments.extend(operation.description.split('\n'))
         body.extend(comment(comments))
 
-        body.append('{}(req *{}) {}'.format(endpoint.interface_name,
-                                            endpoint.request_type_name,
-                                            endpoint.response_type_name))
+        body.append('{}(req *{}) {}'.format(operation.interface_name,
+                                            operation.request_type_name,
+                                            operation.response_type_name))
         body.append('')
     body.pop()
     lines.extend(indent(body, 1))
@@ -184,19 +197,18 @@ def implementation_interface(declared_operations: List[operations.Operation]) ->
     return lines
 
 
-def routes(declared_operations: List[operations.Operation], path_prefix: Optional[str] = None) -> List[str]:
+def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
     """Generate handler Go code for each operation, routed appropriately.
 
-    :param declared_operations: Operations to be included in the handlers and router
-    :param path_prefix: Relative path that should be prefixed to every path as declared in the API (e.g., '/scd')
+    :param api: API to have its operation routes rendered
+    :param api_package: Name of root/common API package
+    :param ensure_500: If True, add a 500 response to all operations that don't already define a 500 response
     :return: Lines of Go code defining the handler functions and router creation function
     """
-    if path_prefix is None:
-        path_prefix = ''
     lines: List[str] = []
 
     # Define a top-level routed HTTP handler function for each operation
-    for operation in declared_operations:
+    for operation in api.operations:
         lines.append(
             'func (s *APIRouter) {}(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {{'.format(
                 operation.interface_name))
@@ -228,6 +240,9 @@ def routes(declared_operations: List[operations.Operation], path_prefix: Optiona
                                                             p.go_type, i + 1))
             body.append('')
 
+        # Parse any query parameters
+        # TODO
+
         # Attempt to parse the request body JSON, if defined
         if operation.json_request_body_type:
             body.extend(comment(['Parse request body']))
@@ -247,15 +262,16 @@ def routes(declared_operations: List[operations.Operation], path_prefix: Optiona
         # Write the first populated response discovered and finish the handler
         body.extend(comment(['Write response to client']))
         responses = [r for r in operation.responses]
+        if ensure_500 and 500 not in {r.code for r in responses}:
+            responses.append(operations.Response(code=500, description='', json_body_type='{}.InternalServerErrorBody'.format(api_package)))
         for response in responses:
             body.append(
                 'if response.{} != nil {{'.format(response.response_set_field))
-            body.extend(indent(['writeJson(w, {}, response.{})'.format(
-                response.code, response.response_set_field)], 1))
+            body.extend(indent(['{}.WriteJson(w, {}, response.{})'.format(
+                api_package, response.code, response.response_set_field)], 1))
             body.extend(indent(['return'], 1))
             body.append('}')
-        body.append(
-            'writeJson(w, 500, InternalServerErrorBody{"Handler implementation did not set a response"})')
+        body.append('%s.WriteJson(w, 500, %s.InternalServerErrorBody{"Handler implementation did not set a response"})' % (api_package, api_package))
 
         lines.extend(indent(body, 1))
 
@@ -263,36 +279,36 @@ def routes(declared_operations: List[operations.Operation], path_prefix: Optiona
         lines.append('')
     lines.pop()
 
-    lines.append('')
-
-    # Generate a function to create an APIRouter HTTP handler that routes to the appropriate methods in the provided Implementation
-    lines.append('func MakeAPIRouter(impl Implementation, auth Authorizer) APIRouter {')
-
-    body: List[str] = []
-    body.append(
-        'router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*Route, %s)}' % len(
-            declared_operations))
-    body.append('')
-    first_assignment = True
-    for i, operation in enumerate(declared_operations):
-        path_regex = path_prefix + re.sub(r'{([^}]*)}', r'(?P<\1>[^/]*)',
-                                          operation.path)
-        body.append('pattern {}= regexp.MustCompile("^{}$")'.format(
-            ':' if first_assignment else '', path_regex))
-        body.append(
-            'router.Routes[%d] = &Route{Pattern: pattern, Handler: router.%s}' % (
-            i, operation.interface_name))
-        body.append('')
-        first_assignment = False
-    body.append('return router')
-    lines.extend(indent(body, 1))
-
-    lines.append('}')
-
     return lines
 
 
-def example(declared_operations: List[operations.Operation]) -> List[str]:
+def routing(api: apis.API, api_package: str) -> List[str]:
+    """Generate Go code to create an APIRouter for the provided Implementation.
+
+    :param api: API to have its operation routes rendered
+    :param api_package: Name of root/common API package
+    :return: Lines of Go code defining the contents of a function to create an APIRouter that routes to the appropriate methods in the provided Implementation
+    """
+    lines: List[str] = []
+    lines.append(
+        'router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*%s.Route, %d)}' % (api_package, len(api.operations)))
+    lines.append('')
+    first_assignment = True
+    for i, operation in enumerate(api.operations):
+        path_regex = '/' + api.package + re.sub(r'{([^}]*)}', r'(?P<\1>[^/]*)',
+                                          operation.path)
+        lines.append('pattern {}= regexp.MustCompile("^{}$")'.format(
+            ':' if first_assignment else '', path_regex))
+        lines.append(
+            'router.Routes[%d] = &%s.Route{Pattern: pattern, Handler: router.%s}' % (
+            i, api_package, operation.interface_name))
+        lines.append('')
+        first_assignment = False
+    lines.append('return router')
+    return lines
+
+
+def example_implementation(api: apis.API, implementation_name: str) -> List[str]:
     """Generate Go code for a dummy API Implementation and a main routine to run it.
 
     Note that this routine produces a starting point/example for implementation,
@@ -302,53 +318,47 @@ def example(declared_operations: List[operations.Operation]) -> List[str]:
     functions initially generated by this routine would generally be manually
     updated rather than being re-auto-generated.
 
-    :param declared_operations: Operations to be included in the Implementation
-    :return: Lines of Go code defining a concrete instance of the Implementation interface along with a main function to use it to handle HTTP requests
+    :param api: API to have its operation routes rendered
+    :return: Lines of Go code defining a concrete instance of the Implementation interface
     """
     lines: List[str] = []
 
     # Define a concrete instance of the Implementation interface
-    lines.append('type ExampleImplementation struct {}')
+    lines.append('type %s struct {}' % implementation_name)
     lines.append('')
-    for endpoint in declared_operations:
-        lines.append('func (*ExampleImplementation) {}(req *{}) {} {{'.format(
-            endpoint.interface_name, endpoint.request_type_name,
-            endpoint.response_type_name))
+    for operation in api.operations:
+        lines.append('func (*{}) {}(req *{}) {} {{'.format(
+            implementation_name, operation.interface_name,
+            api.package + '.' + operation.request_type_name,
+            api.package + '.' + operation.response_type_name))
 
         body: List[str] = []
-        body.append('response := %s{}' % (endpoint.response_type_name))
+        body.append('response := %s{}' % (api.package + '.' + operation.response_type_name))
         # body.append('response.Response500 = &InternalServerErrorBody{ErrorMessage: "Not yet implemented"}')
         body.append('response.%s = &%s{}' % (
-            endpoint.responses[0].response_set_field,
-            endpoint.responses[0].json_body_type))
+            operation.responses[0].response_set_field,
+            api.package + '.' + operation.responses[0].json_body_type))
         body.append('return response')
         lines.extend(indent(body, 1))
 
         lines.append('}')
         lines.append('')
 
-    # Define a main function that uses an ExampleImplementation instance to handle HTTP requests
-    lines.append('func main() {')
+    return lines
 
-    body: List[str] = []
-    body.append(
-        'router1 := MakeAPIRouter(&ExampleImplementation{}, &PermissiveAuthorizer{})')
-    body.append('multiRouter := MultiRouter{Routers: []*APIRouter{&router1}}')
-    body.append('s := &http.Server{')
 
-    args: List[str] = []
-    args.append('Addr:           ":8080",')
-    args.append('Handler:        &multiRouter,')
-    args.append('ReadTimeout:    10 * time.Second,')
-    args.append('WriteTimeout:   10 * time.Second,')
-    args.append('MaxHeaderBytes: 1 << 20,')
-    body.extend(indent(args, 1))
+def example_router_defs(implementations: Dict[str, str], api_package: str) -> List[str]:
+    """Generate Go code for concrete example router & multi-router definitions.
 
-    body.append('}')
-    body.append('log.Fatal(s.ListenAndServe())')
+    :param implementations: Relationship between API name and the name of the Go struct implementing the Implementation of that API
+    :param api_package: Name of root/common API package
+    :return: Lines of Go code for router definitions in a main function to use to handle HTTP requests
+    """
+    lines: List[str] = []
 
-    lines.extend(indent(body, 1))
-
-    lines.append('}')
+    for api_name, implementation in implementations.items():
+        lines.append('%sRouter := %s.MakeAPIRouter(&%s{}, &authorizer)' % (api_name, api_name, implementation))
+    router_list = ', '.join('&{}Router'.format(api_name) for api_name, _ in implementations.items())
+    lines.append('multiRouter := %s.MultiRouter{Routers: []%s.APIRouter{%s}}' % (api_package, api_package, router_list))
 
     return lines

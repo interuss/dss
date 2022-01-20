@@ -1,6 +1,0 @@
-pattern, err := regexp.MustCompile("{{{PATTERN}}}")
-if err != nil {
-    return nil, stacktrace.Propagate(err, "Failed to compile regex pattern `{{{{PATTERN}}}}`")
-}
-handler := h
-router.Routes = append(router.Routes, &Route{Pattern: pattern, http.HandlerFunc(Home)})

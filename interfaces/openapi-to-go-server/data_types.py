@@ -1,9 +1,7 @@
 import dataclasses
 from typing import Dict, List, Set, Tuple
 
-
-def snake_case_to_pascal_case(s: str) -> str:
-    return s.replace('_', ' ').title().replace(' ', '')
+import formatting
 
 
 @dataclasses.dataclass
@@ -25,7 +23,7 @@ class ObjectField:
     @property
     def go_name(self) -> str:
         """Name of the field in the Go representation of the parent data type"""
-        return snake_case_to_pascal_case(self.api_name)
+        return formatting.snake_case_to_pascal_case(self.api_name)
 
 
 @dataclasses.dataclass
@@ -121,7 +119,8 @@ def make_object_field(object_name: str, field_name: str, schema: Dict, required:
             description=schema.get('description', ''),
             required=is_required), []
     else:
-        data_type, additional_types = make_data_types(object_name + snake_case_to_pascal_case(field_name), schema)
+        type_name = object_name + formatting.snake_case_to_pascal_case(field_name)
+        data_type, additional_types = make_data_types(type_name, schema)
         if data_type.go_type in go_primitives.values():
             # No additional type declaration needed
             if additional_types:
