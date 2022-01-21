@@ -20,7 +20,6 @@ import (
 const (
 	isaFieldsV3       = "id, owner, url, cells, starts_at, ends_at, updated_at"
 	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
-	// maxResultLimit	= 10000
 )
 
 // The purpose od isaRepoV3 is solely to support backwards compatibility
