@@ -28,7 +28,7 @@ class KnownIssueFields(ImplicitDict):
 class KnownResponses(ImplicitDict):
     """Mapping of the flight injection attempt's USS response to test outcome"""
     acceptable_results: List[str] 
-    """Acceptable InjectFlightResponse `result` values that will result in the flight injection attempt being considered successful if the USS under test reports one of them as the result of attempting to inject the requested flight."""
+    """Acceptable values in the result data field of InjectFlightResponse. The flight injection attempt will be considered successful if the USS under test reports one of these as the result of attempting to inject the flight."""
 
     incorrect_result_details: Dict[str, KnownIssueFields]
     """For each case where the USS provides an InjectFlightResponse `result` value that is not in the acceptable results, this field contains information about how the Issue should be described"""
