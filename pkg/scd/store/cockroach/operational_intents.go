@@ -241,7 +241,8 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 			AND
 				COALESCE(scd_operations.ends_at >= $4, true)
 			AND
-				COALESCE(scd_operations.starts_at <= $5, true)`, operationFieldsWithPrefix)
+				COALESCE(scd_operations.starts_at <= $5, true)
+			LIMIT $6`, operationFieldsWithPrefix)
 	)
 
 	if v4d.SpatialVolume == nil || v4d.SpatialVolume.Footprint == nil {
@@ -267,6 +268,7 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 		v4d.SpatialVolume.AltitudeHi,
 		v4d.StartTime,
 		v4d.EndTime,
+		dssmodels.MaxResultLimit,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Operations")
