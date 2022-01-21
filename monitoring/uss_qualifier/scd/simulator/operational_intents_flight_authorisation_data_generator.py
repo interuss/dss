@@ -286,7 +286,6 @@ class FlightAuthorisationDataGenerator():
 class TestInjectionRequiredResultsGenerator(): 
     '''A class to generate TestInjection and the associated results '''
     
-
     def generate_flight_injection_attempts(self) -> List[FlightInjectionAttempt]:
         flight_injection_attempts = []
 
@@ -324,7 +323,7 @@ class TestInjectionRequiredResultsGenerator():
             operational_intent_test_injection = my_operational_intent_generator.generate_injection_operational_intents(astm_4d_volume = [flight_volume])
         
             inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
-            operational_intent_processing_result = []
+            
             all_incorrect_result_details = []
             flight_authorisation_result_details = {}
             if make_incorrect: 
