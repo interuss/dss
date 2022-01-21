@@ -8,7 +8,7 @@ else
 	BASEDIR=$(readlink -e "$(dirname "$0")")
 fi
 
-cd ${BASEDIR}
+cd "${BASEDIR}" || exit
 
 docker image build -t openapi-to-go-server-demo .
 

@@ -8,14 +8,14 @@ else
 	BASEDIR=$(readlink -e "$(dirname "$0")")
 fi
 
-cd ${BASEDIR}
+cd "${BASEDIR}" || exit
 
 docker image build -t openapi-to-go-server .
 
 docker container run -it \
-  	-v $(pwd)/../astm-utm/Protocol/utm.yaml:/resources/utm.yaml \
-  	-v $(pwd)/../uastech/standards/remoteid/augmented.yaml:/resources/rid.yaml \
-	  -v $(pwd)/example:/resources/example \
+  	-v "$(pwd)/../astm-utm/Protocol/utm.yaml:/resources/utm.yaml" \
+  	-v "$(pwd)/../uastech/standards/remoteid/augmented.yaml:/resources/rid.yaml" \
+	  -v "$(pwd)/example:/resources/example" \
 	  openapi-to-go-server \
 	      --api_import example/api \
 	      --api /resources/utm.yaml@scd \
