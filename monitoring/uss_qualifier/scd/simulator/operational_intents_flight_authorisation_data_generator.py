@@ -7,6 +7,8 @@ from monitoring.monitorlib.scd import Time, Volume3D, Volume4D, Polygon, Altitud
 from typing import List
 from pathlib import Path
 import geojson
+from itertools import cycle
+import string
 import json
 from pyproj import Geod, Proj
 import arrow
@@ -245,6 +247,41 @@ class FlightAuthorisationDataGenerator():
 
         serial_number = manufacturer_code + dict_key + random_serial_number
         return serial_number
+
+    def generate_incorrect_uav_registration_number(self, valid_registration_number:str) -> str:
+        ''' Take a valid Operator Registration number per the EN4709-02 standard and modify it to make it incorrect / invalid '''
+
+        new_registration_number = valid_registration_number.split('-')[0]
+        final_random_string = ''.join(random.choice(string.ascii_lowercase) for _ in range(3))
+        new_registration_number = new_registration_number +'-'+ final_random_string
+        return new_registration_number
+
+    def generate_operator_registration_number(self, prefix='CHE') -> str:
+        ''' A method to generate the Operator Registration number per the EN4709-02 standard '''
+        def gen_checksum(raw_id):
+            assert raw_id.isalnum()
+            assert len(raw_id) == 15
+            d = {v: k for k, v in enumerate(self.registration_number_code_points)}
+            numeric_base_id = list(map(d.__getitem__, list(raw_id)))
+            # Multiplication factors for each digit depending on its position
+            mult_factors = cycle([2, 1])
+            def partial_sum(number, mult_factor):
+                """Calculate partial sum ofr a single digit."""
+                quotient, remainder = divmod(number * mult_factor, 36)
+                return quotient + remainder
+            final_sum = sum(                
+                partial_sum(int(character), mult_factor)
+                for character, mult_factor in zip(numeric_base_id, mult_factors))
+
+            # Calculate control number based on partial sums
+            control_number = -final_sum % 36
+            return self.registration_number_code_points[control_number]
+
+        final_random_string = ''.join(random.choice(string.ascii_lowercase) for _ in range(3))
+        base_id = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(12))
+        checksum = gen_checksum(base_id + final_random_string)
+        reg_num = prefix + base_id + str(checksum) +'-'+ final_random_string
+        return reg_num
 
 class TestInjectionRequiredResultsGenerator(): 
     '''A class to generate TestInjection and the associated results '''
