@@ -12,13 +12,7 @@ class GeneratedGeometry(ImplicitDict):
     ''' An object to hold generated flight path and the associated rule '''
     geometry: Union[LineString, Polygon]    
     geometry_generation_rule: GeometryGenerationRule
-  
-class RequiredResults(ImplicitDict):
-    ''' A class to evaluate results / response to an injection of test flight data (TestFlightRequest) '''
-    expected_response: str 
-    authorisation_data_fields_to_evaluate: List[str]
-    operational_intent_processing_result: str
-
-class TestInjectionRequiredResult(ImplicitDict):
-    test_injection: InjectFlightRequest
-    required_result: RequiredResults
+   
+class OutputSubDirectories(ImplicitDict):
+    ''' A class to hold information about output directories that will be generated when writing the files to disk. '''
+    autmoated_test_base_path: Path

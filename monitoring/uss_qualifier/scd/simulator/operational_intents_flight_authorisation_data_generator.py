@@ -1,16 +1,20 @@
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest
-from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt, InjectionTarget, KnownIssueFields, KnownResponses
-from utils import GeneratedGeometry, GeometryGenerationRule, RequiredResults,TestInjectionRequiredResult
+from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt, InjectionTarget, KnownIssueFields, KnownResponses, AutomatedTest
+from utils import GeneratedGeometry, GeometryGenerationRule, OutputSubDirectories
 from shapely.geometry import asShape
 from shapely.geometry import LineString
 from monitoring.monitorlib.scd import Time, Volume3D, Volume4D, Polygon, Altitude, LatLngPoint
 from typing import List
+from pathlib import Path
 import geojson
+import json
 from pyproj import Geod, Proj
 import arrow
 import random
 from typing import List, Union
 import shapely.geometry
+import os
+
 
 class ProximateOperationalIntentGenerator():
     ''' A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. '''
@@ -110,7 +114,7 @@ class ProximateOperationalIntentGenerator():
         random_flight_polygon = asShape(random_flight_polygon).envelope # Get the envelope of the linestring and create a box
         return random_flight_polygon
         
-    def _generate_single_flight_geometry(self, geometry_generation_rule:GeometryGenerationRule) -> Union[LineString, Polygon]:
+    def _generate_single_flight_geometry(self, geometry_generation_rule:GeometryGenerationRule, injection_number:int) -> Union[LineString, Polygon]:
         ''' A method to generates flight geometry within a geographic bounds. The geometry can be a linestring or a polygon, simple rules for generation can be specificed. At the moment the method check if the geometry should intersect with the control and based on that, linestring / polygons are created '''
         
         coin_flip = random.choice([0,0,1])         
@@ -118,6 +122,9 @@ class ProximateOperationalIntentGenerator():
             flight_geometry = self._generate_random_flight_polygon()
         else:
             flight_geometry = self._generate_random_flight_path()
+
+        if injection_number == 0:
+            self.first_flight_geometry = asShape(flight_geometry)
 
         if geometry_generation_rule.intersect_space: # This is not the first geometry, check if it should intersect with the control
             geometry_intersects = False
@@ -130,6 +137,7 @@ class ProximateOperationalIntentGenerator():
                     flight_geometry = self._generate_random_flight_path()
                     
                 raw_geom = asShape(flight_geometry) # Generate a shape from the geometry
+                
                 geometry_intersects = self.first_flight_geometry.intersects(raw_geom) # Check this intersects with the control     
             
         return flight_geometry
@@ -171,12 +179,11 @@ class ProximateOperationalIntentGenerator():
         
         return volume_4D
     
-    def generate_nominal_test_geometry(self, geometry_generation_rule:GeometryGenerationRule) -> GeneratedGeometry:
-        ''' A method to generate two Volume 4D payloads to submit to the system to be tested.  '''
+    def generate_nominal_test_geometry(self, geometry_generation_rule: GeometryGenerationRule, injection_number: int) -> GeneratedGeometry:
+        ''' A method to generate two Volume 4D payloads to submit to the system to be tested.  '''                
         
-        
-        # the first path is control, the last path does not intersect the control
-        flight_path_geometry = self._generate_single_flight_geometry(geometry_generation_rule = geometry_generation_rule)
+        flight_path_geometry = self._generate_single_flight_geometry(geometry_generation_rule = geometry_generation_rule, injection_number= injection_number)
+
         raw_geometry = GeneratedGeometry(geometry = flight_path_geometry, geometry_generation_rule = geometry_generation_rule)
         
         return raw_geometry
@@ -243,18 +250,18 @@ class TestInjectionRequiredResultsGenerator():
     '''A class to generate TestInjection and the associated results '''
     
 
-    def generate_flight_injection_attempts(self) -> List[TestInjectionRequiredResult]:
+    def generate_flight_injection_attempts(self) -> List[FlightInjectionAttempt]:
         flight_injection_attempts = []
-        
+
+        my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')
+        altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
+        altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
+                
         num_injections = 2
         for injection_number in range(0,num_injections):
             
             my_flight_authorisation_data_generator = FlightAuthorisationDataGenerator()
 
-            my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')
-            altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
-            altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
-            
             serial_number = my_flight_authorisation_data_generator.generate_serial_number()
             # TODO: Code to generate additional fields 
 
@@ -267,13 +274,13 @@ class TestInjectionRequiredResultsGenerator():
             flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category='Open', operation_mode = 'Vlos',uas_class='C0', identification_technologies = ['ASTMNetRID'], connectivity_methods = ['cellular'], endurance_minutes = 30 , emergency_procedure_url = 'https://uav.com/emergency', operator_id = 'SUSz8k1ukxjfv463-brq', uas_id= '', uas_type_certificate = '')
         
             should_intersect = False
-            if injection_number !=0:   
+            if injection_number != 0:
                 coin_flip = random.choice([0,0,1]) # It may or may not intersect
                 should_intersect = coin_flip
 
             geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
 
-            flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule)            
+            flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)            
         
             flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
             
@@ -299,7 +306,7 @@ class TestInjectionRequiredResultsGenerator():
                 
             all_incorrect_result_details.append(flight_authorisation_result_details)
             operational_intent_processing_result_details = {}
-            
+
             if should_intersect: 
                 expected_operational_intent_processing_result = 'ConflictWithFlight'
 
@@ -325,7 +332,38 @@ class TestInjectionRequiredResultsGenerator():
         return flight_injection_attempts
            
 
+class AutomatedTestsWriter():
+    """ A class to write raw Flight injection attempt and volumes to disk so that they can be examined / used in other software """
+
+    def __init__(self,output_path:os.path, flight_injection_attempts: List[FlightInjectionAttempt], country_code='che')-> None:
+        '''
+        A method to write flight paths, volumes and volume generation rules to disk for review / submission to the test harness. All data is written in the `test_definitions` directory which is created if it does not exist.
+        
+        '''
+        self.country_code = country_code
+        self.output_directory = Path(output_path, self.country_code)        
+        # Create test_definition directory if it does not exist        
+        self.output_directory.mkdir(parents=True, exist_ok=True)
+        # The generator creates two sub-directories to write the files, the 4D Volumes are written in the astm_4d_volumes directory and the rules regarding the generation and the expected output from processing the Volume 4D sequentially. Since the DSS is a First In First Out system, we expect the first volume processing to be accepted.
+        self.output_subdirectories = OutputSubDirectories(autmoated_test_base_path = Path(self.output_directory, 'autmated_test'))        
+        self.output_subdirectories.autmoated_test_base_path.mkdir(parents=True, exist_ok=True)       
+
+        self.automated_test_data = AutomatedTest(injection_attempts = flight_injection_attempts)
+        
+    
+    def write_automated_test_to_disk(self) -> None:
+        ''' A method to automated test to disk '''
+    
+        automated_test_file_name = 'automated_test_%s.json' % str(1)  # Avoid Zero based numbering           
+        automated_test_file = Path(self.output_subdirectories.autmoated_test_base_path, automated_test_file_name)
+        with open(automated_test_file, 'w') as f:
+            f.write(json.dumps(self.automated_test_data))
+
+
 if __name__ == '__main__':    
     my_test_injection_results_generator = TestInjectionRequiredResultsGenerator()
-    injections_results = my_test_injection_results_generator.generate_flight_injection_attempts()    
-    print(injections_results)
+    flight_injection_attempts = my_test_injection_results_generator.generate_flight_injection_attempts()    
+    output_path = os.path.join(Path(__file__).parent.absolute(), '../test_definitions')
+    my_injection_attempt_writer = AutomatedTestsWriter(output_path=output_path,flight_injection_attempts = flight_injection_attempts )
+    my_injection_attempt_writer.write_automated_test_to_disk()
+
