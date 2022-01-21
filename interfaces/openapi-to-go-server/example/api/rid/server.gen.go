@@ -34,15 +34,16 @@ func (s *APIRouter) SearchIdentificationServiceAreas(exp *regexp.Regexp, w http.
 
 	// Copy query parameters
 	query := r.URL.Query()
-	if query.Has("area") {
+	// TODO: Change to query.Has after Go 1.17
+	if query.Get("area") != "" {
 		v := GeoPolygonString(query.Get("area"))
 		req.Area = &v
 	}
-	if query.Has("earliest_time") {
+	if query.Get("earliest_time") != "" {
 		v := query.Get("earliest_time")
 		req.EarliestTime = &v
 	}
-	if query.Has("latest_time") {
+	if query.Get("latest_time") != "" {
 		v := query.Get("latest_time")
 		req.LatestTime = &v
 	}
@@ -284,7 +285,8 @@ func (s *APIRouter) SearchSubscriptions(exp *regexp.Regexp, w http.ResponseWrite
 
 	// Copy query parameters
 	query := r.URL.Query()
-	if query.Has("area") {
+	// TODO: Change to query.Has after Go 1.17
+	if query.Get("area") != "" {
 		v := GeoPolygonString(query.Get("area"))
 		req.Area = &v
 	}

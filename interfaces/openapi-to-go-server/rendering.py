@@ -244,8 +244,9 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
         if operation.query_parameters:
             body.extend(comment(['Copy query parameters']))
             body.append('query := r.URL.Query()')
+            body.extend(comment(['TODO: Change to query.Has after Go 1.17']))
             for q in operation.query_parameters:
-                body.append('if query.Has("%s") {' % q.name)
+                body.append('if query.Get("%s") != "" {' % q.name)
                 if_body: List[str] = []
                 if q.go_type == 'string':
                     if_body.append('v := query.Get("{}")'.format(q.name))
