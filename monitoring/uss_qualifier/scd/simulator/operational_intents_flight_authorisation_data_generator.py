@@ -281,23 +281,47 @@ class TestInjectionRequiredResultsGenerator():
         
             inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
             operational_intent_processing_result = []
-            incorrect_result_details = {}
+            all_incorrect_result_details = []
+            flight_authorisation_result_details = {}
             if make_incorrect: 
                 expected_flight_authorisation_processing_result = 'Rejected'   
-                issue_field = KnownIssueFields(test_code = 'uas_serial_number', relevant_requirements = ['UAS Serial number should adhere to the ANSI CTA standard'], severity= 1, subject='UAS Serial Number is incorrect', summary ="The UAS serial number provided in the injection attempt was incorrect", details = "The UAS serial number does not adhere to the one prescribed in the standard and should be rejected.")
                 
-                incorrect_result_details = {'Planned': issue_field}
+                if_planned_explanation = KnownIssueFields(test_code = 'flight_authorisation_test', relevant_requirements = ['A correct UAS Serial number is equired by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1'], severity= 1, subject='UAS Serial Number provided is incorrect', summary ="The UAS serial number provided in the injection attempt was incorrect", details = "The UAS serial number is not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")
+                
+                flight_authorisation_result_details['Planned'] = if_planned_explanation
             else:
-                expected_flight_authorisation_processing_result = 'Planned'
 
+                expected_flight_authorisation_processing_result = 'Planned'
+                
+                if_rejected_explanation = KnownIssueFields(test_code = 'flight_authorisation_test', relevant_requirements = ['A correct UAS Serial number is equired by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1'], severity= 1, subject='UAS Serial Number provided is incorrect', summary ="The UAS serial number provided in the injection attempt was incorrect", details = "The UAS serial number is not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")
+                
+                flight_authorisation_result_details['Rejected']= if_rejected_explanation
+                
+            all_incorrect_result_details.append(flight_authorisation_result_details)
+            operational_intent_processing_result_details = {}
+            
             if should_intersect: 
-                operational_intent_processing_result = 'ConflictWithFlight'
+                expected_operational_intent_processing_result = 'ConflictWithFlight'
+
+                if_planned_explanation = KnownIssueFields(test_code = 'nominal_test', relevant_requirements = ['A operational intent that has time or space conflict should be planned by the USS'], severity= 1, subject='Operational Intent provided should not be planned', summary ="The operational intent details provided were generated in such a way that they should not have been planned.", details = "The co-ordinates of the 4D Opeational intent does conflicts with any existing operational intent in the area and the processing result should not be a successful planning of the intent.")
+                
+                operational_intent_processing_result_details['Planned'] = if_planned_explanation
             else: 
-                operational_intent_processing_result= 'Planned'
+                expected_operational_intent_processing_result= 'Planned'
+    
+                if_conflict_with_flight_explanation = KnownIssueFields(test_code = 'nominal_test', relevant_requirements = ['A operational intent that has no time or space conflict should be planned by the USS'], severity= 1, subject='Operational Intent provide should be planned', summary ="The operational intent details provided were generated in such a way that they should have been planned.", details = "The co-ordinates of the 4D Opeational intent does not conflict with any existing operational intent in the area and the processing result should be a successful planning of the intent.")
+                
+                operational_intent_processing_result_details['ConflictWithFlight'] = if_conflict_with_flight_explanation
+
+
             injection_target = InjectionTarget(uss_role = 'Submitting USS')
-            known_responses = [KnownResponses(acceptable_results=[expected_flight_authorisation_processing_result, operational_intent_processing_result], incorrect_result_details= incorrect_result_details)]
+
+            known_responses = [KnownResponses(acceptable_results=[expected_flight_authorisation_processing_result, expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)]
+            
             flight_injection_attempt = FlightInjectionAttempt(test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target)
+            
             flight_injection_attempts.append(flight_injection_attempt)
+        
         return flight_injection_attempts
            
 
