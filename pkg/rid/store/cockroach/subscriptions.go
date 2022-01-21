@@ -259,7 +259,8 @@ func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.Cel
 			WHERE
 				cells && $1
 			AND
-				ends_at >= $2`, subscriptionFields)
+				ends_at >= $2
+			LIMIT $3`, subscriptionFields)
 	)
 
 	if len(cells) == 0 {
@@ -271,7 +272,7 @@ func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.Cel
 		cids[i] = int64(cell)
 	}
 
-	return c.process(ctx, query, pq.Int64Array(cids), c.clock.Now())
+	return c.process(ctx, query, pq.Int64Array(cids), c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
@@ -287,7 +288,8 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 			AND
 				subscriptions.owner = $2
 			AND
-				ends_at >= $3`, subscriptionFields)
+				ends_at >= $3
+			LIMIT $4`, subscriptionFields)
 	)
 
 	if len(cells) == 0 {
@@ -299,7 +301,7 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 		cids[i] = int64(cell)
 	}
 
-	return c.process(ctx, query, pq.Int64Array(cids), owner, c.clock.Now())
+	return c.process(ctx, query, pq.Int64Array(cids), owner, c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // ListExpiredSubscriptions lists all expired Subscriptions based on writer.

@@ -20,6 +20,7 @@ import (
 const (
 	isaFieldsV3       = "id, owner, url, cells, starts_at, ends_at, updated_at"
 	updateISAFieldsV3 = "id, url, cells, starts_at, ends_at, updated_at"
+	// maxResultLimit	= 10000
 )
 
 // The purpose od isaRepoV3 is solely to support backwards compatibility
@@ -185,7 +186,8 @@ func (c *isaRepoV3) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest
 			AND
 				COALESCE(starts_at <= $2, true)
 			AND
-				cells && $3`, isaFieldsV3)
+				cells && $3
+			LIMIT $4`, isaFieldsV3)
 	)
 
 	if len(cells) == 0 {
@@ -201,7 +203,7 @@ func (c *isaRepoV3) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest
 		cids[i] = int64(cid)
 	}
 
-	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
+	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids), dssmodels.MaxResultLimit)
 }
 
 // ListExpiredISAs returns empty. We don't support thi function in store v3.0 because db doesn't have 'writer' field.
