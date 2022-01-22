@@ -302,7 +302,8 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 				AND
 					COALESCE(starts_at <= $3, true)
 				AND
-					COALESCE(ends_at >= $2, true)`, subscriptionFieldsWithPrefix)
+					COALESCE(ends_at >= $2, true)
+				LIMIT $4`, subscriptionFieldsWithPrefix)
 	)
 
 	// TODO: Lazily calculate & cache spatial covering so that it is only ever
@@ -328,7 +329,7 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 	}
 
 	subscriptions, err := c.fetchSubscriptions(
-		ctx, c.q, query, pgCids, v4d.StartTime, v4d.EndTime)
+		ctx, c.q, query, pgCids, v4d.StartTime, v4d.EndTime, dssmodels.MaxResultLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to fetch Subscriptions")
 	}

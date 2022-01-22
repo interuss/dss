@@ -307,7 +307,8 @@ func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.Cel
 			WHERE
 				cells && $1
 			AND
-				ends_at >= $2`, subscriptionFields)
+				ends_at >= $2
+			LIMIT $3`, subscriptionFields)
 	)
 
 	if len(cells) == 0 {
@@ -325,7 +326,7 @@ func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.Cel
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	return c.process(ctx, query, pgCids, c.clock.Now())
+	return c.process(ctx, query, pgCids, c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
@@ -341,7 +342,8 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 			AND
 				subscriptions.owner = $2
 			AND
-				ends_at >= $3`, subscriptionFields)
+				ends_at >= $3
+			LIMIT $4`, subscriptionFields)
 	)
 
 	if len(cells) == 0 {
@@ -359,7 +361,7 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	return c.process(ctx, query, pgCids, owner, c.clock.Now())
+	return c.process(ctx, query, pgCids, owner, c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // ListExpiredSubscriptions lists all expired Subscriptions based on writer.

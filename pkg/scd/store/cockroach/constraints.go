@@ -216,7 +216,8 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 			AND
 				COALESCE(starts_at <= $3, true)
 			AND
-				COALESCE(ends_at >= $2, true)`, constraintFieldsWithoutPrefix)
+				COALESCE(ends_at >= $2, true)
+			LIMIT $4`, constraintFieldsWithoutPrefix)
 	)
 
 	// TODO: Lazily calculate & cache spatial covering so that it is only ever
@@ -241,7 +242,7 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 	}
 
 	constraints, err := c.fetchConstraints(
-		ctx, c.q, query, pgCids, v4d.StartTime, v4d.EndTime)
+		ctx, c.q, query, pgCids, v4d.StartTime, v4d.EndTime, dssmodels.MaxResultLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Constraints")
 	}

@@ -235,7 +235,8 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 			AND
 				COALESCE(starts_at <= $2, true)
 			AND
-				cells && $3`, isaFields)
+				cells && $3
+			LIMIT $4`, isaFields)
 	)
 
 	if len(cells) == 0 {
@@ -257,7 +258,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	return c.process(ctx, isasInCellsQuery, earliest, latest, pgCids)
+	return c.process(ctx, isasInCellsQuery, earliest, latest, pgCids, dssmodels.MaxResultLimit)
 }
 
 // ListExpiredISAs lists all expired ISAs based on writer.
@@ -278,8 +279,9 @@ func (c *isaRepo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmod
 	WHERE
 		ends_at + INTERVAL '%d' MINUTE <= CURRENT_TIMESTAMP
 	AND
-		(writer = %s)`, isaFields, expiredDurationInMin, writerQuery)
+		(writer = %s)
+	LIMIT $1`, isaFields, expiredDurationInMin, writerQuery)
 	)
 
-	return c.process(ctx, isasInCellsQuery)
+	return c.process(ctx, isasInCellsQuery, dssmodels.MaxResultLimit)
 }

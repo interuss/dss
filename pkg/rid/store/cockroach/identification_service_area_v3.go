@@ -220,7 +220,8 @@ func (c *isaRepoV3) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest
 			AND
 				COALESCE(starts_at <= $2, true)
 			AND
-				cells && $3`, isaFieldsV3)
+				cells && $3
+			LIMIT $4`, isaFieldsV3)
 	)
 
 	if len(cells) == 0 {
@@ -242,7 +243,7 @@ func (c *isaRepoV3) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	return c.process(ctx, isasInCellsQuery, earliest, latest, pgCids)
+	return c.process(ctx, isasInCellsQuery, earliest, latest, pgCids, dssmodels.MaxResultLimit)
 }
 
 // ListExpiredISAs returns empty. We don't support thi function in store v3.0 because db doesn't have 'writer' field.

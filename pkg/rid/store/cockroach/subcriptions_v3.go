@@ -285,7 +285,8 @@ func (c *subscriptionRepoV3) SearchSubscriptions(ctx context.Context, cells s2.C
 			WHERE
 				cells && $1
 			AND
-				ends_at >= $2`, subscriptionFieldsV3)
+				ends_at >= $2
+			LIMIT $3`, subscriptionFieldsV3)
 	)
 
 	if len(cells) == 0 {
@@ -303,7 +304,7 @@ func (c *subscriptionRepoV3) SearchSubscriptions(ctx context.Context, cells s2.C
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	return c.process(ctx, query, pgCids, c.clock.Now())
+	return c.process(ctx, query, pgCids, c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
@@ -319,7 +320,8 @@ func (c *subscriptionRepoV3) SearchSubscriptionsByOwner(ctx context.Context, cel
 			AND
 				subscriptions.owner = $2
 			AND
-				ends_at >= $3`, subscriptionFieldsV3)
+				ends_at >= $3
+			LIMIT $4`, subscriptionFieldsV3)
 	)
 
 	if len(cells) == 0 {
@@ -337,7 +339,7 @@ func (c *subscriptionRepoV3) SearchSubscriptionsByOwner(ctx context.Context, cel
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	return c.process(ctx, query, pgCids, owner, c.clock.Now())
+	return c.process(ctx, query, pgCids, owner, c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // ListExpiredSubscriptions returns empty. We don't support this function in store v3.0 because db doesn't have 'writer' field.
