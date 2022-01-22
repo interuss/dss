@@ -62,7 +62,9 @@ func newStore(ctx context.Context) (*Store, error) {
 	}
 
 	return &Store{
-		db:     &cockroach.DB{db},
+		db: &cockroach.DB{
+			DB: db,
+		},
 		logger: logging.Logger,
 		clock:  fakeClock,
 	}, nil
@@ -74,7 +76,7 @@ func CleanUp(ctx context.Context, s *Store) error {
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.db.Exec(ctx, query)
+	_, err := s.db.DB.Exec(ctx, query)
 	return err
 }
 
@@ -214,7 +216,7 @@ func TestBasicTxn(t *testing.T) {
 	subscription1 := subscriptionsPool[0].input
 	subscription2 := subscriptionsPool[1].input
 
-	tx1, err := store.db.Begin(ctx)
+	tx1, err := store.db.DB.Begin(ctx)
 	require.NoError(t, err)
 	s1 := &repo{
 		ISA: &isaRepo{
@@ -228,7 +230,7 @@ func TestBasicTxn(t *testing.T) {
 		},
 	}
 
-	tx2, err := store.db.Begin(ctx)
+	tx2, err := store.db.DB.Begin(ctx)
 	require.NoError(t, err)
 	s2 := &repo{
 		ISA: &isaRepo{
