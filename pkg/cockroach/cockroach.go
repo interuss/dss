@@ -110,7 +110,7 @@ func (p ConnectParameters) BuildURI() (string, error) {
 
 // DB models a connection to a CRDB instance.
 type DB struct {
-	dbHandler *pgxpool.Pool
+	DB *pgxpool.Pool
 }
 
 // Dial returns a DB instance connected to a cockroach instance available at
@@ -141,7 +141,7 @@ func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
 	}
 
 	return &DB{
-		dbHandler: db,
+		DB: db,
 	}, nil
 }
 
@@ -182,7 +182,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
         onerow_enforcer = TRUE`, dbName)
 	)
 
-	if err := db.dbHandler.QueryRow(ctx, checkTableQuery, dbName).Scan(&exists); err != nil {
+	if err := db.DB.QueryRow(ctx, checkTableQuery, dbName).Scan(&exists); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
 
@@ -192,7 +192,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 	}
 
 	var dbVersion string
-	if err := db.dbHandler.QueryRow(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
+	if err := db.DB.QueryRow(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning version row")
 	}
 	if len(dbVersion) > 0 && dbVersion[0] == 'v' {

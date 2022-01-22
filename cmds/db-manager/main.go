@@ -74,7 +74,7 @@ func main() {
 		log.Panicf("Failed to connect to database with %+v: %v", connectParameters, err)
 	}
 	defer func() {
-		crdb.Close()
+		crdb.DB.Close()
 	}()
 
 	// Make sure specified database exists
@@ -94,7 +94,7 @@ func main() {
 	if !exists {
 		log.Printf("Database %s does not exist; creating now", dbName)
 		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName)
-		if _, err := crdb.dbHandler.Exec(context.Background(), createDB); err != nil {
+		if _, err := crdb.DB.Exec(context.Background(), createDB); err != nil {
 			log.Panicf("Failed to create new database %s: %v", dbName, err)
 		}
 	} else {
@@ -147,7 +147,7 @@ func main() {
 		migrationSQL := fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
 
 		// Execute migration step
-		if _, err := crdb.dbHandler.Exec(context.Background(), migrationSQL); err != nil {
+		if _, err := crdb.DB.Exec(context.Background(), migrationSQL); err != nil {
 			log.Panicf("Failed to execute %s migration step %s: %v", dbName, fullFilePath, err)
 		}
 
@@ -229,7 +229,7 @@ func doesDatabaseExist(crdb *cockroach.DB, database string) (bool, error) {
 		)`
 
 	var exists bool
-	if err := crdb.dbHandler.QueryRow(context.Background(), checkDbQuery, database).Scan(&exists); err != nil {
+	if err := crdb.DB.QueryRow(context.Background(), checkDbQuery, database).Scan(&exists); err != nil {
 		return false, err
 	}
 

@@ -104,8 +104,8 @@ func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	}
 
 	return &repo{
-		ISA:          NewISARepo(ctx, s.db, *storeVersion, logger),
-		Subscription: NewISASubscriptionRepo(ctx, s.db, *storeVersion, logger, s.clock),
+		ISA:          NewISARepo(ctx, s.db.DB, *storeVersion, logger),
+		Subscription: NewISASubscriptionRepo(ctx, s.db.DB, *storeVersion, logger, s.clock),
 	}, nil
 }
 
@@ -124,7 +124,7 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 	if err != nil {
 		return stacktrace.Propagate(err, "Error determining database RID schema version")
 	}
-	return crdbpgx.ExecuteTx(ctx, s.db, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	return crdbpgx.ExecuteTx(ctx, s.db.DB, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
@@ -136,7 +136,7 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 
 // Close closes the underlying DB connection.
 func (s *Store) Close() error {
-	s.db.Close()
+	s.db.DB.Close()
 	return nil
 }
 
@@ -156,7 +156,7 @@ func (s *Store) CleanUp(ctx context.Context) error {
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.db.Exec(ctx, query)
+	_, err := s.db.DB.Exec(ctx, query)
 	return err
 }
 

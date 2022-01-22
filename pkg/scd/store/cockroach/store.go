@@ -78,7 +78,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 // Interact implements store.Interactor interface.
 func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
 	return &repo{
-		q:      s.db,
+		q:      s.db.DB,
 		logger: s.logger,
 		clock:  s.clock,
 	}, nil
@@ -86,7 +86,7 @@ func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
 
 // Transact implements store.Transactor interface.
 func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repository) error) error {
-	return crdbpgx.ExecuteTx(ctx, s.db, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	return crdbpgx.ExecuteTx(ctx, s.db.DB, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return f(ctx, &repo{
 			q:      tx,
 			logger: s.logger,
@@ -97,7 +97,7 @@ func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repo
 
 // Close closes the underlying DB connection.
 func (s *Store) Close() error {
-	s.db.Close()
+	s.db.DB.Close()
 	return nil
 }
 
