@@ -16,7 +16,7 @@ def _parse_args():
 
     # Input/output specifications
     parser.add_argument('--api', dest='apis', type=str, action='append',
-                        help='source YAML to preprocess')
+                        help='Source YAML to preprocess along with tags (if applicable) and the name of the API.  Form of --api PATH_TO_YAML#TAG1,TAG2@API_NAME')
     parser.add_argument('--api_folder', dest='api_folder', type=str,
                         default=None,
                         help='Folder that will hold the generated output for APIs')
@@ -25,9 +25,6 @@ def _parse_args():
                         help='Folder that will hold the generated output for an example entrypoint and implementations')
 
     # General generation options
-    parser.add_argument('--include_endpoint_tags', dest='include_endpoint_tags',
-                        type=str, default='',
-                        help='Comma-separated list of tags for which to include endpoints')
     parser.add_argument('--api_import', dest='api_import', type=str,
                         help='Full Go import path for the API package')
 
@@ -96,7 +93,7 @@ def _generate_example(api_list: List[apis.API], output_folder: str, api_import: 
     implementations: Dict[str, str] = {}
     implementation_lines: List[str] = []
     for api in api_list:
-        implementation = formatting.capitalize_first_letter(api.package) + 'Implementation'
+        implementation = formatting.snake_case_to_pascal_case(api.package) + 'Implementation'
         implementation_lines.extend(rendering.example_implementation(api, implementation) + [''])
         implementations[api.package] = implementation
 
@@ -120,21 +117,28 @@ def _generate_example(api_list: List[apis.API], output_folder: str, api_import: 
 def main():
     args = _parse_args()
 
-    tags = {t.strip() for t in args.include_endpoint_tags.split(',')}
-
     # Parse API definitions
     api_list: List[apis.API] = []
     for api_declaration in args.apis:
         if '@' in api_declaration:
-            input_yaml, api_name = api_declaration.split('@')
+            input_yaml, package = api_declaration.split('@')
+            api_path = package
         else:
             input_yaml = api_declaration
-            api_name = os.path.split(api_declaration)[-1].split('.')[0]
+            package = os.path.split(api_declaration)[-1].split('.')[0]
+            api_path = ''
+        package = package.replace('-', '_')
+
+        if '#' in input_yaml:
+            input_yaml, tag_list = input_yaml.split('#')
+            tags = {t.strip() for t in tag_list.split(',')}
+        else:
+            tags = set()
 
         with open(input_yaml, mode='r') as f:
             spec = yaml.full_load(f)
 
-        api = apis.make_api(api_name, spec)
+        api = apis.make_api(package, api_path, spec)
         if tags:
             api.filter_operations(tags)
         api_list.append(api)

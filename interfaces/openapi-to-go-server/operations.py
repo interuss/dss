@@ -117,7 +117,7 @@ class Operation:
         return self.interface_name + 'Request'
 
 
-def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringParameter]]:
+def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringParameter], List[data_types.DataType]]:
     """Parse operation parameters from an OpenAPI schema for path or verb
 
     :param schema: Schema for an OpenAPI path or an OpenAPI verb
@@ -127,6 +127,7 @@ def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringP
     """
     path_parameters: List[StringParameter] = []
     query_parameters: List[StringParameter] = []
+    additional_types: List[data_types.DataType] = []
     for parameter in schema.get('parameters', []):
         parameter_name = parameter['name']
         parameter_description = parameter.get('description', '')
@@ -135,8 +136,7 @@ def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringP
             parameter_field, further_types = data_types.make_object_field(
                 '', parameter_name, parameter['schema'], set())
             if further_types:
-                raise NotImplementedError(
-                    'Endpoint path parameters may not currently be non-primitive')
+                additional_types.extend(further_types)
             parameter_type = parameter_field.go_type
         else:
             parameter_type = 'string'
@@ -156,15 +156,17 @@ def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringP
                     parameter_in,
                     parameter_name))
 
-    return path_parameters, query_parameters
+    return path_parameters, query_parameters, additional_types
 
 
-def make_operations(path: str, schema: Dict) -> List[Operation]:
+def make_operations(path: str, schema: Dict) -> Tuple[List[Operation], List[data_types.DataType]]:
     """Parse all operations defined within the specified path definition.
     
     :param path: Relative path of operations described in `schema`
     :param schema: Definition of operations accessible at `path`
-    :return: Operations defined by `schema`
+    :return:
+        * Operations defined by `schema`
+        * Additional data types implicitly defined within operation definitions
     """
     declared_operations: List[Operation] = []
 
@@ -172,7 +174,7 @@ def make_operations(path: str, schema: Dict) -> List[Operation]:
     description = schema.get('description', '')
 
     # Parse common parameters for all operations in schema
-    common_path_parameters, common_query_parameters = _parse_parameters(schema)
+    common_path_parameters, common_query_parameters, additional_data_types = _parse_parameters(schema)
 
     # Parse each operation defined in schema
     for verb in ('get', 'put', 'post', 'delete'):
@@ -186,9 +188,10 @@ def make_operations(path: str, schema: Dict) -> List[Operation]:
         component_name = action.get('requestBody', {}).get('content', {}).get('application/json', {}).get('schema', {}).get('$ref', '')
         request_body_type = data_types.get_data_type_name(component_name, 'requestBody')
 
-        path_parameters, query_parameters = _parse_parameters(action)
+        path_parameters, query_parameters, further_data_types = _parse_parameters(action)
         path_parameters += common_path_parameters
         query_parameters += common_query_parameters
+        additional_data_types.extend(further_data_types)
 
         security = Security(schemes={})
         for security_option in action.get('security', []):
@@ -220,4 +223,4 @@ def make_operations(path: str, schema: Dict) -> List[Operation]:
             responses=responses
         ))
 
-    return declared_operations
+    return declared_operations, additional_data_types

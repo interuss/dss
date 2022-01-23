@@ -190,7 +190,8 @@ def implementation_interface(api: apis.API, api_package: str, ensure_500: bool) 
             operation.interface_name, operation.request_type_name,
             operation.response_type_name))
         body.append('')
-    body.pop()
+    if body:
+        body.pop()
     lines.extend(indent(body, 1))
 
     lines.append('}')
@@ -293,7 +294,8 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
 
         lines.append('}')
         lines.append('')
-    lines.pop()
+    if lines:
+        lines.pop()
 
     return lines
 
@@ -311,7 +313,8 @@ def routing(api: apis.API, api_package: str) -> List[str]:
     lines.append('')
     first_assignment = True
     for i, operation in enumerate(api.operations):
-        path_regex = '/' + api.package + re.sub(r'{([^}]*)}', r'(?P<\1>[^/]*)', operation.path)
+        prefix = ('/' + api.path_prefix) if api.path_prefix else ''
+        path_regex = prefix + re.sub(r'{([^}]*)}', r'(?P<\1>[^/]*)', operation.path)
         lines.append('pattern {}= regexp.MustCompile("^{}$")'.format(
             ':' if first_assignment else '', path_regex))
         lines.append(

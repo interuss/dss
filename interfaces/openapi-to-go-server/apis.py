@@ -8,6 +8,7 @@ import operations
 @dataclasses.dataclass
 class API:
     package: str
+    path_prefix: str
     data_types: List[data_types.DataType]
     operations: List[operations.Operation]
 
@@ -49,8 +50,14 @@ class API:
                            if dt.name in required_data_types]
 
 
-def make_api(package: str, spec: Dict) -> API:
-    # Parse all defined data types
+def make_api(package: str, api_path: str, spec: Dict) -> API:
+    """Create an API from the given OpenAPI specification
+
+    :param package: Name of the Go package this API will reside in
+    :param api_path: If not blank, this folder will be prefixed onto all operation paths
+    :param spec: OpenAPI specification of the API
+    :return: Representation of API
+    """
     if 'components' not in spec:
         raise ValueError('Missing `components` in YAML for {}'.format(package))
     components = spec['components']
@@ -68,7 +75,8 @@ def make_api(package: str, spec: Dict) -> API:
     paths = spec['paths']
     declared_operations = []
     for name, schema in paths.items():
-        new_operations = operations.make_operations(name, schema)
+        new_operations, further_data_tyes = operations.make_operations(name, schema)
+        declared_types.extend(further_data_tyes)
         declared_operations.extend(new_operations)
 
-    return API(package=package, data_types=declared_types, operations=declared_operations)
+    return API(package=package, path_prefix=api_path, data_types=declared_types, operations=declared_operations)

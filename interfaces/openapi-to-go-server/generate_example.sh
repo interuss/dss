@@ -18,8 +18,7 @@ docker container run -it \
 	  -v "$(pwd)/example:/resources/example" \
 	  openapi-to-go-server \
 	      --api_import example/api \
-	      --api /resources/utm.yaml@scd \
-	      --api /resources/rid.yaml@rid \
+	      --api /resources/utm.yaml#dss@scd \
+	      --api /resources/rid.yaml#dss@rid \
 	      --api_folder /resources/example/api \
-	      --example_folder /resources/example \
-	      --include_endpoint_tags dss
+	      --example_folder /resources/example
