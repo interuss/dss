@@ -17,7 +17,6 @@ from typing import List, Union
 import shapely.geometry
 import os
 
-
 class ProximateOperationalIntentGenerator():
     ''' A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. '''
 
@@ -207,17 +206,18 @@ class ProximateOperationalIntentGenerator():
         return current_operational_intent_reference
 
 class SerialNumberGenerator():
-    ''' A class to generate data for flight authorisation per the ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664 for an UAS flight authorisation request. Reference: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1 
+    ''' A class to generate a UAS Serial number as is expressed in the ANSI/CTA-2063-A Physical Serial Number format. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1. Reference: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1 
     ''' 
 
     def __init__(self):
+
         self.serial_number_length_code_points = {'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'A':10,'B':11,'C':12,'D':13,'E':14,'F':15}
         self.serial_number_code_points = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'
 
 
     def generate_incorrect_serial_number(self, valid_serial_number:str) ->str:
         ''' 
-        A method to modify a valid UAV serial number per ANSI/CTA-2063-A standard to one that does not conform to the standard.         
+        A method to modify a valid UAV serial number to one that does not conform to the standard / is invalid.         
         '''
         _serial_number_length_code_points = self.serial_number_length_code_points # make a copy of the the code points
         manufacturer_code = valid_serial_number[0:4] # take out the manufacturer serial code out of the valid one
@@ -232,20 +232,19 @@ class SerialNumberGenerator():
 
     def generate_serial_number(self) -> str:
         ''' 
-        A method to generate a random UAV serial number per ANSI/CTA-2063-A standard        
+        A method to generate a valid and random UAV serial number per the standard        
         '''
         
         random.shuffle(self.serial_number_code_points.split())
         manufacturer_code = ''.join(self.serial_number_code_points[:4])
         dict_key, length_code = random.choice(list(self.serial_number_length_code_points.items()))
         random_serial_number = ''.join(random.choices(self.serial_number_code_points, k=length_code))
-
         serial_number = manufacturer_code + dict_key + random_serial_number
         return serial_number
 
 
 class UAVRegistrationDataGenerator():
-    ''' A class to generate data for flight authorisation per the ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664 for an UAS flight authorisation request. Reference: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1 
+    ''' A class to generate data for operator registration per EN4709-02 standard. 
     ''' 
 
     def __init__(self):        
@@ -253,7 +252,7 @@ class UAVRegistrationDataGenerator():
         self.registration_number_code_points = '0123456789abcdefghijklmnopqrstuvwxyz'
 
     def generate_incorrect_uav_registration_number(self, valid_registration_number:str) -> str:
-        ''' Take a valid Operator Registration number per the EN4709-02 standard and modify it to make it incorrect / invalid '''
+        ''' Take a valid Operator Registration number per the standard and modify it to make it incorrect / invalid '''
 
         new_registration_number = valid_registration_number.split('-')[0]
         final_random_string = ''.join(random.choice(string.ascii_lowercase) for _ in range(3))
@@ -261,7 +260,7 @@ class UAVRegistrationDataGenerator():
         return new_registration_number
 
     def generate_operator_registration_number(self, prefix='CHE') -> str:
-        ''' A method to generate the Operator Registration number per the EN4709-02 standard '''
+        ''' A method to generate the Operator Registration number '''
         def gen_checksum(raw_id):
             assert raw_id.isalnum()
             assert len(raw_id) == 15
@@ -287,102 +286,111 @@ class UAVRegistrationDataGenerator():
         reg_num = prefix + base_id + str(checksum) +'-'+ final_random_string
         return reg_num        
 
-class TestInjectionRequiredResultsGenerator(): 
-    '''A class to generate TestInjection and the associated results '''
+
+def generate_flight_injection_attempts() -> List[FlightInjectionAttempt]:
+    flight_injection_attempts = []
+
+    my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')
+    altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
+    altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
+            
+    num_injections = 2
+    for injection_number in range(0,num_injections):
+        
+        my_serial_number_generator = SerialNumberGenerator()
+        my_operator_id_generator = UAVRegistrationDataGenerator()
+        serial_number = my_serial_number_generator.generate_serial_number()
+        operator_id = my_operator_id_generator.generate_operator_registration_number()
+        # TODO: Code to generate additional fields 
+        
+        make_incorrect = random.choice([0,1]) # a flag specify if one of the parameters of the flight_authorisation should be incorrect
+        if make_incorrect: # if the flag is on, make the serial number incorrect        
+            field_to_make_incorrect = random.choice(['uas_serial_number','operator_registration_number']) # Pick a field to make incorrect, TODO: Additional fields to be added
+            if field_to_make_incorrect == 'uas_serial_number':
+                serial_number = my_serial_number_generator.generate_incorrect_serial_number(valid_serial_number = serial_number)
+            elif field_to_make_incorrect == 'operator_registration_number':
+                operator_id = my_operator_id_generator.generate_operator_registration_number(operator_id= operator_id)
+        
+        flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category='Open', operation_mode = 'Vlos',uas_class='C0', identification_technologies = ['ASTMNetRID'], connectivity_methods = ['cellular'], endurance_minutes = 30 , emergency_procedure_url = 'https://uav.com/emergency', operator_id = operator_id, uas_id= '', uas_type_certificate = '')
     
-    def generate_flight_injection_attempts(self) -> List[FlightInjectionAttempt]:
-        flight_injection_attempts = []
+        should_intersect = False
+        if injection_number != 0:
+            coin_flip = random.choice([0,0,1]) # It may or may not intersect
+            should_intersect = coin_flip
 
-        my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')
-        altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
-        altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
-                
-        num_injections = 2
-        for injection_number in range(0,num_injections):
-            
-            my_serial_number_generator = SerialNumberGenerator()
+        geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
 
-            serial_number = my_serial_number_generator.generate_serial_number()
-            # TODO: Code to generate additional fields 
-
-            make_incorrect = random.choice([0,1]) # a flag specify if one of the parameters of the flight_authorisation should be incorrect
-            if make_incorrect: # if the flag is on, make the serial number incorrect        
-                field_to_make_incorrect = random.choice(['uas_serial_number']) # Pick a field to make incorrect, TODO: Additional fields to be added as the generation code is impl 
-                if field_to_make_incorrect == 'uas_serial_number':
-                    serial_number = my_serial_number_generator.generate_incorrect_serial_number(valid_serial_number = serial_number)
-            
-            flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category='Open', operation_mode = 'Vlos',uas_class='C0', identification_technologies = ['ASTMNetRID'], connectivity_methods = ['cellular'], endurance_minutes = 30 , emergency_procedure_url = 'https://uav.com/emergency', operator_id = 'SUSz8k1ukxjfv463-brq', uas_id= '', uas_type_certificate = '')
+        flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)            
+    
+        flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
         
-            should_intersect = False
-            if injection_number != 0:
-                coin_flip = random.choice([0,0,1]) # It may or may not intersect
-                should_intersect = coin_flip
-
-            geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
-
-            flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)            
+        operational_intent_test_injection = my_operational_intent_generator.generate_injection_operational_intents(astm_4d_volume = [flight_volume])
+    
+        inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
         
-            flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
-            
-            operational_intent_test_injection = my_operational_intent_generator.generate_injection_operational_intents(astm_4d_volume = [flight_volume])
-        
-            inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
-            
-            all_incorrect_result_details = []
-            flight_authorisation_result_details = {}
+        all_incorrect_result_details = []
+        flight_authorisation_result_details = {}
 
-            if make_incorrect: 
+        if make_incorrect:
+            if field_to_make_incorrect == 'uas_serial_number': 
                 expected_flight_authorisation_processing_result = 'Rejected'   
                 
                 if_planned_explanation = KnownIssueFields(test_code = 'flight_authorisation_test', relevant_requirements = ['A correct UAS Serial number is equired by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1'], severity= 1, subject='UAS Serial Number provided is incorrect', summary ="The UAS serial number provided in the injection attempt was incorrect", details = "The UAS serial number is not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")
                 
                 flight_authorisation_result_details['Planned'] = if_planned_explanation
-            else:
-
-                expected_flight_authorisation_processing_result = 'Planned'
+           
+            elif field_to_make_incorrect == 'operator_registration_number':
+                expected_flight_authorisation_processing_result = 'Rejected'   
                 
-                if_rejected_explanation = KnownIssueFields(test_code = 'flight_authorisation_test', relevant_requirements = ['A correct UAS Serial number is equired by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1'], severity= 1, subject='UAS Serial Number provided is incorrect', summary ="The UAS serial number provided in the injection attempt was incorrect", details = "The UAS serial number is not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")
+                if_planned_explanation = KnownIssueFields(test_code = 'flight_authorisation_test', relevant_requirements = ['A correct Operational Registration number is equired by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1'], severity= 1, subject='Operator Registration Number provided is incorrect', summary ="The Operator Registration number provided in the injection attempt was incorrect", details = "The UAS serial number is not as expressed as described in the EN4709-02 standard should be rejected.")
                 
-                flight_authorisation_result_details['Rejected']= if_rejected_explanation
-                
-            all_incorrect_result_details.append(flight_authorisation_result_details)
-            operational_intent_processing_result_details = {}
-
-            if should_intersect: 
-                expected_operational_intent_processing_result = 'ConflictWithFlight'
-
-                if_planned_explanation = KnownIssueFields(test_code = 'nominal_test', relevant_requirements = ['A operational intent that has time or space conflict should be planned by the USS'], severity= 1, subject='Operational Intent provided should not be planned', summary ="The operational intent details provided were generated in such a way that they should not have been planned.", details = "The co-ordinates of the 4D Opeational intent does conflicts with any existing operational intent in the area and the processing result should not be a successful planning of the intent.")
-                
-                operational_intent_processing_result_details['Planned'] = if_planned_explanation
-            else: 
-                expected_operational_intent_processing_result= 'Planned'
-    
-                if_conflict_with_flight_explanation = KnownIssueFields(test_code = 'nominal_test', relevant_requirements = ['A operational intent that has no time or space conflict should be planned by the USS'], severity= 1, subject='Operational Intent provide should be planned', summary ="The operational intent details provided were generated in such a way that they should have been planned.", details = "The co-ordinates of the 4D Opeational intent does not conflict with any existing operational intent in the area and the processing result should be a successful planning of the intent.")
-                
-                operational_intent_processing_result_details['ConflictWithFlight'] = if_conflict_with_flight_explanation
-
-
-            injection_target = InjectionTarget(uss_role = 'Submitting USS')
-
-            known_responses = [KnownResponses(acceptable_results=[expected_flight_authorisation_processing_result, expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)]
-            
-            flight_injection_attempt = FlightInjectionAttempt(test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target)
-            
-            flight_injection_attempts.append(flight_injection_attempt)
-        
-        return flight_injection_attempts
+                flight_authorisation_result_details['Planned'] = if_planned_explanation
            
 
+        else:
+
+            expected_flight_authorisation_processing_result = 'Planned'
+            
+            common_error_notification = KnownIssueFields(test_code = 'flight_authorisation_test', relevant_requirements = ['A correct UAS Serial number is equired by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1'], severity= 1, subject='All data provided is correct and conforms to the appropriate standards', summary ="The flight authorisation data provided was full and correct", details = "All data provided was complete and correct, conforming to the relevant standardized formats and the data should have been processed successfully and flight Planned.")
+            
+            
+            flight_authorisation_result_details['Rejected']= common_error_notification
+            flight_authorisation_result_details['Failed']= common_error_notification
+            
+            
+        all_incorrect_result_details.append(flight_authorisation_result_details)
+        operational_intent_processing_result_details = {}
+
+        if should_intersect: 
+            expected_operational_intent_processing_result = 'ConflictWithFlight'
+
+            if_planned_explanation = KnownIssueFields(test_code = 'nominal_test', relevant_requirements = ['A operational intent that has time or space conflict should be planned by the USS'], severity= 1, subject='Operational Intent provided should not be planned', summary ="The operational intent details provided were generated in such a way that they should not have been planned.", details = "The co-ordinates of the 4D Opeational intent does conflicts with any existing operational intent in the area and the processing result should not be a successful planning of the intent.")
+            
+            operational_intent_processing_result_details['Planned'] = if_planned_explanation
+        else: 
+            expected_operational_intent_processing_result= 'Planned'
+
+            if_conflict_with_flight_explanation = KnownIssueFields(test_code = 'nominal_test', relevant_requirements = ['A operational intent that has no time or space conflict should be planned by the USS'], severity= 1, subject='Operational Intent provide should be planned', summary ="The operational intent details provided were generated in such a way that they should have been planned.", details = "The co-ordinates of the 4D Opeational intent does not conflict with any existing operational intent in the area and the processing result should be a successful planning of the intent.")
+            
+            operational_intent_processing_result_details['ConflictWithFlight'] = if_conflict_with_flight_explanation
+
+        injection_target = InjectionTarget(uss_role = 'Submitting USS')
+
+        known_responses = [KnownResponses(acceptable_results=[expected_flight_authorisation_processing_result, expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)]
+        
+        flight_injection_attempt = FlightInjectionAttempt(test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target)
+        
+        flight_injection_attempts.append(flight_injection_attempt)
+    
+    return flight_injection_attempts
+        
 class AutomatedTestsWriter():
     """ A class to write raw Flight injection attempt and volumes to disk so that they can be examined / used in other software """
 
-    def __init__(self,output_path:os.path, flight_injection_attempts: List[FlightInjectionAttempt], country_code='che')-> None:
-        '''
-        A method to write flight paths, volumes and volume generation rules to disk for review / submission to the test harness. All data is written in the `test_definitions` directory which is created if it does not exist.
-        
-        '''
-        self.country_code = country_code
-        self.output_directory = Path(output_path, self.country_code)        
+    def write_automated_test_to_disk(self,output_path:os.path, flight_injection_attempts: List[FlightInjectionAttempt], country_code='che') -> None:
+        ''' A method to automated test to disk '''
+    
+        self.country_code = country_code    
         # Create test_definition directory if it does not exist        
         self.output_directory.mkdir(parents=True, exist_ok=True)
         # The generator creates two sub-directories to write the files, the 4D Volumes are written in the astm_4d_volumes directory and the rules regarding the generation and the expected output from processing the Volume 4D sequentially. Since the DSS is a First In First Out system, we expect the first volume processing to be accepted.
@@ -391,10 +399,7 @@ class AutomatedTestsWriter():
 
         self.automated_test_data = AutomatedTest(injection_attempts = flight_injection_attempts)
         
-    
-    def write_automated_test_to_disk(self) -> None:
-        ''' A method to automated test to disk '''
-    
+        self.output_directory = Path(output_path, self.country_code)  
         automated_test_file_name = 'automated_test_%s.json' % str(1)  # Avoid Zero based numbering           
         automated_test_file = Path(self.output_subdirectories.autmoated_test_base_path, automated_test_file_name)
         with open(automated_test_file, 'w') as f:
@@ -402,10 +407,8 @@ class AutomatedTestsWriter():
 
 
 if __name__ == '__main__':    
-
-    my_test_injection_results_generator = TestInjectionRequiredResultsGenerator()
-    flight_injection_attempts = my_test_injection_results_generator.generate_flight_injection_attempts()    
+    flight_injection_attempts = generate_flight_injection_attempts()    
     output_path = os.path.join(Path(__file__).parent.absolute(), '../test_definitions')
-    my_injection_attempt_writer = AutomatedTestsWriter(output_path=output_path,flight_injection_attempts = flight_injection_attempts )
-    my_injection_attempt_writer.write_automated_test_to_disk()
+    my_injection_attempt_writer = AutomatedTestsWriter()
+    my_injection_attempt_writer.write_automated_test_to_disk(output_path=output_path,flight_injection_attempts = flight_injection_attempts)
 
