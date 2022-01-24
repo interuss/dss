@@ -206,18 +206,13 @@ class ProximateOperationalIntentGenerator():
         current_operational_intent_reference = OperationalIntentTestInjection(volumes = [astm_4d_volume], key = [], state = 'Accepted', off_nominal_volumes = [], priority =0)            
         return current_operational_intent_reference
 
-class FlightAuthorisationDataGenerator():
+class SerialNumberGenerator():
     ''' A class to generate data for flight authorisation per the ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664 for an UAS flight authorisation request. Reference: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1 
     ''' 
 
     def __init__(self):
-        '''
-        This class generates a Flight Authorisation dataset, the dataset contains 11 fields at any time one of the authorisation data parameter would be incorrect this class generates a Flight Authorisation dataset 
-        '''
-        
         self.serial_number_length_code_points = {'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'A':10,'B':11,'C':12,'D':13,'E':14,'F':15}
         self.serial_number_code_points = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'
-        self.registration_number_code_points = '0123456789abcdefghijklmnopqrstuvwxyz'
 
 
     def generate_incorrect_serial_number(self, valid_serial_number:str) ->str:
@@ -247,6 +242,15 @@ class FlightAuthorisationDataGenerator():
 
         serial_number = manufacturer_code + dict_key + random_serial_number
         return serial_number
+
+
+class UAVRegistrationDataGenerator():
+    ''' A class to generate data for flight authorisation per the ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664 for an UAS flight authorisation request. Reference: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021R0664&from=EN#d1e32-178-1 
+    ''' 
+
+    def __init__(self):        
+        
+        self.registration_number_code_points = '0123456789abcdefghijklmnopqrstuvwxyz'
 
     def generate_incorrect_uav_registration_number(self, valid_registration_number:str) -> str:
         ''' Take a valid Operator Registration number per the EN4709-02 standard and modify it to make it incorrect / invalid '''
@@ -281,7 +285,7 @@ class FlightAuthorisationDataGenerator():
         base_id = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(12))
         checksum = gen_checksum(base_id + final_random_string)
         reg_num = prefix + base_id + str(checksum) +'-'+ final_random_string
-        return reg_num
+        return reg_num        
 
 class TestInjectionRequiredResultsGenerator(): 
     '''A class to generate TestInjection and the associated results '''
@@ -296,16 +300,16 @@ class TestInjectionRequiredResultsGenerator():
         num_injections = 2
         for injection_number in range(0,num_injections):
             
-            my_flight_authorisation_data_generator = FlightAuthorisationDataGenerator()
+            my_serial_number_generator = SerialNumberGenerator()
 
-            serial_number = my_flight_authorisation_data_generator.generate_serial_number()
+            serial_number = my_serial_number_generator.generate_serial_number()
             # TODO: Code to generate additional fields 
 
             make_incorrect = random.choice([0,1]) # a flag specify if one of the parameters of the flight_authorisation should be incorrect
             if make_incorrect: # if the flag is on, make the serial number incorrect        
                 field_to_make_incorrect = random.choice(['uas_serial_number']) # Pick a field to make incorrect, TODO: Additional fields to be added as the generation code is impl 
                 if field_to_make_incorrect == 'uas_serial_number':
-                    serial_number = my_flight_authorisation_data_generator.generate_incorrect_serial_number(valid_serial_number = serial_number)
+                    serial_number = my_serial_number_generator.generate_incorrect_serial_number(valid_serial_number = serial_number)
             
             flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category='Open', operation_mode = 'Vlos',uas_class='C0', identification_technologies = ['ASTMNetRID'], connectivity_methods = ['cellular'], endurance_minutes = 30 , emergency_procedure_url = 'https://uav.com/emergency', operator_id = 'SUSz8k1ukxjfv463-brq', uas_id= '', uas_type_certificate = '')
         
@@ -326,6 +330,7 @@ class TestInjectionRequiredResultsGenerator():
             
             all_incorrect_result_details = []
             flight_authorisation_result_details = {}
+
             if make_incorrect: 
                 expected_flight_authorisation_processing_result = 'Rejected'   
                 
@@ -397,6 +402,7 @@ class AutomatedTestsWriter():
 
 
 if __name__ == '__main__':    
+
     my_test_injection_results_generator = TestInjectionRequiredResultsGenerator()
     flight_injection_attempts = my_test_injection_results_generator.generate_flight_injection_attempts()    
     output_path = os.path.join(Path(__file__).parent.absolute(), '../test_definitions')
