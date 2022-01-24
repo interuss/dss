@@ -216,8 +216,8 @@ class FlightAuthorisationDataGenerator():
         '''
         
         self.serial_number_length_code_points = {'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'A':10,'B':11,'C':12,'D':13,'E':14,'F':15}
-        self.serial_number_code_points = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','J','K','L','M','N','P','Q','R','S','T','U','V','W','X','Y','Z']
-        self.registration_number_code_points = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+        self.serial_number_code_points = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+        self.registration_number_code_points = '0123456789abcdefghijklmnopqrstuvwxyz'
 
 
     def generate_incorrect_serial_number(self, valid_serial_number:str) ->str:
@@ -240,7 +240,7 @@ class FlightAuthorisationDataGenerator():
         A method to generate a random UAV serial number per ANSI/CTA-2063-A standard        
         '''
         
-        random.shuffle(self.serial_number_code_points)
+        random.shuffle(self.serial_number_code_points.split())
         manufacturer_code = ''.join(self.serial_number_code_points[:4])
         dict_key, length_code = random.choice(list(self.serial_number_length_code_points.items()))
         random_serial_number = ''.join(random.choices(self.serial_number_code_points, k=length_code))
@@ -261,7 +261,7 @@ class FlightAuthorisationDataGenerator():
         def gen_checksum(raw_id):
             assert raw_id.isalnum()
             assert len(raw_id) == 15
-            d = {v: k for k, v in enumerate(self.registration_number_code_points)}
+            d = {v: k for k, v in enumerate(self.registration_number_code_points.split())}
             numeric_base_id = list(map(d.__getitem__, list(raw_id)))
             # Multiplication factors for each digit depending on its position
             mult_factors = cycle([2, 1])
