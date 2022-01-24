@@ -3,52 +3,59 @@ from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
 from monitoring.uss_qualifier.common_data_definitions import Severity
 
+
 class KnownIssueFields(ImplicitDict):
-    ''' A class to hold a message that the test executor can provide to the USS in cases when the USS provides a response that is not same as the expected result. '''    
+    """Information, which can be defined at the time of test design, about a problem detected by an automated test when a USS provides a response that is not same as the expected result"""
     test_code: str
-    '''Code corresponding to check generating this issue'''
+    """Code corresponding to check generating this issue"""
 
     relevant_requirements: List[str] = []
-    '''Requirements that this issue relates to'''
+    """Requirements that this issue relates to"""
 
     severity: Severity
-    '''How severe the issue is'''
+    """How severe the issue is"""
 
     subject: Optional[str]
-    ''' Identifier of the subject of this issue, if applicable. This may be a UAS serial number, or any field of other object central to the issue. '''
+    """Identifier of the subject of this issue, if applicable. This may be a UAS serial number, or any field or other object central to the issue."""
 
     summary: str
-    '''Human-readable summary of the issue'''
+    """Human-readable summary of the issue"""
 
     details: str
-    '''Human-readable description of the issue'''
+    """Human-readable description of the issue"""
+
 
 class KnownResponses(ImplicitDict):
-    ''' A class to evaluate results / response to an injection of test flight data (TestFlightRequest). This data structure holds information about the "result" response provided by the test interface of the USS under test and details of how long the executor should wait for a response. Per the SCD Testing API an acceptable result should be one of "Planned", "Rejected", "ConflictWithFlight" or "Failed". In the case where the USS under test provides a result that is not the same as expected result then the test driver can provide a message detailing why the expected result was populated the way it was. This should help the USS under test debug specific parts of their internal systems. '''
+    """Mapping of the flight injection attempt's USS response to test outcome"""
     acceptable_results: List[str] 
-    ''' Acceptable strings that the USS under test can report as the result of processing the test data. '''
+    """Acceptable values in the result data field of InjectFlightResponse. The flight injection attempt will be considered successful if the USS under test reports one of these as the result of attempting to inject the flight."""
 
     incorrect_result_details: Dict[str, KnownIssueFields]
-    ''' In cases where the USS provides a response that is not in the acceptable results, the test exceutor may display a message to the user detailing why the reported response was not correct '''
+    """For each case where the USS provides an InjectFlightResponse `result` value that is not in the acceptable results, this field contains information about how the Issue should be described"""
+
 
 class InjectionTarget(ImplicitDict):
-    ''' A class to hold the role of the USS under test '''
+    """The means to identify a particular USS within an AutomatedTest"""
     uss_role: str
-    ''' In some testing scenarios, the USS may be assigned a role e.g. Querying USS based on the actions they will perform in the test scenario '''
+    """The role of the USS that is the target of a flight injection attempt (e.g., 'Querying USS').  The test executor will assign a USS from the pool of USSs to be tested to each role defined in an AutomatedTest before executing that AutomatedTest."""
+
 
 class FlightInjectionAttempt(ImplicitDict):
-    ''' A class to hold details of the test injection, the injection target and the expected result of processing the flight request '''
+    """All information necessary to attempt to create a flight in a USS and to evaluate the outcome of that attempt"""
     test_injection: InjectFlightRequest
-    ''' Data around flight authorisation and operational intents that are submitted to the test interface of the USS under test '''
+    """Definition of the flight to be injected"""
 
     known_responses: KnownResponses
-    ''' Details about what the USS under test should report after processing the test data '''
+    """Details about what the USS under test should report after processing the test data"""
 
     injection_target: InjectionTarget
-    ''' Details of the USS under test as mapped to the test type '''
+    """The particular USS to which the flight injection attempt should be directed"""
+
 
 class AutomatedTest(ImplicitDict):
-    ''' A class to hold injection attempts by the test exceutor, multiple attempts may be made per test '''
+    """Definition of a complete automated test involving some subset of USSs under test"""
+    name: str
+    """Human-readable name of this test (e.g., 'Nominal strategic coordination')"""
 
     injection_attempts: List[FlightInjectionAttempt]
-    ''' Details of attempts of submitting test data to the interface of USS under test '''
+    """Details of flight injections into USSs that should be attempted"""
