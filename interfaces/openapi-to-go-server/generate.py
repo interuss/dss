@@ -12,7 +12,7 @@ import rendering
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(description='Preprocess an OpenAPI YAML')
+    parser = argparse.ArgumentParser(description='Autogenerate Go code from an OpenAPI YAML')
 
     # Input/output specifications
     parser.add_argument('--api', dest='apis', type=str, action='append',

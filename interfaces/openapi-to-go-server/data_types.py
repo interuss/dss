@@ -94,37 +94,37 @@ def _parse_referenced_type_name(schema: Dict, data_type_name: str) -> str:
     return get_data_type_name(option['$ref'], data_type_name)
 
 
-def make_object_field(object_name: str, field_name: str, schema: Dict, required: Set[str]) -> Tuple[ObjectField, List[DataType]]:
+def make_object_field(go_object_name: str, api_field_name: str, schema: Dict, required: Set[str]) -> Tuple[ObjectField, List[DataType]]:
     """Parse a single field in a data type or endpoint parameter schema.
 
-    :param object_name: Name of the object containing this field, for error messages and inline type names
-    :param field_name: Name of the object field being parsed
+    :param go_object_name: Name of the Go object containing this field, for error messages and inline type names
+    :param api_field_name: Name of the object field being parsed, according to the API
     :param schema: Definition of the object field being parsed
     :param required: The set of required fields for the parent object
     :return: Tuple of
       * The object field defined by the provided schema
       * Any additional data types incidentally defined in the provided schema
     """
-    is_required = field_name in required
+    is_required = api_field_name in required
     if '$ref' in schema:
         return ObjectField(
-            api_name=field_name,
-            go_type=get_data_type_name(schema['$ref'], object_name),
+            api_name=api_field_name,
+            go_type=get_data_type_name(schema['$ref'], go_object_name),
             description=schema.get('description', ''),
             required=is_required), []
     elif 'anyOf' in schema or 'allOf' in schema:
         return ObjectField(
-            api_name=field_name,
-            go_type=_parse_referenced_type_name(schema, object_name + '.' + field_name),
+            api_name=api_field_name,
+            go_type=_parse_referenced_type_name(schema, go_object_name + '.' + api_field_name),
             description=schema.get('description', ''),
             required=is_required), []
     else:
-        type_name = object_name + formatting.snake_case_to_pascal_case(field_name)
+        type_name = go_object_name + formatting.snake_case_to_pascal_case(api_field_name)
         data_type, additional_types = make_data_types(type_name, schema)
         if data_type.go_type in go_primitives.values():
             # No additional type declaration needed
             if additional_types:
-                raise RuntimeError('{} field type `{}` was parsed as primitive {} but also generated {} additional types'.format(object_name, field_name, data_type.go_type, len(additional_types)))
+                raise RuntimeError('{} field type `{}` was parsed as primitive {} but also generated {} additional types'.format(go_object_name, api_field_name, data_type.go_type, len(additional_types)))
             field_data_type = data_type.go_type
         else:
             if data_type.go_type.startswith('[]'):
@@ -133,35 +133,35 @@ def make_object_field(object_name: str, field_name: str, schema: Dict, required:
                 additional_types.append(data_type)
                 field_data_type = data_type.name
         return ObjectField(
-            api_name=field_name,
+            api_name=api_field_name,
             go_type=field_data_type,
             description=data_type.description,
             required=is_required), additional_types
 
 
-def _make_object_fields(object_name: str, properties: Dict, required: Set[str]) -> Tuple[List[ObjectField], List[DataType]]:
+def _make_object_fields(go_object_name: str, properties: Dict, required: Set[str]) -> Tuple[List[ObjectField], List[DataType]]:
     fields: List[ObjectField] = []
     additional_types: List[DataType] = []
     for field_name, schema in properties.items():
-        field, further_types = make_object_field(object_name, field_name, schema, required)
+        field, further_types = make_object_field(go_object_name, field_name, schema, required)
         additional_types.extend(further_types)
         fields.append(field)
     return fields, additional_types
 
 
-def make_data_types(name: str, schema: Dict) -> Tuple[DataType, List[DataType]]:
+def make_data_types(api_name: str, schema: Dict) -> Tuple[DataType, List[DataType]]:
     """Parse all data types necessary to express the provided data type schema.
 
     In addition to the primary data type described by `name`, this routine also
     generates additional data types defined inline in the provided schema.
 
-    :param name: Name of the primary data type being parsed
+    :param api_name: Name of the primary data type being parsed, according to the API
     :param schema: Definition of the data type being parsed
     :return: Tuple of
       * The primary data defined by the provided schema
       * Any additional data types incidentally defined in the provided schema
     """
-    data_type = DataType(name=name)
+    data_type = DataType(name=api_name)
     additional_types = []
 
     if 'description' in schema:
@@ -173,14 +173,14 @@ def make_data_types(name: str, schema: Dict) -> Tuple[DataType, List[DataType]]:
         elif schema['type'] in {'number', 'integer'}:
             data_type.go_type = go_numbers.get(schema.get('format', schema['type']), '')
             if not data_type.go_type:
-                raise ValueError('Unrecognized numeric format `{}` for {}'.format(schema.get('format', '<missing>'), name))
+                raise ValueError('Unrecognized numeric format `{}` for {}'.format(schema.get('format', '<missing>'), api_name))
         elif schema['type'] == 'array':
             if 'items' in schema:
                 items = schema['items']
                 if '$ref' in items:
-                    data_type.go_type = '[]{}'.format(get_data_type_name(items['$ref'], name))
+                    data_type.go_type = '[]{}'.format(get_data_type_name(items['$ref'], api_name))
                 else:
-                    item_type, further_types = make_data_types(name + 'Item', items)
+                    item_type, further_types = make_data_types(api_name + 'Item', items)
                     additional_types.extend(further_types)
                     if item_type.description != '' or not item_type.is_primitive():
                         additional_types.append(item_type)
@@ -188,18 +188,18 @@ def make_data_types(name: str, schema: Dict) -> Tuple[DataType, List[DataType]]:
                     else:
                         data_type.go_type = '[]{}'.format(item_type.go_type)
             else:
-                raise ValueError('Missing `items` declaration for {} array type'.format(name))
+                raise ValueError('Missing `items` declaration for {} array type'.format(api_name))
         elif schema['type'] == 'object':
             data_type.go_type = 'struct'
             data_type.fields, further_types = _make_object_fields(
-                name,
+                api_name,
                 schema.get('properties', {}),
                 set(schema.get('required', [])))
             additional_types.extend(further_types)
         else:
-            raise ValueError('Unrecognized type `{}` in {} type'.format(schema['type'], name))
+            raise ValueError('Unrecognized type `{}` in {} type'.format(schema['type'], api_name))
     elif 'anyOf' in schema or 'allOf' in schema:
-        data_type.go_type = _parse_referenced_type_name(schema, name)
+        data_type.go_type = _parse_referenced_type_name(schema, api_name)
 
     if 'enum' in schema:
         data_type.enum_values = schema['enum']
