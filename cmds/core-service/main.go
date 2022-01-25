@@ -61,7 +61,7 @@ var (
 
 func getDBStats(ctx context.Context, db *cockroach.DB, databaseName string) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
-	statsPtr := db.DB.Stat()
+	statsPtr := db.Pool.Stat()
 	stats := make(map[string]string)
 	stats["DBName"] = databaseName
 	stats["AcquireCount"] = strconv.Itoa(int(statsPtr.AcquireCount()))

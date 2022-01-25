@@ -41,7 +41,7 @@ type (
 	}
 )
 
-func parsePortOrDefault(port string, defaultPort int64) int64 {
+func parseIntOrDefault(port string, defaultPort int64) int64 {
 	p, err := strconv.ParseInt(port, 10, 16)
 	if err != nil {
 		p = defaultPort
@@ -55,7 +55,7 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 		ApplicationName: m["application_name"],
 		DBName:          m["db_name"],
 		Host:            m["host"],
-		Port:            int(parsePortOrDefault(m["port"], 0)),
+		Port:            int(parseIntOrDefault(m["port"], 0)),
 		Credentials: Credentials{
 			Username: m["user"],
 		},
@@ -63,8 +63,8 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 			Mode: m["ssl_mode"],
 			Dir:  m["ssl_dir"],
 		},
-		MaxOpenConns:       int(parsePortOrDefault(m["max_open_conns"], 4)),
-		MaxConnIdleSeconds: int(parsePortOrDefault(m["max_conn_idle_secs"], 40)),
+		MaxOpenConns:       int(parseIntOrDefault(m["max_open_conns"], 4)),
+		MaxConnIdleSeconds: int(parseIntOrDefault(m["max_conn_idle_secs"], 40)),
 	}
 }
 
@@ -110,7 +110,7 @@ func (p ConnectParameters) BuildURI() (string, error) {
 
 // DB models a connection to a CRDB instance.
 type DB struct {
-	DB *pgxpool.Pool
+	Pool *pgxpool.Pool
 }
 
 // Dial returns a DB instance connected to a cockroach instance available at
@@ -141,7 +141,7 @@ func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
 	}
 
 	return &DB{
-		DB: db,
+		Pool: db,
 	}, nil
 }
 
@@ -182,7 +182,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
         onerow_enforcer = TRUE`, dbName)
 	)
 
-	if err := db.DB.QueryRow(ctx, checkTableQuery, dbName).Scan(&exists); err != nil {
+	if err := db.Pool.QueryRow(ctx, checkTableQuery, dbName).Scan(&exists); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
 
@@ -192,7 +192,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 	}
 
 	var dbVersion string
-	if err := db.DB.QueryRow(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
+	if err := db.Pool.QueryRow(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning version row")
 	}
 	if len(dbVersion) > 0 && dbVersion[0] == 'v' {
