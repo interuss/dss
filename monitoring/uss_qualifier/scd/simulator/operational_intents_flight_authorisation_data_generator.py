@@ -264,7 +264,8 @@ class UAVRegistrationDataGenerator():
         def gen_checksum(raw_id):
             assert raw_id.isalnum()
             assert len(raw_id) == 15
-            d = {v: k for k, v in enumerate(self.registration_number_code_points.split())}
+            
+            d = {v: k for k, v in enumerate(list(self.registration_number_code_points))}
             numeric_base_id = list(map(d.__getitem__, list(raw_id)))
             # Multiplication factors for each digit depending on its position
             mult_factors = cycle([2, 1])
@@ -278,7 +279,8 @@ class UAVRegistrationDataGenerator():
 
             # Calculate control number based on partial sums
             control_number = -final_sum % 36
-            return self.registration_number_code_points[control_number]
+            
+            return list(self.registration_number_code_points)[control_number]
 
         final_random_string = ''.join(random.choice(string.ascii_lowercase) for _ in range(3))
         base_id = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(12))
@@ -390,20 +392,20 @@ class AutomatedTestsWriter():
     def write_automated_test_to_disk(self,output_path:os.path, flight_injection_attempts: List[FlightInjectionAttempt], country_code='che') -> None:
         ''' A method to automated test to disk '''
     
-        self.country_code = country_code    
-        # Create test_definition directory if it does not exist        
-        self.output_directory.mkdir(parents=True, exist_ok=True)
-        # The generator creates two sub-directories to write the files, the 4D Volumes are written in the astm_4d_volumes directory and the rules regarding the generation and the expected output from processing the Volume 4D sequentially. Since the DSS is a First In First Out system, we expect the first volume processing to be accepted.
-        self.output_subdirectories = OutputSubDirectories(autmoated_test_base_path = Path(self.output_directory, 'autmated_test'))        
-        self.output_subdirectories.autmoated_test_base_path.mkdir(parents=True, exist_ok=True)       
-
-        self.automated_test_data = AutomatedTest(injection_attempts = flight_injection_attempts)
         
-        self.output_directory = Path(output_path, self.country_code)  
+        output_directory = Path(output_path, country_code) 
+        # Create test_definition directory if it does not exist        
+        output_directory.mkdir(parents=True, exist_ok=True)
+        # The generator creates two sub-directories to write the files, the 4D Volumes are written in the astm_4d_volumes directory and the rules regarding the generation and the expected output from processing the Volume 4D sequentially. Since the DSS is a First In First Out system, we expect the first volume processing to be accepted.
+        output_subdirectories = OutputSubDirectories(autmoated_test_base_path = Path(output_directory, 'autmated_test'))        
+        output_subdirectories.autmoated_test_base_path.mkdir(parents=True, exist_ok=True)       
+
+        automated_test_data = AutomatedTest(injection_attempts = flight_injection_attempts)
+         
         automated_test_file_name = 'automated_test_%s.json' % str(1)  # Avoid Zero based numbering           
-        automated_test_file = Path(self.output_subdirectories.autmoated_test_base_path, automated_test_file_name)
+        automated_test_file = Path(output_subdirectories.autmoated_test_base_path, automated_test_file_name)
         with open(automated_test_file, 'w') as f:
-            f.write(json.dumps(self.automated_test_data))
+            f.write(json.dumps(automated_test_data))
 
 
 if __name__ == '__main__':    
