@@ -61,4 +61,3 @@ paths:
           description: >-
             The requested token was generated successfully
       summary: Generate an access token
-      description: Get the status of the USS automated testing interface
