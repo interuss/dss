@@ -27,7 +27,7 @@ Get a token using an approach similar to this:
 curl "http://localhost:8085/token?sub=uss1&intended_audience=uss2&scope=dss.read.identification_service_areas&issuer=dummy_oauth"
 ```
 
-Token contents can be verified at [jwt.io](https://jwt.io), and the signature can be validated with the [auth2.pem public key](../../build/test-certs/auth2.pem).
+Token contents can be verified at https://dinochiesa.github.io/jwt/, and the signature can be validated with the [auth2.pem public key](../../build/test-certs/auth2.pem) by default.
 
 Take down the Dummy OAuth instance like this:
 
