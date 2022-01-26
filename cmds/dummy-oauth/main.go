@@ -76,7 +76,7 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(s.PrivateKey)
 	if err != nil {
-		resp.Response500 = &api.InternalServerErrorBody{err.Error()}
+		resp.Response500 = &api.InternalServerErrorBody{ErrorMessage: err.Error()}
 		return resp
 	}
 
