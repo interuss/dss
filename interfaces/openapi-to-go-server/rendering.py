@@ -398,6 +398,6 @@ def example_router_defs(implementations: Dict[str, str], api_package: str) -> Li
     for api_name, implementation in implementations.items():
         lines.append('%sRouter := %s.MakeAPIRouter(&%s{}, &authorizer)' % (api_name, api_name, implementation))
     router_list = ', '.join('&{}Router'.format(api_name) for api_name, _ in implementations.items())
-    lines.append('multiRouter := %s.MultiRouter{Routers: []%s.APIRouter{%s}}' % (api_package, api_package, router_list))
+    lines.append('multiRouter := %s.MultiRouter{Routers: []%s.PartialRouter{%s}}' % (api_package, api_package, router_list))
 
     return lines

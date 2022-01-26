@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 )
@@ -43,11 +44,13 @@ type Authorizer interface {
 
 // --- Utilities ---
 
-func WriteJson(w http.ResponseWriter, code int, obj interface{}) {
+func WriteJSON(w http.ResponseWriter, code int, obj interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(code)
 	if err := json.NewEncoder(w).Encode(obj); err != nil {
-		io.WriteString(w, fmt.Sprintf("{\"error_message\": \"Error encoding JSON: %s\"}", err.Error()))
+		if _, err = io.WriteString(w, fmt.Sprintf("{\"error_message\": \"Error encoding JSON: %s\"}", err.Error())); err != nil {
+			log.Panicf("Unable to encode JSON for %d response: %v", code, err)
+		}
 	}
 }
 
@@ -60,14 +63,14 @@ type Route struct {
 	Handler Handler
 }
 
-type APIRouter interface {
+type PartialRouter interface {
 	Handle(w http.ResponseWriter, r *http.Request) bool
 }
 
 // --- Multi-router definitions ---
 
 type MultiRouter struct {
-	Routers []APIRouter
+	Routers []PartialRouter
 }
 
 func (m *MultiRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {

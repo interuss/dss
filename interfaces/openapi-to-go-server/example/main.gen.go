@@ -193,7 +193,7 @@ func main() {
 	authorizer := PermissiveAuthorizer{}
 	scdRouter := scd.MakeAPIRouter(&ScdImplementation{}, &authorizer)
 	ridRouter := rid.MakeAPIRouter(&RidImplementation{}, &authorizer)
-	multiRouter := api.MultiRouter{Routers: []api.APIRouter{&scdRouter, &ridRouter}}
+	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&scdRouter, &ridRouter}}
 	s := &http.Server{
 		Addr:           ":8080",
 		Handler:        &multiRouter,
