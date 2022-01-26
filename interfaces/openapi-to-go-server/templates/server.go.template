@@ -8,9 +8,9 @@ type APIRouter struct {
     Authorizer <API_PACKAGE>.Authorizer
 }
 
-// *<PACKAGE>.APIRouter (type defined above) implements the <API_PACKAGE>.APIRouter interface
-func (a *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
-    for _, route := range a.Routes {
+// *<PACKAGE>.APIRouter (type defined above) implements the <API_PACKAGE>.PartialRouter interface
+func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
+    for _, route := range s.Routes {
         if route.Pattern.MatchString(r.URL.Path) {
             route.Handler(route.Pattern, w, r)
             return true

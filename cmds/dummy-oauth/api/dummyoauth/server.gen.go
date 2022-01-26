@@ -1,5 +1,5 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package dummy_oauth
+package dummyoauth
 
 import (
 	"context"
@@ -15,9 +15,9 @@ type APIRouter struct {
 	Authorizer     api.Authorizer
 }
 
-// *dummy_oauth.APIRouter (type defined above) implements the api.APIRouter interface
-func (a *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
-	for _, route := range a.Routes {
+// *dummyoauth.APIRouter (type defined above) implements the api.PartialRouter interface
+func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
+	for _, route := range s.Routes {
 		if route.Pattern.MatchString(r.URL.Path) {
 			route.Handler(route.Pattern, w, r)
 			return true
@@ -65,18 +65,18 @@ func (s *APIRouter) GetToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
 }
 
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {

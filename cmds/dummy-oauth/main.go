@@ -11,7 +11,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/interuss/dss/cmds/dummy-oauth/api"
-	"github.com/interuss/dss/cmds/dummy-oauth/api/dummy_oauth"
+	"github.com/interuss/dss/cmds/dummy-oauth/api/dummyoauth"
 )
 
 var (
@@ -23,15 +23,15 @@ type DummyOAuthImplementation struct {
 	PrivateKey *rsa.PrivateKey
 }
 
-func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummy_oauth.GetTokenRequest) dummy_oauth.GetTokenResponseSet {
-	resp := dummy_oauth.GetTokenResponseSet{}
+func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth.GetTokenRequest) dummyoauth.GetTokenResponseSet {
+	resp := dummyoauth.GetTokenResponseSet{}
 
 	var intendedAudience string
 	if req.IntendedAudience != nil {
 		intendedAudience = *req.IntendedAudience
 	} else {
 		msg := "Missing `intended_audience` query parameter"
-		resp.Response400 = &dummy_oauth.BadRequestResponse{Message: &msg}
+		resp.Response400 = &dummyoauth.BadRequestResponse{Message: &msg}
 		return resp
 	}
 
@@ -40,7 +40,7 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummy_oaut
 		scope = *req.Scope
 	} else {
 		msg := "Missing `scope` query parameter"
-		resp.Response400 = &dummy_oauth.BadRequestResponse{Message: &msg}
+		resp.Response400 = &dummyoauth.BadRequestResponse{Message: &msg}
 		return resp
 	}
 
@@ -48,7 +48,7 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummy_oaut
 	if req.Issuer != nil {
 		issuer = *req.Issuer
 	} else {
-		issuer = "dummy_oauth"
+		issuer = "dummyoauth"
 	}
 
 	var expireTime int64
@@ -80,7 +80,7 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummy_oaut
 		return resp
 	}
 
-	resp.Response200 = &dummy_oauth.TokenResponse{AccessToken: tokenString}
+	resp.Response200 = &dummyoauth.TokenResponse{AccessToken: tokenString}
 	return resp
 }
 
@@ -105,8 +105,8 @@ func main() {
 
 	// Define and start HTTP server
 	impl := DummyOAuthImplementation{PrivateKey: privateKey}
-	router := dummy_oauth.MakeAPIRouter(&impl, &PermissiveAuthorizer{})
-	multiRouter := api.MultiRouter{Routers: []api.APIRouter{&router}}
+	router := dummyoauth.MakeAPIRouter(&impl, &PermissiveAuthorizer{})
+	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&router}}
 	s := &http.Server{
 		Addr:    *address,
 		Handler: &multiRouter,

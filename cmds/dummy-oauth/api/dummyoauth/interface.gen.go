@@ -1,5 +1,5 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package dummy_oauth
+package dummyoauth
 
 import (
 	"context"

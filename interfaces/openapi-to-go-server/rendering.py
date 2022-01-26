@@ -305,11 +305,11 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> Tuple[List[str]
         for response in responses:
             body.append(
                 'if response.{} != nil {{'.format(response.response_set_field))
-            body.extend(indent(['{}.WriteJson(w, {}, response.{})'.format(
+            body.extend(indent(['{}.WriteJSON(w, {}, response.{})'.format(
                 api_package, response.code, response.response_set_field)], 1))
             body.extend(indent(['return'], 1))
             body.append('}')
-        body.append('%s.WriteJson(w, 500, %s.InternalServerErrorBody{"Handler implementation did not set a response"})' % (api_package, api_package))
+        body.append('%s.WriteJSON(w, 500, %s.InternalServerErrorBody{"Handler implementation did not set a response"})' % (api_package, api_package))
 
         lines.extend(indent(body, 1))
 

@@ -137,7 +137,7 @@ def main():
             input_yaml = api_declaration
             package = os.path.split(api_declaration)[-1].split('.')[0]
             api_path = ''
-        package = package.replace('-', '_')
+            package = package.replace('-', '').replace('_', '')
 
         if '#' in input_yaml:
             input_yaml, tag_list = input_yaml.split('#')

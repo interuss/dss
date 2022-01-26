@@ -1,5 +1,5 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package dummy_oauth
+package dummyoauth
 
 type TokenResponse struct {
 	// JWT that may be used as a Bearer token to authorize operations on an appropriately-configured DSS instance
