@@ -303,12 +303,12 @@ def generate_flight_injection_attempts() -> List[FlightInjectionAttempt]:
         operator_id = my_operator_id_generator.generate_operator_registration_number()
         # TODO: Code to generate additional fields 
         
-        make_incorrect = random.choice([0,1]) # a flag specify if one of the parameters of the flight_authorisation should be incorrect
-        if make_incorrect: # if the flag is on, make the serial number incorrect        
-            field_to_make_incorrect = random.choice(['uas_serial_number','operator_registration_number']) # Pick a field to make incorrect, TODO: Additional fields to be added
-            if field_to_make_incorrect == 'uas_serial_number':
+        generate_incorrect_data = random.choice([0,1]) # a flag specify if one of the parameters of the flight_authorisation should be incorrect
+        if generate_incorrect_data: # if the flag is on, make the serial number incorrect        
+            incorrect_field = random.choice(['uas_serial_number','operator_registration_number']) # Pick a field to make incorrect, TODO: Additional fields to be added
+            if incorrect_field == 'uas_serial_number':
                 serial_number = my_serial_number_generator.generate_incorrect_serial_number(valid_serial_number = serial_number)
-            elif field_to_make_incorrect == 'operator_registration_number':
+            elif incorrect_field == 'operator_registration_number':
                 operator_id = my_operator_id_generator.generate_operator_registration_number(operator_id= operator_id)
         
         flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category='Open', operation_mode = 'Vlos',uas_class='C0', identification_technologies = ['ASTMNetRID'], connectivity_methods = ['cellular'], endurance_minutes = 30 , emergency_procedure_url = 'https://uav.com/emergency', operator_id = operator_id, uas_id= '', uas_type_certificate = '')
@@ -331,15 +331,15 @@ def generate_flight_injection_attempts() -> List[FlightInjectionAttempt]:
         all_incorrect_result_details = []
         flight_authorisation_result_details = {}
 
-        if make_incorrect:
-            if field_to_make_incorrect == 'uas_serial_number': 
+        if generate_incorrect_data:
+            if incorrect_field == 'uas_serial_number': 
                 expected_flight_authorisation_processing_result = 'Rejected'   
                 
                 if_planned_explanation = KnownIssueFields(test_code = 'flight_authorisation_test', relevant_requirements = ['A correct UAS Serial number is equired by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1'], severity= 1, subject='UAS Serial Number provided is incorrect', summary ="The UAS serial number provided in the injection attempt was incorrect", details = "The UAS serial number is not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")
                 
                 flight_authorisation_result_details['Planned'] = if_planned_explanation
            
-            elif field_to_make_incorrect == 'operator_registration_number':
+            elif incorrect_field == 'operator_registration_number':
                 expected_flight_authorisation_processing_result = 'Rejected'   
                 
                 if_planned_explanation = KnownIssueFields(test_code = 'flight_authorisation_test', relevant_requirements = ['A correct Operational Registration number is equired by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1'], severity= 1, subject='Operator Registration Number provided is incorrect', summary ="The Operator Registration number provided in the injection attempt was incorrect", details = "The UAS serial number is not as expressed as described in the EN4709-02 standard should be rejected.")
