@@ -27,18 +27,21 @@ paths:
         description: Fully-qualified domain name where the service for which this access token will be used is hosted.  The `aud` claim will be populated with this value.
         schema:
           type: string
+        example: uss.example.com
       - name: scope
         in: query
         required: true
         description: Scope or scopes that should be granted in the access token.  Multiple scopes can be delimited by spaces (%20) in a single value.  The `scope` claim will be populated with all requested scopes.
         schema:
           type: string
+        example: dss.read.identification_service_areas
       - name: issuer
         in: query
         required: true
         description: Identity of the issuer of the token.  The `iss` claim will be populated with this value.
         schema:
           type: string
+        example: dummy_oauth
       - name: expire
         in: query
         required: false
@@ -46,12 +49,14 @@ paths:
         schema:
           type: integer
           format: int64
+        example: 1532714469
       - name: sub
         in: query
         required: true
         description: Identity of client/subscriber requesting access token.  The `sub` claim will be populated with this value.
         schema:
           type: string
+        example: uss1
       responses:
         '200':
           content:
