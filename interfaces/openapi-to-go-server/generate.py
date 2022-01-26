@@ -40,44 +40,54 @@ def _generate_apis(api_list: List[apis.API], apis_folder: str, api_import: str, 
     :param ensure_500: True to auto-generate a 500 response for each operation when one is not already declared in the API
     """
     api_package = formatting.package_of_import(api_import)
-    template_vars = {
-        '<IMPORTS>': rendering.imports([api_import]),
-        '<API_PACKAGE>': api_package,
-    }
 
     # Generate Go utilities common to any API generated with this tool
     os.makedirs(apis_folder, exist_ok=True)
     common_package = os.path.split(apis_folder)[-1]
-    template_vars['<PACKAGE>'] = common_package
+    common_template_vars = {
+        '<PACKAGE>': common_package,
+        '<IMPORTS>': rendering.imports([api_import]),
+        '<API_PACKAGE>': api_package,
+    }
     with open(os.path.join(apis_folder, 'common.gen.go'), 'w') as f:
-        f.write(rendering.template_content('header', template_vars))
-        f.write(rendering.template_content('common', template_vars))
+        f.write(rendering.template_content('header', common_template_vars))
+        f.write(rendering.template_content('common', common_template_vars))
         f.write('\n')
 
     # Generate a package for each API
     for api in api_list:
-        template_vars['<PACKAGE>'] = api.package
         api_folder = os.path.join(apis_folder, api.package)
         os.makedirs(api_folder, exist_ok=True)
 
         # Generate Go type definitions
         with open(os.path.join(api_folder, 'types.gen.go'), 'w') as f:
-            f.write(rendering.template_content('header', template_vars))
+            types_template_vars = {'<PACKAGE>': api.package}
+            f.write(rendering.template_content('header', types_template_vars))
             for data_type in api.data_types:
                 f.write('\n'.join(rendering.data_type(data_type)) + '\n'*2)
 
         # Generate Go handler implementation interface
-        template_vars['<INTERFACES>'] = '\n'.join(rendering.implementation_interface(api, api_package, ensure_500))
+        interface_template_vars = {
+            '<PACKAGE>': api.package,
+            '<IMPORTS>': rendering.imports([api_import]),
+            '<INTERFACES>': '\n'.join(rendering.implementation_interface(api, api_package, ensure_500)),
+        }
         with open(os.path.join(api_folder, 'interface.gen.go'), 'w') as f:
-            f.write(rendering.template_content('header', template_vars))
-            f.write(rendering.template_content('interface', template_vars))
+            f.write(rendering.template_content('header', interface_template_vars))
+            f.write(rendering.template_content('interface', interface_template_vars))
 
         # Generate Go server factory
-        template_vars['<ROUTES>'] = '\n'.join(rendering.routes(api, api_package, ensure_500))
-        template_vars['<ROUTING>'] = '\n'.join(rendering.routing(api, api_package))
+        routes, new_imports = rendering.routes(api, api_package, ensure_500)
+        server_template_vars = {
+            '<PACKAGE>': api.package,
+            '<IMPORTS>': rendering.imports(list(new_imports) + [api_import]),
+            '<API_PACKAGE>': api_package,
+            '<ROUTES>': '\n'.join(routes),
+            '<ROUTING>': '\n'.join(rendering.routing(api, api_package)),
+        }
         with open(os.path.join(api_folder, 'server.gen.go'), 'w') as f:
-            f.write(rendering.template_content('header', template_vars))
-            f.write(rendering.template_content('server', template_vars))
+            f.write(rendering.template_content('header', server_template_vars))
+            f.write(rendering.template_content('server', server_template_vars))
 
 
 def _generate_example(api_list: List[apis.API], output_folder: str, api_import: str):

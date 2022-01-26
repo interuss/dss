@@ -115,6 +115,23 @@ generator:
 .PHONY: protos
 protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpb/rid.pb.gw.go pkg/api/v1/scdpb/scd.pb.gw.go
 
+# --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
+.PHONY: apis
+apis: dummy_oauth_api
+
+openapi-to-go-server:
+	docker image build -t interuss/openapi-to-go-server ./interfaces/openapi-to-go-server
+
+dummy_oauth_api: openapi-to-go-server
+	docker container run -it \
+		-v $(CURDIR)/interfaces/dummy-oauth/dummy-oauth.yaml:/resources/dummy-oauth.yaml \
+		-v $(CURDIR)/cmds/dummy-oauth:/resources/output \
+		interuss/openapi-to-go-server \
+			--api_import github.com/interuss/dss/cmds/dummy-oauth/api \
+			--api /resources/dummy-oauth.yaml \
+			--api_folder /resources/output/api
+# ---
+
 .PHONY: install-staticcheck
 install-staticcheck:
 	go get honnef.co/go/tools/cmd/staticcheck

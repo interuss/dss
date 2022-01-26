@@ -45,9 +45,6 @@ class DataType:
     enum_values: List[str] = dataclasses.field(default_factory=list)
     """If this is a enum data type, a list of values it may take on"""
 
-    def is_primitive(self) -> bool:
-        """True iff go_type describes a built-in Go type"""
-        return self.go_type in go_primitives.values() or self.go_type in go_numbers.values()
 
 
 go_primitives: Dict[str, str] = {
@@ -65,6 +62,11 @@ go_numbers: Dict[str, str] = {
     'integer': 'float32',
 }
 """Maps OpenAPI `format` (defaulting to `type` if `format` is missing) to Go primitive type"""
+
+
+def is_primitive_go_type(go_type_name: str) -> bool:
+    """True iff go_type_name describes a built-in Go type"""
+    return go_type_name in go_primitives.values() or go_type_name in go_numbers.values()
 
 
 def get_data_type_name(component_name: str, data_type_name: str) -> str:
@@ -121,17 +123,17 @@ def make_object_field(go_object_name: str, api_field_name: str, schema: Dict, re
     else:
         type_name = go_object_name + formatting.snake_case_to_pascal_case(api_field_name)
         data_type, additional_types = make_data_types(type_name, schema)
-        if data_type.go_type in go_primitives.values():
+        if is_primitive_go_type(data_type.go_type):
             # No additional type declaration needed
             if additional_types:
                 raise RuntimeError('{} field type `{}` was parsed as primitive {} but also generated {} additional types'.format(go_object_name, api_field_name, data_type.go_type, len(additional_types)))
             field_data_type = data_type.go_type
+        elif data_type.go_type.startswith('[]'):
+            # Use array data type as-is
+            field_data_type = data_type.go_type
         else:
-            if data_type.go_type.startswith('[]'):
-                field_data_type = data_type.go_type
-            else:
-                additional_types.append(data_type)
-                field_data_type = data_type.name
+            additional_types.append(data_type)
+            field_data_type = data_type.name
         return ObjectField(
             api_name=api_field_name,
             go_type=field_data_type,
@@ -178,15 +180,16 @@ def make_data_types(api_name: str, schema: Dict) -> Tuple[DataType, List[DataTyp
             if 'items' in schema:
                 items = schema['items']
                 if '$ref' in items:
-                    data_type.go_type = '[]{}'.format(get_data_type_name(items['$ref'], api_name))
+                    item_type_name = get_data_type_name(items['$ref'], api_name)
                 else:
                     item_type, further_types = make_data_types(api_name + 'Item', items)
                     additional_types.extend(further_types)
-                    if item_type.description != '' or not item_type.is_primitive():
+                    if item_type.description != '' or not is_primitive_go_type(item_type.go_type):
                         additional_types.append(item_type)
-                        data_type.go_type = '[]{}'.format(item_type.name)
+                        item_type_name = item_type.name
                     else:
-                        data_type.go_type = '[]{}'.format(item_type.go_type)
+                        item_type_name = item_type.go_type
+                data_type.go_type = '[]{}'.format(item_type_name)
             else:
                 raise ValueError('Missing `items` declaration for {} array type'.format(api_name))
         elif schema['type'] == 'object':

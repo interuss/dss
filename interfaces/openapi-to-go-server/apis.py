@@ -12,6 +12,15 @@ class API:
     data_types: List[data_types.DataType]
     operations: List[operations.Operation]
 
+    def primitive_go_type_for(self, data_type_name: str) -> str:
+        if data_types.is_primitive_go_type(data_type_name):
+            return data_type_name
+
+        for d_type in self.data_types:
+            if d_type.name == data_type_name:
+                return self.primitive_go_type_for(d_type.go_type)
+        raise ValueError('No data type named {} found in {} API'.format(data_type_name, self.package))
+
     def filter_operations(self, tags: Set[str]):
         # Select only the applicable operations
         self.operations = [op for op in self.operations
