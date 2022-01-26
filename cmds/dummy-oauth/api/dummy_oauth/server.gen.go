@@ -68,6 +68,10 @@ func (s *APIRouter) GetToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.
 		api.WriteJson(w, 200, response.Response200)
 		return
 	}
+	if response.Response400 != nil {
+		api.WriteJson(w, 400, response.Response400)
+		return
+	}
 	if response.Response500 != nil {
 		api.WriteJson(w, 500, response.Response500)
 		return

@@ -33,6 +33,9 @@ type GetTokenResponseSet struct {
 	// The requested token was generated successfully
 	Response200 *TokenResponse
 
+	// The request was not properly formed
+	Response400 *BadRequestResponse
+
 	// Auto-generated internal server error response
 	Response500 *api.InternalServerErrorBody
 }

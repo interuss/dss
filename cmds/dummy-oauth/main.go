@@ -26,6 +26,31 @@ type DummyOAuthImplementation struct {
 func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummy_oauth.GetTokenRequest) dummy_oauth.GetTokenResponseSet {
 	resp := dummy_oauth.GetTokenResponseSet{}
 
+    var intendedAudience string
+    if req.IntendedAudience != nil {
+        intendedAudience = *req.IntendedAudience
+    } else {
+        msg := "Missing `intended_audience` query parameter"
+        resp.Response400 = &dummy_oauth.BadRequestResponse{Message: &msg}
+        return resp
+    }
+
+    var scope string
+    if req.Scope != nil {
+        scope = *req.Scope
+    } else {
+        msg := "Missing `scope` query parameter"
+        resp.Response400 = &dummy_oauth.BadRequestResponse{Message: &msg}
+        return resp
+    }
+
+    var issuer string
+    if req.Issuer != nil {
+        issuer = *req.Issuer
+    } else {
+        issuer = "dummy_oauth"
+    }
+
 	var expireTime int64
 	if req.Expire == nil {
 		expireTime = time.Now().Add(time.Hour).Unix()
@@ -33,12 +58,19 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummy_oaut
 		expireTime = int64(*req.Expire)
 	}
 
+    var sub string
+    if req.Sub != nil {
+        sub = *req.Sub
+    } else {
+        sub = "fake_uss"
+    }
+
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"aud":   req.IntendedAudience,
-		"scope": req.Scope,
-		"iss":   req.Issuer,
+		"aud":   intendedAudience,
+		"scope": scope,
+		"iss":   issuer,
 		"exp":   expireTime,
-		"sub":   req.Sub,
+		"sub":   sub,
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
