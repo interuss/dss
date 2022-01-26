@@ -54,7 +54,7 @@ var (
 	enableSCD           = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
 	enableHTTP          = flag.Bool("enable_http", false, "Enables http scheme for Strategic Conflict Detection API")
 	locality            = flag.String("locality", "", "self-identification string used as CRDB table writer column")
-	garbageColletorSpec = flag.String("garbage_collector_spec", "@every 30m", "Garbage collector schedule. The value must follow robfig/cron format. See https://godoc.org/github.com/robfig/cron#hdr-Usage for more detail.")
+	garbageCollectorSpec = flag.String("garbage_collector_spec", "@every 30m", "Garbage collector schedule. The value must follow robfig/cron format. See https://godoc.org/github.com/robfig/cron#hdr-Usage for more detail.")
 
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
@@ -126,7 +126,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	}
 
 	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
-	if _, err = ridCron.AddJob(*garbageColletorSpec, cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
+	if _, err = ridCron.AddJob(*garbageCollectorSpec, cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
 	}
 	ridCron.Start()
