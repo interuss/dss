@@ -76,7 +76,7 @@ func (s *APIRouter) GetToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {

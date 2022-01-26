@@ -71,7 +71,7 @@ func (s *APIRouter) QueryOperationalIntentReferences(exp *regexp.Regexp, w http.
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -118,7 +118,7 @@ func (s *APIRouter) GetOperationalIntentReference(exp *regexp.Regexp, w http.Res
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -178,7 +178,7 @@ func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -239,7 +239,7 @@ func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) DeleteOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -295,7 +295,7 @@ func (s *APIRouter) DeleteOperationalIntentReference(exp *regexp.Regexp, w http.
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) QueryConstraintReferences(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -343,7 +343,7 @@ func (s *APIRouter) QueryConstraintReferences(exp *regexp.Regexp, w http.Respons
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -390,7 +390,7 @@ func (s *APIRouter) GetConstraintReference(exp *regexp.Regexp, w http.ResponseWr
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -446,7 +446,7 @@ func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.Respons
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -503,7 +503,7 @@ func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.Respons
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) DeleteConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -555,7 +555,7 @@ func (s *APIRouter) DeleteConstraintReference(exp *regexp.Regexp, w http.Respons
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) QuerySubscriptions(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -603,7 +603,7 @@ func (s *APIRouter) QuerySubscriptions(exp *regexp.Regexp, w http.ResponseWriter
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -650,7 +650,7 @@ func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -702,7 +702,7 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -755,7 +755,7 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -807,7 +807,7 @@ func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) MakeDssReport(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -851,7 +851,7 @@ func (s *APIRouter) MakeDssReport(exp *regexp.Regexp, w http.ResponseWriter, r *
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -894,7 +894,7 @@ func (s *APIRouter) GetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -942,7 +942,7 @@ func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJSON(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
