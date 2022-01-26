@@ -269,7 +269,7 @@ class UAVRegistrationDataGenerator():
             # Multiplication factors for each digit depending on its position
             mult_factors = cycle([2, 1])
             def partial_sum(number, mult_factor):
-                """Calculate partial sum ofr a single digit."""
+                '''Calculate partial sum ofr a single digit.'''
                 quotient, remainder = divmod(number * mult_factor, 36)
                 return quotient + remainder
             final_sum = sum(                
@@ -385,7 +385,7 @@ def generate_flight_injection_attempts() -> List[FlightInjectionAttempt]:
     return flight_injection_attempts
         
 class AutomatedTestsWriter():
-    """ A class to write raw Flight injection attempt and volumes to disk so that they can be examined / used in other software """
+    ''' A class to write raw Flight injection attempt and volumes to disk so that they can be examined / used in other software '''
 
     def write_automated_test_to_disk(self,output_path:os.path, flight_injection_attempts: List[FlightInjectionAttempt], country_code='che') -> None:
         ''' A method to automated test to disk '''
