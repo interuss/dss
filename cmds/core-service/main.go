@@ -72,7 +72,11 @@ func getDBStats(ctx context.Context, db *cockroach.DB, databaseName string) {
 	stats["IdleConns"] = strconv.Itoa(int(statsPtr.IdleConns()))
 	stats["MaxConns"] = strconv.Itoa(int(statsPtr.MaxConns()))
 	stats["TotalConns"] = strconv.Itoa(int(statsPtr.TotalConns()))
-	logger.Info("Successful periodic DB Ping ", zap.Any("DB Stats", stats))
+	if stats["TotalConns"] == "0" {
+		logger.Panic("Failed periodic DB Ping, panic to force restart", zap.String("Database", databaseName))
+	} else {
+		logger.Info("Successful periodic DB Ping ", zap.String("Database", databaseName))
+	}
 }
 
 func createKeyResolver() (auth.KeyResolver, error) {
