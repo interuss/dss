@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -59,9 +60,20 @@ var (
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
-func pingDB(ctx context.Context, db *cockroach.DB, databaseName string) {
+func getDBStats(ctx context.Context, db *cockroach.DB, databaseName string) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
-	if err := db.PingContext(ctx); err != nil {
+	statsPtr := db.Pool.Stat()
+	stats := make(map[string]string)
+	stats["DBName"] = databaseName
+	stats["AcquireCount"] = strconv.Itoa(int(statsPtr.AcquireCount()))
+	stats["AcquiredConns"] = strconv.Itoa(int(statsPtr.AcquiredConns()))
+	stats["CanceledAcquireCount"] = strconv.Itoa(int(statsPtr.CanceledAcquireCount()))
+	stats["ConstructingConns"] = strconv.Itoa(int(statsPtr.ConstructingConns()))
+	stats["EmptyAcquireCount"] = strconv.Itoa(int(statsPtr.EmptyAcquireCount()))
+	stats["IdleConns"] = strconv.Itoa(int(statsPtr.IdleConns()))
+	stats["MaxConns"] = strconv.Itoa(int(statsPtr.MaxConns()))
+	stats["TotalConns"] = strconv.Itoa(int(statsPtr.TotalConns()))
+	if stats["TotalConns"] == "0" {
 		logger.Panic("Failed periodic DB Ping, panic to force restart", zap.String("Database", databaseName))
 	} else {
 		logger.Info("Successful periodic DB Ping ", zap.String("Database", databaseName))
@@ -92,7 +104,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = ridc.DatabaseName
-	ridCrdb, err := cockroach.ConnectTo(connectParameters)
+	ridCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
@@ -102,7 +114,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		// try DatabaseName with defaultdb for older versions.
 		ridc.DatabaseName = "defaultdb"
 		connectParameters.DBName = ridc.DatabaseName
-		ridCrdb, err := cockroach.ConnectTo(connectParameters)
+		ridCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database for older version <defaultdb>; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 		}
@@ -120,9 +132,9 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
-	// schedule pinging every minute for the underlying storage for RID Server
-	if _, err := ridCron.AddFunc("@every 1m", func() { pingDB(ctx, ridCrdb, ridc.DatabaseName) }); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", ridc.DatabaseName)
+	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
+	if _, err := ridCron.AddFunc("@every 1m", func() { getDBStats(ctx, ridCrdb, ridc.DatabaseName) }); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", ridc.DatabaseName)
 	}
 
 	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
@@ -142,15 +154,15 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = scdc.DatabaseName
-	scdCrdb, err := cockroach.ConnectTo(connectParameters)
+	scdCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 	// schedule period tasks for SCD Server
 	scdCron := cron.New()
-	// schedule pinging every minute for the underlying storage for SCD Server
-	if _, err := scdCron.AddFunc("@every 1m", func() { pingDB(ctx, scdCrdb, scdc.DatabaseName) }); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to schedule periodic ping to %s", scdc.DatabaseName)
+	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
+	if _, err := scdCron.AddFunc("@every 1m", func() { getDBStats(ctx, scdCrdb, scdc.DatabaseName) }); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", scdc.DatabaseName)
 	}
 
 	scdCron.Start()

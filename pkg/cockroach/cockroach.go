@@ -2,12 +2,13 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 var (
@@ -29,16 +30,18 @@ type (
 
 	// ConnectParameters bundles up parameters used for connecting to a CRDB instance.
 	ConnectParameters struct {
-		ApplicationName string
-		Host            string
-		Port            int
-		DBName          string
-		Credentials     Credentials
-		SSL             SSL
+		ApplicationName    string
+		Host               string
+		Port               int
+		DBName             string
+		Credentials        Credentials
+		SSL                SSL
+		MaxOpenConns       int
+		MaxConnIdleSeconds int
 	}
 )
 
-func parsePortOrDefault(port string, defaultPort int64) int64 {
+func parseIntOrDefault(port string, defaultPort int64) int64 {
 	p, err := strconv.ParseInt(port, 10, 16)
 	if err != nil {
 		p = defaultPort
@@ -52,7 +55,7 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 		ApplicationName: m["application_name"],
 		DBName:          m["db_name"],
 		Host:            m["host"],
-		Port:            int(parsePortOrDefault(m["port"], 0)),
+		Port:            int(parseIntOrDefault(m["port"], 0)),
 		Credentials: Credentials{
 			Username: m["user"],
 		},
@@ -60,6 +63,8 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 			Mode: m["ssl_mode"],
 			Dir:  m["ssl_dir"],
 		},
+		MaxOpenConns:       int(parseIntOrDefault(m["max_open_conns"], 4)),
+		MaxConnIdleSeconds: int(parseIntOrDefault(m["max_conn_idle_secs"], 40)),
 	}
 }
 
@@ -105,30 +110,48 @@ func (p ConnectParameters) BuildURI() (string, error) {
 
 // DB models a connection to a CRDB instance.
 type DB struct {
-	*sql.DB
+	Pool *pgxpool.Pool
 }
 
 // Dial returns a DB instance connected to a cockroach instance available at
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html
-func Dial(uri string) (*DB, error) {
-	db, err := sql.Open("postgres", uri)
+func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
+	uri, err := connParams.BuildURI()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error building URI")
+	}
+
+	config, err := pgxpool.ParseConfig(uri)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to parse connection config for pgx")
+	}
+
+	if connParams.SSL.Mode == "enable" {
+		config.ConnConfig.TLSConfig.ServerName = connParams.Host
+	}
+	config.MaxConns = int32(connParams.MaxOpenConns)
+	config.MaxConnIdleTime = (time.Duration(connParams.MaxConnIdleSeconds) * time.Second)
+	config.HealthCheckPeriod = (1 * time.Second)
+	config.MinConns = 1
+
+	db, err := pgxpool.ConnectConfig(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
 	return &DB{
-		DB: db,
+		Pool: db,
 	}, nil
 }
 
 // Connect to a database using the specified connection parameters
-func ConnectTo(connectParameters ConnectParameters) (*DB, error) {
+func ConnectTo(ctx context.Context, connectParameters ConnectParameters) (*DB, error) {
 	uri, err := connectParameters.BuildURI()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building CockroachDB connection URI")
 	}
-	db, err := Dial(uri)
+	db, err := Dial(ctx, connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error dialing CockroachDB database at %s", uri)
 	}
@@ -159,7 +182,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
         onerow_enforcer = TRUE`, dbName)
 	)
 
-	if err := db.QueryRowContext(ctx, checkTableQuery, dbName).Scan(&exists); err != nil {
+	if err := db.Pool.QueryRow(ctx, checkTableQuery, dbName).Scan(&exists); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning table listing row")
 	}
 
@@ -169,7 +192,7 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 	}
 
 	var dbVersion string
-	if err := db.QueryRowContext(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
+	if err := db.Pool.QueryRow(ctx, getVersionQuery).Scan(&dbVersion); err != nil {
 		return nil, stacktrace.Propagate(err, "Error scanning version row")
 	}
 	if len(dbVersion) > 0 && dbVersion[0] == 'v' {

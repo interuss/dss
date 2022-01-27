@@ -13,6 +13,7 @@
 
 import asyncio
 import datetime
+import inspect
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
@@ -231,6 +232,7 @@ def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_ops_concurrent(ids, scd_api, scd_session_async):
+  start_time = datetime.datetime.utcnow()
   assert len(ovn_map) == 0
   op_req_map = {}
   op_resp_map = {}
@@ -264,6 +266,7 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
     assert 'subscription_id' in op
     ovn_map[op_id] = op['ovn']
   assert len(ovn_map) == len(OP_TYPES)
+  print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
 
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
@@ -271,6 +274,7 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @depends_on(test_create_ops_concurrent)
 def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session_async):
+  start_time = datetime.datetime.utcnow()
   op_resp_map = {}
   # Get operations concurrently
   loop = asyncio.get_event_loop()
@@ -293,6 +297,7 @@ def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session_async):
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
     assert op['version'] == 1
+  print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
 
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
@@ -301,6 +306,7 @@ def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session_async):
 @default_scope(SCOPE_SC)
 @depends_on(test_create_ops_concurrent)
 def test_get_ops_by_search_concurrent(ids, scd_api, scd_session_async):
+  start_time = datetime.datetime.utcnow()
   op_resp_map = {}
   total_found_ids = set()
 
@@ -323,6 +329,7 @@ def test_get_ops_by_search_concurrent(ids, scd_api, scd_session_async):
     total_found_ids.update(found_ids)
 
   assert len(_intersection(map(ids, OP_TYPES), total_found_ids)) == len(OP_TYPES)
+  print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
 
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
@@ -331,6 +338,7 @@ def test_get_ops_by_search_concurrent(ids, scd_api, scd_session_async):
 @default_scope(SCOPE_SC)
 @depends_on(test_create_ops_concurrent)
 def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
+  start_time = datetime.datetime.utcnow()
   op_req_map = {}
   op_resp_map = {}
   op_map = {}
@@ -369,6 +377,7 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
     ovn_map[op_id] = op['ovn']
 
   assert len(ovn_map) == len(OP_TYPES)
+  print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
 
 
 # Preconditions: Operations with ids in OP_IDS mutated to second version
@@ -376,6 +385,7 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @depends_on(test_mutate_ops_concurrent)
 def test_delete_op_concurrent(ids, scd_api, scd_session_async):
+  start_time = datetime.datetime.utcnow()
   op_resp_map = {}
 
   # Delete operations concurrently
@@ -391,3 +401,4 @@ def test_delete_op_concurrent(ids, scd_api, scd_session_async):
 
   for resp in op_resp_map.values():
     assert resp['status_code'] == 200, resp['content']
+  print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
