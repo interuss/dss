@@ -3,6 +3,7 @@ package cockroach
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -148,6 +149,8 @@ func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
 // Connect to a database using the specified connection parameters
 func ConnectTo(ctx context.Context, connectParameters ConnectParameters) (*DB, error) {
 	uri, err := connectParameters.BuildURI()
+	fmt.Println("My url: ", uri)
+	log.Println("My url: ", uri)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building CockroachDB connection URI")
 	}
