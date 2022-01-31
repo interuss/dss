@@ -1,6 +1,6 @@
 import sys
 
-from monitoring.mock_ridsp import webapp
+from monitoring.mock_uss import webapp
 
 
 def main(argv):
