@@ -160,6 +160,9 @@ func ConnectTo(ctx context.Context, connectParameters ConnectParameters) (*DB, e
 
 // GetVersion returns the Schema Version of the requested DB Name
 func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, error) {
+	if dbName == "" {
+		return nil, stacktrace.NewError("GetVersion was provided with an empty database name")
+	}
 	var (
 		checkTableQuery = fmt.Sprintf(`
       SELECT EXISTS (
