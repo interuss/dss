@@ -16,6 +16,12 @@ components:
         access_token:
           description: JWT that may be used as a Bearer token to authorize operations on an appropriately-configured DSS instance
           type: string
+    BadRequestResponse:
+      type: object
+      properties:
+        message:
+          description: Human-readable message describing problem with request
+          type: string
 
 paths:
   /token:
@@ -37,7 +43,7 @@ paths:
         example: dss.read.identification_service_areas
       - name: issuer
         in: query
-        required: true
+        required: false
         description: Identity of the issuer of the token.  The `iss` claim will be populated with this value.
         schema:
           type: string
@@ -65,4 +71,11 @@ paths:
                 $ref: '#/components/schemas/TokenResponse'
           description: >-
             The requested token was generated successfully
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+          description: >-
+            The request was not properly formed
       summary: Generate an access token

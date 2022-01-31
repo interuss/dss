@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List
+from typing import Dict, List, Set, Tuple
 
 import apis
 import data_types
@@ -55,7 +55,7 @@ def data_type(d_type: data_types.DataType) -> List[str]:
     lines = comment(
         d_type.description.split('\n')) if d_type.description else []
 
-    if d_type.is_primitive():
+    if data_types.is_primitive_go_type(d_type.go_type):
         lines.append('type {} {}'.format(d_type.name, d_type.go_type))
     elif d_type.go_type == 'struct':
         lines.append('type %s struct {' % d_type.name)
@@ -198,18 +198,23 @@ def implementation_interface(api: apis.API, api_package: str, ensure_500: bool) 
     return lines
 
 
-def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
+def routes(api: apis.API, api_package: str, ensure_500: bool) -> Tuple[List[str], Set[str]]:
     """Generate handler Go code for each operation, routed appropriately.
 
     :param api: API to have its operation routes rendered
     :param api_package: Name of root/common API package
     :param ensure_500: If True, add a 500 response to all operations that don't already define a 500 response
-    :return: Lines of Go code defining the handler functions and router creation function
+    :return:
+        * Lines of Go code defining the handler functions and router creation function
+        * Go packages that need to be imported
     """
     lines: List[str] = []
+    imports: Set[str] = set()
 
     # Define a top-level routed HTTP handler function for each operation
     for operation in api.operations:
+        imports.add('regexp')
+        imports.add('net/http')
         lines.append(
             'func (s *APIRouter) {}(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {{'.format(
                 operation.interface_name))
@@ -241,7 +246,7 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
                                                             p.go_type, i + 1))
             body.append('')
 
-        # Capture any query parameters
+        # Capture/parse any query parameters
         if operation.query_parameters:
             body.extend(comment(['Copy query parameters']))
             body.append('query := r.URL.Query()')
@@ -251,15 +256,30 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
                 if_body: List[str] = []
                 if q.go_type == 'string':
                     if_body.append('v := query.Get("{}")'.format(q.name))
+                    if_body.append('req.{} = &v'.format(q.go_field_name))
                 else:
-                    if_body.append('v := {}(query.Get("{}"))'.format(q.go_type, q.name))
-                if_body.append('req.{} = &v'.format(q.go_field_name))
+                    primitive_type = api.primitive_go_type_for(q.go_type)
+                    if primitive_type == 'string':
+                        if_body.append('v := {}(query.Get("{}"))'.format(q.go_type, q.name))
+                        if_body.append('req.{} = &v'.format(q.go_field_name))
+                    elif primitive_type.startswith('int'):
+                        imports.add('strconv')
+                        if_body.append('i, err := strconv.ParseInt(query.Get("{}"), 10, {})'.format(q.name, primitive_type[3:]))
+                        if_body.append('if err == nil {')
+                        if data_types.is_primitive_go_type(q.go_type):
+                            if_body.append('req.{} = &i'.format(q.go_field_name))
+                        else:
+                            if_body.extend(indent(['v := {}(i)'.format(q.go_type), 'req.{} = &v'.format(q.go_field_name)], 1))
+                        if_body.append('}')
+                    else:
+                        raise NotImplementedError()
                 body.extend(indent(if_body, 1))
                 body.append('}')
             body.append('')
 
         # Attempt to parse the request body JSON, if defined
         if operation.json_request_body_type:
+            imports.add('encoding/json')
             body.extend(comment(['Parse request body']))
             body.append(
                 'req.Body = new({})'.format(operation.json_request_body_type))
@@ -269,6 +289,7 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
             body.append('')
 
         # Actually invoke the API Implementation with the processed request to obtain the response
+        imports.add('context')
         body.extend(comment(['Call implementation']))
         body.append('ctx, cancel := context.WithCancel(context.Background())')
         body.append('defer cancel()')
@@ -284,11 +305,11 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
         for response in responses:
             body.append(
                 'if response.{} != nil {{'.format(response.response_set_field))
-            body.extend(indent(['{}.WriteJson(w, {}, response.{})'.format(
+            body.extend(indent(['{}.WriteJSON(w, {}, response.{})'.format(
                 api_package, response.code, response.response_set_field)], 1))
             body.extend(indent(['return'], 1))
             body.append('}')
-        body.append('%s.WriteJson(w, 500, %s.InternalServerErrorBody{"Handler implementation did not set a response"})' % (api_package, api_package))
+        body.append('%s.WriteJSON(w, 500, %s.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})' % (api_package, api_package))
 
         lines.extend(indent(body, 1))
 
@@ -297,7 +318,7 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> List[str]:
     if lines:
         lines.pop()
 
-    return lines
+    return lines, imports
 
 
 def routing(api: apis.API, api_package: str) -> List[str]:
@@ -377,6 +398,6 @@ def example_router_defs(implementations: Dict[str, str], api_package: str) -> Li
     for api_name, implementation in implementations.items():
         lines.append('%sRouter := %s.MakeAPIRouter(&%s{}, &authorizer)' % (api_name, api_name, implementation))
     router_list = ', '.join('&{}Router'.format(api_name) for api_name, _ in implementations.items())
-    lines.append('multiRouter := %s.MultiRouter{Routers: []%s.APIRouter{%s}}' % (api_package, api_package, router_list))
+    lines.append('multiRouter := %s.MultiRouter{Routers: []%s.PartialRouter{%s}}' % (api_package, api_package, router_list))
 
     return lines

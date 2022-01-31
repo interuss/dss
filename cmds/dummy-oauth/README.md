@@ -34,3 +34,7 @@ Take down the Dummy OAuth instance like this:
 ```bash
 build/dev/run_locally.sh down
 ```
+
+## Development
+
+The Dummy OAuth API scaffolding is generated automatically by [openapi-to-go-server](../../interfaces/openapi-to-go-server) using [the Dummy OAuth API](../../interfaces/dummy-oauth/dummy-oauth.yaml) via the command [`make apis`](../../Makefile) starting in the repo root folder.

@@ -94,13 +94,6 @@ def test_get_isa_with_fake_token(ids, no_auth_session):
   assert resp.json()['message'] == 'token contains an invalid number of segments'
 
 
-def test_get_isa_without_scope(ids, session):
-  if not isinstance(session.auth_adapter, DummyOAuth):
-    pytest.skip('General auth providers will not usually grant tokens without any scopes')
-  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope='')
-  assert resp.status_code == 403, resp.content
-
-
 def test_delete(ids, session):
   resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope=SCOPE_READ)
   if resp.status_code == 200:

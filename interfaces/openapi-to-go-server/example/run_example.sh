@@ -10,7 +10,7 @@ fi
 
 cd "${BASEDIR}" || exit
 
-docker image build -t openapi-to-go-server-demo .
+docker image build -t openapi-to-go-server-demo . || exit
 
 echo "Running server..."
 docker container run -it -p 8080:8080 openapi-to-go-server-demo

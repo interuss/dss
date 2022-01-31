@@ -15,9 +15,9 @@ type APIRouter struct {
 	Authorizer     api.Authorizer
 }
 
-// *rid.APIRouter (type defined above) implements the api.APIRouter interface
-func (a *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
-	for _, route := range a.Routes {
+// *rid.APIRouter (type defined above) implements the api.PartialRouter interface
+func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
+	for _, route := range s.Routes {
 		if route.Pattern.MatchString(r.URL.Path) {
 			route.Handler(route.Pattern, w, r)
 			return true
@@ -55,30 +55,30 @@ func (s *APIRouter) SearchIdentificationServiceAreas(exp *regexp.Regexp, w http.
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response413 != nil {
-		api.WriteJson(w, 413, response.Response413)
+		api.WriteJSON(w, 413, response.Response413)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetIdentificationServiceArea(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -98,30 +98,30 @@ func (s *APIRouter) GetIdentificationServiceArea(exp *regexp.Regexp, w http.Resp
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		api.WriteJson(w, 404, response.Response404)
+		api.WriteJSON(w, 404, response.Response404)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) CreateIdentificationServiceArea(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -146,34 +146,34 @@ func (s *APIRouter) CreateIdentificationServiceArea(exp *regexp.Regexp, w http.R
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		api.WriteJson(w, 409, response.Response409)
+		api.WriteJSON(w, 409, response.Response409)
 		return
 	}
 	if response.Response413 != nil {
-		api.WriteJson(w, 413, response.Response413)
+		api.WriteJSON(w, 413, response.Response413)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) UpdateIdentificationServiceArea(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -199,34 +199,34 @@ func (s *APIRouter) UpdateIdentificationServiceArea(exp *regexp.Regexp, w http.R
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		api.WriteJson(w, 409, response.Response409)
+		api.WriteJSON(w, 409, response.Response409)
 		return
 	}
 	if response.Response413 != nil {
-		api.WriteJson(w, 413, response.Response413)
+		api.WriteJSON(w, 413, response.Response413)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) DeleteIdentificationServiceArea(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -247,34 +247,34 @@ func (s *APIRouter) DeleteIdentificationServiceArea(exp *regexp.Regexp, w http.R
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		api.WriteJson(w, 404, response.Response404)
+		api.WriteJSON(w, 404, response.Response404)
 		return
 	}
 	if response.Response409 != nil {
-		api.WriteJson(w, 409, response.Response409)
+		api.WriteJSON(w, 409, response.Response409)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) SearchSubscriptions(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -298,30 +298,30 @@ func (s *APIRouter) SearchSubscriptions(exp *regexp.Regexp, w http.ResponseWrite
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response413 != nil {
-		api.WriteJson(w, 413, response.Response413)
+		api.WriteJSON(w, 413, response.Response413)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -341,30 +341,30 @@ func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		api.WriteJson(w, 404, response.Response404)
+		api.WriteJSON(w, 404, response.Response404)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -389,34 +389,34 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		api.WriteJson(w, 409, response.Response409)
+		api.WriteJSON(w, 409, response.Response409)
 		return
 	}
 	if response.Response429 != nil {
-		api.WriteJson(w, 429, response.Response429)
+		api.WriteJSON(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -442,34 +442,34 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response409 != nil {
-		api.WriteJson(w, 409, response.Response409)
+		api.WriteJSON(w, 409, response.Response409)
 		return
 	}
 	if response.Response429 != nil {
-		api.WriteJson(w, 429, response.Response429)
+		api.WriteJSON(w, 429, response.Response429)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -490,34 +490,34 @@ func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 	// Write response to client
 	if response.Response200 != nil {
-		api.WriteJson(w, 200, response.Response200)
+		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
 	if response.Response400 != nil {
-		api.WriteJson(w, 400, response.Response400)
+		api.WriteJSON(w, 400, response.Response400)
 		return
 	}
 	if response.Response401 != nil {
-		api.WriteJson(w, 401, response.Response401)
+		api.WriteJSON(w, 401, response.Response401)
 		return
 	}
 	if response.Response403 != nil {
-		api.WriteJson(w, 403, response.Response403)
+		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
 	if response.Response404 != nil {
-		api.WriteJson(w, 404, response.Response404)
+		api.WriteJSON(w, 404, response.Response404)
 		return
 	}
 	if response.Response409 != nil {
-		api.WriteJson(w, 409, response.Response409)
+		api.WriteJSON(w, 409, response.Response409)
 		return
 	}
 	if response.Response500 != nil {
-		api.WriteJson(w, 500, response.Response500)
+		api.WriteJSON(w, 500, response.Response500)
 		return
 	}
-	api.WriteJson(w, 500, api.InternalServerErrorBody{"Handler implementation did not set a response"})
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {

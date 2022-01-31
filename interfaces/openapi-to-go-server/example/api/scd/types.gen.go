@@ -37,29 +37,20 @@ type Time struct {
 	Format string `json:"format"`
 }
 
-// Distance from the centerpoint of a circular area, along the WGS84 ellipsoid.
-type RadiusValue float32
-
 type Radius struct {
 	// Distance from the centerpoint of a circular area, along the WGS84 ellipsoid.
-	Value RadiusValue `json:"value"`
+	Value float32 `json:"value"`
 
 	// FIXM-compatible units.  Only meters ("M") are acceptable for UTM.
 	Units string `json:"units"`
 }
-
-// The numeric value of the altitude. Note that min and max values are
-// added as a sanity check. As use cases evolve and more options are
-// made available in terms of units of measure or reference systems,
-// these bounds may be re-evaluated.
-type AltitudeValue float64
 
 type Altitude struct {
 	// The numeric value of the altitude. Note that min and max values are
 	// added as a sanity check. As use cases evolve and more options are
 	// made available in terms of units of measure or reference systems,
 	// these bounds may be re-evaluated.
-	Value AltitudeValue `json:"value"`
+	Value float64 `json:"value"`
 
 	// A code indicating the reference for a vertical distance. See AIXM 5.1
 	// and FIXM 4.2.0. Currently, UTM only allows WGS84 with no immediate
@@ -297,12 +288,6 @@ const (
 	OperationalIntentState_Contingent    OperationalIntentState = "Contingent"
 )
 
-// Numeric version of this operational intent which increments upon each change in the operational intent,
-// regardless of whether any field of the operational intent reference changes.  A USS with the
-// details of this operational intent when it was at a particular version does not need to retrieve
-// the details again until the version changes.
-type OperationalIntentReferenceVersion int32
-
 // The high-level information of a planned or active operational intent with the URL
 // of a USS to query for details.  Note: 'ovn' is returned ONLY to the USS that
 // created the operational intent but NEVER to other USS instances.
@@ -321,7 +306,7 @@ type OperationalIntentReference struct {
 	// regardless of whether any field of the operational intent reference changes.  A USS with the
 	// details of this operational intent when it was at a particular version does not need to retrieve
 	// the details again until the version changes.
-	Version OperationalIntentReferenceVersion `json:"version"`
+	Version int32 `json:"version"`
 
 	State OperationalIntentState `json:"state"`
 
@@ -433,12 +418,6 @@ type QueryOperationalIntentReferenceResponse struct {
 	OperationalIntentReferences []OperationalIntentReference `json:"operational_intent_references"`
 }
 
-// Numeric version of this constraint which increments upon each change in the constraint,
-// regardless of whether any field of the constraint reference changes.  A USS with the
-// details of this constraint when it was at a particular version does not need to retrieve
-// the details again until the version changes.
-type ConstraintReferenceVersion int32
-
 // A ConstraintReference (area in which a constraint is present, along with other high-level information, but no details).  The DSS reports only these references and clients must exchange details and additional information peer-to-peer.
 type ConstraintReference struct {
 	Id EntityID `json:"id"`
@@ -455,7 +434,7 @@ type ConstraintReference struct {
 	// regardless of whether any field of the constraint reference changes.  A USS with the
 	// details of this constraint when it was at a particular version does not need to retrieve
 	// the details again until the version changes.
-	Version ConstraintReferenceVersion `json:"version"`
+	Version int32 `json:"version"`
 
 	// Opaque version number of this constraint.  Populated only when the ConstraintReference
 	// is managed by the USS retrieving or providing it.  Not populated when the
@@ -565,9 +544,6 @@ type UssAvailabilityStatusResponse struct {
 	Status UssAvailabilityStatus `json:"status"`
 }
 
-// HTTP response code sent/received in response to request.
-type ExchangeRecordResponseCode int32
-
 // Details of a request/response data exchange.
 type ExchangeRecord struct {
 	// Full URL of request.
@@ -595,7 +571,7 @@ type ExchangeRecord struct {
 	ResponseBody *string `json:"response_body"`
 
 	// HTTP response code sent/received in response to request.
-	ResponseCode *ExchangeRecordResponseCode `json:"response_code"`
+	ResponseCode *int32 `json:"response_code"`
 
 	// Human-readable description of the problem with the exchange, if any.
 	Problem *string `json:"problem"`
