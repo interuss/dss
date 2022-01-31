@@ -2,9 +2,9 @@ package application
 
 import (
 	"context"
+	"log"
 	"testing"
 	"time"
-	"log"
 
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/cockroach/flags"
