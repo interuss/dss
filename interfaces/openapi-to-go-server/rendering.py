@@ -262,11 +262,21 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> Tuple[List[str]
                     if primitive_type == 'string':
                         if_body.append('v := {}(query.Get("{}"))'.format(q.go_type, q.name))
                         if_body.append('req.{} = &v'.format(q.go_field_name))
-                    elif primitive_type.startswith('int'):
+                    elif primitive_type.startswith('int') or primitive_type.startswith('float'):
                         imports.add('strconv')
-                        if_body.append('i, err := strconv.ParseInt(query.Get("{}"), 10, {})'.format(q.name, primitive_type[3:]))
+                        if primitive_type.startswith('int'):
+                            parse_func = 'ParseInt'
+                            parse_params = '10, {}'.format(primitive_type[len('int'):])
+                            no_conversion_type = 'int64'
+                        elif primitive_type.startswith('float'):
+                            parse_func = 'ParseFloat'
+                            parse_params = primitive_type[len('float'):]
+                            no_conversion_type = 'float64'
+                        else:
+                            raise RuntimeError()
+                        if_body.append('i, err := strconv.{}(query.Get("{}"), {})'.format(parse_func, q.name, parse_params))
                         if_body.append('if err == nil {')
-                        if data_types.is_primitive_go_type(q.go_type):
+                        if q.go_type == no_conversion_type:
                             if_body.append('req.{} = &i'.format(q.go_field_name))
                         else:
                             if_body.extend(indent(['v := {}(i)'.format(q.go_type), 'req.{} = &v'.format(q.go_field_name)], 1))
@@ -374,9 +384,12 @@ def example_implementation(api: apis.API, implementation_name: str) -> List[str]
         body: List[str] = []
         body.append('response := %s{}' % (api.package + '.' + operation.response_type_name))
         # body.append('response.Response500 = &InternalServerErrorBody{ErrorMessage: "Not yet implemented"}')
+        response_type = operation.responses[0].json_body_type
+        if not response_type:
+            response_type = 'EmptyResponseBody'
         body.append('response.%s = &%s{}' % (
             operation.responses[0].response_set_field,
-            api.package + '.' + operation.responses[0].json_body_type))
+            api.package + '.' + response_type))
         body.append('return response')
         lines.extend(indent(body, 1))
 
