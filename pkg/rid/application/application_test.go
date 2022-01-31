@@ -2,18 +2,17 @@ package application
 
 import (
 	"context"
-	"flag"
 	"testing"
 	"time"
 
 	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/cockroach/flags"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/rid/store"
-	ridcrdb "github.com/interuss/dss/pkg/rid/store/cockroach"
+	ridc "github.com/interuss/dss/pkg/rid/store/cockroach"
 	dssql "github.com/interuss/dss/pkg/sql"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
@@ -21,7 +20,6 @@ import (
 )
 
 var (
-	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	fakeClock = clockwork.NewFakeClock()
 	startTime = fakeClock.Now().Add(-time.Minute)
 	endTime   = fakeClock.Now().Add(time.Hour)
@@ -47,8 +45,9 @@ func (s *mockRepo) Close() error {
 
 func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.Store, func()) {
 	DefaultClock = fakeClock
+	connectParameters := flags.ConnectParameters()
 
-	if len(*storeURI) == 0 {
+	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		logger.Info("using the stubbed in memory store.")
 		return &mockRepo{
 			isaStore: &isaStore{
@@ -59,19 +58,13 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 			},
 		}, func() {}
 	}
-	ridcrdb.DefaultClock = fakeClock
+	connectParameters.DBName = ridc.DatabaseName
+	ridc.DefaultClock = fakeClock
+	ridCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
+	require.NoError(t, err)
 	logger.Info("using cockroachDB.")
 
-	config, err := pgxpool.ParseConfig(*storeURI)
-	require.NoError(t, err)
-
-	db, err := pgxpool.ConnectConfig(ctx, config)
-	require.NoError(t, err)
-
-	cdb := &cockroach.DB{
-		Pool: db,
-	}
-	store, err := ridcrdb.NewStore(ctx, cdb, logger)
+	store, err := ridc.NewStore(ctx, ridCrdb, logger)
 	require.NoError(t, err)
 
 	return store, func() {
@@ -81,6 +74,6 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 }
 
 // CleanUp drops all required tables from the store, useful for testing.
-func CleanUp(ctx context.Context, s *ridcrdb.Store) error {
+func CleanUp(ctx context.Context, s *ridc.Store) error {
 	return s.CleanUp(ctx)
 }
