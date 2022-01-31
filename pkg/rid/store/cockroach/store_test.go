@@ -3,6 +3,7 @@ package cockroach
 import (
 	"context"
 	"errors"
+	"log"
 	"testing"
 	"time"
 
@@ -50,6 +51,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 }
 
 func newStore(ctx context.Context, t *testing.T, connectParameters cockroach.ConnectParameters) (*Store, error) {
+	log.Println("My connectionParams: ", connectParameters)
 	db, err := cockroach.ConnectTo(ctx, connectParameters)
 	require.NoError(t, err)
 
