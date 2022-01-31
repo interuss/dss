@@ -150,7 +150,7 @@ func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
 func ConnectTo(ctx context.Context, connectParameters ConnectParameters) (*DB, error) {
 	uri, err := connectParameters.BuildURI()
 	fmt.Println("My url: ", uri)
-	log.Println("My url: ", uri)
+	log.Println("My params: ", connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building CockroachDB connection URI")
 	}
