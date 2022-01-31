@@ -131,9 +131,9 @@ test:
 test-cockroach: cleanup-test-cockroach
 	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v21.2.3 start-single-node --insecure > /dev/null
 	go run ./cmds/db-manager/main.go --schemas_dir ./build/deploy/db_schemas/rid --db_version latest --cockroach_host localhost
-	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --schemas_dir ./build/deploy/db_schemas/rid
-	go test -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --schemas_dir ./build/deploy/db_schemas/scd
-	go test -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --schemas_dir ./build/deploy/db_schemas/rid --cockroach_db_name rid
+	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid
+	go test -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root
+	go test -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 
