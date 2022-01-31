@@ -32,13 +32,15 @@ func init() {
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	connectParameters := flags.ConnectParameters()
+	log.Println("My connectionParams: ", connectParameters)
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
 	} else {
 		if !(connectParameters.DBName == "rid" || connectParameters.DBName == "scd") {
-			connectParameters.DBName = ""
+			connectParameters.DBName = "rid"
 		}
 	}
+	log.Println("My connectionParams 2: ", connectParameters)
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
@@ -51,7 +53,6 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 }
 
 func newStore(ctx context.Context, t *testing.T, connectParameters cockroach.ConnectParameters) (*Store, error) {
-	log.Println("My connectionParams: ", connectParameters)
 	db, err := cockroach.ConnectTo(ctx, connectParameters)
 	require.NoError(t, err)
 
