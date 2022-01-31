@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -59,9 +58,6 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 			},
 		}, func() {}
 	}
-	// connectParameters.DBName = ridc.DatabaseName
-	log.Println("My DBName", connectParameters.DBName)
-	connectParameters.DBName = "rid"
 	ridc.DefaultClock = fakeClock
 	ridCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
 	require.NoError(t, err)

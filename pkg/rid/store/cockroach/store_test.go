@@ -3,7 +3,6 @@ package cockroach
 import (
 	"context"
 	"errors"
-	"log"
 	"testing"
 	"time"
 
@@ -32,7 +31,6 @@ func init() {
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	connectParameters := flags.ConnectParameters()
-	log.Println("My connectionParams: ", connectParameters)
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
 	} else {
@@ -40,7 +38,6 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 			connectParameters.DBName = "rid"
 		}
 	}
-	log.Println("My connectionParams 2: ", connectParameters)
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
