@@ -79,11 +79,11 @@ the
 [InterUSS RID automated testing interface](../interfaces/automated-testing/rid)
 injection API.
 
-### mock_riddp
+#### riddp
 
 ![mock_riddp system](../assets/mock_riddp_system.png)
 
-The [mock RID Display Provider](mock_riddp) behaves like an RID Display Provider
+The [mock RID Display Provider](mock_uss) behaves like an RID Display Provider
 that makes remote ID information available to Display Application substitutes
 via the
 [InterUSS RID automated testing interface](../interfaces/automated-testing/rid)

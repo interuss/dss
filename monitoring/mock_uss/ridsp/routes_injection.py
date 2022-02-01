@@ -40,7 +40,7 @@ def create_test(test_id: str) -> Tuple[str, int]:
   t1 += RECENT_POSITIONS_BUFFER
   rect = req_body.get_rect()
   flights_url = '{}/mock/ridsp/v1/uss/flights'.format(webapp.config.get(config.KEY_BASE_URL))
-  mutated_isa = mutate.put_isa(resources.dss_client, rect, t0, t1, flights_url, record.version)
+  mutated_isa = mutate.put_isa(resources.utm_client, rect, t0, t1, flights_url, record.version)
   if not mutated_isa.dss_response.success:
     response = rid.ErrorResponse(message='Unable to create ISA in DSS')
     response['errors'] = mutated_isa.dss_response.errors
@@ -66,7 +66,7 @@ def delete_test(test_id: str) -> Tuple[str, int]:
   record = db.tests[test_id]
 
   # Delete ISA from DSS
-  deleted_isa = mutate.delete_isa(resources.dss_client, record.version, record.isa_version)
+  deleted_isa = mutate.delete_isa(resources.utm_client, record.version, record.isa_version)
   if not deleted_isa.dss_response.success:
     response = rid.ErrorResponse(message='Unable to delete ISA from DSS')
     response['errors'] = deleted_isa.dss_response.errors
