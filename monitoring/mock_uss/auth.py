@@ -1,5 +1,5 @@
 from monitoring.monitorlib import auth_validation
-from monitoring.mock_ridsp import webapp
+from monitoring.mock_uss import webapp
 from . import config
 
 

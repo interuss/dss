@@ -8,9 +8,10 @@ from monitoring.monitorlib import rid
 from monitoring.monitorlib.mutate import rid as mutate
 from monitoring.monitorlib.rid_automated_testing import injection_api
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.mock_ridsp import webapp
-from monitoring.mock_ridsp.auth import requires_scope
-from . import config, database, resources
+from monitoring.mock_uss import webapp
+from monitoring.mock_uss.auth import requires_scope
+from monitoring.mock_uss import config, resources
+from . import database
 from .database import db
 
 
@@ -19,7 +20,7 @@ from .database import db
 RECENT_POSITIONS_BUFFER = datetime.timedelta(seconds=60.2)
 
 
-@webapp.route('/injection/tests/<test_id>', methods=['PUT'])
+@webapp.route('/ridsp/injection/tests/<test_id>', methods=['PUT'])
 @requires_scope([injection_api.SCOPE_RID_QUALIFIER_INJECT])
 def create_test(test_id: str) -> Tuple[str, int]:
   """Implements test creation in RID automated testing injection API."""
@@ -38,7 +39,7 @@ def create_test(test_id: str) -> Tuple[str, int]:
   (t0, t1) = req_body.get_span()
   t1 += RECENT_POSITIONS_BUFFER
   rect = req_body.get_rect()
-  flights_url = '{}/v1/uss/flights'.format(webapp.config.get(config.KEY_BASE_URL))
+  flights_url = '{}/mock/ridsp/v1/uss/flights'.format(webapp.config.get(config.KEY_BASE_URL))
   mutated_isa = mutate.put_isa(resources.dss_client, rect, t0, t1, flights_url, record.version)
   if not mutated_isa.dss_response.success:
     response = rid.ErrorResponse(message='Unable to create ISA in DSS')
@@ -54,7 +55,7 @@ def create_test(test_id: str) -> Tuple[str, int]:
   return flask.jsonify(injection_api.ChangeTestResponse(version=record.version, injected_flights=record.flights))
 
 
-@webapp.route('/injection/tests/<test_id>', methods=['DELETE'])
+@webapp.route('/ridsp/injection/tests/<test_id>', methods=['DELETE'])
 @requires_scope([injection_api.SCOPE_RID_QUALIFIER_INJECT])
 def delete_test(test_id: str) -> Tuple[str, int]:
   """Implements test deletion in RID automated testing injection API."""
