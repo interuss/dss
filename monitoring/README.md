@@ -67,11 +67,13 @@ OAuth server](../cmds/dummy-oauth) which grants properly-formatted access tokens
 (which can be validated against the
 [test public key](../build/test-certs/auth2.pem)) to anyone requesting them.
 
-### mock_ridsp
+### mock_uss
+
+#### ridsp
 
 ![mock_ridsp system](../assets/mock_ridsp_system.png)
 
-The [mock RID Service Provider](mock_ridsp) behaves like an RID Service Provider
+The [mock RID Service Provider](mock_uss) behaves like an RID Service Provider
 which accepts input flight data (as would normally come from an operator) via
 the
 [InterUSS RID automated testing interface](../interfaces/automated-testing/rid)

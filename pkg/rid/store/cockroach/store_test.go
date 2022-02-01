@@ -54,9 +54,10 @@ func newStore(ctx context.Context, t *testing.T, connectParameters cockroach.Con
 	require.NoError(t, err)
 
 	return &Store{
-		db:     db,
-		logger: logging.Logger,
-		clock:  fakeClock,
+		db:           db,
+		logger:       logging.Logger,
+		clock:        fakeClock,
+		DatabaseName: "rid",
 	}, nil
 }
 

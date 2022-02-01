@@ -135,7 +135,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8071/ridsp/v1/uss/flights/a3423b-213401-0023/details",
+					"raw": "http://localhost:8071/mock/ridsp/v1/uss/flights/a3423b-213401-0023/details",
 					"protocol": "http",
 					"host": [
 						"localhost"

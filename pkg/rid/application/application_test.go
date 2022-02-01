@@ -66,7 +66,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	require.NoError(t, err)
 	logger.Info("using cockroachDB.")
 
-	store, err := ridc.NewStore(ctx, ridCrdb, logger)
+	store, err := ridc.NewStore(ctx, ridCrdb, "rid", logger)
 	require.NoError(t, err)
 
 	return store, func() {

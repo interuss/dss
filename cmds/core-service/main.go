@@ -60,6 +60,10 @@ var (
 	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
+const (
+	codeRetryable = stacktrace.ErrorCode(1)
+)
+
 func getDBStats(ctx context.Context, db *cockroach.DB, databaseName string) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 	statsPtr := db.Pool.Stat()
@@ -74,7 +78,7 @@ func getDBStats(ctx context.Context, db *cockroach.DB, databaseName string) {
 	stats["MaxConns"] = strconv.Itoa(int(statsPtr.MaxConns()))
 	stats["TotalConns"] = strconv.Itoa(int(statsPtr.TotalConns()))
 	if stats["TotalConns"] == "0" {
-		logger.Panic("Failed periodic DB Ping, panic to force restart", zap.String("Database", databaseName))
+		logger.Warn("Failed periodic DB Ping (TotalConns=0)", zap.String("Database", databaseName))
 	} else {
 		logger.Info("Successful periodic DB Ping ", zap.String("Database", databaseName))
 	}
@@ -103,23 +107,32 @@ func createKeyResolver() (auth.KeyResolver, error) {
 
 func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid.Server, error) {
 	connectParameters := flags.ConnectParameters()
-	connectParameters.DBName = ridc.DatabaseName
+	connectParameters.DBName = "rid"
 	ridCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
 	if err != nil {
+		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
+		}
 		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	ridStore, err := ridc.NewStore(ctx, ridCrdb, logger)
+	ridStore, err := ridc.NewStore(ctx, ridCrdb, connectParameters.DBName, logger)
 	if err != nil {
-		// try DatabaseName with defaultdb for older versions.
-		ridc.DatabaseName = "defaultdb"
-		connectParameters.DBName = ridc.DatabaseName
+		// try DBName of defaultdb for older versions.
+		ridCrdb.Pool.Close()
+		connectParameters.DBName = "defaultdb"
 		ridCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database for older version <defaultdb>; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 		}
-		ridStore, err = ridc.NewStore(ctx, ridCrdb, logger)
+		ridStore, err = ridc.NewStore(ctx, ridCrdb, connectParameters.DBName, logger)
 		if err != nil {
+			// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
+			if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
+				ridCrdb.Pool.Close()
+				return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
+			}
 			return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
 		}
 	}
@@ -133,13 +146,13 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
 	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
-	if _, err := ridCron.AddFunc("@every 1m", func() { getDBStats(ctx, ridCrdb, ridc.DatabaseName) }); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", ridc.DatabaseName)
+	if _, err := ridCron.AddFunc("@every 1m", func() { getDBStats(ctx, ridCrdb, connectParameters.DBName) }); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", connectParameters.DBName)
 	}
 
 	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
 	if _, err = ridCron.AddJob(*garbageCollectorSpec, cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", ridc.DatabaseName)
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", connectParameters.DBName)
 	}
 	ridCron.Start()
 
@@ -148,6 +161,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		Timeout:    *timeout,
 		Locality:   locality,
 		EnableHTTP: *enableHTTP,
+		Cron:       ridCron,
 	}, nil
 }
 
@@ -158,6 +172,17 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
+
+	scdStore, err := scdc.NewStore(ctx, scdCrdb, logger)
+	if err != nil {
+		// TODO: More robustly detect failure to create SCD server is due to a problem that may be temporary
+		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database \"scd\" does not exist") {
+			scdCrdb.Pool.Close()
+			return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for strategic conflict detection store")
+		}
+		return nil, stacktrace.Propagate(err, "Failed to create strategic conflict detection store")
+	}
+
 	// schedule period tasks for SCD Server
 	scdCron := cron.New()
 	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
@@ -166,11 +191,6 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	}
 
 	scdCron.Start()
-
-	scdStore, err := scdc.NewStore(ctx, scdCrdb, logger)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create strategic conflict detection store")
-	}
 
 	return &scd.Server{
 		Store:      scdStore,
@@ -189,13 +209,6 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 		// correctly.
 		logger.Warn("missing required --accepted_jwt_audiences")
 	}
-
-	l, err := net.Listen("tcp", address)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error attempting to listen at %s", address)
-	}
-	// l does not need to be closed manually. Instead, the grpc Server instance owning
-	// l will close it on a graceful stop.
 
 	var (
 		ridServer *rid.Server
@@ -219,6 +232,7 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	if *enableSCD {
 		server, err := createSCDServer(ctx, logger)
 		if err != nil {
+			ridServer.Cron.Stop()
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}
 		scdServer = server
@@ -297,6 +311,12 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 			}
 		}
 	}()
+	l, err := net.Listen("tcp", address)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error attempting to listen at %s", address)
+	}
+	// l does not need to be closed manually. Instead, the grpc Server instance owning
+	// l will close it on a graceful stop.
 	return s.Serve(l)
 }
 
@@ -337,8 +357,23 @@ func main() {
 		}
 	}
 
-	if err := RunGRPCServer(ctx, cancel, *address, *locality); err != nil {
-		logger.Panic("Failed to execute service", zap.Error(err))
+	backoffs := []time.Duration{
+		5 * time.Second, 15 * time.Second, 1 * time.Minute, 1 * time.Minute,
+		1 * time.Minute, 5 * time.Minute}
+	backoff := 0
+	for {
+		if err := RunGRPCServer(ctx, cancel, *address, *locality); err != nil {
+			if stacktrace.GetCode(err) == codeRetryable {
+				logger.Info(fmt.Sprintf("Prerequisites not yet satisfied; waiting %ds to retry...", backoffs[backoff]/1000000000), zap.Error(err))
+				time.Sleep(backoffs[backoff])
+				if backoff < len(backoffs)-1 {
+					backoff++
+				}
+				continue
+			}
+			logger.Panic("Failed to execute service", zap.Error(err))
+		}
+		break
 	}
 
 	logger.Info("Shutting down gracefully")
