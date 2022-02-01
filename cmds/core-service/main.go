@@ -78,7 +78,7 @@ func getDBStats(ctx context.Context, db *cockroach.DB, databaseName string) {
 	stats["MaxConns"] = strconv.Itoa(int(statsPtr.MaxConns()))
 	stats["TotalConns"] = strconv.Itoa(int(statsPtr.TotalConns()))
 	if stats["TotalConns"] == "0" {
-		logger.Panic("Failed periodic DB Ping with TotalConns=0, panic to force restart", zap.String("Database", databaseName))
+		logger.Warn("Failed periodic DB Ping (TotalConns=0)", zap.String("Database", databaseName))
 	} else {
 		logger.Info("Successful periodic DB Ping ", zap.String("Database", databaseName))
 	}

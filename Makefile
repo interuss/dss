@@ -117,10 +117,13 @@ protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpb/rid.pb.gw.go pkg/
 
 # --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
 .PHONY: apis
-apis: dummy_oauth_api
+apis: example_apis dummy_oauth_api
 
 openapi-to-go-server:
 	docker image build -t interuss/openapi-to-go-server ./interfaces/openapi-to-go-server
+
+example_apis: openapi-to-go-server
+	$(CURDIR)/interfaces/openapi-to-go-server/generate_example.sh
 
 dummy_oauth_api: openapi-to-go-server
 	docker container run -it \
