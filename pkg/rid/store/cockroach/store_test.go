@@ -65,8 +65,9 @@ func newStore(ctx context.Context) (*Store, error) {
 		db: &cockroach.DB{
 			Pool: db,
 		},
-		logger: logging.Logger,
-		clock:  fakeClock,
+		logger:       logging.Logger,
+		clock:        fakeClock,
+		DatabaseName: "rid",
 	}, nil
 }
 

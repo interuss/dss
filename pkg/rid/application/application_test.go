@@ -71,7 +71,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	cdb := &cockroach.DB{
 		Pool: db,
 	}
-	store, err := ridcrdb.NewStore(ctx, cdb, logger)
+	store, err := ridcrdb.NewStore(ctx, cdb, "rid", logger)
 	require.NoError(t, err)
 
 	return store, func() {
