@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-${SCRIPT_DIR}/run_locally_base.sh
+"${SCRIPT_DIR}/run_locally_base.sh"
 
 AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
