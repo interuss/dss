@@ -435,6 +435,158 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "RID display provider",
+			"item": [
+				{
+					"name": "Get token from Dummy OAuth",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									"",
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"production_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"uss_id\", \"uss1\");",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8085/token?grant_type=client_credentials&sub=uss1&intended_audience=host.docker.internal&issuer=dummy&scope=dss.read.identification_service_areas rid.inject_test_data",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"token"
+							],
+							"query": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials"
+								},
+								{
+									"key": "sub",
+									"value": "uss1"
+								},
+								{
+									"key": "intended_audience",
+									"value": "host.docker.internal"
+								},
+								{
+									"key": "issuer",
+									"value": "dummy"
+								},
+								{
+									"key": "scope",
+									"value": "dss.read.identification_service_areas rid.inject_test_data"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flights in mock_ridsp test area",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8073/riddp/observation/display_data?view=34.122,-118.453,34.125,-118.458",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8073",
+							"path": [
+								"riddp",
+								"observation",
+								"display_data"
+							],
+							"query": [
+								{
+									"key": "view",
+									"value": "34.122,-118.453,34.125,-118.458"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight details from mock_ridsp test data",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8073/riddp/observation/display_data/a3423b-213401-0023",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8073",
+							"path": [
+								"riddp",
+								"observation",
+								"display_data",
+								"a3423b-213401-0023"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
