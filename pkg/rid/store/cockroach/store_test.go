@@ -3,25 +3,22 @@ package cockroach
 import (
 	"context"
 	"errors"
-	"flag"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/cockroach/flags"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	storeURI  = flag.String("store-uri", "", "URI pointing to a Cockroach node")
 	fakeClock = clockwork.NewFakeClock()
 	startTime = fakeClock.Now().Add(-time.Minute)
 	endTime   = fakeClock.Now().Add(time.Hour)
@@ -33,17 +30,18 @@ func init() {
 }
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
-	if len(*storeURI) == 0 {
+	connectParameters := flags.ConnectParameters()
+	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
 	} else {
-		if !(strings.Contains(*storeURI, "rid") || strings.Contains(*storeURI, "scd")) {
-			*storeURI = strings.Replace(*storeURI, "?sslmode", "/rid?sslmode", 1)
+		if !(connectParameters.DBName == "rid" || connectParameters.DBName == "scd") {
+			connectParameters.DBName = "rid"
 		}
 	}
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
-	store, err := newStore(ctx)
+	store, err := newStore(ctx, t, connectParameters)
 	require.NoError(t, err)
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
@@ -51,20 +49,12 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newStore(ctx context.Context) (*Store, error) {
-	config, err := pgxpool.ParseConfig(*storeURI)
-	if err != nil {
-		return nil, err
-	}
-	db, err := pgxpool.ConnectConfig(ctx, config)
-	if err != nil {
-		return nil, err
-	}
+func newStore(ctx context.Context, t *testing.T, connectParameters cockroach.ConnectParameters) (*Store, error) {
+	db, err := cockroach.ConnectTo(ctx, connectParameters)
+	require.NoError(t, err)
 
 	return &Store{
-		db: &cockroach.DB{
-			Pool: db,
-		},
+		db:     db,
 		logger: logging.Logger,
 		clock:  fakeClock,
 	}, nil
