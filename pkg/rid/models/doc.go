@@ -1,3 +1,3 @@
-// Package models bundles up types and functions used for performing
-// CRUD operations on RID DB.
+// Package models contains business objects and logic for RID along with function
+// to convert to and from API objects.
 package models

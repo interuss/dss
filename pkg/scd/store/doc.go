@@ -1,3 +1,3 @@
-// Package store provides the interface to obtain Repos, to interact with
-// the SCD backing store.
+// Package store defines interfaces that every RID Store implementation,
+// acting on an SCD Repository, must implement.
 package store
