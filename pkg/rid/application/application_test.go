@@ -58,6 +58,9 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 			},
 		}, func() {}
 	}
+	if !(connectParameters.DBName == "rid" || connectParameters.DBName == "scd") {
+		connectParameters.DBName = "rid"
+	}
 	ridc.DefaultClock = fakeClock
 	ridCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
 	require.NoError(t, err)
