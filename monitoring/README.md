@@ -73,7 +73,7 @@ OAuth server](../cmds/dummy-oauth) which grants properly-formatted access tokens
 
 ![mock_ridsp system](../assets/mock_ridsp_system.png)
 
-The [mock RID Service Provider](mock_ridsp) behaves like an RID Service Provider
+The [mock RID Service Provider](mock_uss) behaves like an RID Service Provider
 which accepts input flight data (as would normally come from an operator) via
 the
 [InterUSS RID automated testing interface](../interfaces/automated-testing/rid)
