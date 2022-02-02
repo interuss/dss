@@ -8,9 +8,9 @@ from monitoring.monitorlib import geo, rid
 from monitoring.monitorlib.fetch import rid as fetch
 from monitoring.monitorlib.rid_automated_testing import observation_api
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.mock_riddp import webapp
-from monitoring.mock_riddp.auth import requires_scope
-from . import database, resources
+from monitoring.mock_uss import resources, webapp
+from monitoring.mock_uss.auth import requires_scope
+from . import database
 from .database import db
 
 
@@ -58,7 +58,7 @@ def _make_flight_observation(flight: rid.RIDFlight, view: s2sphere.LatLngRect) -
     recent_paths=[observation_api.Path(positions=path) for path in paths])
 
 
-@webapp.route('/observation/display_data', methods=['GET'])
+@webapp.route('/riddp/observation/display_data', methods=['GET'])
 @requires_scope([rid.SCOPE_READ])
 def display_data() -> Tuple[str, int]:
   """Implements retrieval of current display data per automated testing API."""
@@ -115,7 +115,7 @@ def display_data() -> Tuple[str, int]:
     return 'Cluster response not yet implemented', 500
 
 
-@webapp.route('/observation/display_data/<flight_id>', methods=['GET'])
+@webapp.route('/riddp/observation/display_data/<flight_id>', methods=['GET'])
 @requires_scope([rid.SCOPE_READ])
 def flight_details(flight_id: str) -> Tuple[str, int]:
   """Implements get flight details endpoint per automated testing API."""

@@ -1,5 +1,6 @@
+from enum import Enum
 from monitoring.monitorlib.typing import ImplicitDict
-from typing import List
+from typing import List, Optional
 from monitoring.monitorlib.scd import Volume4D
 
 SCOPE_SCD_QUALIFIER_INJECT = 'utm.inject_test_data'
@@ -22,15 +23,15 @@ class FlightAuthorisationData(ImplicitDict):
     
     uas_serial_number: str
     operation_mode: str
-    operation_category: str
+    operation_category: Optional[str]
     uas_class: str
     identification_technologies: List[str]
-    uas_type_certificate: str
+    uas_type_certificate: Optional[str]
     connectivity_methods: List[str]
     endurance_minutes: int
     emergency_procedure_url: str
     operator_id: str
-    uas_id: str    
+    uas_id: Optional[str]
 
 ### End of definitions around flight authorisation data
 
@@ -39,7 +40,15 @@ class InjectFlightRequest(ImplicitDict):
     operational_intent: OperationalIntentTestInjection
     flight_authorisation: FlightAuthorisationData
 
+
+class InjectFlightResult(str, Enum):
+    Planned = 'Planned'
+    Rejected = 'Rejected'
+    ConflictWithFlight = 'ConflictWithFlight'
+    Failed = 'Failed'
+
+
 class InjectFlightResponse(ImplicitDict):
     ''' A class to hold test flight submission response '''
-    result: str
-    operational_intent_id: str
+    result: InjectFlightResult
+    operational_intent_id: Optional[str]

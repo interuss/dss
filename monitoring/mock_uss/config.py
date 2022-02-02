@@ -27,7 +27,7 @@ class Config(object):
   TOKEN_PUBLIC_KEY = auth_validation.fix_key(
     os.environ.get(ENV_KEY_PUBLIC_KEY, '')).encode('utf-8')
   TOKEN_AUDIENCE = os.environ.get(ENV_KEY_TOKEN_AUDIENCE, '')
-  USS_BASE_URL = os.environ[ENV_KEY_BASE_URL]
+  USS_BASE_URL = os.environ.get(ENV_KEY_BASE_URL, None)
   AUTH_SPEC = os.environ[ENV_KEY_AUTH]
   SERVICES = set(svc.strip().lower() for svc in os.environ.get(ENV_KEY_SERVICES, '').split(','))
   DSS_URL = os.environ[ENV_KEY_DSS]

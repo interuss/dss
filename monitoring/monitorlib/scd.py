@@ -165,8 +165,8 @@ class Time(ImplicitDict):
 
 class Volume3D(ImplicitDict):
     '''A class to hold Volume3D objects '''
-    outline_circle: Circle
-    outline_polygon: Polygon
+    outline_circle: Optional[Circle]
+    outline_polygon: Optional[Polygon]
     altitude_lower: Altitude
     altitude_upper: Altitude
 

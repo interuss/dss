@@ -1,6 +1,6 @@
 import arrow
 import datetime
-from typing import get_args, get_origin, get_type_hints, Dict, Optional, Type, Union
+from typing import get_args, get_origin, get_type_hints, Dict, Literal, Optional, Type, Union
 
 import pytimeparse
 
@@ -187,6 +187,12 @@ def _parse_value(value, value_type: Type):
         return None
       else:
         return _parse_value(value, arg_types[0])
+
+    elif generic_type is Literal and len(arg_types) == 1:
+        # Type is a Literal (parsed value must match specified value)
+        if value != arg_types[0]:
+            raise ValueError('Value {} does not match required Literal {}'.format(value, arg_types[0]))
+        return value
 
     else:
       raise NotImplementedError('Automatic parsing of {} type is not yet implemented'.format(value_type))
