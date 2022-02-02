@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedTimeDelta
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
 from monitoring.uss_qualifier.common_data_definitions import Severity
 
@@ -42,6 +42,9 @@ class InjectionTarget(ImplicitDict):
 
 class FlightInjectionAttempt(ImplicitDict):
     """All information necessary to attempt to create a flight in a USS and to evaluate the outcome of that attempt"""
+    reference_time: str
+    """A time to hold when the test data was created, it will be updated to reflect when the test data was submitted """
+
     test_injection: InjectFlightRequest
     """Definition of the flight to be injected"""
 
@@ -59,3 +62,6 @@ class AutomatedTest(ImplicitDict):
 
     injection_attempts: List[FlightInjectionAttempt]
     """Details of flight injections into USSs that should be attempted"""
+
+    flight_plan_delay : StringBasedTimeDelta = StringBasedTimeDelta('3m')
+    """The delay when the USS under test should attempt to process the test data, the test executor will use this field to update timestamps in the generated data """

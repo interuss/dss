@@ -196,8 +196,8 @@ class ProximateOperationalIntentGenerator():
         
         return flight_volume_4d
     
-def generate_injection_operational_intents(astm_4d_volume:Volume4D) -> OperationalIntentTestInjection:
-    """A method to generate Operational Intent references given a list of Volume 4Ds """        
+def generate_injection_operational_intent(astm_4d_volume:Volume4D) -> OperationalIntentTestInjection:
+    """A method to generate Operational Intent injection  """        
     current_operational_intent_reference = OperationalIntentTestInjection(volumes = [astm_4d_volume], state = 'Accepted', off_nominal_volumes = [], priority =0)            
     return current_operational_intent_reference
 
@@ -209,14 +209,11 @@ class KnownIssuesAcceptableResultFieldGenerator():
         self.expected_flight_authorisation_processing_result = expected_flight_authorisation_processing_result
         self.expected_operational_intent_processing_result = expected_operational_intent_processing_result        
         self.all_test_results = {expected_flight_authorisation_processing_result, expected_operational_intent_processing_result}
-            
-    def generate_acceptable_result(self)-> List[str]: 
-        """The test executor submits two seperate datasets and two seperate tests, this method normalizes the expected outputs of the two tests"""
-        
+        self.acceptable_results = list(self.all_test_results)
+
         if "Planned" in self.all_test_results and len(self.all_test_results) != 1:
-            self.all_test_results.remove("Planned")
-            
-        return list(self.all_test_results)
+            self.acceptable_results.remove("Planned")
+
 
     def generate_known_issue_fields(self, incorrect_field:str = None)-> Dict[str, KnownIssueFields]: 
         """A method to generate messages for the user to take remedial actions """
@@ -259,7 +256,7 @@ class KnownIssuesAcceptableResultFieldGenerator():
                                                               relevant_requirements = ["ANNEX IV of Commission Implementing Regulation (EU) 2021/664, requirement 1"], 
                                                               severity = "High", 
                                                               subject="UAS Serial Number provided is incorrect", 
-                                                              summary ="The UAS serial number provided in the injection attempt was incorrect", 
+                                                              summary ="Flight created with invalid UAS serial number", 
                                                               details = "The UAS serial number is not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")     
 
                     all_known_issue_fields["Planned"] = if_planned_explanation
@@ -269,7 +266,7 @@ class KnownIssuesAcceptableResultFieldGenerator():
                                                               relevant_requirements = ["ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1"], 
                                                               severity = "High", 
                                                               subject="Operator Registration Number provided is incorrect", 
-                                                              summary ="The Operator Registration number provided in the injection attempt was incorrect", 
+                                                              summary ="Flight created with invalid Operator Registration Number", 
                                                               details = "The UAS serial number is not as expressed as described in the EN4709-02 standard should be rejected.")
 
                     all_known_issue_fields["Planned"] = if_planned_explanation
@@ -324,11 +321,12 @@ def generate_flight_injection_attempts(num_injections:int = 2) -> List[FlightInj
 
         geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
 
-        flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)            
+        flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)       
+        reference_time = my_operational_intent_generator.now.isoformat()
     
         flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
         
-        operational_intent_test_injection = generate_injection_operational_intents(astm_4d_volume = flight_volume)
+        operational_intent_test_injection = generate_injection_operational_intent(astm_4d_volume = flight_volume)
     
         inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
         
@@ -338,13 +336,13 @@ def generate_flight_injection_attempts(num_injections:int = 2) -> List[FlightInj
         my_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = expected_flight_authorisation_processing_result,expected_operational_intent_processing_result = expected_operational_intent_processing_result)
         all_incorrect_result_details = my_known_issues_acceptable_result_generator.generate_known_issue_fields(incorrect_field= incorrect_field)
 
-        acceptable_results = my_known_issues_acceptable_result_generator.generate_acceptable_result()
-
+        acceptable_results = my_known_issues_acceptable_result_generator.acceptable_results
+        
         injection_target = InjectionTarget(uss_role = "Submitting USS")
         
         known_responses = KnownResponses(acceptable_results=acceptable_results, incorrect_result_details= all_incorrect_result_details)
         
-        flight_injection_attempt = FlightInjectionAttempt(test_injection = inject_flight_request, known_responses = [known_responses],injection_target = injection_target)
+        flight_injection_attempt = FlightInjectionAttempt(reference_time = reference_time, test_injection = inject_flight_request, known_responses = [known_responses],injection_target = injection_target)
         
         flight_injection_attempts.append(flight_injection_attempt)
     
@@ -360,7 +358,7 @@ def write_automated_test_to_disk(output_path:os.path, flight_injection_attempts:
     output_subdirectories = Path(output_directory, "autmated_test")        
     output_subdirectories.mkdir(parents=True, exist_ok=True)       
 
-    automated_test_data = AutomatedTest(injection_attempts = flight_injection_attempts)
+    automated_test_data = AutomatedTest(name="Nominal Strategic co-ordination", injection_attempts = flight_injection_attempts)
         
     automated_test_file_name = "automated_test_%s.json" % str(1)  # Avoid Zero based numbering           
     automated_test_file = Path(output_subdirectories, automated_test_file_name)
