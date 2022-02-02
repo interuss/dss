@@ -1,0 +1,81 @@
+openapi: 3.0.2
+info:
+  title: Dummy OAuth Provider
+  version: 1.0.0
+  description: >-
+    This interface exposes the ability to generate OAuth tokens usable by the
+    DSS according to parameters specified by the client.
+
+components:
+  schemas:
+    TokenResponse:
+      type: object
+      required:
+      - access_token
+      properties:
+        access_token:
+          description: JWT that may be used as a Bearer token to authorize operations on an appropriately-configured DSS instance
+          type: string
+    BadRequestResponse:
+      type: object
+      properties:
+        message:
+          description: Human-readable message describing problem with request
+          type: string
+
+paths:
+  /token:
+    get:
+      parameters:
+      - name: intended_audience
+        in: query
+        required: true
+        description: Fully-qualified domain name where the service for which this access token will be used is hosted.  The `aud` claim will be populated with this value.
+        schema:
+          type: string
+        example: uss.example.com
+      - name: scope
+        in: query
+        required: true
+        description: Scope or scopes that should be granted in the access token.  Multiple scopes can be delimited by spaces (%20) in a single value.  The `scope` claim will be populated with all requested scopes.
+        schema:
+          type: string
+        example: dss.read.identification_service_areas
+      - name: issuer
+        in: query
+        required: false
+        description: Identity of the issuer of the token.  The `iss` claim will be populated with this value.
+        schema:
+          type: string
+        example: dummy_oauth
+      - name: expire
+        in: query
+        required: false
+        description: Unix timestamp (seconds since epoch) of the time this access token should expire.  If not specified, defaults to an hour from time of token creation.
+        schema:
+          type: integer
+          format: int64
+        example: 1532714469
+      - name: sub
+        in: query
+        required: true
+        description: Identity of client/subscriber requesting access token.  The `sub` claim will be populated with this value.
+        schema:
+          type: string
+        example: uss1
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+          description: >-
+            The requested token was generated successfully
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+          description: >-
+            The request was not properly formed
+      summary: Generate an access token

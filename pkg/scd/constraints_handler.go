@@ -2,7 +2,6 @@ package scd
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
@@ -12,6 +11,7 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v4"
 )
 
 // DeleteConstraintReference deletes a single constraint ref for a given ID at
@@ -34,7 +34,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		// Make sure deletion request is valid
 		old, err := r.GetConstraint(ctx, id)
 		switch {
-		case err == sql.ErrNoRows:
+		case err == pgx.ErrNoRows:
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 		case err != nil:
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
@@ -117,7 +117,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		constraint, err := r.GetConstraint(ctx, id)
 		switch {
-		case err == sql.ErrNoRows:
+		case err == pgx.ErrNoRows:
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 		case err != nil:
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
@@ -217,7 +217,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ov
 		// Get existing Constraint, if any, and validate request
 		old, err := r.GetConstraint(ctx, id)
 		switch {
-		case err == sql.ErrNoRows:
+		case err == pgx.ErrNoRows:
 			// No existing Constraint; verify that creation was requested
 			if ovn != "" {
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %s does not exist", ovn)

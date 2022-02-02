@@ -8,8 +8,8 @@ import s2sphere
 from monitoring.monitorlib import geo, rid
 from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlight
 from monitoring.monitorlib.typing import StringBasedDateTime
-from monitoring.mock_ridsp import webapp
-from monitoring.mock_ridsp.auth import requires_scope
+from monitoring.mock_uss import webapp
+from monitoring.mock_uss.auth import requires_scope
 from .database import db
 
 
@@ -41,7 +41,7 @@ def _get_report(flight: TestFlight, t_request: datetime.datetime,
   return result
 
 
-@webapp.route('/ridsp/v1/uss/identification_service_areas/<id>', methods=['POST'])
+@webapp.route('/mock/ridsp/v1/uss/identification_service_areas/<id>', methods=['POST'])
 @requires_scope([rid.SCOPE_WRITE])
 def notify_isa(id: str):
   return flask.jsonify({
@@ -49,7 +49,7 @@ def notify_isa(id: str):
   }), 400
 
 
-@webapp.route('/ridsp/v1/uss/flights', methods=['GET'])
+@webapp.route('/mock/ridsp/v1/uss/flights', methods=['GET'])
 @requires_scope([rid.SCOPE_READ])
 def flights():
   if 'view' not in flask.request.args:
@@ -76,7 +76,7 @@ def flights():
   return flask.jsonify(rid.GetFlightsResponse(timestamp=StringBasedDateTime(now), flights=flights)), 200
 
 
-@webapp.route('/ridsp/v1/uss/flights/<id>/details', methods=['GET'])
+@webapp.route('/mock/ridsp/v1/uss/flights/<id>/details', methods=['GET'])
 @requires_scope([rid.SCOPE_READ])
 def flight_details(id: str):
   now = arrow.utcnow().datetime
