@@ -40,9 +40,9 @@ format:
 
 .PHONY: lint
 lint:
-	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
-	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all  -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
-	find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
+	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
+	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all --skip-dirs /dss/build/workspace -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
+	find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
 
 pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
@@ -114,6 +114,26 @@ generator:
 
 .PHONY: protos
 protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpb/rid.pb.gw.go pkg/api/v1/scdpb/scd.pb.gw.go
+
+# --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
+.PHONY: apis
+apis: example_apis dummy_oauth_api
+
+openapi-to-go-server:
+	docker image build -t interuss/openapi-to-go-server ./interfaces/openapi-to-go-server
+
+example_apis: openapi-to-go-server
+	$(CURDIR)/interfaces/openapi-to-go-server/generate_example.sh
+
+dummy_oauth_api: openapi-to-go-server
+	docker container run -it \
+		-v $(CURDIR)/interfaces/dummy-oauth/dummy-oauth.yaml:/resources/dummy-oauth.yaml \
+		-v $(CURDIR)/cmds/dummy-oauth:/resources/output \
+		interuss/openapi-to-go-server \
+			--api_import github.com/interuss/dss/cmds/dummy-oauth/api \
+			--api /resources/dummy-oauth.yaml \
+			--api_folder /resources/output/api
+# ---
 
 .PHONY: install-staticcheck
 install-staticcheck:

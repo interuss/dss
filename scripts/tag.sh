@@ -21,4 +21,5 @@ if test -z "${version}"; then
 fi
 
 git tag -a "${version}"
-git push tag "${version}"
+git push origin "${version}"
+

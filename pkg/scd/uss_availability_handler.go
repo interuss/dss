@@ -2,13 +2,13 @@ package scd
 
 import (
 	"context"
-	"database/sql"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v4"
 	"strings"
 )
 
@@ -31,7 +31,7 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Get USS availability from Store
 		ussa, err := r.GetUssAvailability(ctx, id)
-		if err != nil && err != sql.ErrNoRows {
+		if err != nil && err != pgx.ErrNoRows {
 			return stacktrace.Propagate(err, "Could not get USS availability from repo")
 		}
 		if ussa == nil {

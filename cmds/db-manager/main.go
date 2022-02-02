@@ -16,7 +16,6 @@ import (
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/cockroach/flags"
 	"github.com/interuss/stacktrace"
-	_ "github.com/lib/pq"
 )
 
 type MigrationStep struct {
@@ -70,12 +69,12 @@ func main() {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = "postgres" // Use an initial database that is known to always be present
-	crdb, err := cockroach.ConnectTo(connectParameters)
+	crdb, err := cockroach.ConnectTo(context.Background(), connectParameters)
 	if err != nil {
 		log.Panicf("Failed to connect to database with %+v: %v", connectParameters, err)
 	}
 	defer func() {
-		crdb.Close()
+		crdb.Pool.Close()
 	}()
 
 	// Make sure specified database exists
@@ -95,7 +94,7 @@ func main() {
 	if !exists {
 		log.Printf("Database %s does not exist; creating now", dbName)
 		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName)
-		if _, err := crdb.Exec(createDB); err != nil {
+		if _, err := crdb.Pool.Exec(context.Background(), createDB); err != nil {
 			log.Panicf("Failed to create new database %s: %v", dbName, err)
 		}
 	} else {
@@ -148,7 +147,7 @@ func main() {
 		migrationSQL := fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
 
 		// Execute migration step
-		if _, err := crdb.Exec(migrationSQL); err != nil {
+		if _, err := crdb.Pool.Exec(context.Background(), migrationSQL); err != nil {
 			log.Panicf("Failed to execute %s migration step %s: %v", dbName, fullFilePath, err)
 		}
 
@@ -230,7 +229,7 @@ func doesDatabaseExist(crdb *cockroach.DB, database string) (bool, error) {
 		)`
 
 	var exists bool
-	if err := crdb.QueryRow(checkDbQuery, database).Scan(&exists); err != nil {
+	if err := crdb.Pool.QueryRow(context.Background(), checkDbQuery, database).Scan(&exists); err != nil {
 		return false, err
 	}
 

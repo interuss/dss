@@ -12,7 +12,7 @@ def validate_configuration(test_configuration: SCDQualifierTestConfiguration):
 def run_scd_tests(locale: str, test_configuration: SCDQualifierTestConfiguration,
                   auth_spec: str):
     # TODO Replace with actual implementation
-    if locale is 'che':
+    if locale == 'che':
         print("[SCD] Running ASTM and U-Space tests")
     else:
         print("[SCD] Running ASTM tests")

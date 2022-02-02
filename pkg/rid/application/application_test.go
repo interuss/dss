@@ -13,6 +13,7 @@ import (
 	"github.com/interuss/dss/pkg/rid/store"
 	ridcrdb "github.com/interuss/dss/pkg/rid/store/cockroach"
 	dssql "github.com/interuss/dss/pkg/sql"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
@@ -61,11 +62,16 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	ridcrdb.DefaultClock = fakeClock
 	logger.Info("using cockroachDB.")
 
-	// Use a real store.
-	cdb, err := cockroach.Dial(*storeURI)
+	config, err := pgxpool.ParseConfig(*storeURI)
 	require.NoError(t, err)
 
-	store, err := ridcrdb.NewStore(ctx, cdb, logger)
+	db, err := pgxpool.ConnectConfig(ctx, config)
+	require.NoError(t, err)
+
+	cdb := &cockroach.DB{
+		Pool: db,
+	}
+	store, err := ridcrdb.NewStore(ctx, cdb, "rid", logger)
 	require.NoError(t, err)
 
 	return store, func() {

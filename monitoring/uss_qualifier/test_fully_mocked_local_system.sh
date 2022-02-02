@@ -13,7 +13,7 @@ cd "${BASEDIR}/../.." || exit 1
 echo '################################################################################'
 echo '## NOTE: Prerequisites to run this command are:                               ##'
 echo '## 1. Local DSS instance + Dummy OAuth server (/build/dev/run_locally.sh)     ##'
-echo '## 2. Local mock RID service provider (/monitoring/mock_ridsp/run_locally.sh) ##'
+echo '## 2. Local mock RID service provider (/monitoring/mock_uss/run_locally.sh)   ##'
 echo '## 3. Local mock RID display provider (/monitoring/mock_riddp/run_locally.sh) ##'
 echo '################################################################################'
 
@@ -24,18 +24,20 @@ AUTH='--auth DummyOAuth(http://host.docker.internal:8085/token,sub=testing_uss)'
 
 echo '{
   "locale": "che",
-  "injection_targets": [
-    {
-      "name": "uss1",
-      "injection_base_url": "http://host.docker.internal:8071/injection"
-    }
-  ],
-  "observers": [
-    {
-      "name": "uss2",
-      "observation_base_url": "http://host.docker.internal:8073/observation"
-    }
-  ]
+  "rid": {
+    "injection_targets": [
+      {
+        "name": "uss1",
+        "injection_base_url": "http://host.docker.internal:8071/ridsp/injection"
+      }
+    ],
+    "observers": [
+      {
+        "name": "uss2",
+        "observation_base_url": "http://host.docker.internal:8073/observation"
+      }
+    ]
+  }
 }' > ${CONFIG_LOCATION}
 
 RID_QUALIFIER_OPTIONS="$AUTH $CONFIG"
