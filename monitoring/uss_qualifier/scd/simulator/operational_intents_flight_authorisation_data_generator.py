@@ -16,10 +16,10 @@ import shapely.geometry
 import os
 
 class ProximateOperationalIntentGenerator():
-    """ A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. """
+    """A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. """
 
     def __init__(self, minx: float, miny: float, maxx: float, maxy: float, utm_zone:str) -> None:
-        """ Create a ProximateVolumeGenerator within a given geographic bounding box. 
+        """Create a ProximateVolumeGenerator within a given geographic bounding box. 
 
         Once these extents are specified, a grid will be created with two rows. A combination of LineStrings and Polygons will be generated withing these bounds. While linestrings can extend to the full boundaries of the box, polygon areas are generated within the grid. 
 
@@ -54,7 +54,7 @@ class ProximateOperationalIntentGenerator():
         self._generate_grid_cells()
         
     def _generate_grid_cells(self):
-        # Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid.
+        """Compute the box where the flights will be created. For a the sample bounds given, over Bern, Switzerland, a division by 2 produces a cell_size of 0.0025212764739985793, a division of 3 is 0.0016808509826657196 and division by 4 0.0012606382369992897. As the cell size goes smaller more number of flights can be accomodated within the grid. For the study area bounds we build a 3x2 box for six flights by creating 3 column 2 row grid. """
         N_COLS = 3
         N_ROWS = 2
         cell_size_x = (self.maxx - self.minx)/(N_COLS)  # create three columns
@@ -70,7 +70,7 @@ class ProximateOperationalIntentGenerator():
         self.grid_cells = grid_cells
 
     def utm_converter(self, shapely_shape: shapely.geometry, inverse:bool=False) -> shapely.geometry.shape:
-        """ A helper function to convert from lat / lon to UTM coordinates for buffering. tracks. This is the UTM projection (https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system), we use Zone 33T which encompasses Switzerland, this zone has to be set for each locale / city. Adapted from https://gis.stackexchange.com/questions/325926/buffering-geometry-with-points-in-wgs84-using-shapely """
+        """A helper function to convert from lat / lon to UTM coordinates for buffering. tracks. This is the UTM projection (https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system), we use Zone 33T which encompasses Switzerland, this zone has to be set for each locale / city. Adapted from https://gis.stackexchange.com/questions/325926/buffering-geometry-with-points-in-wgs84-using-shapely """
 
         proj = Proj(proj='utm', zone=self.utm_zone, ellps='WGS84', datum='WGS84')
 
@@ -87,7 +87,7 @@ class ProximateOperationalIntentGenerator():
         return shapely.geometry.shape({'type': feature_type, 'coordinates': tuple(new_coordinates)})
 
     def _input_extents_valid(self) -> None:
-        """ This method checks if the input extents are valid i.e. small enough, if the extent is too large, we reject them, at the moment it checks for extents less than 500m x 500m square but can be changed as necessary."""
+        """This method checks if the input extents are valid i.e. small enough, if the extent is too large, we reject them, at the moment it checks for extents less than 500m x 500m square but can be changed as necessary."""
 
         box = shapely.geometry.box(self.minx, self.miny, self.maxx, self.maxy)
         area = abs(self.geod.geometry_area_perimeter(box)[0])
@@ -99,7 +99,7 @@ class ProximateOperationalIntentGenerator():
             raise ValueError('The extents provided are not of the correct size, please provide extents that are less than 500m x 500m and more than 300m x 300m square')
         
     def _generate_random_flight_path(self) -> LineString:
-        """Generate a random flight path. this code uses the `generate_random` method (https://github.com/jazzband/geojson/blob/master/geojson/utils.py#L131) to generate the initial linestring.  """
+        """Generate a random flight path. this code uses the `generate_random` method (https://github.com/jazzband/geojson/blob/master/geojson/utils.py#L131) to generate the initial linestring. """
         
         random_flight_path = geojson.utils.generate_random(featureType = 'LineString', numberVertices=2, boundingBox=[self.minx, self.miny, self.maxx, self.maxy])
 
@@ -114,7 +114,7 @@ class ProximateOperationalIntentGenerator():
         return random_flight_polygon
         
     def _generate_single_flight_geometry(self, geometry_generation_rule:GeometryGenerationRule, injection_number:int) -> Union[LineString, Polygon]:
-        """ A method to generates flight geometry within a geographic bounds. The geometry can be a linestring or a polygon, simple rules for generation can be specificed. At the moment the method check if the geometry should intersect with the control and based on that, linestring / polygons are created """
+        """A method to generates flight geometry within a geographic bounds. The geometry can be a linestring or a polygon, simple rules for generation can be specificed. At the moment the method check if the geometry should intersect with the control and based on that, linestring / polygons are created """
         
         coin_flip = random.choice([0,0,1])         
         if coin_flip:
@@ -142,7 +142,7 @@ class ProximateOperationalIntentGenerator():
         return flight_geometry
 
     def convert_geometry_to_volume(self, flight_geometry:LineString, altitude_of_ground_level_wgs_84:int) -> Volume3D:
-        """ A method to convert a GeoJSON LineString or Polygon to a ASTM outline_polygon object by buffering 15m spatially """
+        """A method to convert a GeoJSON LineString or Polygon to a ASTM outline_polygon object by buffering 15m spatially """
         
         flight_geometry_shp = asShape(flight_geometry)
         flight_geometry_utm = self.utm_converter(flight_geometry_shp)
@@ -168,7 +168,7 @@ class ProximateOperationalIntentGenerator():
         return volume3D
 
     def transform_3d_volume_to_astm_4d(self, volume_3d : Volume3D) -> Volume4D:
-        """ This method converts a 3D Volume to 4D Volume, the flight start time is 3 mins from now  """
+        """This method converts a 3D Volume to 4D Volume, the flight start time is 3 mins from now  """
     
         three_mins_from_now = self.now.shift(minutes = 3)
         eight_mins_from_now = self.now.shift(minutes = 8)
@@ -179,7 +179,7 @@ class ProximateOperationalIntentGenerator():
         return volume_4D
     
     def generate_nominal_test_geometry(self, geometry_generation_rule: GeometryGenerationRule, injection_number: int) -> GeneratedGeometry:
-        """ A method to generate two Volume 4D payloads to submit to the system to be tested.  """                
+        """A method to generate two Volume 4D payloads to submit to the system to be tested.  """                
         
         flight_path_geometry = self._generate_single_flight_geometry(geometry_generation_rule = geometry_generation_rule, injection_number= injection_number)
 
@@ -189,7 +189,7 @@ class ProximateOperationalIntentGenerator():
 
 
     def generate_astm_4d_volumes(self,raw_geometry:GeneratedGeometry, altitude_of_ground_level_wgs_84 :int) -> Volume4D:
-        """ A method to generate ASTM specified Volume 4D payloads to submit to the system to be tested.  """
+        """A method to generate ASTM specified Volume 4D payloads to submit to the system to be tested.  """
         
         flight_volume_3d = self.convert_geometry_to_volume(flight_geometry = raw_geometry.geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
         flight_volume_4d = self.transform_3d_volume_to_astm_4d(volume_3d = flight_volume_3d)
@@ -197,7 +197,7 @@ class ProximateOperationalIntentGenerator():
         return flight_volume_4d
     
 def generate_injection_operational_intents(astm_4d_volume:Volume4D) -> OperationalIntentTestInjection:
-    """ A method to generate Operational Intent references given a list of Volume 4Ds """        
+    """A method to generate Operational Intent references given a list of Volume 4Ds """        
     current_operational_intent_reference = OperationalIntentTestInjection(volumes = [astm_4d_volume], state = 'Accepted', off_nominal_volumes = [], priority =0)            
     return current_operational_intent_reference
 
@@ -305,8 +305,6 @@ def generate_flight_injection_attempts(num_injections:int = 2) -> List[FlightInj
         serial_number = SerialNumber.generate_valid()
         operator_id = OperatorRegistrationNumber.generate_valid()
 
-        # TODO: Code to generate additional fields         
-        
         generate_incorrect_data = random.choice([0,1]) # a flag specify if one of the parameters of the flight_authorisation should be incorrect
         if generate_incorrect_data: # if the flag is on, make the one of the fields in the flight authorisation format incorrect        
             incorrect_field = random.choice(["uas_serial_number","operator_registration_number"]) # Pick a field to make incorrect, TODO: Additional fields can be added
@@ -354,7 +352,7 @@ def generate_flight_injection_attempts(num_injections:int = 2) -> List[FlightInj
     
 
 def write_automated_test_to_disk(output_path:os.path, flight_injection_attempts: List[FlightInjectionAttempt], country_code="che") -> None:
-    """A method to write raw Flight injection attempts to disk so that they can be examined / used in other software and the test executor to disk """
+    """A function to write Flight injection attempts to disk so that they can be examined / used by other software like the test executor """
         
     output_directory = Path(output_path, country_code) 
     # Create test_definition directory if it does not exist        
@@ -373,6 +371,5 @@ def write_automated_test_to_disk(output_path:os.path, flight_injection_attempts:
 if __name__ == '__main__':    
     flight_injection_attempts = generate_flight_injection_attempts()    
     output_path = os.path.join(Path(__file__).parent.absolute(), "../test_definitions")
-
     write_automated_test_to_disk(output_path=output_path,flight_injection_attempts = flight_injection_attempts)
     

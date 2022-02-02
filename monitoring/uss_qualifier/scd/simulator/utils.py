@@ -14,7 +14,7 @@ class OperatorRegistrationNumber(str):
         return self.split('-')[0]
 
     def make_invalid_by_changing_checksum_control(self,prefix='CHE') -> str:
-        ''' A method to generate the Operator Registration number '''
+        """A method to generate the Operator Registration number """
         
         new_random_string = ''.join(random.choice(string.ascii_lowercase) for _ in range(3))
         return OperatorRegistrationNumber(self.checksum_control +'-'+ new_random_string)
