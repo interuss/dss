@@ -1,2 +1,2 @@
-'Migration down from scd 3.1.0 is not yet implemented'
--- TODO: Populate with down migration (issue #574)
+DROP TABLE IF EXISTS scd_uss_availability;
+UPDATE schema_versions set schema_version = 'v3.0.0' WHERE onerow_enforcer = TRUE;
