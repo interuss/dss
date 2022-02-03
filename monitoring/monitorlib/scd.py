@@ -244,6 +244,8 @@ def rect_bounds_of(vol4s: List[Volume4D]) -> s2sphere.LatLngRect:
                 lng_max = max(lng_max, v.lng)
         if 'outline_circle' in vol4.volume:
             circle = vol4.volume.outline_circle
+            if circle.radius.units != 'M':
+                raise ValueError('Unsupported circle radius units: {}'.format(circle.radius.units))
             lat_radius = 360 * circle.radius.value / geo.EARTH_CIRCUMFERENCE_M
             lng_radius = 360 * circle.radius.value / (geo.EARTH_CIRCUMFERENCE_M * math.cos(math.radians(lat_radius)))
             lat_min = min(lat_min, circle.center.lat - lat_radius)
@@ -253,6 +255,16 @@ def rect_bounds_of(vol4s: List[Volume4D]) -> s2sphere.LatLngRect:
     p1 = s2sphere.LatLng.from_degrees(lat_min, lng_min)
     p2 = s2sphere.LatLng.from_degrees(lat_max, lng_max)
     return s2sphere.LatLngRect.from_point_pair(p1, p2)
+
+
+def meter_altitude_bounds_of(vol4s: List[Volume4D]) -> Tuple[float, float]:
+    alt_lo = min(vol4.volume.altitude_lower.value for vol4 in vol4s if 'altitude_lower' in vol4.volume)
+    alt_hi = max(vol4.volume.altitude_upper.value for vol4 in vol4s if 'altitude_upper' in vol4.volume)
+    if not all(vol4.volume.altitude_lower.units == 'M' for vol4 in vol4s if 'altitude_lower' in vol4.volume):
+        raise ValueError('altitude_lower units must always be M')
+    if not all(vol4.volume.altitude_upper.units == 'M' for vol4 in vol4s if 'altitude_upper' in vol4.volume):
+        raise ValueError('altitude_upper units must always be M')
+    return alt_lo, alt_hi
 
 
 def vol4_intersect(vol4_1: Volume4D, vol4_2: Volume4D) -> bool:
@@ -266,8 +278,10 @@ def vol4_intersect(vol4_1: Volume4D, vol4_2: Volume4D) -> bool:
         return False
 
     if 'outline_circle' in vol4_1.volume:
-        p = vol4_1.volume.outline_circle.center
-        ref = s2sphere.LatLng.from_degrees(p.lat, p.lng)
+        circle = vol4_1.volume.outline_circle
+        if circle.radius.units != 'M':
+            raise ValueError('Unsupported circle radius units: {}'.format(circle.radius.units))
+        ref = s2sphere.LatLng.from_degrees(circle.center.lat, circle.center.lng)
         footprint1 = shapely.geometry.Point(0, 0).buffer(vol4_1.volume.outline_circle.radius.value)
     elif 'outline_polygon' in vol4_1.volume:
         p = vol4_1.volume.outline_polygon.vertices[0]
@@ -279,10 +293,11 @@ def vol4_intersect(vol4_1: Volume4D, vol4_2: Volume4D) -> bool:
         raise ValueError('Neither outline_circle nor outline_polygon specified')
 
     if 'outline_circle' in vol4_2.volume:
-        p = vol4_2.volume.outline_circle.center
-        r = vol4_1.volume.outline_circle.radius.value
-        xy = geo.flatten(ref, s2sphere.LatLng.from_degrees(p.lat, p.lng))
-        footprint2 = shapely.geometry.Point(*xy).buffer(r)
+        circle = vol4_2.volume.outline_circle
+        if circle.radius.units != 'M':
+            raise ValueError('Unsupported circle radius units: {}'.format(circle.radius.units))
+        xy = geo.flatten(ref, s2sphere.LatLng.from_degrees(circle.center.lat, circle.center.lng))
+        footprint2 = shapely.geometry.Point(*xy).buffer(circle.radius.value)
     elif 'outline_polygon' in vol4_1.volume:
         footprint2 = shapely.geometry.Polygon(
             geo.flatten(ref, s2sphere.LatLng.from_degrees(v.lat, v.lng))

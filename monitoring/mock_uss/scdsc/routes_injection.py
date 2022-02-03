@@ -42,7 +42,8 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     start_time = scd.start_of(req_body.operational_intent.volumes)
     end_time = scd.end_of(req_body.operational_intent.volumes)
     area = scd.rect_bounds_of(req_body.operational_intent.volumes)
-    vol4 = scd.make_vol4(start_time, end_time, 0, 3048, polygon=scd.make_polygon(latlngrect=area))
+    alt_lo, alt_hi = scd.meter_altitude_bounds_of(req_body.operational_intent.volumes)
+    vol4 = scd.make_vol4(start_time, end_time, alt_lo, alt_hi, polygon=scd.make_polygon(latlngrect=area))
     try:
         op_intents = scd_client.query_operational_intents(resources.utm_client, vol4, db.cached_operations)
     except (ValueError, scd_client.OperationError) as e:
