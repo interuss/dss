@@ -83,7 +83,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
         v2a = op_intent.details.volumes
         v2b = op_intent.details.off_nominal_volumes
         if scd.vol4s_intersect(v1, v2a) or scd.vol4s_intersect(v1, v2b):
-            notes = 'Requested flight intersected {} operational intent {}'.format(op_intent.reference.manager, op_intent.reference.id)
+            notes = 'Requested flight intersected {}\'s operational intent {}'.format(op_intent.reference.manager, op_intent.reference.id)
             return flask.jsonify(InjectFlightResponse(
                 result=InjectFlightResult.ConflictWithFlight, notes=notes)), 200
 

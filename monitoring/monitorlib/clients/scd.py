@@ -30,6 +30,13 @@ def create_operational_intent_reference(utm_client: DSSTestSession, id: str, req
     return ImplicitDict.parse(resp.json(), scd.ChangeOperationalIntentReferenceResponse)
 
 
+def delete_operational_intent_reference(utm_client: DSSTestSession, id: str, ovn: str) -> scd.ChangeOperationalIntentReferenceResponse:
+    resp = utm_client.delete('/dss/v1/operational_intent_references/{}/{}'.format(id, ovn), scope=scd.SCOPE_SC)
+    if resp.status_code != 200:
+        raise OperationError('deleteOperationalIntentReference failed {}:\n{}'.format(resp.status_code, resp.content.decode('utf-8')))
+    return ImplicitDict.parse(resp.json(), scd.ChangeOperationalIntentReferenceResponse)
+
+
 # === USS operations defined in the ASTM API ===
 
 

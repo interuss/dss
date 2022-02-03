@@ -176,6 +176,10 @@ class PutOperationalIntentDetailsParameters(ImplicitDict):
 ################################################################################
 
 
+class DeleteAllFlightsRequest(ImplicitDict):
+    extents: List[Volume4D]
+
+
 def make_vol4(
         t0: Optional[datetime] = None,
         t1: Optional[datetime] = None,

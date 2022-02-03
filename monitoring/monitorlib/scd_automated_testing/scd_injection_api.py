@@ -51,5 +51,5 @@ class InjectFlightResult(str, Enum):
 class InjectFlightResponse(ImplicitDict):
     ''' A class to hold test flight submission response '''
     result: InjectFlightResult
-    notes: str
+    notes: Optional[str]
     operational_intent_id: Optional[str]
