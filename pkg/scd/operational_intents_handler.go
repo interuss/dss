@@ -349,8 +349,12 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 		var sub *scdmodels.Subscription
 		if subscriptionID.Empty() {
 			// Create implicit Subscription
+			subBaseURL := params.GetNewSubscription().GetUssBaseUrl()
+			if subBaseURL == "" {
+				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing uss_base_url in new_subscription")
+			}
 			if !a.EnableHTTP {
-				err := scdmodels.ValidateUSSBaseURL(params.GetNewSubscription().GetUssBaseUrl())
+				err := scdmodels.ValidateUSSBaseURL(subBaseURL)
 				if err != nil {
 					return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
 				}
@@ -364,7 +368,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 				AltitudeLo:                  uExtent.SpatialVolume.AltitudeLo,
 				AltitudeHi:                  uExtent.SpatialVolume.AltitudeHi,
 				Cells:                       cells,
-				USSBaseURL:                  params.GetNewSubscription().GetUssBaseUrl(),
+				USSBaseURL:                  subBaseURL,
 				NotifyForOperationalIntents: true,
 				NotifyForConstraints:        params.GetNewSubscription().GetNotifyForConstraints(),
 				ImplicitSubscription:        true,

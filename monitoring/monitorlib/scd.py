@@ -99,14 +99,14 @@ class Volume3D(ImplicitDict):
     '''A class to hold Volume3D objects '''
     outline_circle: Optional[Circle]
     outline_polygon: Optional[Polygon]
-    altitude_lower: Altitude
-    altitude_upper: Altitude
+    altitude_lower: Optional[Altitude]
+    altitude_upper: Optional[Altitude]
 
 class Volume4D(ImplicitDict):
     '''A class to hold Volume4D objects '''
     volume: Volume3D
-    time_start: Time
-    time_end: Time
+    time_start: Optional[Time]
+    time_end: Optional[Time]
 
 class OperationalIntentReference(ImplicitDict):
     id: str
