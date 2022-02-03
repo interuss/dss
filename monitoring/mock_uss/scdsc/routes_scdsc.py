@@ -3,6 +3,7 @@ import flask
 from monitoring.monitorlib import scd
 from monitoring.mock_uss import webapp
 from monitoring.mock_uss.auth import requires_scope
+from monitoring.mock_uss.scdsc.database import db
 
 
 @webapp.route('/mock/scd/uss/v1/operational_intents/<entityid>', methods=['GET'])
@@ -10,16 +11,29 @@ from monitoring.mock_uss.auth import requires_scope
 def get_operational_intent_details(entityid: str):
     """Implements getOperationalIntentDetails in ASTM SCD API."""
 
-    return flask.jsonify({'message': 'Not yet implemented'}), 500
-
     # Look up entityid in database
-    # TODO: Implement
+    flight = None
+    for f in db.flights.values():
+        if f.op_intent_reference.id == entityid:
+            flight = f
+            break
 
     # If requested operational intent doesn't exist, return 404
-    # TODO: Implement
+    if flight is None:
+        return flask.jsonify(scd.ErrorResponse(message='Operational intent {} not known by this USS'.format(entityid))), 404
 
     # Return nominal response with details
-    # TODO: Implement
+    response = scd.GetOperationalIntentDetailsResponse(
+        operational_intent=scd.OperationalIntent(
+            reference=flight.op_intent_reference,
+            details=scd.OperationalIntentDetails(
+                volumes=flight.op_intent_injection.volumes,
+                off_nominal_volumes=flight.op_intent_injection.off_nominal_volumes,
+                priority=flight.op_intent_injection.priority
+            )
+        )
+    )
+    return flask.jsonify(response), 200
 
 
 @webapp.route('/mock/scd/uss/v1/operational_intents', methods=['POST'])

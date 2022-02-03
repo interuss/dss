@@ -12,5 +12,6 @@ pytimeparse==1.1.8
 pyyaml==5.4
 requests==2.25.1
 s2sphere==0.2.5
+shapely==1.7.1
 termcolor==1.1.0
 aiohttp==3.8.0

@@ -24,6 +24,6 @@ docker run --name mock_uss_scdsc \
   local-interuss/mock_uss \
   gunicorn \
     --preload \
-    --workers=1 \
+    --workers=2 \
     --bind=0.0.0.0:5000 \
     monitoring.mock_uss:webapp
