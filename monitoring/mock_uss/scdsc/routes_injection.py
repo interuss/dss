@@ -47,18 +47,22 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     try:
         op_intents = scd_client.query_operational_intents(resources.utm_client, vol4, db.cached_operations)
     except (ValueError, scd_client.OperationError) as e:
-        # TODO: Add text message to InjectFlightResponse to document reason for outcome
-        print('Error querying operational intents: {}'.format(e))
-        return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Failed)), 200
+        notes = 'Error querying operational intents: {}'.format(e)
+        return flask.jsonify(InjectFlightResponse(
+            result=InjectFlightResult.Failed, notes=notes)), 200
 
     # Check for intersections
     v1 = req_body.operational_intent.volumes
     for op_intent in op_intents:
+        if req_body.operational_intent.priority > op_intent.details.priority:
+            continue
+        # TODO: Allow intersections between same-priority operations when configured to do so
         v2a = op_intent.details.volumes
         v2b = op_intent.details.off_nominal_volumes
         if scd.vol4s_intersect(v1, v2a) or scd.vol4s_intersect(v1, v2b):
-            # TODO: Add text message to InjectFlightResponse to document reason for outcome
-            return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.ConflictWithFlight)), 200
+            notes = 'Requested flight intersected {} operational intent {}'.format(op_intent.reference.manager, op_intent.reference.id)
+            return flask.jsonify(InjectFlightResponse(
+                result=InjectFlightResult.ConflictWithFlight, notes=notes)), 200
 
     # Create operational intent in DSS
     base_url = '{}/mock/scd'.format(webapp.config[config.KEY_BASE_URL])
@@ -75,10 +79,15 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     try:
         result = scd_client.create_operational_intent_reference(resources.utm_client, id, req)
     except (ValueError, scd_client.OperationError) as e:
-        # TODO: Add text message to InjectFlightResponse to document reason for outcome
-        print('Error creating operational intent: {}'.format(e))
-        return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Failed)), 200
-    # TODO: Notify subscribers
+        notes = 'Error creating operational intent: {}'.format(e)
+        return flask.jsonify(InjectFlightResponse(
+            result=InjectFlightResult.Failed, notes=notes)), 200
+    scd_client.notify_subscribers(
+        resources.utm_client, result.operational_intent_reference.id,
+        scd.OperationalIntent(
+            reference=result.operational_intent_reference,
+            details=req_body.operational_intent),
+        result.subscribers)
 
     # Store flight in database
     record = database.FlightRecord(

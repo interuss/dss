@@ -165,6 +165,11 @@ class OperationalIntent(ImplicitDict):
 class GetOperationalIntentDetailsResponse(ImplicitDict):
     operational_intent: OperationalIntent
 
+class PutOperationalIntentDetailsParameters(ImplicitDict):
+    operational_intent_id: str
+    operational_intent: Optional[OperationalIntent]
+    subscriptions: List[SubscriptionState]
+
 ################################################################################
 #################### End of ASTM-standard definitions    #####################
 #################### interfaces/astm-utm/Protocol/utm.yaml #####################

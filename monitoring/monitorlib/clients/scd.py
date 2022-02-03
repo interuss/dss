@@ -41,6 +41,12 @@ def get_operational_intent_details(utm_client: DSSTestSession, uss_base_url: str
     return resp_body.operational_intent
 
 
+def notify_operational_intent_details_changed(utm_client: DSSTestSession, uss_base_url: str, update: scd.PutOperationalIntentDetailsParameters) -> None:
+    resp = utm_client.post('{}/uss/v1/operational_intents'.format(uss_base_url), json=update, scope=scd.SCOPE_SC)
+    if resp.status_code != 200:
+        raise OperationError('notifyOperationalIntentDetailsChanged failed {}:\n{}'.format(resp.status_code, resp.content.decode('utf-8')))
+
+
 # === Custom actions ===
 
 
@@ -60,3 +66,12 @@ def query_operational_intents(utm_client: DSSTestSession, area_of_interest: scd.
             op_intent = get_operational_intent_details(utm_client, op_intent_ref.uss_base_url, op_intent_ref.id)
             cache[op_intent.reference.id] = op_intent
     return [cache[op_intent_ref.id] for op_intent_ref in op_intent_refs]
+
+
+def notify_subscribers(utm_client: DSSTestSession, id: str, operational_intent: scd.OperationalIntent, subscribers: List[scd.SubscriberToNotify]):
+    for subscriber in subscribers:
+        update = scd.PutOperationalIntentDetailsParameters(
+            operational_intent_id=id,
+            operational_intent=operational_intent,
+            subscriptions=subscriber.subscriptions)
+        notify_operational_intent_details_changed(utm_client, subscriber.uss_base_url, update)
