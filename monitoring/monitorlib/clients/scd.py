@@ -50,24 +50,6 @@ def notify_operational_intent_details_changed(utm_client: DSSTestSession, uss_ba
 # === Custom actions ===
 
 
-def query_operational_intents(utm_client: DSSTestSession, area_of_interest: scd.Volume4D, cache: Dict[str, scd.OperationalIntent]=None) -> List[scd.OperationalIntent]:
-    """Retrieve a complete set of operational intents in an area, including details.
-
-    :param utm_client: Means by which to execute HTTP calls to the DSS and other USSs
-    :param area_of_interest: Area where intersecting operational intents must be discovered
-    :param cache: If specified, this cache is mutated to store the details of operational intents so that the details don't necessarily need to be retrieved next time
-    :return: Full definition for every operational intent discovered
-    """
-    if cache is None:
-        cache = dict()
-    op_intent_refs = query_operational_intent_references(utm_client, area_of_interest)
-    for op_intent_ref in op_intent_refs:
-        if op_intent_ref.id not in cache or cache[op_intent_ref.id].reference.version != op_intent_ref.version:
-            op_intent = get_operational_intent_details(utm_client, op_intent_ref.uss_base_url, op_intent_ref.id)
-            cache[op_intent.reference.id] = op_intent
-    return [cache[op_intent_ref.id] for op_intent_ref in op_intent_refs]
-
-
 def notify_subscribers(utm_client: DSSTestSession, id: str, operational_intent: scd.OperationalIntent, subscribers: List[scd.SubscriberToNotify]):
     for subscriber in subscribers:
         update = scd.PutOperationalIntentDetailsParameters(

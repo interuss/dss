@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 import uuid
 
 import flask
@@ -11,6 +11,29 @@ from monitoring.mock_uss import config, resources, webapp
 from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss.scdsc import database
 from monitoring.mock_uss.scdsc.database import db
+
+
+def query_operational_intents(area_of_interest: scd.Volume4D) -> List[scd.OperationalIntent]:
+    """Retrieve a complete set of operational intents in an area, including details.
+
+    :param area_of_interest: Area where intersecting operational intents must be discovered
+    :return: Full definition for every operational intent discovered
+    """
+    op_intent_refs = scd_client.query_operational_intent_references(resources.utm_client, area_of_interest)
+    with db.lock:
+        get_details_for = []
+        for op_intent_ref in op_intent_refs:
+            if op_intent_ref.id not in db.cached_operations or db.cached_operations[op_intent_ref.id].reference.version != op_intent_ref.version:
+                get_details_for.append(op_intent_ref)
+
+    updated_op_intents = []
+    for op_intent_ref in get_details_for:
+        updated_op_intents.append(scd_client.get_operational_intent_details(resources.utm_client, op_intent_ref.uss_base_url, op_intent_ref.id))
+
+    with db.lock:
+        for op_intent in updated_op_intents:
+            db.cached_operations[op_intent.reference.id] = op_intent
+        return [db.cached_operations[op_intent_ref.id] for op_intent_ref in op_intent_refs]
 
 
 @webapp.route('/scdsc/v1/status', methods=['GET'])
@@ -45,7 +68,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     alt_lo, alt_hi = scd.meter_altitude_bounds_of(req_body.operational_intent.volumes)
     vol4 = scd.make_vol4(start_time, end_time, alt_lo, alt_hi, polygon=scd.make_polygon(latlngrect=area))
     try:
-        op_intents = scd_client.query_operational_intents(resources.utm_client, vol4, db.cached_operations)
+        op_intents = query_operational_intents(vol4)
     except (ValueError, scd_client.OperationError) as e:
         notes = 'Error querying operational intents: {}'.format(e)
         return flask.jsonify(InjectFlightResponse(
@@ -94,6 +117,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
         op_intent_reference=result.operational_intent_reference,
         op_intent_injection=req_body.operational_intent,
         flight_authorisation=req_body.flight_authorisation)
-    db.flights[flight_id] = record
+    with db.lock:
+        db.flights[flight_id] = record
 
     return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Planned, operational_intent_id=id))
