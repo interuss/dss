@@ -10,7 +10,7 @@ SCOPE_SCD_QUALIFIER_INJECT = 'utm.inject_test_data'
 class OperationalIntentTestInjection(ImplicitDict):
     ''' A class to hold data for operational intent data that will be submitted to the SCD testing interface. '''
     state: str
-    priorty: int = 0
+    priority: int = 0
     volumes: List[Volume4D]
     off_nominal_volumes: List[Volume4D]= []
 
