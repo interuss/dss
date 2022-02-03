@@ -43,7 +43,7 @@ def get_operational_intent_details(utm_client: DSSTestSession, uss_base_url: str
 
 def notify_operational_intent_details_changed(utm_client: DSSTestSession, uss_base_url: str, update: scd.PutOperationalIntentDetailsParameters) -> None:
     resp = utm_client.post('{}/uss/v1/operational_intents'.format(uss_base_url), json=update, scope=scd.SCOPE_SC)
-    if resp.status_code != 200:
+    if resp.status_code != 204 and resp.status_code != 200:
         raise OperationError('notifyOperationalIntentDetailsChanged failed {}:\n{}'.format(resp.status_code, resp.content.decode('utf-8')))
 
 

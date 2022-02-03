@@ -1,3 +1,4 @@
+import os
 import sys
 
 from monitoring.mock_uss import webapp
@@ -5,7 +6,8 @@ from monitoring.mock_uss import webapp
 
 def main(argv):
   del argv
-  webapp.run(host='localhost', port=8071)
+  port = int(os.environ.get('MOCK_USS_PORT', '8071'))
+  webapp.run(host='localhost', port=port)
 
 
 if __name__ == '__main__':
