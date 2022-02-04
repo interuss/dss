@@ -196,7 +196,7 @@ class ProximateOperationalIntentGenerator():
         
         return flight_volume_4d
     
-def generate_injection_operational_intent(astm_4d_volume:Volume4D) -> OperationalIntentTestInjection:
+def generate_injection_operational_intent(astm_4d_volume : Volume4D) -> OperationalIntentTestInjection:
     """A method to generate Operational Intent injection  """        
     current_operational_intent_reference = OperationalIntentTestInjection(volumes = [astm_4d_volume], state = 'Accepted', off_nominal_volumes = [], priority =0)            
     return current_operational_intent_reference
@@ -221,39 +221,37 @@ class KnownIssuesAcceptableResultFieldGenerator():
         all_known_issue_fields = {}
 
         common_error_notification = KnownIssueFields(test_code = "flight_authorisation_test", 
-                                                     relevant_requirements = ["A correct UAS Serial number is equired by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1", "Registration number of the UAS operator. The format is defined in EASA Easy Access Rules for Unmanned Aircraft Systems GM1 to AMC1 Article 14(6) Registration of UAS operators and ‘certified’ UAS. Required by ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 10."], 
-                                                     severity = "High", 
-                                                     subject='', 
-                                                     summary ="Injection request for valid flight was unsuccessful", details = "All data provided was complete and correct, conforming to the relevant standardized formats and the data should have been processed successfully and flight Planned.")           
+                                                     relevant_requirements = [], 
+                                                     severity = "High",
+                                                     subject="", 
+                                                     summary ="Injection request for valid flight was unsuccessful", details = "All data provided was complete and correct, conforming to the relevant standardized formats and the data should have been processed successfully and flight Planned.")        
                 
         if len(self.all_test_results) == 1:
-            if "Planned" in self.all_test_results:
-                # The result of both tests is planned
-                if_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_test", 
-                                                                       relevant_requirements = ["A operational intent that has no time or space conflict should be planned by the USS"], 
-                                                                       severity= "High", 
-                                                                       subject="Operational Intent provided should be planned successfully", 
-                                                                       summary ="The operational intent details provided were generated in such a way that they should have been planned.", 
-                                                                       details = "The co-ordinates of the 4D Opeational intent does not conflict with any existing operational intent in the area and the processing result should be a successful planning of the intent.")             
+            # The result of both tests is planned
+            if_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_test", 
+                                                                   relevant_requirements = ["A operational intent that has no time or space conflict should be planned by the USS"], 
+                                                                   severity= "High", 
+                                                                   subject="Operational Intent provided should be planned successfully", 
+                                                                   summary ="The operational intent details provided were generated in such a way that they should have been planned.", 
+                                                                   details = "The co-ordinates of the 4D Operational intent does not conflict with any existing operational intents in the area and the processing result should be a successful planning of the intent.")             
 
-                all_known_issue_fields['Rejected']= common_error_notification
-                all_known_issue_fields['Failed']= common_error_notification
-                if self.expected_operational_intent_processing_result != "ConflictWithFlight":
-                    all_known_issue_fields['ConflictWithFlight']= if_conflict_with_flight_explanation
+            all_known_issue_fields['Rejected']= common_error_notification
+            all_known_issue_fields['Failed']= common_error_notification
+            if self.expected_operational_intent_processing_result != "ConflictWithFlight":                
+                all_known_issue_fields['ConflictWithFlight']= if_conflict_with_flight_explanation
         else:
-
+            # One of the two tests has data that should fail processing
             common_conflict_with_flight_explanation = KnownIssueFields(test_code = "flight_authorisation_test", 
-                                                                        relevant_requirements = ["A complete and correct flight authorisation data should be provided by the USSP."], 
-                                                                        severity = "High", 
-                                                                        subject="Flight authorisation data is incorrect and operational intent should not be processed", 
-                                                                        summary ="Invalid flight authorisation data was provided and therefore the operational intent should not have been planned or submitted to the DSS", 
-                                                                        details = "All flight authorisation data should be validated by the USSP before submitting the Operational Intent to the DSS. In this case, the flight authorisation is not valid and processing should have returned a error.")
+                                                                       relevant_requirements = ["A complete and correct flight authorisation data should be provided by the USSP."], 
+                                                                       severity = "High", 
+                                                                       subject="Flight authorisation data is incorrect and operational intent should not be processed", 
+                                                                       summary ="Invalid flight authorisation data was provided and therefore the operational intent should not have been planned or submitted to the DSS", 
+                                                                       details = "All flight authorisation data should be validated by the USSP before submitting the Operational Intent to the DSS. In this case, the flight authorisation is not valid and processing should have returned a error.")
                     
             if self.expected_flight_authorisation_processing_result =="Rejected":
-
                 if incorrect_field == "uas_serial_number":                 
                     if_planned_explanation = KnownIssueFields(test_code = "flight_authorisation_test",
-                                                              relevant_requirements = ["ANNEX IV of Commission Implementing Regulation (EU) 2021/664, requirement 1"], 
+                                                              relevant_requirements = ["ANNEX IV of Commission Implementing Regulation (EU) 2021/664, paragraph 1"], 
                                                               severity = "High", 
                                                               subject="UAS Serial Number provided is incorrect", 
                                                               summary ="Flight created with invalid UAS serial number", 
@@ -266,8 +264,8 @@ class KnownIssuesAcceptableResultFieldGenerator():
                                                               relevant_requirements = ["ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1"], 
                                                               severity = "High", 
                                                               subject="Operator Registration Number provided is incorrect", 
-                                                              summary ="Flight created with invalid Operator Registration Number", 
-                                                              details = "The UAS serial number is not as expressed as described in the EN4709-02 standard should be rejected.")
+                                                              summary ="Flight created with invalid Operator registration number", 
+                                                              details = "The UAS serial number provided is not as expressed as described in the EN4709-02 standard should be rejected.")
 
                     all_known_issue_fields["Planned"] = if_planned_explanation
 
@@ -279,9 +277,9 @@ class KnownIssuesAcceptableResultFieldGenerator():
             if self.expected_operational_intent_processing_result == "ConflictWithFlight":      
 
                 if_planned_explanation = KnownIssueFields(test_code = "nominal_test", 
-                                                          relevant_requirements = ["A operational intent that has time or space conflict should be planned by the USS"], severity = "High", 
+                                                          relevant_requirements = ["A operational intent that has time or space conflict should not be planned by the USS"], severity = "High", 
                                                           subject="Operational Intent provided should not be planned", 
-                                                          summary ="The operational intent details provided were generated in such a way that they should not have been planned.", details = "The co-ordinates of the 4D Opeational intent does conflicts with any existing operational intent in the area and the processing result should not be a successful planning of the intent.")
+                                                          summary ="The operational intent details provided were generated in such a way that they should not have been planned.", details = "The co-ordinates of the 4D Opeational intent conflicts with an existing operational intent in the area and the processing result should not be a successful planning of the intent.")
                 
                 all_known_issue_fields['Failed'] = common_error_notification
 
@@ -308,7 +306,7 @@ def generate_flight_injection_attempts(num_injections:int = 2) -> List[FlightInj
             if incorrect_field == "uas_serial_number":
                 serial_number = serial_number.make_invalid_by_changing_payload_length()
             elif incorrect_field == "operator_registration_number":
-                operator_id = operator_id.make_invalid_by_changing_checksum_control()
+                operator_id = operator_id.make_invalid_by_changing_final_control_string()
         else: 
             incorrect_field = None
         
@@ -355,7 +353,7 @@ def write_automated_test_to_disk(output_path:os.path, flight_injection_attempts:
     output_directory = Path(output_path, country_code) 
     # Create test_definition directory if it does not exist        
     output_directory.mkdir(parents=True, exist_ok=True)        
-    output_subdirectories = Path(output_directory, "autmated_test")        
+    output_subdirectories = Path(output_directory, "automated_test")        
     output_subdirectories.mkdir(parents=True, exist_ok=True)       
 
     automated_test_data = AutomatedTest(name="Nominal Strategic co-ordination", injection_attempts = flight_injection_attempts)
