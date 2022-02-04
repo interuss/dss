@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import List
+from typing import Dict
 
 from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
@@ -10,33 +10,35 @@ from monitoring.uss_qualifier.scd.utils import SCDQualifierTestConfiguration
 from monitoring.uss_qualifier.utils import is_url
 
 
-def get_automated_tests(automated_tests_dir: Path) -> List[AutomatedTest]:
-    """Gets automated tests from the specified directory if they exist"""
+def get_automated_tests(automated_tests_dir: Path, prefix: str) -> Dict[str, AutomatedTest]:
+    """Gets automated tests from the specified directory"""
 
-    if not os.path.exists(automated_tests_dir):
-        raise ValueError('The automated tests directory does not exist: {}'.format(automated_tests_dir))
-
-    all_files = os.listdir(automated_tests_dir)
-    files = [os.path.join(automated_tests_dir, f) for f in all_files if os.path.isfile(os.path.join(automated_tests_dir, f))]
-    if not files:
-        raise ValueError('There are no automated tests in the directory, create automated tests first using the simulator module.')
-
-    automated_tests = []
-    for file in files:
+    # Read all JSON files in this directory
+    automated_tests: Dict[str, AutomatedTest] = {}
+    for file in automated_tests_dir.glob('*.json'):
+        id = prefix + os.path.splitext(os.path.basename(file))[0]
         with open(file, 'r') as f:
-            automated_tests.append(ImplicitDict.parse(json.load(f), AutomatedTest))
+            automated_tests[id] = ImplicitDict.parse(json.load(f), AutomatedTest)
+
+    # Read subdirectories
+    for subdir in automated_tests_dir.iterdir():
+        if subdir.is_dir():
+            new_tests = get_automated_tests(subdir, prefix + subdir.name + '/')
+            for k, v in new_tests.items():
+                automated_tests[k] = v
 
     return automated_tests
 
-def load_scd_test_definitions(locale: str) -> List[AutomatedTest]:
-    automated_tests_dir = Path(os.getcwd(), 'scd/test_definitions', locale.value, 'automated_test')
-    try:
-        automated_tests = get_automated_tests(automated_tests_dir)
-    except ValueError:
+
+def load_scd_test_definitions(locale: Locality) -> Dict[str, AutomatedTest]:
+    automated_tests_dir = Path(os.getcwd(), 'scd', 'test_definitions', locale.value)
+    if not os.path.exists(automated_tests_dir):
         print('[SCD] No automated tests files found; generating them via simulator now')
         # TODO: Call the simulator
         raise NotImplementedError()
-    return automated_tests
+
+    return get_automated_tests(automated_tests_dir, '')
+
 
 def validate_configuration(test_configuration: SCDQualifierTestConfiguration):
     try:
@@ -45,14 +47,12 @@ def validate_configuration(test_configuration: SCDQualifierTestConfiguration):
     except ValueError:
         raise ValueError("A valid url for injection_target must be passed")
 
+
 def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfiguration,
                   auth_spec: str):
 
     automated_tests = load_scd_test_definitions(locale)
 
-    # TODO: Move to simulator
-    if locale.is_uspace_applicable():
-        print("[SCD] U-Space tests")
-
-    print("[SCD] Running ASTM tests")
-    # TODO Replace with actual implementation
+    for test_id, test in automated_tests.items():
+        print('[SCD] Running {} ({})'.format(test_id, test.name))
+        # TODO Replace with actual implementation
