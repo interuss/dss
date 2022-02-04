@@ -440,6 +440,16 @@ components:
           type: string
           enum: [Planned, Rejected, ConflictWithFlight, Failed]
           example: Planned
+        notes:
+          description: >-
+            Human-readable explanation of the observed result.  This explanation
+            should be available to a human reviewing the test results, and
+            ideally should explain why an undesirable result was obtained.  For
+            instance, if the injection attempt Failed, then these notes may
+            indicate that the attempt failed because the DSS indicated 400 to a
+            valid request (perhaps also including the valid request as proof).
+          type: string
+          example: Requested flight intersected operational intent c036326c-c97b-4926-bf9f-c60dc83d2b57
         operational_intent_id:
           description: The id of the operational intent communicated to the DSS. This value is only required when the result of the flight submission is `Planned`.
           anyOf:

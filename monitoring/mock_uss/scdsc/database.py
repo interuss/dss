@@ -1,4 +1,5 @@
 import dataclasses
+from multiprocessing import Lock
 from typing import Dict
 
 from monitoring.monitorlib import scd
@@ -15,10 +16,12 @@ class FlightRecord(object):
 
 class Database(object):
     """Simple in-memory pseudo-database tracking the state of the mock system"""
+    lock: Lock
     flights: Dict[str, FlightRecord]
     cached_operations: Dict[str, scd.OperationalIntent]
 
     def __init__(self):
+        self.lock = Lock()
         self.flights = {}
         self.cached_operations = {}
 
