@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import List, Optional
 
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.infrastructure import DSSTestSession
@@ -57,10 +57,13 @@ def notify_operational_intent_details_changed(utm_client: DSSTestSession, uss_ba
 # === Custom actions ===
 
 
-def notify_subscribers(utm_client: DSSTestSession, id: str, operational_intent: scd.OperationalIntent, subscribers: List[scd.SubscriberToNotify]):
+def notify_subscribers(utm_client: DSSTestSession, id: str, operational_intent: Optional[scd.OperationalIntent], subscribers: List[scd.SubscriberToNotify]):
     for subscriber in subscribers:
-        update = scd.PutOperationalIntentDetailsParameters(
-            operational_intent_id=id,
-            operational_intent=operational_intent,
-            subscriptions=subscriber.subscriptions)
+        kwargs = {
+            'operational_intent_id': id,
+            'subscriptions': subscriber.subscriptions,
+        }
+        if operational_intent is not None:
+            kwargs['operational_intent'] = operational_intent
+        update = scd.PutOperationalIntentDetailsParameters(**kwargs)
         notify_operational_intent_details_changed(utm_client, subscriber.uss_base_url, update)
