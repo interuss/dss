@@ -1,4 +1,7 @@
-class Severity(object):
+from enum import Enum
+
+
+class Severity(str, Enum):
   Critical = 'Critical'
   """The system does not function correctly on a basic level."""
 
