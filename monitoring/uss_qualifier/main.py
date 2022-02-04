@@ -5,6 +5,7 @@ import json
 import os
 import sys
 
+from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid import test_executor as rid_test_executor
 from monitoring.uss_qualifier.scd import test_executor as scd_test_executor
@@ -53,7 +54,9 @@ def main() -> int:
     if "scd" in config:
         print(f"[SCD] Configuration provided with {len(config.scd.injection_targets)} injection targets.")
         scd_test_executor.validate_configuration(config.scd)
-        scd_test_executor.run_scd_tests(locale=config.locale, test_configuration=config.scd, auth_spec=auth_spec)
+        locale = Locality(config.locale.upper())
+        print(f"[SCD] Locale: {locale.value} (is_uspace_applicable:{locale.is_uspace_applicable}, allow_same_priority_intersections:{locale.allow_same_priority_intersections})")
+        scd_test_executor.run_scd_tests(locale=locale, test_configuration=config.scd, auth_spec=auth_spec)
     else:
         print("[SCD] No configuration provided.")
 
