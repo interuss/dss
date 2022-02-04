@@ -439,7 +439,7 @@ components:
 
           type: string
           enum: [Planned, Rejected, ConflictWithFlight, Failed]
-          example: Planned
+          example: ConflictWithFlight
         notes:
           description: >-
             Human-readable explanation of the observed result.  This explanation
@@ -454,6 +454,26 @@ components:
           description: The id of the operational intent communicated to the DSS. This value is only required when the result of the flight submission is `Planned`.
           anyOf:
             - $ref: '#/components/schemas/EntityID'
+    DeleteFlightResponse:
+      type: object
+      required:
+      - result
+      properties:
+        result:
+          description: >-
+            The result of attempted flight cancellation/closure
+
+              - `Closed`: The flight was closed successfully by the USS and is now out of the UTM system.
+
+              - `Failed`: The flight could not be closed successfully by the USS.
+
+          enum: [Closed, Failed]
+          example: Failed
+        notes:
+          description: >-
+            Human-readable explanation of the observed result.
+          type: string
+          example: DSS was unreachable when attempting to delete operational intent reference
 
 paths:
   /v1/status:
@@ -479,17 +499,18 @@ paths:
       description: Get the status of the USS automated testing interface
 
   /v1/flights/{flight_id}:
+    parameters:
+    - name: flight_id
+      in: path
+      required: true
+      description: A UUID string identifying the injected flight.
+      schema:
+        $ref: '#/components/schemas/UUIDv4Format'
+
     put:
       security:
         - Authority:
             - utm.inject_test_data
-      parameters:
-        - name: flight_id
-          in: path
-          required: true
-          description: A UUID string identifying the injected flight.
-          schema:
-            $ref: '#/components/schemas/UUIDv4Format'
 
       requestBody:
         content:
@@ -509,6 +530,29 @@ paths:
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
 
-      summary: Inject test flight
+      summary: Inject flight
+      operationId: injectFlight
       description: >-
         This endpoint simulates the operator intention to submit a flight operation / flight request.
+
+    delete:
+      security:
+      - Authority:
+        - utm.inject_test_data
+
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteFlightResponse'
+          description: Flight was deleted from the system successfully
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+
+      summary: Delete flight
+      operationId: deleteFlight
+      description: >-
+        This endpoint simulates the operator intention to cancel or end a flight operation.
