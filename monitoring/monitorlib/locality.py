@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class Locality(str, Enum):
-    """The mock USS should behave as if it were operating in this locality."""
+    """Operating locations and their respective regulation and technical variations."""
     CHE = 'CHE'
     """Switzerland"""
 

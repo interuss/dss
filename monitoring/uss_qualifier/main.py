@@ -55,6 +55,7 @@ def main() -> int:
         print(f"[SCD] Configuration provided with {len(config.scd.injection_targets)} injection targets.")
         scd_test_executor.validate_configuration(config.scd)
         locale = Locality(config.locale.upper())
+        print(f"[SCD] Locale: {locale.value} (is_uspace_applicable:{locale.is_uspace_applicable}, allow_same_priority_intersections:{locale.allow_same_priority_intersections})")
         scd_test_executor.run_scd_tests(locale=locale, test_configuration=config.scd, auth_spec=auth_spec)
     else:
         print("[SCD] No configuration provided.")
