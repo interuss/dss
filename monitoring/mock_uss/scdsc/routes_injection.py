@@ -58,8 +58,9 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
         msg = 'Create flight {} unable to parse JSON: {}'.format(flight_id, e)
         return msg, 400
 
-    # Validate flight authorisation
-    # TODO: Implement
+    if webapp.config[config.KEY_BEHAVIOR_LOCALITY].is_uspace_applicable:
+        # Validate flight authorisation
+        pass  # TODO: Implement
 
     # Check for operational intents in the DSS
     start_time = scd.start_of(req_body.operational_intent.volumes)
@@ -79,7 +80,8 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     for op_intent in op_intents:
         if req_body.operational_intent.priority > op_intent.details.priority:
             continue
-        # TODO: Allow intersections between same-priority operations when configured to do so
+        if webapp.config[config.KEY_BEHAVIOR_LOCALITY].allow_same_priority_intersections:
+            continue
         v2a = op_intent.details.volumes
         v2b = op_intent.details.off_nominal_volumes
         if scd.vol4s_intersect(v1, v2a) or scd.vol4s_intersect(v1, v2b):
