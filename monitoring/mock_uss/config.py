@@ -2,7 +2,7 @@ from enum import Enum
 import os
 
 from monitoring.monitorlib import auth_validation
-
+from monitoring.monitorlib.locality import Locality
 
 ENV_KEY_PREFIX = 'MOCK_USS'
 ENV_KEY_PUBLIC_KEY = '{}_PUBLIC_KEY'.format(ENV_KEY_PREFIX)
@@ -26,20 +26,6 @@ KEY_BEHAVIOR_LOCALITY = 'BEHAVIOR_LOCALITY'
 workspace_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'workspace')
 
 
-class BehaviorLocality(str, Enum):
-    """The mock USS should behave as if it were operating in this locality."""
-    CHE = 'CHE'
-    """Switzerland"""
-
-    @property
-    def is_uspace_applicable(self) -> bool:
-        return self in {BehaviorLocality.CHE}
-
-    @property
-    def allow_same_priority_intersections(self) -> bool:
-        return self in set()
-
-
 class Config(object):
   TOKEN_PUBLIC_KEY = auth_validation.fix_key(
     os.environ.get(ENV_KEY_PUBLIC_KEY, '')).encode('utf-8')
@@ -48,4 +34,4 @@ class Config(object):
   AUTH_SPEC = os.environ[ENV_KEY_AUTH]
   SERVICES = set(svc.strip().lower() for svc in os.environ.get(ENV_KEY_SERVICES, '').split(','))
   DSS_URL = os.environ[ENV_KEY_DSS]
-  BEHAVIOR_LOCALITY = BehaviorLocality(os.environ.get(ENV_KEY_BEHAVIOR_LOCALITY, 'CHE'))
+  BEHAVIOR_LOCALITY = Locality(os.environ.get(ENV_KEY_BEHAVIOR_LOCALITY, 'CHE'))
