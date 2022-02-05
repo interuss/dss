@@ -10,7 +10,7 @@ class SynchronizedValue(object):
 
     The shared value can be read with .value or updated in a transaction.  A
     transaction is created using `with` which returns the current value.  That
-    object is mutated in the transaction, and then committed when with `with`
+    object is mutated in the transaction, and then committed when the `with`
     block is exited.  Example:
 
     db = SynchronizedValue({'foo': 'bar'})
