@@ -14,6 +14,8 @@ import random
 from typing import List, Union
 import shapely.geometry
 import os
+import known_issues 
+from monitoring.monitorlib.typing import ImplicitDict
 
 class ProximateOperationalIntentGenerator():
     """A class to generate operational intents. As a input the module takes in a bounding box for which to generate the volumes within. """
@@ -163,7 +165,7 @@ class ProximateOperationalIntentGenerator():
         
         p = Polygon(vertices=all_vertices)
         
-        volume3D = Volume3D(outline_polygon = p, altitude_lower = altitude_lower, altitude_upper = altitude_upper, outline_circle = {})
+        volume3D = Volume3D(outline_polygon = p, altitude_lower = altitude_lower, altitude_upper = altitude_upper, outline_circle = None)
         
         return volume3D
 
@@ -220,72 +222,30 @@ class KnownIssuesAcceptableResultFieldGenerator():
 
         all_known_issue_fields = {}
 
-        common_error_notification = KnownIssueFields(test_code = "flight_authorisation_test", 
-                                                     relevant_requirements = [], 
-                                                     severity = "High",
-                                                     subject="", 
-                                                     summary ="Injection request for valid flight was unsuccessful", details = "All data provided was complete and correct, conforming to the relevant standardized formats and the data should have been processed successfully and flight Planned.")        
-                
         if len(self.all_test_results) == 1:
-            # The result of both tests is planned
-            if_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_test", 
-                                                                   relevant_requirements = ["A operational intent that has no time or space conflict should be planned by the USS"], 
-                                                                   severity= "High", 
-                                                                   subject="Operational Intent provided should be planned successfully", 
-                                                                   summary ="The operational intent details provided were generated in such a way that they should have been planned.", 
-                                                                   details = "The co-ordinates of the 4D Operational intent does not conflict with any existing operational intents in the area and the processing result should be a successful planning of the intent.")             
-
-            all_known_issue_fields['Rejected']= common_error_notification
-            all_known_issue_fields['Failed']= common_error_notification
+            all_known_issue_fields['Rejected']= known_issues.common_error_notification
+            all_known_issue_fields['Failed']= known_issues.common_error_notification
             if self.expected_operational_intent_processing_result != "ConflictWithFlight":                
-                all_known_issue_fields['ConflictWithFlight']= if_conflict_with_flight_explanation
+                all_known_issue_fields['ConflictWithFlight']= known_issues.if_conflict_with_flight_explanation
         else:
-            # One of the two tests has data that should fail processing
-            common_conflict_with_flight_explanation = KnownIssueFields(test_code = "flight_authorisation_test", 
-                                                                       relevant_requirements = ["A complete and correct flight authorisation data should be provided by the USSP."], 
-                                                                       severity = "High", 
-                                                                       subject="Flight authorisation data is incorrect and operational intent should not be processed", 
-                                                                       summary ="Invalid flight authorisation data was provided and therefore the operational intent should not have been planned or submitted to the DSS", 
-                                                                       details = "All flight authorisation data should be validated by the USSP before submitting the Operational Intent to the DSS. In this case, the flight authorisation is not valid and processing should have returned a error.")
-                    
             if self.expected_flight_authorisation_processing_result =="Rejected":
-                if incorrect_field == "uas_serial_number":                 
-                    if_planned_explanation = KnownIssueFields(test_code = "flight_authorisation_test",
-                                                              relevant_requirements = ["ANNEX IV of Commission Implementing Regulation (EU) 2021/664, paragraph 1"], 
-                                                              severity = "High", 
-                                                              subject="UAS Serial Number provided is incorrect", 
-                                                              summary ="Flight created with invalid UAS serial number", 
-                                                              details = "The UAS serial number is not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")     
+                if incorrect_field == "uas_serial_number":                   
+                    all_known_issue_fields["Planned"] = known_issues.if_planned_with_incorrect_uas_serial_number_explanation            
+                elif incorrect_field == "operator_registration_number":     
+                    all_known_issue_fields["Planned"] = known_issues.if_planned_with_incorrect_operator_registration_number_explanation
 
-                    all_known_issue_fields["Planned"] = if_planned_explanation
-            
-                elif incorrect_field == "operator_registration_number":      
-                    if_planned_explanation = KnownIssueFields(test_code = "flight_authorisation_test", 
-                                                              relevant_requirements = ["ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1"], 
-                                                              severity = "High", 
-                                                              subject="Operator Registration Number provided is incorrect", 
-                                                              summary ="Flight created with invalid Operator registration number", 
-                                                              details = "The UAS serial number provided is not as expressed as described in the EN4709-02 standard should be rejected.")
-
-                    all_known_issue_fields["Planned"] = if_planned_explanation
-
-                all_known_issue_fields["Failed"] = common_error_notification
+                all_known_issue_fields["Failed"] = known_issues.common_error_notification
                 
                 if self.expected_operational_intent_processing_result != "ConflictWithFlight":
-                    all_known_issue_fields["ConflictWithFlight"] = common_conflict_with_flight_explanation
+                    all_known_issue_fields["ConflictWithFlight"] = known_issues.common_conflict_with_flight_explanation
 
             if self.expected_operational_intent_processing_result == "ConflictWithFlight":      
 
-                if_planned_explanation = KnownIssueFields(test_code = "nominal_test", 
-                                                          relevant_requirements = ["A operational intent that has time or space conflict should not be planned by the USS"], severity = "High", 
-                                                          subject="Operational Intent provided should not be planned", 
-                                                          summary ="The operational intent details provided were generated in such a way that they should not have been planned.", details = "The co-ordinates of the 4D Opeational intent conflicts with an existing operational intent in the area and the processing result should not be a successful planning of the intent.")
-                
-                all_known_issue_fields['Failed'] = common_error_notification
+                all_known_issue_fields['Failed'] = known_issues.common_error_notification
 
                 if self.expected_flight_authorisation_processing_result != "Rejected":
-                    all_known_issue_fields['Rejected'] = common_error_notification
-                all_known_issue_fields['Planned'] = if_planned_explanation
+                    all_known_issue_fields['Rejected'] = known_issues.common_error_notification
+                all_known_issue_fields['Planned'] = known_issues.if_planned_with_conflict_with_flight_explanation
         
         return all_known_issue_fields
 
@@ -347,10 +307,10 @@ def generate_flight_injection_attempts(num_injections:int = 2) -> List[FlightInj
     return flight_injection_attempts
     
 
-def write_automated_test_to_disk(output_path:os.path, flight_injection_attempts: List[FlightInjectionAttempt], country_code="che") -> None:
+def write_automated_test_to_disk(output_path:os.path, flight_injection_attempts: List[FlightInjectionAttempt], locale ="che") -> None:
     """A function to write Flight injection attempts to disk so that they can be examined / used by other software like the test executor """
         
-    output_directory = Path(output_path, country_code) 
+    output_directory = Path(output_path, locale) 
     # Create test_definition directory if it does not exist        
     output_directory.mkdir(parents=True, exist_ok=True)        
     output_subdirectories = Path(output_directory, "automated_test")        
@@ -362,6 +322,9 @@ def write_automated_test_to_disk(output_path:os.path, flight_injection_attempts:
     automated_test_file = Path(output_subdirectories, automated_test_file_name)
     with open(automated_test_file, "w") as f:
         f.write(json.dumps(automated_test_data))
+        
+    with open(automated_test_file, 'r') as f:
+        ImplicitDict.parse(json.load(f), AutomatedTest)
 
 
 if __name__ == '__main__':    
