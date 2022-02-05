@@ -258,19 +258,16 @@ def generate_flight_injection_attempts(num_injections:int = 2) -> List[FlightInj
                 
     for injection_number in range(0,num_injections):        
         serial_number = SerialNumber.generate_valid()
-        operator_id = OperatorRegistrationNumber.generate_valid()
-
+        
         generate_incorrect_data = random.choice([0,1]) # a flag specify if one of the parameters of the flight_authorisation should be incorrect
         if generate_incorrect_data: # if the flag is on, make the one of the fields in the flight authorisation format incorrect        
-            incorrect_field = random.choice(["uas_serial_number","operator_registration_number"]) # Pick a field to make incorrect, TODO: Additional fields can be added
+            incorrect_field = random.choice(["uas_serial_number"]) # Pick a field to make incorrect, TODO: Additional fields can be added
             if incorrect_field == "uas_serial_number":
                 serial_number = serial_number.make_invalid_by_changing_payload_length()
-            elif incorrect_field == "operator_registration_number":
-                operator_id = operator_id.make_invalid_by_changing_final_control_string()
         else: 
             incorrect_field = None
         
-        flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category="Open", operation_mode = "Vlos",uas_class="C0", identification_technologies = ["ASTMNetRID"], connectivity_methods = ["cellular"], endurance_minutes = 30, emergency_procedure_url = "https://uav.com/emergency", operator_id = operator_id, uas_id= '', uas_type_certificate = '')
+        flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category="Open", operation_mode = "Vlos",uas_class="C0", identification_technologies = ["ASTMNetRID"], connectivity_methods = ["cellular"], endurance_minutes = 30, emergency_procedure_url = "https://uav.com/emergency", operator_id = 'CHEfz2dbsqxuq095-tbl', uas_id= '', uas_type_certificate = '')
     
         should_intersect = False 
         if injection_number != 0:
