@@ -212,7 +212,7 @@ class KnownIssuesAcceptableResultFieldGenerator():
         self.expected_operational_intent_processing_result = expected_operational_intent_processing_result        
         
     def generate_nominal_test_known_issue_fields(self)-> Dict[str, KnownIssueFields]: 
-        """A method to generate messages for the user to take remedial actions """
+        """A method to generate messages for the user to take remedial actions when a nominal test returns a status that is not expected """
 
         all_known_issue_fields = {}
         
@@ -228,28 +228,27 @@ class KnownIssuesAcceptableResultFieldGenerator():
         return all_known_issue_fields
 
     def generate_flight_authorisation_test_known_issue_fields(self, incorrect_field:str = None)-> Dict[str, KnownIssueFields]: 
-        """A method to generate messages for the user to take remedial actions """
+        """A method to generate messages for the user to take remedial actions when a flight authorisation test returns a status that not expected """
 
-        all_known_issue_fields = {}
-      
+        all_known_issue_fields = {}      
 
         if self.expected_flight_authorisation_processing_result =="Rejected":
             if incorrect_field == "uas_serial_number":                   
                 all_known_issue_fields["Planned"] = known_issues.if_planned_with_incorrect_uas_serial_number_explanation            
-            all_known_issue_fields["Failed"] = known_issues.common_error_notification
-            all_known_issue_fields["Rejected"] = known_issues.common_error_notification            
-            all_known_issue_fields["ConflictWithFlight"] = known_issues.common_conflict_with_flight_explanation
+            all_known_issue_fields["Failed"] = known_issues.flight_authorisation_test_common_error_notification
+            all_known_issue_fields["Rejected"] = known_issues.flight_authorisation_test_common_error_notification            
+            all_known_issue_fields["ConflictWithFlight"] = known_issues.flight_authorisation_test_common_error_notification
 
         elif self.expected_flight_authorisation_processing_result =="Planned":
-            all_known_issue_fields["Failed"] = known_issues.common_error_notification
-            all_known_issue_fields["Rejected"] = known_issues.common_error_notification            
-            all_known_issue_fields["ConflictWithFlight"] = known_issues.common_conflict_with_flight_explanation
+            all_known_issue_fields["Failed"] = known_issues.flight_authorisation_test_common_error_notification
+            all_known_issue_fields["Rejected"] = known_issues.flight_authorisation_test_common_error_notification            
+            all_known_issue_fields["ConflictWithFlight"] = known_issues.flight_authorisation_test_common_error_notification
 
         return all_known_issue_fields
 
 def generate_nominal_test_flight_injection_attempts(num_injections:int = 2) -> List[FlightInjectionAttempt]:
     """A method to generate flight injection data and associated messages in case the result of data processing is different from the expectation """
-    flight_injection_attempts = []
+    nominal_test_flight_injection_attempts = []
 
     my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone="32T")
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
@@ -281,29 +280,30 @@ def generate_nominal_test_flight_injection_attempts(num_injections:int = 2) -> L
         
         flight_injection_attempt = FlightInjectionAttempt(reference_time = reference_time, test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target)
         
-        flight_injection_attempts.append(flight_injection_attempt)
+        nominal_test_flight_injection_attempts.append(flight_injection_attempt)
     
-    return flight_injection_attempts
+    return nominal_test_flight_injection_attempts
 
-def generate_flight_authorisation_u_space_format_injection_attempts() -> List[FlightInjectionAttempt]:
+def generate_flight_authorisation_u_space_format_injection_attempts(field_to_make_incorrect:str = None) -> List[FlightInjectionAttempt]:
     """A method to generate data for flight authorisation test and the associated injection attempt"""
-    flight_injection_attempts = []
+    flight_authorisation_test_flight_injection_attempts = []
 
     serial_number = SerialNumber.generate_valid()
     
-    generate_incorrect_data = random.choice([0,1]) # a flag specify if one of the parameters of the flight_authorisation should be incorrect
-    if generate_incorrect_data: # if the flag is on, make the one of the fields in the flight authorisation format incorrect        
-        incorrect_field = random.choice(["uas_serial_number"]) # Pick a field to make incorrect, TODO: Additional fields can be added
-        if incorrect_field == "uas_serial_number":
-            serial_number = serial_number.make_invalid_by_changing_payload_length()
-    else: 
-        incorrect_field = None
-    expected_flight_authorisation_processing_result = 'Rejected' if generate_incorrect_data else 'Planned'
+    oeprator_id = OperatorRegistrationNumber.generate_valid()
+
+    if field_to_make_incorrect == "uas_serial_number":
+        serial_number = serial_number.make_invalid_by_changing_payload_length()
+    if field_to_make_incorrect == "operator_registration_number":
+        operator_id = oeprator_id.make_invalid_by_changing_final_control_string()
+
+    expected_flight_authorisation_processing_result = 'Rejected' if field_to_make_incorrect else 'Planned'
+
     flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category="Open", operation_mode = "Vlos",uas_class="C0", identification_technologies = ["ASTMNetRID"], connectivity_methods = ["cellular"], endurance_minutes = 30, emergency_procedure_url = "https://uav.com/emergency", operator_id = 'CHEfz2dbsqxuq095-tbl', uas_id= '', uas_type_certificate = '')
     my_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = expected_flight_authorisation_processing_result,expected_operational_intent_processing_result = None)
 
     inject_flight_request = InjectFlightRequest(operational_intent= None, flight_authorisation= flight_authorisation_data)
-    all_incorrect_result_details = my_known_issues_acceptable_result_generator.generate_flight_authorisation_test_known_issue_fields(incorrect_field= incorrect_field)
+    all_incorrect_result_details = my_known_issues_acceptable_result_generator.generate_flight_authorisation_test_known_issue_fields(incorrect_field= field_to_make_incorrect)
 
     injection_target = InjectionTarget(uss_role = "Submitting USS")
         
@@ -312,19 +312,24 @@ def generate_flight_authorisation_u_space_format_injection_attempts() -> List[Fl
     reference_time = arrow.now().isoformat()
     flight_injection_attempt = FlightInjectionAttempt(reference_time = reference_time, test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target)
     
-    flight_injection_attempts.append(flight_injection_attempt)
-    return flight_injection_attempts
+    flight_authorisation_test_flight_injection_attempts.append(flight_injection_attempt)
+    return flight_authorisation_test_flight_injection_attempts
     
 def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     """A method to run the data generator to generate the nominal and flight authorisation data test"""
     nominal_and_flight_authorisation_test_injection_attempts = []
     nominal_test_flight_injection_attempts = generate_nominal_test_flight_injection_attempts()
-    flight_authorisation_test_injection_attempts = generate_flight_authorisation_u_space_format_injection_attempts()
-
     nominal_test_details = AutomatedTest(name="Nominal Test", injection_attempts = nominal_test_flight_injection_attempts)    
-    flight_authorisation_test_details = AutomatedTest(name="UAS Flight Authorisation format Tests (U-space only)", injection_attempts = flight_authorisation_test_injection_attempts)    
+
+    nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_details)
+
+    fields_to_make_incorrect = [None, "uas_serial_number", "operator_registration_number"]
+
+    for incorrect_field in fields_to_make_incorrect:
+        flight_authorisation_test_injection_attempts = generate_flight_authorisation_u_space_format_injection_attempts(field_to_make_incorrect=incorrect_field)    
+        flight_authorisation_test_details = AutomatedTest(name="UAS Flight Authorisation format Tests (U-space only)", injection_attempts = flight_authorisation_test_injection_attempts)    
    
-    nominal_and_flight_authorisation_test_injection_attempts = [flight_authorisation_test_details,nominal_test_details]
+        nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
 
     return nominal_and_flight_authorisation_test_injection_attempts
 

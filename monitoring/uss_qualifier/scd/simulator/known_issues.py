@@ -7,8 +7,12 @@ nominal_test_common_error_notification = KnownIssueFields(test_code = "nominal_t
                                                 subject="", 
                                                 summary ="Injection request for valid flight was unsuccessful", details = "All data provided was complete and correct with no flight conflicts, conforming to the relevant standardized formats and the data should have been processed successfully and flight Planned.")        
         
-
-# One of the two tests has data that should fail processing
+flight_authorisation_test_common_error_notification = KnownIssueFields(test_code = "flight_authorisation_test", 
+                                                relevant_requirements = [], 
+                                                severity = "High",
+                                                subject="", 
+                                                summary ="Flight authorisation request for with valid flight details should be processed successfully", details = "All data provided was complete and correct with no errors, conforming to the relevant standardized formats and the data should have been processed successfully.")        
+        
 common_conflict_with_flight_explanation = KnownIssueFields(test_code = "flight_authorisation_test", 
                                                             relevant_requirements = ["A complete and correct flight authorisation data should be provided by the USSP."], 
                                                             severity = "High", 
@@ -17,7 +21,6 @@ common_conflict_with_flight_explanation = KnownIssueFields(test_code = "flight_a
                                                             details = "All flight authorisation data should be validated by the USSP before submitting the Operational Intent to the DSS. In this case, the flight authorisation is not valid and processing should have returned a error.")
         
 
-# The result of both tests is planned
 if_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_test", 
                                                         relevant_requirements = ["A operational intent that has no time or space conflict should be planned by the USS"], 
                                                         severity= "High", 
