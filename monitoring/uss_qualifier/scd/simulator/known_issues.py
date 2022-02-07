@@ -1,11 +1,11 @@
 from monitoring.uss_qualifier.scd.data_interfaces import KnownIssueFields
 
 
-common_error_notification = KnownIssueFields(test_code = "flight_authorisation_test", 
+nominal_test_common_error_notification = KnownIssueFields(test_code = "nominal_test", 
                                                 relevant_requirements = [], 
                                                 severity = "High",
                                                 subject="", 
-                                                summary ="Injection request for valid flight was unsuccessful", details = "All data provided was complete and correct, conforming to the relevant standardized formats and the data should have been processed successfully and flight Planned.")        
+                                                summary ="Injection request for valid flight was unsuccessful", details = "All data provided was complete and correct with no flight conflicts, conforming to the relevant standardized formats and the data should have been processed successfully and flight Planned.")        
         
 
 # One of the two tests has data that should fail processing
