@@ -319,7 +319,7 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     """A method to run the data generator to generate the nominal and flight authorisation data test"""
     nominal_and_flight_authorisation_test_injection_attempts = []
     nominal_test_flight_injection_attempts = generate_nominal_test_flight_injection_attempts()
-    nominal_test_details = AutomatedTest(name="Nominal Test", injection_attempts = nominal_test_flight_injection_attempts)    
+    nominal_test_details = AutomatedTest(name="Nominal Planning Test", injection_attempts = nominal_test_flight_injection_attempts)    
 
     nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_details)
 
@@ -327,7 +327,7 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
 
     for incorrect_field in fields_to_make_incorrect:
         flight_authorisation_test_injection_attempts = generate_flight_authorisation_u_space_format_injection_attempts(field_to_make_incorrect=incorrect_field)    
-        flight_authorisation_test_details = AutomatedTest(name="UAS Flight Authorisation format Tests (U-space only)", injection_attempts = flight_authorisation_test_injection_attempts)    
+        flight_authorisation_test_details = AutomatedTest(name="Flight Authorisation validation test", injection_attempts = flight_authorisation_test_injection_attempts)    
    
         nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
 
