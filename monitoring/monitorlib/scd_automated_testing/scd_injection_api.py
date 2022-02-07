@@ -37,8 +37,8 @@ class FlightAuthorisationData(ImplicitDict):
 
 class InjectFlightRequest(ImplicitDict):
     ''' A class to hold the details of a test injection payload '''
-    operational_intent: OperationalIntentTestInjection
-    flight_authorisation: FlightAuthorisationData
+    operational_intent: Optional[OperationalIntentTestInjection]
+    flight_authorisation: Optional[FlightAuthorisationData]
 
 
 class InjectFlightResult(str, Enum):

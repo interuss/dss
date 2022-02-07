@@ -219,9 +219,9 @@ class KnownIssuesAcceptableResultFieldGenerator():
         if self.expected_operational_intent_processing_result == "ConflictWithFlight":
             all_known_issue_fields['Rejected']= known_issues.nominal_test_common_error_notification
             all_known_issue_fields['Failed']= known_issues.nominal_test_common_error_notification
-            all_known_issue_fields['Planned']= known_issues.nominal_test_common_error_notification
+            all_known_issue_fields['Planned']= known_issues.if_planned_with_conflict_with_flight_explanation
         elif self.expected_operational_intent_processing_result == "Planned":            
-            all_known_issue_fields['ConflictWithFlight']= known_issues.if_conflict_with_flight_explanation
+            all_known_issue_fields['ConflictWithFlight']= known_issues.common_conflict_with_flight_explanation
             all_known_issue_fields['Rejected']= known_issues.nominal_test_common_error_notification
             all_known_issue_fields['Failed']= known_issues.nominal_test_common_error_notification
         
@@ -349,8 +349,8 @@ def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[
         with open(automated_test_file, "w") as f:
             f.write(json.dumps(automated_test_data))
             
-        # with open(automated_test_file, 'r') as f:
-        #     ImplicitDict.parse(json.load(f), AutomatedTest)
+        with open(automated_test_file, 'r') as f:
+            ImplicitDict.parse(json.load(f), AutomatedTest)
 
 
 if __name__ == '__main__':    
