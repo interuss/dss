@@ -2,12 +2,13 @@ import flask
 from werkzeug.exceptions import HTTPException
 
 from monitoring.monitorlib import auth_validation, versioning
-from monitoring.mock_uss import webapp
+from monitoring.mock_uss import webapp, enabled_services
 
 
 @webapp.route('/status')
 def status():
-    return 'Mock USS ok {}'.format(versioning.get_code_version())
+    return 'Mock USS ok {}; hosting {}'.format(
+        versioning.get_code_version(), ', '.join(enabled_services))
 
 
 @webapp.errorhandler(Exception)

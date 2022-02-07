@@ -10,12 +10,12 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-echo '################################################################################'
-echo '## NOTE: Prerequisites to run this command are:                               ##'
-echo '## 1. Local DSS instance + Dummy OAuth server (/build/dev/run_locally.sh)     ##'
-echo '## 2. Local mock RID service provider (/monitoring/mock_uss/run_locally.sh)   ##'
-echo '## 3. Local mock RID display provider (/monitoring/mock_riddp/run_locally.sh) ##'
-echo '################################################################################'
+echo '####################################################################################'
+echo '## NOTE: Prerequisites to run this command are:                                   ##'
+echo '## 1. Local DSS instance + Dummy OAuth server (/build/dev/run_locally.sh)         ##'
+echo '## 2. Local mock RID service provider (/monitoring/mock_uss/run_locally_ridsp.sh) ##'
+echo '## 3. Local mock RID display provider (/monitoring/mock_uss/run_locally_riddp.sh) ##'
+echo '####################################################################################'
 
 CONFIG_LOCATION="monitoring/uss_qualifier/config_test_fully_mocked_local_system.json"
 CONFIG='--config config_test_fully_mocked_local_system.json'
@@ -34,7 +34,7 @@ echo '{
     "observers": [
       {
         "name": "uss2",
-        "observation_base_url": "http://host.docker.internal:8073/observation"
+        "observation_base_url": "http://host.docker.internal:8073/riddp/observation"
       }
     ]
   }
