@@ -145,19 +145,6 @@ func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
 	}, nil
 }
 
-// Connect to a database using the specified connection parameters
-func ConnectTo(ctx context.Context, connectParameters ConnectParameters) (*DB, error) {
-	uri, err := connectParameters.BuildURI()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error building CockroachDB connection URI")
-	}
-	db, err := Dial(ctx, connectParameters)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error dialing CockroachDB database at %s", uri)
-	}
-	return db, nil
-}
-
 // GetVersion returns the Schema Version of the requested DB Name
 func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, error) {
 	if dbName == "" {

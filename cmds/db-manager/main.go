@@ -69,7 +69,7 @@ func main() {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = "postgres" // Use an initial database that is known to always be present
-	crdb, err := cockroach.ConnectTo(context.Background(), connectParameters)
+	crdb, err := cockroach.Dial(context.Background(), connectParameters)
 	if err != nil {
 		log.Panicf("Failed to connect to database with %+v: %v", connectParameters, err)
 	}

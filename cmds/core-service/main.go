@@ -108,7 +108,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = "rid"
-	ridCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
+	ridCrdb, err := cockroach.Dial(ctx, connectParameters)
 	if err != nil {
 		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") {
@@ -122,7 +122,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 		// try DBName of defaultdb for older versions.
 		ridCrdb.Pool.Close()
 		connectParameters.DBName = "defaultdb"
-		ridCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
+		ridCrdb, err := cockroach.Dial(ctx, connectParameters)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database for older version <defaultdb>; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 		}
@@ -168,7 +168,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = scdc.DatabaseName
-	scdCrdb, err := cockroach.ConnectTo(ctx, connectParameters)
+	scdCrdb, err := cockroach.Dial(ctx, connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
