@@ -14,7 +14,7 @@ import random
 from typing import List, Union
 import shapely.geometry
 import os
-import known_issues 
+import known_issues_generator
 from monitoring.monitorlib.typing import ImplicitDict
 
 class ProximateOperationalIntentGenerator():
@@ -212,13 +212,13 @@ class KnownIssuesAcceptableResultFieldGenerator():
         all_known_issues_fields = {}
         
         if self.expected_operational_intent_processing_result == "ConflictWithFlight":
-            all_known_issues_fields['Rejected']= known_issues.nominal_test_common_error_notification
-            all_known_issues_fields['Failed']= known_issues.nominal_test_common_error_notification
-            all_known_issues_fields['Planned']= known_issues.if_planned_with_conflict_with_flight_explanation
+            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_common_error_notification
+            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_common_error_notification
+            all_known_issues_fields['Planned']= known_issues_generator.if_planned_with_conflict_with_flight_explanation
         elif self.expected_operational_intent_processing_result == "Planned":            
-            all_known_issues_fields['ConflictWithFlight']= known_issues.common_conflict_with_flight_explanation
-            all_known_issues_fields['Rejected']= known_issues.nominal_test_common_error_notification
-            all_known_issues_fields['Failed']= known_issues.nominal_test_common_error_notification
+            all_known_issues_fields['ConflictWithFlight']= known_issues_generator.conflict_with_flight_explanation
+            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_common_error_notification
+            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_common_error_notification
         
         return all_known_issues_fields
 
@@ -229,15 +229,15 @@ class KnownIssuesAcceptableResultFieldGenerator():
 
         if self.expected_flight_authorisation_processing_result == "Rejected":
             if incorrect_field == "uas_serial_number":                   
-                all_known_issues_fields["Planned"] = known_issues.if_planned_with_incorrect_uas_serial_number_explanation            
-            all_known_issues_fields["Failed"] = known_issues.flight_authorisation_test_common_error_notification
-            all_known_issues_fields["Rejected"] = known_issues.flight_authorisation_test_common_error_notification            
-            all_known_issues_fields["ConflictWithFlight"] = known_issues.flight_authorisation_test_common_error_notification
+                all_known_issues_fields["Planned"] = known_issues_generator.if_planned_with_incorrect_uas_serial_number_explanation            
+            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_common_error_notification
+            all_known_issues_fields["Rejected"] = known_issues_generator.flight_authorisation_test_common_error_notification            
+            all_known_issues_fields["ConflictWithFlight"] = known_issues_generator.flight_authorisation_test_conflict_with_flight_error_notification
 
         elif self.expected_flight_authorisation_processing_result == "Planned":
-            all_known_issues_fields["Failed"] = known_issues.flight_authorisation_test_common_error_notification
-            all_known_issues_fields["Rejected"] = known_issues.flight_authorisation_test_common_error_notification            
-            all_known_issues_fields["ConflictWithFlight"] = known_issues.flight_authorisation_test_common_error_notification
+            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_common_error_notification
+            all_known_issues_fields["Rejected"] = known_issues_generator.flight_authorisation_test_common_error_notification            
+            all_known_issues_fields["ConflictWithFlight"] = known_issues_generator.flight_authorisation_test_conflict_with_flight_error_notification
 
         return all_known_issues_fields
 

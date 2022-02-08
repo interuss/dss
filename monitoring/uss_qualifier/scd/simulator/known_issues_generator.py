@@ -1,23 +1,23 @@
 from monitoring.uss_qualifier.scd.data_interfaces import KnownIssueFields
 
 
-nominal_test_common_error_notification = KnownIssueFields(test_code = "nominal_test", 
+nominal_planning_test_common_error_notification = KnownIssueFields(test_code = "nominal_planning_test", 
                                                 relevant_requirements = [], 
                                                 severity = "High",
                                                 subject="", 
-                                                summary ="Injection request for a valid flight was unsuccessful", details = "All operational intent data provided was complete and correct with no airspace conflicts, conforming to the relevant standardized formats and the data should have been processed successfully and flight should have been planned.")        
+                                                summary ="Injection request for a valid flight was unsuccessful", details = "All operational intent data provided was complete and correct with no airspace conflicts. The operational intent data should have been processed successfully and flight should have been planned.")        
         
-if_planned_with_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_test", 
+if_planned_with_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_planning_test", 
                                             relevant_requirements = ["A operational intent that has time or space conflict should not be planned by the USS"], severity = "High", 
                                             subject="Operational Intent provided should not be sucessfully planned by the USSP", 
                                             summary ="The operational intent details provided were generated in such a way that they should not have been planned.", details = "The co-ordinates of the 4D Operational intent conflicts with an existing operational intent in the area and the processing result should not be a successful planning of the intent.")
                                             
-common_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_test", 
-                                                            relevant_requirements = ["A complete and correct flight authorisation data should be provided by the USSP."], 
+conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_planning_test", 
+                                                            relevant_requirements = ["An operational intent with no conflicts in space and time should be planned by the USSP."], 
                                                             severity = "High", 
-                                                            subject="Flight authorisation data is incorrect and operational intent should not be processed", 
-                                                            summary ="Invalid operational intent data was provided and therefore the operational intent should not have been planned or submitted to the DSS", 
-                                                            details = "All operational intent data should be validated by the USSP before submitting the Operational Intent to the DSS. In this case, the data is not valid, processing should have returned a error.")
+                                                            subject="Processing of Operational intent data provided should lead to planning of flight", 
+                                                            summary ="The operational intent data provided should have been processed without conflicts", 
+                                                            details = "All operational intent data provided is correct and valid and free of conflict in space and time, therefore it should have been planned by the USSP.")
         
 
 flight_authorisation_test_common_error_notification = KnownIssueFields(test_code = "flight_authorisation_test", 
@@ -26,7 +26,14 @@ flight_authorisation_test_common_error_notification = KnownIssueFields(test_code
                                                 subject="", 
                                                 summary ="Flight authorisation request for with valid flight details should be processed successfully", details = "All data provided was complete and correct with no errors, conforming to the relevant standardized formats and the data should have been processed successfully.")        
         
-if_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_test", 
+
+flight_authorisation_test_conflict_with_flight_error_notification = KnownIssueFields(test_code = "flight_authorisation_test", 
+                                                relevant_requirements = [], 
+                                                severity = "High",
+                                                subject="", 
+                                                summary ="Flight authorisation request did not contain any operational intents and therefore should not lead to a airspace conflict error.", details = "Operational intents are provided for nominal tests only and flight planning is not expected for flight authorisation test.")        
+        
+if_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_planning_test", 
                                                         relevant_requirements = ["A operational intent that has no time or space conflict should be planned by the USS"], 
                                                         severity= "High", 
                                                         subject="Operational Intent provided should be planned successfully", 
