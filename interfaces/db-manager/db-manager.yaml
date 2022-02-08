@@ -1,0 +1,202 @@
+openapi: 3.0.2
+info:
+  title: Database Manager
+  version: 1.0.0
+  description: >-
+    This interface exposes the ability to manage the schemas present within the
+    database.
+
+components:
+  securitySchemes:
+    Authority:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            dss.manage_database: |-
+              Client may perform management functions on the shared DSS Airspace Representation
+      description: |-
+        Authorization from, or on behalf of, an authorization authority, augmenting standard authorizations for the purpose of DSS database management.
+
+  schemas:
+    Database:
+      type: string
+      description: Name of logical database/subsystem.
+      example: rid
+      enum:
+      - rid
+      - scd
+    SchemaVersion:
+      type: string
+      description: Schema version of the relevant logical database/subsystem.  "0.0.0" indicates that the database does not contain an annotation indicating the RID schema version.  When requesting a change, specify "latest" for a version to update to newest version.
+      example: 4.0.0
+    DatabaseVersion:
+      type: object
+      description: Representation of a schema version for a particular database
+      properties:
+        database:
+          $ref: '#/components/schemas/Database'
+        schema_version:
+          $ref: '#/components/schemas/SchemaVersion'
+    GetSchemasResponse:
+      type: object
+      properties:
+        current_versions:
+          description: Current versions of the schemas active in the database cluster.
+          type: array
+          items:
+            $ref: '#/components/schemas/DatabaseVersion'
+    SchemaChangeRequest:
+      type: object
+      required:
+      - timestamp
+      - target_version
+      properties:
+        timestamp:
+          description: Unix epoch timestamp at which this request is valid.  Request will be rejected if it is issued too long after this value.
+          type: integer
+          example: 1644267138
+        target_version:
+          $ref: '#/components/schemas/SchemaVersion'
+    SchemaChangeResponse:
+      type: object
+      properties:
+        current_version:
+          description: Current versions of the schemas active in the database cluster.
+          anyOf:
+          - $ref: '#/components/schemas/DatabaseVersion'
+    SchemaErrorResponse:
+      type: object
+      properties:
+        message:
+          description: Human-readable indication for why the operation failed
+          type: string
+          example: Unable to connect to database
+    BadRequestResponse:
+      type: object
+      properties:
+        message:
+          description: Human-readable message describing problem with request
+          type: string
+          example: Specified schema version does not exist for rid database
+    ManagerVersion:
+      type: object
+      properties:
+        version:
+          description: Version of db-manager, as determined by scripts/git/version.sh at build time
+          type: string
+          example: interuss/dss/v0.1.0-64b02294
+        build_time:
+          description: Timestamp when image was built
+          type: string
+          example: 2022-02-08.18:53:49
+        build_hostname:
+          description: Hostname on which image was built
+          type: string
+          example: ci-builder.example.com
+    ManagerVersionResponse:
+      type: object
+      properties:
+        db_manager:
+          $ref: '#/components/schemas/ManagerVersion'
+
+paths:
+  /schemas:
+    summary: Database schemas
+
+    get:
+      operationId: getSchemas
+      summary: Read current database schemas
+      security:
+      - Authority:
+        - dss.manage_database
+      responses:
+        '200':
+          description: The schemas were retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetSchemasResponse'
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+        '412':
+          description: There was an error reading the schemas, likely due to a problem with the database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaErrorResponse'
+
+  /schemas/{database}/{request_id}:
+    summary: Request to change a database schema
+
+    parameters:
+    - name: database
+      in: path
+      required: true
+      description: Name of database whose schema will be changed (e.g., "rid" or "scd")
+      schema:
+        $ref: '#/components/schemas/Database'
+    - name: request_id
+      in: path
+      required: true
+      description: Unique ID for this database change request.  May only be used once.
+      schema:
+        type: string
+        format: uuid
+      example: de92e6e6-d547-438c-9259-165d0ad1fa99
+
+    put:
+      operationId: changeSchema
+      summary: Change a database schema
+      security:
+      - Authority:
+        - dss.manage_database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchemaChangeRequest'
+        required: true
+      responses:
+        '200':
+          description: Schemas were updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaChangeResponse'
+        '400':
+          description: There was an error in the request submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '412':
+          description: There was an error updating the schemas, likely due to a problem with the database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaErrorResponse'
+
+  /version:
+    summary: db-manager version
+
+    get:
+      operationId: getDBManagerVersion
+      summary: Read db-manager version
+      security:
+      - Authority:
+        - dss.manage_database
+      responses:
+        '200':
+          description: The version was retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerVersionResponse'
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
