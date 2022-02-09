@@ -229,14 +229,15 @@ class KnownIssuesAcceptableResultFieldGenerator():
 
         if self.expected_flight_authorisation_processing_result == "Rejected":
             if incorrect_field == "uas_serial_number":                   
-                all_known_issues_fields["Planned"] = known_issues_generator.if_planned_with_incorrect_uas_serial_number_explanation            
-            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_common_error_notification
-            all_known_issues_fields["Rejected"] = known_issues_generator.flight_authorisation_test_common_error_notification            
+                all_known_issues_fields["Planned"] = known_issues_generator.if_planned_with_incorrect_uas_serial_number_explanation
+            elif incorrect_field == "operator_registration_number":
+                all_known_issues_fields["Planned"] = known_issues_generator.if_planned_with_incorrect_operator_registration_number_explanation            
+            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_common_error_notification                
             all_known_issues_fields["ConflictWithFlight"] = known_issues_generator.flight_authorisation_test_conflict_with_flight_error_notification
 
         elif self.expected_flight_authorisation_processing_result == "Planned":
-            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_common_error_notification
             all_known_issues_fields["Rejected"] = known_issues_generator.flight_authorisation_test_common_error_notification            
+            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_common_error_notification
             all_known_issues_fields["ConflictWithFlight"] = known_issues_generator.flight_authorisation_test_conflict_with_flight_error_notification
 
         return all_known_issues_fields
@@ -353,4 +354,3 @@ if __name__ == '__main__':
     nominal_and_flight_authorisation_test = generate_nominal_and_flight_authorisation_test()    
     output_path = os.path.join(Path(__file__).parent.absolute(), "../test_definitions")
     write_automated_test_to_disk(output_path=output_path, all_automated_tests = nominal_and_flight_authorisation_test)
-    
