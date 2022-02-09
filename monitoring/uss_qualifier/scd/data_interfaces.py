@@ -42,6 +42,9 @@ class InjectionTarget(ImplicitDict):
 
 class FlightInjectionAttempt(ImplicitDict):
     """All information necessary to attempt to create a flight in a USS and to evaluate the outcome of that attempt"""
+    name: str
+    """Name of this flight, used to refer to the flight later in the automated test"""
+
     test_injection: InjectFlightRequest
     """Definition of the flight to be injected"""
 
@@ -52,10 +55,28 @@ class FlightInjectionAttempt(ImplicitDict):
     """The particular USS to which the flight injection attempt should be directed"""
 
 
+class FlightDeletionAttempt(ImplicitDict):
+    """All information necessary to attempt to close a flight previously injected into a USS"""
+    flight_name: str
+    """Name of the flight previously injected into the USS to delete"""
+
+
+class TestStep(ImplicitDict):
+    """The action taken in one step of a sequence of steps constituting an automated test"""
+    name: str
+    """Human-readable name/summary of this step"""
+
+    inject_flight: FlightInjectionAttempt
+    """If populated, the test driver should attempt to inject a flight for this step"""
+
+    delete_flight: FlightDeletionAttempt
+    """If populated, the test driver should attempt to delete the specified flight for this step"""
+
+
 class AutomatedTest(ImplicitDict):
     """Definition of a complete automated test involving some subset of USSs under test"""
     name: str
     """Human-readable name of this test (e.g., 'Nominal planning')"""
 
-    injection_attempts: List[FlightInjectionAttempt]
-    """Details of flight injections into USSs that should be attempted"""
+    steps: List[TestStep]
+    """Actions to be performed for this test"""
