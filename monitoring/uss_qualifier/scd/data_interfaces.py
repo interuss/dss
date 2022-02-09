@@ -55,7 +55,7 @@ class FlightInjectionAttempt(ImplicitDict):
 class AutomatedTest(ImplicitDict):
     """Definition of a complete automated test involving some subset of USSs under test"""
     name: str
-    """Human-readable name of this test (e.g., 'Nominal strategic coordination')"""
+    """Human-readable name of this test (e.g., 'Nominal planning')"""
 
     injection_attempts: List[FlightInjectionAttempt]
     """Details of flight injections into USSs that should be attempted"""
