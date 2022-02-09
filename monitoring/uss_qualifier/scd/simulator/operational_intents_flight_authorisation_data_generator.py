@@ -352,5 +352,5 @@ def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[
 if __name__ == '__main__':    
     nominal_and_flight_authorisation_test = generate_nominal_and_flight_authorisation_test()    
     output_path = os.path.join(Path(__file__).parent.absolute(), "../test_definitions")
-    write_automated_test_to_disk(output_path=output_path,all_automated_tests = nominal_and_flight_authorisation_test)
+    write_automated_test_to_disk(output_path=output_path, all_automated_tests = nominal_and_flight_authorisation_test)
     
