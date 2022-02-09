@@ -68,7 +68,8 @@ def flights():
 
   now = arrow.utcnow().datetime
   flights = []
-  for test_id, record in db.tests.items():
+  tx = db.value
+  for test_id, record in tx.tests.items():
     for flight in record.flights:
       reported_flight = _get_report(flight, now, view, include_recent_positions)
       if reported_flight is not None:
@@ -80,7 +81,8 @@ def flights():
 @requires_scope([rid.SCOPE_READ])
 def flight_details(id: str):
   now = arrow.utcnow().datetime
-  for test_id, record in db.tests.items():
+  tx = db.value
+  for test_id, record in tx.tests.items():
     for flight in record.flights:
       details = flight.get_details(now)
       if details and details.id == id:
