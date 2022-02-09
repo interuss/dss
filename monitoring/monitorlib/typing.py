@@ -179,6 +179,11 @@ def _parse_value(value, value_type: Type):
         # value is a list of non-ImplicitDict values
         return value
 
+    elif generic_type is dict:
+        # value is a dict of some kind
+        return {k if arg_types[0] is str else _parse_value(k, arg_types[0]): _parse_value(v, arg_types[1])
+                for k, v in value.items()}
+
     elif generic_type is Union and len(arg_types) == 2 and arg_types[1] is type(None):
       # Type is an Optional declaration
       if value is None:
