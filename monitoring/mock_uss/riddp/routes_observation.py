@@ -111,7 +111,7 @@ def display_data() -> Tuple[str, int]:
       _make_flight_observation(f, view) for f in validated_flights])
     with db as tx:
         for k, v in flight_info.items():
-            tx[k] = v
+            tx.flights[k] = v
     return flask.jsonify(response)
   else:
     # Construct clusters response
