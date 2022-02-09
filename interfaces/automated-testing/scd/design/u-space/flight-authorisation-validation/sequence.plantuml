@@ -1,12 +1,13 @@
 @startuml
-title UAS Flight Authorisation format tests (U-Space only)
+center header U-space
+title Flight authorisation validation test
 
 participant "Test Driver" as TD
 participant "USS under test" as USS
 
 == Invalid uas_serial_number ==
 TD -> USS: PUT /inject/flight\nwith invalid flight_authorisation.uas_serial_number
-TD <- USS: 200 Ok\n{"result": "rejected"}
+TD <- USS: 200 Ok\n{"result": "Rejected"}
 
 ...
 
@@ -26,5 +27,5 @@ end note
 
 == Valid ==
 TD -> USS: PUT /inject/flight\nwith valid request
-TD <- USS: 200 Ok\n{"result": "planned"}
+TD <- USS: 200 Ok\n{"result": "Planned"}
 @enduml

@@ -5,7 +5,7 @@ import flask
 
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients import scd as scd_client
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.mock_uss import config, resources, webapp
 from monitoring.mock_uss.auth import requires_scope
@@ -123,3 +123,33 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
         tx.flights[flight_id] = record
 
     return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Planned, operational_intent_id=id))
+
+
+@webapp.route('/scdsc/v1/flights/<flight_id>', methods=['DELETE'])
+@requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
+def delete_flight(flight_id: str) -> Tuple[str, int]:
+    """Implements flight deletion in SCD automated testing injection API."""
+
+    with db.lock:
+        flight = db.flights.pop(flight_id, None)
+
+    if flight is None:
+        return flask.jsonify(DeleteFlightResponse(
+            result=DeleteFlightResult.Failed,
+            notes='Flight {} does not exist'.format(flight_id))), 200
+
+    # Delete operational intent from DSS
+    try:
+        result = scd_client.delete_operational_intent_reference(
+            resources.utm_client,
+            flight.op_intent_reference.id,
+            flight.op_intent_reference.ovn)
+    except (ValueError, scd_client.OperationError) as e:
+        notes = 'Error deleting operational intent: {}'.format(e)
+        return flask.jsonify(DeleteFlightResponse(
+            result=DeleteFlightResult.Failed, notes=notes)), 200
+    scd_client.notify_subscribers(
+        resources.utm_client, result.operational_intent_reference.id,
+        None, result.subscribers)
+
+    return flask.jsonify(DeleteFlightResponse(result=DeleteFlightResult.Closed))
