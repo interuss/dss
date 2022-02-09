@@ -1,28 +1,30 @@
+import json
 from typing import Dict, List, Optional
 
+from monitoring.monitorlib.multiprocessing import SynchronizedValue
 from monitoring.monitorlib.rid_automated_testing import injection_api
+from monitoring.monitorlib.typing import ImplicitDict
 
 
-class TestRecord(object):
+class TestRecord(ImplicitDict):
   """Representation of RID SP's record of a set of injected test flights"""
   version: str
   flights: List[injection_api.TestFlight]
   isa_version: Optional[str] = None
 
-  def __init__(self, version: str, flights: List[injection_api.TestFlight]):
-    flights = [injection_api.TestFlight(**flight) for flight in flights]
-    for flight in flights:
+  def __init__(self, **kwargs):
+    kwargs['flights'] = [injection_api.TestFlight(**flight) for flight in kwargs['flights']]
+    for flight in kwargs['flights']:
       flight.order_telemetry()
-    self.version = version
-    self.flights = flights
+
+    super(TestRecord, self).__init__(**kwargs)
 
 
-class Database(object):
-  """Simple in-memory pseudo-database tracking the state of the mock system"""
-  tests: Dict[str, TestRecord]
-
-  def __init__(self):
-    self.tests = {}
+class Database(ImplicitDict):
+  """Simple pseudo-database structure tracking the state of the mock system"""
+  tests: Dict[str, TestRecord] = {}
 
 
-db = Database()
+db = SynchronizedValue(
+    Database(),
+    decoder=lambda b: ImplicitDict.parse(json.loads(b.decode('utf-8')), Database))

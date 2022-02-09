@@ -1,7 +1,3 @@
-import flask
-from werkzeug.exceptions import HTTPException
-
-from monitoring.monitorlib import versioning, auth_validation
 from monitoring.mock_uss import webapp
 
 

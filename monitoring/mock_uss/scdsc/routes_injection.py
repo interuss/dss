@@ -5,7 +5,7 @@ import flask
 
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients import scd as scd_client
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.mock_uss import config, resources, webapp
 from monitoring.mock_uss.auth import requires_scope
@@ -20,20 +20,20 @@ def query_operational_intents(area_of_interest: scd.Volume4D) -> List[scd.Operat
     :return: Full definition for every operational intent discovered
     """
     op_intent_refs = scd_client.query_operational_intent_references(resources.utm_client, area_of_interest)
-    with db.lock:
-        get_details_for = []
-        for op_intent_ref in op_intent_refs:
-            if op_intent_ref.id not in db.cached_operations or db.cached_operations[op_intent_ref.id].reference.version != op_intent_ref.version:
-                get_details_for.append(op_intent_ref)
+    tx = db.value
+    get_details_for = []
+    for op_intent_ref in op_intent_refs:
+        if op_intent_ref.id not in tx.cached_operations or tx.cached_operations[op_intent_ref.id].reference.version != op_intent_ref.version:
+            get_details_for.append(op_intent_ref)
 
     updated_op_intents = []
     for op_intent_ref in get_details_for:
         updated_op_intents.append(scd_client.get_operational_intent_details(resources.utm_client, op_intent_ref.uss_base_url, op_intent_ref.id))
 
-    with db.lock:
+    with db as tx:
         for op_intent in updated_op_intents:
-            db.cached_operations[op_intent.reference.id] = op_intent
-        return [db.cached_operations[op_intent_ref.id] for op_intent_ref in op_intent_refs]
+            tx.cached_operations[op_intent.reference.id] = op_intent
+        return [tx.cached_operations[op_intent_ref.id] for op_intent_ref in op_intent_refs]
 
 
 @webapp.route('/scdsc/v1/status', methods=['GET'])
@@ -119,7 +119,37 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
         op_intent_reference=result.operational_intent_reference,
         op_intent_injection=req_body.operational_intent,
         flight_authorisation=req_body.flight_authorisation)
-    with db.lock:
-        db.flights[flight_id] = record
+    with db as tx:
+        tx.flights[flight_id] = record
 
     return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Planned, operational_intent_id=id))
+
+
+@webapp.route('/scdsc/v1/flights/<flight_id>', methods=['DELETE'])
+@requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
+def delete_flight(flight_id: str) -> Tuple[str, int]:
+    """Implements flight deletion in SCD automated testing injection API."""
+
+    with db.lock:
+        flight = db.flights.pop(flight_id, None)
+
+    if flight is None:
+        return flask.jsonify(DeleteFlightResponse(
+            result=DeleteFlightResult.Failed,
+            notes='Flight {} does not exist'.format(flight_id))), 200
+
+    # Delete operational intent from DSS
+    try:
+        result = scd_client.delete_operational_intent_reference(
+            resources.utm_client,
+            flight.op_intent_reference.id,
+            flight.op_intent_reference.ovn)
+    except (ValueError, scd_client.OperationError) as e:
+        notes = 'Error deleting operational intent: {}'.format(e)
+        return flask.jsonify(DeleteFlightResponse(
+            result=DeleteFlightResult.Failed, notes=notes)), 200
+    scd_client.notify_subscribers(
+        resources.utm_client, result.operational_intent_reference.id,
+        None, result.subscribers)
+
+    return flask.jsonify(DeleteFlightResponse(result=DeleteFlightResult.Closed))

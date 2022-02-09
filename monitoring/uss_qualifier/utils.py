@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
-from monitoring.uss_qualifier.scd.utils import SCDQualifierTestConfiguration
+from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 
 
 class USSQualifierTestConfiguration(ImplicitDict):

@@ -156,7 +156,7 @@ func main() {
 			// RID database changes from `defaultdb` to `rid` when moving up to 4.0.0
 			dbName = "rid"
 		}
-		if dbName == "defaultdb" && currentVersion.String() == "4.0.0" && newCurrentStepIndex < currentStepIndex {
+		if dbName == "rid" && currentVersion.String() == "4.0.0" && newCurrentStepIndex < currentStepIndex {
 			// RID database changes from `rid` to `defaultdb` when moving down from 4.0.0
 			dbName = "defaultdb"
 		}

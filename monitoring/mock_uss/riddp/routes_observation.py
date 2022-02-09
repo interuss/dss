@@ -85,7 +85,8 @@ def display_data() -> Tuple[str, int]:
 
   # Fetch flights from each unique flights URL
   validated_flights: List[rid.RIDFlight] = []
-  flight_info: Dict[str, database.FlightInfo] = {k: v for k, v in db.flights.items()}
+  tx = db.value
+  flight_info: Dict[str, database.FlightInfo] = {k: v for k, v in tx.flights.items()}
 
   for flights_url in isas_response.flight_urls:
     flights_response = fetch.flights(resources.utm_client, flights_url, view, True)
@@ -108,7 +109,9 @@ def display_data() -> Tuple[str, int]:
     # Construct detailed flights response
     response = observation_api.GetDisplayDataResponse(flights=[
       _make_flight_observation(f, view) for f in validated_flights])
-    db.flights = flight_info
+    with db as tx:
+        for k, v in flight_info.items():
+            tx.flights[k] = v
     return flask.jsonify(response)
   else:
     # Construct clusters response
@@ -120,7 +123,8 @@ def display_data() -> Tuple[str, int]:
 def flight_details(flight_id: str) -> Tuple[str, int]:
   """Implements get flight details endpoint per automated testing API."""
 
-  if flight_id not in db.flights:
+  tx = db.value
+  if flight_id not in tx.flights:
     return 'Flight "{}" not found'.format(flight_id), 404
 
   return flask.jsonify(observation_api.GetDetailsResponse())

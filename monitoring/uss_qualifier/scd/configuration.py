@@ -5,5 +5,5 @@ from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
 
 
 class SCDQualifierTestConfiguration(ImplicitDict):
-  injection_targets: List[InjectionTargetConfiguration]
-  """Set of USS into which data should be injected"""
+    injection_targets: List[InjectionTargetConfiguration]
+    """Set of USS into which data should be injected"""
