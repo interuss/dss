@@ -3,7 +3,7 @@ from enum import Enum
 from monitoring.monitorlib.typing import ImplicitDict
 
 
-class Severity(object):
+class Severity(str, Enum):
   Critical = 'Critical'
   """The system does not function correctly on a basic level."""
 
