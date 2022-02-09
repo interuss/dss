@@ -6,7 +6,7 @@ from typing import Dict
 from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest
-from monitoring.uss_qualifier.scd.utils import SCDQualifierTestConfiguration
+from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 from monitoring.uss_qualifier.utils import is_url
 
 

@@ -1,5 +1,7 @@
 from enum import Enum
 
+from monitoring.monitorlib.typing import ImplicitDict
+
 
 class Severity(str, Enum):
   Critical = 'Critical'
@@ -10,4 +12,13 @@ class Severity(str, Enum):
 
   Low = 'Low'
   """The system behaves correctly, but could be improved."""
-  
+
+
+class SubjectType(str, Enum):
+    InjectedFlight = 'InjectedFlight'
+    OperationalIntent = 'OperationalIntent'
+
+
+class IssueSubject(ImplicitDict):
+    subject_type: SubjectType
+    subject: str
