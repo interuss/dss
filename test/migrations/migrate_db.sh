@@ -26,7 +26,7 @@ echo " ---------------- MIGRATE DATABASE -------------------- "
 echo "Migrating ${db_name} database to version ${version}"
 docker run --rm --name migration-testing-db-manager \
   --link "${crdb_name}":crdb \
-  $network_flag \
+  "$network_flag" \
   -v "$(pwd)/build/deploy/db_schemas/${db_name}:/db-schemas/${db_name}" \
   local-db-manager \
   --schemas_dir db-schemas/"${db_name}" \
