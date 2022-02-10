@@ -68,46 +68,6 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 	}
 }
 
-// BuildURI returns a URI built from p.
-func (p ConnectParameters) BuildURI() (string, error) {
-	an := p.ApplicationName
-	if an == "" {
-		an = "dss"
-	}
-	h := p.Host
-	if h == "" {
-		return "", stacktrace.NewError("Missing crdb hostname")
-	}
-	port := p.Port
-	if port == 0 {
-		return "", stacktrace.NewError("Missing crdb port")
-	}
-	u := p.Credentials.Username
-	if u == "" {
-		return "", stacktrace.NewError("Missing crdb user")
-	}
-	ssl := p.SSL.Mode
-	if ssl == "" {
-		return "", stacktrace.NewError("Missing crdb ssl_mode")
-	}
-	db := p.DBName
-	if db != "" {
-		db = fmt.Sprintf("/%s", db)
-	}
-	if ssl == "disable" {
-		return fmt.Sprintf("postgresql://%s@%s:%d%s?application_name=%s&sslmode=disable", u, h, port, db, an), nil
-	}
-	dir := p.SSL.Dir
-	if dir == "" {
-		return "", stacktrace.NewError("Missing crdb ssl_dir")
-	}
-
-	return fmt.Sprintf(
-		"postgresql://%s@%s:%d%s?application_name=%s&sslmode=%s&sslrootcert=%s/ca.crt&sslcert=%s/client.%s.crt&sslkey=%s/client.%s.key",
-		u, h, port, db, an, ssl, dir, dir, u, dir, u,
-	), nil
-}
-
 // DB models a connection to a CRDB instance.
 type DB struct {
 	Pool *pgxpool.Pool
@@ -117,12 +77,11 @@ type DB struct {
 // "uri".
 // https://www.cockroachlabs.com/docs/stable/connection-parameters.html
 func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
-	uri, err := connParams.BuildURI()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error building URI")
-	}
+	dsn := fmt.Sprintf("user=%s host=%s port=%d dbname=%s sslmode=%s pool_max_conns=%d",
+		connParams.Credentials.Username, connParams.Host, connParams.Port, connParams.DBName, connParams.SSL.Mode,
+		int32(connParams.MaxOpenConns))
 
-	config, err := pgxpool.ParseConfig(uri)
+	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse connection config for pgx")
 	}
