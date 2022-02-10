@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict
-from monitoring.monitorlib.typing import ImplicitDict, StringBasedTimeDelta
+from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
 from monitoring.uss_qualifier.common_data_definitions import Severity
 

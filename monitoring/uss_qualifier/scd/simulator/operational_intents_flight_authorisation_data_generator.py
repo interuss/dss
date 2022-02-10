@@ -1,5 +1,6 @@
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest
-from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt, InjectionTarget, KnownIssueFields, KnownResponses, AutomatedTest
+from monitoring.uss_qualifier.scd.data_interfaces import FlightDeletionAttempt, FlightInjectionAttempt, InjectionTarget, KnownIssueFields, KnownResponses, AutomatedTest, TestStep
+from monitoring.uss_qualifier.scd.simulator.utils import FlightNameIncorrectField
 from utils import GeneratedGeometry, GeometryGenerationRule, SerialNumber, OperatorRegistrationNumber
 from shapely.geometry import asShape
 from shapely.geometry import LineString
@@ -10,7 +11,7 @@ import geojson
 import json
 from pyproj import Geod, Proj
 import arrow
-import random
+import random, string
 from typing import List, Union
 import shapely.geometry
 import os
@@ -242,18 +243,16 @@ class KnownIssuesAcceptableResultFieldGenerator():
 
         return all_known_issues_fields
 
-def generate_nominal_test_flight_injection_attempts(num_injections:int = 2) -> List[FlightInjectionAttempt]:
+def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str]) -> List[FlightInjectionAttempt]:
     """A method to generate flight injection data and associated messages in case the result of data processing is different from the expectation """
     nominal_test_flight_injection_attempts = []
 
     my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone="32T")
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
                 
-    for injection_number in range(0, num_injections):    
-        should_intersect = False 
-        if injection_number != 0:
-            coin_flip = random.choice([0,0,1]) # Geometry may or may not intersect, the first one will never intersect
-            should_intersect = coin_flip
+    for injection_number, flight_name in enumerate(all_flight_names):    
+
+        should_intersect = False if injection_number == 0 else True
 
         geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
 
@@ -272,15 +271,14 @@ def generate_nominal_test_flight_injection_attempts(num_injections:int = 2) -> L
         injection_target = InjectionTarget(uss_role = "Submitting USS")
         known_responses = KnownResponses(acceptable_results=[expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)
         
-        flight_injection_attempt = FlightInjectionAttempt(reference_time = reference_time, test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target)
+        flight_injection_attempt = FlightInjectionAttempt(reference_time = reference_time, test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target, name = flight_name)
         
         nominal_test_flight_injection_attempts.append(flight_injection_attempt)
     
     return nominal_test_flight_injection_attempts
 
-def generate_flight_authorisation_u_space_format_injection_attempts(field_to_make_incorrect:str = None) -> List[FlightInjectionAttempt]:
-    """A method to generate data for flight authorisation test and the associated injection attempt"""
-    flight_authorisation_test_flight_injection_attempts = []
+def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:str, field_to_make_incorrect:str = None) -> FlightInjectionAttempt:
+    """A method to generate data for flight authorisation test and the associated injection attempt"""    
     
     serial_number = SerialNumber.generate_valid()
     operator_id = OperatorRegistrationNumber.generate_valid()
@@ -303,25 +301,71 @@ def generate_flight_authorisation_u_space_format_injection_attempts(field_to_mak
     known_responses = KnownResponses(acceptable_results=[expected_flight_authorisation_processing_result], incorrect_result_details= all_incorrect_result_details)
     
     reference_time = arrow.now().isoformat()
-    flight_injection_attempt = FlightInjectionAttempt(reference_time = reference_time, test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target)
+    flight_injection_attempt = FlightInjectionAttempt(reference_time = reference_time, name=flight_name, test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target)
     
-    flight_authorisation_test_flight_injection_attempts.append(flight_injection_attempt)
-    return flight_authorisation_test_flight_injection_attempts
+    return flight_injection_attempt
     
 def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     """A method to run the data generator to generate the nominal and flight authorisation data test"""
     nominal_and_flight_authorisation_test_injection_attempts = []
-    nominal_test_flight_injection_attempts = generate_nominal_test_flight_injection_attempts()
-    nominal_test_details = AutomatedTest(name="Nominal Planning Test", injection_attempts = nominal_test_flight_injection_attempts)    
+    all_flight_names = []
+    injection_attempts = 2
+    for injection_attempt in range(0,injection_attempts):
+        random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
+        all_flight_names.append(random_flight_name)
+    nominal_test_steps = []
+
+    nominal_test_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names)
+
+    # Build nominal test steps    
+    for idx, injection_attempt in enumerate(nominal_test_flight_injection_attempts): 
+        if idx == 0:
+            nominal_test_step_1 = TestStep(name="Inject flight via First-mover USS", inject_flight = injection_attempt, delete_flight={})
+            nominal_test_steps.append(nominal_test_step_1)
+        elif idx == 1: 
+            nominal_test_step_2 = TestStep(name="Inject flight via Blocked USS", inject_flight = injection_attempt, delete_flight={})
+            nominal_test_steps.append(nominal_test_step_2)
+
+    for flight_idx, flight_name in enumerate(all_flight_names):
+        flight_deletion_attempt = FlightDeletionAttempt(flight_name =flight_name)
+        if flight_idx == 0:
+            
+
+            nominal_test_step_3 = TestStep(name="Delete first injected flight", delete_flight= flight_deletion_attempt, inject_flight={})
+            nominal_test_steps.append(nominal_test_step_3) 
+        elif flight_idx ==1:
+            nominal_test_step_4 = TestStep(name="Delete second injected flight", delete_flight= flight_deletion_attempt, inject_flight={})
+            nominal_test_steps.append(nominal_test_step_4)             
+
+    nominal_test_details = AutomatedTest(name="Nominal Planning Test", steps = nominal_test_steps)    
 
     nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_details)
 
     fields_to_make_incorrect = [None, "uas_serial_number", "operator_registration_number"]
+   
+    total_flight_auth_tests = 3
+    flight_authorisation_test_flight_details = []
+    for flight_auth_test_id in range(0,total_flight_auth_tests):
+        random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
+        if flight_auth_test_id == 0:
+            flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name)
+            
+        else:
+            flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name, incorrect_field = fields_to_make_incorrect[flight_auth_test_id])
+        
+        flight_authorisation_test_flight_details.append(flight_name_incorrect_field)
 
-    for incorrect_field in fields_to_make_incorrect:
-        flight_authorisation_test_injection_attempts = generate_flight_authorisation_u_space_format_injection_attempts(field_to_make_incorrect=incorrect_field)    
-        flight_authorisation_test_details = AutomatedTest(name="Flight Authorisation validation test", injection_attempts = flight_authorisation_test_injection_attempts)    
-        nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
+
+    flight_authorisation_test_steps = []
+    for field_index, flight_auth_test_metadata in enumerate(flight_authorisation_test_flight_details):
+        flight_authorisation_test_injection_attempt = generate_flight_authorisation_u_space_format_injection_attempt(field_to_make_incorrect=flight_auth_test_metadata.incorrect_field, flight_name= flight_auth_test_metadata.flight_name)    
+        flight_authorisation_test_steps.append(TestStep(name="Inject Fight Authorisation data", inject_flight= flight_authorisation_test_injection_attempt, delete_flight={}))
+        flight_deletion_attempt = FlightDeletionAttempt(flight_name =flight_name)
+        flight_authorisation_test_steps.append(TestStep(name="Delete injected data", delete_flight= flight_deletion_attempt, inject_flight = {}))
+        
+    flight_authorisation_test_details = AutomatedTest(name="Flight Authorisation validation test", steps = flight_authorisation_test_steps)    
+    nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
+
 
     return nominal_and_flight_authorisation_test_injection_attempts
 

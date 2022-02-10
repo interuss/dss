@@ -90,3 +90,7 @@ class GeneratedGeometry(ImplicitDict):
     geometry: Union[LineString, Polygon]    
     geometry_generation_rule: GeometryGenerationRule
    
+class FlightNameIncorrectField(ImplicitDict):
+    """A class to hold name of a flight and the associated incorrect field within it"""
+    flight_name: str
+    incorrect_field:str = None
