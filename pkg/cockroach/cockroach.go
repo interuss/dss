@@ -3,7 +3,6 @@ package cockroach
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/coreos/go-semver/semver"
