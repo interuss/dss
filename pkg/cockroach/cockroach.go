@@ -41,33 +41,6 @@ type (
 	}
 )
 
-func parseIntOrDefault(port string, defaultPort int64) int64 {
-	p, err := strconv.ParseInt(port, 10, 16)
-	if err != nil {
-		p = defaultPort
-	}
-	return p
-}
-
-// connectParametersFromMap constructs a ConnectParameters instance from m.
-func connectParametersFromMap(m map[string]string) ConnectParameters {
-	return ConnectParameters{
-		ApplicationName: m["application_name"],
-		DBName:          m["db_name"],
-		Host:            m["host"],
-		Port:            int(parseIntOrDefault(m["port"], 0)),
-		Credentials: Credentials{
-			Username: m["user"],
-		},
-		SSL: SSL{
-			Mode: m["ssl_mode"],
-			Dir:  m["ssl_dir"],
-		},
-		MaxOpenConns:       int(parseIntOrDefault(m["max_open_conns"], 4)),
-		MaxConnIdleSeconds: int(parseIntOrDefault(m["max_conn_idle_secs"], 40)),
-	}
-}
-
 // DB models a connection to a CRDB instance.
 type DB struct {
 	Pool *pgxpool.Pool
