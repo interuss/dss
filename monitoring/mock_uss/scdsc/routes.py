@@ -53,18 +53,18 @@ def clear_all_flights() -> Tuple[str, int]:
             dss_deletion_results[op_intent_ref.id] = str(e)
 
     # Delete corresponding flight injections and cached operational intents
-    with db.lock:
+    with db as tx:
         flights_to_delete = []
-        for flight_id, record in db.flights.items():
+        for flight_id, record in tx.flights.items():
             if record.op_intent_reference.id in deleted:
                 flights_to_delete.append(flight_id)
         for flight_id in flights_to_delete:
-            del db.flights[flight_id]
+            del tx.flights[flight_id]
 
         cache_deletions = []
         for op_intent_id in deleted:
-            if op_intent_id in db.cached_operations:
-                del db.cached_operations[op_intent_id]
+            if op_intent_id in tx.cached_operations:
+                del tx.cached_operations[op_intent_id]
                 cache_deletions.append(op_intent_id)
 
     return flask.jsonify({

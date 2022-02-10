@@ -12,12 +12,12 @@ def get_operational_intent_details(entityid: str):
     """Implements getOperationalIntentDetails in ASTM SCD API."""
 
     # Look up entityid in database
-    with db.lock:
-        flight = None
-        for f in db.flights.values():
-            if f.op_intent_reference.id == entityid:
-                flight = f
-                break
+    tx = db.value
+    flight = None
+    for f in tx.flights.values():
+        if f.op_intent_reference.id == entityid:
+            flight = f
+            break
 
     # If requested operational intent doesn't exist, return 404
     if flight is None:

@@ -51,7 +51,8 @@ def create_test(test_id: str) -> Tuple[str, int]:
     if code != 204 and code != 200:
       pass #TODO: Log notification failures (maybe also log incorrect 200s)
 
-  db.tests[test_id] = record
+  with db as tx:
+    tx.tests[test_id] = record
   return flask.jsonify(injection_api.ChangeTestResponse(version=record.version, injected_flights=record.flights))
 
 
@@ -60,10 +61,10 @@ def create_test(test_id: str) -> Tuple[str, int]:
 def delete_test(test_id: str) -> Tuple[str, int]:
   """Implements test deletion in RID automated testing injection API."""
 
-  if test_id not in db.tests:
-    return 'Test "{}" not found'.format(test_id), 404
+  record = db.value.tests.get(test_id, None)
 
-  record = db.tests[test_id]
+  if record is None:
+    return 'Test "{}" not found'.format(test_id), 404
 
   # Delete ISA from DSS
   deleted_isa = mutate.delete_isa(resources.utm_client, record.version, record.isa_version)
@@ -76,5 +77,6 @@ def delete_test(test_id: str) -> Tuple[str, int]:
     if code != 204 and code != 200:
       pass #TODO: Log notification failures (maybe also log incorrect 200s)
 
-  del db.tests[test_id]
+  with db as tx:
+    del tx.tests[test_id]
   return flask.jsonify(injection_api.ChangeTestResponse(version=record.version, injected_flights=record.flights))

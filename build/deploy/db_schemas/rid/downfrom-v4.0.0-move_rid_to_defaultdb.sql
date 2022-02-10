@@ -1,2 +1,6 @@
-'Migration down from rid 4.0.0 is not yet implemented'
--- TODO: Populate with down migration (issue #574)
+SET sql_safe_updates = false;
+DROP DATABASE IF EXISTS defaultdb;
+ALTER DATABASE rid RENAME TO defaultdb;
+USE defaultdb;
+
+UPDATE schema_versions set schema_version = 'v3.1.1' WHERE onerow_enforcer = TRUE;
