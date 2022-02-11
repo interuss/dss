@@ -306,7 +306,9 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
     return flight_injection_attempt
 
 def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
-    """A method to run the data generator to generate the nominal and flight authorisation data test"""
+    """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
+
+    ## Begin nominal test data generation
     nominal_and_flight_authorisation_test_injection_attempts = []
     all_flight_names = []
     injection_attempts = 2
@@ -329,8 +331,6 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     for flight_idx, flight_name in enumerate(all_flight_names):
         flight_deletion_attempt = FlightDeletionAttempt(flight_name =flight_name)
         if flight_idx == 0:
-
-
             nominal_test_step_3 = TestStep(name="Delete first injected flight", delete_flight= flight_deletion_attempt, inject_flight=None)
             nominal_test_steps.append(nominal_test_step_3)
         elif flight_idx ==1:
@@ -338,34 +338,37 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
             nominal_test_steps.append(nominal_test_step_4)
 
     nominal_test_details = AutomatedTest(name="Nominal Planning Test", steps = nominal_test_steps)
+    ## End nominal test data generation
 
     nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_details)
 
+    ## Begin flight authorisation test data generation    
     fields_to_make_incorrect = [None, "uas_serial_number", "operator_registration_number"]
 
-    total_flight_auth_tests = 3
-    flight_authorisation_test_flight_details = []
+    total_flight_auth_tests = len(fields_to_make_incorrect)
+    all_flight_authorisation_test_flights = []
     for flight_auth_test_id in range(0,total_flight_auth_tests):
         random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
         if flight_auth_test_id == 0:
             flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name)
-
         else:
             flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name, incorrect_field = fields_to_make_incorrect[flight_auth_test_id])
 
-        flight_authorisation_test_flight_details.append(flight_name_incorrect_field)
+        all_flight_authorisation_test_flights.append(flight_name_incorrect_field)
 
-
-    flight_authorisation_test_steps = []
-    for field_index, flight_auth_test_metadata in enumerate(flight_authorisation_test_flight_details):
+    
+    for flight_auth_test_metadata in all_flight_authorisation_test_flights:
+        flight_authorisation_test_steps = []
         flight_authorisation_test_injection_attempt = generate_flight_authorisation_u_space_format_injection_attempt(field_to_make_incorrect=flight_auth_test_metadata.incorrect_field, flight_name= flight_auth_test_metadata.flight_name)
         flight_authorisation_test_steps.append(TestStep(name="Inject Fight Authorisation data", inject_flight= flight_authorisation_test_injection_attempt, delete_flight=None))
-        flight_deletion_attempt = FlightDeletionAttempt(flight_name =flight_name)
+        
+        flight_deletion_attempt = FlightDeletionAttempt(flight_name = flight_auth_test_metadata.flight_name)
         flight_authorisation_test_steps.append(TestStep(name="Delete injected data", delete_flight= flight_deletion_attempt, inject_flight=None))
 
-    flight_authorisation_test_details = AutomatedTest(name="Flight Authorisation validation test", steps = flight_authorisation_test_steps)
-    nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
+        flight_authorisation_test_details = AutomatedTest(name="Flight Authorisation validation test", steps = flight_authorisation_test_steps)
 
+        nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
+    ## End flight authorisation test data generation    
 
     return nominal_and_flight_authorisation_test_injection_attempts
 
