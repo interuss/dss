@@ -91,6 +91,6 @@ class GeneratedGeometry(ImplicitDict):
     geometry_generation_rule: GeometryGenerationRule
    
 class FlightNameIncorrectField(ImplicitDict):
-    """A class to hold name of a flight and the associated incorrect field within it"""
+    """A class to hold name of a flight and the associated incorrect field within it, used when generating data for flight authorisation data checks """
     flight_name: str
     incorrect_field:str = None
