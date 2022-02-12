@@ -1,9 +1,11 @@
 import uuid
 from typing import Tuple
 
+from monitoring.monitorlib.clients.scd import OperationError
 from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, \
     SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult
+from monitoring.monitorlib.typing import ImplicitDict
 
 
 def create_flight(utm_client: DSSTestSession, uss_base_url: str, flight_request: InjectFlightRequest, dry: bool=False) -> Tuple[str, InjectFlightResponse]:
@@ -16,15 +18,23 @@ def create_flight(utm_client: DSSTestSession, uss_base_url: str, flight_request:
             notes=[],
             operational_intent_id=str(uuid.uuid4())
         )
+    resp = utm_client.put(url, json=flight_request, scope=SCOPE_SCD_QUALIFIER_INJECT)
+    if resp.status_code != 200:
+        raise OperationError('createFlight failed {}:\n{}'.format(resp.status_code, resp.content.decode('utf-8')))
+    return flight_id, ImplicitDict.parse(resp.json(), InjectFlightResponse)
 
 
 def delete_flight(utm_client: DSSTestSession, uss_base_url: str, flight_id: str, dry: bool) -> DeleteFlightResponse:
     url = '{}/v1/flights/{}'.format(uss_base_url, flight_id)
-    print("[SCD] DEL {}".format(url))
+    print("[SCD] DELETE {}".format(url))
     if dry:
         return DeleteFlightResponse(
             result=DeleteFlightResult.DryRun,
             notes=[]
         )
+    resp = utm_client.delete(url, scope=SCOPE_SCD_QUALIFIER_INJECT)
+    if resp.status_code != 200:
+        raise OperationError('deleteFlight failed {}:\n{}'.format(resp.status_code, resp.content.decode('utf-8')))
+    return ImplicitDict.parse(resp.json(), DeleteFlightResponse)
 
 

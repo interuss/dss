@@ -2,15 +2,19 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import Inject
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt, \
     InjectionTarget, FlightDeletionAttempt, KnownResponses
-from monitoring.uss_qualifier.scd.executor import TestRunner, targets_combination
+from monitoring.uss_qualifier.scd.executor import TestRunner, combine_targets, TestTarget
 
-
-targets = [
+injection_targets = [
     InjectionTargetConfiguration(
         name="uss_unit_test_1",
-        injection_base_url="http://host.docker.internal:8074/scdsc"
+        injection_base_url="http://host.docker.internal:8075/scdsc"
+    ),
+    InjectionTargetConfiguration(
+        name="uss_unit_test_2",
+        injection_base_url="http://host.docker.internal:8076/scdsc"
     )
 ]
+configured_targets = list(map(lambda t: TestTarget(t.name, t, "NoAuth()"), injection_targets))
 
 automated_test = AutomatedTest(
     name="Unit Test",
@@ -57,25 +61,13 @@ automated_test = AutomatedTest(
 )
 
 def test_TestRunner():
-    runner = TestRunner(auth_spec="NoAuth()", automated_test_id=automated_test.name, automated_test=automated_test, targets=targets)
-    for s in automated_test.steps:
-        print(s.name)
-        runner.get_target(s)
+    combinations = combine_targets(configured_targets, automated_test.steps)
+    runner = TestRunner("NoAuth()", automated_test.name, automated_test, next(combinations))
+    runner.print_test_plan()
 
 
 def test_target_combinations():
-    targets = [
-        InjectionTargetConfiguration(
-            name="uss_unit_test_1",
-            injection_base_url="http://host.docker.internal:8075/scdsc"
-        ),
-        InjectionTargetConfiguration(
-            name="uss_unit_test_2",
-            injection_base_url="http://host.docker.internal:8076/scdsc"
-        )
-    ]
-
-    targets_under_test = list(targets_combination(targets, automated_test.steps))
+    targets_under_test = list(combine_targets(configured_targets, automated_test.steps))
     assert len(targets_under_test) == 2
     assert targets_under_test[0]["First-Mover USS"].name == "uss_unit_test_1"
     assert targets_under_test[0]["Second USS"].name == "uss_unit_test_2"

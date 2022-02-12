@@ -2,14 +2,16 @@ import itertools
 import json
 import os
 import typing
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List
 
 from monitoring.monitorlib import infrastructure, auth
+from monitoring.monitorlib.clients.scd import OperationError
 from monitoring.monitorlib.clients.scd_automated_testing import create_flight, delete_flight
 from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResult, \
-    DeleteFlightResult
+    DeleteFlightResult, InjectFlightResponse
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
@@ -73,7 +75,11 @@ class TestTarget():
         print (flight_id, self.name, self.created_flight_ids)
         if resp.result in [InjectFlightResult.Planned, InjectFlightResult.DryRun]:
             self.created_flight_ids[flight_request.name] = flight_id
-        # TODO: Handle errors
+        # elif resp.result == InjectFlightResult.ConflictWithFlight:
+        #     raise OperationError("Unable to inject flight due to conflicting flight: {}".format(resp))
+        # elif resp.result == InjectFlightResult.Failed:
+        #     raise OperationError("Unable to inject flight: {}".format(resp))
+        return resp
 
     def delete_flight(self, flight_name: str, dry=False):
         flight_id = self.created_flight_ids[flight_name]
@@ -85,12 +91,11 @@ class TestTarget():
     def delete_all_flights(self, dry=False) -> int:
         flights_count = len(self.created_flight_ids.keys())
         print("[SCD]    - Deleting {} flights for target {}.".format(flights_count, self.name))
-        for flight_name, flight_id in self.created_flight_ids.items():
-            self.delete_flight(flight_id, dry=dry)
+        for flight_name, flight_id in list(self.created_flight_ids.items()):
+            self.delete_flight(flight_name, dry=dry)
         return flights_count
 
     def has_created_flight(self, flight_name: str):
-        print (flight_name, self.created_flight_ids.keys())
         return flight_name in self.created_flight_ids.keys()
 
 class TestRunner:
@@ -99,7 +104,6 @@ class TestRunner:
         self.automated_test_id = automated_test_id
         self.automated_test = automated_test
         self.targets = targets
-        print(targets)
 
     def print_test_plan(self):
         self.run_automated_test(dry=True)
@@ -110,21 +114,33 @@ class TestRunner:
             print('[SCD] - {}'.format(step.name))
             self.execute_step(step, dry=dry)
 
+    def evaluate_inject_flight_response(self, req: InjectFlightRequest, resp: InjectFlightResponse, dry=False) -> bool:
+        if dry and resp.result == InjectFlightResult.DryRun:
+            print("[SCD] Result: SKIP")
+            return
+        if resp.result not in req.known_responses.acceptable_results:
+            raise OperationError("[SCD] ERROR: Received {}, expected one of {}. Reason: {}".format(resp.result, req.known_responses.acceptable_results, resp.get('notes', None)))
+        print("[SCD] Result: SUCCESS")
+
     def execute_step(self, step: TestStep, dry=False):
         target = self.get_target(step)
         if target is None:
             # TODO implement reporting
             self.print_targets_state()
-            raise RuntimeError("[SCD] Error: Unable to identify the target for step {}".format(step.name))
+            raise RuntimeError("[SCD] Error: Unable to identify the target managing flight {}".format(
+                step.inject_flight.name if 'inject_flight' in step else step.delete_flight.flight_name
+            ))
 
         if 'inject_flight' in step:
             print("[SCD]   - Inject flight {} to {}".format(step.inject_flight.name, target.name))
-            target.inject_flight(step.inject_flight, dry=dry)
+            resp = target.inject_flight(step.inject_flight, dry=dry)
+            self.evaluate_inject_flight_response(step.inject_flight, resp, dry=dry)
         elif 'delete_flight' in step:
             print("[SCD]   - Delete flight {} to {}".format(step.delete_flight.flight_name, target.name))
             target.delete_flight(step.delete_flight.flight_name, dry=dry)
         else:
             print("[SCD] Warning: no action defined for step {}".format(step.name))
+
 
     def get_managing_target(self, flight_name: str) -> typing.Optional[TestTarget]:
         for role, target in self.targets.items():
@@ -154,16 +170,17 @@ class TestRunner:
 def combine_targets(targets: List[InjectionTargetConfiguration], steps: List[TestStep]) -> typing.Iterator[Dict[str, TestTarget]]:
     injection_steps = filter(lambda step: 'inject_flight' in step, steps)
     # Get unique uss roles in injection steps
-    uss_roles = set(map(lambda step: step.inject_flight.injection_target.uss_role, injection_steps))
+    uss_roles = sorted(set(map(lambda step: step.inject_flight.injection_target.uss_role, injection_steps)))
     for t in itertools.permutations(targets, len(uss_roles)):
         target_set = {}
         for i, role in enumerate(uss_roles):
             target_set[role] = t[i]
+        print(target_set)
         yield target_set
 
 
 def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfiguration,
-                  auth_spec: str):
+                  auth_spec: str, dry=False):
     automated_tests = load_scd_test_definitions(locale)
     configured_targets = list(map(lambda t: TestTarget(t.name, t, auth_spec), test_configuration.injection_targets))
 
@@ -172,6 +189,12 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
         for i, targets_under_test in enumerate(combinations):
             print('[SCD] Starting test combination {}: {} ({}/{}) {}'.format(i+1,  test.name, locale, test_id, list(map(lambda t: "{}: {}".format(t[0], t[1].name), targets_under_test.items()))))
             runner = TestRunner(auth_spec, test_id, test, targets_under_test)
-            runner.print_test_plan()
+
+            if dry:
+                runner.print_test_plan()
+            else:
+                runner.run_automated_test()
+                runner.teardown()
+
 
 
