@@ -129,8 +129,8 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
 def delete_flight(flight_id: str) -> Tuple[str, int]:
     """Implements flight deletion in SCD automated testing injection API."""
 
-    with db.lock:
-        flight = db.flights.pop(flight_id, None)
+    with db as tx:
+        flight = tx.flights.pop(flight_id, None)
 
     if flight is None:
         return flask.jsonify(DeleteFlightResponse(
