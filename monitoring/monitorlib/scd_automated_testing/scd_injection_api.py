@@ -6,7 +6,7 @@ from monitoring.monitorlib.scd import Volume4D
 SCOPE_SCD_QUALIFIER_INJECT = 'utm.inject_test_data'
 
 ## Definitions around operational intent data that need to be submitted to the test injection interface
-  
+
 class OperationalIntentTestInjection(ImplicitDict):
     ''' A class to hold data for operational intent data that will be submitted to the SCD testing interface. '''
     state: str
@@ -17,10 +17,10 @@ class OperationalIntentTestInjection(ImplicitDict):
 ### End of definitions around operational intent data
 
 ## Definitions around flight authorisation data that need to be submitted to the test injection interface
-   
+
 class FlightAuthorisationData(ImplicitDict):
     '''A class to hold information about Flight Authorisation Test '''
-    
+
     uas_serial_number: str
     operation_mode: str
     operation_category: Optional[str]
@@ -46,6 +46,7 @@ class InjectFlightResult(str, Enum):
     Rejected = 'Rejected'
     ConflictWithFlight = 'ConflictWithFlight'
     Failed = 'Failed'
+    DryRun = 'DryRun'
 
 
 class InjectFlightResponse(ImplicitDict):
@@ -58,6 +59,7 @@ class InjectFlightResponse(ImplicitDict):
 class DeleteFlightResult(str, Enum):
     Closed = 'Closed'
     Failed = 'Failed'
+    DryRun = 'DryRun'
 
 
 class DeleteFlightResponse(ImplicitDict):

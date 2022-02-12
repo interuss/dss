@@ -1,58 +1,84 @@
-import json
-import os
-from pathlib import Path
-from typing import Dict
-
-from monitoring.monitorlib.locality import Locality
-from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest
-from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
-from monitoring.uss_qualifier.utils import is_url
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
+from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
+from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt, \
+    InjectionTarget, FlightDeletionAttempt, KnownResponses
+from monitoring.uss_qualifier.scd.executor import TestRunner, targets_combination
 
 
-def get_automated_tests(automated_tests_dir: Path, prefix: str) -> Dict[str, AutomatedTest]:
-    """Gets automated tests from the specified directory"""
+targets = [
+    InjectionTargetConfiguration(
+        name="uss_unit_test_1",
+        injection_base_url="http://host.docker.internal:8074/scdsc"
+    )
+]
 
-    # Read all JSON files in this directory
-    automated_tests: Dict[str, AutomatedTest] = {}
-    for file in automated_tests_dir.glob('*.json'):
-        id = prefix + os.path.splitext(os.path.basename(file))[0]
-        with open(file, 'r') as f:
-            automated_tests[id] = ImplicitDict.parse(json.load(f), AutomatedTest)
+automated_test = AutomatedTest(
+    name="Unit Test",
+    steps = [
+        TestStep(
+            name="Inject Flight 1",
+            inject_flight=FlightInjectionAttempt(
+                reference_time="2022-02-11T09:00:05.359502+00:00",
+                name="f0001",
+                test_injection=InjectFlightRequest(
+                    operational_intent=None,
+                    flight_authorisation=None
+                ),
+                known_responses=KnownResponses(
+                    acceptable_results=[],
+                    incorrect_result_details={}
+                ),
+                injection_target=InjectionTarget(uss_role="First-Mover USS")
+            )
+        ),
+        TestStep(
+            name="Inject Flight 2",
+            inject_flight=FlightInjectionAttempt(
+                reference_time="2022-02-11T09:30:05.359502+00:00",
+                name="f0002",
+                test_injection=InjectFlightRequest(
+                    operational_intent=None,
+                    flight_authorisation=None
+                ),
+                known_responses=KnownResponses(
+                    acceptable_results=[],
+                    incorrect_result_details={}
+                ),
+                injection_target=InjectionTarget(uss_role="Second USS")
+            )
+        ),
+        TestStep(
+            name="Delete Flight",
+            delete_flight=FlightDeletionAttempt(
+                flight_name="f0001"
+            )
+        )
+    ]
+)
 
-    # Read subdirectories
-    for subdir in automated_tests_dir.iterdir():
-        if subdir.is_dir():
-            new_tests = get_automated_tests(subdir, prefix + subdir.name + '/')
-            for k, v in new_tests.items():
-                automated_tests[k] = v
-
-    return automated_tests
+def test_TestRunner():
+    runner = TestRunner(auth_spec="NoAuth()", automated_test_id=automated_test.name, automated_test=automated_test, targets=targets)
+    for s in automated_test.steps:
+        print(s.name)
+        runner.get_target(s)
 
 
-def load_scd_test_definitions(locale: Locality) -> Dict[str, AutomatedTest]:
-    automated_tests_dir = Path(os.getcwd(), 'scd', 'test_definitions', locale.value)
-    if not os.path.exists(automated_tests_dir):
-        print('[SCD] No automated tests files found; generating them via simulator now')
-        # TODO: Call the simulator
-        raise NotImplementedError()
+def test_target_combinations():
+    targets = [
+        InjectionTargetConfiguration(
+            name="uss_unit_test_1",
+            injection_base_url="http://host.docker.internal:8075/scdsc"
+        ),
+        InjectionTargetConfiguration(
+            name="uss_unit_test_2",
+            injection_base_url="http://host.docker.internal:8076/scdsc"
+        )
+    ]
 
-    return get_automated_tests(automated_tests_dir, '')
+    targets_under_test = list(targets_combination(targets, automated_test.steps))
+    assert len(targets_under_test) == 2
+    assert targets_under_test[0]["First-Mover USS"].name == "uss_unit_test_1"
+    assert targets_under_test[0]["Second USS"].name == "uss_unit_test_2"
+    assert targets_under_test[1]["First-Mover USS"].name == "uss_unit_test_2"
+    assert targets_under_test[1]["Second USS"].name == "uss_unit_test_1"
 
-
-def validate_configuration(test_configuration: SCDQualifierTestConfiguration):
-    try:
-        for injection_target in test_configuration.injection_targets:
-            is_url(injection_target.injection_base_url)
-    except ValueError:
-        raise ValueError("A valid url for injection_target must be passed")
-
-
-def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfiguration,
-                  auth_spec: str):
-
-    automated_tests = load_scd_test_definitions(locale)
-
-    for test_id, test in automated_tests.items():
-        print('[SCD] Running {} ({})'.format(test_id, test.name))
-        # TODO Replace with actual implementation
