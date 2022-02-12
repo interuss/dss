@@ -2,7 +2,9 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import Inject
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt, \
     InjectionTarget, FlightDeletionAttempt, KnownResponses
-from monitoring.uss_qualifier.scd.executor import TestRunner, combine_targets, TestTarget
+from monitoring.uss_qualifier.scd.executor.executor import combine_targets
+from monitoring.uss_qualifier.scd.executor.runner import TestRunner
+from monitoring.uss_qualifier.scd.executor.target import TestTarget
 
 injection_targets = [
     InjectionTargetConfiguration(
