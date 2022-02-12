@@ -47,7 +47,6 @@ def scdsc_injection_status() -> Tuple[str, int]:
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def inject_flight(flight_id: str) -> Tuple[str, int]:
     """Implements flight injection in SCD automated testing injection API."""
-
     try:
         json = flask.request.json
         if json is None:
@@ -118,7 +117,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     record = database.FlightRecord(
         op_intent_reference=result.operational_intent_reference,
         op_intent_injection=req_body.operational_intent,
-        flight_authorisation=req_body.flight_authorisation)
+        flight_authorisation=req_body.flight_authorisation if 'flight_authorisation' in req_body else None)
     with db as tx:
         tx.flights[flight_id] = record
 

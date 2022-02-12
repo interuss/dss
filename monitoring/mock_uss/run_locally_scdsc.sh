@@ -11,7 +11,7 @@ AUD=${MOCK_USS_TOKEN_AUDIENCE:-localhost,host.docker.internal}
 PORT=${PORT:-8074}
 BASE_URL="http://${MOCK_USS_TOKEN_AUDIENCE:-host.docker.internal}:${PORT}"
 
-docker run --name mock_uss_scdsc \
+docker run --name mock_uss_scdsc_$PORT \
   --rm \
   -e MOCK_USS_AUTH_SPEC="${AUTH}" \
   -e MOCK_USS_DSS_URL="${DSS}" \
