@@ -1,22 +1,12 @@
-import itertools
-import json
-import os
-import typing
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, List
+
+from typing import Dict
 
 from monitoring.monitorlib import infrastructure, auth
-from monitoring.monitorlib.clients.scd import OperationError
 from monitoring.monitorlib.clients.scd_automated_testing import create_flight, delete_flight
-from monitoring.monitorlib.locality import Locality
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResult, \
-    DeleteFlightResult, InjectFlightResponse
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResult, \
+    DeleteFlightResult
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
-from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
-from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt
-from monitoring.uss_qualifier.utils import is_url
+from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt
 
 FlightName = str
 

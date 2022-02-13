@@ -1,14 +1,14 @@
 
+import json
 import typing
 from typing import Dict
-import json
-from monitoring.monitorlib.clients.scd import OperationError
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResult, \
+
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResult, \
     InjectFlightResponse
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt
 from monitoring.uss_qualifier.scd.executor.target import TestTarget
-from monitoring.uss_qualifier.scd.reports import Report, Interaction
+from monitoring.uss_qualifier.scd.reports import Report
 
 
 class TestRunner:
@@ -67,7 +67,7 @@ class TestRunner:
         else:
             raise NotImplementedError("Unsupported step. A Test Step shall contain either a inject_flight or a delete_flight object.")
 
-    # TODO: Move evaluation at the end of the execution
+    # TODO: Use this method as a canvas to create findings and move the final evaluation at the end of the execution.
     def evaluate_inject_flight_response(self, attempt: FlightInjectionAttempt, resp: InjectFlightResponse, dry=False) -> bool:
         if dry and resp.result == InjectFlightResult.DryRun:
             print("[SCD]     Result: SKIP")
