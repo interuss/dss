@@ -53,16 +53,23 @@ def validate_configuration(test_configuration: SCDQualifierTestConfiguration):
         raise ValueError("A valid url for injection_target must be passed")
 
 
-def combine_targets(targets: List[InjectionTargetConfiguration], steps: List[TestStep]) -> typing.Iterator[Dict[str, TestTarget]]:
+def combine_targets(targets: List[TestTarget], steps: List[TestStep]) -> typing.Iterator[Dict[str, TestTarget]]:
+    """Gets combination of targets assigned to the uss roles specified in steps"""
     injection_steps = filter(lambda step: 'inject_flight' in step, steps)
-    # Get unique uss roles in injection steps
+
+    # Get unique uss roles in injection steps in deterministic order
     uss_roles = sorted(set(map(lambda step: step.inject_flight.injection_target.uss_role, injection_steps)))
+
+    # Create combinations
     for t in itertools.permutations(targets, len(uss_roles)):
         target_set = {}
         for i, role in enumerate(uss_roles):
             target_set[role] = t[i]
-        print(target_set)
         yield target_set
+
+
+def format_combination(combination: Dict[str, TestTarget]) -> str:
+    return list(map(lambda t: "{}: {}".format(t[0], t[1].name), combination.items()))
 
 
 def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfiguration,
@@ -73,8 +80,9 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
     for test_id, test in automated_tests.items():
         combinations = combine_targets(configured_targets, test.steps)
         for i, targets_under_test in enumerate(combinations):
-            print('[SCD] Starting test combination {}: {} ({}/{}) {}'.format(i+1,  test.name, locale, test_id, list(map(lambda t: "{}: {}".format(t[0], t[1].name), targets_under_test.items()))))
-            runner = TestRunner(auth_spec, test_id, test, targets_under_test)
+            print('[SCD] Starting test combination {}: {} ({}/{}) {}'.format(i+1,  test.name, locale, test_id,
+                format_combination(targets_under_test)))
+            runner = TestRunner(test_id, test, targets_under_test)
 
             if dry:
                 runner.print_test_plan()
