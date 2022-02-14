@@ -67,7 +67,8 @@ def combine_targets(targets: List[TestTarget], steps: List[TestStep]) -> typing.
         yield target_set
 
 
-def format_combination(combination: Dict[str, TestTarget]) -> str:
+def format_combination(combination: Dict[str, TestTarget]) -> List[str]:
+    """Returns a string in the form of `uss_role: target_name`"""
     return list(map(lambda t: "{}: {}".format(t[0], t[1].name), combination.items()))
 
 
@@ -77,10 +78,11 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
     configured_targets = list(map(lambda t: TestTarget(t.name, t, auth_spec), test_configuration.injection_targets))
 
     for test_id, test in automated_tests.items():
-        combinations = combine_targets(configured_targets, test.steps)
-        for i, targets_under_test in enumerate(combinations):
+        target_combinations = combine_targets(configured_targets, test.steps)
+        for i, targets_under_test in enumerate(target_combinations):
             print('[SCD] Starting test combination {}: {} ({}/{}) {}'.format(i+1,  test.name, locale, test_id,
                 format_combination(targets_under_test)))
+
             runner = TestRunner(test_id, test, targets_under_test)
 
             if dry:
@@ -88,4 +90,3 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
             else:
                 runner.run_automated_test()
                 runner.teardown()
-

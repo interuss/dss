@@ -68,8 +68,10 @@ injection_targets = [
 configured_targets = list(map(lambda t: TestTarget(t.name, t, "NoAuth()"), injection_targets))
 # End of Test data definition
 
+
 def test_test_runner():
     """Test ability to execute dry steps and build the test plan"""
+
     combinations = combine_targets(configured_targets, automated_test.steps)
     runner = TestRunner(automated_test.name, automated_test, next(combinations))
     runner.print_test_plan()
