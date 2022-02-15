@@ -73,7 +73,7 @@ def format_combination(combination: Dict[str, TestTarget]) -> List[str]:
 
 
 def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfiguration,
-                  auth_spec: str, dry=False):
+                  auth_spec: str):
     automated_tests = load_scd_test_definitions(locale)
     configured_targets = list(map(lambda t: TestTarget(t.name, t, auth_spec), test_configuration.injection_targets))
 
@@ -85,8 +85,5 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
 
             runner = TestRunner(test_id, test, targets_under_test)
 
-            if dry:
-                runner.print_test_plan()
-            else:
-                runner.run_automated_test()
-                runner.teardown()
+            runner.run_automated_test()
+            runner.teardown()

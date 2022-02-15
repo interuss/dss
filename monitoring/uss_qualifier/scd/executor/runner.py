@@ -24,21 +24,18 @@ class TestRunner:
     def get_scd_configuration(self) -> SCDQualifierTestConfiguration:
         return SCDQualifierTestConfiguration(injection_targets=list(map(lambda t: t.config, self.targets.values())))
 
-    def run_automated_test(self, dry=False):
-        """Runs the automated test. If dry is set to True, no request is submitted and results of requests are set to DryRun.
-           This allows to introspect a test plan without dependencies."""
-
+    def run_automated_test(self):
         for step in self.automated_test.steps:
             print('[SCD]   Running step {}'.format(step.name))
-            self.execute_step(step, dry=dry)
+            self.execute_step(step)
 
-    def teardown(self, dry=False):
+    def teardown(self):
         """Delete resources created by this test runner."""
         print("[SCD]   Teardown {}".format(self.automated_test.name))
         for role, target in self.targets.items():
-            target.delete_all_flights(dry=dry)
+            target.delete_all_flights()
 
-    def execute_step(self, step: TestStep, dry=False):
+    def execute_step(self, step: TestStep):
         target = self.get_target(step)
         if target is None:
             # TODO implement reporting
@@ -49,12 +46,12 @@ class TestRunner:
 
         if 'inject_flight' in step:
             print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
-            resp = target.inject_flight(step.inject_flight, dry=dry)
+            resp = target.inject_flight(step.inject_flight)
             # TODO: Move evaluation at the end of the execution
-            TestRunner.evaluate_inject_flight_response(step.inject_flight, resp, dry=dry)
+            TestRunner.evaluate_inject_flight_response(step.inject_flight, resp)
         elif 'delete_flight' in step:
             print("[SCD]     Step: Delete flight {} to {}".format(step.delete_flight.flight_name, target.name))
-            target.delete_flight(step.delete_flight.flight_name, dry=dry)
+            target.delete_flight(step.delete_flight.flight_name)
         else:
             print("[SCD] Warning: no action defined for step {}".format(step.name))
 
@@ -76,10 +73,7 @@ class TestRunner:
 
     # TODO: Use this method as a canvas to create findings and move the evaluation at the end of or outside the execution.
     @staticmethod
-    def evaluate_inject_flight_response(attempt: FlightInjectionAttempt, resp: InjectFlightResponse, dry=False) -> bool:
-        if dry and resp.result == InjectFlightResult.DryRun:
-            print("[SCD]     Result: SKIP")
-            return True
+    def evaluate_inject_flight_response(attempt: FlightInjectionAttempt, resp: InjectFlightResponse) -> bool:
         if resp.result not in attempt.known_responses.acceptable_results:
             print("[SCD]     Result: ERROR. Received {}, expected one of {}. Reason: {}".format(
                 resp.result,
@@ -94,11 +88,6 @@ class TestRunner:
         print("[SCD] Targets States:")
         for name, target in self.targets.items():
             print(f"[SCD]   - {name}: {target.created_flight_ids}")
-
-    def print_test_plan(self):
-        """Runs the automated test in dry mode to validate and print the test plan."""
-        self.run_automated_test(dry=True)
-        self.teardown(dry=True)
 
     def print_report(self):
         print(json.dumps(self.report))
