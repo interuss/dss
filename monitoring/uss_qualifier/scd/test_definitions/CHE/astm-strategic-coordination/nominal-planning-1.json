@@ -262,6 +262,23 @@
                         "state": "Accepted",
                         "off_nominal_volumes": [],
                         "priority": 0
+                    },
+                    "flight_authorisation": {
+                        "uas_serial_number": "1AF49UL5CC5J6K",
+                        "operation_category": "Open",
+                        "operation_mode": "Vlos",
+                        "uas_class": "C0",
+                        "identification_technologies": [
+                            "ASTMNetRID"
+                        ],
+                        "connectivity_methods": [
+                            "cellular"
+                        ],
+                        "endurance_minutes": 30,
+                        "emergency_procedure_url": "https://uav.com/emergency",
+                        "operator_id": "CHEo5kut30e0mt01-qwe",
+                        "uas_id": "",
+                        "uas_type_certificate": ""
                     }
                 },
                 "known_responses": {
@@ -608,6 +625,23 @@
                         "state": "Accepted",
                         "off_nominal_volumes": [],
                         "priority": 0
+                    },
+                    "flight_authorisation": {
+                        "uas_serial_number": "1AF49UL5CC5J6K",
+                        "operation_category": "Open",
+                        "operation_mode": "Vlos",
+                        "uas_class": "C0",
+                        "identification_technologies": [
+                            "ASTMNetRID"
+                        ],
+                        "connectivity_methods": [
+                            "cellular"
+                        ],
+                        "endurance_minutes": 30,
+                        "emergency_procedure_url": "https://uav.com/emergency",
+                        "operator_id": "CHEo5kut30e0mt01-qwe",
+                        "uas_id": "",
+                        "uas_type_certificate": ""
                     }
                 },
                 "known_responses": {
@@ -647,12 +681,6 @@
                     "uss_role": "Second USS"
                 },
                 "name": "za0q1nwk"
-            }
-        },
-        {
-            "name": "Delete first injected flight",
-            "delete_flight": {
-                "flight_name": "wmejx5p5"
             }
         }
     ]

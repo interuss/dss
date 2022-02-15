@@ -65,9 +65,7 @@
                         ],
                         "endurance_minutes": 30,
                         "emergency_procedure_url": "https://uav.com/emergency",
-                        "operator_id": "CHEo5kut30e0mt01-qwe",
-                        "uas_id": "",
-                        "uas_type_certificate": ""
+                        "operator_id": "CHEo5kut30e0mt01-qwe"
                     }
                 },
                 "known_responses": {
@@ -104,12 +102,6 @@
                 "injection_target": {
                     "uss_role": "Submitting USS"
                 }
-            }
-        },
-        {
-            "name": "Delete injected data",
-            "delete_flight": {
-                "flight_name": "8vludg44"
             }
         }
     ]
