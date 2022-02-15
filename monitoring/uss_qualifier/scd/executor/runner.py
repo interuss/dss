@@ -47,6 +47,8 @@ class TestRunner:
         if 'inject_flight' in step:
             print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
             resp = target.inject_flight(step.inject_flight)
+            # TODO: Implement the report and replace this check by evaluating the outcome at the end of the execution
+            TestRunner.evaluate_inject_flight_response(step.inject_flight, resp)
         elif 'delete_flight' in step:
             print("[SCD]     Step: Delete flight {} to {}".format(step.delete_flight.flight_name, target.name))
             target.delete_flight(step.delete_flight.flight_name)
