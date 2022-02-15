@@ -1,9 +1,8 @@
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest,  InjectFlightResult
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt, \
     InjectionTarget, FlightDeletionAttempt, KnownResponses
 from monitoring.uss_qualifier.scd.executor.executor import combine_targets
-from monitoring.uss_qualifier.scd.executor.runner import TestRunner
 from monitoring.uss_qualifier.scd.executor.target import TestTarget
 
 # Constants
@@ -24,7 +23,7 @@ automated_test = AutomatedTest(
                     flight_authorisation=None
                 ),
                 known_responses=KnownResponses(
-                    acceptable_results=[],
+                    acceptable_results=[InjectFlightResult.Planned],
                     incorrect_result_details={}
                 ),
                 injection_target=InjectionTarget(uss_role=FirstMoverRole)
@@ -40,7 +39,7 @@ automated_test = AutomatedTest(
                     flight_authorisation=None
                 ),
                 known_responses=KnownResponses(
-                    acceptable_results=[],
+                    acceptable_results=[InjectFlightResult.Planned],
                     incorrect_result_details={}
                 ),
                 injection_target=InjectionTarget(uss_role=SecondMoverRole)
@@ -67,15 +66,6 @@ injection_targets = [
 ]
 configured_targets = list(map(lambda t: TestTarget(t.name, t, "NoAuth()"), injection_targets))
 # End of Test data definition
-
-
-def test_test_runner():
-    """Test ability to execute dry steps and build the test plan"""
-
-    combinations = combine_targets(configured_targets, automated_test.steps)
-    runner = TestRunner(automated_test.name, automated_test, next(combinations))
-    runner.print_test_plan()
-
 
 def test_target_combinations():
     targets_under_test = list(combine_targets(configured_targets, automated_test.steps))
