@@ -47,13 +47,11 @@ class TestRunner:
         if 'inject_flight' in step:
             print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
             resp = target.inject_flight(step.inject_flight)
-            # TODO: Move evaluation at the end of the execution
-            TestRunner.evaluate_inject_flight_response(step.inject_flight, resp)
         elif 'delete_flight' in step:
             print("[SCD]     Step: Delete flight {} to {}".format(step.delete_flight.flight_name, target.name))
             target.delete_flight(step.delete_flight.flight_name)
         else:
-            print("[SCD] Warning: no action defined for step {}".format(step.name))
+            raise RuntimeError("[SCD] Error: Unable to identify the action to execute for step {}".format(step.name))
 
     def get_managing_target(self, flight_name: str) -> typing.Optional[TestTarget]:
         """Returns the managing target which created a flight"""
