@@ -38,7 +38,7 @@ class FlightAuthorisationData(ImplicitDict):
 class InjectFlightRequest(ImplicitDict):
     ''' A class to hold the details of a test injection payload '''
     operational_intent: OperationalIntentTestInjection
-    flight_authorisation: Optional[FlightAuthorisationData]
+    flight_authorisation: FlightAuthorisationData
 
 
 class InjectFlightResult(str, Enum):
@@ -46,7 +46,6 @@ class InjectFlightResult(str, Enum):
     Rejected = 'Rejected'
     ConflictWithFlight = 'ConflictWithFlight'
     Failed = 'Failed'
-    DryRun = 'DryRun'
 
 
 class InjectFlightResponse(ImplicitDict):
@@ -59,7 +58,6 @@ class InjectFlightResponse(ImplicitDict):
 class DeleteFlightResult(str, Enum):
     Closed = 'Closed'
     Failed = 'Failed'
-    DryRun = 'DryRun'
 
 
 class DeleteFlightResponse(ImplicitDict):
