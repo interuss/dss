@@ -14,7 +14,11 @@ DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 EARTH_CIRCUMFERENCE_M = 40.075e6
 
 API_0_3_5 = '0.3.5'
-API_0_3_17 = '0.3.17'
+
+# API version 0.3.17 is programmatically identical to version 1.0.0, so both these versions can be used interchangeably.
+API_1_0_0 = '1.0.0'
+API_0_3_17 = API_1_0_0
+
 # In Both
 SCOPE_SC = 'utm.strategic_coordination'
 SCOPE_CM = 'utm.constraint_management'
