@@ -10,7 +10,7 @@ from monitoring.monitorlib.typing import ImplicitDict
 class FlightRecord(ImplicitDict):
     """Representation of a flight in a USS"""
     op_intent_injection: scd_injection_api.OperationalIntentTestInjection
-    flight_authorisation: Optional[scd_injection_api.FlightAuthorisationData]
+    flight_authorisation: scd_injection_api.FlightAuthorisationData
     op_intent_reference: scd.OperationalIntentReference
 
 

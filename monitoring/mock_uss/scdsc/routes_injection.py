@@ -117,7 +117,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     record = database.FlightRecord(
         op_intent_reference=result.operational_intent_reference,
         op_intent_injection=req_body.operational_intent,
-        flight_authorisation=req_body.flight_authorisation if 'flight_authorisation' in req_body else None)
+        flight_authorisation=req_body.flight_authorisation)
     with db as tx:
         tx.flights[flight_id] = record
 
