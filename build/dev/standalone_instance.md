@@ -128,6 +128,28 @@ docker container exec -i dss_sandbox_local-dss-crdb_1 cockroach sql --insecure <
 To just determine the current version of a database schema, simply omit the
 target version parameter to `migrate_local_db.sh`.
 
+## Data injection and verification
+
+### Prober
+
+* `probe_local_instance.sh` runs the end-to-end [prober](../../monitoring/prober)
+integration test, similar to [docker_e2e.sh](../../test/docker_e2e.sh), but using
+the DSS instance already deployed locally instead of also deploying a local
+instance as docker_e2e.sh does
+
+### RID
+
+* `check_dss.sh` lists the ISAs near Hawaii
+
+### SCD
+
+* `check_scd_write.sh` creates a Subscription, Constraint Reference, and Operational Intent
+* `check_scd_read.sh` verifies that the objects created with `check_scd_write.sh` are still present
+    * `read_scd_subscription.sh <SUBSCRIPTION_ID>` retrieves the specified subscription from the DSS as the USS "check_scd"
+    * `read_scd_constraint_reference.sh <CONSTRAINT_ID>` retrieves the specified constraint reference from the DSS as the USS "check_scd"
+    * `read_scd_operational_intent_reference.sh <OP_INTENT_ID>` retrieves the specified operational_intent_reference from the DSS as the USS "check_scd"
+* `check_scd_clear.sh` removes the objects created with `check_scd_write.sh` from the DSS
+
 ## Troubleshooting
 
 If one or more of the necessary ports are not available, identify the process
