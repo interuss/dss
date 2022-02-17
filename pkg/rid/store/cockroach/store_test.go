@@ -50,7 +50,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 }
 
 func newStore(ctx context.Context, t *testing.T, connectParameters cockroach.ConnectParameters) (*Store, error) {
-	db, err := cockroach.ConnectTo(ctx, connectParameters)
+	db, err := cockroach.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 
 	return &Store{
