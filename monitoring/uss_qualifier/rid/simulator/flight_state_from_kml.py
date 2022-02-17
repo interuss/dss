@@ -5,10 +5,10 @@ import argparse
 import datetime
 import json
 import math
-import s2sphere
 import os
 import uuid
 from datetime import datetime, timedelta
+import s2sphere
 from shapely.geometry import LineString, Point, Polygon
 from monitoring.monitorlib.geo import flatten, unflatten
 from monitoring.uss_qualifier.rid.simulator import kml
