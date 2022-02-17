@@ -7,7 +7,7 @@ from monitoring.monitorlib.scd import Volume4D
 SCOPE_SCD_QUALIFIER_INJECT = 'utm.inject_test_data'
 
 ## Definitions around operational intent data that need to be submitted to the test injection interface
-  
+
 class OperationalIntentTestInjection(ImplicitDict):
     ''' A class to hold data for operational intent data that will be submitted to the SCD testing interface. '''
     state: str

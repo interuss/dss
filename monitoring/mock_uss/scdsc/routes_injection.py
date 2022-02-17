@@ -49,7 +49,6 @@ def scdsc_injection_status() -> Tuple[str, int]:
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def inject_flight(flight_id: str) -> Tuple[str, int]:
     """Implements flight injection in SCD automated testing injection API."""
-
     try:
         json = flask.request.json
         if json is None:
