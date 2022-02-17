@@ -5,7 +5,7 @@ nominal_planning_test_common_error_notification = KnownIssueFields(test_code = "
                                                 relevant_requirements = [], 
                                                 severity = "High",
                                                 subject="", 
-                                                summary ="Injection request for a valid flight was unsuccessful", details = "All operational intent data provided was complete and correct with no airspace conflicts. The operational intent data should have been processed successfully and flight should have been planned.")        
+                                                summary ="Injection request for a valid flight was unsuccessful", details = "All operational intent and flight authorisation data provided was complete and correct with no airspace conflicts. The operational intent data should have been processed successfully and flight should have been planned.")        
         
 if_planned_with_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_planning_test", 
                                             relevant_requirements = ["A operational intent that has time or space conflict should not be planned by the USS"], severity = "High", 
