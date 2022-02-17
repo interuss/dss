@@ -314,8 +314,6 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
     return flight_injection_attempt
 
 
-
-
 def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
 
@@ -331,6 +329,7 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     nominal_test_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names)
 
     # Build nominal test steps
+
     for idx, injection_attempt in enumerate(nominal_test_flight_injection_attempts):
         if idx == 0:
             nominal_test_step_1 = TestStep(name="Inject flight via First-mover USS", inject_flight = injection_attempt, delete_flight=None)
@@ -349,6 +348,7 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
             nominal_test_steps.append(nominal_test_step_4)
 
     nominal_test_details = AutomatedTest(name="Nominal Planning Test", steps = nominal_test_steps)
+
     ## End nominal test data generation
 
     nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_details)
@@ -362,10 +362,9 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
 
 
-    for flight_auth_test_id, field_to_make_incorrect in enumerate(fields_to_make_incorrect):
+    for field_to_make_incorrect in fields_to_make_incorrect:
         random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
         flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name, incorrect_field = field_to_make_incorrect)
-
         all_flight_authorisation_test_flights.append(flight_name_incorrect_field)
 
     
