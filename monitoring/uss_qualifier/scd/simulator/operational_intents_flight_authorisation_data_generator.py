@@ -313,6 +313,9 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
 
     return flight_injection_attempt
 
+
+
+
 def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
 
@@ -367,11 +370,10 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
 
     
     flight_authorisation_test_steps = []
-    for flight_auth_test_metadata in all_flight_authorisation_test_flights:
+    for test_id, flight_auth_test_metadata in enumerate(all_flight_authorisation_test_flights):
         
         geometry_generation_rule = GeometryGenerationRule(intersect_space = False)
-        flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = flight_auth_test_id)
-        reference_time = my_operational_intent_generator.now.isoformat()
+        flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = test_id)
         flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
         operational_intent_test_injection = generate_operational_intent_injection(astm_4d_volume = flight_volume)
 
@@ -384,7 +386,7 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
         delete_test_step = TestStep(name="Delete injected data", delete_flight= flight_deletion_attempt, inject_flight=None)
         flight_authorisation_test_steps.append(delete_test_step)
 
-    flight_authorisation_test_details = AutomatedTest(name="Flight Authorisation validation test", steps = flight_authorisation_test_steps)
+    flight_authorisation_test_details = AutomatedTest(name="Flight authorisation validation test", steps = flight_authorisation_test_steps)
 
     nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
     ## End flight authorisation test data generation    
