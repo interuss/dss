@@ -58,7 +58,8 @@ def main() -> int:
         locale = Locality(config.locale.upper())
         print(f"[SCD] Locale: {locale.value} (is_uspace_applicable:{locale.is_uspace_applicable}, allow_same_priority_intersections:{locale.allow_same_priority_intersections})")
 
-        scd_test_executor.run_scd_tests(locale=locale, test_configuration=config.scd, auth_spec=auth_spec)
+        if not scd_test_executor.run_scd_tests(locale=locale, test_configuration=config.scd, auth_spec=auth_spec):
+            return os.EX_SOFTWARE
     else:
         print("[SCD] No configuration provided.")
 

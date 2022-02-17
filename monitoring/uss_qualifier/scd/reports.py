@@ -1,7 +1,8 @@
 import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from monitoring.monitorlib import fetch
+from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.common_data_definitions import IssueSubject, Severity
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
@@ -34,7 +35,7 @@ class Issue(ImplicitDict):
 
     subject: Optional[IssueSubject]
     """Identifier of the subject of this issue, if applicable.
-  
+
     This may be a flight ID, or ID of other object central to the issue.
     """
 
@@ -74,11 +75,17 @@ class Findings(ImplicitDict):
     def add_interaction(self, interaction: Interaction):
         self.interactions.append(interaction)
 
+    def add_issue(self, issue: Issue):
+        self.issues.append(issue)
+
     def __repr__(self):
         return '[{} issues in {} interactions]'.format(
             len(self.issues), len(self.interactions))
 
-
 class Report(ImplicitDict):
     configuration: SCDQualifierTestConfiguration
     findings: Findings = Findings()
+    test_id: str
+    test_name: str
+    targets_combination: Dict[str, str]
+    locale: Locality

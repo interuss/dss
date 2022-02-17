@@ -1,13 +1,16 @@
+import uuid
+from datetime import datetime
+from typing import Dict, Callable, Tuple
+import requests
 
-from typing import Dict
-
-from monitoring.monitorlib import infrastructure, auth
+from monitoring.monitorlib import infrastructure, auth, fetch
 from monitoring.monitorlib.clients.scd_automated_testing import create_flight, delete_flight
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResult, \
     DeleteFlightResult, InjectFlightResponse, DeleteFlightResponse
+from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
-from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt
-
+from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt, TestStep
+from monitoring.uss_qualifier.scd.reports import Interaction, Report
 
 class TestTarget():
     """A class managing the state and the interactions with a target"""
@@ -24,21 +27,22 @@ class TestTarget():
         # Value: flight id
         self.created_flight_ids: Dict[str, str] = {}
 
+
     def __repr__(self):
         return "TestTarget({}, {})".format(self.name, self.config.injection_base_url)
 
-    def inject_flight(self, flight_request: FlightInjectionAttempt) -> InjectFlightResponse:
-        flight_id, resp = create_flight(self.client, self.config.injection_base_url, flight_request.test_injection)
+    def inject_flight(self, flight_request: FlightInjectionAttempt) -> Tuple[InjectFlightResponse, fetch.Query]:
+        flight_id, resp, query = create_flight(self.client, self.config.injection_base_url, flight_request.test_injection)
         if resp.result == InjectFlightResult.Planned:
             self.created_flight_ids[flight_request.name] = flight_id
-        return resp
+        return resp, query
 
-    def delete_flight(self, flight_name: str) -> DeleteFlightResponse:
+    def delete_flight(self, flight_name: str) -> Tuple[DeleteFlightResponse, fetch.Query]:
         flight_id = self.created_flight_ids[flight_name]
-        resp = delete_flight(self.client, self.config.injection_base_url, flight_id)
+        resp, query = delete_flight(self.client, self.config.injection_base_url, flight_id)
         if resp.result == DeleteFlightResult.Closed:
             del self.created_flight_ids[flight_name]
-        return resp
+        return resp, query
 
     def delete_all_flights(self) -> int:
         flights_count = len(self.created_flight_ids.keys())
