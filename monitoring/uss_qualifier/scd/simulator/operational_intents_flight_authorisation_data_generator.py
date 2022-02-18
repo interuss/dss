@@ -285,7 +285,7 @@ def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str])
 
     return nominal_test_flight_injection_attempts
 
-def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:str, operational_intent_test_injection:OperationalIntentTestInjection,field_to_make_incorrect:str = None) -> FlightInjectionAttempt:
+def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:str, operational_intent_test_injection: OperationalIntentTestInjection,field_to_make_incorrect:str = None) -> FlightInjectionAttempt:
     """A method to generate data for flight authorisation test and the associated injection attempt"""
 
     serial_number = SerialNumber.generate_valid()
@@ -299,6 +299,7 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
     expected_flight_authorisation_processing_result = 'Rejected' if field_to_make_incorrect else 'Planned'
 
     flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category="Open", operation_mode = "Vlos",uas_class="C0", identification_technologies = ["ASTMNetRID"], connectivity_methods = ["cellular"], endurance_minutes = 30, emergency_procedure_url = "https://uav.com/emergency", operator_id = operator_id, uas_id= '', uas_type_certificate = '')
+
     my_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = expected_flight_authorisation_processing_result,expected_operational_intent_processing_result = 'Planned')
 
     inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
@@ -317,7 +318,7 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
 def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
 
-    ## Begin nominal test data generation
+    ## Begin nominal test data generation ##
     nominal_and_flight_authorisation_test_injection_attempts = []
     all_flight_names = []
     injection_attempts = 2
@@ -346,14 +347,16 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
         elif flight_idx ==1:
             nominal_test_step_4 = TestStep(name="Delete second injected flight", delete_flight= flight_deletion_attempt, inject_flight=None)
             nominal_test_steps.append(nominal_test_step_4)
+            
+    # End nominal test steps
 
     nominal_test_details = AutomatedTest(name="Nominal Planning Test", steps = nominal_test_steps)
 
-    ## End nominal test data generation
+    ## End nominal test data generation ##
 
     nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_details)
 
-    ## Begin flight authorisation test data generation    
+    ## Begin flight authorisation test data generation  ##  
     fields_to_make_incorrect = ["uas_serial_number", "operator_registration_number"]
 
     all_flight_authorisation_test_flights = []
@@ -388,7 +391,7 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     flight_authorisation_test_details = AutomatedTest(name="Flight authorisation validation test", steps = flight_authorisation_test_steps)
 
     nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
-    ## End flight authorisation test data generation    
+    ## End flight authorisation test data generation ##
 
     return nominal_and_flight_authorisation_test_injection_attempts
 
