@@ -350,7 +350,6 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     nominal_test_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names)
 
     # Build nominal test steps
-
     for idx, injection_attempt in enumerate(nominal_test_flight_injection_attempts):
         if idx == 0:
             nominal_test_step_1 = TestStep(name="Inject flight via First-mover USS", inject_flight = injection_attempt, delete_flight=None)
@@ -367,7 +366,7 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
         elif flight_idx ==1:
             nominal_test_step_4 = TestStep(name="Delete second injected flight", delete_flight= flight_deletion_attempt, inject_flight=None)
             nominal_test_steps.append(nominal_test_step_4)            
-    # End nominal test steps
+    # End build nominal test steps
 
     nominal_test_details = AutomatedTest(name="Nominal Planning Test", steps = nominal_test_steps)
     ## End nominal test data generation ##
@@ -389,7 +388,7 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
     all_operational_intents_for_flight_authorisation_test = generate_operational_intents_for_flight_authorisation_test(num_operational_intents= number_of_injections)
 
     flight_authorisation_test_steps = []
-    
+    # Build flight authorisation test steps
     for test_id, flight_auth_test_metadata in enumerate(all_flight_authorisation_test_flights):
         flight_authorisation_test_injection_attempt = generate_flight_authorisation_u_space_format_injection_attempt(field_to_make_incorrect=flight_auth_test_metadata.incorrect_field, flight_name= flight_auth_test_metadata.flight_name, operational_intent_test_injection = all_operational_intents_for_flight_authorisation_test[test_id])
 
@@ -399,12 +398,13 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
         flight_deletion_attempt = FlightDeletionAttempt(flight_name = flight_auth_test_metadata.flight_name)
         delete_test_step = TestStep(name="Delete injected data", delete_flight= flight_deletion_attempt, inject_flight=None)
         flight_authorisation_test_steps.append(delete_test_step)
-
+    # End build flight authorisation test steps
+    
     flight_authorisation_test_details = AutomatedTest(name="Flight authorisation validation test", steps = flight_authorisation_test_steps)
-
-    nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
     ## End flight authorisation test data generation ##
-
+    
+    nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
+    
     return nominal_and_flight_authorisation_test_injection_attempts
 
 
