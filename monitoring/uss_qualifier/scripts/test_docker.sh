@@ -22,7 +22,7 @@ services=( "$(docker-compose -f docker-compose_qualifier_mocks.yaml config --ser
 for service_name in "${services[@]}"; do
     container_name="${project_name}_${service_name}_1"
     retry=0
-    max_retry=3
+    max_retry=7
     until [ "$(docker inspect -f \{\{.State.Health.Status\}\} "${container_name}")" == "healthy" ]; do
         if [ "$retry" -gt "$max_retry" ]; then
             echo "$container_name didn't properly start. Exit." && exit 1
