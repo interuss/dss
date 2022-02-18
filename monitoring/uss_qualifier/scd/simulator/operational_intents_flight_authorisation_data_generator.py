@@ -379,21 +379,22 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
 
     ## Begin flight authorisation test data generation  ##  
     fields_to_make_incorrect = ["uas_serial_number", "operator_registration_number"]
+    number_of_injections = len(fields_to_make_incorrect)
 
     all_flight_authorisation_test_flights = []
 
-    for field_to_make_incorrect in fields_to_make_incorrect:
+    for field_index in range(0,number_of_injections):
         random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
-        flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name, incorrect_field = field_to_make_incorrect)
+        flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name, incorrect_field = fields_to_make_incorrect[field_index])
         all_flight_authorisation_test_flights.append(flight_name_incorrect_field)
 
     
-    all_operational_intent_test_injections = generate_operational_intents_for_flight_authorisation_test(num_operational_intents= len(field_to_make_incorrect))
+    all_operational_intents_for_flight_authorisation_test = generate_operational_intents_for_flight_authorisation_test(num_operational_intents= number_of_injections)
 
     flight_authorisation_test_steps = []
     
     for test_id, flight_auth_test_metadata in enumerate(all_flight_authorisation_test_flights):
-        flight_authorisation_test_injection_attempt = generate_flight_authorisation_u_space_format_injection_attempt(field_to_make_incorrect=flight_auth_test_metadata.incorrect_field, flight_name= flight_auth_test_metadata.flight_name, operational_intent_test_injection = all_operational_intent_test_injections[test_id])
+        flight_authorisation_test_injection_attempt = generate_flight_authorisation_u_space_format_injection_attempt(field_to_make_incorrect=flight_auth_test_metadata.incorrect_field, flight_name= flight_auth_test_metadata.flight_name, operational_intent_test_injection = all_operational_intents_for_flight_authorisation_test[test_id])
 
         inject_test_step = TestStep(name="Inject Fight Authorisation data", inject_flight= flight_authorisation_test_injection_attempt, delete_flight=None)
         flight_authorisation_test_steps.append(inject_test_step)
