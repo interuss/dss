@@ -347,7 +347,6 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
         random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
         all_flight_names.append(random_flight_name)
     nominal_test_steps = []
-
     nominal_test_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names)
 
     # Build nominal test steps
@@ -367,12 +366,10 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
             nominal_test_steps.append(nominal_test_step_3)
         elif flight_idx ==1:
             nominal_test_step_4 = TestStep(name="Delete second injected flight", delete_flight= flight_deletion_attempt, inject_flight=None)
-            nominal_test_steps.append(nominal_test_step_4)
-            
+            nominal_test_steps.append(nominal_test_step_4)            
     # End nominal test steps
 
     nominal_test_details = AutomatedTest(name="Nominal Planning Test", steps = nominal_test_steps)
-
     ## End nominal test data generation ##
 
     nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_details)
