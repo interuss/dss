@@ -244,7 +244,9 @@ class KnownIssuesAcceptableResultFieldGenerator():
         return all_known_issues_fields
 
 
-def generate_valid_flight_authorisation_u_space_format_data() -> FlightAuthorisationData:
+def generate_valid_flight_authorisation_data_for_nominal_test() -> FlightAuthorisationData:
+    """A method to generate valid  flight authorisation data for the nominal test """
+
     serial_number = SerialNumber.generate_valid()
     operator_id = OperatorRegistrationNumber.generate_valid()
 
@@ -252,6 +254,25 @@ def generate_valid_flight_authorisation_u_space_format_data() -> FlightAuthorisa
 
     return flight_authorisation_data
 
+
+def generate_operational_intents_for_flight_authorisation_test(num_operational_intents:int)->List[OperationalIntentTestInjection]:
+    """A method to generate well clear operational intents and use them in the flight authorisation data format tests """
+
+    all_operational_intent_test_injections = []
+
+    my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone="32T")
+    altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
+
+    for injection_number in range(0,num_operational_intents):
+        # The flight path geometry should not intersect 
+        should_intersect = False                 
+        geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
+        flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)        
+        flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
+        operational_intent_test_injection = generate_operational_intent_injection(astm_4d_volume = flight_volume)
+        all_operational_intent_test_injections.append(operational_intent_test_injection)
+
+    return all_operational_intent_test_injections
 
 
 def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str]) -> List[FlightInjectionAttempt]:
@@ -269,7 +290,7 @@ def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str])
         reference_time = my_operational_intent_generator.now.isoformat()
         flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
         operational_intent_test_injection = generate_operational_intent_injection(astm_4d_volume = flight_volume)
-        valid_flight_authorisation_data = generate_valid_flight_authorisation_u_space_format_data()
+        valid_flight_authorisation_data = generate_valid_flight_authorisation_data_for_nominal_test()
         inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= valid_flight_authorisation_data)
         expected_operational_intent_processing_result= 'ConflictWithFlight' if should_intersect else 'Planned'
 
@@ -361,25 +382,18 @@ def generate_nominal_and_flight_authorisation_test() -> List[AutomatedTest]:
 
     all_flight_authorisation_test_flights = []
 
-    my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone="32T")
-    altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
-
-
     for field_to_make_incorrect in fields_to_make_incorrect:
         random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
         flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name, incorrect_field = field_to_make_incorrect)
         all_flight_authorisation_test_flights.append(flight_name_incorrect_field)
 
     
-    flight_authorisation_test_steps = []
-    for test_id, flight_auth_test_metadata in enumerate(all_flight_authorisation_test_flights):
-        
-        geometry_generation_rule = GeometryGenerationRule(intersect_space = False)
-        flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = test_id)
-        flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
-        operational_intent_test_injection = generate_operational_intent_injection(astm_4d_volume = flight_volume)
+    all_operational_intent_test_injections = generate_operational_intents_for_flight_authorisation_test(num_operational_intents= len(field_to_make_incorrect))
 
-        flight_authorisation_test_injection_attempt = generate_flight_authorisation_u_space_format_injection_attempt(field_to_make_incorrect=flight_auth_test_metadata.incorrect_field, flight_name= flight_auth_test_metadata.flight_name, operational_intent_test_injection = operational_intent_test_injection)
+    flight_authorisation_test_steps = []
+    
+    for test_id, flight_auth_test_metadata in enumerate(all_flight_authorisation_test_flights):
+        flight_authorisation_test_injection_attempt = generate_flight_authorisation_u_space_format_injection_attempt(field_to_make_incorrect=flight_auth_test_metadata.incorrect_field, flight_name= flight_auth_test_metadata.flight_name, operational_intent_test_injection = all_operational_intent_test_injections[test_id])
 
         inject_test_step = TestStep(name="Inject Fight Authorisation data", inject_flight= flight_authorisation_test_injection_attempt, delete_flight=None)
         flight_authorisation_test_steps.append(inject_test_step)
