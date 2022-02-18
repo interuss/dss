@@ -245,7 +245,7 @@ class KnownIssuesAcceptableResultFieldGenerator():
 
 
 def generate_valid_flight_authorisation_data_for_nominal_test() -> FlightAuthorisationData:
-    """A method to generate valid  flight authorisation data for the nominal test """
+    """A method to generate valid flight authorisation data for the nominal test, in the nominal test we are providing valid flight authorisation data since the operational intent processing is the main intent of the test """
 
     serial_number = SerialNumber.generate_valid()
     operator_id = OperatorRegistrationNumber.generate_valid()
@@ -276,14 +276,14 @@ def generate_operational_intents_for_flight_authorisation_test(num_operational_i
 
 
 def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str]) -> List[FlightInjectionAttempt]:
-    """A method to generate flight injection data and associated messages in case the result of data processing is different from the expectation """
+    """A method to generate flight injection data and associated messages in case the result of data processing is different from the expectation for the nominal test """
+
     nominal_test_flight_injection_attempts = []
 
     my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone="32T")
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
 
-    for injection_number, flight_name in enumerate(all_flight_names):
-        
+    for injection_number, flight_name in enumerate(all_flight_names):        
         should_intersect = False if injection_number == 0 else True
         geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
         flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)
@@ -307,7 +307,7 @@ def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str])
     return nominal_test_flight_injection_attempts
 
 def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:str, operational_intent_test_injection: OperationalIntentTestInjection,field_to_make_incorrect:str = None) -> FlightInjectionAttempt:
-    """A method to generate data for flight authorisation test and the associated injection attempt"""
+    """A method to generate data for flight authorisation test and the associated injection attempt for the authorisation format test """
 
     serial_number = SerialNumber.generate_valid()
     operator_id = OperatorRegistrationNumber.generate_valid()
