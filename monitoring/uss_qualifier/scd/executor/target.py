@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Dict, Callable, Tuple
+from typing import Dict, Callable, Tuple, Optional
 import requests
 
 from monitoring.monitorlib import infrastructure, auth, fetch
@@ -44,11 +44,13 @@ class TestTarget():
             del self.created_flight_ids[flight_name]
         return resp, query
 
-    def delete_all_flights(self) -> int:
+    def delete_all_flights(self, capture_interaction: Optional[Callable[[fetch.Query], None]]) -> int:
         flights_count = len(self.created_flight_ids.keys())
         print("[SCD]    - Deleting {} flights for target {}.".format(flights_count, self.name))
         for flight_name, flight_id in list(self.created_flight_ids.items()):
-            self.delete_flight(flight_name)
+            resp, query = self.delete_flight(flight_name)
+            if capture_interaction:
+                capture_interaction(query)
         return flights_count
 
     def is_managing_flight(self, flight_name: str) -> bool:

@@ -7,13 +7,13 @@ from monitoring.monitorlib import fetch
 from monitoring.monitorlib.clients.scd import OperationError
 from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.locality import Locality
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResponse
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResponse, DeleteFlightResponse
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt, \
-    KnownIssueFields
+    KnownIssueFields, FlightDeletionAttempt
 from monitoring.uss_qualifier.scd.executor.target import TestTarget
-from monitoring.uss_qualifier.scd.reports import Report, Interaction, Issue, AutomatedTestContext
+from monitoring.uss_qualifier.scd.reports import Report, Interaction, Issue, AutomatedTestContext, TestStepTeardownIndex
 
 class TestRunnerError(RuntimeError):
     """An error encountered when interacting with a DSS or a USS"""
@@ -43,8 +43,13 @@ class TestRunner:
     def teardown(self):
         """Delete resources created by this test runner."""
         print("[SCD]   Teardown {}".format(self.automated_test.name))
+
+        def capture_teardown_interaction(query: fetch.Query):
+            return self.capture_interaction(TestStepTeardownIndex, query)
+
         for role, target in self.targets.items():
-            target.delete_all_flights()
+            # TODO: Capture errors
+            target.delete_all_flights(capture_teardown_interaction)
 
     def execute_step(self, step: TestStep, step_index: int):
         target = self.get_target(step)
@@ -72,7 +77,8 @@ class TestRunner:
 
         elif 'delete_flight' in step:
             print("[SCD]     Step: Delete flight {} to {}".format(step.delete_flight.flight_name, target.name))
-            target.delete_flight(step.delete_flight.flight_name)
+            # TODO: Capture errors
+            resp, query = target.delete_flight(step.delete_flight.flight_name)
         else:
             raise RuntimeError("[SCD] Error: Unable to identify the action to execute for step {}".format(step.name))
 
@@ -158,6 +164,7 @@ class TestRunner:
 
         print("[SCD]     Result: COMPLETED")
         return None
+
 
     def print_targets_state(self):
         print("[SCD] Targets States:")

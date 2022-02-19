@@ -63,10 +63,19 @@ class Interaction(ImplicitDict):
     """Context in which this interaction was performed"""
 
     test_step: int
-    """Step of test"""
+    """Step of test.
+    0-based indexed.
+    Special values:
+     * -1: capture occurred during test initialization
+     * -2: capture occurred during test teardown
+     """
 
     query: fetch.Query
     """Interaction performed (flight injection, DSS query, USS query, etc)"""
+
+
+TestStepSetupIndex = -1
+TestStepTeardownIndex = -2
 
 
 class Findings(ImplicitDict):
