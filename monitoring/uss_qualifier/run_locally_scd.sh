@@ -64,6 +64,7 @@ docker run ${docker_args} --name uss_qualifier \
   -e SCD_QUALIFIER_OPTIONS="${SCD_QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
   -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
+  -v "${REPORT_SCD_FILE}:/app/monitoring/uss_qualifier/report_scd.json" \
   -v "$(pwd):/app" \
   interuss/uss_qualifier \
   python main.py $SCD_QUALIFIER_OPTIONS

@@ -8,7 +8,7 @@ from typing import Dict, List
 from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
-from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep
+from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, AutomatedTestContext
 from monitoring.uss_qualifier.scd.executor.runner import TestRunner, TestRunnerError
 from monitoring.uss_qualifier.scd.executor.target import TestTarget
 from monitoring.uss_qualifier.scd.reports import Report
@@ -55,6 +55,7 @@ def validate_configuration(test_configuration: SCDQualifierTestConfiguration):
 
 def combine_targets(targets: List[TestTarget], steps: List[TestStep]) -> typing.Iterator[Dict[str, TestTarget]]:
     """Gets combination of targets assigned to the uss roles specified in steps"""
+
     injection_steps = filter(lambda step: 'inject_flight' in step, steps)
 
     # Get unique uss roles in injection steps in deterministic order
@@ -73,50 +74,42 @@ def format_combination(combination: Dict[str, TestTarget]) -> List[str]:
     return list(map(lambda t: "{}: {}".format(t[0], t[1].name), combination.items()))
 
 
-def issues_count(reports: List[Report]) -> int:
-    issues_count_list: List[int] = list(map(lambda report: len(report.findings.issues), reports))
-    return sum(issues_count_list, 0)
-
-
-def save_reports(reports: List[Report]):
-    filepath = "report.json"
-    with open('./report.json', 'w') as f:
-        json.dump(reports, f)
-    print("[SCD] Report saved to {}".format(filepath))
-
-
 def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfiguration,
                   auth_spec: str) -> bool:
     automated_tests = load_scd_test_definitions(locale)
     configured_targets = list(map(lambda t: TestTarget(t.name, t, auth_spec), test_configuration.injection_targets))
-    reports: List[Report] = []
+    report = Report(
+            configuration=test_configuration,
+    )
 
     for test_id, test in automated_tests.items():
         target_combinations = combine_targets(configured_targets, test.steps)
         for i, targets_under_test in enumerate(target_combinations):
+            context = AutomatedTestContext(
+                test_id = test_id,
+                test_name = test.name,
+                locale = locale,
+                targets_combination = dict(map(lambda t: (t[0], t[1].name), targets_under_test.items()))
+            )
             print('[SCD] Starting test combination {}: {} ({}/{}) {}'.format(i+1,  test.name, locale, test_id,
                 format_combination(targets_under_test)))
 
-            runner = TestRunner(test_id, test, targets_under_test, locale)
+            runner = TestRunner(context, test, targets_under_test, report)
             try:
                 runner.run_automated_test()
             except TestRunnerError as e:
-                print("[SCD] Error: {} - Issue: {}".format(e, e.issue))
+                print("[SCD] TestRunnerError: {}. Issue: {}. Related interactions: {}.".format(e, e.issue.details, e.issue.interactions))
             finally:
                 runner.teardown()
-                reports.append(runner.report)
 
-    save_reports(reports)
+    report.save()
 
-    print ("[SCD] Results:")
-    for report in reports:
-        outcome = "SUCCESS" if issues_count([report]) == 0 else "FAIL"
-        print("[SCD]   - [{}] {}: {}/{} for {}".format(outcome, report.test_name, locale, report.test_id, report.targets_combination))
-        print(report.findings)
-
+    issues_count = len(report.findings.issues)
+    outcome = "SUCCESS" if issues_count == 0 else "FAIL"
+    print ("[SCD] Result: {} {}".format(outcome, report.findings))
 
     # TODO: handle low priority issues.
-    return issues_count(reports) == 0
+    return issues_count == 0
 
 
 

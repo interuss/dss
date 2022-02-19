@@ -4,6 +4,8 @@ import uuid
 from typing import Dict
 
 from monitoring.monitorlib import fetch
+from monitoring.monitorlib.clients.scd import OperationError
+from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResponse
 from monitoring.uss_qualifier.common_data_definitions import Severity
@@ -11,7 +13,7 @@ from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfigura
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt, \
     KnownIssueFields
 from monitoring.uss_qualifier.scd.executor.target import TestTarget
-from monitoring.uss_qualifier.scd.reports import Report, Interaction, Issue
+from monitoring.uss_qualifier.scd.reports import Report, Interaction, Issue, AutomatedTestContext
 
 class TestRunnerError(RuntimeError):
     """An error encountered when interacting with a DSS or a USS"""
@@ -24,18 +26,11 @@ class TestRunnerError(RuntimeError):
 class TestRunner:
     """A class to run automated test steps for a specific combination of targets per uss role"""
 
-    def __init__(self, automated_test_id: str, automated_test: AutomatedTest, targets: Dict[str, TestTarget], locale: Locality):
-        self.automated_test_id = automated_test_id
+    def __init__(self, context: AutomatedTestContext, automated_test: AutomatedTest, targets: Dict[str, TestTarget], report: Report):
+        self.context = context
         self.automated_test = automated_test
         self.targets = targets
-        self.locale = locale
-        self.report = Report(
-            test_id=self.automated_test_id,
-            test_name=self.automated_test.name,
-            configuration=self.get_scd_configuration(),
-            targets_combination=dict(map(lambda t: (t[0], t[1].name), targets.items())),
-            locale=locale
-        )
+        self.report = report
 
     def get_scd_configuration(self) -> SCDQualifierTestConfiguration:
         return SCDQualifierTestConfiguration(injection_targets=list(map(lambda t: t.config, self.targets.values())))
@@ -61,9 +56,19 @@ class TestRunner:
 
         if 'inject_flight' in step:
             print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
-            resp, query = target.inject_flight(step.inject_flight)
-            interaction_id = self.capture_interaction(step_index, query)
-            self.evaluate_inject_flight_response(step.inject_flight, resp, interaction_id)
+            try:
+                resp, query = target.inject_flight(step.inject_flight)
+                interaction_id = self.capture_interaction(step_index, query)
+                self.evaluate_inject_flight_response(step.inject_flight, resp, interaction_id)
+            except QueryError as e:
+                interaction_id = self.capture_interaction(step_index, e.query)
+                issue = self.capture_injection_unknown_issue(
+                    "Injection request was unsuccessful",
+                    "Injection attempt failed with status {}.".format(e.query.status_code),
+                    step.inject_flight,
+                    interaction_id
+                )
+                raise TestRunnerError("Unsuccessful attempt to inject flight {}".format(step.inject_flight.name), issue)
 
         elif 'delete_flight' in step:
             print("[SCD]     Step: Delete flight {} to {}".format(step.delete_flight.flight_name, target.name))
@@ -91,8 +96,8 @@ class TestRunner:
         interaction_id = str(uuid.uuid4())
         interaction = Interaction(
                 interaction_id=interaction_id,
-                test_id=self.automated_test_id,
                 test_step=step_index,
+                context=self.context,
                 query=query
             )
         self.report.findings.add_interaction(interaction)
@@ -100,7 +105,7 @@ class TestRunner:
 
     def capture_injection_issue(self, attempt: FlightInjectionAttempt, known_issue: KnownIssueFields, interaction_id: str):
         issue = Issue(
-                test_id=self.automated_test_id,
+                context=self.context,
                 check_code=known_issue.test_code,
                 relevant_requirements=known_issue.relevant_requirements,
                 severity=known_issue.severity,
@@ -116,7 +121,7 @@ class TestRunner:
 
     def capture_injection_unknown_issue(self, summary: str, details: str, attempt: FlightInjectionAttempt, interaction_id: str):
         issue = Issue(
-                test_id=self.automated_test_id,
+                context=self.context,
                 check_code="unknown",
                 relevant_requirements=[],
                 severity=Severity.Critical,
@@ -140,7 +145,7 @@ class TestRunner:
             known_issue = attempt.known_responses.incorrect_result_details.get(resp.result, None)
             if known_issue:
                 issue = self.capture_injection_issue(attempt, known_issue, interaction_id)
-                if not known_issue.severity == Severity.Low:
+                if known_issue.severity != Severity.Low:
                     raise TestRunnerError("Failed attempt to inject flight {}: {}".format(attempt.name, known_issue.summary), issue)
             else:
                 issue = self.capture_injection_unknown_issue(
@@ -151,15 +156,10 @@ class TestRunner:
                 )
                 raise TestRunnerError("Unsuccessful attempt to inject flight {}".format(attempt.name), issue)
 
-        print("[SCD]     Result: SUCCESS")
+        print("[SCD]     Result: COMPLETED")
         return None
 
     def print_targets_state(self):
         print("[SCD] Targets States:")
         for name, target in self.targets.items():
             print(f"[SCD]   - {name}: {target.created_flight_ids}")
-
-    def print_report(self):
-        print("[SCD] Report: {}".format(json.dumps(self.report)))
-        print("[SCD] Outcome: {}".format("SUCCESS" if len(self.report.findings.issues) == 0 else "FAIL"))
-

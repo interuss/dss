@@ -1,4 +1,4 @@
-import datetime
+import datetime, json
 from typing import List, Optional, Dict
 
 from monitoring.monitorlib import fetch
@@ -6,6 +6,7 @@ from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.common_data_definitions import IssueSubject, Severity
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
+from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTestContext
 
 
 InteractionID = str
@@ -15,8 +16,8 @@ class Issue(ImplicitDict):
     timestamp: Optional[str]
     """Time the issue was discovered"""
 
-    test_id: str
-    """ID of test in which issue was discovered"""
+    context: AutomatedTestContext
+    """Test context in which issue was discovered"""
 
     check_code: str
     """Code corresponding to check generating this issue"""
@@ -58,11 +59,11 @@ class Interaction(ImplicitDict):
     interaction_id: InteractionID
     """ID of this interaction (used to refer to this interaction from an issue)"""
 
-    test_id: str
-    """ID of test for which this interaction was performed"""
+    context: AutomatedTestContext
+    """Context in which this interaction was performed"""
 
     test_step: int
-    """Step of test for which this interaction was performed"""
+    """Step of test"""
 
     query: fetch.Query
     """Interaction performed (flight injection, DSS query, USS query, etc)"""
@@ -85,7 +86,9 @@ class Findings(ImplicitDict):
 class Report(ImplicitDict):
     configuration: SCDQualifierTestConfiguration
     findings: Findings = Findings()
-    test_id: str
-    test_name: str
-    targets_combination: Dict[str, str]
-    locale: Locality
+
+    def save(self):
+        filepath = "./report_scd.json"
+        with open(filepath, 'w') as f:
+            json.dump(self, f)
+        print("[SCD] Report saved to {}".format(filepath))
