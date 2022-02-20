@@ -1,8 +1,7 @@
 import datetime, json
-from typing import List, Optional, Dict
+from typing import List, Optional
 
 from monitoring.monitorlib import fetch
-from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.common_data_definitions import IssueSubject, Severity
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
@@ -63,7 +62,7 @@ class Interaction(ImplicitDict):
     """Context in which this interaction was performed"""
 
     test_step: int
-    """Step of test.
+    """Step of test for which this interaction was performed.
     0-based indexed.
     Special values:
      * -1: capture occurred during test initialization

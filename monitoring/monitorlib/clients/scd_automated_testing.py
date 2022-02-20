@@ -22,6 +22,7 @@ def create_flight(utm_client: DSSTestSession, uss_base_url: str, flight_request:
     flight_id = str(uuid.uuid4())
     url = '{}/v1/flights/{}'.format(uss_base_url, flight_id)
     print("[SCD] PUT {}".format(url))
+
     initiated_at = datetime.utcnow()
     resp = utm_client.put(url, json=flight_request, scope=SCOPE_SCD_QUALIFIER_INJECT)
     if resp.status_code != 200:

@@ -7,15 +7,10 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import Inject
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt
+from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
 from monitoring.uss_qualifier.scd.executor.report_recorder import ReportRecorder
 from monitoring.uss_qualifier.scd.executor.target import TestTarget
 from monitoring.uss_qualifier.scd.reports import Report, Issue, AutomatedTestContext, TestStepTeardownIndex
-
-class TestRunnerError(RuntimeError):
-    """An error encountered when interacting with a DSS or a USS"""
-    def __init__(self, msg, issue: Issue):
-        super(TestRunnerError, self).__init__(msg)
-        self.issue = issue
 
 
 # TODO: Replace print by logging
@@ -28,13 +23,16 @@ class TestRunner:
         self.targets = targets
         self.report_recorder = ReportRecorder(report, self.context)
 
+
     def get_scd_configuration(self) -> SCDQualifierTestConfiguration:
         return SCDQualifierTestConfiguration(injection_targets=list(map(lambda t: t.config, self.targets.values())))
+
 
     def run_automated_test(self):
         for i, step in enumerate(self.automated_test.steps):
             print('[SCD]   Running step {}: {}'.format(i, step.name))
             self.execute_step(step, i)
+
 
     def teardown(self):
         """Delete resources created by this test runner."""
@@ -58,6 +56,7 @@ class TestRunner:
                                     uss_role=role
                             )
                     print("[SCD] Error: Unable to delete flight {} during teardown".format(flight_name))
+
 
     def execute_step(self, step: TestStep, step_index: int):
         target = self.get_target(step)
@@ -106,12 +105,14 @@ class TestRunner:
 
         print("[SCD]     Step {} COMPLETED".format(step.name))
 
+
     def get_managing_target(self, flight_name: str) -> typing.Optional[TestTarget]:
         """Returns the managing target which created a flight"""
         for role, target in self.targets.items():
             if target.is_managing_flight(flight_name):
                 return target
         return None
+
 
     def get_target(self, step: TestStep) -> typing.Optional[TestTarget]:
         """Returns the target which should be called in the TestStep"""
@@ -122,9 +123,11 @@ class TestRunner:
         else:
             raise NotImplementedError("Unsupported step. A Test Step shall contain either a inject_flight or a delete_flight object.")
 
+
     def get_target_role(self, target_name):
         results = list(filter(lambda x: x[1].name == target_name, self.targets.items()))
         return results[0] if len(results) > 0 else None
+
 
     def evaluate_inject_flight_response(self, interaction_id: str, target: TestTarget, attempt: FlightInjectionAttempt, resp: InjectFlightResponse) -> typing.Optional[Issue]:
         if resp.result not in attempt.known_responses.acceptable_results:

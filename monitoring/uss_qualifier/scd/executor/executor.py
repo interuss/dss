@@ -9,7 +9,8 @@ from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, AutomatedTestContext
-from monitoring.uss_qualifier.scd.executor.runner import TestRunner, TestRunnerError
+from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
+from monitoring.uss_qualifier.scd.executor.runner import TestRunner
 from monitoring.uss_qualifier.scd.executor.target import TestTarget
 from monitoring.uss_qualifier.scd.reports import Report
 from monitoring.uss_qualifier.utils import is_url

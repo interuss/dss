@@ -11,6 +11,7 @@ class ReportRecorder():
         self.report = report
         self.context = context
 
+
     def capture_interaction(self, step_index: int, query: fetch.Query) -> InteractionID:
         interaction_id = str(uuid.uuid4())
         interaction = Interaction(
@@ -21,6 +22,7 @@ class ReportRecorder():
             )
         self.report.findings.add_interaction(interaction)
         return interaction_id
+
 
     def capture_injection_issue(self,  interaction_id: InteractionID, target_name: str, attempt: FlightInjectionAttempt, known_issue: KnownIssueFields):
         issue = Issue(
@@ -38,6 +40,7 @@ class ReportRecorder():
         self.report.findings.add_issue(issue)
         return issue
 
+
     def capture_injection_unknown_issue(self, interaction_id: InteractionID, summary: str, details: str, target_name: str, attempt: FlightInjectionAttempt):
         issue = Issue(
                 context=self.context,
@@ -53,6 +56,7 @@ class ReportRecorder():
             )
         self.report.findings.add_issue(issue)
         return issue
+
 
     def capture_deletion_unknown_issue(self, interaction_id: InteractionID, summary: str, details: str, flight_name: str, target_name: str, uss_role: str):
         issue = Issue(
