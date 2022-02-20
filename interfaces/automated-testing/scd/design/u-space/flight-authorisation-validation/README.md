@@ -8,4 +8,4 @@ creation when all fields are valid.
 
 ## Sequence
 
-![Sequence diagram](uas_flight_authorization.png)
+![Sequence diagram](sequence.png)
