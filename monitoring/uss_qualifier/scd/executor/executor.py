@@ -89,8 +89,6 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
             break
         target_combinations = combine_targets(configured_targets, test.steps)
         for i, targets_under_test in enumerate(target_combinations):
-            if should_exit:
-                break
             context = AutomatedTestContext(
                 test_id = test_id,
                 test_name = test.name,
@@ -112,6 +110,7 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
             should_exit = len(report.findings.critical_issues()) > 0
             if should_exit:
                 print ("[SCD] Critical issues found during test. Interrupting test sequence. {}".format(report.findings))
+                break
 
 
     report.save()
