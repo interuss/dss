@@ -10,8 +10,10 @@ echo "Ensure the environment is clean"
 echo "============="
 docker-compose -f docker-compose_qualifier_mocks.yaml -p $project_name down
 
-echo "Rebuild images without cache"
-docker-compose -f docker-compose_qualifier_mocks.yaml -p $project_name build --no-cache
+if [ "$CI" = "true" ]; then
+    echo "Rebuild images without cache"
+    docker-compose -f docker-compose_qualifier_mocks.yaml -p $project_name build --no-cache
+fi
 
 echo "Start mocks"
 echo "============="
