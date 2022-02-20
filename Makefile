@@ -38,11 +38,18 @@ format:
 	clang-format -style=file -i pkg/api/v1/scdpb/scd.proto
 	clang-format -style=file -i pkg/api/v1/auxpb/aux_service.proto
 
-.PHONY: lint
-lint:
+lint: go_lint shell_lint
+
+.PHONY: go_lint
+go_lint:
 	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
 	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all --skip-dirs /dss/build/workspace -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
+
+.PHONY: shell_lint
+shell_lint:
 	find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
+
+
 
 pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \

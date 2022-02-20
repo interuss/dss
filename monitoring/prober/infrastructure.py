@@ -86,7 +86,7 @@ ResourceType = int
 resource_type_code_descriptions: Dict[ResourceType, str] = {}
 
 
-# Next code: 344
+# Next code: 347
 def register_resource_type(code: int, description: str) -> ResourceType:
   """Register that the specified code refers to the described resource.
 
@@ -148,3 +148,8 @@ class IDFactory(object):
     resource_type_code = ResourceType(int(x, 16))
     owner_name = utils.decode_owner(y)
     return owner_name, resource_type_code
+
+
+check_scd_write_subscription_id = register_resource_type(344, 'Subscription created by build/dev/check_scd_write.sh')
+check_scd_write_constraint_id = register_resource_type(345, 'Constraint reference created by build/dev/check_scd_write.sh')
+check_scd_write_operational_intent_id = register_resource_type(346, 'Operational intent reference created by build/dev/check_scd_write.sh')

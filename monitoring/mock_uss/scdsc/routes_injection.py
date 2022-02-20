@@ -1,10 +1,12 @@
 from typing import List, Tuple
+from urllib.parse import urlparse
 import uuid
 
 import flask
 
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients import scd as scd_client
+from monitoring.monitorlib.scd_automated_testing import scd_injection_api
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.mock_uss import config, resources, webapp
@@ -47,7 +49,6 @@ def scdsc_injection_status() -> Tuple[str, int]:
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def inject_flight(flight_id: str) -> Tuple[str, int]:
     """Implements flight injection in SCD automated testing injection API."""
-
     try:
         json = flask.request.json
         if json is None:
@@ -60,7 +61,25 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
 
     if webapp.config[config.KEY_BEHAVIOR_LOCALITY].is_uspace_applicable:
         # Validate flight authorisation
-        pass  # TODO: Implement
+        flight_auth = req_body.flight_authorisation
+        if not flight_auth.uas_serial_number.valid:
+            return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Rejected, notes='Invalid serial number'))
+        if not flight_auth.operator_id.valid:
+            return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Rejected, notes='Invalid operator ID'))
+        if flight_auth.uas_class == scd_injection_api.UASClass.Other:
+            return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Rejected, notes='Invalid UAS class'))
+        if flight_auth.operation_category == scd_injection_api.OperationCategory.Unknown:
+            return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Rejected, notes='Invalid operation category'))
+        if flight_auth.endurance_minutes < 1 or flight_auth.endurance_minutes > 10 * 24 * 60:
+            return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Rejected, notes='Invalid endurance'))
+        if sum(1 if len(m) > 0 else 0 for m in flight_auth.connectivity_methods) == 0:
+            return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Rejected, notes='Invalid connectivity methods'))
+        if sum(1 if len(m) > 0 else 0 for m in flight_auth.identification_technologies) == 0:
+            return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Rejected, notes='Invalid identification technologies'))
+        try:
+            urlparse(flight_auth.emergency_procedure_url)
+        except ValueError:
+            return flask.jsonify(InjectFlightResponse(result=InjectFlightResult.Rejected, notes='Invalid emergency procedure URL'))
 
     # Check for operational intents in the DSS
     start_time = scd.start_of(req_body.operational_intent.volumes)
@@ -130,8 +149,8 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
 def delete_flight(flight_id: str) -> Tuple[str, int]:
     """Implements flight deletion in SCD automated testing injection API."""
 
-    with db.lock:
-        flight = db.flights.pop(flight_id, None)
+    with db as tx:
+        flight = tx.flights.pop(flight_id, None)
 
     if flight is None:
         return flask.jsonify(DeleteFlightResponse(
