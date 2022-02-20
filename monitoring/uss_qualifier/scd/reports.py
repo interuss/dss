@@ -96,6 +96,7 @@ class Findings(ImplicitDict):
             len(self.issues), len(self.interactions))
 
 class Report(ImplicitDict):
+    qualifier_version: str
     configuration: SCDQualifierTestConfiguration
     findings: Findings = Findings()
 

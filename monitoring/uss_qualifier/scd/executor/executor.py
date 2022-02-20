@@ -79,6 +79,7 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
     automated_tests = load_scd_test_definitions(locale)
     configured_targets = list(map(lambda t: TestTarget(t.name, t, auth_spec), test_configuration.injection_targets))
     report = Report(
+            qualifier_version=os.environ.get("SCD_VERSION", "unknown"),
             configuration=test_configuration,
     )
 
