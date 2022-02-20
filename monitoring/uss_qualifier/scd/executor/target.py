@@ -4,13 +4,13 @@ from typing import Dict, Callable, Tuple, Optional
 import requests
 
 from monitoring.monitorlib import infrastructure, auth, fetch
-from monitoring.monitorlib.clients.scd_automated_testing import create_flight, delete_flight
+from monitoring.monitorlib.clients.scd_automated_testing import create_flight, delete_flight, QueryError
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResult, \
     DeleteFlightResult, InjectFlightResponse, DeleteFlightResponse
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt, TestStep
-from monitoring.uss_qualifier.scd.reports import Interaction, Report
+from monitoring.uss_qualifier.scd.reports import Interaction, Report, Issue
 
 class TestTarget():
     """A class managing the state and the interactions with a target"""
@@ -42,16 +42,16 @@ class TestTarget():
         resp, query = delete_flight(self.client, self.config.injection_base_url, flight_id)
         if resp.result == DeleteFlightResult.Closed:
             del self.created_flight_ids[flight_name]
+        elif resp.result == DeleteFlightResult.Failed:
+            raise QueryError("Unable to delete flight {}. Result: {} Notes: {}".format(flight_name, resp.result, resp.get("notes", None)), query)
+        else:
+            raise NotImplementedError("Unsupported DeleteFlightResult {}".format(resp.get("result", None)))
         return resp, query
 
-    def delete_all_flights(self, capture_interaction: Optional[Callable[[fetch.Query], None]]) -> int:
-        flights_count = len(self.created_flight_ids.keys())
-        print("[SCD]    - Deleting {} flights for target {}.".format(flights_count, self.name))
-        for flight_name, flight_id in list(self.created_flight_ids.items()):
-            resp, query = self.delete_flight(flight_name)
-            if capture_interaction:
-                capture_interaction(query)
-        return flights_count
+
+    def managed_flights(self):
+        """Get flight names managed by this test target"""
+        return list(self.created_flight_ids.keys())
 
     def is_managing_flight(self, flight_name: str) -> bool:
         return flight_name in self.created_flight_ids.keys()

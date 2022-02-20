@@ -44,12 +44,27 @@ class TestRunner:
         """Delete resources created by this test runner."""
         print("[SCD]   Teardown {}".format(self.automated_test.name))
 
-        def capture_teardown_interaction(query: fetch.Query):
-            return self.capture_interaction(TestStepTeardownIndex, query)
+        def capture_teardown_issue(interaction_id, flight_name: str, target_name: str, uss_role: str) -> Issue:
+            return self.capture_deletion_unknown_issue(
+                    summary="Deletion request for flight {} was unsuccessful".format(flight_name),
+                    details="Deletion attempt failed with status {}.".format(e.query.status_code),
+                    flight_name=flight_name,
+                    target=target_name,
+                    uss_role=uss_role,
+                    interaction_id=interaction_id
+            )
 
         for role, target in self.targets.items():
-            # TODO: Capture errors
-            target.delete_all_flights(capture_teardown_interaction)
+            flight_names = target.managed_flights()
+            for flight_name in flight_names:
+                print("[SCD]    - Deleting {} flights for target {}.".format(len(flight_names), target.name))
+                try:
+                    resp, query = target.delete_flight(flight_name)
+                    self.capture_interaction(TestStepTeardownIndex, query)
+                except QueryError as e:
+                    interaction_id = self.capture_interaction(TestStepTeardownIndex, e.query)
+                    capture_teardown_issue(interaction_id, flight_name, target_name=target.name, uss_role=role)
+                    print("[SCD] Error: Unable to delete flight {}".format(flight_name))
 
     def execute_step(self, step: TestStep, step_index: int):
         target = self.get_target(step)
@@ -76,11 +91,26 @@ class TestRunner:
                 raise TestRunnerError("Unsuccessful attempt to inject flight {}".format(step.inject_flight.name), issue)
 
         elif 'delete_flight' in step:
-            print("[SCD]     Step: Delete flight {} to {}".format(step.delete_flight.flight_name, target.name))
-            # TODO: Capture errors
-            resp, query = target.delete_flight(step.delete_flight.flight_name)
+            print("[SCD]     Step: Delete flight {} in {}".format(step.delete_flight.flight_name, target.name))
+            try:
+                resp, query = target.delete_flight(step.delete_flight.flight_name)
+                self.capture_interaction(step_index, query)
+            except QueryError as e:
+                interaction_id = self.capture_interaction(step_index, e.query)
+                issue = self.capture_deletion_unknown_issue(
+                    "Deletion request was unsuccessful.",
+                    "Deletion attempt failed with status {}.".format(e.query.status_code),
+                    flight_name=step.delete_flight.flight_name,
+                    target=target.name,
+                    uss_role=self.get_target_role(target.name),
+                    interaction_id=interaction_id
+                )
+                raise TestRunnerError("Unsuccessful attempt to delete flight {}".format(step.inject_flight.name), issue)
+
         else:
             raise RuntimeError("[SCD] Error: Unable to identify the action to execute for step {}".format(step.name))
+
+        print("[SCD]     Step {} COMPLETED".format(step.name))
 
     def get_managing_target(self, flight_name: str) -> typing.Optional[TestTarget]:
         """Returns the managing target which created a flight"""
@@ -97,6 +127,10 @@ class TestRunner:
             return self.get_managing_target(step.delete_flight.flight_name)
         else:
             raise NotImplementedError("Unsupported step. A Test Step shall contain either a inject_flight or a delete_flight object.")
+
+    def get_target_role(self, target_name):
+        results = list(filter(lambda x: x[1].name == target_name, self.targets.items()))
+        return results[0] if len(results) > 0 else None
 
     def capture_interaction(self, step_index: int, query: fetch.Query) -> str:
         interaction_id = str(uuid.uuid4())
@@ -131,11 +165,27 @@ class TestRunner:
                 check_code="unknown",
                 relevant_requirements=[],
                 severity=Severity.Critical,
-                subject="Unknown issue",
+                subject="Unknown issue during injection attempt",
                 summary=summary,
                 details=details,
                 target=attempt.injection_target,
                 uss_role=attempt.injection_target.uss_role,
+                interactions=[interaction_id]
+            )
+        self.report.findings.add_issue(issue)
+        return issue
+
+    def capture_deletion_unknown_issue(self, summary: str, details: str, flight_name: str, target: str, uss_role: str, interaction_id: str):
+        issue = Issue(
+                context=self.context,
+                check_code="unknown",
+                relevant_requirements=[],
+                severity=Severity.Critical,
+                subject="Unknown issue during deletion of flight {}".format(flight_name),
+                summary=summary,
+                details=details,
+                target=target,
+                uss_role=uss_role,
                 interactions=[interaction_id]
             )
         self.report.findings.add_issue(issue)
@@ -161,8 +211,6 @@ class TestRunner:
                     interaction_id
                 )
                 raise TestRunnerError("Unsuccessful attempt to inject flight {}".format(attempt.name), issue)
-
-        print("[SCD]     Result: COMPLETED")
         return None
 
 

@@ -82,9 +82,15 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
             configuration=test_configuration,
     )
 
+    should_exit = False
+    executed_test_run_count = 0
     for test_id, test in automated_tests.items():
+        if should_exit:
+            break
         target_combinations = combine_targets(configured_targets, test.steps)
         for i, targets_under_test in enumerate(target_combinations):
+            if should_exit:
+                break
             context = AutomatedTestContext(
                 test_id = test_id,
                 test_name = test.name,
@@ -98,15 +104,21 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
             try:
                 runner.run_automated_test()
             except TestRunnerError as e:
-                print("[SCD] TestRunnerError: {}. Issue: {}. Related interactions: {}.".format(e, e.issue.details, e.issue.interactions))
+                print("[SCD] TestRunnerError: {} Issue: {} Related interactions: {}".format(e, e.issue.details, e.issue.interactions))
             finally:
                 runner.teardown()
+
+            executed_test_run_count = executed_test_run_count + 1
+            should_exit = len(report.findings.critical_issues()) > 0
+            if should_exit:
+                print ("[SCD] Critical issues found during test. Interrupting test sequence. {}".format(report.findings))
+
 
     report.save()
 
     issues_count = len(report.findings.issues)
     outcome = "SUCCESS" if issues_count == 0 else "FAIL"
-    print ("[SCD] Result: {} {}".format(outcome, report.findings))
+    print ("[SCD] Result: {} {} {} executed tests".format(outcome, report.findings, executed_test_run_count))
 
     # TODO: handle low priority issues.
     return issues_count == 0

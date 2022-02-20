@@ -88,6 +88,9 @@ class Findings(ImplicitDict):
     def add_issue(self, issue: Issue):
         self.issues.append(issue)
 
+    def critical_issues(self) -> List[Issue]:
+        return list(filter(lambda issue: issue.severity.Critical, self.issues))
+
     def __repr__(self):
         return '[{} issues in {} interactions]'.format(
             len(self.issues), len(self.interactions))
