@@ -64,6 +64,9 @@ class Interaction(ImplicitDict):
     test_step: int
     """Step of test for which this interaction was performed. 0-based indexed."""
 
+    test_step_name: str
+    """Name of test step for which this interaction was performed."""
+
     query: fetch.Query
     """Interaction performed (flight injection, DSS query, USS query, etc)"""
 

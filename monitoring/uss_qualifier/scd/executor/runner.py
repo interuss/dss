@@ -43,11 +43,12 @@ class TestRunner:
             flight_names = target.managed_flights()
             for flight_name in flight_names:
                 print("[SCD]    - Deleting {} flights for target {}.".format(len(flight_names), target.name))
+                step_name = "Clean up flight {} in {}".format(flight_name, target.name)
                 try:
                     resp, query = target.delete_flight(flight_name)
-                    self.report_recorder.capture_interaction(cleanup_test_step, query, test_phase=AutomatedTestPhase.Cleanup)
+                    self.report_recorder.capture_interaction(cleanup_test_step, step_name, query, test_phase=AutomatedTestPhase.Cleanup)
                 except QueryError as e:
-                    interaction_id = self.report_recorder.capture_interaction(cleanup_test_step, e.query, test_phase=AutomatedTestPhase.Cleanup)
+                    interaction_id = self.report_recorder.capture_interaction(cleanup_test_step, step_name, e.query, test_phase=AutomatedTestPhase.Cleanup)
                     self.report_recorder.capture_deletion_unknown_issue(
                                     interaction_id=interaction_id,
                                     summary="Deletion request for flight {} was unsuccessful".format(flight_name),
@@ -72,10 +73,10 @@ class TestRunner:
             print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
             try:
                 resp, query = target.inject_flight(step.inject_flight)
-                interaction_id = self.report_recorder.capture_interaction(step_index, query)
+                interaction_id = self.report_recorder.capture_interaction(step_index, step.name, query)
                 self.evaluate_inject_flight_response(interaction_id, target, step.inject_flight, resp)
             except QueryError as e:
-                interaction_id = self.report_recorder.capture_interaction(step_index, e.query)
+                interaction_id = self.report_recorder.capture_interaction(step_index, step.name, e.query)
                 issue = self.report_recorder.capture_injection_unknown_issue(
                     interaction_id,
                     summary="Injection request was unsuccessful",
@@ -89,9 +90,9 @@ class TestRunner:
             print("[SCD]     Step: Delete flight {} in {}".format(step.delete_flight.flight_name, target.name))
             try:
                 resp, query = target.delete_flight(step.delete_flight.flight_name)
-                self.report_recorder.capture_interaction(step_index, query)
+                self.report_recorder.capture_interaction(step_index, step.name, query)
             except QueryError as e:
-                interaction_id = self.report_recorder.capture_interaction(step_index, e.query)
+                interaction_id = self.report_recorder.capture_interaction(step_index, step.name, e.query)
                 issue = self.report_recorder.capture_deletion_unknown_issue(
                     interaction_id=interaction_id,
                     summary="Deletion request was unsuccessful.",
@@ -148,6 +149,7 @@ class TestRunner:
                     interaction_id=interaction_id,
                     summary="Injection request was unsuccessful",
                     details="Injection attempt failed with unknown response {}".format(resp.result),
+                    target_name=target.name,
                     attempt=attempt
                 )
                 raise TestRunnerError("Unsuccessful attempt to inject flight {}".format(attempt.name), issue)

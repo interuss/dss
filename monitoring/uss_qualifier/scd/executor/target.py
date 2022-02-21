@@ -8,7 +8,7 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import Inject
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt
 
-class TestTarget():
+class TestTarget:
     """A class managing the state and the interactions with a target"""
 
     def __init__(self, name: str, config: InjectionTargetConfiguration, auth_spec: str):
