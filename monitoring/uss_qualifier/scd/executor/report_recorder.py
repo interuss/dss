@@ -1,7 +1,7 @@
 import uuid
 from monitoring.monitorlib import fetch
 from monitoring.uss_qualifier.common_data_definitions import Severity
-from monitoring.uss_qualifier.scd.data_interfaces import KnownIssueFields, FlightInjectionAttempt, AutomatedTestContext
+from monitoring.uss_qualifier.scd.data_interfaces import KnownIssueFields, FlightInjectionAttempt, AutomatedTestContext, AutomatedTestPhase
 from monitoring.uss_qualifier.scd.reports import Interaction, Report, Issue, InteractionID
 
 class ReportRecorder():
@@ -12,11 +12,12 @@ class ReportRecorder():
         self.context = context
 
 
-    def capture_interaction(self, step_index: int, query: fetch.Query) -> InteractionID:
+    def capture_interaction(self, step_index: int, query: fetch.Query, test_phase: AutomatedTestPhase=AutomatedTestPhase.Test) -> InteractionID:
         interaction_id = str(uuid.uuid4())
         interaction = Interaction(
                 interaction_id=interaction_id,
                 test_step=step_index,
+                test_phase=test_phase,
                 context=self.context,
                 query=query
             )

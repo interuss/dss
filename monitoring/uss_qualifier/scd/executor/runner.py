@@ -6,11 +6,11 @@ from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResponse
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
-from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt
+from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt, AutomatedTestPhase
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
 from monitoring.uss_qualifier.scd.executor.report_recorder import ReportRecorder
 from monitoring.uss_qualifier.scd.executor.target import TestTarget
-from monitoring.uss_qualifier.scd.reports import Report, Issue, AutomatedTestContext, TestStepTeardownIndex
+from monitoring.uss_qualifier.scd.reports import Report, Issue, AutomatedTestContext
 
 
 # TODO: Replace print by logging
@@ -38,15 +38,16 @@ class TestRunner:
         """Delete resources created by this test runner."""
         print("[SCD]   Teardown {}".format(self.automated_test.name))
 
+        cleanup_test_step = 0
         for role, target in self.targets.items():
             flight_names = target.managed_flights()
             for flight_name in flight_names:
                 print("[SCD]    - Deleting {} flights for target {}.".format(len(flight_names), target.name))
                 try:
                     resp, query = target.delete_flight(flight_name)
-                    self.report_recorder.capture_interaction(TestStepTeardownIndex, query)
+                    self.report_recorder.capture_interaction(cleanup_test_step, query, test_phase=AutomatedTestPhase.Cleanup)
                 except QueryError as e:
-                    interaction_id = self.report_recorder.capture_interaction(TestStepTeardownIndex, e.query)
+                    interaction_id = self.report_recorder.capture_interaction(cleanup_test_step, e.query, test_phase=AutomatedTestPhase.Cleanup)
                     self.report_recorder.capture_deletion_unknown_issue(
                                     interaction_id=interaction_id,
                                     summary="Deletion request for flight {} was unsuccessful".format(flight_name),
@@ -56,6 +57,7 @@ class TestRunner:
                                     uss_role=role
                             )
                     print("[SCD] Error: Unable to delete flight {} during teardown".format(flight_name))
+                cleanup_test_step = cleanup_test_step + 1
 
 
     def execute_step(self, step: TestStep, step_index: int):

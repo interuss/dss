@@ -5,7 +5,7 @@ from monitoring.monitorlib import fetch
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.common_data_definitions import IssueSubject, Severity
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
-from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTestContext
+from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTestContext, AutomatedTestPhase
 
 
 InteractionID = str
@@ -62,19 +62,12 @@ class Interaction(ImplicitDict):
     """Context in which this interaction was performed"""
 
     test_step: int
-    """Step of test for which this interaction was performed.
-    0-based indexed.
-    Special values:
-     * -1: capture occurred during test initialization
-     * -2: capture occurred during test teardown
-     """
+    """Step of test for which this interaction was performed. 0-based indexed."""
 
     query: fetch.Query
     """Interaction performed (flight injection, DSS query, USS query, etc)"""
 
-
-TestStepSetupIndex = -1
-TestStepTeardownIndex = -2
+    test_phase: AutomatedTestPhase
 
 
 class Findings(ImplicitDict):
