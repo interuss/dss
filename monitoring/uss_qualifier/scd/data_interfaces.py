@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Optional, List, Dict
 from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
@@ -73,12 +72,6 @@ class TestStep(ImplicitDict):
 
     delete_flight: Optional[FlightDeletionAttempt]
     """If populated, the test driver should attempt to delete the specified flight for this step"""
-
-
-class AutomatedTestPhase(str, Enum):
-    Initialization = 'Initialization'
-    Test = 'Test'
-    Cleanup = 'Cleanup'
 
 
 class AutomatedTest(ImplicitDict):

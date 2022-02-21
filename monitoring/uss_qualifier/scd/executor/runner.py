@@ -6,11 +6,11 @@ from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResponse
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
-from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt, AutomatedTestPhase
+from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, FlightInjectionAttempt
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
 from monitoring.uss_qualifier.scd.executor.report_recorder import ReportRecorder
 from monitoring.uss_qualifier.scd.executor.target import TestTarget
-from monitoring.uss_qualifier.scd.reports import Report, Issue, AutomatedTestContext
+from monitoring.uss_qualifier.scd.reports import Report, Issue, AutomatedTestContext, TestStepReference, TestPhase
 
 
 # TODO: Replace print by logging
@@ -43,12 +43,18 @@ class TestRunner:
             flight_names = target.managed_flights()
             for flight_name in flight_names:
                 print("[SCD]    - Deleting {} flights for target {}.".format(len(flight_names), target.name))
-                step_name = "Clean up flight {} in {}".format(flight_name, target.name)
+
+                step_ref = TestStepReference(
+                    name="Clean up flight {} in {}".format(flight_name, target.name),
+                    index=cleanup_test_step,
+                    phase=TestPhase.Cleanup
+                )
+
                 try:
                     resp, query = target.delete_flight(flight_name)
-                    self.report_recorder.capture_interaction(cleanup_test_step, step_name, query, test_phase=AutomatedTestPhase.Cleanup)
+                    self.report_recorder.capture_interaction(step_ref, query)
                 except QueryError as e:
-                    interaction_id = self.report_recorder.capture_interaction(cleanup_test_step, step_name, e.query, test_phase=AutomatedTestPhase.Cleanup)
+                    interaction_id = self.report_recorder.capture_interaction(step_ref, e.query)
                     self.report_recorder.capture_deletion_unknown_issue(
                                     interaction_id=interaction_id,
                                     summary="Deletion request for flight {} was unsuccessful".format(flight_name),
@@ -69,14 +75,20 @@ class TestRunner:
                 step.inject_flight.name if 'inject_flight' in step else step.delete_flight.flight_name
             ))
 
+        step_ref = TestStepReference(
+            name=step.name,
+            index=step_index,
+            phase=TestPhase.Test
+        )
+
         if 'inject_flight' in step:
             print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
             try:
                 resp, query = target.inject_flight(step.inject_flight)
-                interaction_id = self.report_recorder.capture_interaction(step_index, step.name, query)
+                interaction_id = self.report_recorder.capture_interaction(step_ref, query)
                 self.evaluate_inject_flight_response(interaction_id, target, step.inject_flight, resp)
             except QueryError as e:
-                interaction_id = self.report_recorder.capture_interaction(step_index, step.name, e.query)
+                interaction_id = self.report_recorder.capture_interaction(step_ref, e.query)
                 issue = self.report_recorder.capture_injection_unknown_issue(
                     interaction_id,
                     summary="Injection request was unsuccessful",
@@ -90,9 +102,9 @@ class TestRunner:
             print("[SCD]     Step: Delete flight {} in {}".format(step.delete_flight.flight_name, target.name))
             try:
                 resp, query = target.delete_flight(step.delete_flight.flight_name)
-                self.report_recorder.capture_interaction(step_index, step.name, query)
+                self.report_recorder.capture_interaction(step_ref, query)
             except QueryError as e:
-                interaction_id = self.report_recorder.capture_interaction(step_index, step.name, e.query)
+                interaction_id = self.report_recorder.capture_interaction(step_ref, e.query)
                 issue = self.report_recorder.capture_deletion_unknown_issue(
                     interaction_id=interaction_id,
                     summary="Deletion request was unsuccessful.",
