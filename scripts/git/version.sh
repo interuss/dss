@@ -37,13 +37,13 @@ LAST_VERSION_TAG=$(git describe --abbrev=1 --tags --match="${UPSTREAM_ORG}/${COM
 LAST_VERSION=${LAST_VERSION_TAG##*/}
 #echo "LAST_VERSION: $LAST_VERSION"
 
-# If no version was found, use default v0.0.0.
-if [[ -z "$LAST_VERSION" ]]; then
-  LAST_VERSION="v0.0.0"
-fi
-
 # Current commit
 COMMIT=$(git rev-parse --short HEAD)
+
+# If no version was found, use default v0.0.0.
+if [[ -z "$LAST_VERSION" ]]; then
+  LAST_VERSION="v0.0.0-$COMMIT"
+fi
 
 # Check if there are some commits on top of the tag by checking if an abbrev part is present.
 if [[ "$LAST_VERSION" == *"-"* ]]; then
