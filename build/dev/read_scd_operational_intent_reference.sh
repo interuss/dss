@@ -9,7 +9,7 @@ operation_id=$1
 
 # Retrieve token from dummy OAuth server
 ACCESS_TOKEN=$(curl --silent -X POST \
-    "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost" \
+    "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost&sub=check_scd" \
 | jq -r '.access_token')
 
 curl --silent -X GET  "http://localhost:8082/dss/v1/operational_intent_references/$operation_id"  \

@@ -6,19 +6,18 @@ set -eo pipefail
 
 # Retrieve token from dummy OAuth server
 ACCESS_TOKEN=$(curl --silent -X POST \
-    "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost" \
+    "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination%20utm.constraint_management&intended_audience=localhost&issuer=localhost&sub=check_scd" \
 | jq -r '.access_token')
 
 
-echo "DSS response to [SCD] PUT Subscriptions query:"
+echo "DSS response to [SCD] PUT subscription query:"
 echo "============="
 TIMESTAMP_NOW=$(python -c 'from datetime import datetime; print((datetime.utcnow()).isoformat() + "Z")')
 TIMESTAMP_LATER=$(python -c 'from datetime import datetime, timedelta; print((datetime.utcnow() + timedelta(minutes=5)).isoformat() + "Z")')
-RANDOMCODE=$(openssl rand -hex 2)
 
 
 curl --silent -X PUT  \
-"http://localhost:8082/dss/v1/subscriptions/000000d8-$RANDOMCODE-40ff-a64b-a8fb8db60000" \
+"http://localhost:8082/dss/v1/subscriptions/00000158-9aba-4026-bbef-bad6cde80000" \
 -H "Authorization: Bearer ${ACCESS_TOKEN}" -H "Content-Type: application/json"  \
 -d '{
        "notify_for_operational_intents": true,
@@ -51,16 +50,13 @@ curl --silent -X PUT  \
                 "format": "RFC3339"
             }
 }}'
+echo
 
 
-echo "Create SCD constraints"
+echo "DSS response to [SCD] PUT constraint reference query:"
 echo "============="
 
-ACCESS_TOKEN=$(curl --silent -X POST \
-    "http://localhost:8085/token?grant_type=client_credentials&scope=utm.constraint_management&intended_audience=localhost&issuer=localhost" \
-| jq -r '.access_token')
-
-curl --silent -X PUT  "http://localhost:8082/dss/v1/constraint_references/00000002-$RANDOMCODE-40ff-a64b-a8fb8db60000"  \
+curl --silent -X PUT  "http://localhost:8082/dss/v1/constraint_references/00000159-9aba-4026-bbef-bad6cde80000"  \
 -H "Authorization: Bearer ${ACCESS_TOKEN}"  \
 -H "Content-Type: application/json"  \
 -d '{
@@ -101,16 +97,13 @@ curl --silent -X PUT  "http://localhost:8082/dss/v1/constraint_references/000000
     ],
     "old_version": 0
 }'
+echo
 
 
-echo "Create Operational intent"
+echo "DSS response to [SCD] PUT operational intent reference query:"
 echo "=========="
 
-ACCESS_TOKEN=$(curl --silent -X POST \
-    "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost" \
-| jq -r '.access_token')
-
-curl --silent -X PUT  "http://localhost:8082/dss/v1/operational_intent_references/00000156-$RANDOMCODE-40ff-a64b-a8fb8db60000"  \
+curl --silent -X PUT  "http://localhost:8082/dss/v1/operational_intent_references/0000015a-9aba-4026-bbef-bad6cde80000"  \
  -H "Authorization: Bearer ${ACCESS_TOKEN}"  \
  -H "Content-Type: application/json"  \
  -d '{
@@ -324,3 +317,4 @@ curl --silent -X PUT  "http://localhost:8082/dss/v1/operational_intent_reference
     },
     "key": []
 }'
+echo

@@ -27,7 +27,7 @@ class KnownIssueFields(ImplicitDict):
 
 class KnownResponses(ImplicitDict):
     """Mapping of the flight injection attempt's USS response to test outcome"""
-    acceptable_results: List[str] 
+    acceptable_results: List[str]
     """Acceptable values in the result data field of InjectFlightResponse. The flight injection attempt will be considered successful if the USS under test reports one of these as the result of attempting to inject the flight."""
 
     incorrect_result_details: Dict[str, KnownIssueFields]
@@ -66,10 +66,10 @@ class TestStep(ImplicitDict):
     name: str
     """Human-readable name/summary of this step"""
 
-    inject_flight: FlightInjectionAttempt
+    inject_flight: Optional[FlightInjectionAttempt]
     """If populated, the test driver should attempt to inject a flight for this step"""
 
-    delete_flight: FlightDeletionAttempt
+    delete_flight: Optional[FlightDeletionAttempt]
     """If populated, the test driver should attempt to delete the specified flight for this step"""
 
 

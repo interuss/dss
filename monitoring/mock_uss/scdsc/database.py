@@ -1,5 +1,5 @@
 import json
-from typing import Dict
+from typing import Dict, Optional
 
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.multiprocessing import SynchronizedValue
