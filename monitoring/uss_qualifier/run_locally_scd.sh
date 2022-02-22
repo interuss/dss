@@ -12,11 +12,11 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-echo '####################################################################################'
-echo '## NOTE: Prerequisites to run this command are:                                   ##'
-echo '## 1. Local DSS instance + Dummy OAuth server (/build/dev/run_locally.sh)         ##'
-echo '## 2. Local mock SCD service provider (/monitoring/mock_uss/run_locally_scdsc.sh) ##'
-echo '####################################################################################'
+echo '#########################################################################'
+echo '## NOTE: A prerequisite for running this command locally is to have    ##'
+echo '## a running instance of the uss_qualifier SCD system mock             ##'
+echo '## (../mock_uss/run_locally_scdsc.sh) including related dependencies.  ##'
+echo '#########################################################################'
 
 CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally.json"
 CONFIG='--config config_run_locally.json'
