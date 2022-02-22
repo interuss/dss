@@ -34,7 +34,7 @@ REPORT_SCD_FILE="$(pwd)/monitoring/uss_qualifier/report_scd.json"
 touch "${REPORT_RID_FILE}"
 touch "${REPORT_SCD_FILE}"
 
-$(pwd)/monitoring/uss_qualifier/bin/build.sh
+"$(pwd)"/monitoring/uss_qualifier/bin/build.sh
 
 if [ "$CI" == "true" ]; then
   docker_args="--add-host host.docker.internal:host-gateway" # Required to reach other containers in Ubuntu (used for Github Actions)
@@ -42,6 +42,7 @@ else
   docker_args="-it"
 fi
 
+# shellcheck disable=SC2086
 docker run ${docker_args} --name uss_qualifier \
   --rm \
   -e QUALIFIER_OPTIONS="${QUALIFIER_OPTIONS}" \
