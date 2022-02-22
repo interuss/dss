@@ -42,7 +42,7 @@ echo '{
 SCD_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
 REPORT_SCD_FILE="$(pwd)/monitoring/uss_qualifier/report_scd.json"
-# report.json must already exist to share correctly with the Docker container
+# report_scd.json must already exist to share correctly with the Docker container
 touch "${REPORT_SCD_FILE}"
 
 docker build \
@@ -64,7 +64,6 @@ docker run ${docker_args} --name uss_qualifier \
   --rm \
   -e SCD_QUALIFIER_OPTIONS="${SCD_QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
-  -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
   -v "${REPORT_SCD_FILE}:/app/monitoring/uss_qualifier/report_scd.json" \
   -v "$(pwd):/app" \
   interuss/uss_qualifier \
