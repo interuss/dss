@@ -12,11 +12,11 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-echo '#########################################################################'
-echo '## NOTE: A prerequisite for running this command locally is to have    ##'
-echo '## a running instance of the uss_qualifier SCD system mock             ##'
-echo '## (../mock_uss/run_locally_scdsc.sh) including related dependencies.  ##'
-echo '#########################################################################'
+echo '####################################################################################'
+echo '## NOTE: Prerequisites to run this command are:                                   ##'
+echo '## 1. Local DSS instance + Dummy OAuth server (/build/dev/run_locally.sh)         ##'
+echo '## 2. Local mock SCD service provider (/monitoring/mock_uss/run_locally_scdsc.sh) ##'
+echo '####################################################################################'
 
 CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally.json"
 CONFIG='--config config_run_locally.json'
@@ -41,15 +41,15 @@ echo '{
 
 SCD_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
-REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report.json"
+REPORT_SCD_FILE="$(pwd)/monitoring/uss_qualifier/report_scd.json"
 # report.json must already exist to share correctly with the Docker container
-touch "${REPORT_FILE}"
+touch "${REPORT_SCD_FILE}"
 
 docker build \
     -f monitoring/uss_qualifier/Dockerfile \
     -t interuss/uss_qualifier \
     --build-arg version="$(scripts/git/commit.sh)" \
-    --build-arg qualifier_scd_version="$(scripts/git/version.sh uss_qualifier_scd --long)" \
+    --build-arg qualifier_scd_version="$(scripts/git/version.sh uss_qualifier --long)" \
     monitoring
 
 if [ "$CI" == "true" ]; then
