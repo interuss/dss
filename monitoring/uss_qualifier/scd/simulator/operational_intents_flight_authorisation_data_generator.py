@@ -285,7 +285,7 @@ def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str],
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
 
     for injection_number, flight_name in enumerate(all_flight_names):        
-        should_intersect = False if injection_number == 0 else True
+        should_intersect = False if injection_number == 0 else random.choice([False, True])
         geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
         flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)
         reference_time = my_operational_intent_generator.now.isoformat()
