@@ -62,6 +62,12 @@ def combine_targets(targets: List[TestTarget], steps: List[TestStep]) -> typing.
     # Get unique uss roles in injection steps in deterministic order
     uss_roles = sorted(set(map(lambda step: step.inject_flight.injection_target.uss_role, injection_steps)))
 
+    targets_count = len(targets)
+    uss_roles_count = len(uss_roles)
+    if targets_count < uss_roles_count:
+        # TODO: Implement a strategy when there are less targets configured than the required uss_roles.
+        raise RuntimeError("A minimum of {} targets have to be configured for this test. Only {} found.".format(uss_roles_count, targets_count))
+
     # Create combinations
     for t in itertools.permutations(targets, len(uss_roles)):
         target_set = {}
