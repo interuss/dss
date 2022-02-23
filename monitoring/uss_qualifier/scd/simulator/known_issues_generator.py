@@ -52,13 +52,13 @@ flight_authorisation_test_conflict_with_flight_error_notification = KnownIssueFi
                                                 relevant_requirements = [], 
                                                 severity = "High",
                                                 subject= nominal_planning_test_subject, 
-                                                summary ="Flight authorisation request contains operational intents with no conflict in spae and time and therefore should not lead to a airspace conflict error.", details = "The test data contains operational intents with no conflicts in space and time and therefore should be planned successfully.")        
+                                                summary ="Flight authorisation request contains operational intents with no conflict in space and time and therefore should not lead to a airspace conflict error.", details = "The test data contains operational intents with no conflicts in space and time and therefore should be planned successfully.")        
 
 flight_authorisation_test_failed_with_without_incorrect_field_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
                                                 relevant_requirements = [], 
                                                 severity = "High",
                                                 subject= "Flight Authorisation Data", 
-                                                summary ="Flight injection request contains complete and valid flight authorisation data and complete and valid operational intent.", details = "The test data contains operational intents and fligth authorisation data that are complete and valid and should be processsed by the USSP.")        
+                                                summary ="Flight injection request contains complete and valid flight authorisation data and complete and valid operational intent.", details = "The test data contains operational intents and flight authorisation data that are complete and valid and should be processsed by the USSP.")
         
 if_planned_with_incorrect_uas_serial_number_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test",
                                             relevant_requirements = ["ANNEX IV of Commission Implementing Regulation (EU) 2021/664, paragraph 1"], 

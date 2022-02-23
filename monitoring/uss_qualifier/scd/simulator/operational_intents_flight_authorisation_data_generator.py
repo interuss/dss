@@ -228,6 +228,8 @@ class KnownIssuesAcceptableResultFieldGenerator():
         """A method to generate messages for the user to take remedial actions when a flight authorisation test returns a status that is not expected """
 
         all_known_issues_fields = {}
+        all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_failed_with_without_incorrect_field_notification            
+        all_known_issues_fields["ConflictWithFlight"] = known_issues_generator.flight_authorisation_test_conflict_with_flight_error_notification
 
         if self.expected_flight_authorisation_processing_result == "Rejected":
             if incorrect_field == "uas_serial_number":
@@ -235,14 +237,8 @@ class KnownIssuesAcceptableResultFieldGenerator():
             elif incorrect_field == "operator_registration_number":
                 all_known_issues_fields["Planned"] = known_issues_generator.if_planned_with_incorrect_operator_registration_number_notification
             
-            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_failed_with_without_incorrect_field_notification
-            
-            all_known_issues_fields["ConflictWithFlight"] = known_issues_generator.flight_authorisation_test_conflict_with_flight_error_notification
-
         elif self.expected_flight_authorisation_processing_result == "Planned":
             all_known_issues_fields["Rejected"] = known_issues_generator.flight_authorisation_test_common_error_notification
-            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_failed_with_without_incorrect_field_notification
-            all_known_issues_fields["ConflictWithFlight"] = known_issues_generator.flight_authorisation_test_conflict_with_flight_error_notification
 
         return all_known_issues_fields
 
