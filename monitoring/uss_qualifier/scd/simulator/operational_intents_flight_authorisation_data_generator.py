@@ -1,6 +1,6 @@
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest
 from monitoring.uss_qualifier.scd.data_interfaces import FlightDeletionAttempt, FlightInjectionAttempt, InjectionTarget, KnownIssueFields, KnownResponses, AutomatedTest, TestStep
-from monitoring.uss_qualifier.scd.simulator.utils import FlightNameIncorrectField
+from monitoring.uss_qualifier.scd.simulator.utils import FlightNameIncorrectField, TestOutputPathDetails, AutomatedTestDetails
 from utils import GeneratedGeometry, GeometryGenerationRule
 from monitoring.monitorlib.formats import OperatorRegistrationNumber, SerialNumber
 from shapely.geometry import asShape
@@ -337,7 +337,7 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
     return flight_injection_attempt
 
 
-def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[AutomatedTest]:
+def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[AutomatedTestDetails]:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
 
     ## Begin nominal test data generation ##
@@ -369,10 +369,13 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
             nominal_test_steps.append(nominal_test_step_4)            
     # End build nominal test steps
 
-    nominal_test_details = AutomatedTest(name="Nominal Planning Test", steps = nominal_test_steps)
     ## End nominal test data generation ##
+    test_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning')
+    test_name = test_output_details.group +'/'+test_output_details.name
+    nominal_test_details = AutomatedTest(name=test_name, steps = nominal_test_steps)
+    nominal_test_and_output_details = AutomatedTestDetails(automated_test = nominal_test_details, output_path_details= test_output_details)
 
-    nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_details)
+    nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_and_output_details)
 
     ## Begin flight authorisation test data generation  ##  
     fields_to_make_incorrect = ["uas_serial_number", "operator_registration_number"]
@@ -401,7 +404,12 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
         flight_authorisation_test_steps.append(delete_test_step)
     # End build flight authorisation test steps
     
-    flight_authorisation_test_details = AutomatedTest(name="Flight authorisation validation test", steps = flight_authorisation_test_steps)
+    flight_authorisation_test_output_details = TestOutputPathDetails(group='u-space', name ='flight-authorisation-validation')
+    flight_authorisation_test_name = flight_authorisation_test_output_details.group +'/'+ flight_authorisation_test_output_details.name
+    
+    flight_authorisation_test = AutomatedTest(name = flight_authorisation_test_name, steps = flight_authorisation_test_steps)
+    flight_authorisation_test_details = AutomatedTestDetails(automated_test = flight_authorisation_test, output_path_details= flight_authorisation_test_output_details)
+
     ## End flight authorisation test data generation ##
     
     nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
@@ -414,24 +422,23 @@ def generate_operational_intent_injection(astm_4d_volume : Volume4D) -> Operatio
     current_operational_intent_reference = OperationalIntentTestInjection(volumes = [astm_4d_volume], state = 'Accepted', off_nominal_volumes = [], priority =0)
     return current_operational_intent_reference
 
-def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[AutomatedTest], locale ="che") -> None:
+def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[AutomatedTestDetails], locale ="che") -> None:
     """A function to write Flight injection attempts to disk so that they can be examined / used by other software like the test executor """
-
-    output_directory = Path(output_path, locale)
     # Create test_definition directory if it does not exist
-    output_directory.mkdir(parents=True, exist_ok=True)
-    output_subdirectories = Path(output_directory, "automated_test")
-    output_subdirectories.mkdir(parents=True, exist_ok=True)
+    
 
-    for test_index, automated_test_data in enumerate(all_automated_tests):
-        automated_test_file_name = "automated_test_%s.json" % str(test_index + 1)  # Avoid Zero based numbering
-        automated_test_file = Path(output_subdirectories, automated_test_file_name)
+    for automated_test_data in all_automated_tests:      
+        automated_test_file_directory_name = automated_test_data.output_path_details.group
+        automated_test_file_directory = Path(output_path,locale, automated_test_file_directory_name)
+        automated_test_file_directory.mkdir(parents=True, exist_ok=True)
+        automated_test_file_name = automated_test_data.output_path_details.name + '.json'
+        automated_test_file = Path(automated_test_file_directory, automated_test_file_name)
+                
         with open(automated_test_file, "w") as f:
-            f.write(json.dumps(automated_test_data))
+            f.write(json.dumps(automated_test_data.automated_test))
 
         with open(automated_test_file, 'r') as f:
             ImplicitDict.parse(json.load(f), AutomatedTest)
-
 
 if __name__ == '__main__':
     nominal_and_flight_authorisation_test = generate_nominal_and_flight_authorisation_test()
