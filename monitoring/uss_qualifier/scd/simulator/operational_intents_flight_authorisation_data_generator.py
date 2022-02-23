@@ -219,8 +219,8 @@ class KnownIssuesAcceptableResultFieldGenerator():
             all_known_issues_fields['Planned']= known_issues_generator.if_planned_with_conflict_with_flight_explanation
         elif self.expected_operational_intent_processing_result == "Planned":
             all_known_issues_fields['ConflictWithFlight']= known_issues_generator.conflict_with_flight_explanation
-            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_common_error_notification
-            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_common_error_notification
+            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_rejected_error_notification
+            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_failed_error_notification
 
         return all_known_issues_fields
 
