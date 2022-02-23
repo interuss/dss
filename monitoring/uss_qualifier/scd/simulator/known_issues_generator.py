@@ -44,20 +44,20 @@ if_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_plan
 flight_authorisation_test_common_error_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
                                                 relevant_requirements = [], 
                                                 severity = "High",
-                                                subject="", 
+                                                subject="Flight Authorisation Data", 
                                                 summary ="Flight authorisation request for with valid flight details should be processed successfully", details = "All data provided was complete and correct with no errors, conforming to the relevant standardized formats and the data should have been processed successfully.")        
         
 
 flight_authorisation_test_conflict_with_flight_error_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
                                                 relevant_requirements = [], 
                                                 severity = "High",
-                                                subject="", 
+                                                subject="Flight Authorisation Data", 
                                                 summary ="Flight authorisation request did not contain any operational intents and therefore should not lead to a airspace conflict error.", details = "Operational intents are provided for nominal tests only and flight planning is not expected for flight authorisation test.")        
         
 if_planned_with_incorrect_uas_serial_number_explanation = KnownIssueFields(test_code = "flight_authorisation_validation_test",
                                             relevant_requirements = ["ANNEX IV of Commission Implementing Regulation (EU) 2021/664, paragraph 1"], 
                                             severity = "High", 
-                                            subject="UAS Serial Number provided is incorrect", 
+                                            subject="UAS Serial Number", 
                                             summary ="Flight created with invalid UAS serial number", 
                                             details = "The UAS serial number is not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")   
 
@@ -65,7 +65,7 @@ if_planned_with_incorrect_uas_serial_number_explanation = KnownIssueFields(test_
 if_planned_with_incorrect_operator_registration_number_explanation = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
                                             relevant_requirements = ["ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1"], 
                                             severity = "High", 
-                                            subject="Operator Registration Number provided is incorrect", 
-                                            summary ="Flight created with invalid Operator registration number", 
+                                            subject="Operator Registration ID", 
+                                            summary ="Flight created with invalid Operator registration ID", 
                                             details = "The UAS serial number provided is not as expressed as described in the EN4709-02 standard should be rejected.")
 
