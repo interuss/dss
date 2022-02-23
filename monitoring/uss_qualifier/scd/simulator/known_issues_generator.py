@@ -65,7 +65,7 @@ if_planned_with_incorrect_uas_serial_number_notification = KnownIssueFields(test
                                             severity = "High", 
                                             subject="UAS Serial Number", 
                                             summary ="Flight created with invalid UAS serial number", 
-                                            details = "The UAS serial number is not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")   
+                                            details = "The UAS serial number provided in the flight authorisation datais was not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")   
 
 
 if_planned_with_incorrect_operator_registration_number_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
@@ -73,5 +73,5 @@ if_planned_with_incorrect_operator_registration_number_notification = KnownIssue
                                             severity = "High", 
                                             subject="Operator Registration ID", 
                                             summary ="Flight created with invalid Operator registration ID", 
-                                            details = "The UAS serial number provided is not as expressed as described in the EN4709-02 standard should be rejected.")
+                                            details = "The Operation Registration ID provided in the flight authorisation details is not as expressed as described in the EN4709-02 standard should be rejected.")
 
