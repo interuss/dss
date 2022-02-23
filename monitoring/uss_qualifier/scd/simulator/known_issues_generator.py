@@ -45,7 +45,7 @@ flight_authorisation_test_common_error_notification = KnownIssueFields(test_code
                                                 relevant_requirements = [], 
                                                 severity = "High",
                                                 subject="Flight Authorisation Data", 
-                                                summary ="Flight authorisation request for with valid flight details should be processed successfully", details = "All data provided was complete and correct with no errors, conforming to the relevant standardized formats and the data should have been processed successfully.")        
+                                                summary ="Flight authorisation request with valid flight details should be processed successfully", details = "All data provided was complete and correct with no errors, conforming to the relevant standardized formats and the data should have been processed successfully.")        
         
 
 flight_authorisation_test_conflict_with_flight_error_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 

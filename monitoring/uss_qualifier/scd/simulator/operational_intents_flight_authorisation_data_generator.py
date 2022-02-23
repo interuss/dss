@@ -391,9 +391,6 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
         inject_test_step = TestStep(name="Inject Fight Authorisation data", inject_flight= flight_authorisation_test_injection_attempt, delete_flight=None)
         flight_authorisation_test_steps.append(inject_test_step)
         
-        flight_deletion_attempt = FlightDeletionAttempt(flight_name = flight_auth_test_metadata.flight_name)
-        delete_test_step = TestStep(name="Delete injected data", delete_flight= flight_deletion_attempt, inject_flight=None)
-        flight_authorisation_test_steps.append(delete_test_step)
     # End build flight authorisation test steps
     
     flight_authorisation_test_output_details = TestOutputPathDetails(group='u-space', name ='flight-authorisation-validation')
