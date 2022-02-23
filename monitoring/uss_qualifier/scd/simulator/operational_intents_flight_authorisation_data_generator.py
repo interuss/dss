@@ -234,7 +234,7 @@ class KnownIssuesAcceptableResultFieldGenerator():
                 all_known_issues_fields["Planned"] = known_issues_generator.if_planned_with_incorrect_uas_serial_number_explanation
             elif incorrect_field == "operator_registration_number":
                 all_known_issues_fields["Planned"] = known_issues_generator.if_planned_with_incorrect_operator_registration_number_explanation
-            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_common_error_notification
+            all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_failed_error_notification
             all_known_issues_fields["ConflictWithFlight"] = known_issues_generator.flight_authorisation_test_conflict_with_flight_error_notification
 
         elif self.expected_flight_authorisation_processing_result == "Planned":

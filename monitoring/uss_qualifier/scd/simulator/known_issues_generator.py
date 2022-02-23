@@ -23,13 +23,13 @@ nominal_planning_test_failed_error_notification = KnownIssueFields(test_code = "
 if_planned_with_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_planning_test", 
                                             relevant_requirements = [], 
                                             severity = "High", 
-                                            subject=nominal_planning_test_subject, 
+                                            subject= nominal_planning_test_subject, 
                                             summary ="The operational intent details provided were generated in such a way that they should not have been planned.", details = "The co-ordinates of the 4D Operational intent conflicts with an existing operational intent in the area and the processing result should not be a successful planning of the intent.")
                                             
 conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_planning_test", 
                                                             relevant_requirements = [], 
                                                             severity = "High", 
-                                                            subject=nominal_planning_test_subject, 
+                                                            subject= nominal_planning_test_subject, 
                                                             summary ="The operational intent data provided should have been processed without conflicts", 
                                                             details = "All operational intent data provided is correct and valid and free of conflict in space and time, therefore it should have been planned by the USSP.")
         
@@ -37,7 +37,7 @@ conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_plannin
 if_conflict_with_flight_explanation = KnownIssueFields(test_code = "nominal_planning_test", 
                                                         relevant_requirements = [], 
                                                         severity= "High", 
-                                                        subject=nominal_planning_test_subject, 
+                                                        subject= nominal_planning_test_subject, 
                                                         summary ="The operational intent details provided were generated in such a way that they should have been planned.", 
                                                         details = "The co-ordinates of the 4D Operational intent does not conflict with any existing operational intents in the area and the processing result should be a successful planning of the intent.")             
 
@@ -51,8 +51,8 @@ flight_authorisation_test_common_error_notification = KnownIssueFields(test_code
 flight_authorisation_test_conflict_with_flight_error_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
                                                 relevant_requirements = [], 
                                                 severity = "High",
-                                                subject="Flight Authorisation Data", 
-                                                summary ="Flight authorisation request did not contain any operational intents and therefore should not lead to a airspace conflict error.", details = "Operational intents are provided for nominal tests only and flight planning is not expected for flight authorisation test.")        
+                                                subject= nominal_planning_test_subject, 
+                                                summary ="Flight authorisation request contains operational intents with no conflict in spae and time and therefore should not lead to a airspace conflict error.", details = "The test data contains operational intents with no conflicts in space and time and therefore should be planned successfully.")        
         
 if_planned_with_incorrect_uas_serial_number_explanation = KnownIssueFields(test_code = "flight_authorisation_validation_test",
                                             relevant_requirements = ["ANNEX IV of Commission Implementing Regulation (EU) 2021/664, paragraph 1"], 
