@@ -33,7 +33,6 @@ conflict_with_flight_notification = KnownIssueFields(test_code = "nominal_planni
                                                             summary ="The operational intent data provided should have been processed without conflicts", 
                                                             details = "All operational intent data provided is correct and valid and free of conflict in space and time, therefore it should have been planned by the USSP.")
         
-
 if_conflict_with_flight_notification = KnownIssueFields(test_code = "nominal_planning_test", 
                                                         relevant_requirements = [], 
                                                         severity= "High", 
@@ -58,7 +57,7 @@ flight_authorisation_test_failed_with_without_incorrect_field_notification = Kno
                                                 relevant_requirements = [], 
                                                 severity = "High",
                                                 subject= "Flight Authorisation Data", 
-                                                summary ="Flight injection request contains complete and valid flight authorisation data and complete and valid operational intent.", details = "The test data contains operational intents and flight authorisation data that are complete and valid and should be processsed by the USSP.")
+                                                summary ="Flight injection request contains flight authorisation with all required fields and a valid operational intent.", details = "The test data contains operational intents and flight authorisation data that are complete and valid and should be processsed by the USSP.")
         
 if_planned_with_incorrect_uas_serial_number_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test",
                                             relevant_requirements = ["ANNEX IV of Commission Implementing Regulation (EU) 2021/664, paragraph 1"], 
@@ -67,11 +66,10 @@ if_planned_with_incorrect_uas_serial_number_notification = KnownIssueFields(test
                                             summary ="Flight created with invalid UAS serial number", 
                                             details = "The UAS serial number provided in the flight authorisation datais was not as expressed in the ANSI/CTA-2063 Physical Serial Number format and should be rejected.")   
 
-
 if_planned_with_incorrect_operator_registration_number_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
                                             relevant_requirements = ["ANNEX IV of COMMISSION IMPLEMENTING REGULATION (EU) 2021/664, paragraph 1"], 
                                             severity = "High", 
                                             subject="Operator Registration ID", 
                                             summary ="Flight created with invalid Operator registration ID", 
-                                            details = "The Operation Registration ID provided in the flight authorisation details is not as expressed as described in the EN4709-02 standard should be rejected.")
+                                            details = "The Operation Registration ID provided in the flight authorisation details is not as expressed as described in the EN4709-02 standard and should be rejected.")
 
