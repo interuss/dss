@@ -358,15 +358,7 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
         elif idx == 1:
             nominal_test_step_2 = TestStep(name="Inject flight via Blocked USS", inject_flight = injection_attempt, delete_flight=None)
             nominal_test_steps.append(nominal_test_step_2)
-
-    for flight_idx, flight_name in enumerate(all_flight_names):
-        flight_deletion_attempt = FlightDeletionAttempt(flight_name =flight_name)
-        if flight_idx == 0:
-            nominal_test_step_3 = TestStep(name="Delete first injected flight", delete_flight= flight_deletion_attempt, inject_flight=None)
-            nominal_test_steps.append(nominal_test_step_3)
-        elif flight_idx ==1:
-            nominal_test_step_4 = TestStep(name="Delete second injected flight", delete_flight= flight_deletion_attempt, inject_flight=None)
-            nominal_test_steps.append(nominal_test_step_4)            
+    
     # End build nominal test steps
 
     ## End nominal test data generation ##
@@ -433,7 +425,7 @@ def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[
         automated_test_file_directory.mkdir(parents=True, exist_ok=True)
         automated_test_file_name = automated_test_data.output_path_details.name + '.json'
         automated_test_file = Path(automated_test_file_directory, automated_test_file_name)
-                
+
         with open(automated_test_file, "w") as f:
             f.write(json.dumps(automated_test_data.automated_test))
 
