@@ -56,7 +56,7 @@ echo " -------------- BOOTSTRAP ----------------- "
 echo "Building local container for testing (see core-service-build.log for details)"
 docker build --rm . -t local-interuss-dss-image > core-service-build.log
 echo "Building db-manager container for testing"
-docker build --rm -f cmds/db-manager/Dockerfile . -t local-db-manager > db-manager-build.log
+docker build --rm . -t local-db-manager > db-manager-build.log
 
 echo " ---------------- CRDB -------------------- "
 echo "cleaning up any crdb pre-existing containers"
