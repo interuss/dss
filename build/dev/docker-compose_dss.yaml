@@ -19,8 +19,8 @@ services:
   local-dss-rid-bootstrapper:
     build:
       context: ../..
-      dockerfile: cmds/db-manager/Dockerfile
-    image: interuss-local/db-manager
+      dockerfile: Dockerfile
+    image: interuss-local/dss
     volumes:
       - $PWD/../deploy/db_schemas/rid:/db-schemas/rid:ro
       - local-dss-data:/var/local-dss-data
@@ -32,8 +32,8 @@ services:
   local-dss-scd-bootstrapper:
     build:
       context: ../..
-      dockerfile: cmds/db-manager/Dockerfile
-    image: interuss-local/db-manager
+      dockerfile: Dockerfile
+    image: interuss-local/dss
     volumes:
       - $PWD/../deploy/db_schemas/scd:/db-schemas/scd:ro
       - local-dss-data:/var/local-dss-data
@@ -49,8 +49,6 @@ services:
     image: interuss-local/dss
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
-      - local-dss-data:/var/local-dss-data
-      - $PWD/startup:/startup:ro
     command: /startup/core_service.sh ${DEBUG_ON:-0}
     expose:
       - 8081
