@@ -23,12 +23,12 @@ RUN mkdir -p cmds/db-manager
 COPY pkg /app/pkg
 COPY cmds/db-manager cmds/db-manager
 
+RUN go install ./...
 
 COPY scripts /app/scripts
 COPY Makefile /app
 RUN make interuss
 
-RUN go install ./...
 
 FROM alpine:latest
 RUN apk update && apk add ca-certificates
