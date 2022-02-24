@@ -30,9 +30,6 @@ services:
       - local-dss-crdb
 
   local-dss-scd-bootstrapper:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     volumes:
       - $PWD/../deploy/db_schemas/scd:/db-schemas/scd:ro
@@ -43,12 +40,11 @@ services:
       - local-dss-crdb
 
   local-dss-core-service:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
+      - local-dss-data:/var/local-dss-data
+      - $PWD/startup:/startup:ro
     command: /startup/core_service.sh ${DEBUG_ON:-0}
     expose:
       - 8081
@@ -59,9 +55,6 @@ services:
       - local-dss-scd-bootstrapper
 
   local-dss-http-gateway:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     volumes:
       - local-dss-data:/var/local-dss-data

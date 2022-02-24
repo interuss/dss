@@ -35,4 +35,3 @@ COPY --from=build /go/bin/http-gateway /usr/bin
 COPY --from=build /go/bin/core-service /usr/bin
 COPY --from=build /go/bin/db-manager /usr/bin
 COPY --from=build /go/bin/dlv /usr/bin
-ENTRYPOINT ["/usr/bin/db-manager"]

@@ -55,8 +55,6 @@ trap on_sigint SIGINT
 echo " -------------- BOOTSTRAP ----------------- "
 echo "Building local container for testing (see core-service-build.log for details)"
 docker build --rm . -t local-interuss-dss-image > core-service-build.log
-echo "Building db-manager container for testing"
-docker build --rm . -t local-db-manager > db-manager-build.log
 
 echo " ---------------- CRDB -------------------- "
 echo "cleaning up any crdb pre-existing containers"
@@ -74,7 +72,7 @@ echo "Bootstrapping RID Database tables"
 docker run --rm --name rid-db-manager \
 	--link dss-crdb-for-debugging:crdb \
 	-v "$(pwd)/build/deploy/db_schemas/rid:/db-schemas/rid" \
-	local-db-manager \
+	local-interuss-dss-image \
 	--schemas_dir db-schemas/rid \
 	--db_version "latest" \
 	--cockroach_host crdb
@@ -84,7 +82,7 @@ echo "Bootstrapping SCD Database tables"
 docker run --rm --name scd-db-manager \
 	--link dss-crdb-for-debugging:crdb \
 	-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
-	local-db-manager \
+	local-interuss-dss-image \
 	--schemas_dir db-schemas/scd \
 	--db_version "latest" \
 	--cockroach_host crdb
