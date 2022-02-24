@@ -477,6 +477,9 @@ components:
           example: DSS was unreachable when attempting to delete operational intent reference
     ClearAreaRequest:
       type: object
+      required:
+      - request_id
+      - extent
       properties:
         request_id:
           description: >-
@@ -493,12 +496,15 @@ components:
             - $ref: '#/components/schemas/Volume4D'
     ClearAreaResponse:
       type: object
+      required:
+      - timestamp
       properties:
         success:
           description: >-
             True if, and only if, all flights in the specified area owned by the
             USS were canceled and removed.
           type: bool
+          default: false
         message:
           description: >-
             If the USS was unable to clear the entire area, this message can
