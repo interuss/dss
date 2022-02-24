@@ -1,6 +1,6 @@
 from enum import Enum
 from monitoring.monitorlib import formats
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 from typing import List, Optional
 from monitoring.monitorlib.scd import Volume4D
 
@@ -88,3 +88,14 @@ class DeleteFlightResult(str, Enum):
 class DeleteFlightResponse(ImplicitDict):
     result: DeleteFlightResult
     notes: Optional[str]
+
+
+class ClearAreaRequest(ImplicitDict):
+    request_id: str
+    extent: Volume4D
+
+
+class ClearAreaResponse(ImplicitDict):
+    success: bool
+    message: Optional[str]
+    timestamp: StringBasedDateTime

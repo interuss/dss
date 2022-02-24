@@ -1,14 +1,16 @@
+from datetime import datetime
 from typing import List, Tuple
 from urllib.parse import urlparse
 import uuid
 
 import flask
+import yaml
 
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients import scd as scd_client
 from monitoring.monitorlib.scd_automated_testing import scd_injection_api
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, ClearAreaRequest, ClearAreaResponse
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 from monitoring.mock_uss import config, resources, webapp
 from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss.scdsc import database
@@ -172,3 +174,65 @@ def delete_flight(flight_id: str) -> Tuple[str, int]:
         None, result.subscribers)
 
     return flask.jsonify(DeleteFlightResponse(result=DeleteFlightResult.Closed))
+
+
+@webapp.route('/scdsc/v1/areas', methods=['POST'])
+@requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
+def clear_area() -> Tuple[str, int]:
+    try:
+        json = flask.request.json
+        if json is None:
+            raise ValueError('Request did not contain a JSON payload')
+        req = ImplicitDict.parse(json, ClearAreaRequest)
+    except ValueError as e:
+        msg = 'Unable to parse ClearAreaRequest JSON request: {}'.format(e)
+        return msg, 400
+
+    # Find operational intents in the DSS
+    start_time = scd.start_of([req.extent])
+    end_time = scd.end_of([req.extent])
+    area = scd.rect_bounds_of([req.extent])
+    alt_lo, alt_hi = scd.meter_altitude_bounds_of([req.extent])
+    vol4 = scd.make_vol4(start_time, end_time, alt_lo, alt_hi, polygon=scd.make_polygon(latlngrect=area))
+    try:
+        op_intent_refs = scd_client.query_operational_intent_references(resources.utm_client, vol4)
+    except (ValueError, scd_client.OperationError) as e:
+        msg = 'Error querying operational intents: {}'.format(e)
+        return flask.jsonify(ClearAreaResponse(
+            success=False, message=msg,
+            timestamp=StringBasedDateTime(datetime.utcnow()))), 200
+
+    # Try to delete every operational intent found
+    dss_deletion_results = {}
+    deleted = set()
+    for op_intent_ref in op_intent_refs:
+        try:
+            scd_client.delete_operational_intent_reference(resources.utm_client, op_intent_ref.id, op_intent_ref.ovn)
+            dss_deletion_results[op_intent_ref.id] = 'Deleted from DSS'
+            deleted.add(op_intent_ref.id)
+        except scd_client.OperationError as e:
+            dss_deletion_results[op_intent_ref.id] = str(e)
+
+    # Delete corresponding flight injections and cached operational intents
+    with db as tx:
+        flights_to_delete = []
+        for flight_id, record in tx.flights.items():
+            if record.op_intent_reference.id in deleted:
+                flights_to_delete.append(flight_id)
+        for flight_id in flights_to_delete:
+            del tx.flights[flight_id]
+
+        cache_deletions = []
+        for op_intent_id in deleted:
+            if op_intent_id in tx.cached_operations:
+                del tx.cached_operations[op_intent_id]
+                cache_deletions.append(op_intent_id)
+
+    msg = yaml.dump({
+        'dss_deletions': dss_deletion_results,
+        'flight_deletions': flights_to_delete,
+        'cache_deletions': cache_deletions,
+    })
+    return flask.jsonify(ClearAreaResponse(
+        success=True, message=msg,
+        timestamp=StringBasedDateTime(datetime.utcnow()))), 200
