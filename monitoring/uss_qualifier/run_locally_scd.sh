@@ -41,14 +41,15 @@ echo '{
 
 SCD_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
-REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report.json"
-# report.json must already exist to share correctly with the Docker container
-touch "${REPORT_FILE}"
+REPORT_SCD_FILE="$(pwd)/monitoring/uss_qualifier/report_scd.json"
+# report_scd.json must already exist to share correctly with the Docker container
+touch "${REPORT_SCD_FILE}"
 
 docker build \
     -f monitoring/uss_qualifier/Dockerfile \
     -t interuss/uss_qualifier \
     --build-arg version="$(scripts/git/commit.sh)" \
+    --build-arg qualifier_scd_version="$(scripts/git/version.sh uss_qualifier --long)" \
     monitoring
 
 if [ "$CI" == "true" ]; then
@@ -63,7 +64,7 @@ docker run ${docker_args} --name uss_qualifier \
   --rm \
   -e SCD_QUALIFIER_OPTIONS="${SCD_QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
-  -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
+  -v "${REPORT_SCD_FILE}:/app/monitoring/uss_qualifier/report_scd.json" \
   -v "$(pwd):/app" \
   interuss/uss_qualifier \
   python main.py $SCD_QUALIFIER_OPTIONS
