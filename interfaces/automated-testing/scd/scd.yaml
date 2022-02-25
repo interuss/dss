@@ -494,7 +494,7 @@ components:
             flight intersects this area.
           anyOf:
             - $ref: '#/components/schemas/Volume4D'
-    ClearAreaResponse:
+    ClearAreaOutcome:
       type: object
       required:
       - timestamp
@@ -518,6 +518,13 @@ components:
             The time at which this operation was performed by the USS.
           type: string
           format: datetime
+    ClearAreaResponse:
+      type: object
+      required:
+      - outcome
+      properties:
+        outcome:
+          $ref: '#/components/schemas/ClearAreaOutcome'
 
 paths:
   /v1/status:
@@ -601,7 +608,7 @@ paths:
       description: >-
         This endpoint simulates the operator intention to cancel or end a flight operation.
 
-  /v1/areas:
+  /v1/clear_area_requests:
     post:
       security:
       - Authority:

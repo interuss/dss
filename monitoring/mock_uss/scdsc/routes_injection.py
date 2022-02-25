@@ -9,7 +9,7 @@ import yaml
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients import scd as scd_client
 from monitoring.monitorlib.scd_automated_testing import scd_injection_api
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, ClearAreaRequest, ClearAreaResponse
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, ClearAreaRequest, ClearAreaOutcome, ClearAreaResponse
 from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 from monitoring.mock_uss import config, resources, webapp
 from monitoring.mock_uss.auth import requires_scope
@@ -176,7 +176,7 @@ def delete_flight(flight_id: str) -> Tuple[str, int]:
     return flask.jsonify(DeleteFlightResponse(result=DeleteFlightResult.Closed))
 
 
-@webapp.route('/scdsc/v1/areas', methods=['POST'])
+@webapp.route('/scdsc/v1/clear_area_requests', methods=['POST'])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def clear_area() -> Tuple[str, int]:
     try:
@@ -199,8 +199,10 @@ def clear_area() -> Tuple[str, int]:
     except (ValueError, scd_client.OperationError) as e:
         msg = 'Error querying operational intents: {}'.format(e)
         return flask.jsonify(ClearAreaResponse(
-            success=False, message=msg,
-            timestamp=StringBasedDateTime(datetime.utcnow()))), 200
+            outcome=ClearAreaOutcome(
+                success=False, message=msg,
+                timestamp=StringBasedDateTime(datetime.utcnow())),
+            request=req)), 200
 
     # Try to delete every operational intent found
     dss_deletion_results = {}
@@ -234,5 +236,7 @@ def clear_area() -> Tuple[str, int]:
         'cache_deletions': cache_deletions,
     })
     return flask.jsonify(ClearAreaResponse(
-        success=True, message=msg,
-        timestamp=StringBasedDateTime(datetime.utcnow()))), 200
+        outcome=ClearAreaOutcome(
+            success=True, message=msg,
+            timestamp=StringBasedDateTime(datetime.utcnow())),
+        request=req)), 200

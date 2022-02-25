@@ -95,7 +95,12 @@ class ClearAreaRequest(ImplicitDict):
     extent: Volume4D
 
 
-class ClearAreaResponse(ImplicitDict):
+class ClearAreaOutcome(ImplicitDict):
     success: bool
     message: Optional[str]
     timestamp: StringBasedDateTime
+
+
+class ClearAreaResponse(ImplicitDict):
+    request: ClearAreaRequest
+    outcome: ClearAreaOutcome
