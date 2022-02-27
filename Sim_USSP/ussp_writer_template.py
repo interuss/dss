@@ -7,12 +7,10 @@ import requests
 params = (
     ('sub', 'uss1'),
     ('intended_audience', 'uss2'),
-    ('scope', 'dss.read.identification_service_areas'),
+    ('scope', 'dss.write.identification_service_areas'),
     ('issuer', 'dummy_oauth'),
 )
 
 response = requests.get('http://localhost:8085/token', params=params)
 
 print(response.text)
-
-
