@@ -398,8 +398,10 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var data = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"op_intent_id\", data.operational_intent_id);"
+									"if (responseCode.code === 200) {",
+									"    var data = JSON.parse(responseBody);",
+									"    postman.setEnvironmentVariable(\"op_intent_id\", data.operational_intent_id);",
+									"}"
 								],
 								"type": "text/javascript"
 							}
@@ -420,7 +422,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"operational_intent\": {\n        \"state\": \"Accepted\",\n        \"priority\": 0,\n        \"volumes\": [\n            {\n                \"volume\": {\n                    \"outline_polygon\": {\n                        \"vertices\": [\n                            {\n                                \"lng\": -155.6043,\n                                \"lat\": 19.4763\n                            },\n                            {\n                                \"lng\": -155.5746,\n                                \"lat\": 19.4884\n                            },\n                            {\n                                \"lng\": -155.5941,\n                                \"lat\": 19.4516\n                            }\n                        ]\n                    },\n                    \"altitude_lower\": {\n                        \"value\": 0,\n                        \"units\": \"M\",\n                        \"reference\": \"W84\"\n                    },\n                    \"altitude_upper\": {\n                        \"value\": 122,\n                        \"units\": \"M\",\n                        \"reference\": \"W84\"\n                    }\n                },\n                \"time_start\": {\n                    \"value\": \"{{timestamp_start}}\",\n                    \"format\": \"RFC3339\"\n                },\n                \"time_end\": {\n                    \"value\": \"{{timestamp_end}}\",\n                    \"format\": \"RFC3339\"\n                }\n            }\n        ],\n        \"off_nominal_volumes\": []\n    },\n    \"flight_authorisation\": {\n        \"uas_serial_number\": \"0123FN82SWRTQT1DD5WZ\",\n        \"operation_category\": \"Open\",\n        \"operation_mode\": \"Vlos\",\n        \"uas_class\": \"C0\",\n        \"identification_technologies\": [\n            \"ASTMNetRID\"\n        ],\n        \"connectivity_methods\": [\n            \"cellular\"\n        ],\n        \"endurance_minutes\": 30,\n        \"emergency_procedure_url\": \"https://example.com/emergency\",\n        \"operator_id\": \"FIN87astrdge12k8\"\n    }\n}",
+							"raw": "{\n    \"operational_intent\": {\n        \"state\": \"Accepted\",\n        \"priority\": 0,\n        \"volumes\": [\n            {\n                \"volume\": {\n                    \"outline_polygon\": {\n                        \"vertices\": [\n                            {\n                                \"lng\": -155.6043,\n                                \"lat\": 19.4763\n                            },\n                            {\n                                \"lng\": -155.5746,\n                                \"lat\": 19.4884\n                            },\n                            {\n                                \"lng\": -155.5941,\n                                \"lat\": 19.4516\n                            }\n                        ]\n                    },\n                    \"altitude_lower\": {\n                        \"value\": 0,\n                        \"units\": \"M\",\n                        \"reference\": \"W84\"\n                    },\n                    \"altitude_upper\": {\n                        \"value\": 122,\n                        \"units\": \"M\",\n                        \"reference\": \"W84\"\n                    }\n                },\n                \"time_start\": {\n                    \"value\": \"{{timestamp_start}}\",\n                    \"format\": \"RFC3339\"\n                },\n                \"time_end\": {\n                    \"value\": \"{{timestamp_end}}\",\n                    \"format\": \"RFC3339\"\n                }\n            }\n        ],\n        \"off_nominal_volumes\": []\n    },\n    \"flight_authorisation\": {\n        \"uas_serial_number\": \"TBPADUZCSXBFMTKAUV\",\n        \"operation_category\": \"Open\",\n        \"operation_mode\": \"Vlos\",\n        \"uas_class\": \"C0\",\n        \"identification_technologies\": [\n            \"ASTMNetRID\"\n        ],\n        \"connectivity_methods\": [\n            \"cellular\"\n        ],\n        \"endurance_minutes\": 30,\n        \"emergency_procedure_url\": \"https://example.com/emergency\",\n        \"operator_id\": \"CHEa34mqjq4jshtf-cyn\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -439,6 +441,38 @@
 								"v1",
 								"flights",
 								"c036326c-c97b-4926-bf9f-c60dc83d2b57"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight 1 reference",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8082/dss/v1/operational_intent_references/{{op_intent_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"dss",
+								"v1",
+								"operational_intent_references",
+								"{{op_intent_id}}"
 							]
 						}
 					},
@@ -473,6 +507,70 @@
 								"v1",
 								"operational_intents",
 								"{{op_intent_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight 1 (nominal)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const moment = require('moment');",
+									"pm.globals.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+									"pm.globals.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8074/scdsc/v1/flights/c036326c-c97b-4926-bf9f-c60dc83d2b57",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8074",
+							"path": [
+								"scdsc",
+								"v1",
+								"flights",
+								"c036326c-c97b-4926-bf9f-c60dc83d2b57"
 							]
 						}
 					},

@@ -15,4 +15,6 @@ RUN mkdir -p /app/flight-states
 ENV PYTHONPATH /app
 ARG version
 ENV CODE_VERSION=$version
+ARG qualifier_scd_version
+ENV SCD_VERSION=$qualifier_scd_version
 ENTRYPOINT []

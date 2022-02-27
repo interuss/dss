@@ -104,7 +104,7 @@ class TestSteps:
                 dss.delete(f"/identification_service_areas/{stored_uuid}/{version}", scope=SCOPE_WRITE)
             elif entity_type == "SUB":
                 version = self.context[stored_uuid].uuid
-                dss.delete(f"/subscriptions/{stored_uuid}/{version}", scope=SCOPE_WRITE)
+                dss.delete(f"/subscriptions/{stored_uuid}/{version}", scope=SCOPE_READ)
             elif entity_type == "VERSION":
                 # do nothing
                 continue

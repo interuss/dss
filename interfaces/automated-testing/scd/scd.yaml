@@ -328,6 +328,7 @@ components:
         operation_category:
           type: string
           enum:
+            - Unknown
             - Open
             - Specific
             - Certified

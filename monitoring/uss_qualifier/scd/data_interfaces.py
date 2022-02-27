@@ -1,4 +1,5 @@
 from typing import Optional, List, Dict
+from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
 from monitoring.uss_qualifier.common_data_definitions import Severity
@@ -27,7 +28,7 @@ class KnownIssueFields(ImplicitDict):
 
 class KnownResponses(ImplicitDict):
     """Mapping of the flight injection attempt's USS response to test outcome"""
-    acceptable_results: List[str] 
+    acceptable_results: List[str]
     """Acceptable values in the result data field of InjectFlightResponse. The flight injection attempt will be considered successful if the USS under test reports one of these as the result of attempting to inject the flight."""
 
     incorrect_result_details: Dict[str, KnownIssueFields]
@@ -66,10 +67,10 @@ class TestStep(ImplicitDict):
     name: str
     """Human-readable name/summary of this step"""
 
-    inject_flight: FlightInjectionAttempt
+    inject_flight: Optional[FlightInjectionAttempt]
     """If populated, the test driver should attempt to inject a flight for this step"""
 
-    delete_flight: FlightDeletionAttempt
+    delete_flight: Optional[FlightDeletionAttempt]
     """If populated, the test driver should attempt to delete the specified flight for this step"""
 
 
@@ -80,3 +81,17 @@ class AutomatedTest(ImplicitDict):
 
     steps: List[TestStep]
     """Actions to be performed for this test"""
+
+
+class AutomatedTestContext(ImplicitDict):
+    test_id: str
+    """ID of test"""
+
+    test_name: str
+    """Name of test"""
+
+    locale: Locality
+    """Locale of test"""
+
+    targets_combination: Dict[str, str]
+    """Mapping of target role and target name used for this test."""

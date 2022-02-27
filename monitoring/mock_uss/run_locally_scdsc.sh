@@ -20,7 +20,7 @@ docker run --name mock_uss_scdsc \
   -e MOCK_USS_BASE_URL="${BASE_URL}" \
   -e MOCK_USS_SERVICES="scdsc" \
   -p ${PORT}:5000 \
-  -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
+  -v "${SCRIPT_DIR}/../../build/test-certs:/var/test-certs:ro" \
   local-interuss/mock_uss \
   gunicorn \
     --preload \

@@ -36,8 +36,9 @@ services such as Remote ID (ASTM F3411-19) and Strategic Conflict Detection defi
 Management (UTM) UAS Service Supplier (USS) Interoperability Specification.
 
 - [Introduction to monitoring, conformance and interoperability testing](./monitoring/README.md)<br>Modules:
-  - [USS Remote ID qualifier](./monitoring/uss_qualifier/rid)
-  <!-- - [USS SCD qualifier](./monitoring/scd_qualifier) -->
+  - [USS qualifier](./monitoring/uss_qualifier)
+    - [Remote ID qualification](./monitoring/uss_qualifier/rid)
+    - [Strategic Coordination and UAS Flight Authorisation qualification](./monitoring/uss_qualifier/scd)
   - [DSSs interoperability tests](./monitoring/interoperability)
   - [DSS integration test: prober](./monitoring/prober)
   - [DSS load test](./monitoring/loadtest)

@@ -1,0 +1,15 @@
+{
+    "locale": "CHE",
+    "scd": {
+        "injection_targets": [
+            {
+                "name": "uss1",
+                "injection_base_url": "http://host.docker.internal:8074/scdsc"
+            },
+            {
+                "name": "uss2",
+                "injection_base_url": "http://host.docker.internal:8074/scdsc"
+            }
+        ]
+    }
+}
