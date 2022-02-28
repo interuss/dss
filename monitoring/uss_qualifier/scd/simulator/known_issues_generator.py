@@ -17,7 +17,7 @@ nominal_planning_test_rejected_error_notification = KnownIssueFields(test_code =
 nominal_planning_test_failed_error_notification = KnownIssueFields(test_code = "nominal_planning_test", 
                                                 relevant_requirements = [], 
                                                 severity = "High",
-                                                subject="", 
+                                                subject=nominal_planning_test_subject, 
                                                 summary ="Injection request for a valid flight failed", details = "All operational intent and flight authorisation data provided was complete and correct with no airspace conflicts. The operational intent data should have been processed successfully and flight should have been planned.")        
         
 if_planned_with_conflict_with_flight_notification = KnownIssueFields(test_code = "nominal_planning_test", 
