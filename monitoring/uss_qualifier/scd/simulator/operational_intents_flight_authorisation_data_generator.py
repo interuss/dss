@@ -161,7 +161,9 @@ class ProximateOperationalIntentGenerator():
 
         altitude_upper = Altitude(value= alt_upper, reference = 'W84', units='M')
         altitude_lower = Altitude(value=alt_lower, reference = 'W84', units='M')
-        for vertex in list(buffered_shape_geo.exterior.coords):
+        coords = list(buffered_shape_geo.exterior.coords)
+        coords.pop() # remove the last item of a Shapely coords since it is the same as the first one       
+        for vertex in coords:
             coord = LatLngPoint(lat = vertex[0] , lng = vertex[1])
             all_vertices.append(coord)
 
