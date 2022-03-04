@@ -309,12 +309,7 @@ a PR to that effect would be greatly appreciated.
 
         - If providing a .pem file directly as the public key to valid incoming access tokens, provide a blank string for this parameter.
 
-    1.  `VAR_SCHEMA_MANAGER_IMAGE_NAME`: Full name of the schema manager docker
-        image built in the section above.  `build.sh` prints this name as the
-        last thing it does when run with `DOCKER_URL` set.  It should look
-        something like `gcr.io/your-project-id/db-manager:2020-07-01-46cae72cf`.
-
-    -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
+    -   Note that `VAR_DOCKER_IMAGE_NAME` is used in three places.
 
     -   If you are only turning up a single cluster for development, you
         may optionally change `single_cluster` to `true`.
