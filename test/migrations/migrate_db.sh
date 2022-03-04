@@ -20,7 +20,7 @@ echo "crdb server: ${crdb_name} dss network ${network_flag}"
 
 echo " -------------- BOOTSTRAP ----------------- "
 echo "Building db-manager container for testing"
-docker build --rm -f cmds/db-manager/Dockerfile . -t local-db-manager > db-manager-build.log
+docker build --rm . -t local-db-manager > db-manager-build.log
 
 echo " ---------------- MIGRATE DATABASE -------------------- "
 echo "Migrating ${db_name} database to version ${version}"

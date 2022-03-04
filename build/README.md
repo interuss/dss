@@ -314,7 +314,7 @@ echo "Current CLUSTER_CONTEXT is $CLUSTER_CONTEXT"
         yourself, or `docker.io/interuss/dss` if using the InterUSS image
         without `build.sh`.
 
-        -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
+        -   Note that `VAR_DOCKER_IMAGE_NAME` is used in three places.
 
     1.  `VAR_APP_HOSTNAME`: Fully-qualified domain name of your HTTPS Gateway
         ingress endpoint.  For example, `dss.example.com`.
@@ -341,13 +341,6 @@ echo "Current CLUSTER_CONTEXT is $CLUSTER_CONTEXT"
         referenced above.
 
         - If providing a .pem file directly as the public key to valid incoming access tokens, provide a blank string for this parameter.
-
-    1.  `VAR_SCHEMA_MANAGER_IMAGE_NAME`: Full name of the schema manager docker
-        image built in the section above.  `build.sh` prints this name as the
-        last thing it does when run with `DOCKER_URL` set.  It should look
-        something like `gcr.io/your-project-id/db-manager:2020-07-01-46cae72cf`
-        if you built the image yourself, or `docker.io/interuss/db-manager` if
-        using the InterUSS image without `build.sh`.
 
     -   If you are only turning up a single DSS instance for development, you
         may optionally change `single_cluster` to `true`.

@@ -74,8 +74,10 @@ def main():
                           args.namespace, args.ca_cert_to_join)
 
     # Create the generated directories.
-    os.makedirs('workspace', exist_ok=True)
-    os.makedirs(cr.directory, exist_ok=True)
+    if not os.path.exists('workspace'):
+        os.makedirs('workspace')
+    if not os.path.exists(cr.directory):
+        os.makedirs(cr.directory)
 
     create_ca = not os.path.exists(cr.ca_certs_file) or args.overwrite_ca_cert
     if create_ca:
