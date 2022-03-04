@@ -1,0 +1,2 @@
+kubernetes==23.3.0
+structlog==21.5.0
