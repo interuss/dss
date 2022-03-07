@@ -1,7 +1,7 @@
 # RID Qualifier WebApp
 
 `rid_qualifier webapp` is a development-level web server that provides endpoint to initialize the automated testing of the rid qualifier. 
-This PR includes the initial setup for the web-server that can be run locally on your system via the (run_locally.sh)[run_locally.sh] script. 
+This PR includes the initial setup for the web-server that can be run locally on your system via the [run_locally.sh](run_locally.sh) script. 
 
 ## Architecture
 
@@ -15,7 +15,7 @@ This project will create the following environment:
 
 This application accepts Auth2 credentials for user specific login. The process to authenticate using Auth2 is described (here)[/LOGIN.md]. If Auth2 credentials are not provided application uses `Local User` session by default.
 
-* Additionally, you need to bring up [rid_qualifier mock instance](/monitoring/uss_qualifier/rid/mock/run_locally.sh) to produce a mock RID system for use with rid_qualifier. The instructions to bring up the rid_qualifier mock instance can be found [here](/monitoring/rid_qualifier/mock/README.md).
+* Additionally, you need to bring up [rid_qualifier mock instance](/monitoring/uss_qualifier/rid/mock/run_locally.sh) to produce a mock RID system for use with uss_qualifier. The instructions to bring up the rid_qualifier mock instance can be found [here](/monitoring/uss_qualifier/mock/README.md).
 
 ### Input Files
 
@@ -55,7 +55,7 @@ Resulting files will be generated under `monitoring/uss_qualifier/test_definitio
 
 ## User Config information
 
-rid_qualifier host needs a configuration object and an auth spec (single string e.g. `NoAuth()`) in order to run. Configuration object is a simple nested json string which should have at least a list of `injection_targets` and `observers`. A sample configuration object can be found [here](/monitoring/uss_qualifier/run_locally.sh) at line 20.
+rid_qualifier host needs a configuration object and an auth spec (single string e.g. `NoAuth()`) in order to run. Configuration object is a simple nested json string which should have at least a list of `injection_targets` and `observers`. A sample configuration object can be found [here](/monitoring/uss_qualifier/run_locally.sh#L26).
 
 A task may take few minutes to finish. A new task can not be launched until current task ends.
 
