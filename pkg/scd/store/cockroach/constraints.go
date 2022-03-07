@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -13,7 +12,8 @@ import (
 	dsssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/interuss/stacktrace"
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v4"
 )
 
 const (
@@ -54,14 +54,14 @@ func init() {
 }
 
 func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Constraint, error) {
-	rows, err := q.QueryContext(ctx, query, args...)
+	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 
 	var payload []*scdmodels.Constraint
-	cids := pq.Int64Array{}
+	pgCids := pgtype.Int8Array{}
 	for rows.Next() {
 		var (
 			c         = new(scdmodels.Constraint)
@@ -76,11 +76,16 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 			&c.AltitudeUpper,
 			&c.StartTime,
 			&c.EndTime,
-			&cids,
+			&pgCids,
 			&updatedAt,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Constraint row")
+		}
+		var cids []int64
+
+		if err := pgCids.AssignTo(&cids); err != nil {
+			return nil, stacktrace.Propagate(err, "Error converting jacks/pgtype to array")
 		}
 		c.Cells = geo.CellUnionFromInt64(cids)
 		c.OVN = scdmodels.NewOVNFromTime(updatedAt, c.ID.String())
@@ -101,7 +106,7 @@ func (c *repo) fetchConstraint(ctx context.Context, q dsssql.Queryable, query st
 		return nil, stacktrace.NewError("Query returned %d Constraints when only 0 or 1 was expected", len(constraints))
 	}
 	if len(constraints) == 0 {
-		return nil, sql.ErrNoRows
+		return nil, pgx.ErrNoRows
 	}
 	return constraints[0], nil
 }
@@ -117,7 +122,11 @@ func (c *repo) GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.C
 			WHERE
 				id = $1`, constraintFieldsWithoutPrefix)
 	)
-	return c.fetchConstraint(ctx, c.q, query, id)
+	uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.fetchConstraint(ctx, c.q, query, uid)
 }
 
 // Implements scd.repos.Constraint.UpsertConstraint
@@ -142,8 +151,17 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 		cids[i] = int64(cell)
 	}
 
-	s, err := c.fetchConstraint(ctx, c.q, upsertQuery,
-		s.ID,
+	var pgCids pgtype.Int8Array
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	id, err := s.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	s, err = c.fetchConstraint(ctx, c.q, upsertQuery,
+		id,
 		s.Manager,
 		s.Version,
 		s.USSBaseURL,
@@ -151,7 +169,7 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 		s.AltitudeUpper,
 		s.StartTime,
 		s.EndTime,
-		pq.Int64Array(cids))
+		pgCids)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Constraint")
 	}
@@ -169,17 +187,17 @@ func (c *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
 			id = $1`
 	)
 
-	res, err := c.q.ExecContext(ctx, query, id)
+	uid, err := id.PgUUID()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	res, err := c.q.Exec(ctx, query, uid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not get RowsAffected")
-	}
-	if rows == 0 {
-		return sql.ErrNoRows
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 
 	return nil
@@ -198,7 +216,8 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 			AND
 				COALESCE(starts_at <= $3, true)
 			AND
-				COALESCE(ends_at >= $2, true)`, constraintFieldsWithoutPrefix)
+				COALESCE(ends_at >= $2, true)
+			LIMIT $4`, constraintFieldsWithoutPrefix)
 	)
 
 	// TODO: Lazily calculate & cache spatial covering so that it is only ever
@@ -217,8 +236,13 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 		cids[i] = int64(cell)
 	}
 
+	var pgCids pgtype.Int8Array
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
 	constraints, err := c.fetchConstraints(
-		ctx, c.q, query, pq.Array(cids), v4d.StartTime, v4d.EndTime)
+		ctx, c.q, query, pgCids, v4d.StartTime, v4d.EndTime, dssmodels.MaxResultLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Constraints")
 	}

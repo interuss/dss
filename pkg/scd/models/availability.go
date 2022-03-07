@@ -1,6 +1,10 @@
 package models
 
-import dssmodels "github.com/interuss/dss/pkg/models"
+import (
+	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/stacktrace"
+	"strings"
+)
 
 // Aggregates constants for uss availability.
 const (
@@ -21,4 +25,17 @@ type UssAvailabilityStatus struct {
 
 func (u UssAvailabilityState) String() string {
 	return string(u)
+}
+
+func UssAvailabilityStateFromString(s string) (UssAvailabilityState, error) {
+	switch strings.ToLower(s) {
+	case "", "unknown":
+		return UssAvailabilityStateUnknown, nil
+	case "normal":
+		return UssAvailabilityStateNormal, nil
+	case "down":
+		return UssAvailabilityStateDown, nil
+	default:
+		return UssAvailabilityStateUnknown, stacktrace.NewError("Invalid USS availability state")
+	}
 }

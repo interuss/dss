@@ -1,0 +1,31 @@
+@startuml
+center header U-space
+title Flight authorisation validation test
+
+participant "Test Driver" as TD
+participant "USS under test" as USS
+
+== Invalid uas_serial_number ==
+TD -> USS: PUT /inject/flight\nwith invalid flight_authorisation.uas_serial_number
+TD <- USS: 200 Ok\n{"result": "Rejected"}
+
+...
+
+== Repeat for the following flight_authorisation fields ==
+note right of TD
+- operation_mode
+- operation_category
+- uas_class
+- identification_technologies
+- connectivity_methods
+- endurance_minutes
+- emergency_procedure_url
+- operator_id
+end note
+
+...
+
+== Valid ==
+TD -> USS: PUT /inject/flight\nwith valid request
+TD <- USS: 200 Ok\n{"result": "Planned"}
+@enduml

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
+	"strings"
 	"syscall"
 	"time"
 
@@ -33,9 +34,13 @@ import (
 var (
 	address         = flag.String("addr", ":8080", "Local address that the gateway binds to and listens on for incoming connections")
 	traceRequests   = flag.Bool("trace-requests", false, "Logs HTTP request/response pairs to stderr if true")
-	grpcBackend     = flag.String("grpc-backend", "", "Endpoint for grpc backend. Only to be set if run in proxy mode")
+	coreService     = flag.String("core-service", "", "Endpoint for core service. Only to be set if run in proxy mode")
 	profServiceName = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
 	enableSCD       = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
+)
+
+const (
+	codeRetryable = stacktrace.ErrorCode(1)
 )
 
 // RunHTTPProxy starts the HTTP proxy for the DSS gRPC service on ctx, listening
@@ -44,6 +49,8 @@ func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint str
 	logger := logging.WithValuesFromContext(ctx, logging.Logger).With(
 		zap.String("address", address), zap.String("endpoint", endpoint),
 	)
+
+	logger.Info("build", zap.Any("description", build.Describe()))
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -67,17 +74,32 @@ func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint str
 		grpc.WithTimeout(10 * time.Second),
 	}
 
+	logger.Info("Registering RID service")
 	if err := ridpb.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
-		return err
+		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
+		if strings.Contains(err.Error(), "context deadline exceeded") {
+			return stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to core-service for remote ID")
+		}
+		return stacktrace.Propagate(err, "Error registering RID service handler")
 	}
 
+	logger.Info("Registering aux service")
 	if err := auxpb.RegisterDSSAuxServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
-		return err
+		// TODO: More robustly detect failure to create aux server is due to a problem that may be temporary
+		if strings.Contains(err.Error(), "context deadline exceeded") {
+			return stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to core-service for aux")
+		}
+		return stacktrace.Propagate(err, "Error registering aux service handler")
 	}
 
+	logger.Info("Registering SCD service")
 	if *enableSCD {
 		if err := scdpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
-			return err
+			// TODO: More robustly detect failure to create SCD server is due to a problem that may be temporary
+			if strings.Contains(err.Error(), "context deadline exceeded") {
+				return stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to core-service for strategic conflict detection")
+			}
+			return stacktrace.Propagate(err, "Error registering SCD service handler")
 		}
 		logger.Info("config", zap.Any("scd", "enabled"))
 	} else {
@@ -97,8 +119,6 @@ func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint str
 	if *traceRequests {
 		handler = logging.HTTPMiddleware(logger, handler)
 	}
-
-	logger.Info("build", zap.Any("description", build.Describe()))
 
 	signals := make(chan os.Signal)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
@@ -129,6 +149,7 @@ func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint str
 	}()
 
 	// Start HTTP server (and proxy calls to gRPC server endpoint)
+	logger.Info("Starting HTTP server")
 	return server.ListenAndServe()
 }
 
@@ -183,7 +204,7 @@ func myCodeToHTTPStatus(code codes.Code) int {
 // we initially only needed to add 1 extra Code to handle but since they didn't
 // export HTTPStatusFromCode we had to copy the whole thing.  Since then, we have added
 // custom error handling to return additional content for certain errors.  This handler
-// is invoked whenever the call to the gRPC backend results in an error (thus returning
+// is invoked whenever the call to the Core Service results in an error (thus returning
 // a Status err).  Because an error has occurred, the normal response body is not returned.
 func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, _ *http.Request, err error) {
 	errID := errors.MakeErrID()
@@ -220,7 +241,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 			body, ok := s.Details()[0].(*scdpb.AirspaceConflictResponse)
 			if ok {
 				buf, marshalingErr = marshaler.Marshal(body)
-				grpclog.Errorf("Error %s was an AirspaceConflictResponse from the gRPC backend", errID)
+				grpclog.Errorf("Error %s was an AirspaceConflictResponse from the Core Service", errID)
 			} else {
 				marshalingErr = stacktrace.NewError("Unable to cast s.Details()[0] from %s to *scdpb.AirspaceConflictResponse", reflect.TypeOf(s.Details()[0]))
 			}
@@ -231,7 +252,7 @@ func myHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.M
 		result, ok := s.Details()[0].(*auxpb.StandardErrorResponse)
 		if ok {
 			buf, marshalingErr = marshaler.Marshal(result)
-			grpclog.Errorf("Error %s was a StandardErrorResponse from the gRPC backend", errID)
+			grpclog.Errorf("Error %s was a StandardErrorResponse from the Core Service", errID)
 			handled = true
 		}
 	}
@@ -320,11 +341,27 @@ func main() {
 		}
 	}
 
-	switch err := RunHTTPProxy(ctx, cancel, *address, *grpcBackend); err {
-	case nil, context.Canceled, http.ErrServerClosed:
-		logger.Info("Shutting down gracefully")
-	default:
-		logger.Panic("Failed to execute service", zap.Error(err))
+	backoffs := []time.Duration{
+		5 * time.Second, 15 * time.Second, 1 * time.Minute, 1 * time.Minute,
+		1 * time.Minute, 5 * time.Minute}
+	backoff := 0
+	for {
+		if err := RunHTTPProxy(ctx, cancel, *address, *coreService); err != nil {
+			if stacktrace.GetCode(err) == codeRetryable {
+				logger.Info(fmt.Sprintf("Prerequisites not yet satisfied; waiting %ds to retry...", backoffs[backoff]/1000000000), zap.Error(err))
+				time.Sleep(backoffs[backoff])
+				if backoff < len(backoffs)-1 {
+					backoff++
+				}
+				continue
+			}
+			rootCause := stacktrace.RootCause(err)
+			if rootCause == nil || rootCause == context.Canceled || rootCause == http.ErrServerClosed {
+				logger.Info("Shutting down gracefully")
+				break
+			}
+			logger.Panic("Failed to execute service", zap.Error(err))
+		}
+		break
 	}
-
 }

@@ -2,11 +2,11 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/jackc/pgtype"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
@@ -17,7 +17,6 @@ import (
 	repos "github.com/interuss/dss/pkg/rid/repos"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
@@ -47,34 +46,41 @@ type isaRepo struct {
 }
 
 func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
-	rows, err := c.QueryContext(ctx, query, args...)
+	rows, err := c.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
 	defer rows.Close()
 
 	var payload []*ridmodels.IdentificationServiceArea
-	cids := pq.Int64Array{}
+	pgCids := pgtype.Int8Array{}
 
-	var writer sql.NullString
+	var writer pgtype.Varchar
 	for rows.Next() {
 		i := new(ridmodels.IdentificationServiceArea)
+
+		var updateTime time.Time
 
 		err := rows.Scan(
 			&i.ID,
 			&i.Owner,
 			&i.URL,
-			&cids,
+			&pgCids,
 			&i.StartTime,
 			&i.EndTime,
 			&writer,
-			&i.Version,
+			&updateTime,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning ISA row")
 		}
 		i.Writer = writer.String
+		var cids []int64
+		if err := pgCids.AssignTo(&cids); err != nil {
+			return nil, stacktrace.Propagate(err, "Error Converting jackc/pgtype to array")
+		}
 		i.SetCells(cids)
+		i.Version = dssmodels.VersionFromTime(updateTime)
 		payload = append(payload, i)
 	}
 	if err := rows.Err(); err != nil {
@@ -106,7 +112,11 @@ func (c *isaRepo) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Ident
 			identification_service_areas
 		WHERE
 			id = $1`, isaFields)
-	return c.processOne(ctx, query, id)
+	uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, query, uid)
 }
 
 // InsertISA inserts the IdentificationServiceArea identified by "id" and owned
@@ -136,8 +146,16 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 		}
 		cids[i] = int64(cell)
 	}
+	var pgCids pgtype.Int8Array
+	if err := pgCids.Set(cids); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+	id, err := isa.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, insertAreasQuery, id, isa.Owner, isa.URL, pgCids, isa.StartTime, isa.EndTime, isa.Writer)
 
-	return c.processOne(ctx, insertAreasQuery, isa.ID, isa.Owner, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Writer)
 }
 
 // UpdateISA updates the IdentificationServiceArea identified by "id" and owned
@@ -167,7 +185,16 @@ func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationSe
 		cids[i] = int64(cell)
 	}
 
-	return c.processOne(ctx, updateAreasQuery, isa.ID, isa.URL, pq.Int64Array(cids), isa.StartTime, isa.EndTime, isa.Version.ToTimestamp(), isa.Writer)
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+	id, err := isa.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, updateAreasQuery, id, isa.URL, pgCids, isa.StartTime, isa.EndTime, isa.Version.ToTimestamp(), isa.Writer)
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
@@ -184,7 +211,11 @@ func (c *isaRepo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationSe
 				updated_at = $2
 			RETURNING %s`, isaFields)
 	)
-	return c.processOne(ctx, deleteQuery, isa.ID, isa.Version.ToTimestamp())
+	id, err := isa.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, deleteQuery, id, isa.Version.ToTimestamp())
 }
 
 // SearchISAs searches IdentificationServiceArea
@@ -204,7 +235,8 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 			AND
 				COALESCE(starts_at <= $2, true)
 			AND
-				cells && $3`, isaFields)
+				cells && $3
+			LIMIT $4`, isaFields)
 	)
 
 	if len(cells) == 0 {
@@ -220,7 +252,13 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 		cids[i] = int64(cid)
 	}
 
-	return c.process(ctx, isasInCellsQuery, earliest, latest, pq.Int64Array(cids))
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	return c.process(ctx, isasInCellsQuery, earliest, latest, pgCids, dssmodels.MaxResultLimit)
 }
 
 // ListExpiredISAs lists all expired ISAs based on writer.
@@ -241,8 +279,9 @@ func (c *isaRepo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmod
 	WHERE
 		ends_at + INTERVAL '%d' MINUTE <= CURRENT_TIMESTAMP
 	AND
-		(writer = %s)`, isaFields, expiredDurationInMin, writerQuery)
+		(writer = %s)
+	LIMIT $1`, isaFields, expiredDurationInMin, writerQuery)
 	)
 
-	return c.process(ctx, isasInCellsQuery)
+	return c.process(ctx, isasInCellsQuery, dssmodels.MaxResultLimit)
 }

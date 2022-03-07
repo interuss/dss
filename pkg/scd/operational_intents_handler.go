@@ -265,9 +265,11 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
 	}
 
-	err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
+	if !a.EnableHTTP {
+		err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
+		if err != nil {
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
+		}
 	}
 
 	state := scdmodels.OperationalIntentState(params.State)
@@ -347,9 +349,15 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 		var sub *scdmodels.Subscription
 		if subscriptionID.Empty() {
 			// Create implicit Subscription
-			err := scdmodels.ValidateUSSBaseURL(params.GetNewSubscription().GetUssBaseUrl())
-			if err != nil {
-				return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
+			subBaseURL := params.GetNewSubscription().GetUssBaseUrl()
+			if subBaseURL == "" {
+				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing uss_base_url in new_subscription")
+			}
+			if !a.EnableHTTP {
+				err := scdmodels.ValidateUSSBaseURL(subBaseURL)
+				if err != nil {
+					return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
+				}
 			}
 
 			sub, err = r.UpsertSubscription(ctx, &scdmodels.Subscription{
@@ -360,7 +368,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 				AltitudeLo:                  uExtent.SpatialVolume.AltitudeLo,
 				AltitudeHi:                  uExtent.SpatialVolume.AltitudeHi,
 				Cells:                       cells,
-				USSBaseURL:                  params.GetNewSubscription().GetUssBaseUrl(),
+				USSBaseURL:                  subBaseURL,
 				NotifyForOperationalIntents: true,
 				NotifyForConstraints:        params.GetNewSubscription().GetNotifyForConstraints(),
 				ImplicitSubscription:        true,

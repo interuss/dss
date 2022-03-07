@@ -1,18 +1,19 @@
 GOPATH := $(shell go env GOPATH 2> /dev/null)
 GOBIN := $(GOPATH)/bin
-COMMIT := $(shell scripts/git/commit.sh)
-# LAST_RELEASE_TAG determines the version of the DSS and is baked into
-# the executable using linker flags. We gracefully ignore any tag that
-# does not satisfy the naming pattern v*, thus supporting interleaving release
-# and ordinary tags.
-LAST_RELEASE_TAG := $(shell git describe --tags --abbrev=0 --match='v*' 2> /dev/null | grep -E 'v[0-9]+\.[0-9]+\.[0-9]+')
-LAST_RELEASE_TAG := $(or $(LAST_RELEASE_TAG), v0.0.0)
 
-GENERATOR_TAG := generator:$(LAST_RELEASE_TAG)
+UPSTREAM_OWNER := $(shell scripts/git/upstream_owner.sh)
+COMMIT := $(shell scripts/git/commit.sh)
+# DSS_VERSION_TAG determines the version of the DSS and is baked into
+# the executable using linker flags. If the commit is not a tag,
+# the version_tag will contain information about the closest tag
+# (ie v0.0.1-g6a64c20, see RELEASE.md for more details).
+DSS_VERSION_TAG := $(shell scripts/git/version.sh dss)
+
+GENERATOR_TAG := generator:${DSS_VERSION_TAG}
 
 # Build and version information is baked into the executable itself.
 BUILD_LDFLAGS := -X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/build.commit=$(COMMIT) -X github.com/interuss/dss/pkg/build.host=$(shell hostname)
-VERSION_LDFLAGS := -X github.com/interuss/dss/pkg/version.tag=$(LAST_RELEASE_TAG) -X github.com/interuss/dss/pkg/version.commit=$(COMMIT)
+VERSION_LDFLAGS := -X github.com/interuss/dss/pkg/version.tag=$(DSS_VERSION_TAG) -X github.com/interuss/dss/pkg/version.commit=$(COMMIT)
 LDFLAGS := $(BUILD_LDFLAGS) $(VERSION_LDFLAGS)
 
 ifeq ($(OS),Windows_NT)
@@ -37,11 +38,18 @@ format:
 	clang-format -style=file -i pkg/api/v1/scdpb/scd.proto
 	clang-format -style=file -i pkg/api/v1/auxpb/aux_service.proto
 
-.PHONY: lint
-lint:
-	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
-	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all  -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
-	find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
+lint: go_lint shell_lint
+
+.PHONY: go_lint
+go_lint:
+	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
+	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all --skip-dirs /dss/build/workspace -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
+
+.PHONY: shell_lint
+shell_lint:
+	find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
+
+
 
 pkg/api/v1/ridpb/rid.pb.go: pkg/api/v1/ridpb/rid.proto generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
@@ -114,6 +122,26 @@ generator:
 .PHONY: protos
 protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpb/rid.pb.gw.go pkg/api/v1/scdpb/scd.pb.gw.go
 
+# --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
+.PHONY: apis
+apis: example_apis dummy_oauth_api
+
+openapi-to-go-server:
+	docker image build -t interuss/openapi-to-go-server ./interfaces/openapi-to-go-server
+
+example_apis: openapi-to-go-server
+	$(CURDIR)/interfaces/openapi-to-go-server/generate_example.sh
+
+dummy_oauth_api: openapi-to-go-server
+	docker container run -it \
+		-v $(CURDIR)/interfaces/dummy-oauth/dummy-oauth.yaml:/resources/dummy-oauth.yaml \
+		-v $(CURDIR)/cmds/dummy-oauth:/resources/output \
+		interuss/openapi-to-go-server \
+			--api_import github.com/interuss/dss/cmds/dummy-oauth/api \
+			--api /resources/dummy-oauth.yaml \
+			--api_folder /resources/output/api
+# ---
+
 .PHONY: install-staticcheck
 install-staticcheck:
 	go get honnef.co/go/tools/cmd/staticcheck
@@ -128,11 +156,11 @@ test:
 
 .PHONY: test-cockroach
 test-cockroach: cleanup-test-cockroach
-	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v20.2.0 start-single-node --insecure > /dev/null
+	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v21.2.3 start-single-node --insecure > /dev/null
 	go run ./cmds/db-manager/main.go --schemas_dir ./build/deploy/db_schemas/rid --db_version latest --cockroach_host localhost
-	go test -count=1 -v ./pkg/rid/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
-	go test -count=1 -v ./pkg/scd/store/cockroach -store-uri "postgresql://root@localhost:26257?sslmode=disable"
-	go test -count=1 -v ./pkg/rid/application -store-uri "postgresql://root@localhost:26257/rid?sslmode=disable"
+	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid --schemas_dir db-schemas/rid
+	go test -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name scd --schemas_dir db-schemas/scd
+	go test -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid --schemas_dir db-schemas/rid
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 
@@ -145,10 +173,10 @@ cleanup-test-cockroach:
 test-e2e:
 	test/docker_e2e.sh
 
-release: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
+tag: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
 
-release:
-	scripts/release.sh $(VERSION)
+tag:
+	scripts/tag.sh $(UPSTREAM_OWNER)/dss/$(VERSION)
 
 start-locally:
 	build/dev/run_locally.sh

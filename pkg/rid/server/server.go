@@ -3,6 +3,8 @@ package server
 import (
 	"time"
 
+	"github.com/robfig/cron/v3"
+
 	"github.com/interuss/dss/pkg/auth"
 	"github.com/interuss/dss/pkg/rid/application"
 )
@@ -31,6 +33,7 @@ type Server struct {
 	Timeout    time.Duration
 	Locality   string
 	EnableHTTP bool
+	Cron       *cron.Cron
 }
 
 // AuthScopes returns a map of endpoint to required Oauth scope.

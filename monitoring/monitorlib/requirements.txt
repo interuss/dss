@@ -1,6 +1,7 @@
 arrow==1.1.0
 cryptography==3.3.2
 flask==1.1.2
+itsdangerous==2.0.1 # Version 2.1.0 is not compatible with flask 1.1.2.
 google-auth==1.6.3
 jwcrypto==0.7
 lxml==4.6.5
@@ -12,5 +13,6 @@ pytimeparse==1.1.8
 pyyaml==5.4
 requests==2.25.1
 s2sphere==0.2.5
+shapely==1.7.1
 termcolor==1.1.0
 aiohttp==3.8.0

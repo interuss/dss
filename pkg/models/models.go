@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgtype"
 )
 
 type (
@@ -32,7 +33,19 @@ const (
 	// 32 used to be the highest value allowed by strconv. The new value is 36,
 	// although changes to this will result in RMW errors.
 	versionBase = 32
+
+	// Set a max limit for the SELECT query result
+	MaxResultLimit = 10000
 )
+
+func (id *ID) PgUUID() (*pgtype.UUID, error) {
+	var pgUUID pgtype.UUID
+	err := pgUUID.Set(id.String())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error converting ID to PgUUID format")
+	}
+	return &pgUUID, nil
+}
 
 func (id ID) String() string {
 	return string(id)
@@ -56,6 +69,10 @@ func IDFromString(s string) (ID, error) {
 		return ID(""), stacktrace.Propagate(err, "Error parsing ID in UUID format")
 	}
 	return ID(id.String()), nil
+}
+
+func ManagerFromString(s string) Manager {
+	return Manager(s)
 }
 
 func IDFromOptionalString(s string) (ID, error) {

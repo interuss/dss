@@ -328,6 +328,7 @@ components:
         operation_category:
           type: string
           enum:
+            - Unknown
             - Open
             - Specific
             - Certified
@@ -439,11 +440,91 @@ components:
 
           type: string
           enum: [Planned, Rejected, ConflictWithFlight, Failed]
-          example: Planned
+          example: ConflictWithFlight
+        notes:
+          description: >-
+            Human-readable explanation of the observed result.  This explanation
+            should be available to a human reviewing the test results, and
+            ideally should explain why an undesirable result was obtained.  For
+            instance, if the injection attempt Failed, then these notes may
+            indicate that the attempt failed because the DSS indicated 400 to a
+            valid request (perhaps also including the valid request as proof).
+          type: string
+          example: Requested flight intersected operational intent c036326c-c97b-4926-bf9f-c60dc83d2b57
         operational_intent_id:
           description: The id of the operational intent communicated to the DSS. This value is only required when the result of the flight submission is `Planned`.
           anyOf:
             - $ref: '#/components/schemas/EntityID'
+    DeleteFlightResponse:
+      type: object
+      required:
+      - result
+      properties:
+        result:
+          description: >-
+            The result of attempted flight cancellation/closure
+
+              - `Closed`: The flight was closed successfully by the USS and is now out of the UTM system.
+
+              - `Failed`: The flight could not be closed successfully by the USS.
+
+          enum: [Closed, Failed]
+          example: Failed
+        notes:
+          description: >-
+            Human-readable explanation of the observed result.
+          type: string
+          example: DSS was unreachable when attempting to delete operational intent reference
+    ClearAreaRequest:
+      type: object
+      required:
+      - request_id
+      - extent
+      properties:
+        request_id:
+          description: >-
+            Unique string identifying this request.  If a second request with an
+            identical ID is received, the USS may return the same response from
+            the previous operation rather than attempting to clear the area
+            again (the USS may also attempt to clear the area again).
+          type: string
+        extent:
+          description: >-
+            The USS should cancel and remove any flight where any part of that
+            flight intersects this area.
+          anyOf:
+            - $ref: '#/components/schemas/Volume4D'
+    ClearAreaOutcome:
+      type: object
+      required:
+      - timestamp
+      properties:
+        success:
+          description: >-
+            True if, and only if, all flights in the specified area owned by the
+            USS were canceled and removed.
+          type: bool
+          default: false
+        message:
+          description: >-
+            If the USS was unable to clear the entire area, this message can
+            provide information on the problem encountered.
+          type: string
+          example: >-
+            DSS at dss.example.com returned 500 when attempting to delete
+            operational intent 57e98b17-aefa-4eee-a376-5140e4a8385f
+        timestamp:
+          description: >-
+            The time at which this operation was performed by the USS.
+          type: string
+          format: datetime
+    ClearAreaResponse:
+      type: object
+      required:
+      - outcome
+      properties:
+        outcome:
+          $ref: '#/components/schemas/ClearAreaOutcome'
 
 paths:
   /v1/status:
@@ -469,17 +550,18 @@ paths:
       description: Get the status of the USS automated testing interface
 
   /v1/flights/{flight_id}:
+    parameters:
+    - name: flight_id
+      in: path
+      required: true
+      description: A UUID string identifying the injected flight.
+      schema:
+        $ref: '#/components/schemas/UUIDv4Format'
+
     put:
       security:
         - Authority:
             - utm.inject_test_data
-      parameters:
-        - name: flight_id
-          in: path
-          required: true
-          description: A UUID string identifying the injected flight.
-          schema:
-            $ref: '#/components/schemas/UUIDv4Format'
 
       requestBody:
         content:
@@ -499,6 +581,58 @@ paths:
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
 
-      summary: Inject test flight
+      summary: Inject flight
+      operationId: injectFlight
       description: >-
         This endpoint simulates the operator intention to submit a flight operation / flight request.
+
+    delete:
+      security:
+      - Authority:
+        - utm.inject_test_data
+
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteFlightResponse'
+          description: Flight was deleted from the system successfully
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+
+      summary: Delete flight
+      operationId: deleteFlight
+      description: >-
+        This endpoint simulates the operator intention to cancel or end a flight operation.
+
+  /v1/clear_area_requests:
+    post:
+      security:
+      - Authority:
+        - utm.inject_test_data
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClearAreaRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClearAreaResponse'
+          description: Requested area was cleared successfully
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+
+      summary: Clear area
+      operationId: clearArea
+      description: >-
+        This endpoint requests that the USS cancel and remove all flights in the specified area.

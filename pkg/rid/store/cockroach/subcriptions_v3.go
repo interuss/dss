@@ -3,17 +3,18 @@ package cockroach
 import (
 	"context"
 	"fmt"
+	"time"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/jackc/pgtype"
 	"github.com/jonboulle/clockwork"
 
 	"github.com/golang/geo/s2"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
@@ -32,32 +33,39 @@ type subscriptionRepoV3 struct {
 
 // process a query that should return one or many subscriptions.
 func (c *subscriptionRepoV3) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
-	rows, err := c.QueryContext(ctx, query, args...)
+	rows, err := c.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
 	defer rows.Close()
 
 	var payload []*ridmodels.Subscription
-	cids := pq.Int64Array{}
+	pgCids := pgtype.Int8Array{}
 
 	for rows.Next() {
 		s := new(ridmodels.Subscription)
+
+		var updateTime time.Time
 
 		err := rows.Scan(
 			&s.ID,
 			&s.Owner,
 			&s.URL,
 			&s.NotificationIndex,
-			&cids,
+			&pgCids,
 			&s.StartTime,
 			&s.EndTime,
-			&s.Version,
+			&updateTime,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
+		var cids []int64
+		if err := pgCids.AssignTo(&cids); err != nil {
+			return nil, stacktrace.Propagate(err, "Error Converting jackc/pgtype to array")
+		}
 		s.SetCells(cids)
+		s.Version = dssmodels.VersionFromTime(updateTime)
 		payload = append(payload, s)
 	}
 	if err := rows.Err(); err != nil {
@@ -110,7 +118,13 @@ func (c *subscriptionRepoV3) MaxSubscriptionCountInCellsByOwner(ctx context.Cont
 		cids[i] = int64(cell)
 	}
 
-	row := c.QueryRowContext(ctx, query, owner, c.clock.Now(), pq.Int64Array(cids))
+	var pgCids pgtype.Int8Array
+
+	if err := pgCids.Set(cids); err != nil {
+		return 0, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	row := c.QueryRow(ctx, query, owner, c.clock.Now(), pgCids)
 	var ret int
 	err := row.Scan(&ret)
 	return ret, stacktrace.Propagate(err, "Error scanning subscription count row")
@@ -123,7 +137,11 @@ func (c *subscriptionRepoV3) GetSubscription(ctx context.Context, id dssmodels.I
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
 		WHERE id = $1`, subscriptionFieldsV3)
-	return c.processOne(ctx, query, id)
+	uid, err := id.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, query, uid)
 }
 
 // UpdateSubscription updates the Subscription.. not yet implemented.
@@ -148,11 +166,21 @@ func (c *subscriptionRepoV3) UpdateSubscription(ctx context.Context, s *ridmodel
 		cids[i] = int64(cell)
 	}
 
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	id, err := s.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
 	return c.processOne(ctx, updateQuery,
-		s.ID,
+		id,
 		s.URL,
 		s.NotificationIndex,
-		pq.Int64Array(cids),
+		pgCids,
 		s.StartTime,
 		s.EndTime,
 		s.Version.ToTimestamp())
@@ -181,12 +209,22 @@ func (c *subscriptionRepoV3) InsertSubscription(ctx context.Context, s *ridmodel
 		cids[i] = int64(cell)
 	}
 
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	uid, err := s.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
 	return c.processOne(ctx, insertQuery,
-		s.ID,
+		uid,
 		s.Owner,
 		s.URL,
 		s.NotificationIndex,
-		pq.Int64Array(cids),
+		pgCids,
 		s.StartTime,
 		s.EndTime)
 }
@@ -204,7 +242,11 @@ func (c *subscriptionRepoV3) DeleteSubscription(ctx context.Context, s *ridmodel
 			AND updated_at = $2
 		RETURNING %s`, subscriptionFieldsV3)
 	)
-	return c.processOne(ctx, query, s.ID, s.Version.ToTimestamp())
+	id, err := s.ID.PgUUID()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
+	}
+	return c.processOne(ctx, query, id, s.Version.ToTimestamp())
 }
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.
@@ -221,8 +263,15 @@ func (c *subscriptionRepoV3) UpdateNotificationIdxsInCells(ctx context.Context, 
 	for i, cell := range cells {
 		cids[i] = int64(cell)
 	}
+
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
 	return c.process(
-		ctx, updateQuery, pq.Int64Array(cids), c.clock.Now())
+		ctx, updateQuery, pgCids, c.clock.Now())
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
@@ -236,7 +285,8 @@ func (c *subscriptionRepoV3) SearchSubscriptions(ctx context.Context, cells s2.C
 			WHERE
 				cells && $1
 			AND
-				ends_at >= $2`, subscriptionFieldsV3)
+				ends_at >= $2
+			LIMIT $3`, subscriptionFieldsV3)
 	)
 
 	if len(cells) == 0 {
@@ -248,7 +298,13 @@ func (c *subscriptionRepoV3) SearchSubscriptions(ctx context.Context, cells s2.C
 		cids[i] = int64(cell)
 	}
 
-	return c.process(ctx, query, pq.Int64Array(cids), c.clock.Now())
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	return c.process(ctx, query, pgCids, c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
@@ -264,7 +320,8 @@ func (c *subscriptionRepoV3) SearchSubscriptionsByOwner(ctx context.Context, cel
 			AND
 				subscriptions.owner = $2
 			AND
-				ends_at >= $3`, subscriptionFieldsV3)
+				ends_at >= $3
+			LIMIT $4`, subscriptionFieldsV3)
 	)
 
 	if len(cells) == 0 {
@@ -276,7 +333,13 @@ func (c *subscriptionRepoV3) SearchSubscriptionsByOwner(ctx context.Context, cel
 		cids[i] = int64(cell)
 	}
 
-	return c.process(ctx, query, pq.Int64Array(cids), owner, c.clock.Now())
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	return c.process(ctx, query, pgCids, owner, c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // ListExpiredSubscriptions returns empty. We don't support this function in store v3.0 because db doesn't have 'writer' field.

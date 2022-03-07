@@ -1,6 +1,6 @@
 import arrow
 import datetime
-from typing import get_args, get_origin, get_type_hints, Dict, Optional, Type, Union
+from typing import get_args, get_origin, get_type_hints, Dict, Literal, Optional, Type, Union
 
 import pytimeparse
 
@@ -179,6 +179,11 @@ def _parse_value(value, value_type: Type):
         # value is a list of non-ImplicitDict values
         return value
 
+    elif generic_type is dict:
+        # value is a dict of some kind
+        return {k if arg_types[0] is str else _parse_value(k, arg_types[0]): _parse_value(v, arg_types[1])
+                for k, v in value.items()}
+
     elif generic_type is Union and len(arg_types) == 2 and arg_types[1] is type(None):
       # Type is an Optional declaration
       if value is None:
@@ -187,6 +192,12 @@ def _parse_value(value, value_type: Type):
         return None
       else:
         return _parse_value(value, arg_types[0])
+
+    elif generic_type is Literal and len(arg_types) == 1:
+        # Type is a Literal (parsed value must match specified value)
+        if value != arg_types[0]:
+            raise ValueError('Value {} does not match required Literal {}'.format(value, arg_types[0]))
+        return value
 
     else:
       raise NotImplementedError('Automatic parsing of {} type is not yet implemented'.format(value_type))

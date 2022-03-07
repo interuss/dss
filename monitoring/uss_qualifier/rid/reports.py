@@ -6,17 +6,7 @@ import s2sphere
 from monitoring.monitorlib import fetch
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid.utils import InjectedFlight, RIDQualifierTestConfiguration
-
-
-class Severity(object):
-  Critical = 'Critical'
-  """The system does not function correctly on a basic level."""
-
-  High = 'High'
-  """The system may superficially function, but does not meet requirements."""
-
-  Low = 'Low'
-  """The system behaves correctly, but could be improved."""
+from monitoring.uss_qualifier.common_data_definitions import Severity
 
 
 class Issue(ImplicitDict):

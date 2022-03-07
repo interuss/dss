@@ -20,7 +20,7 @@ fi
 
 cd "${BASEDIR}" || exit 1
 
-DC_COMMAND=${1}
+DC_COMMAND=$*
 
 if [[ ! "$DC_COMMAND" ]]; then
   DC_COMMAND="up"
@@ -30,9 +30,7 @@ elif [[ "$DC_COMMAND" == "down" ]]; then
 elif [[ "$DC_COMMAND" == "debug" ]]; then
   DC_COMMAND=up
   export DEBUG_ON=1
-else
-  DC_OPTIONS=""
 fi
 
 # shellcheck disable=SC2086
-docker-compose -f docker-compose_dss.yaml -p dss_sandbox "$DC_COMMAND" $DC_OPTIONS
+docker-compose -f docker-compose_dss.yaml -p dss_sandbox $DC_COMMAND $DC_OPTIONS

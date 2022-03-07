@@ -4,10 +4,10 @@ Database migration is performed in a controlled fashion by defining the SQL
 commands necessary to move from one database version to the next one "up" and
 the commands necessary to move from that higher database version to the next one
 "down".  Therefore, to make changes to the database schema, two files must be
-added ("up" and "down"), starting with the next available ordinal, and named
-according to what the changes do.  schema_versions.schema_version should be
-updated as the last step of each transition; see existing .sql files for
-examples.
+added ("upto" and "downfrom"), prefixed also with the schema semantic version,
+and named according to what the changes do.  schema_versions.schema_version
+should be updated as the last step of each transition; see existing .sql files
+for examples.
 
 The two new .sql files must be added to scd.libsonnet or rid.libsonnet
 (for remote ID) in this folder.

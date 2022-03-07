@@ -8,7 +8,7 @@ steps:
     path: '/go'
 - id: 'Lint: Formatting'
   name: golangci/golangci-lint:v1.23.8
-  # Disable staticcheck since grpc-gateway doesn't use DialContext
+  # Disable staticcheck since http-gateway doesn't use DialContext
   args: ['golangci-lint', 'run', '--timeout', '5m', '-v', '-E', 'gofmt,bodyclose,rowserrcheck,misspell,golint', '-D', 'staticcheck,vet']
   volumes:
   - name: 'go-vol'

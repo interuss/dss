@@ -1,4 +1,0 @@
-flask==1.1.2
-gunicorn==20.0.4
-pyopenssl
--r ../monitorlib/requirements.txt

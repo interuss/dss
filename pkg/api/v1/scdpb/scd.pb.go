@@ -103,19 +103,11 @@ type Altitude struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A code indicating the reference for a vertical distance. See AIXM 5.1
-	// and FIXM 4.2.0. Currently, UTM only allows WGS84 with no immediate
-	// plans to allow other options. FIXM and AIXM allow for 'SFC' which is
-	// equivalent to AGL.
+	// A code indicating the reference for a vertical distance. See AIXM 5.1 and FIXM 4.2.0. Currently, UTM only allows WGS84 with no immediate plans to allow other options. FIXM and AIXM allow for 'SFC' which is equivalent to AGL.
 	Reference string `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
-	// The reference quantities used to express the value of altitude. See
-	// FIXM 4.2. Currently, UTM only allows meters with no immediate plans
-	// to allow other options.
+	// The reference quantities used to express the value of altitude. See FIXM 4.2. Currently, UTM only allows meters with no immediate plans to allow other options.
 	Units string `protobuf:"bytes,2,opt,name=units,proto3" json:"units,omitempty"`
-	// The numeric value of the altitude. Note that min and max values are
-	// added as a sanity check. As use cases evolve and more options are
-	// made available in terms of units of measure or reference systems,
-	// these bounds may be re-evaluated.
+	// The numeric value of the altitude. Note that min and max values are added as a sanity check. As use cases evolve and more options are made available in terms of units of measure or reference systems, these bounds may be re-evaluated.
 	Value float64 `protobuf:"fixed64,3,opt,name=value,proto3" json:"value,omitempty"`
 }
 
@@ -172,10 +164,10 @@ func (x *Altitude) GetValue() float64 {
 	return 0
 }
 
-// A relevant authority that is in charge for authorising, being notified or providing
-// information for UAS operations in the UAS zone.
-//
-// Rule: at least one of the following shall be specified - siteURL, email, phone.
+// A relevant authority that is in charge for authorising, being notified or providing information for UAS operations in the UAS zone.
+// Rule: >-
+//    at least one of the following shall be specified - siteURL, email,
+// phone.
 type Authority struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -184,12 +176,9 @@ type Authority struct {
 	// The name or role of a specific person that needs to be contacted within the organisation
 	ContactName string `protobuf:"bytes,1,opt,name=contact_name,json=contactName,proto3" json:"contact_name,omitempty"`
 	// The e-mail address by which the organisation may be contacted.
-	//
-	// Note: in the data coding format, this might be further constrained in order to ensure a valid e-mail
-	// format.
+	// Note: in the data coding format, this might be further constrained in order to ensure a valid e-mail format.
 	Email string `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	// The minimal time interval required between notification or authorization request and starting to operate
-	// in the zone, in the format PnnDTnnHnnM (ISO 8601).
+	// The minimal time interval required between notification or authorization request and starting to operate in the zone, in the format PnnDTnnHnnM (ISO 8601).
 	IntervalBefore string `protobuf:"bytes,3,opt,name=interval_before,json=intervalBefore,proto3" json:"interval_before,omitempty"`
 	// The official name of a public or private authority
 	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
@@ -200,7 +189,6 @@ type Authority struct {
 	// The name of a specific department or service within the organisation
 	Service string `protobuf:"bytes,7,opt,name=service,proto3" json:"service,omitempty"`
 	// The URL of the public internet site through which the organisation may be contacted
-	//
 	// Note: in the data coding format, this might be further constrained in order to ensure a valid URL format.
 	SiteUrl string `protobuf:"bytes,8,opt,name=site_url,json=siteUrl,proto3" json:"site_url,omitempty"`
 }
@@ -350,18 +338,14 @@ func (x *ChangeConstraintReferenceResponse) GetSubscribers() []*SubscriberToNoti
 	return nil
 }
 
-// Response to a request to create, update, or delete an OperationalIntentReference
-// in the DSS.
+// Response to a request to create, update, or delete an OperationalIntentReference in the DSS.
 type ChangeOperationalIntentReferenceResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	OperationalIntentReference *OperationalIntentReference `protobuf:"bytes,1,opt,name=operational_intent_reference,json=operationalIntentReference,proto3" json:"operational_intent_reference,omitempty"`
-	// DSS subscribers that this client now has the obligation to
-	// notify of the operational intent changes just made.  This client must call POST
-	// for each provided URL according to the USS-USS `/uss/v1/operational_intents`
-	// path API.  The client's own subscriptions will also be included in this list.
+	// DSS subscribers that this client now has the obligation to notify of the operational intent changes just made.  This client must call POST for each provided URL according to the USS-USS `/uss/v1/operational_intents` path API.  The client's own subscriptions will also be included in this list.
 	Subscribers []*SubscriberToNotify `protobuf:"bytes,2,rep,name=subscribers,proto3" json:"subscribers,omitempty"`
 }
 
@@ -534,7 +518,6 @@ type ConstraintDetails struct {
 	// Type of airspace feature this constraint represents.
 	Type string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
 	// Volumes that wholly contain the constraint while being as small as practical.
-	//
 	// The end time may not be in the past.
 	Volumes []*Volume4D `protobuf:"bytes,3,rep,name=volumes,proto3" json:"volumes,omitempty"`
 }
@@ -657,24 +640,15 @@ type ConstraintReference struct {
 	unknownFields protoimpl.UnknownFields
 
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Created by the DSS based on creating client's ID (via access token).  Used internal
-	// to the DSS for restricting mutation and deletion operations to manager.  Used by USSs
-	// to reject constraint update notifications originating from a USS that does not manage
-	// the constraint.
+	// Created by the DSS based on creating client's ID (via access token).  Used internal to the DSS for restricting mutation and deletion operations to manager.  Used by USSs to reject constraint update notifications originating from a USS that does not manage the constraint.
 	Manager string `protobuf:"bytes,2,opt,name=manager,proto3" json:"manager,omitempty"`
-	// Opaque version number of this constraint.  Populated only when the ConstraintReference
-	// is managed by the USS retrieving or providing it.  Not populated when the
-	// ConstraintReference is not managed by the USS retrieving or providing it (instead, the
-	// USS must obtain the OVN from the details retrieved from the managing USS).
+	// Opaque version number of this constraint.  Populated only when the ConstraintReference is managed by the USS retrieving or providing it.  Not populated when the ConstraintReference is not managed by the USS retrieving or providing it (instead, the USS must obtain the OVN from the details retrieved from the managing USS).
 	Ovn             string `protobuf:"bytes,3,opt,name=ovn,proto3" json:"ovn,omitempty"`
 	TimeEnd         *Time  `protobuf:"bytes,4,opt,name=time_end,json=timeEnd,proto3" json:"time_end,omitempty"`
 	TimeStart       *Time  `protobuf:"bytes,5,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
 	UssAvailability string `protobuf:"bytes,6,opt,name=uss_availability,json=ussAvailability,proto3" json:"uss_availability,omitempty"`
 	UssBaseUrl      string `protobuf:"bytes,7,opt,name=uss_base_url,json=ussBaseUrl,proto3" json:"uss_base_url,omitempty"`
-	// Numeric version of this constraint which increments upon each change in the constraint,
-	// regardless of whether any field of the constraint reference changes.  A USS with the
-	// details of this constraint when it was at a particular version does not need to retrieve
-	// the details again until the version changes.
+	// Numeric version of this constraint which increments upon each change in the constraint, regardless of whether any field of the constraint reference changes.  A USS with the details of this constraint when it was at a particular version does not need to retrieve the details again until the version changes.
 	Version int32 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -1214,8 +1188,7 @@ func (x *ErrorReport) GetReportId() string {
 	return ""
 }
 
-// Human-readable string returned when an error occurs
-// as a result of a USS - DSS transaction.
+// Human-readable string returned when an error occurs as a result of a USS - DSS transaction.
 type ErrorResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1272,9 +1245,9 @@ type ExchangeRecord struct {
 
 	// Set of headers associated with request or response. Requires 'Authorization:' field (at a minimum)
 	Headers []string `protobuf:"bytes,1,rep,name=headers,proto3" json:"headers,omitempty"`
-	// HTTP verb used by requestor (e.g., "PUT," "GET," etc.).
+	// HTTP verb used by requestor (e.g., "PUT," "GET," etc.)
 	Method string `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
-	// Human-readable description of the problem with the exchange, if any.
+	// 'Human-readable description of the problem with the exchange, if any.'
 	Problem string `protobuf:"bytes,3,opt,name=problem,proto3" json:"problem,omitempty"`
 	// A coded value that indicates the role of the logging USS: 'Client' (initiating a request to a remote USS) or 'Server' (handling a request from a remote USS)
 	RecorderRole string `protobuf:"bytes,4,opt,name=recorder_role,json=recorderRole,proto3" json:"recorder_role,omitempty"`
@@ -1394,46 +1367,30 @@ func (x *ExchangeRecord) GetUrl() string {
 	return ""
 }
 
-// An airspace of defined dimensions, above the land areas or territorial waters of a
-// State, within which a particular restriction or condition for UAS flights applies.
+// An airspace of defined dimensions, above the land areas or territorial waters of a State, within which a particular restriction or condition for UAS flights applies.
 type GeoZone struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Indicates that exemptions from the national or European regulations are allowed in the UAS Zone, that
-	// will be detailed via the "message" property.
+	// Indicates that exemptions from the national or European regulations are allowed in the UAS Zone, that will be detailed via the "message" property.
 	AdditionalProperties *GeoZone_AdditionalPropertiesMessage `protobuf:"bytes,1,opt,name=additional_properties,json=additionalProperties,proto3" json:"additional_properties,omitempty"`
 	// The State that has the authority to declare the zone.
-	//
-	// Note - There will be no Zone belonging to two States. Not necessary to code the information that two
-	// zones are "in neighboring States" or "related".
+	// Note - There will be no Zone belonging to two States. Not necessary to code the information that two zones are "in neighboring States" or "related".
 	Country []string `protobuf:"bytes,2,rep,name=country,proto3" json:"country,omitempty"`
-	// A string of characters that uniquely identifies the UAS Zone within the State/Territory identified by the
-	// country attribute.
-	//
-	// Note - The UAS Zone is uniquely identified worldwide by the combination of the country and the
-	// identifier attributes
+	// A string of characters that uniquely identifies the UAS Zone within the State/Territory identified by the country attribute.
+	// Note - The UAS Zone is uniquely identified worldwide by the combination of the country and the identifier attributes
 	Identifier []string `protobuf:"bytes,3,rep,name=identifier,proto3" json:"identifier,omitempty"`
-	// A message to be displayed to the user of the zone, typically on the RPS for the Remote Pilot, to make
-	// him/her aware about specific information associated with the zone (typically when it is not only a
-	// restriction to fly in the zone, thus not only an alert or an automatic limitation, for example : “image capture
-	// prohibited in this zone”, “frequent strong winds in this zone”, “no landing or take-off in this zone”). This
-	// message is also used to indicate exemptions from regulation in a zone (see below). Several information
-	// can be grouped in a message, separated by a “/”.
+	// A message to be displayed to the user of the zone, typically on the RPS for the Remote Pilot, to make him/her aware about specific information associated with the zone (typically when it is not only a restriction to fly in the zone, thus not only an alert or an automatic limitation, for example : “image capture prohibited in this zone”, “frequent strong winds in this zone”, “no landing or take-off in this zone”). This message is also used to indicate exemptions from regulation in a zone (see below). Several information can be grouped in a message, separated by a “/”.
 	Message []string `protobuf:"bytes,4,rep,name=message,proto3" json:"message,omitempty"`
 	// A free text name by which the zone may be known by the public or by the UAS community.
 	Name []string `protobuf:"bytes,5,rep,name=name,proto3" json:"name,omitempty"`
-	// A free text description of the reason that led to the establishment of the zone, when not covered by a
-	// pre-defined coded value.
+	// A free text description of the reason that led to the establishment of the zone, when not covered by a pre-defined coded value.
 	OtherReasonInfo string `protobuf:"bytes,6,opt,name=other_reason_info,json=otherReasonInfo,proto3" json:"other_reason_info,omitempty"`
 	// A coded indication for the reason that led to the establishment of the zone.
 	Reason []string `protobuf:"bytes,7,rep,name=reason,proto3" json:"reason,omitempty"`
 	// Where applicable, identifies a region inside a State where the UAS Zone is located.
-	//
-	// Note 1) identified with a digit between 0-65535 (16 bit), corresponding to a list of regions pre-defined for
-	// each State.
-	//
+	// Note 1) identified with a digit between 0-65535 (16 bit), corresponding to a list of regions pre-defined for each State.
 	// Note 2) this attribute is intended to facilitate extracting sub-sets of data, for specific regions
 	Region int32 `protobuf:"varint,8,opt,name=region,proto3" json:"region,omitempty"`
 	// This is an extension point. It allows adding additional attributes of national interest through this element.
@@ -1442,14 +1399,10 @@ type GeoZone struct {
 	Restriction []string `protobuf:"bytes,10,rep,name=restriction,proto3" json:"restriction,omitempty"`
 	// An indication of the conditions under which the zone can be used
 	RestrictionConditions []string `protobuf:"bytes,11,rep,name=restriction_conditions,json=restrictionConditions,proto3" json:"restriction_conditions,omitempty"`
-	// An indication whether the Zone is provided with its common definition or with a customised definition,
-	// for a particular user.
+	// An indication whether the Zone is provided with its common definition or with a customised definition, for a particular user.
 	Type []string `protobuf:"bytes,12,rep,name=type,proto3" json:"type,omitempty"`
 	// A code that identifies the category or class of the zone applying a "USpace concept".
-	//
-	// Note: Two (draft) classifications exist, one from Eurocontrol and one from CORUS. Therefore, two
-	// instances of this attribute are expected, one from each sub-list. This might be later replaced with
-	// separate attributes and separate lists of values.
+	// Note: Two (draft) classifications exist, one from Eurocontrol and one from CORUS. Therefore, two instances of this attribute are expected, one from each sub-list. This might be later replaced with separate attributes and separate lists of values.
 	USpaceClass   []string     `protobuf:"bytes,13,rep,name=u_space_class,json=uSpaceClass,proto3" json:"u_space_class,omitempty"`
 	ZoneAuthority []*Authority `protobuf:"bytes,14,rep,name=zone_authority,json=zoneAuthority,proto3" json:"zone_authority,omitempty"`
 }
@@ -1878,11 +1831,7 @@ type GetOperationalIntentTelemetryResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The next telemetry similar to this telemetry is not expected to be
-	// available until at or after this time, so the polling USS should
-	// generally not poll the endpoint providing this response data again
-	// until at or after that time.  If this field is omitted, then there
-	// is no current expectation of new telemetry becoming available.
+	// The next telemetry similar to this telemetry is not expected to be available until at or after this time, so the polling USS should generally not poll the endpoint providing this response data again until at or after that time.  If this field is omitted, then there is no current expectation of new telemetry becoming available.
 	NextTelemetryOpportunity *Time `protobuf:"bytes,1,opt,name=next_telemetry_opportunity,json=nextTelemetryOpportunity,proto3" json:"next_telemetry_opportunity,omitempty"`
 	// ID of the operational intent which the vehicle reporting telemetry is flying.
 	OperationalIntentId string            `protobuf:"bytes,2,opt,name=operational_intent_id,json=operationalIntentId,proto3" json:"operational_intent_id,omitempty"`
@@ -2092,14 +2041,9 @@ type ImplicitSubscriptionParameters struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// True if this operational intent's subscription should trigger notifications when constraints change.
-	// Otherwise, changes in constraints should not trigger notifications.  The scope
-	// utm.constraint_processing is required to set this flag true, and a USS performing the constraint
-	// processing role should set this flag true.
+	// True if this operational intent's subscription should trigger notifications when constraints change. Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true, and a USS performing the constraint processing role should set this flag true.
 	NotifyForConstraints bool `protobuf:"varint,1,opt,name=notify_for_constraints,json=notifyForConstraints,proto3" json:"notify_for_constraints,omitempty"`
-	// The base URL of a USS implementation of the parts of the USS-USS API necessary for
-	// receiving the notifications that the operational intent must be aware of.  This includes, at least,
-	// notifications for relevant changes in operational intents.
+	// The base URL of a USS implementation of the parts of the USS-USS API necessary for receiving the notifications that the operational intent must be aware of.  This includes, at least, notifications for relevant changes in operational intents.
 	UssBaseUrl string `protobuf:"bytes,2,opt,name=uss_base_url,json=ussBaseUrl,proto3" json:"uss_base_url,omitempty"`
 }
 
@@ -2315,24 +2259,15 @@ type OperationalIntentDetails struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Volumes that contain the anticipated area of non-conformance while the aircraft is in the Nonconforming
-	// or Contingent states.
-	//
-	// Start and end times, as well as lower and upper altitudes, are required for each
-	// volume. The end time may not be in the past.
-	//
+	// Volumes that contain the anticipated area of non-conformance while the aircraft is in the Nonconforming or Contingent states.
+	// Start and end times, as well as lower and upper altitudes, are required for each volume. The end time may not be in the past.
 	// Required with at least one item when the operational intent is Nonconforming or Contingent.
-	//
 	// May not contain any items when the operational intent is Accepted or Activated.
 	OffNominalVolumes []*Volume4D `protobuf:"bytes,1,rep,name=off_nominal_volumes,json=offNominalVolumes,proto3" json:"off_nominal_volumes,omitempty"`
 	Priority          int32       `protobuf:"varint,2,opt,name=priority,proto3" json:"priority,omitempty"`
 	// Volumes that wholly contain the operational intent while being as small as practical.
-	//
-	// Start and end times, as well as lower and upper altitudes, are required for each
-	// volume. The end time may not be in the past.
-	//
+	// Start and end times, as well as lower and upper altitudes, are required for each volume. The end time may not be in the past.
 	// Required with at least one item when the operational intent is Accepted, Activated, or Nonconforming.
-	//
 	// May not contain any items when the operational intent is Contingent.
 	Volumes []*Volume4D `protobuf:"bytes,3,rep,name=volumes,proto3" json:"volumes,omitempty"`
 }
@@ -2390,8 +2325,7 @@ func (x *OperationalIntentDetails) GetVolumes() []*Volume4D {
 	return nil
 }
 
-// A record of position data gathered through the course of an operational
-// intent
+// A record of position data gathered through the course of an operational intent
 type OperationalIntentPositions struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2448,28 +2382,19 @@ func (x *OperationalIntentPositions) GetPositions() []*PositionRecord {
 	return nil
 }
 
-// The high-level information of a planned or active operational intent with the URL
-// of a USS to query for details.  Note: 'ovn' is returned ONLY to the USS that
-// created the operational intent but NEVER to other USS instances.
+// The high-level information of a planned or active operational intent with the URL of a USS to query for details.  Note: 'ovn' is returned ONLY to the USS that created the operational intent but NEVER to other USS instances.
 type OperationalIntentReference struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Created by the DSS based on creating client's ID (via access token).  Used internal
-	// to the DSS for restricting mutation and deletion operations to manager.  Used by USSs
-	// to reject operational intent update notifications originating from a USS that does not manage
-	// the operational intent.
+	// Created by the DSS based on creating client's ID (via access token).  Used internal to the DSS for restricting mutation and deletion operations to manager.  Used by USSs to reject operational intent update notifications originating from a USS that does not manage the operational intent.
 	Manager string `protobuf:"bytes,2,opt,name=manager,proto3" json:"manager,omitempty"`
-	// Opaque version number of this operational intent.  Populated only when the OperationalIntentReference
-	// is managed by the USS retrieving or providing it.  Not populated when the
-	// OperationalIntentReference is not managed by the USS retrieving or providing it (instead, the
-	// USS must obtain the OVN from the details retrieved from the managing USS).
+	// Opaque version number of this operational intent.  Populated only when the OperationalIntentReference is managed by the USS retrieving or providing it.  Not populated when the OperationalIntentReference is not managed by the USS retrieving or providing it (instead, the USS must obtain the OVN from the details retrieved from the managing USS).
 	Ovn   string `protobuf:"bytes,3,opt,name=ovn,proto3" json:"ovn,omitempty"`
 	State string `protobuf:"bytes,4,opt,name=state,proto3" json:"state,omitempty"`
-	// The ID of the subscription that is ensuring the operational intent manager receives relevant
-	// airspace updates.
+	// The ID of the subscription that is ensuring the operational intent manager receives relevant airspace updates.
 	SubscriptionId string `protobuf:"bytes,5,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
 	// End time of operational intent.
 	TimeEnd *Time `protobuf:"bytes,6,opt,name=time_end,json=timeEnd,proto3" json:"time_end,omitempty"`
@@ -2477,10 +2402,7 @@ type OperationalIntentReference struct {
 	TimeStart       *Time  `protobuf:"bytes,7,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
 	UssAvailability string `protobuf:"bytes,8,opt,name=uss_availability,json=ussAvailability,proto3" json:"uss_availability,omitempty"`
 	UssBaseUrl      string `protobuf:"bytes,9,opt,name=uss_base_url,json=ussBaseUrl,proto3" json:"uss_base_url,omitempty"`
-	// Numeric version of this operational intent which increments upon each change in the operational intent,
-	// regardless of whether any field of the operational intent reference changes.  A USS with the
-	// details of this operational intent when it was at a particular version does not need to retrieve
-	// the details again until the version changes.
+	// Numeric version of this operational intent which increments upon each change in the operational intent, regardless of whether any field of the operational intent reference changes.  A USS with the details of this operational intent when it was at a particular version does not need to retrieve the details again until the version changes.
 	Version int32 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -2738,12 +2660,7 @@ func (x *PlanningRecord) GetTime() *Time {
 	return nil
 }
 
-// An enclosed area on the earth.
-// The bounding edges of this polygon are defined to be the shortest paths between connected vertices.  This means, for instance, that the edge between two points both defined at a particular latitude is not generally contained at that latitude.
-// The winding order must be interpreted as the order which produces the smaller area.
-// The path between two vertices is defined to be the shortest possible path between those vertices.
-// Edges may not cross.
-// Vertices may not be duplicated.  In particular, the final polygon vertex must not be identical to the first vertex.
+// An enclosed area on the earth. The bounding edges of this polygon are defined to be the shortest paths between connected vertices.  This means, for instance, that the edge between two points both defined at a particular latitude is not generally contained at that latitude. The winding order must be interpreted as the order which produces the smaller area. The path between two vertices is defined to be the shortest possible path between those vertices. Edges may not cross. Vertices may not be duplicated.  In particular, the final polygon vertex must not be identical to the first vertex.
 type Polygon struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2791,8 +2708,7 @@ func (x *Polygon) GetVertices() []*LatLngPoint {
 	return nil
 }
 
-// Location of the vehicle (UAS) as reported for UTM.
-// Note: 'accuracy' values are required when extrapolated field is true.
+// Location of the vehicle (UAS) as reported for UTM. Note: 'accuracy' values are required when extrapolated field is true.
 type Position struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2801,8 +2717,7 @@ type Position struct {
 	AccuracyH string    `protobuf:"bytes,1,opt,name=accuracy_h,json=accuracyH,proto3" json:"accuracy_h,omitempty"`
 	AccuracyV string    `protobuf:"bytes,2,opt,name=accuracy_v,json=accuracyV,proto3" json:"accuracy_v,omitempty"`
 	Altitude  *Altitude `protobuf:"bytes,3,opt,name=altitude,proto3" json:"altitude,omitempty"`
-	// True if this position was generated primarily by computation
-	// rather than primarily from a direct instrument measurement.
+	// True if this position was generated primarily by computation rather than primarily from a direct instrument measurement.
 	Extrapolated bool    `protobuf:"varint,4,opt,name=extrapolated,proto3" json:"extrapolated,omitempty"`
 	Latitude     float64 `protobuf:"fixed64,5,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	Longitude    float64 `protobuf:"fixed64,6,opt,name=longitude,proto3" json:"longitude,omitempty"`
@@ -2945,9 +2860,7 @@ type PutConstraintDetailsParameters struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Full information about the constraint that has changed.  If this field is omitted,
-	// the constraint was deleted.  The `ovn` field in the nested `reference` must be
-	// populated.
+	// Full information about the constraint that has changed.  If this field is omitted, the constraint was deleted.  The `ovn` field in the nested `reference` must be populated.
 	Constraint *Constraint `protobuf:"bytes,1,opt,name=constraint,proto3" json:"constraint,omitempty"`
 	// ID of constraint that has changed.
 	ConstraintId string `protobuf:"bytes,2,opt,name=constraint_id,json=constraintId,proto3" json:"constraint_id,omitempty"`
@@ -3015,13 +2928,8 @@ type PutConstraintReferenceParameters struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Spacetime extents that bound this constraint.
-	//
 	// The end time may not be in the past.
-	//
-	// All volumes of the constraint must be encompassed in these extents.
-	// However, these extents do not need to match the precise volumes of
-	// the constraint; a single bounding extent may be provided instead,
-	// for instance.
+	// All volumes of the constraint must be encompassed in these extents. However, these extents do not need to match the precise volumes of the constraint; a single bounding extent may be provided instead, for instance.
 	Extents    []*Volume4D `protobuf:"bytes,1,rep,name=extents,proto3" json:"extents,omitempty"`
 	UssBaseUrl string      `protobuf:"bytes,2,opt,name=uss_base_url,json=ussBaseUrl,proto3" json:"uss_base_url,omitempty"`
 }
@@ -3072,17 +2980,13 @@ func (x *PutConstraintReferenceParameters) GetUssBaseUrl() string {
 	return ""
 }
 
-// Parameters of a message informing of detailed information for a peer operational intent.
-// Pushed (by a client, not the DSS) directly to clients with subscriptions when
-// another client makes a change to airspace within a cell with a subscription.
+// Parameters of a message informing of detailed information for a peer operational intent. Pushed (by a client, not the DSS) directly to clients with subscriptions when another client makes a change to airspace within a cell with a subscription.
 type PutOperationalIntentDetailsParameters struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Full information about the operational intent that has changed.  If this field is omitted,
-	// the operational intent was deleted.  The `ovn` field in the nested `reference` must be
-	// populated.
+	// Full information about the operational intent that has changed.  If this field is omitted, the operational intent was deleted.  The `ovn` field in the nested `reference` must be populated.
 	OperationalIntent *OperationalIntent `protobuf:"bytes,1,opt,name=operational_intent,json=operationalIntent,proto3" json:"operational_intent,omitempty"`
 	// ID of operational intent that has changed.
 	OperationalIntentId string `protobuf:"bytes,2,opt,name=operational_intent_id,json=operationalIntentId,proto3" json:"operational_intent_id,omitempty"`
@@ -3143,43 +3047,21 @@ func (x *PutOperationalIntentDetailsParameters) GetSubscriptions() []*Subscripti
 	return nil
 }
 
-// Parameters for a request to create an OperationalIntentReference in the DSS.
-// A subscription to changes overlapping this volume may be implicitly created, but
-// this can be overridden by providing the (optional) 'subscription_id' to use.
-// Note: The implicit subscription is managed by the DSS, not the USS.
+// Parameters for a request to create an OperationalIntentReference in the DSS. A subscription to changes overlapping this volume may be implicitly created, but this can be overridden by providing the (optional) 'subscription_id' to use. Note: The implicit subscription is managed by the DSS, not the USS.
 type PutOperationalIntentReferenceParameters struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// Spacetime extents that bound this operational intent.
-	//
-	// Start and end times, as well as lower and upper altitudes, are required for each
-	// volume. The end time may not be in the past. All volumes, both nominal and off-nominal,
-	// must be encompassed in these extents. However, these extents do not need to match the
-	// precise volumes of the operational intent; a single bounding extent may be provided
-	// instead, for instance.
+	// Start and end times, as well as lower and upper altitudes, are required for each volume. The end time may not be in the past. All volumes, both nominal and off-nominal, must be encompassed in these extents. However, these extents do not need to match the precise volumes of the operational intent; a single bounding extent may be provided instead, for instance.
 	Extents []*Volume4D `protobuf:"bytes,1,rep,name=extents,proto3" json:"extents,omitempty"`
-	// Proof that the USS creating or mutating this operational intent was aware of the current state of the
-	// airspace, with the expectation that this operational intent is therefore deconflicted from all relevant
-	// features in the airspace.  This field is not required when declaring an operational intent Nonconforming
-	// or Contingent, or when there are no relevant Entities in the airspace, but is otherwise required.
-	// OVNs for constraints are required if and only if the USS managing this operational intent is performing
-	// the constraint processing role, which is indicated by whether the subscription associated with this
-	// operational intent triggers notifications for constraints.  The key does not need to contain the OVN for
-	// the operational intent being updated.
+	// Proof that the USS creating or mutating this operational intent was aware of the current state of the airspace, with the expectation that this operational intent is therefore deconflicted from all relevant features in the airspace.  This field is not required when declaring an operational intent Nonconforming or Contingent, or when there are no relevant Entities in the airspace, but is otherwise required. OVNs for constraints are required if and only if the USS managing this operational intent is performing the constraint processing role, which is indicated by whether the subscription associated with this operational intent triggers notifications for constraints.  The key does not need to contain the OVN for the operational intent being updated.
 	Key []string `protobuf:"bytes,2,rep,name=key,proto3" json:"key,omitempty"`
-	// If an existing subscription is not specified in `subscription_id`, then this field must be
-	// populated.  When this field is populated, an implicit subscription will be created and
-	// associated with this operational intent, and will generally be deleted automatically upon the
-	// deletion of this operational intent.
+	// If an existing subscription is not specified in `subscription_id`, and the operational intent is in the Activated, Nonconforming, or Contingent state, then this field must be populated.  When this field is populated, an implicit subscription will be created and associated with this operational intent, and will generally be deleted automatically upon the deletion of this operational intent.
 	NewSubscription *ImplicitSubscriptionParameters `protobuf:"bytes,3,opt,name=new_subscription,json=newSubscription,proto3" json:"new_subscription,omitempty"`
 	State           string                          `protobuf:"bytes,4,opt,name=state,proto3" json:"state,omitempty"`
-	// The ID of an existing subscription that the USS will use to keep the operator informed about
-	// updates to relevant airspace information.  If this field is not provided, then the
-	// `new_subscription` field must be provided in order to provide notification capability
-	// for the operational intent.  The subscription specified by this ID must cover at least the area over
-	// which this operational intent is conducted, and it must provide notifications for operational intents.
+	// The ID of an existing subscription that the USS will use to keep the operator informed about updates to relevant airspace information. If this field is not provided when the operational intent is in the Activated, Nonconforming, or Contingent state, then the `new_subscription` field must be provided in order to provide notification capability for the operational intent.  The subscription specified by this ID must cover at least the area over which this operational intent is conducted, and it must provide notifications for operational intents.
 	SubscriptionId string `protobuf:"bytes,5,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
 	UssBaseUrl     string `protobuf:"bytes,6,opt,name=uss_base_url,json=ussBaseUrl,proto3" json:"uss_base_url,omitempty"`
 }
@@ -3258,22 +3140,15 @@ func (x *PutOperationalIntentReferenceParameters) GetUssBaseUrl() string {
 	return ""
 }
 
-// Parameters for a request to create/update a subscription in the DSS.  At least one form of
-// notifications must be requested.
+// Parameters for a request to create/update a subscription in the DSS.  At least one form of notifications must be requested.
 type PutSubscriptionParameters struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// Spacetime extents of the volume to subscribe to.
-	//
-	// This subscription will automatically be deleted after its end time if it has not been
-	// refreshed by then. If end time is not specified, the value will be chosen automatically
-	// by the DSS. If start time is not specified, it will default to the time the request is
-	// processed. The end time may not be in the past.
-	//
-	// Note that some Entities triggering notifications may lie entirely outside the requested
-	// area.
+	// This subscription will automatically be deleted after its end time if it has not been refreshed by then. If end time is not specified, the value will be chosen automatically by the DSS. If start time is not specified, it will default to the time the request is processed. The end time may not be in the past.
+	// Note that some Entities triggering notifications may lie entirely outside the requested area.
 	Extents *Volume4D `protobuf:"bytes,1,opt,name=extents,proto3" json:"extents,omitempty"`
 	// If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true.
 	NotifyForConstraints bool `protobuf:"varint,2,opt,name=notify_for_constraints,json=notifyForConstraints,proto3" json:"notify_for_constraints,omitempty"`
@@ -3348,11 +3223,9 @@ type PutSubscriptionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Constraints in or near the subscription area at the time of creation/update,
-	// if `notify_for_constraints` is true.
+	// Constraints in or near the subscription area at the time of creation/update, if `notify_for_constraints` is true.
 	ConstraintReferences []*ConstraintReference `protobuf:"bytes,1,rep,name=constraint_references,json=constraintReferences,proto3" json:"constraint_references,omitempty"`
-	// Operational intents in or near the subscription area at the time of creation/update,
-	// if `notify_for_operational_intents` is true.
+	// Operational intents in or near the subscription area at the time of creation/update, if `notify_for_operational_intents` is true.
 	OperationalIntentReferences []*OperationalIntentReference `protobuf:"bytes,2,rep,name=operational_intent_references,json=operationalIntentReferences,proto3" json:"operational_intent_references,omitempty"`
 	Subscription                *Subscription                 `protobuf:"bytes,3,opt,name=subscription,proto3" json:"subscription,omitempty"`
 }
@@ -4015,10 +3888,7 @@ func (x *SetUssAvailabilityStatusParameters) GetOldVersion() string {
 	return ""
 }
 
-// Subscriber to notify of a change in the airspace.  This is provided by the DSS
-// to a client changing the airspace, and it is the responsibility of that client
-// to send a notification to the specified USS according to the change made to the
-// airspace.
+// Subscriber to notify of a change in the airspace.  This is provided by the DSS to a client changing the airspace, and it is the responsibility of that client to send a notification to the specified USS according to the change made to the airspace.
 type SubscriberToNotify struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4075,8 +3945,7 @@ func (x *SubscriberToNotify) GetUssBaseUrl() string {
 	return ""
 }
 
-// Specification of a geographic area that a client is interested
-// in on an ongoing basis (e.g., "planning area").
+// Specification of a geographic area that a client is interested in on an ongoing basis (e.g., "planning area").
 type Subscription struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4085,26 +3954,19 @@ type Subscription struct {
 	// List of IDs for operational intents that are dependent on this subscription.
 	DependentOperationalIntents []string `protobuf:"bytes,1,rep,name=dependent_operational_intents,json=dependentOperationalIntents,proto3" json:"dependent_operational_intents,omitempty"`
 	Id                          string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	// True if this subscription was implicitly created by the DSS via the creation of an
-	// operational intent, and should therefore be deleted by the DSS when that operational intent is deleted.
+	// True if this subscription was implicitly created by the DSS via the creation of an operational intent, and should therefore be deleted by the DSS when that operational intent is deleted.
 	ImplicitSubscription bool  `protobuf:"varint,3,opt,name=implicit_subscription,json=implicitSubscription,proto3" json:"implicit_subscription,omitempty"`
 	NotificationIndex    int32 `protobuf:"varint,4,opt,name=notification_index,json=notificationIndex,proto3" json:"notification_index,omitempty"`
 	// If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true.
 	NotifyForConstraints bool `protobuf:"varint,5,opt,name=notify_for_constraints,json=notifyForConstraints,proto3" json:"notify_for_constraints,omitempty"`
 	// If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not trigger notifications.  The scope utm.strategic_coordination is required to set this flag true.
 	NotifyForOperationalIntents bool `protobuf:"varint,6,opt,name=notify_for_operational_intents,json=notifyForOperationalIntents,proto3" json:"notify_for_operational_intents,omitempty"`
-	// If set, this subscription will not receive notifications involving airspace changes
-	// entirely after this time.
+	// If set, this subscription will not receive notifications involving airspace changes entirely after this time.
 	TimeEnd *Time `protobuf:"bytes,7,opt,name=time_end,json=timeEnd,proto3" json:"time_end,omitempty"`
-	// If set, this subscription will not receive notifications involving airspace changes
-	// entirely before this time.
+	// If set, this subscription will not receive notifications involving airspace changes entirely before this time.
 	TimeStart  *Time  `protobuf:"bytes,8,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
 	UssBaseUrl string `protobuf:"bytes,9,opt,name=uss_base_url,json=ussBaseUrl,proto3" json:"uss_base_url,omitempty"`
-	// Version of the subscription that the DSS changes every time a USS changes the
-	// subscription.  The DSS incrementing the notification_index does not constitute a
-	// change that triggers a new version.  A USS must specify this version when modifying
-	// an existing subscription to ensure consistency in read-modify-write operations and
-	// distributed systems.
+	// Version of the subscription that the DSS changes every time a USS changes the subscription.  The DSS incrementing the notification_index does not constitute a change that triggers a new version.  A USS must specify this version when modifying an existing subscription to ensure consistency in read-modify-write operations and distributed systems.
 	Version string `protobuf:"bytes,10,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -4958,9 +4820,7 @@ type Velocity struct {
 
 	// Ground speed in meters/second.
 	Speed float32 `protobuf:"fixed32,1,opt,name=speed,proto3" json:"speed,omitempty"`
-	// Direction of flight expressed as a "True North-based" ground track angle.
-	// This value is provided in degrees East of North with a minimum resolution of 1 degree.
-	// A value of 360 indicates invalid, no value, or unknown.
+	// Direction of flight expressed as a "True North-based" ground track angle. This value is provided in degrees East of North with a minimum resolution of 1 degree. A value of 360 indicates invalid, no value, or unknown.
 	Track      float32 `protobuf:"fixed32,2,opt,name=track,proto3" json:"track,omitempty"`
 	UnitsSpeed string  `protobuf:"bytes,3,opt,name=units_speed,json=unitsSpeed,proto3" json:"units_speed,omitempty"`
 }
@@ -5018,8 +4878,7 @@ func (x *Velocity) GetUnitsSpeed() string {
 	return ""
 }
 
-// A three-dimensional geographic volume consisting of a vertically-extruded shape.
-// Exactly one outline must be specified.
+// A three-dimensional geographic volume consisting of a vertically-extruded shape. Exactly one outline must be specified.
 type Volume3D struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7357,7 +7216,6 @@ type UTMAPIUSSDSSAndUSSUSSServiceClient interface {
 	// Create the specified subscription in the DSS.
 	//
 	// Create a subscription.
-	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
 	CreateSubscription(ctx context.Context, in *CreateSubscriptionRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error)
 	// Delete the specified constraint reference from the DSS.
@@ -7386,36 +7244,17 @@ type UTMAPIUSSDSSAndUSSUSSServiceClient interface {
 	MakeDssReport(ctx context.Context, in *MakeDssReportRequest, opts ...grpc.CallOption) (*ErrorReport, error)
 	// Query all constraint references in the specified area/volume from the DSS.
 	//
-	// Note that this endpoint does not produce any mutations in the DSS
-	// despite using the HTTP POST verb.  The HTTP GET verb is traditionally
-	// used for operations like this one, but requiring or using a request body
-	// for HTTP GET requests is non-standard and not supported by some
-	// architectures.  POST is used here instead of GET to ensure robust
-	// support for the use of a request body.
+	// Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.  POST is used here instead of GET to ensure robust support for the use of a request body.
 	QueryConstraintReferences(ctx context.Context, in *QueryConstraintReferencesRequest, opts ...grpc.CallOption) (*QueryConstraintReferencesResponse, error)
 	// Query all operational intent references in the specified area/volume/time from the DSS.
 	//
-	// Note that this endpoint does not produce any mutations in the DSS
-	// despite using the HTTP POST verb.  The HTTP GET verb is traditionally
-	// used for operations like this one, but requiring or using a request body
-	// for HTTP GET requests is non-standard and not supported by some
-	// architectures.  POST is used here instead of GET to ensure robust
-	// support for the use of a request body.
+	// Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.  POST is used here instead of GET to ensure robust support for the use of a request body.
 	QueryOperationalIntentReferences(ctx context.Context, in *QueryOperationalIntentReferencesRequest, opts ...grpc.CallOption) (*QueryOperationalIntentReferenceResponse, error)
 	// Query all subscriptions in the specified area/volume from the DSS.
 	//
-	// Query subscriptions intersecting an area of interest.  Subscription
-	// notifications are only triggered by (and contain full information of) changes to,
-	// creation of, or deletion of, Entities referenced by or stored in the DSS;
-	// they do not involve any data transfer (such as remote ID telemetry updates) apart
-	// from Entity information.
-	//
-	// Note that this parameter is a JSON object (in the 'request-body'). Note that either
-	// or both of the 'altitude' and 'time' values may be omitted from this parameter.
-	//
-	// Only subscriptions belonging to the caller are returned.  This endpoint would be
-	// used if a USS lost track of subscriptions they had created and/or wanted to resolve
-	// an error indicating that they had too many existing subscriptions in an area.
+	// Query subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
+	// Note that this parameter is a JSON object (in the 'request-body'). Note that either or both of the 'altitude' and 'time' values may be omitted from this parameter.
+	// Only subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing subscriptions in an area.
 	QuerySubscriptions(ctx context.Context, in *QuerySubscriptionsRequest, opts ...grpc.CallOption) (*QuerySubscriptionsResponse, error)
 	// Set availability status of a USS.
 	//
@@ -7428,9 +7267,7 @@ type UTMAPIUSSDSSAndUSSUSSServiceClient interface {
 	// Update the specified subscription in the DSS.
 	//
 	// Update a subscription.
-	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	//
 	// The standard requires each operational intent to have a subscription that cover the 4D volume of the operational intent.  If a USS attempts to update a subscription upon which an operational intent depends, and this update would cause the operational intent to lose subscription coverage, the update will be rejected by the DSS as a bad request.
 	UpdateSubscription(ctx context.Context, in *UpdateSubscriptionRequest, opts ...grpc.CallOption) (*PutSubscriptionResponse, error)
 }
@@ -7614,7 +7451,6 @@ type UTMAPIUSSDSSAndUSSUSSServiceServer interface {
 	// Create the specified subscription in the DSS.
 	//
 	// Create a subscription.
-	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
 	CreateSubscription(context.Context, *CreateSubscriptionRequest) (*PutSubscriptionResponse, error)
 	// Delete the specified constraint reference from the DSS.
@@ -7643,36 +7479,17 @@ type UTMAPIUSSDSSAndUSSUSSServiceServer interface {
 	MakeDssReport(context.Context, *MakeDssReportRequest) (*ErrorReport, error)
 	// Query all constraint references in the specified area/volume from the DSS.
 	//
-	// Note that this endpoint does not produce any mutations in the DSS
-	// despite using the HTTP POST verb.  The HTTP GET verb is traditionally
-	// used for operations like this one, but requiring or using a request body
-	// for HTTP GET requests is non-standard and not supported by some
-	// architectures.  POST is used here instead of GET to ensure robust
-	// support for the use of a request body.
+	// Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.  POST is used here instead of GET to ensure robust support for the use of a request body.
 	QueryConstraintReferences(context.Context, *QueryConstraintReferencesRequest) (*QueryConstraintReferencesResponse, error)
 	// Query all operational intent references in the specified area/volume/time from the DSS.
 	//
-	// Note that this endpoint does not produce any mutations in the DSS
-	// despite using the HTTP POST verb.  The HTTP GET verb is traditionally
-	// used for operations like this one, but requiring or using a request body
-	// for HTTP GET requests is non-standard and not supported by some
-	// architectures.  POST is used here instead of GET to ensure robust
-	// support for the use of a request body.
+	// Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.  POST is used here instead of GET to ensure robust support for the use of a request body.
 	QueryOperationalIntentReferences(context.Context, *QueryOperationalIntentReferencesRequest) (*QueryOperationalIntentReferenceResponse, error)
 	// Query all subscriptions in the specified area/volume from the DSS.
 	//
-	// Query subscriptions intersecting an area of interest.  Subscription
-	// notifications are only triggered by (and contain full information of) changes to,
-	// creation of, or deletion of, Entities referenced by or stored in the DSS;
-	// they do not involve any data transfer (such as remote ID telemetry updates) apart
-	// from Entity information.
-	//
-	// Note that this parameter is a JSON object (in the 'request-body'). Note that either
-	// or both of the 'altitude' and 'time' values may be omitted from this parameter.
-	//
-	// Only subscriptions belonging to the caller are returned.  This endpoint would be
-	// used if a USS lost track of subscriptions they had created and/or wanted to resolve
-	// an error indicating that they had too many existing subscriptions in an area.
+	// Query subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
+	// Note that this parameter is a JSON object (in the 'request-body'). Note that either or both of the 'altitude' and 'time' values may be omitted from this parameter.
+	// Only subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing subscriptions in an area.
 	QuerySubscriptions(context.Context, *QuerySubscriptionsRequest) (*QuerySubscriptionsResponse, error)
 	// Set availability status of a USS.
 	//
@@ -7685,9 +7502,7 @@ type UTMAPIUSSDSSAndUSSUSSServiceServer interface {
 	// Update the specified subscription in the DSS.
 	//
 	// Update a subscription.
-	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	//
 	// The standard requires each operational intent to have a subscription that cover the 4D volume of the operational intent.  If a USS attempts to update a subscription upon which an operational intent depends, and this update would cause the operational intent to lose subscription coverage, the update will be rejected by the DSS as a bad request.
 	UpdateSubscription(context.Context, *UpdateSubscriptionRequest) (*PutSubscriptionResponse, error)
 }

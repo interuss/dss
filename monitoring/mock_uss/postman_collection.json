@@ -1,0 +1,796 @@
+{
+	"info": {
+		"_postman_id": "6ac44595-7f12-416c-8f46-c04d09817727",
+		"name": "Mock USS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "RID service provider",
+			"item": [
+				{
+					"name": "Get token from Dummy OAuth",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									"",
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"production_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"uss_id\", \"uss1\");",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8085/token?grant_type=client_credentials&sub=uss1&intended_audience=host.docker.internal&issuer=dummy&scope=dss.read.identification_service_areas rid.inject_test_data",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"token"
+							],
+							"query": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials"
+								},
+								{
+									"key": "sub",
+									"value": "uss1"
+								},
+								{
+									"key": "intended_audience",
+									"value": "host.docker.internal"
+								},
+								{
+									"key": "issuer",
+									"value": "dummy"
+								},
+								{
+									"key": "scope",
+									"value": "dss.read.identification_service_areas rid.inject_test_data"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create test in mock_ridsp",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const moment = require('moment');",
+									"pm.globals.set(\"t_1\", moment().add(5, 'seconds').toISOString());",
+									"pm.globals.set(\"t_2\", moment().add(1, 'minutes').toISOString());",
+									"pm.globals.set(\"t_3\", moment().add(2, 'minutes').toISOString());",
+									"pm.globals.set(\"t_4\", moment().add(2, 'minutes').toISOString());",
+									"pm.globals.set(\"t_5\", moment().add(2, 'minutes').toISOString());",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requested_flights\": [\n    {\n      \"injection_id\": \"edb7695f-8737-4b9f-91f8-e2afbb333f41\",\n      \"telemetry\": [\n        {\n          \"timestamp\": \"{{t_1}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1231,\n            \"lng\": -118.4561,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 90,\n          \"speed\": 1.9,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        },\n        {\n          \"timestamp\": \"{{t_2}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1231,\n            \"lng\": -118.4551,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 180,\n          \"speed\": 2.0,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        },\n        {\n          \"timestamp\": \"{{t_3}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1221,\n            \"lng\": -118.4551,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 270,\n          \"speed\": 2.1,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        },\n        {\n          \"timestamp\": \"{{t_4}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1221,\n            \"lng\": -118.4561,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 270,\n          \"speed\": 2.2,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        },\n        {\n          \"timestamp\": \"{{t_5}}\",\n          \"timestamp_accuracy\": 5,\n          \"operational_status\": \"Airborne\",\n          \"position\": {\n            \"lat\": 34.1221,\n            \"lng\": -118.4571,\n            \"alt\": 1321.1,\n            \"accuracy_h\": \"HA3m\",\n            \"accuracy_v\": \"VA10m\",\n            \"extrapolated\": false\n          },\n          \"track\": 45,\n          \"speed\": 2.3,\n          \"speed_accuracy\": \"SA10mpsPlus\",\n          \"vertical_speed\": 0\n        }\n      ],\n      \"details_responses\": [\n        {\n          \"effective_after\": \"{{t_1}}\",\n          \"details\": {\n            \"id\": \"a3423b-213401-0023\",\n            \"operator_id\": \"operator1\",\n            \"operator_location\": {\n              \"lng\": -118.4561,\n              \"lat\": 34.1231\n            },\n            \"operation_description\": \"SafeFlightDrone company doing survey with DJI Inspire 2. See my privacy policy www.example.com/privacy.\",\n            \"serial_number\": \"INTCJ123-4567-891\",\n            \"registration_number\": \"FA12345891\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8071/ridsp/injection/tests/9a20678b-fad4-49e6-9009-b4891aa77cb7",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8071",
+							"path": [
+								"ridsp",
+								"injection",
+								"tests",
+								"9a20678b-fad4-49e6-9009-b4891aa77cb7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flights in test area",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8071/mock/ridsp/v1/uss/flights?view=34.122,-118.453,34.125,-118.458&include_recent_positions=false",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8071",
+							"path": [
+								"mock",
+								"ridsp",
+								"v1",
+								"uss",
+								"flights"
+							],
+							"query": [
+								{
+									"key": "view",
+									"value": "34.122,-118.453,34.125,-118.458"
+								},
+								{
+									"key": "include_recent_positions",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight details",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8071/mock/ridsp/v1/uss/flights/a3423b-213401-0023/details",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8071",
+							"path": [
+								"mock",
+								"ridsp",
+								"v1",
+								"uss",
+								"flights",
+								"a3423b-213401-0023",
+								"details"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete test",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8071/ridsp/injection/tests/9a20678b-fad4-49e6-9009-b4891aa77cb7",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8071",
+							"path": [
+								"ridsp",
+								"injection",
+								"tests",
+								"9a20678b-fad4-49e6-9009-b4891aa77cb7"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SCD strategic coordinator",
+			"item": [
+				{
+					"name": "Get token from Dummy OAuth",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									"",
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"production_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"uss_id\", \"uss1\");",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8085/token?grant_type=client_credentials&sub=uss1&intended_audience=host.docker.internal&issuer=dummy&scope=utm.inject_test_data utm.strategic_coordination",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"token"
+							],
+							"query": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials"
+								},
+								{
+									"key": "sub",
+									"value": "uss1"
+								},
+								{
+									"key": "intended_audience",
+									"value": "host.docker.internal"
+								},
+								{
+									"key": "issuer",
+									"value": "dummy"
+								},
+								{
+									"key": "scope",
+									"value": "utm.inject_test_data utm.strategic_coordination"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Status of injection interface",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8074/scdsc/v1/status",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8074",
+							"path": [
+								"scdsc",
+								"v1",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight 1 (nominal)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const moment = require('moment');",
+									"pm.globals.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+									"pm.globals.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (responseCode.code === 200) {",
+									"    var data = JSON.parse(responseBody);",
+									"    postman.setEnvironmentVariable(\"op_intent_id\", data.operational_intent_id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"operational_intent\": {\n        \"state\": \"Accepted\",\n        \"priority\": 0,\n        \"volumes\": [\n            {\n                \"volume\": {\n                    \"outline_polygon\": {\n                        \"vertices\": [\n                            {\n                                \"lng\": -155.6043,\n                                \"lat\": 19.4763\n                            },\n                            {\n                                \"lng\": -155.5746,\n                                \"lat\": 19.4884\n                            },\n                            {\n                                \"lng\": -155.5941,\n                                \"lat\": 19.4516\n                            }\n                        ]\n                    },\n                    \"altitude_lower\": {\n                        \"value\": 0,\n                        \"units\": \"M\",\n                        \"reference\": \"W84\"\n                    },\n                    \"altitude_upper\": {\n                        \"value\": 122,\n                        \"units\": \"M\",\n                        \"reference\": \"W84\"\n                    }\n                },\n                \"time_start\": {\n                    \"value\": \"{{timestamp_start}}\",\n                    \"format\": \"RFC3339\"\n                },\n                \"time_end\": {\n                    \"value\": \"{{timestamp_end}}\",\n                    \"format\": \"RFC3339\"\n                }\n            }\n        ],\n        \"off_nominal_volumes\": []\n    },\n    \"flight_authorisation\": {\n        \"uas_serial_number\": \"TBPADUZCSXBFMTKAUV\",\n        \"operation_category\": \"Open\",\n        \"operation_mode\": \"Vlos\",\n        \"uas_class\": \"C0\",\n        \"identification_technologies\": [\n            \"ASTMNetRID\"\n        ],\n        \"connectivity_methods\": [\n            \"cellular\"\n        ],\n        \"endurance_minutes\": 30,\n        \"emergency_procedure_url\": \"https://example.com/emergency\",\n        \"operator_id\": \"CHEa34mqjq4jshtf-cyn\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8074/scdsc/v1/flights/c036326c-c97b-4926-bf9f-c60dc83d2b57",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8074",
+							"path": [
+								"scdsc",
+								"v1",
+								"flights",
+								"c036326c-c97b-4926-bf9f-c60dc83d2b57"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight 1 reference",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8082/dss/v1/operational_intent_references/{{op_intent_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"dss",
+								"v1",
+								"operational_intent_references",
+								"{{op_intent_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight 1 details",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8074/mock/scd/uss/v1/operational_intents/{{op_intent_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8074",
+							"path": [
+								"mock",
+								"scd",
+								"uss",
+								"v1",
+								"operational_intents",
+								"{{op_intent_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight 1 (nominal)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const moment = require('moment');",
+									"pm.globals.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+									"pm.globals.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8074/scdsc/v1/flights/c036326c-c97b-4926-bf9f-c60dc83d2b57",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8074",
+							"path": [
+								"scdsc",
+								"v1",
+								"flights",
+								"c036326c-c97b-4926-bf9f-c60dc83d2b57"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clear all flights",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const moment = require('moment');",
+									"pm.globals.set(\"timestamp_start\", moment().subtract(2, 'seconds').toISOString());",
+									"pm.globals.set(\"timestamp_end\", moment().add(5, 'minutes').toISOString());",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"extents\": [\n        {\n            \"volume\": {\n                \"outline_polygon\": {\n                    \"vertices\": [\n                        {\n                            \"lng\": -155.6043,\n                            \"lat\": 19.4763\n                        },\n                        {\n                            \"lng\": -155.5746,\n                            \"lat\": 19.4884\n                        },\n                        {\n                            \"lng\": -155.5941,\n                            \"lat\": 19.4516\n                        }\n                    ]\n                },\n                \"altitude_lower\": {\n                    \"value\": 0,\n                    \"units\": \"M\",\n                    \"reference\": \"W84\"\n                },\n                \"altitude_upper\": {\n                    \"value\": 122,\n                    \"units\": \"M\",\n                    \"reference\": \"W84\"\n                }\n            },\n            \"time_start\": {\n                \"value\": \"{{timestamp_start}}\",\n                \"format\": \"RFC3339\"\n            },\n            \"time_end\": {\n                \"value\": \"{{timestamp_end}}\",\n                \"format\": \"RFC3339\"\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8074/scdsc/clear_all_flights",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8074",
+							"path": [
+								"scdsc",
+								"clear_all_flights"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "RID display provider",
+			"item": [
+				{
+					"name": "Get token from Dummy OAuth",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									"",
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"production_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"uss_id\", \"uss1\");",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8085/token?grant_type=client_credentials&sub=uss1&intended_audience=host.docker.internal&issuer=dummy&scope=dss.read.identification_service_areas rid.inject_test_data",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"token"
+							],
+							"query": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials"
+								},
+								{
+									"key": "sub",
+									"value": "uss1"
+								},
+								{
+									"key": "intended_audience",
+									"value": "host.docker.internal"
+								},
+								{
+									"key": "issuer",
+									"value": "dummy"
+								},
+								{
+									"key": "scope",
+									"value": "dss.read.identification_service_areas rid.inject_test_data"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flights in mock_ridsp test area",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8073/riddp/observation/display_data?view=34.122,-118.453,34.125,-118.458",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8073",
+							"path": [
+								"riddp",
+								"observation",
+								"display_data"
+							],
+							"query": [
+								{
+									"key": "view",
+									"value": "34.122,-118.453,34.125,-118.458"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight details from mock_ridsp test data",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{production_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8073/riddp/observation/display_data/a3423b-213401-0023",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8073",
+							"path": [
+								"riddp",
+								"observation",
+								"display_data",
+								"a3423b-213401-0023"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

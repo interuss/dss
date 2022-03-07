@@ -1,5 +1,4 @@
-Flask==1.1.2
+-r ../../../monitorlib/requirements.txt
 iso8601==0.1.14
 s2sphere==0.2.5
 gunicorn==20.0.4
--r ../../../monitorlib/requirements.txt
