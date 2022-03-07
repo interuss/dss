@@ -1,7 +1,7 @@
-# RID Qualifier WebApp
+# USS Qualifier WebApp
 
-`rid_qualifier webapp` is a development-level web server that provides endpoint to initialize the automated testing of the rid qualifier. 
-This PR includes the initial setup for the web-server that can be run locally on your system via the [run_locally.sh](run_locally.sh) script. 
+`uss_qualifier webapp` is a development-level web server that provides endpoint to initialize the automated testing of the USS qualifier. 
+The local environment for the web server is setup by [run_locally.sh](run_locally.sh) script. 
 
 ## Architecture
 
@@ -25,7 +25,7 @@ When KML files are provided as input, `Flight records json` files are generated 
 
 ### Test Execution
 
-When the user requests the execution of a test, the rid_qualifier host sends it as a message to the `redis` server Message Queue, which is then handled by the worker process running on the `rq-worker`. This job takes some amount of time, during this time UI keeps sending requests to rid_qualifier server to check the job status. rid_qualifier host then checks the Redis container for the job progress and returns current status to the UI. Once job finishes successfully, RID Host generates resulting report from the job response and keep it in user specific `tests` folder on rid-host, and sends it as a response to the UI.
+When the user requests the execution of a test, the `rid-host` sends it as a message to the `redis` server Message Queue, which is then handled by the worker process running on the `rq-worker`. This job takes some amount of time, during this time UI keeps polling rid-host server to check the job status. rid-host then checks the Redis container for the job progress and returns current status to the UI. Once job finishes successfully, rid-host generates resulting report from the job response and keep it in user specific `tests` folder on rid-host, and sends it as a response to the UI.
 
 All the tests run by a user are then available to download from the UI.
 
@@ -55,7 +55,7 @@ Resulting files will be generated under `monitoring/uss_qualifier/test_definitio
 
 ## User Config information
 
-rid_qualifier host needs a configuration object and an auth spec (single string e.g. `NoAuth()`) in order to run. Configuration object is a simple nested json string which should have at least a list of `injection_targets` and `observers`. A sample configuration object can be found [here](/monitoring/uss_qualifier/run_locally.sh#L26).
+uss_qualifier host needs a configuration object and an auth spec (single string e.g. `NoAuth()`) in order to run. Configuration object is a simple nested json string which should have at least a list of `injection_targets` and `observers`. A sample configuration object can be found [here](/monitoring/uss_qualifier/run_locally.sh#L26).
 
 A task may take few minutes to finish. A new task can not be launched until current task ends.
 
