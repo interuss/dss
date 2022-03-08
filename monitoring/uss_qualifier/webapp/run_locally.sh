@@ -11,7 +11,7 @@ fi
 cd "${BASEDIR}/../../.." || exit 1
 
 # Run monitoring/uss_qualifier/rid/mock/run_locally.sh to produce a mock RID system
-# for use with rid_qualifier
+# for use with uss_qualifier
 AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
 PORT=8072
@@ -33,11 +33,11 @@ echo "cleaning up any RQ worker containers"
 docker container stop rq-worker &> /dev/null || echo "No RQ worker running"
 echo "Start RQ worker container."
 docker run --name rq-worker -d --rm \
-  -e MOCK_HOST_RID_QUALIFIER_AUTH_SPEC="${AUTH}" \
-  -e MOCK_HOST_RID_QUALIFIER_DSS_URL="${DSS}" \
-  -e MOCK_HOST_RID_QUALIFIER_HOST_URL="${RID_HOST}" \
-  -e MOCK_HOST_RID_QUALIFIER_HOST_PORT="${PORT}" \
-  -e MOCK_HOST_RID_QUALIFIER_REDIS_URL=redis://redis-server:6379/0 \
+  -e MOCK_HOST_USS_QUALIFIER_AUTH_SPEC="${AUTH}" \
+  -e MOCK_HOST_USS_QUALIFIER_DSS_URL="${DSS}" \
+  -e MOCK_HOST_USS_QUALIFIER_HOST_URL="${RID_HOST}" \
+  -e MOCK_HOST_USS_QUALIFIER_HOST_PORT="${PORT}" \
+  -e MOCK_HOST_USS_QUALIFIER_REDIS_URL=redis://redis-server:6379/0 \
   -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
   -v /tmp/rid-host-input-files:/mnt/app/input-files \
   --link redis:redis-server \
@@ -48,11 +48,11 @@ docker run --name rq-worker -d --rm \
 echo "Start Host container"
 docker run --name rid-host \
   --rm \
-  -e MOCK_HOST_RID_QUALIFIER_AUTH_SPEC="${AUTH}" \
-  -e MOCK_HOST_RID_QUALIFIER_DSS_URL="${DSS}" \
-  -e MOCK_HOST_RID_QUALIFIER_HOST_URL="${RID_HOST}" \
-  -e MOCK_HOST_RID_QUALIFIER_HOST_PORT="${PORT}" \
-  -e MOCK_HOST_RID_QUALIFIER_REDIS_URL=redis://redis-server:6379/0 \
+  -e MOCK_HOST_USS_QUALIFIER_AUTH_SPEC="${AUTH}" \
+  -e MOCK_HOST_USS_QUALIFIER_DSS_URL="${DSS}" \
+  -e MOCK_HOST_USS_QUALIFIER_HOST_URL="${RID_HOST}" \
+  -e MOCK_HOST_USS_QUALIFIER_HOST_PORT="${PORT}" \
+  -e MOCK_HOST_USS_QUALIFIER_REDIS_URL=redis://redis-server:6379/0 \
   -p ${PORT}:5000 \
   -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
   -v /tmp/rid-host-input-files:/mnt/app/input-files \

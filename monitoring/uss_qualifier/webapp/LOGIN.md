@@ -18,4 +18,4 @@ Finally, hit Create and download the OAuth client secret file.
 
 ![Download Client Secret](assets/download_secret.png)
 
-Rename the file to client_secret.json and copy place it in dss/monitoring/rid_qualifier/host directory.
+Rename the file to client_secret.json and copy place it in dss/monitoring/uss_qualifier/host directory.

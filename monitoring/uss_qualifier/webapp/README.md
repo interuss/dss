@@ -11,21 +11,21 @@ This project will create the following environment:
 
 * rq-worker Container: A container to run redis queue worker processes.
 
-* rid-host Container: A flask application which accepts KML files or flight states' json files as input, collect auth and config spec from user and allow user to executes RID Qualifier test. Once task finishes successfully, report file becomes available to download from the UI.
+* uss-host Container: A flask application which accepts KML files or flight states' json files as input, collect auth and config spec from the user and allow user to execute USS Qualifier test. Once task finishes successfully, report file becomes available to download from the UI.
 
-This application accepts Auth2 credentials for user specific login. The process to authenticate using Auth2 is described (here)[/LOGIN.md]. If Auth2 credentials are not provided application uses `Local User` session by default.
+This application accepts Auth2 credentials for user-specific login. The process to authenticate using Auth2 is described (here)[/LOGIN.md]. If Auth2 credentials are not provided application uses `Local User` session by default.
 
-* Additionally, you need to bring up [rid_qualifier mock instance](/monitoring/uss_qualifier/rid/mock/run_locally.sh) to produce a mock RID system for use with uss_qualifier. The instructions to bring up the rid_qualifier mock instance can be found [here](/monitoring/uss_qualifier/mock/README.md).
+* Additionally, you need to bring up [rid mock instance](/monitoring/uss_qualifier/rid/mock/run_locally.sh) to produce a mock RID system to use with uss_qualifier. The instructions to bring up the rid mock instance can be found [here](/monitoring/uss_qualifier/mock/README.md).
 
 ### Input Files
 
 Accepted input files are, either valid flight records or KML files in the format mentioned [here](/monitoring/uss_qualifier/rid/README.md#Create-Flight-Record-from-KML).
 
-When KML files are provided as input, `Flight records json` files are generated from the KML and kept into user specific `flight_records` folder on the RID host. Once records are generated, these are available on the UI for selection during test execution.
+When KML files are provided as input, `Flight records json` files are generated from the KML and kept into user specific `flight_records` folder on the RID host. Generated files are then available on the UI for selection during test execution.
 
 ### Test Execution
 
-When the user requests the execution of a test, the `rid-host` sends it as a message to the `redis` server Message Queue, which is then handled by the worker process running on the `rq-worker`. This job takes some amount of time, during this time UI keeps polling rid-host server to check the job status. rid-host then checks the Redis container for the job progress and returns current status to the UI. Once job finishes successfully, rid-host generates resulting report from the job response and keep it in user specific `tests` folder on rid-host, and sends it as a response to the UI.
+When the user requests the execution of a test, the `uss-host` sends this request as a message to the `redis` server Message Queue, which is then handled by the worker process running on the `rq-worker`. This job takes some amount of time, during this time UI keeps polling `uss-host` server to check for the job status. In the background, uss-host then checks the `Redis` container for the job progress and returns current status to the UI. Once job finishes successfully, uss-host generates resulting report from the job response and keep it in user specific `tests` folder on uss-host, and sends it as a response to the UI.
 
 All the tests run by a user are then available to download from the UI.
 
