@@ -19,7 +19,7 @@ KEY_USS_QUALIFIER_HOST_PORT = 'USS_QUALIFIER_HOST_PORT'
 class Config(object):
     AUTH_SPEC = os.environ[ENV_KEY_AUTH]
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-test-secret-string'
-    FILE_PATH = '/app/rid-host-files'
+    FILE_PATH = '/app/uss-host-files'
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
     REDIS_QUEUE = 'qualifer-tasks'
