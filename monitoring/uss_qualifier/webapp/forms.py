@@ -19,6 +19,10 @@ class TestsExecuteForm(FlaskForm):
     def validate_user_config(form, field):
         user_config = json.loads(field.data)
         expected_keys = {'injection_targets', 'observers'}
+        # if not user_config.get('rid'):
+        #     message = f'`rid` field missing in config object'
+        #     raise ValidationError(message)
+        # rid_config = user_config['rid']
         if not expected_keys.issubset(set(user_config)):
             message = f'missing fields in config object {expected_keys - set(user_config)}'
             raise ValidationError(message)
