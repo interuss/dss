@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 import uuid
 
 import flask
+import requests.exceptions
 import yaml
 
 from monitoring.monitorlib import scd
@@ -91,7 +92,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     vol4 = scd.make_vol4(start_time, end_time, alt_lo, alt_hi, polygon=scd.make_polygon(latlngrect=area))
     try:
         op_intents = query_operational_intents(vol4)
-    except (ValueError, scd_client.OperationError) as e:
+    except (ValueError, scd_client.OperationError, requests.exceptions.ConnectionError, ConnectionError) as e:
         notes = 'Error querying operational intents: {}'.format(e)
         return flask.jsonify(InjectFlightResponse(
             result=InjectFlightResult.Failed, notes=notes)), 200
@@ -124,7 +125,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     id = str(uuid.uuid4())
     try:
         result = scd_client.create_operational_intent_reference(resources.utm_client, id, req)
-    except (ValueError, scd_client.OperationError) as e:
+    except (ValueError, scd_client.OperationError, requests.exceptions.ConnectionError, ConnectionError) as e:
         notes = 'Error creating operational intent: {}'.format(e)
         return flask.jsonify(InjectFlightResponse(
             result=InjectFlightResult.Failed, notes=notes)), 200
@@ -165,7 +166,7 @@ def delete_flight(flight_id: str) -> Tuple[str, int]:
             resources.utm_client,
             flight.op_intent_reference.id,
             flight.op_intent_reference.ovn)
-    except (ValueError, scd_client.OperationError) as e:
+    except (ValueError, scd_client.OperationError, requests.exceptions.ConnectionError, ConnectionError) as e:
         notes = 'Error deleting operational intent: {}'.format(e)
         return flask.jsonify(DeleteFlightResponse(
             result=DeleteFlightResult.Failed, notes=notes)), 200
@@ -196,7 +197,7 @@ def clear_area() -> Tuple[str, int]:
     vol4 = scd.make_vol4(start_time, end_time, alt_lo, alt_hi, polygon=scd.make_polygon(latlngrect=area))
     try:
         op_intent_refs = scd_client.query_operational_intent_references(resources.utm_client, vol4)
-    except (ValueError, scd_client.OperationError) as e:
+    except (ValueError, scd_client.OperationError, requests.exceptions.ConnectionError, ConnectionError) as e:
         msg = 'Error querying operational intents: {}'.format(e)
         return flask.jsonify(ClearAreaResponse(
             outcome=ClearAreaOutcome(

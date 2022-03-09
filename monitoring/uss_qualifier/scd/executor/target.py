@@ -28,13 +28,13 @@ class TestTarget:
         return "TestTarget({}, {})".format(self.name, self.config.injection_base_url)
 
 
-    def inject_flight(self, flight_request: FlightInjectionAttempt) -> Tuple[InjectFlightResponse, fetch.Query]:
+    def inject_flight(self, flight_request: FlightInjectionAttempt) -> Tuple[InjectFlightResponse, fetch.Query, str]:
         flight_id, resp, query = create_flight(self.client, self.config.injection_base_url, flight_request.test_injection)
 
         if resp.result == InjectFlightResult.Planned:
             self.created_flight_ids[flight_request.name] = flight_id
 
-        return resp, query
+        return resp, query, flight_id
 
 
     def delete_flight(self, flight_name: str) -> Tuple[DeleteFlightResponse, fetch.Query]:

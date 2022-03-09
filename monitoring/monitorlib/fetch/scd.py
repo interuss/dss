@@ -29,8 +29,8 @@ class FetchedEntityReferences(fetch.Query):
     for entity_ref in self.json_result.get(self.entity_type, []):
       if 'id' not in entity_ref:
         return 'DSS response to search {} included entry without id'.format(self.entity_type)
-      if 'owner' not in entity_ref:
-        return 'DSS response to search {} included {} without owner'.format(self.entity_type, entity_ref['id'])
+      if 'manager' not in entity_ref:
+        return 'DSS response to search {} included {} without manager'.format(self.entity_type, entity_ref['id'])
       if 'uss_base_url' not in entity_ref:
         return 'DSS response to search {} included {} without uss_base_url'.format(self.entity_type, entity_ref['id'])
     return None
@@ -80,6 +80,15 @@ def _entity_references(dss_resource_name: str,
   return entity_references
 
 
+def operational_intent_references(utm_client: infrastructure.DSSTestSession,
+                                  area: s2sphere.LatLngRect,
+                                  start_time: datetime.datetime,
+                                  end_time: datetime.datetime,
+                                  alt_min_m: float=0,
+                                  alt_max_m: float=3048) -> FetchedEntityReferences:
+    return _entity_references('operational_intent_references', utm_client, area, start_time, end_time, alt_min_m, alt_max_m)
+
+
 class FetchedEntity(fetch.Query):
   @property
   def success(self) -> bool:
@@ -110,7 +119,10 @@ class FetchedEntity(fetch.Query):
     prefix = 'USS query for {} {} '.format(self.entity_type, self.id_requested)
 
     if self.status_code != 200:
-      return prefix + 'indicated failure ({})'.format(self.status_code)
+      msg = prefix + 'indicated failure ({})'.format(self.status_code)
+      if 'failure' in self.response:
+          msg += ': ' + self.response['failure']
+      return msg
     if self.json_result is None:
       return prefix + 'did not return valid JSON'
     if self.entity_type not in self.json_result:
@@ -138,7 +150,7 @@ yaml.add_representer(FetchedEntity, Representer.represent_dict)
 def _full_entity(uss_resource_name: str,
                  uss_base_url: str,
                  entity_id: str,
-                 utm_client: infrastructure.DSSTestSession):
+                 utm_client: infrastructure.DSSTestSession) -> FetchedEntity:
   uss_entity_url = uss_base_url + '/uss/v1/{}s/{}'.format(uss_resource_name, entity_id)
 
   # Query the USS for Entity details
@@ -147,6 +159,10 @@ def _full_entity(uss_resource_name: str,
   entity['id_requested'] = entity_id
   entity['entity_type'] = uss_resource_name
   return entity
+
+
+def operational_intent(uss_base_url: str, entity_id: str, utm_client: infrastructure.DSSTestSession) -> FetchedEntity:
+    return _full_entity('operational_intent', uss_base_url, entity_id, utm_client)
 
 
 class FetchedEntities(dict):

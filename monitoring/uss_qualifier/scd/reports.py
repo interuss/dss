@@ -77,6 +77,9 @@ class Interaction(ImplicitDict):
     interaction_id: InteractionID
     """ID of this interaction (used to refer to this interaction from an issue)"""
 
+    purpose: str
+    """Intended purpose of the interaction"""
+
     context: AutomatedTestContext
     """Context in which this interaction was performed."""
 
