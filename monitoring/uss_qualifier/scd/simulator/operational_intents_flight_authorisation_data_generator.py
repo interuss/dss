@@ -276,7 +276,7 @@ def generate_operational_intents_for_flight_authorisation_test(num_operational_i
     return all_operational_intent_test_injections
 
 
-def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str],locale:str) -> List[FlightInjectionAttempt]:
+def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str],locale:str, with_priority:bool = False) -> List[FlightInjectionAttempt]:
     """A method to generate flight injection data and associated messages in case the result of data processing is different from the expectation for the nominal test """
 
     nominal_test_flight_injection_attempts = []
@@ -290,7 +290,13 @@ def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str],
         flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)
         reference_time = my_operational_intent_generator.now.isoformat()
         flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
-        operational_intent_test_injection = generate_operational_intent_injection(astm_4d_volume = flight_volume)
+
+        if with_priority:
+            priority = 0 if injection_number ==0 else 100
+        else: 
+            priority = 1
+        
+        operational_intent_test_injection = generate_operational_intent_injection(astm_4d_volume = flight_volume, priority=priority)
         valid_flight_authorisation_data = generate_valid_flight_authorisation_data_for_nominal_test(locale= locale)
         inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= valid_flight_authorisation_data)
         expected_operational_intent_processing_result= 'ConflictWithFlight' if should_intersect else 'Planned'
@@ -360,7 +366,6 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
             nominal_test_steps.append(nominal_test_step_2)
     
     # End build nominal test steps
-
     ## End nominal test data generation ##
     test_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning')
     test_name = test_output_details.group +'/'+test_output_details.name
@@ -368,6 +373,35 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
     nominal_test_and_output_details = AutomatedTestDetails(automated_test = nominal_test_details, output_path_details= test_output_details)
 
     nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_and_output_details)
+
+
+    ## Begin nominal test data generation (with priorities) ##
+    nominal_and_flight_authorisation_test_injection_attempts = []
+    all_flight_names = []
+    injection_attempts = 2
+    for injection_attempt in range(0,injection_attempts):
+        random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
+        all_flight_names.append(random_flight_name)
+    nominal_test_with_priority_steps = []
+    nominal_test_with_priority_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names,locale=locale, with_priority=True)
+
+    # Build nominal test  (with priorities) steps
+    for idx, injection_attempt in enumerate(nominal_test_with_priority_flight_injection_attempts):
+        if idx == 0:
+            nominal_test_with_priority_step_1 = TestStep(name="Inject flight via First-mover USS", inject_flight = injection_attempt, delete_flight=None)
+            nominal_test_with_priority_steps.append(nominal_test_with_priority_step_1)
+        elif idx == 1:
+            nominal_test_with_priority_step_2 = TestStep(name="Inject flight via Second USS", inject_flight = injection_attempt, delete_flight=None)
+            nominal_test_with_priority_steps.append(nominal_test_with_priority_step_2)
+    
+    # End build nominal test (with priorities) steps 
+
+    test_with_priority_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning-with-priority')
+    with_priority_test_name = test_with_priority_output_details.group +'/'+test_with_priority_output_details.name
+    nominal_test_with_priority_details = AutomatedTest(name=with_priority_test_name, steps = nominal_test_with_priority_steps)
+    nominal_test_with_priority_and_output_details = AutomatedTestDetails(automated_test = nominal_test_with_priority_details, output_path_details= test_with_priority_output_details)
+
+    nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_with_priority_and_output_details)
 
     ## Begin flight authorisation test data generation  ##  
     fields_to_make_incorrect = ["uas_serial_number", "operator_registration_number"]
@@ -406,9 +440,9 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
     return nominal_and_flight_authorisation_test_injection_attempts
 
 
-def generate_operational_intent_injection(astm_4d_volume : Volume4D) -> OperationalIntentTestInjection:
+def generate_operational_intent_injection(astm_4d_volume : Volume4D, priority:int = 0) -> OperationalIntentTestInjection:
     """A method to generate Operational Intent injection  """
-    current_operational_intent_reference = OperationalIntentTestInjection(volumes = [astm_4d_volume], state = 'Accepted', off_nominal_volumes = [], priority =0)
+    current_operational_intent_reference = OperationalIntentTestInjection(volumes = [astm_4d_volume], state = 'Accepted', off_nominal_volumes = [], priority =priority)
     return current_operational_intent_reference
 
 def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[AutomatedTestDetails], locale ="che") -> None:
