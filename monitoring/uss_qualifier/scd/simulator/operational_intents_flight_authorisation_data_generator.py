@@ -218,13 +218,25 @@ class KnownIssuesAcceptableResultFieldGenerator():
         if self.expected_operational_intent_processing_result == "ConflictWithFlight":
             all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_common_error_notification
             all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_common_error_notification
-            all_known_issues_fields['Planned']= known_issues_generator.if_planned_with_conflict_with_flight_notification
+            all_known_issues_fields['Planned']= known_issues_generator.nominal_planning_test_if_planned_with_conflict_with_flight_notification
         elif self.expected_operational_intent_processing_result == "Planned":
-            all_known_issues_fields['ConflictWithFlight']= known_issues_generator.conflict_with_flight_notification
+            all_known_issues_fields['ConflictWithFlight']= known_issues_generator.nominal_planning_test_if_conflict_with_flight_notification
             all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_rejected_error_notification
             all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_failed_error_notification
 
         return all_known_issues_fields
+
+    def generate_nominal_test_with_priroties_known_issues_fields(self)-> Dict[str, KnownIssueFields]:
+        """A method to generate messages for the user to take remedial actions when a nominal test with priorities with different priorties returns a status that is not expected """
+        all_known_issues_fields = {}
+
+        if self.expected_operational_intent_processing_result == "Planned":
+            all_known_issues_fields['ConflictWithFlight']= known_issues_generator.nominal_planning_test_with_priority_conflict_with_flight_notification
+            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_with_priority_rejected_error_notification
+            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_with_priority_failed_error_notification
+
+        return all_known_issues_fields
+
 
     def generate_flight_authorisation_test_known_issue_fields(self, incorrect_field:str = None)-> Dict[str, KnownIssueFields]:
         """A method to generate messages for the user to take remedial actions when a flight authorisation test returns a status that is not expected """
@@ -299,11 +311,18 @@ def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str],
         operational_intent_test_injection = generate_operational_intent_injection(astm_4d_volume = flight_volume, priority=priority)
         valid_flight_authorisation_data = generate_valid_flight_authorisation_data_for_nominal_test(locale= locale)
         inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= valid_flight_authorisation_data)
-        expected_operational_intent_processing_result= 'ConflictWithFlight' if should_intersect else 'Planned'
+        if with_priority:
+            expected_operational_intent_processing_result= 'Planned' if should_intersect else 'ConflictWithFlight'
+            my_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = 'Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
+            all_incorrect_result_details = my_known_issues_acceptable_result_generator.generate_nominal_test_with_priroties_known_issues_fields()
 
-        my_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = 'Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
+        else:
+            expected_operational_intent_processing_result= 'ConflictWithFlight' if should_intersect else 'Planned'
+            my_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = 'Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
 
-        all_incorrect_result_details = my_known_issues_acceptable_result_generator.generate_nominal_test_known_issues_fields()
+            all_incorrect_result_details = my_known_issues_acceptable_result_generator.generate_nominal_test_known_issues_fields()
+
+            
         injection_target = InjectionTarget(uss_role = "Submitting USS")
         known_responses = KnownResponses(acceptable_results=[expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)
 
