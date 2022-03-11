@@ -49,7 +49,7 @@ TD <- USS2: 200 Ok - returns Operational Intent 2
 == TD attempts to transition flight in First-mover USS to Activated ==
 
 TD -> USS1: PUT /inject/flight\n{"state": "Activated"}
-TD <- USS1: 200 Ok - Flight update rejected\n{"result": "Rejected"}
+TD <- USS1: 200 Ok - Flight update rejected\n{"result": "ConflictWithFlight"}
 
 TD -> DSS: POST /dss/v1/operational_intent_references/query\nwith area_of_interest encompassing Operational Intent 1
 TD <- DSS: 200 Ok or 404 Not found - Operational Intent Reference 1 is either unchanged or deleted
