@@ -54,7 +54,8 @@ def scd_capabilities() -> Tuple[str, int]:
     """Implements USS capabilities in SCD automated testing injection API."""
     return flask.jsonify(CapabilitiesResponse(capabilities=[
         Capability.BasicStrategicConflictDetection,
-        Capability.FlightAuthorisationValidation]))
+        Capability.FlightAuthorisationValidation,
+        Capability.HighPriorityFlights]))
 
 
 @webapp.route('/scdsc/v1/flights/<flight_id>', methods=['PUT'])
