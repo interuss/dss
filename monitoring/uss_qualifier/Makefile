@@ -1,7 +1,7 @@
 
 .PHONY: test
 test: lint
-	./scripts/test_docker.sh
+	./scripts/test_docker_fully_mocked.sh
 
 .PHONY: lint
 lint:

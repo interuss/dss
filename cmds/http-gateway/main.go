@@ -148,6 +148,13 @@ func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint str
 		}
 	}()
 
+	// Indicate ready for container health checks
+	ready_file, err := os.Create("service.ready")
+	if err != nil {
+		return stacktrace.Propagate(err, "Error touching file to indicate service ready")
+	}
+	ready_file.Close()
+
 	// Start HTTP server (and proxy calls to gRPC server endpoint)
 	logger.Info("Starting HTTP server")
 	return server.ListenAndServe()
