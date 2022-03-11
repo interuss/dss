@@ -143,7 +143,7 @@ echo "Building Integration Test container"
 docker build -q --rm -f monitoring/prober/Dockerfile monitoring -t e2e-test
 
 echo "Finally Begin Testing"
-docker run --link dummy-oauth-for-testing:oauth \
+if ! docker run --link dummy-oauth-for-testing:oauth \
 	--link http-gateway-for-testing:local-gateway \
 	-v "${RESULTFILE}:/app/test_result" \
 	e2e-test \
@@ -154,7 +154,16 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
-	--scd-api-version 1.0.0
+	--scd-api-version 1.0.0; then
+
+  if [ "$CI" == "true" ]; then
+    echo "=== END OF TEST RESULTS ==="
+    echo "Dumping core-service logs"
+    docker logs core-service-for-testing
+    echo "Dumping http-gateway logs"
+    docker logs http-gateway-for-testing
+  fi
+fi
 
 echo "Cleaning up http-gateway container"
 docker stop http-gateway-for-testing > /dev/null
