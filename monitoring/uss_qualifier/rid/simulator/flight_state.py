@@ -398,7 +398,7 @@ class RIDAircraftStateWriter():
                 f.write(json.dumps(single_flight))
 
 
-def generate_aircraft_states():
+def generate_aircraft_states(test_definitions_path):
     # TODO: accept these parameters as values so that other locations can be supplied
     my_path_generator = AdjacentCircularFlightsSimulator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone='32T')
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
@@ -414,15 +414,15 @@ def generate_aircraft_states():
 
     query_bboxes = my_path_generator.query_bboxes
 
-    output_path = os.path.join(pathlib.Path(__file__).parent.absolute(), '../test_definitions')
-
-    my_track_writer = TrackWriter(output_path=output_path, grid_tracks=grid_tracks, bboxes=query_bboxes, country_code=COUNTRY_CODE)
+    my_track_writer = TrackWriter(output_path=test_definitions_path, grid_tracks=grid_tracks, bboxes=query_bboxes, country_code=COUNTRY_CODE)
     my_track_writer.write_bboxes()
     my_track_writer.write_tracks()
 
-    my_state_generator = RIDAircraftStateWriter(output_path=output_path, flights=flights, country_code=COUNTRY_CODE)
+    my_state_generator = RIDAircraftStateWriter(output_path=test_definitions_path, flights=flights, country_code=COUNTRY_CODE)
     my_state_generator.write_rid_state()
+    print('Wrote aircraft states to {}'.format(test_definitions_path))
 
 
 if __name__ == '__main__':
-    generate_aircraft_states()
+    output_path = os.path.join(pathlib.Path(__file__).parent.absolute(), '../test_definitions')
+    generate_aircraft_states(output_path)
