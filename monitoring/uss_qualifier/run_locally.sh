@@ -23,7 +23,7 @@ CONFIG='--config config_run_locally.json'
 AUTH='--auth NoAuth()'
 
 echo '{
-  "locale": "che",
+  "locale": "CHE",
   "rid": {
     "injection_targets": [
       {

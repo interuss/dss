@@ -23,7 +23,7 @@ CONFIG='--config config_test_fully_mocked_local_system.json'
 AUTH='--auth DummyOAuth(http://host.docker.internal:8085/token,sub=testing_uss)'
 
 echo '{
-  "locale": "che",
+  "locale": "CHE",
   "rid": {
     "injection_targets": [
       {
