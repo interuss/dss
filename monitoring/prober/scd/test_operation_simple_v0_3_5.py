@@ -266,3 +266,8 @@ def test_get_deleted_op_by_search(ids, scd_api, scd_session):
   })
   assert resp.status_code == 200, resp.content
   assert ids(OP_TYPE) not in [x['id'] for x in resp.json()['operation_references']]
+
+
+@for_api_versions(scd.API_0_3_5)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)

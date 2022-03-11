@@ -103,7 +103,7 @@ def _parse_conflicts_v17(conflicts: Dict) -> Tuple[Dict[str, Dict], Dict[str, Di
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-def test_ensure_clean_workspace_v5(ids, scd_api, scd_session, scd_session2):
+def test_ensure_clean_workspace(ids, scd_api, scd_session, scd_session2):
   for op_id, owner in ((ids(OP1_TYPE), scd_session), (ids(OP2_TYPE), scd_session2)):
       actions.delete_operation_if_exists(op_id, owner, scd_api)
   actions.delete_subscription_if_exists(ids(SUB2_TYPE), scd_session2, scd_api)
@@ -1033,3 +1033,8 @@ def test_delete_sub2(ids, scd_api, scd_session2):
   elif scd_api == scd.API_0_3_17:
     resp = scd_session2.delete('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version))
   assert resp.status_code == 200, resp.content
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session, scd_session2):
+    test_ensure_clean_workspace(ids, scd_api, scd_session, scd_session2)

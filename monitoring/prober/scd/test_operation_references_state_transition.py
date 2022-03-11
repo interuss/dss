@@ -142,3 +142,8 @@ def test_op_bad_state_transition_v17(ids, scd_api, scd_session):
     req['state'] = 'Ended'
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 400, resp.content
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)

@@ -265,3 +265,8 @@ def test_delete_subs(ids, scd_api, scd_session):
     else:
       raise NotImplementedError('Unsupported API version {}'.format(scd_api))
     assert resp.status_code == 200, resp.content
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)

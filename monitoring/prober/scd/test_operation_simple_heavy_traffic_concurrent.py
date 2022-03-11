@@ -199,7 +199,7 @@ async def _delete_operation_async(op_id, scd_session_async, scd_api):
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
+def test_ensure_clean_workspace(ids, scd_api, scd_session):
     for op_id in map(ids, OP_TYPES):
         actions.delete_operation_if_exists(op_id, scd_session, scd_api)
 
@@ -379,3 +379,8 @@ def test_delete_op_concurrent(ids, scd_api, scd_session_async):
   for resp in op_resp_map.values():
     assert resp['status_code'] == 200, resp['content']
   print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)

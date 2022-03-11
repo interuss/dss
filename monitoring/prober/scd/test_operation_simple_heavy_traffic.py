@@ -47,7 +47,7 @@ def _intersection(list1, list2):
   return list(set(list1) & set(list2))
 
 
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_ensure_clean_workspace(ids, scd_api, scd_session):
     for op_id in map(ids, OP_TYPES):
         actions.delete_operation_if_exists(op_id, scd_session, scd_api)
@@ -465,3 +465,8 @@ def test_get_deleted_ops_by_search_v15(ids, scd_api, scd_session):
     assert resp.status_code == 200, resp.content
     found_ids = [op['id'] for op in resp.json().get('operational_intent_reference', [])]
     assert not _intersection(map(ids, OP_TYPES), found_ids)
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)

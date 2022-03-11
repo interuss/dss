@@ -24,7 +24,7 @@ SUB_TYPE = register_resource_type(212, 'Subscription')
 
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
-def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
+def test_ensure_clean_workspace(ids, scd_api, scd_session):
   for op_id in map(ids, (OP1_TYPE, OP2_TYPE)):
       actions.delete_operation_if_exists(op_id, scd_session, scd_api)
   actions.delete_subscription_if_exists(ids(SUB_TYPE), scd_session, scd_api)
@@ -178,3 +178,8 @@ def test_id_conversion_bug_v5(ids, scd_api, scd_session):
   else:
     raise NotImplementedError('Unsupported API version {}'.format(scd_api))
   assert resp.status_code == 200, resp.content
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)

@@ -348,3 +348,8 @@ def test_get_deleted_constraint_by_search(ids, scd_api, scd_session):
   })
   assert resp.status_code == 200, resp.content
   assert ids(CONSTRAINT_TYPE) not in [x['id'] for x in resp.json()['constraint_references']]
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session, scd_session_cm):
+    test_ensure_clean_workspace(ids, scd_api, scd_session, scd_session_cm)
