@@ -3,6 +3,38 @@
     "steps": [
         {
             "name": "Inject flight via First-mover USS",
+            "uss_capabilities": [
+                {
+                    "capabilities": ["BasicStrategicConflictDetection"],
+                    "injection_target": {
+                        "uss_role": "First-Mover USS"
+                    },
+                    "skip": "AutomatedTest",
+                    "generate_issue": {
+                        "test_code": "FirstMoverCapabilities",
+                        "relevant_requirements": [],
+                        "severity": "High",
+                        "subject": "",
+                        "summary": "Basic strategic conflict detection not supported",
+                        "details": "USSP indicated it does not support flight authorisation validation, so it cannot perform the First-Mover USS role to test basic strategic conflict detection required by the flight authorisation service in Switzerland."
+                    }
+                },
+                {
+                    "capabilities": ["BasicStrategicConflictDetection"],
+                    "injection_target": {
+                        "uss_role": "Second USS"
+                    },
+                    "skip": "AutomatedTest",
+                    "generate_issue": {
+                        "test_code": "SecondUSSCapabilities",
+                        "relevant_requirements": [],
+                        "severity": "High",
+                        "subject": "",
+                        "summary": "Basic strategic conflict detection not supported",
+                        "details": "USSP indicated it does not support flight authorisation validation, so it cannot perform the Second USS role to test basic strategic conflict detection required by the flight authorisation service in Switzerland."
+                    }
+                }
+            ],
             "inject_flight": {
                 "reference_time": "2023-02-12T10:34:14.483425+00:00",
                 "test_injection": {
