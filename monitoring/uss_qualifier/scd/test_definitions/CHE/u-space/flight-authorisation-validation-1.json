@@ -9,7 +9,6 @@
                     "injection_target": {
                         "uss_role": "Submitting USS"
                     },
-                    "skip": "AutomatedTest",
                     "generate_issue": {
                         "test_code": "Capabilities",
                         "relevant_requirements": [],

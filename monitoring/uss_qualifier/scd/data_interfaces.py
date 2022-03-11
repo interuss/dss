@@ -75,23 +75,12 @@ class TestStep(ImplicitDict):
     """If populated, the test driver should attempt to delete the specified flight for this step"""
 
 
-class AutomatedTestComponent(str, Enum):
-    AutomatedTest = 'AutomatedTest'
-    """Skip the entire AutomatedTest"""
-
-    TestStep = 'TestStep'
-    """Skip just the TestStep"""
-
-
 class RequiredUSSCapabilities(ImplicitDict):
     capabilities: List[Capability]
     """The set of capabilities a particular USS in the test must support"""
 
     injection_target: InjectionTarget
     """The USS which must support the specified capabilities"""
-
-    skip: Optional[AutomatedTestComponent] = None
-    """If specified, skip the specified test component which involves the specified injection target utilizing the specified capabilities."""
 
     generate_issue: Optional[KnownIssueFields] = None
     """If specified, generate an issue with the specified characteristics when the specified injection target does not support the specified capabilities."""

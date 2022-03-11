@@ -8,15 +8,13 @@
                     "capabilities": ["FlightAuthorisationValidation"],
                     "injection_target": {
                         "uss_role": "First-Mover USS"
-                    },
-                    "skip": "AutomatedTest"
+                    }
                 },
                 {
                     "capabilities": ["FlightAuthorisationValidation", "HighPriorityFlights"],
                     "injection_target": {
                         "uss_role": "Second USS"
-                    },
-                    "skip": "AutomatedTest"
+                    }
                 }
             ],
             "inject_flight": {

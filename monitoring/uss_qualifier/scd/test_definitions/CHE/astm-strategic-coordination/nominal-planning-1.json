@@ -9,7 +9,6 @@
                     "injection_target": {
                         "uss_role": "First-Mover USS"
                     },
-                    "skip": "AutomatedTest",
                     "generate_issue": {
                         "test_code": "FirstMoverCapabilities",
                         "relevant_requirements": [],
@@ -24,7 +23,6 @@
                     "injection_target": {
                         "uss_role": "Second USS"
                     },
-                    "skip": "AutomatedTest",
                     "generate_issue": {
                         "test_code": "SecondUSSCapabilities",
                         "relevant_requirements": [],
