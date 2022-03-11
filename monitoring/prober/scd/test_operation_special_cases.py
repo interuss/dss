@@ -15,6 +15,7 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.prober.infrastructure import for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 OP1_TYPE = register_resource_type(210, 'Operational intent 1')
@@ -22,63 +23,12 @@ OP2_TYPE = register_resource_type(211, 'Operational intent 2')
 SUB_TYPE = register_resource_type(212, 'Subscription')
 
 
-@for_api_versions(scd.API_0_3_5)
-@default_scope(SCOPE_SC)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
   for op_id in map(ids, (OP1_TYPE, OP2_TYPE)):
-    resp = scd_session.get('/operation_references/{}'.format(op_id))
-    if resp.status_code == 200:
-      resp = scd_session.delete('/operation_references/{}'.format(op_id))
-      assert resp.status_code == 200, resp.content
-      resp = scd_session.get('/operation_references/{}'.format(op_id))
-      assert resp.status_code == 404, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
-  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
-  if resp.status_code == 200:
-    resp = scd_session.delete('/subscriptions/{}'.format(ids(SUB_TYPE)))
-    assert resp.status_code == 200, resp.content
-    resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
-    assert resp.status_code == 404, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
+      actions.delete_operation_if_exists(op_id, scd_session, scd_api)
+  actions.delete_subscription_if_exists(ids(SUB_TYPE), scd_session, scd_api)
 
-
-@for_api_versions(scd.API_0_3_17)
-@default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v17(ids, scd_api, scd_session):
-  for op_id in map(ids, (OP1_TYPE, OP2_TYPE)):
-    resp = scd_session.get(
-      '/operational_intent_references/{}'.format(op_id))
-    if resp.status_code == 200:
-      resp = scd_session.delete(
-        '/operational_intent_references/{}'.format(op_id))
-      assert resp.status_code == 200, resp.content
-      resp = scd_session.get(
-        '/operational_intent_references/{}'.format(op_id))
-      assert resp.status_code == 404, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
-  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
-  if resp.status_code == 200:
-    resp = scd_session.delete('/subscriptions/{}/{}'.format(ids(SUB_TYPE), resp.json()['subscription']['version']))
-    assert resp.status_code == 200, resp.content
-    resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)))
-    assert resp.status_code == 404, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
 
 # Preconditions: None
 # Mutations: None

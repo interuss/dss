@@ -11,6 +11,7 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.prober.infrastructure import for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 OP_TYPE = register_resource_type(342, 'Primary operational intent')
@@ -20,15 +21,7 @@ OP_TYPE2 = register_resource_type(343, 'Conflicting operational intent')
 @for_api_versions(scd.API_0_3_17)
 def test_ensure_clean_workspace(ids, scd_api, scd_session):
   for op_id in (ids(OP_TYPE), ids(OP_TYPE2)):
-    resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
-    if resp.status_code == 200:
-      resp = scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
-      assert resp.status_code == 200, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
+      actions.delete_operation_if_exists(op_id, scd_session, scd_api)
 
 
 @for_api_versions(scd.API_0_3_17)

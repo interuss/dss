@@ -10,6 +10,7 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.prober.infrastructure import for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 SUB1_TYPE = register_resource_type(216, 'Subscription 1')
@@ -77,15 +78,7 @@ def _make_sub3_req(scd_api):
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_ensure_clean_workspace(ids, scd_api, scd_session):
   for sub_id in (ids(SUB1_TYPE), ids(SUB2_TYPE), ids(SUB3_TYPE)):
-    resp = scd_session.get('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
-    if resp.status_code == 200:
-      resp = scd_session.delete('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
-      assert resp.status_code == 200, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
+      actions.delete_subscription_if_exists(sub_id, scd_session, scd_api)
 
 
 # Preconditions: No named Subscriptions exist

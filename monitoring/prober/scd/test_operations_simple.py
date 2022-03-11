@@ -17,6 +17,7 @@ from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 URL_OP1 = 'https://example.com/op1/dss'
@@ -101,54 +102,11 @@ def _parse_conflicts_v17(conflicts: Dict) -> Tuple[Dict[str, Dict], Dict[str, Di
   return ops, constraints, ovns
 
 
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session, scd_session2):
   for op_id, owner in ((ids(OP1_TYPE), scd_session), (ids(OP2_TYPE), scd_session2)):
-    resp = owner.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-    if resp.status_code == 200:
-      resp = owner.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-      assert resp.status_code == 200, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
-
-  resp = scd_session2.get('/subscriptions/{}'.format(ids(SUB2_TYPE)), scope=SCOPE_SC)
-  if resp.status_code == 200:
-    resp = scd_session2.delete('/subscriptions/{}'.format(ids(SUB2_TYPE)), scope=SCOPE_SC)
-    assert resp.status_code == 200, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
-
-
-@for_api_versions(scd.API_0_3_17)
-def test_ensure_clean_workspace_v17(ids, scd_api, scd_session, scd_session2):
-  for op_id, owner in ((ids(OP1_TYPE), scd_session), (ids(OP2_TYPE), scd_session2)):
-    resp = owner.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
-    if resp.status_code == 200:
-      ovn = resp.json()['operational_intent_reference']['ovn']
-      resp = owner.delete('/operational_intent_references/{}/{}'.format(op_id, ovn), scope=SCOPE_SC)
-      assert resp.status_code == 200, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
-
-  resp = scd_session2.get('/subscriptions/{}'.format(ids(SUB2_TYPE)), scope=SCOPE_SC)
-  if resp.status_code == 200:
-    version = resp.json()['subscription']['version']
-    resp = scd_session2.delete('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), version), scope=SCOPE_SC)
-    assert resp.status_code == 200, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
+      actions.delete_operation_if_exists(op_id, owner, scd_api)
+  actions.delete_subscription_if_exists(ids(SUB2_TYPE), scd_session2, scd_api)
 
 
 # Op1 shouldn't exist by ID for USS1 when starting this sequence

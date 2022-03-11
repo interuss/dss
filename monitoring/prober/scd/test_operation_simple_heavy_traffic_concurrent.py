@@ -20,6 +20,7 @@ from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 # TODO: verify if following issues are fixed with this PR.
@@ -197,34 +198,10 @@ async def _delete_operation_async(op_id, scd_session_async, scd_api):
   return result
 
 
-@for_api_versions(scd.API_0_3_5)
-@default_scope(SCOPE_SC)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
     for op_id in map(ids, OP_TYPES):
-      resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-      if resp.status_code == 200:
-        resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-        assert resp.status_code == 200, resp.content
-      elif resp.status_code == 404:
-        # As expected.
-        pass
-      else:
-        assert False, resp.content
-
-
-@for_api_versions(scd.API_0_3_17)
-@default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
-    for op_id in map(ids, OP_TYPES):
-      resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
-      if resp.status_code == 200:
-        resp = scd_session.delete('/operational_intent_references/{}/{}'.format(op_id, resp.json()['operational_intent_reference']['ovn']), scope=SCOPE_SC)
-        assert resp.status_code == 200, resp.content
-      elif resp.status_code == 404:
-        # As expected.
-        pass
-      else:
-        assert False, resp.content
+        actions.delete_operation_if_exists(op_id, scd_session, scd_api)
 
 
 # Preconditions: None

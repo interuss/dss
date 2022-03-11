@@ -18,6 +18,7 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 BASE_URL = 'https://example.com/uss'
@@ -58,15 +59,7 @@ def _make_sub_req(time_start, time_end, alt_start, alt_end, radius, scd_api):
 @for_api_versions(scd.API_0_3_5)
 @default_scope(SCOPE_SC)
 def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
-  resp = scd_session.get('/operation_references/{}'.format(ids(OP_TYPE)))
-  if resp.status_code == 200:
-    resp = scd_session.delete('/operation_references/{}'.format(ids(OP_TYPE)))
-    assert resp.status_code == 200, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
+    actions.delete_subscription_if_exists(ids(OP_TYPE), scd_session, scd_api)
 
 
 @for_api_versions(scd.API_0_3_17)

@@ -17,6 +17,7 @@ from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 SUB_TYPE = register_resource_type(220, 'Subscription')
@@ -24,15 +25,7 @@ SUB_TYPE = register_resource_type(220, 'Subscription')
 
 @for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 def test_ensure_clean_workspace(ids, scd_api, scd_session):
-  resp = scd_session.get('/subscriptions/{}'.format(ids(SUB_TYPE)), scope=SCOPE_SC)
-  if resp.status_code == 200:
-    resp = scd_session.delete('/subscriptions/{}'.format(ids(SUB_TYPE)), scope=SCOPE_SC)
-    assert resp.status_code == 200, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
+    actions.delete_subscription_if_exists(ids(SUB_TYPE), scd_session, scd_api)
 
 
 def _make_sub1_req(scd_api):
