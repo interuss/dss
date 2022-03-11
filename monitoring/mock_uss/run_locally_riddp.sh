@@ -19,7 +19,7 @@ docker run --name mock_uss_riddp \
   -e MOCK_USS_SERVICES="riddp" \
   -p ${PORT}:5000 \
   -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
-  $* \
+  "$@" \
   local-interuss/mock_uss \
   gunicorn \
     --preload \
