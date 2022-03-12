@@ -329,6 +329,7 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
   loop = asyncio.get_event_loop()
   results = loop.run_until_complete(
     asyncio.gather(*[_put_operation_async(req, op_id, scd_session_async, scd_api, False) for op_id, req in op_req_map.items()]))
+  print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
   for req_map, resp in zip(op_req_map.items(), results):
     op_id = req_map[0]
     op_resp_map[op_id] = {}
@@ -337,6 +338,14 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
 
   ovn_map.clear()
 
+  # Check status codes and report all failures together
+  ops_with_bad_status = [op_id for op_id, resp in op_resp_map.items() if resp['status_code'] != 200]
+  if ops_with_bad_status:
+      msg = '{} operational intents failed to mutate:\n'.format(len(ops_with_bad_status))
+      msg += '\n'.join('{}: {}'.format(op_id, op_resp_map[op_id]) for op_id in ops_with_bad_status)
+      assert False, msg
+
+  # Check details of results
   for op_id, resp in op_resp_map.items():
     existing_op = op_map[op_id]
     assert existing_op
@@ -354,7 +363,6 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
     ovn_map[op_id] = op['ovn']
 
   assert len(ovn_map) == len(OP_TYPES)
-  print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
 
 
 # Preconditions: Operations with ids in OP_IDS mutated to second version
