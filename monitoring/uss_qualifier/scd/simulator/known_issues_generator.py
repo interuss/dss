@@ -53,7 +53,7 @@ nominal_planning_test_with_priority_conflict_with_flight_notification = KnownIss
                                                             relevant_requirements = [], 
                                                             severity = "High", 
                                                             subject =  nominal_planning_with_priority_test_subject,
-                                                            summary ="The operational intent data provided should have been processed regardless of conflicts", 
+                                                            summary ="The operational intent data provided should have been planned regardless of a airspace conflict", 
                                                             details = "All operational intent data provided is correct and valid and while it has conflicts with an existing operational intent, the priority is higher so the USSP should have planned it.")
                                                             
 nominal_planning_test_with_priority_rejected_error_notification = KnownIssueFields(test_code = "nominal_planning_test_with_priority", 
@@ -72,7 +72,8 @@ nominal_planning_test_with_priority_failed_error_notification = KnownIssueFields
         
 ### End Nominal planning test (with priority) notifications ###      
 
-### Begin flight authorisation data validation notifications ###                                                                  
+### Begin flight authorisation data validation notifications ###              
+                                                    
 flight_authorisation_test_subject = "Flight Authorisation Data"
 flight_authorisation_test_conflict_with_flight_error_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
                                                 relevant_requirements = [], 
