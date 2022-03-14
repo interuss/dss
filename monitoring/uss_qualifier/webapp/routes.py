@@ -247,7 +247,8 @@ def get_task_status(task_id):
         now = datetime.now()
         if task_result:
             filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
-            user_id = session['google_id']
+            # TODO:(Pratibha) Use Auth ID for user_id
+            user_id = 'localuser'
             filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
             job_result = json.loads(task_result)
             if job_result.get('is_flight_records_from_kml'):
