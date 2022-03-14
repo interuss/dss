@@ -40,6 +40,7 @@ type (
 		SSL                SSL
 		MaxOpenConns       int
 		MaxConnIdleSeconds int
+		MaxRetries         int
 	}
 )
 
