@@ -1,0 +1,113 @@
+openapi: 3.0.2
+info:
+  title: Automated testing tool for USS Qualifier
+  version: 0.0.1
+  description: >-
+    This is an interface to run the qualifier tests.
+
+components:
+  schemas:
+    RunTests:
+      type: object
+      required:
+      - flight_records
+      - auth_spec
+      - user_config
+      properties:
+        flight_records:
+          description: >-
+            Comma separated list of flight record file names. Files should be uploaded by upload method before running the tests.
+          type: string
+        auth_spec:
+          description: >-
+            User authentication specification.
+          type: string
+        user_config:
+          description: >-
+            User authentication configuration.
+          type: string
+    RunTestsResponse:
+      type: object
+      required:
+      - test_id
+      properties:
+        test_id:
+          type: string
+          description: >-
+            Returns an exisitng/newly created ID for the running background task.
+          example: '830b15b7-d8c4-42b7-bba6-bd631a0216d8'
+        message:
+          type: string
+          description: >-
+            Status of currently running job.
+        user_id:
+          type: string
+          description: >-
+            User ID of user running the tests.
+    TaskID:
+      description: >-
+        Task ID identifier.
+      type: string
+      example: 2f8343be-6482-4d1b-a474-16847e01af1e
+    TaskIdStatusResponse:
+      type: object
+      required:
+      - task_status
+      properties:
+        task_status:
+          type: string
+          description: >-
+            Returns current status of the background task.
+          example: 'Started|Finished'
+        task_result:
+          type: object
+          description: >-
+            Tests result if task has completed.
+        filename:
+          type: string
+          description: >-
+            filename if test result is saved in an output report file.
+
+paths:
+  /api/tests:
+    post:
+      description: 'Run tests'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RunTests'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunTestsResponse'
+          description: Test execution request submitted successfully
+        '404':
+          description: Testing interface is not activated.
+        '400':
+          description: Fail to execute tests.
+        
+
+  /api/tasks/{task_id}:
+    get:
+      description: 'Get status of the task filter by task id.'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskIdStatusResponse'
+          description: >-
+            Returns current status of the task, along with result, if result is available.
+        '400':
+          description: Status is not avilable for task ID.
+    parameters:
+    - name: task_id
+      in: path
+      required: true
+      description: A task ID of an initiated task.
+      schema:
+        $ref: '#/components/schemas/TaskID'
