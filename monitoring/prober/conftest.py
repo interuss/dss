@@ -122,7 +122,9 @@ def session(pytestconfig) -> DSSTestSession:
 
 @pytest.fixture(scope='session')
 def session_async(pytestconfig):
-  return make_session_async(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
+  session = make_session_async(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
+  yield session
+  session.close()
 
 
 @pytest.fixture(scope='session')
@@ -136,7 +138,9 @@ def scd_session(pytestconfig) -> DSSTestSession:
 
 @pytest.fixture(scope='session')
 def scd_session_async(pytestconfig):
-  return make_session_async(pytestconfig, '/dss/v1', 'scd_auth1')
+  session = make_session_async(pytestconfig, '/dss/v1', 'scd_auth1')
+  yield session
+  session.close()
 
 
 @pytest.fixture(scope='session')

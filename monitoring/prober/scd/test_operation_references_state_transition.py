@@ -7,37 +7,15 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.prober.infrastructure import for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 OP_TYPE = register_resource_type(8, 'Operational intent')
 
 
-@for_api_versions(scd.API_0_3_5)
-@default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
-  resp = scd_session.get('/operation_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_SC)
-  if resp.status_code == 200:
-    resp = scd_session.delete('/operation_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_SC)
-    assert resp.status_code == 200, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
-
-
-@for_api_versions(scd.API_0_3_17)
-@default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
-  resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_SC)
-  if resp.status_code == 200:
-    resp = scd_session.delete('/operational_intent_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_SC)
-    assert resp.status_code == 200, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_ensure_clean_workspace(ids, scd_api, scd_session):
+    actions.delete_operation_if_exists(ids(OP_TYPE), scd_session, scd_api)
 
 
 @for_api_versions(scd.API_0_3_5)
@@ -164,3 +142,8 @@ def test_op_bad_state_transition_v17(ids, scd_api, scd_session):
     req['state'] = 'Ended'
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 400, resp.content
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)

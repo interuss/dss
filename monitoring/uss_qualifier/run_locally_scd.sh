@@ -21,7 +21,7 @@ echo '#########################################################################'
 CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally.json"
 CONFIG='--config config_run_locally.json'
 
-AUTH='--auth NoAuth()'
+AUTH='--auth DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
 
 echo '{
     "locale": "CHE",
@@ -35,7 +35,8 @@ echo '{
                 "name": "uss2",
                 "injection_base_url": "http://host.docker.internal:8074/scdsc"
             }
-        ]
+        ],
+        "dss_base_url": "http://host.docker.internal:8082"
     }
 }' > ${CONFIG_LOCATION}
 

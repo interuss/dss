@@ -22,8 +22,8 @@ def handle_exception(e):
     elif isinstance(e, auth_validation.InvalidAccessTokenError):
         return flask.jsonify({'message': e.message}), 401
     elif isinstance(e, auth_validation.ConfigurationError):
-        return flask.jsonify({'message': e.message}), 500
+        return flask.jsonify({'message': 'Auth validation configuration error: ' + e.message}), 500
     elif isinstance(e, ValueError):
         return flask.jsonify({'message': str(e)}), 400
 
-    return flask.jsonify({'message': str(e)}), 500
+    return flask.jsonify({'message': 'Unhandled {}: {}'.format(type(e).__name__, str(e))}), 500
