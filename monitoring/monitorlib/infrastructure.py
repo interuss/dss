@@ -128,6 +128,10 @@ class AsyncUTMTestSession:
 
   async def build_session(self):
     self._client = ClientSession()
+
+  def close(self):
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(self._client.close())
   
   def adjust_request_kwargs(self, url, method, kwargs):
     if self.auth_adapter:
