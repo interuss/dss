@@ -1,7 +1,8 @@
+from enum import Enum
 from typing import Optional, List, Dict
 from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, Capability
 from monitoring.uss_qualifier.common_data_definitions import Severity
 
 
@@ -74,10 +75,24 @@ class TestStep(ImplicitDict):
     """If populated, the test driver should attempt to delete the specified flight for this step"""
 
 
+class RequiredUSSCapabilities(ImplicitDict):
+    capabilities: List[Capability]
+    """The set of capabilities a particular USS in the test must support"""
+
+    injection_target: InjectionTarget
+    """The USS which must support the specified capabilities"""
+
+    generate_issue: Optional[KnownIssueFields] = None
+    """If specified, generate an issue with the specified characteristics when the specified injection target does not support the specified capabilities."""
+
+
 class AutomatedTest(ImplicitDict):
     """Definition of a complete automated test involving some subset of USSs under test"""
     name: str
     """Human-readable name of this test (e.g., 'Nominal planning')"""
+
+    uss_capabilities: Optional[List[RequiredUSSCapabilities]] = []
+    """List of required USS capabilities for this test and what to do when they are not supported"""
 
     steps: List[TestStep]
     """Actions to be performed for this test"""

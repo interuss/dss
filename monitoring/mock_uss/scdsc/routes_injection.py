@@ -10,7 +10,7 @@ import yaml
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients import scd as scd_client
 from monitoring.monitorlib.scd_automated_testing import scd_injection_api
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, ClearAreaRequest, ClearAreaOutcome, ClearAreaResponse
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, ClearAreaRequest, ClearAreaOutcome, ClearAreaResponse, Capability, CapabilitiesResponse
 from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 from monitoring.mock_uss import config, resources, webapp
 from monitoring.mock_uss.auth import requires_scope
@@ -46,6 +46,16 @@ def query_operational_intents(area_of_interest: scd.Volume4D) -> List[scd.Operat
 def scdsc_injection_status() -> Tuple[str, int]:
     """Implements USS status in SCD automated testing injection API."""
     return flask.jsonify({'status': 'Ready'})
+
+
+@webapp.route('/scdsc/v1/capabilities', methods=['GET'])
+@requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
+def scd_capabilities() -> Tuple[str, int]:
+    """Implements USS capabilities in SCD automated testing injection API."""
+    return flask.jsonify(CapabilitiesResponse(capabilities=[
+        Capability.BasicStrategicConflictDetection,
+        Capability.FlightAuthorisationValidation,
+        Capability.HighPriorityFlights]))
 
 
 @webapp.route('/scdsc/v1/flights/<flight_id>', methods=['PUT'])
