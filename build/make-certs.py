@@ -74,10 +74,13 @@ def main():
                           args.namespace, args.ca_cert_to_join)
 
     # Create the generated directories.
-    os.makedirs('workspace', exist_ok=True)
-    os.makedirs(cr.directory, exist_ok=True)
+    if not os.path.exists('workspace'):
+        os.makedirs('workspace')
+    if not os.path.exists(cr.directory):
+        os.makedirs(cr.directory)
 
-    if args.overwrite_ca_cert:
+    create_ca = not os.path.exists(cr.ca_certs_file) or args.overwrite_ca_cert
+    if create_ca:
       # Create a new CA.
       # Delete and recreate the ca_certs_dir.
       shutil.rmtree(cr.ca_certs_dir, ignore_errors=True)
@@ -92,7 +95,7 @@ def main():
     os.mkdir(cr.client_certs_dir)
     os.mkdir(cr.node_certs_dir)
 
-    if args.overwrite_ca_cert:
+    if create_ca:
       # Create the CA.
       subprocess.check_call([
           'cockroach', 'cert', 'create-ca',
@@ -111,7 +114,7 @@ def main():
                 new_certs_fh.write(join_ca_cert_fh.read())
                 new_certs_fh.write('\n')
 
-    if cr.ca_cert_to_join and args.overwrite_ca_cert:
+    if cr.ca_cert_to_join and create_ca:
       print('Created new CA certificate in {}'.format(cr.ca_certs_dir))
 
     subprocess.check_call([

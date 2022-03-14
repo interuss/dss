@@ -30,7 +30,7 @@ local metadata = metadataBase {
     jwksKeyIds: ['VAR_JWKS_KEY_ID'],
   },
   schema_manager+: {
-    image: 'VAR_SCHEMA_MANAGER_IMAGE_NAME',
+    image: 'VAR_DOCKER_IMAGE_NAME',
     desired_rid_db_version: '4.0.0',
     desired_scd_db_version: '3.1.0',
   },

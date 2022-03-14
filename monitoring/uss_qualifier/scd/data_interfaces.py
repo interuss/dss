@@ -1,4 +1,5 @@
 from typing import Optional, List, Dict
+from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest
 from monitoring.uss_qualifier.common_data_definitions import Severity
@@ -82,3 +83,17 @@ class AutomatedTest(ImplicitDict):
 
     steps: List[TestStep]
     """Actions to be performed for this test"""
+
+
+class AutomatedTestContext(ImplicitDict):
+    test_id: str
+    """ID of test"""
+
+    test_name: str
+    """Name of test"""
+
+    locale: Locality
+    """Locale of test"""
+
+    targets_combination: Dict[str, str]
+    """Mapping of target role and target name used for this test."""
