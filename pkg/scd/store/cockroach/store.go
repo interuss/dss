@@ -2,10 +2,11 @@ package cockroach
 
 import (
 	"context"
-
+	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/cockroach/flags"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
@@ -86,6 +87,7 @@ func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
 
 // Transact implements store.Transactor interface.
 func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repository) error) error {
+	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
 	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return f(ctx, &repo{
 			q:      tx,
