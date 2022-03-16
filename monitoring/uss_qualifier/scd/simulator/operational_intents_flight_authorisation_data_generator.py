@@ -372,7 +372,8 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
 def generate_nominal_with_priority_flight_authorisation_test_data(locale:str ='CHE') -> List[AutomatedTestDetails]:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
     all_automated_test_details = []
-    # ## Begin nominal test data generation ##
+
+    ## Begin nominal test data generation ##
  
     all_flight_names = []
     injection_attempts = 2
@@ -393,13 +394,14 @@ def generate_nominal_with_priority_flight_authorisation_test_data(locale:str ='C
     
     # End build nominal test steps
 
-    ## End nominal test data generation ##
     test_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning')
     test_name = test_output_details.group +'/'+test_output_details.name
     nominal_test_details = AutomatedTest(name=test_name, steps = nominal_test_steps)
     nominal_test_and_output_details = AutomatedTestDetails(automated_test = nominal_test_details, output_path_details= test_output_details)
 
     all_automated_test_details.append(nominal_test_and_output_details)
+
+    ## End nominal test data generation ##
 
     ## Begin nominal test (with priorities) data generation  ##
     all_flight_names = []
@@ -425,8 +427,10 @@ def generate_nominal_with_priority_flight_authorisation_test_data(locale:str ='C
     with_priority_test_name = test_with_priority_output_details.group +'/'+test_with_priority_output_details.name
     nominal_test_with_priority_details = AutomatedTest(name=with_priority_test_name, steps = nominal_test_with_priority_steps)
     nominal_test_with_priority_and_output_details = AutomatedTestDetails(automated_test = nominal_test_with_priority_details, output_path_details= test_with_priority_output_details)
-
+    
     all_automated_test_details.append(nominal_test_with_priority_and_output_details)
+
+    ## End nominal test (with priorities) data generation  ##
 
     ## Begin flight authorisation test data generation  ##  
     fields_to_make_incorrect = ["uas_serial_number", "operator_registration_number"]
@@ -457,10 +461,10 @@ def generate_nominal_with_priority_flight_authorisation_test_data(locale:str ='C
     
     flight_authorisation_test = AutomatedTest(name = flight_authorisation_test_name, steps = flight_authorisation_test_steps)
     flight_authorisation_test_details = AutomatedTestDetails(automated_test = flight_authorisation_test, output_path_details= flight_authorisation_test_output_details)
-
-    ## End flight authorisation test data generation ##
     
     all_automated_test_details.append(flight_authorisation_test_details)
+
+    ## End flight authorisation test data generation ##
     
     return all_automated_test_details
 
