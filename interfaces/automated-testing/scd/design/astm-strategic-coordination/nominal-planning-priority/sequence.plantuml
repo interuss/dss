@@ -36,7 +36,7 @@ TD <- USS2: 200 Ok - returns Operational Intent 2
 == TD transitions flight in Second USS to Activated ==
 
 TD -> USS2: PUT /inject/flight\n{"state": "Activated"}
-TD <- USS2: 200 Ok\n{"result": "Planned"}
+TD <- USS2: 200 Ok\n{"result": "ReadyToFly"}
 
 TD -> DSS: POST /dss/v1/operational_intent_references/query\nwith area_of_interest encompassing Operational Intent 2
 TD <- DSS: 200 Ok - returns Operational Intent Reference 2 with entityid2 managed by Second USS
@@ -55,6 +55,6 @@ TD -> DSS: POST /dss/v1/operational_intent_references/query\nwith area_of_intere
 TD <- DSS: 200 Ok or 404 Not found - Operational Intent Reference 1 is either unchanged or deleted
 
 TD -> USS1: GET /uss/v1/operational_intents/{entityid1}
-TD <- USS1: 200 Ok - Operational Intent 1 is unchanged (if not deleted in DSS)
+TD <- USS1: 200 Ok or 404 Not found - Operational Intent 1 is unchanged if not deleted in DSS
 
 @enduml
