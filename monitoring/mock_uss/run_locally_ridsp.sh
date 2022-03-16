@@ -17,7 +17,7 @@ else
   docker_args=""
 fi
 
-docker run ${docker_args} --name mock_uss_ridsp \
+docker run "${docker_args}" --name mock_uss_ridsp \
   --rm \
   -e MOCK_USS_AUTH_SPEC="${AUTH}" \
   -e MOCK_USS_DSS_URL="${DSS}" \

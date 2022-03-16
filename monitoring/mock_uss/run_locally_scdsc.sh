@@ -17,7 +17,7 @@ else
   docker_args=""
 fi
 
-docker run ${docker_args} --name mock_uss_scdsc \
+docker run "${docker_args}" --name mock_uss_scdsc \
   --rm \
   -e MOCK_USS_AUTH_SPEC="${AUTH}" \
   -e MOCK_USS_DSS_URL="${DSS}" \
