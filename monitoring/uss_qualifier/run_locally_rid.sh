@@ -61,7 +61,6 @@ else
   docker_args="-it"
 fi
 
-
 # shellcheck disable=SC2086
 docker run ${docker_args} --name uss_qualifier \
   --rm \
