@@ -53,8 +53,9 @@ nominal_planning_test_with_priority_conflict_with_flight_notification = KnownIss
                                                             relevant_requirements = [], 
                                                             severity = "High", 
                                                             subject =  nominal_planning_with_priority_test_subject,
-                                                            summary ="The operational intent data provided should have been planned regardless of a airspace conflict", 
+                                                            summary ="The operational intent data provided should have been planned regardless of an airspace or time conflict", 
                                                             details = "All operational intent data provided is correct and valid and while it has conflicts with an existing operational intent, the priority is higher so the USSP should have planned it.")
+                                                            
                                                             
 nominal_planning_test_with_priority_rejected_error_notification = KnownIssueFields(test_code = "nominal_planning_test_with_priority", 
                                                 relevant_requirements = [], 

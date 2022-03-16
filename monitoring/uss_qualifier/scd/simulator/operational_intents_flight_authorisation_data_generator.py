@@ -212,17 +212,16 @@ class KnownIssuesAcceptableResultFieldGenerator():
 
     def generate_nominal_test_known_issues_fields(self)-> Dict[str, KnownIssueFields]:
         """A method to generate messages for the user to take remedial actions when a nominal test returns a status that is not expected """
-
         all_known_issues_fields = {}
-
-        if self.expected_operational_intent_processing_result == "ConflictWithFlight":
-            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_common_error_notification
-            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_common_error_notification
-            all_known_issues_fields['Planned']= known_issues_generator.nominal_planning_test_if_planned_with_conflict_with_flight_notification
-        elif self.expected_operational_intent_processing_result == "Planned":
+        
+        if self.expected_operational_intent_processing_result == "Planned":
             all_known_issues_fields['ConflictWithFlight']= known_issues_generator.nominal_planning_test_if_conflict_with_flight_notification
             all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_rejected_error_notification
             all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_failed_error_notification
+        elif self.expected_operational_intent_processing_result == "ConflictWithFlight":
+            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_common_error_notification
+            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_common_error_notification
+            all_known_issues_fields['Planned']= known_issues_generator.nominal_planning_test_if_planned_with_conflict_with_flight_notification
 
         return all_known_issues_fields
 
@@ -234,7 +233,6 @@ class KnownIssuesAcceptableResultFieldGenerator():
             all_known_issues_fields['ConflictWithFlight']= known_issues_generator.nominal_planning_test_with_priority_conflict_with_flight_notification
             all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_with_priority_rejected_error_notification
             all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_with_priority_failed_error_notification
-
         return all_known_issues_fields
 
 
@@ -296,35 +294,44 @@ def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str],
     my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone="32T")
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
 
-    for injection_number, flight_name in enumerate(all_flight_names):        
-        should_intersect = False if injection_number == 0 else random.choice([False, True])
+    for injection_number, flight_name in enumerate(all_flight_names):  
+
+        # If the test is with a nominal planning test or a nominal planning test with priority the second flight generated should always intersect the frist one 
+        should_intersect = False if injection_number == 0 else True            
+        if with_priority:
+            expected_operational_intent_processing_result = 'Planned'
+        else:
+            expected_operational_intent_processing_result = 'ConflictWithFlight' if should_intersect else 'Planned'
         geometry_generation_rule = GeometryGenerationRule(intersect_space = should_intersect)
         flight_geometry = my_operational_intent_generator.generate_nominal_test_geometry(geometry_generation_rule= geometry_generation_rule, injection_number = injection_number)
         reference_time = my_operational_intent_generator.now.isoformat()
         flight_volume = my_operational_intent_generator.generate_astm_4d_volumes(raw_geometry = flight_geometry, altitude_of_ground_level_wgs_84 = altitude_of_ground_level_wgs_84)
 
         if with_priority:
-            priority = 0 if injection_number ==0 else 100
+            priority = 0 if injection_number == 0 else 100
         else: 
             priority = 1
-        
+
         operational_intent_test_injection = generate_operational_intent_injection(astm_4d_volume = flight_volume, priority=priority)
         valid_flight_authorisation_data = generate_valid_flight_authorisation_data_for_nominal_test(locale= locale)
         inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= valid_flight_authorisation_data)
-        if with_priority:
-            expected_operational_intent_processing_result= 'Planned' if should_intersect else 'ConflictWithFlight'
-            my_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = 'Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
-            all_incorrect_result_details = my_known_issues_acceptable_result_generator.generate_nominal_test_with_priroties_known_issues_fields()
+        if with_priority:            
+            nominal_test_w_priority_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result ='Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
+            all_incorrect_result_details = nominal_test_w_priority_known_issues_acceptable_result_generator.generate_nominal_test_with_priroties_known_issues_fields()            
+            known_responses = KnownResponses(acceptable_results=[expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)
 
-        else:
-            expected_operational_intent_processing_result= 'ConflictWithFlight' if should_intersect else 'Planned'
-            my_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = 'Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
-
-            all_incorrect_result_details = my_known_issues_acceptable_result_generator.generate_nominal_test_known_issues_fields()
-
+        else:            
+            nominal_test_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = 'Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
+            all_incorrect_result_details = nominal_test_known_issues_acceptable_result_generator.generate_nominal_test_known_issues_fields()            
+            known_responses = KnownResponses(acceptable_results=[expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)
             
-        injection_target = InjectionTarget(uss_role = "Submitting USS")
-        known_responses = KnownResponses(acceptable_results=[expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)
+        if with_priority:
+            uss_role = "First-Mover USS" if injection_number ==0 else "Second USS"
+        else:
+            uss_role = "First-Mover USS" if injection_number ==0 else "Blocked USS"
+
+        injection_target = InjectionTarget(uss_role = uss_role)
+        
 
         flight_injection_attempt = FlightInjectionAttempt(reference_time = reference_time, test_injection = inject_flight_request, known_responses = known_responses,injection_target = injection_target, name = flight_name)
 
@@ -362,11 +369,11 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
     return flight_injection_attempt
 
 
-def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[AutomatedTestDetails]:
+def generate_nominal_with_priority_flight_authorisation_test_data(locale:str ='CHE') -> List[AutomatedTestDetails]:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
-
-    ## Begin nominal test data generation ##
-    nominal_and_flight_authorisation_test_injection_attempts = []
+    all_automated_test_details = []
+    # ## Begin nominal test data generation ##
+ 
     all_flight_names = []
     injection_attempts = 2
     for injection_attempt in range(0,injection_attempts):
@@ -385,17 +392,16 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
             nominal_test_steps.append(nominal_test_step_2)
     
     # End build nominal test steps
+
     ## End nominal test data generation ##
     test_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning')
     test_name = test_output_details.group +'/'+test_output_details.name
     nominal_test_details = AutomatedTest(name=test_name, steps = nominal_test_steps)
     nominal_test_and_output_details = AutomatedTestDetails(automated_test = nominal_test_details, output_path_details= test_output_details)
 
-    nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_and_output_details)
+    all_automated_test_details.append(nominal_test_and_output_details)
 
-
-    ## Begin nominal test data generation (with priorities) ##
-    nominal_and_flight_authorisation_test_injection_attempts = []
+    ## Begin nominal test (with priorities) data generation  ##
     all_flight_names = []
     injection_attempts = 2
     for injection_attempt in range(0,injection_attempts):
@@ -404,7 +410,7 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
     nominal_test_with_priority_steps = []
     nominal_test_with_priority_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names,locale=locale, with_priority=True)
 
-    # Build nominal test  (with priorities) steps
+    # Build nominal test (with priorities) steps
     for idx, injection_attempt in enumerate(nominal_test_with_priority_flight_injection_attempts):
         if idx == 0:
             nominal_test_with_priority_step_1 = TestStep(name="Inject flight via First-mover USS", inject_flight = injection_attempt, delete_flight=None)
@@ -415,12 +421,12 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
     
     # End build nominal test (with priorities) steps 
 
-    test_with_priority_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning-with-priority')
+    test_with_priority_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning-with-priority-1')
     with_priority_test_name = test_with_priority_output_details.group +'/'+test_with_priority_output_details.name
     nominal_test_with_priority_details = AutomatedTest(name=with_priority_test_name, steps = nominal_test_with_priority_steps)
     nominal_test_with_priority_and_output_details = AutomatedTestDetails(automated_test = nominal_test_with_priority_details, output_path_details= test_with_priority_output_details)
 
-    nominal_and_flight_authorisation_test_injection_attempts.append(nominal_test_with_priority_and_output_details)
+    all_automated_test_details.append(nominal_test_with_priority_and_output_details)
 
     ## Begin flight authorisation test data generation  ##  
     fields_to_make_incorrect = ["uas_serial_number", "operator_registration_number"]
@@ -454,9 +460,9 @@ def generate_nominal_and_flight_authorisation_test(locale:str ='CHE') -> List[Au
 
     ## End flight authorisation test data generation ##
     
-    nominal_and_flight_authorisation_test_injection_attempts.append(flight_authorisation_test_details)
+    all_automated_test_details.append(flight_authorisation_test_details)
     
-    return nominal_and_flight_authorisation_test_injection_attempts
+    return all_automated_test_details
 
 
 def generate_operational_intent_injection(astm_4d_volume : Volume4D, priority:int = 0) -> OperationalIntentTestInjection:
@@ -468,8 +474,8 @@ def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[
     """A function to write Flight injection attempts to disk so that they can be examined / used by other software like the test executor """
     # Create test_definition directory if it does not exist
     
-
-    for automated_test_data in all_automated_tests:      
+    
+    for automated_test_data in all_automated_tests:           
         automated_test_file_directory_name = automated_test_data.output_path_details.group
         automated_test_file_directory = Path(output_path,locale, automated_test_file_directory_name)
         automated_test_file_directory.mkdir(parents=True, exist_ok=True)
@@ -483,6 +489,6 @@ def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[
             ImplicitDict.parse(json.load(f), AutomatedTest)
 
 if __name__ == '__main__':
-    nominal_and_flight_authorisation_test = generate_nominal_and_flight_authorisation_test()
+    nominal_and_flight_authorisation_test = generate_nominal_with_priority_flight_authorisation_test_data()
     output_path = os.path.join(Path(__file__).parent.absolute(), "../test_definitions")
     write_automated_test_to_disk(output_path=output_path, all_automated_tests = nominal_and_flight_authorisation_test)
