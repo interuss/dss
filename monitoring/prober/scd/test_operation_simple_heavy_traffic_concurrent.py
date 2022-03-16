@@ -23,16 +23,9 @@ from monitoring.prober.infrastructure import depends_on, for_api_versions, regis
 from monitoring.prober.scd import actions
 
 
-# TODO: verify if following issues are fixed with this PR.
-# This test is implemented to fire requests concurrently, given there are several concurrent related issues:
-# - https://github.com/interuss/dss/issues/417
-# - https://github.com/interuss/dss/issues/418
-# - https://github.com/interuss/dss/issues/419
-# - https://github.com/interuss/dss/issues/420
-# - https://github.com/interuss/dss/issues/421
-
 BASE_URL = 'https://example.com/uss'
-OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(100)]
+# TODO(#742): Increase number of concurrent operations from 20 to 100
+OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(20)]
 GROUP_SIZE = len(OP_TYPES) // 3
 # Semaphore is added to limit the number of simultaneous requests,
 # default is 100.
