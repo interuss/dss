@@ -104,3 +104,13 @@ class ClearAreaOutcome(ImplicitDict):
 class ClearAreaResponse(ImplicitDict):
     request: ClearAreaRequest
     outcome: ClearAreaOutcome
+
+
+class Capability(str, Enum):
+    FlightAuthorisationValidation = 'FlightAuthorisationValidation'
+    BasicStrategicConflictDetection = 'BasicStrategicConflictDetection'
+    HighPriorityFlights = 'HighPriorityFlights'
+
+
+class CapabilitiesResponse(ImplicitDict):
+    capabilities: Optional[List[Capability]]

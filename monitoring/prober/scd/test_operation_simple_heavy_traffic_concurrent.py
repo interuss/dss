@@ -20,6 +20,7 @@ from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 # TODO: verify if following issues are fixed with this PR.
@@ -197,34 +198,10 @@ async def _delete_operation_async(op_id, scd_session_async, scd_api):
   return result
 
 
-@for_api_versions(scd.API_0_3_5)
-@default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_ensure_clean_workspace(ids, scd_api, scd_session):
     for op_id in map(ids, OP_TYPES):
-      resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-      if resp.status_code == 200:
-        resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-        assert resp.status_code == 200, resp.content
-      elif resp.status_code == 404:
-        # As expected.
-        pass
-      else:
-        assert False, resp.content
-
-
-@for_api_versions(scd.API_0_3_17)
-@default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
-    for op_id in map(ids, OP_TYPES):
-      resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
-      if resp.status_code == 200:
-        resp = scd_session.delete('/operational_intent_references/{}/{}'.format(op_id, resp.json()['operational_intent_reference']['ovn']), scope=SCOPE_SC)
-        assert resp.status_code == 200, resp.content
-      elif resp.status_code == 404:
-        # As expected.
-        pass
-      else:
-        assert False, resp.content
+        actions.delete_operation_if_exists(op_id, scd_session, scd_api)
 
 
 # Preconditions: None
@@ -352,6 +329,7 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
   loop = asyncio.get_event_loop()
   results = loop.run_until_complete(
     asyncio.gather(*[_put_operation_async(req, op_id, scd_session_async, scd_api, False) for op_id, req in op_req_map.items()]))
+  print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
   for req_map, resp in zip(op_req_map.items(), results):
     op_id = req_map[0]
     op_resp_map[op_id] = {}
@@ -360,6 +338,14 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
 
   ovn_map.clear()
 
+  # Check status codes and report all failures together
+  ops_with_bad_status = [op_id for op_id, resp in op_resp_map.items() if resp['status_code'] != 200]
+  if ops_with_bad_status:
+      msg = '{} operational intents failed to mutate:\n'.format(len(ops_with_bad_status))
+      msg += '\n'.join('{}: {}'.format(op_id, op_resp_map[op_id]) for op_id in ops_with_bad_status)
+      assert False, msg
+
+  # Check details of results
   for op_id, resp in op_resp_map.items():
     existing_op = op_map[op_id]
     assert existing_op
@@ -377,7 +363,6 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
     ovn_map[op_id] = op['ovn']
 
   assert len(ovn_map) == len(OP_TYPES)
-  print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
 
 
 # Preconditions: Operations with ids in OP_IDS mutated to second version
@@ -402,3 +387,8 @@ def test_delete_op_concurrent(ids, scd_api, scd_session_async):
   for resp in op_resp_map.values():
     assert resp['status_code'] == 200, resp['content']
   print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)
