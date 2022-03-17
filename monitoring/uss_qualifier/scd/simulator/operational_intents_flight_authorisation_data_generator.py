@@ -1,5 +1,5 @@
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest
-from monitoring.uss_qualifier.scd.data_interfaces import FlightDeletionAttempt, FlightInjectionAttempt, InjectionTarget, KnownIssueFields, KnownResponses, AutomatedTest, TestStep
+from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt, InjectionTarget, KnownResponses, AutomatedTest, TestStep
 from monitoring.uss_qualifier.scd.simulator.utils import FlightNameIncorrectField, TestOutputPathDetails, AutomatedTestDetails
 from utils import GeneratedGeometry, GeometryGenerationRule
 from monitoring.monitorlib.formats import OperatorRegistrationNumber, SerialNumber
@@ -423,8 +423,7 @@ def generate_operational_intent_injection(astm_4d_volume : Volume4D, priority:in
 
 def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[AutomatedTestDetails], locale ="che") -> None:
     """A function to write Flight injection attempts to disk so that they can be examined / used by other software like the test executor """
-    # Create test_definition directory if it does not exist
-    
+    # Create test_definition directory if it does not exist    
     
     for automated_test_data in all_automated_tests:           
         automated_test_file_directory_name = automated_test_data.output_path_details.group
