@@ -4,8 +4,7 @@ from typing import Dict
 
 
 class NominalTestKnownIssuesAcceptableResults():
-    """A class to generate Known Issues and Acceptable results for the nominal test data"""
-
+    """A class to generate Known Issues and Acceptable results for the nominal test data """
     def __init__(self, expected_flight_authorisation_processing_result:str, expected_operational_intent_processing_result:str):
 
         self.expected_flight_authorisation_processing_result = expected_flight_authorisation_processing_result
