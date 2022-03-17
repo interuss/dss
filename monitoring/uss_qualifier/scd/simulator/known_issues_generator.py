@@ -4,7 +4,7 @@ from typing import Dict
 
 
 class NominalTestKnownIssuesAcceptableResults():
-    """A class to generate Known Issues and Acceptable results as a result of data processing of the test data provided by the USSP"""
+    """A class to generate Known Issues and Acceptable results for the nominal test data"""
 
     def __init__(self, expected_flight_authorisation_processing_result:str, expected_operational_intent_processing_result:str):
 
@@ -78,7 +78,7 @@ class NominalTestKnownIssuesAcceptableResults():
 ### Begin Nominal planning test (with priority) notifications ###                                                            
 
 class NominalTestwPrioritiesKnownIssuesAcceptableResults():
-    """A class to generate Known Issues and Acceptable results as a result of data processing of the test data provided by the USSP"""
+    """A class to generate Known Issues and Acceptable results to inform about  data processing errors in the test data provided """
 
     def __init__(self, expected_flight_authorisation_processing_result:str, expected_operational_intent_processing_result:str):
 
@@ -124,10 +124,8 @@ class NominalTestwPrioritiesKnownIssuesAcceptableResults():
 
 ### Begin flight authorisation data validation notifications ###              
 
-
-
 class FlightAuthorisationKnownIssuesAcceptableResults():
-    """A class to generate Known Issues and Acceptable results as a result of data processing of the test data provided by the USSP"""
+    """A class to generate Known Issues and Acceptable results as a result of flight authorisation data processing"""
 
     def __init__(self, expected_flight_authorisation_processing_result:str, expected_operational_intent_processing_result:str):
 
