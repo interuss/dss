@@ -202,59 +202,6 @@ class ProximateOperationalIntentGenerator():
 
         return flight_volume_4d
 
-class KnownIssuesAcceptableResultFieldGenerator():
-    """A class to generate Known Issues and Acceptable results as a result of data processing of the test data provided by the USSP"""
-
-    def __init__(self, expected_flight_authorisation_processing_result:str, expected_operational_intent_processing_result:str):
-
-        self.expected_flight_authorisation_processing_result = expected_flight_authorisation_processing_result
-        self.expected_operational_intent_processing_result = expected_operational_intent_processing_result
-
-    def generate_nominal_test_known_issues_fields(self)-> Dict[str, KnownIssueFields]:
-        """A method to generate messages for the user to take remedial actions when a nominal test returns a status that is not expected """
-        all_known_issues_fields = {}
-        
-        if self.expected_operational_intent_processing_result == "Planned":
-            all_known_issues_fields['ConflictWithFlight']= known_issues_generator.nominal_planning_test_if_conflict_with_flight_notification
-            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_rejected_error_notification
-            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_failed_error_notification
-        elif self.expected_operational_intent_processing_result == "ConflictWithFlight":
-            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_common_error_notification
-            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_common_error_notification
-            all_known_issues_fields['Planned']= known_issues_generator.nominal_planning_test_if_planned_with_conflict_with_flight_notification
-
-        return all_known_issues_fields
-
-    def generate_nominal_test_with_priroties_known_issues_fields(self)-> Dict[str, KnownIssueFields]:
-        """A method to generate messages for the user to take remedial actions when a nominal test with priorities with different priorties returns a status that is not expected """
-        all_known_issues_fields = {}
-
-        if self.expected_operational_intent_processing_result == "Planned":
-            all_known_issues_fields['ConflictWithFlight']= known_issues_generator.nominal_planning_test_with_priority_conflict_with_flight_notification
-            all_known_issues_fields['Rejected']= known_issues_generator.nominal_planning_test_with_priority_rejected_error_notification
-            all_known_issues_fields['Failed']= known_issues_generator.nominal_planning_test_with_priority_failed_error_notification
-        return all_known_issues_fields
-
-
-    def generate_flight_authorisation_test_known_issue_fields(self, incorrect_field:str = None)-> Dict[str, KnownIssueFields]:
-        """A method to generate messages for the user to take remedial actions when a flight authorisation test returns a status that is not expected """
-
-        all_known_issues_fields = {}
-        all_known_issues_fields["Failed"] = known_issues_generator.flight_authorisation_test_failed_with_without_incorrect_field_notification            
-        all_known_issues_fields["ConflictWithFlight"] = known_issues_generator.flight_authorisation_test_conflict_with_flight_error_notification
-
-        if self.expected_flight_authorisation_processing_result == "Rejected":
-            if incorrect_field == "uas_serial_number":
-                all_known_issues_fields["Planned"] = known_issues_generator.if_planned_with_incorrect_uas_serial_number_notification
-            elif incorrect_field == "operator_registration_number":
-                all_known_issues_fields["Planned"] = known_issues_generator.if_planned_with_incorrect_operator_registration_number_notification
-            
-        elif self.expected_flight_authorisation_processing_result == "Planned":
-            all_known_issues_fields["Rejected"] = known_issues_generator.flight_authorisation_test_common_error_notification
-
-        return all_known_issues_fields
-
-
 def generate_valid_flight_authorisation_data_for_nominal_test(locale:str ='CHE') -> FlightAuthorisationData:
     """A method to generate valid flight authorisation data for the nominal test, in the nominal test we are providing valid flight authorisation data since the operational intent processing is the main intent of the test """
 
@@ -316,12 +263,12 @@ def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str],
         valid_flight_authorisation_data = generate_valid_flight_authorisation_data_for_nominal_test(locale= locale)
         inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= valid_flight_authorisation_data)
         if with_priority:            
-            nominal_test_w_priority_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result ='Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
+            nominal_test_w_priority_known_issues_acceptable_result_generator = known_issues_generator.NominalTestwPrioritiesKnownIssuesAcceptableResults(expected_flight_authorisation_processing_result ='Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
             all_incorrect_result_details = nominal_test_w_priority_known_issues_acceptable_result_generator.generate_nominal_test_with_priroties_known_issues_fields()            
             known_responses = KnownResponses(acceptable_results=[expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)
 
         else:            
-            nominal_test_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = 'Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
+            nominal_test_known_issues_acceptable_result_generator = known_issues_generator.NominalTestKnownIssuesAcceptableResults(expected_flight_authorisation_processing_result = 'Planned',expected_operational_intent_processing_result = expected_operational_intent_processing_result)
             all_incorrect_result_details = nominal_test_known_issues_acceptable_result_generator.generate_nominal_test_known_issues_fields()            
             known_responses = KnownResponses(acceptable_results=[expected_operational_intent_processing_result], incorrect_result_details= all_incorrect_result_details)
             
@@ -354,10 +301,10 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
 
     flight_authorisation_data = FlightAuthorisationData(uas_serial_number = serial_number, operation_category="Open", operation_mode = "Vlos",uas_class="C0", identification_technologies = ["ASTMNetRID"], connectivity_methods = ["cellular"], endurance_minutes = 30, emergency_procedure_url = "https://uav.com/emergency", operator_id = operator_id, uas_id= '', uas_type_certificate = '')
 
-    my_known_issues_acceptable_result_generator = KnownIssuesAcceptableResultFieldGenerator(expected_flight_authorisation_processing_result = expected_flight_authorisation_processing_result,expected_operational_intent_processing_result = 'Planned')
+    flight_auth_test_issues_acceptable_result_generator = known_issues_generator.FlightAuthorisationKnownIssuesAcceptableResults(expected_flight_authorisation_processing_result = expected_flight_authorisation_processing_result,expected_operational_intent_processing_result = 'Planned')
 
     inject_flight_request = InjectFlightRequest(operational_intent= operational_intent_test_injection, flight_authorisation= flight_authorisation_data)
-    all_incorrect_result_details = my_known_issues_acceptable_result_generator.generate_flight_authorisation_test_known_issue_fields(incorrect_field= field_to_make_incorrect)
+    all_incorrect_result_details = flight_auth_test_issues_acceptable_result_generator.generate_flight_authorisation_test_known_issue_fields(incorrect_field= field_to_make_incorrect)
 
     injection_target = InjectionTarget(uss_role = "Submitting USS")
 
