@@ -7,7 +7,7 @@ go 1.14
 
 require (
 	cloud.google.com/go v0.64.0
-	github.com/cockroachdb/cockroach-go/v2 v2.2.0
+	github.com/cockroachdb/cockroach-go/v2 v2.2.8
 	github.com/coreos/go-semver v0.3.0
 	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec

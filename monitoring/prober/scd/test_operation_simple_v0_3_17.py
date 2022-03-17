@@ -16,6 +16,7 @@ from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC, SCOPE_CM, SCOPE_CP
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 BASE_URL = 'https://example.com/uss'
@@ -24,15 +25,7 @@ OP_TYPE = register_resource_type(341, 'Operational intent')
 
 @for_api_versions(scd.API_0_3_17)
 def test_ensure_clean_workspace(ids, scd_api, scd_session):
-  resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_SC)
-  if resp.status_code == 200:
-    resp = scd_session.delete('/operational_intent_references/{}'.format(ids(OP_TYPE)), scope=SCOPE_SC)
-    assert resp.status_code == 200, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
+    actions.delete_operation_if_exists(ids(OP_TYPE), scd_session, scd_api)
 
 
 def _make_op1_request():
@@ -335,3 +328,8 @@ def test_get_deleted_op_by_search(ids, scd_api, scd_session):
   })
   assert resp.status_code == 200, resp.content
   assert ids(OP_TYPE) not in [x['id'] for x in resp.json()['operational_intent_references']]
+
+
+@for_api_versions(scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)

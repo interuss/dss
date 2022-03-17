@@ -28,7 +28,7 @@ def remove_rq_job(job_id):
 
 def call_test_executor(user_config_json: str, auth_spec: str, flight_record_jsons: List[str], debug=False):
     user_config: RIDQualifierTestConfiguration = ImplicitDict.parse(
-        json.loads(user_config_json), RIDQualifierTestConfiguration)
+        json.loads(user_config_json)['rid'], RIDQualifierTestConfiguration)
     flight_records: List[FullFlightRecord] = [
         ImplicitDict.parse(json.loads(j), FullFlightRecord)
         for j in flight_record_jsons]

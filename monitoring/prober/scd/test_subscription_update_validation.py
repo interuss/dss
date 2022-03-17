@@ -18,6 +18,7 @@ from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 BASE_URL = 'https://example.com/uss'
@@ -55,33 +56,10 @@ def _make_sub_req(time_start, time_end, alt_start, alt_end, radius, scd_api):
   return req
 
 
-@for_api_versions(scd.API_0_3_5)
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
-  resp = scd_session.get('/operation_references/{}'.format(ids(OP_TYPE)))
-  if resp.status_code == 200:
-    resp = scd_session.delete('/operation_references/{}'.format(ids(OP_TYPE)))
-    assert resp.status_code == 200, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
-
-
-@for_api_versions(scd.API_0_3_17)
-@default_scope(SCOPE_SC)
-def test_ensure_clean_workspace_v17(ids, scd_api, scd_session):
-  resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
-  if resp.status_code == 200:
-    ovn = resp.json()['operational_intent_reference']['ovn']
-    resp = scd_session.delete('/operational_intent_references/{}/{}'.format(ids(OP_TYPE), ovn), scope=SCOPE_SC)
-    assert resp.status_code == 200, resp.content
-  elif resp.status_code == 404:
-    # As expected.
-    pass
-  else:
-    assert False, resp.content
+def test_ensure_clean_workspace(ids, scd_api, scd_session):
+    actions.delete_subscription_if_exists(ids(OP_TYPE), scd_session, scd_api)
 
 
 # Create operation normally (also creates implicit Subscription)
@@ -282,3 +260,8 @@ def test_delete_sub_v17(scd_api, scd_session):
 def test_get_deleted_sub_by_id(scd_api, scd_session):
   resp = scd_session.get('/subscriptions/{}'.format(sub_id))
   assert resp.status_code == 404, resp.content
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)
