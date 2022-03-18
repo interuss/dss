@@ -7,6 +7,7 @@ from typing import Dict, List
 
 from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTest, TestStep, AutomatedTestContext
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
@@ -85,6 +86,11 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
                   auth_spec: str) -> bool:
     automated_tests = load_scd_test_definitions(locale)
     configured_targets = list(map(lambda t: TestTarget(t.name, t, auth_spec), test_configuration.injection_targets))
+    dss_target = TestTarget(
+        'DSS',
+        InjectionTargetConfiguration(
+            name='DSS', injection_base_url=test_configuration.dss_base_url),
+        auth_spec=auth_spec) if 'dss_base_url' in test_configuration else None
     report = Report(
             qualifier_version=os.environ.get("SCD_VERSION", "unknown"),
             configuration=test_configuration,
@@ -106,10 +112,11 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
             print('[SCD] Starting test combination {}: {} ({}/{}) {}'.format(i+1,  test.name, locale, test_id,
                 format_combination(targets_under_test)))
 
-            runner = TestRunner(context, test, targets_under_test, report)
+            runner = TestRunner(context, test, targets_under_test, dss_target, report)
             try:
                 runner.run_automated_test()
             except TestRunnerError as e:
+                report.findings.issues.append(e.issue)
                 print("[SCD] TestRunnerError: {} Issue: {} Related interactions: {}".format(e, e.issue.details, e.issue.interactions))
             finally:
                 runner.teardown()

@@ -2,6 +2,8 @@ package cockroach
 
 import (
 	"context"
+	"github.com/cockroachdb/cockroach-go/v2/crdb"
+	"github.com/interuss/dss/pkg/cockroach/flags"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
@@ -120,6 +122,8 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 	// "store" for everything
 	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
 	defer cancel()
+
+	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
 
 	storeVersion, err := s.GetVersion(ctx)
 	if err != nil {

@@ -12,10 +12,11 @@ class ReportRecorder:
         self.context = context
 
 
-    def capture_interaction(self, step_ref: TestStepReference, query: fetch.Query) -> InteractionID:
+    def capture_interaction(self, step_ref: TestStepReference, query: fetch.Query, purpose: str) -> InteractionID:
         interaction_id = str(uuid.uuid4())
         interaction = Interaction(
                 interaction_id=interaction_id,
+                purpose=purpose,
                 test_step=step_ref,
                 context=self.context,
                 query=query
@@ -37,9 +38,11 @@ class ReportRecorder:
                 uss_role=attempt.injection_target.uss_role,
                 interactions=[interaction_id]
             )
-        self.report.findings.add_issue(issue)
+        self.capture_issue(issue)
         return issue
 
+    def capture_issue(self, issue: Issue):
+        self.report.findings.add_issue(issue)
 
     def capture_injection_unknown_issue(self, interaction_id: InteractionID, summary: str, details: str, target_name: str, attempt: FlightInjectionAttempt):
         issue = Issue(
@@ -54,7 +57,7 @@ class ReportRecorder:
                 uss_role=attempt.injection_target.uss_role,
                 interactions=[interaction_id]
             )
-        self.report.findings.add_issue(issue)
+        self.capture_issue(issue)
         return issue
 
 

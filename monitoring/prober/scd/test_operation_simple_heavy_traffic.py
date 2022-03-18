@@ -16,6 +16,7 @@ from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
 from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
+from monitoring.prober.scd import actions
 
 
 BASE_URL = 'https://example.com/uss'
@@ -46,32 +47,10 @@ def _intersection(list1, list2):
   return list(set(list1) & set(list2))
 
 
-@for_api_versions(scd.API_0_3_5)
-def test_ensure_clean_workspace_v5(ids, scd_api, scd_session):
-  for op_id in map(ids, OP_TYPES):
-    resp = scd_session.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-    if resp.status_code == 200:
-      resp = scd_session.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-      assert resp.status_code == 200, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
-
-
-@for_api_versions(scd.API_0_3_17)
-def test_ensure_clean_workspace_v15(ids, scd_api, scd_session):
-  for op_id in map(ids, OP_TYPES):
-    resp = scd_session.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
-    if resp.status_code == 200:
-      resp = scd_session.delete('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
-      assert resp.status_code == 200, resp.content
-    elif resp.status_code == 404:
-      # As expected.
-      pass
-    else:
-      assert False, resp.content
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_ensure_clean_workspace(ids, scd_api, scd_session):
+    for op_id in map(ids, OP_TYPES):
+        actions.delete_operation_if_exists(op_id, scd_session, scd_api)
 
 
 # Preconditions: None
@@ -486,3 +465,8 @@ def test_get_deleted_ops_by_search_v15(ids, scd_api, scd_session):
     assert resp.status_code == 200, resp.content
     found_ids = [op['id'] for op in resp.json().get('operational_intent_reference', [])]
     assert not _intersection(map(ids, OP_TYPES), found_ids)
+
+
+@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+def test_final_cleanup(ids, scd_api, scd_session):
+    test_ensure_clean_workspace(ids, scd_api, scd_session)

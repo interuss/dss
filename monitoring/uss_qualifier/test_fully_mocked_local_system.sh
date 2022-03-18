@@ -40,7 +40,7 @@ echo '{
   }
 }' > ${CONFIG_LOCATION}
 
-RID_QUALIFIER_OPTIONS="$AUTH $CONFIG"
+USS_QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
 # report.json must already exist to share correctly with the Docker container
 touch "$(pwd)/monitoring/uss_qualifier/report.json"
@@ -55,11 +55,11 @@ docker build \
 docker run --name uss_qualifier \
   --rm \
   --tty \
-  -e RID_QUALIFIER_OPTIONS="${RID_QUALIFIER_OPTIONS}" \
+  -e USS_QUALIFIER_OPTIONS="${USS_QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
   -v "$(pwd)/monitoring/uss_qualifier/report.json:/app/monitoring/uss_qualifier/report.json" \
   -v "$(pwd)/${CONFIG_LOCATION}:/app/${CONFIG_LOCATION}" \
   interuss/uss_qualifier \
-  python main.py $RID_QUALIFIER_OPTIONS
+  python main.py $USS_QUALIFIER_OPTIONS
 
 rm ${CONFIG_LOCATION}
