@@ -2,7 +2,7 @@ FROM python:3.8
 # Not -alpine because: https://stackoverflow.com/a/58028091/651139
 # `docker build` should be run from `monitoring` (the parent folder of this folder)
 RUN apt-get update && apt-get install openssl && apt-get install ca-certificates
-RUN mkdir -p /app/rid-host-files
+RUN mkdir -p /app/uss-host-files
 RUN mkdir -p /app/monitoring/monitorlib
 RUN mkdir -p /app/monitoring/uss_qualifier/webapp
 COPY monitorlib/requirements.txt /app/monitoring/monitorlib/requirements.txt

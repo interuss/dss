@@ -432,6 +432,8 @@ components:
 
               - `Planned`: The flight submission data was valid and the flight was successfully processed by the USS and is now authorized.
 
+              - `ReadyToFly`: The flight is ready for the operator to begin flying.
+
               - `Rejected`: The flight submission data provided was invalid and/or could not be used to attempt to authorize the flight.
 
               - `ConflictWithFlight`: The flight submission data was valid, but the flight could not be authorized because of a disallowed conflict with another flight.
@@ -439,7 +441,7 @@ components:
               - `Failed`: The USS was not able to successfully authorize the flight due to a problem with the USS or a downstream system
 
           type: string
-          enum: [Planned, Rejected, ConflictWithFlight, Failed]
+          enum: [Planned, ReadyToFly, Rejected, ConflictWithFlight, Failed]
           example: ConflictWithFlight
         notes:
           description: >-
