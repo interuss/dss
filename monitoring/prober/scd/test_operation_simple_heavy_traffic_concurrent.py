@@ -27,7 +27,7 @@ from monitoring.prober.scd import actions
 BASE_URL = 'https://example.com/uss'
 # TODO(#742): Increase number of concurrent operations from 20 to 100
 OP_TYPES = [register_resource_type(110 + i, 'Operational intent {}'.format(i)) for i in range(20)]
-GROUP_SIZE = len(OP_TYPES) // 3
+GROUP_SIZE = len(OP_TYPES) // 3 + (1 if len(OP_TYPES) % 3 > 0 else 0)
 # Semaphore is added to limit the number of simultaneous requests,
 # default is 100.
 SEMAPHORE = asyncio.Semaphore(10)
