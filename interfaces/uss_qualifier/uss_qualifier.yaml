@@ -7,7 +7,22 @@ info:
 
 components:
   schemas:
-    RunTests:
+    TestRunSpecification:
+      type: object
+      properties:
+        flight_records:
+          description: >-
+            Comma separated list of flight record file names.
+          type: string
+        auth_spec:
+          description: >-
+            User authentication specification.
+          type: string
+        user_config:
+          description: >-
+            User authentication configuration.
+          type: string
+    CreateTestRunRequest:
       type: object
       required:
       - flight_records
@@ -26,27 +41,25 @@ components:
           description: >-
             User authentication configuration.
           type: string
-    RunTestsResponse:
+    CreateTestRunResponse:
       type: object
-      required:
-      - test_id
       properties:
-        test_id:
+        task_id:
+          $ref: '#/components/schemas/TaskID'
+        status_message:
           type: string
+          example: 'A task has been started in the background.'
           description: >-
-            Returns an exisitng/newly created ID for the running background task.
-          example: '830b15b7-d8c4-42b7-bba6-bd631a0216d8'
-        message:
-          type: string
-          description: >-
-            Status of currently running job.
+            Status of currently running task.
         user_id:
           type: string
           description: >-
             User ID of user running the tests.
+        specification:
+          $ref: '#/components/schemas/TestRunSpecification'
     TaskID:
       description: >-
-        Task ID identifier.
+        An exisitng/ newly created ID for the running background task.
       type: string
       example: 2f8343be-6482-4d1b-a474-16847e01af1e
     TaskIdStatusResponse:
@@ -69,26 +82,26 @@ components:
             filename if test result is saved in an output report file.
 
 paths:
-  /api/tests:
+  /api/test_runs:
     post:
       description: 'Run tests'
       requestBody:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/RunTests'
+              $ref: '#/components/schemas/CreateTestRunRequest'
         required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RunTestsResponse'
+                $ref: '#/components/schemas/CreateTestRunResponse'
           description: Test execution request submitted successfully
         '404':
           description: Testing interface is not activated.
         '400':
-          description: Fail to execute tests.
+          description: Flight record not found.
         
 
   /api/tasks/{task_id}:
@@ -111,3 +124,6 @@ paths:
       description: A task ID of an initiated task.
       schema:
         $ref: '#/components/schemas/TaskID'
+servers:
+  - url: http://localhost:8072
+    variables: {}

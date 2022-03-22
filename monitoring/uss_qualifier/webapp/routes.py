@@ -1,6 +1,7 @@
 import flask
 import json
 import logging
+import messages
 import os
 import pathlib
 import requests
@@ -183,7 +184,7 @@ def tests():
         data=data)
 
 
-@webapp.route('/api/tests', methods=['POST'])
+@webapp.route('/api/test_runs', methods=['POST'])
 @login_required
 def run_tests():
     running_job = _get_running_jobs()
@@ -195,7 +196,7 @@ def run_tests():
             'message': 'A job already running in the background'
         }
     # TODO:(pratibha) user_id hardcoded until Auth is fixed.
-    form = forms.TestsForm(request.form)
+    form = forms.TestRunsForm(request.form)
     if not form.validate():
         forms.json_abort(400, 'validation error', details=form.errors)
     else:
@@ -209,7 +210,16 @@ def run_tests():
                 with open(filepath) as fo:
                     file_objs.append(fo.read())
             else:
-                forms.json_abort(400, f'{filename} does not exist.')
+                existing_flights = get_flight_records()
+                if existing_flights and existing_flights['flight_records']:
+                    message = '%s\n%s' % (
+                        messages.FLIGHT_RECORD_NOT_FOUND.format(filename=filename),
+                        messages.FLIGHT_RECORDS_EXISTING.format(
+                            flight_records='\n'.join(existing_flights['flight_records']))
+                    )
+                else:
+                    message = messages.FLIGHT_RECORD_NOT_FOUND.format(filename=filename)
+                forms.json_abort(400, message)
         task_id = _start_background_task(
                 form.user_config.data,
                 form.auth_spec.data,
