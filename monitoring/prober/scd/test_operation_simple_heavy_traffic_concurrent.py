@@ -13,13 +13,14 @@
 
 import asyncio
 import datetime
+import json
 import inspect
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_SC
 from monitoring.monitorlib.testing import assert_datetimes_are_equal
-from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type
+from monitoring.prober.infrastructure import depends_on, for_api_versions, register_resource_type, IDFactory, resource_type_code_descriptions
 from monitoring.prober.scd import actions
 
 
@@ -95,12 +96,20 @@ def _make_op_request_differ_in_time(idx, time_gap):
 # requests, so these two types of requests do not overlap at any time.
 def _make_op_request(idx, additional_time_gap=0):
   if idx < GROUP_SIZE:
-    return _make_op_request_differ_in_2d(idx)
+    req = _make_op_request_differ_in_2d(idx)
+    deconflict = '2d'
   elif idx < GROUP_SIZE * 2:
-    return _make_op_request_differ_in_altitude(idx)
+    req = _make_op_request_differ_in_altitude(idx)
+    deconflict = 'altitude'
   else:
     time_gap = datetime.timedelta(minutes=20 + additional_time_gap)
-    return _make_op_request_differ_in_time(idx, time_gap)
+    req = _make_op_request_differ_in_time(idx, time_gap)
+    deconflict = 'time'
+  extent = req['extents'][0]
+  volume = extent['volume']
+  center = volume['outline_circle']['center']
+  print('{} ({}): ({}, {}) {}-{} {}-{}'.format(idx, deconflict, center['lat'], center['lng'], volume['altitude_lower']['value'], volume['altitude_upper']['value'], extent['time_start']['value'], extent['time_end']['value']))
+  return req
 
 
 def _intersection(list1, list2):
@@ -220,6 +229,31 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
     op_resp_map[op_id]['status_code'] = resp[0][0]
     op_resp_map[op_id]['content'] = resp[0][1]
   for op_id, resp in op_resp_map.items():
+    if resp['status_code'] != 200:
+        try:
+            owner_name, id_code = IDFactory.decode(op_id)
+        except ValueError:
+            owner_name = '<Unknown owner>'
+            id_code = '<Unknown resource ID>'
+        print('Error with op_id {}: {}\'s {}'.format(op_id, owner_name, resource_type_code_descriptions.get(id_code, '<Unknown purpose>')))
+        print('=== Request ===')
+        print(json.dumps(op_req_map[op_id]))
+        print('=== Response ===')
+        print(json.dumps(resp['content']))
+        print('=== Missing operational intents ===')
+        if 'missing_operational_intents' in resp['content']:
+            for missing_op in resp['content']['missing_operational_intents']:
+                missing_id = missing_op.get('id', '<Unknown ID>')
+                try:
+                    owner_name, id_code = IDFactory.decode(missing_id)
+                except ValueError:
+                    owner_name = '<Unknown owner>'
+                    id_code = '<Unknown resource ID>'
+                print('--- Missing op {}: {}\'s {}'.format(missing_id, owner_name, resource_type_code_descriptions.get(id_code, '<Unknown purpose>')))
+                print('--- Request:')
+                print(json.dumps(op_req_map[missing_id]))
+                print('--- Response:')
+                print(json.dumps(op_resp_map[missing_id]))
     assert resp['status_code'] == 200, resp['content']
     req = op_req_map[op_id]
     data = resp['content']
