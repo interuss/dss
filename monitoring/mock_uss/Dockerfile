@@ -14,4 +14,7 @@ ENV PYTHONPATH /app
 ARG version
 ENV CODE_VERSION=$version
 
+# Note that this health check assumes the use of port 5000 locally
+HEALTHCHECK CMD curl --fail http://localhost:5000/status || exit 1
+
 ENTRYPOINT []

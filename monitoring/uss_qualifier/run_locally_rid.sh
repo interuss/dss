@@ -14,35 +14,37 @@ cd "${BASEDIR}/../.." || exit 1
 
 echo '#########################################################################'
 echo '## NOTE: A prerequisite for running this command locally is to have    ##'
-echo '## a running instance of the mock_uss with SCD enabled                 ##'
-echo '## (../mock_uss/run_locally_scdsc.sh) including related dependencies.  ##'
+echo '## running instances of mock_uss acting as RID SP and RID DP           ##'
+echo '## (../mock_uss/run_locally_ridsp.sh) and                              ##'
+echo '## (../mock_uss/run_locally_riddp.sh) including related dependencies.  ##'
 echo '#########################################################################'
 
-CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally_scd.json"
-CONFIG='--config config_run_locally_scd.json'
+CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally_rid.json"
+CONFIG='--config config_run_locally_rid.json'
 
 AUTH='--auth DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
 
 echo '{
     "locale": "CHE",
-    "scd": {
-        "injection_targets": [
-            {
-                "name": "uss1",
-                "injection_base_url": "http://host.docker.internal:8074/scdsc"
-            },
-            {
-                "name": "uss2",
-                "injection_base_url": "http://host.docker.internal:8074/scdsc"
-            }
-        ],
-        "dss_base_url": "http://host.docker.internal:8082"
+    "rid": {
+      "injection_targets": [
+        {
+          "name": "uss1",
+          "injection_base_url": "http://host.docker.internal:8071/ridsp/injection"
+        }
+      ],
+      "observers": [
+        {
+          "name": "uss2",
+          "observation_base_url": "http://host.docker.internal:8073/riddp/observation"
+        }
+      ]
     }
 }' > ${CONFIG_LOCATION}
 
 QUALIFIER_OPTIONS="$AUTH $CONFIG"
 
-REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report_scd.json"
+REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report_rid.json"
 # Report file must already exist to share correctly with the Docker container
 touch "${REPORT_FILE}"
 
@@ -59,13 +61,12 @@ else
   docker_args="-it"
 fi
 
-
 # shellcheck disable=SC2086
 docker run ${docker_args} --name uss_qualifier \
   --rm \
   -e QUALIFIER_OPTIONS="${QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
-  -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report_scd.json" \
+  -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report_rid.json" \
   -v "$(pwd):/app" \
   interuss/uss_qualifier \
   python main.py $QUALIFIER_OPTIONS

@@ -11,7 +11,14 @@ AUD=${MOCK_USS_TOKEN_AUDIENCE:-localhost,host.docker.internal}
 PORT=8074
 BASE_URL="http://${MOCK_USS_TOKEN_AUDIENCE:-host.docker.internal}:${PORT}"
 
-docker run --name mock_uss_scdsc \
+if [ "$CI" == "true" ]; then
+  docker_args="--add-host host.docker.internal:host-gateway" # Required to reach other containers in Ubuntu (used for Github Actions)
+else
+  docker_args=""
+fi
+
+# shellcheck disable=SC2086
+docker run ${docker_args} --name mock_uss_scdsc \
   --rm \
   -e MOCK_USS_AUTH_SPEC="${AUTH}" \
   -e MOCK_USS_DSS_URL="${DSS}" \
@@ -21,6 +28,7 @@ docker run --name mock_uss_scdsc \
   -e MOCK_USS_SERVICES="scdsc" \
   -p ${PORT}:5000 \
   -v "${SCRIPT_DIR}/../../build/test-certs:/var/test-certs:ro" \
+  "$@" \
   local-interuss/mock_uss \
   gunicorn \
     --preload \

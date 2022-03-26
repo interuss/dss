@@ -14,12 +14,13 @@ from monitoring.uss_qualifier.utils import is_url
 
 
 def load_rid_test_definitions(locale: str):
-  aircraft_states_directory = Path(os.getcwd(), 'rid/test_definitions', locale, 'aircraft_states')
+  test_definitions_path = Path(os.getcwd(), 'rid/test_definitions')
+  aircraft_states_directory = Path(test_definitions_path, locale, 'aircraft_states')
   try:
     flight_records = aircraft_state_replayer.get_full_flight_records(aircraft_states_directory)
   except ValueError:
-    print('[RID] No aircraft state files found; generating them via simulator now')
-    flight_state.generate_aircraft_states()
+    print('[RID] No aircraft state files found in {}; generating them via simulator now'.format(aircraft_states_directory))
+    flight_state.generate_aircraft_states(test_definitions_path)
     flight_records = aircraft_state_replayer.get_full_flight_records(aircraft_states_directory)
   return flight_records
 
