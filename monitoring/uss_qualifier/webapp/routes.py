@@ -1,6 +1,7 @@
 import flask
 import json
 import logging
+import messages
 import os
 import pathlib
 import requests
@@ -182,6 +183,97 @@ def tests():
         form=form,
         data=data)
 
+
+@webapp.route('/api/test_runs', methods=['POST'])
+@login_required
+def run_tests():
+    running_job = _get_running_jobs()
+    user_id = 'localuser'
+    if running_job:
+        return {
+            'task_id': running_job,
+            'user_id': user_id,
+            'message': 'A job already running in the background'
+        }
+    # TODO:(pratibha) user_id hardcoded until Auth is fixed.
+    form = forms.TestRunsForm(request.form)
+    if not form.validate():
+        forms.json_abort(400, 'validation error', details=form.errors)
+    else:
+        flight_records_files = [i.strip() for i in (request.form['flight_records']).split(',')]
+
+        file_objs = []
+        for record in (flight_records_files):
+            filename = secure_filename(record)
+            filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records/{filename}'
+            if os.path.exists(filepath):
+                with open(filepath) as fo:
+                    file_objs.append(fo.read())
+            else:
+                existing_flights = get_flight_records()
+                if existing_flights and existing_flights['flight_records']:
+                    message = '%s\n%s' % (
+                        messages.FLIGHT_RECORD_NOT_FOUND.format(filename=filename),
+                        messages.FLIGHT_RECORDS_EXISTING.format(
+                            flight_records='\n'.join(existing_flights['flight_records']))
+                    )
+                else:
+                    message = messages.FLIGHT_RECORD_NOT_FOUND.format(filename=filename)
+                forms.json_abort(400, message)
+        task_id = _start_background_task(
+                form.user_config.data,
+                form.auth_spec.data,
+                file_objs,
+                debug=False)
+        return {
+            'task_id': task_id,
+            'user_id': user_id,
+            'message': 'A task has been started in the background'
+        }
+
+@webapp.route('/api/tasks/<string:task_id>', methods=['GET'])
+def get_task_status(task_id):
+    if session.get('completed_job') == task_id:
+        abort(400, 'Request already processed')
+    task = tasks.get_rq_job(task_id)
+    response_object = {}
+    if task:
+        response_object = {
+            'task_id': task.get_id(),
+            'task_status': task.get_status(),
+            'task_result': task.result,
+        }
+    else:
+        abort(400, f'task_id: {task_id} does not exist.')
+    if task.get_status() == 'finished':
+        session['completed_job'] = task_id
+        task_result = json.loads(task.result)
+        response_object.update({
+            'task_status': 'finished',
+            'task_result': task_result,
+        })
+        # removing job so that all the pending requests on this job should abort.
+        tasks.remove_rq_job(task_id)
+        now = datetime.now()
+        if task_result:
+            filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
+            # TODO:(Pratibha) Use Auth ID for user_id
+            user_id = 'localuser'
+            filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
+            job_result = json.loads(task_result)
+            if job_result.get('is_flight_records_from_kml'):
+                del job_result['is_flight_records_from_kml']
+                for filename, content in job_result.items():
+                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records/{filename}.json'
+                    _write_to_file(filepath, json.dumps(content))
+                response_object.update({'is_flight_records_from_kml': True})
+            else:
+                job_result = task_result
+                _write_to_file(filepath, job_result)
+            response_object.update({'filename': filename})
+        else:
+            logging.info('Task result not available yet..')
+    return response_object
 
 def get_flight_records():
     data = {
