@@ -317,6 +317,14 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	}
 	// l does not need to be closed manually. Instead, the grpc Server instance owning
 	// l will close it on a graceful stop.
+
+	// Indicate ready for container health checks
+	readyFile, err := os.Create("service.ready")
+	if err != nil {
+		return stacktrace.Propagate(err, "Error touching file to indicate service ready")
+	}
+	readyFile.Close()
+
 	return s.Serve(l)
 }
 

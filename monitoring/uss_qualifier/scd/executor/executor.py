@@ -92,7 +92,7 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
             name='DSS', injection_base_url=test_configuration.dss_base_url),
         auth_spec=auth_spec) if 'dss_base_url' in test_configuration else None
     report = Report(
-            qualifier_version=os.environ.get("SCD_VERSION", "unknown"),
+            qualifier_version=os.environ.get("USS_QUALIFIER_VERSION", "unknown"),
             configuration=test_configuration,
     )
 

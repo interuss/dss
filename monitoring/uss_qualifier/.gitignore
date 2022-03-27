@@ -1,4 +1,6 @@
 config_run_locally.json
+config_run_locally_scd.json
+config_run_locally_rid.json
 config_test_fully_mocked_local_system.json
 report*.json
 client_secret.json

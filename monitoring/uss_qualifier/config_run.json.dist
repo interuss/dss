@@ -10,6 +10,7 @@
                 "name": "uss2",
                 "injection_base_url": "http://host.docker.internal:8074/scdsc"
             }
-        ]
+        ],
+        "dss_base_url": "http://host.docker.internal:8082"
     }
 }
