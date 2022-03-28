@@ -7,7 +7,7 @@ from monitoring.monitorlib import fetch
 from monitoring.monitorlib.clients.scd import OperationError
 from monitoring.monitorlib.infrastructure import DSSTestSession
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, \
-    SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult
+    SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, CapabilitiesResponse, StatusResponse
 from monitoring.monitorlib.typing import ImplicitDict
 
 
@@ -42,3 +42,25 @@ def delete_flight(utm_client: DSSTestSession, uss_base_url: str, flight_id: str)
     return ImplicitDict.parse(resp.json(), DeleteFlightResponse), fetch.describe_query(resp, initiated_at)
 
 
+def get_capabilities(utm_client: DSSTestSession, uss_base_url: str) -> Tuple[CapabilitiesResponse, fetch.Query]:
+    url = '{}/v1/capabilities'.format(uss_base_url)
+    print("[SCD] GET {}".format(url))
+
+    initiated_at = datetime.utcnow()
+    resp = utm_client.get(url, scope=SCOPE_SCD_QUALIFIER_INJECT)
+    if resp.status_code != 200:
+            raise QueryError('Unexpected response code for get_capabilities {}. Response: {}'.format(resp.status_code, resp.content.decode('utf-8')), fetch.describe_query(resp, initiated_at))
+
+    return ImplicitDict.parse(resp.json(), CapabilitiesResponse), fetch.describe_query(resp, initiated_at)
+
+
+def get_version(utm_client: DSSTestSession, uss_base_url: str) -> Tuple[StatusResponse, fetch.Query]:
+    url = '{}/v1/status'.format(uss_base_url)
+    print("[SCD] GET {}".format(url))
+
+    initiated_at = datetime.utcnow()
+    resp = utm_client.get(url, scope=SCOPE_SCD_QUALIFIER_INJECT)
+    if resp.status_code != 200:
+            raise QueryError('Unexpected response code for get_version {}. Response: {}'.format(resp.status_code, resp.content.decode('utf-8')), fetch.describe_query(resp, initiated_at))
+
+    return ImplicitDict.parse(resp.json(), StatusResponse), fetch.describe_query(resp, initiated_at)
