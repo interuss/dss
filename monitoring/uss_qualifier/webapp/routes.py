@@ -1,4 +1,3 @@
-from crypt import methods
 import flask
 import json
 import logging
@@ -250,11 +249,7 @@ def get_task_status(task_id):
         abort(400, f'task_id: {task_id} does not exist.')
     if task.get_status() == 'finished':
         session['completed_job'] = task_id
-        task_result = json.loads(task.result)
-        response_object.update({
-            'task_status': 'finished',
-            'task_result': task_result,
-        })
+        task_result = task.result
         # removing job so that all the pending requests on this job should abort.
         tasks.remove_rq_job(task_id)
         now = datetime.now()
@@ -267,8 +262,9 @@ def get_task_status(task_id):
             if job_result.get('is_flight_records_from_kml'):
                 del job_result['is_flight_records_from_kml']
                 for filename, content in job_result.items():
-                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records/{filename}.json'
-                    _write_to_file(filepath, json.dumps(content))
+                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
+                    json_file_path = _get_latest_file_version(filepath, filename)
+                    _write_to_file(json_file_path, json.dumps(content))
                 response_object.update({'is_flight_records_from_kml': True})
             else:
                 job_result = task_result
@@ -277,6 +273,18 @@ def get_task_status(task_id):
         else:
             logging.info('Task result not available yet..')
     return response_object
+
+def _get_latest_file_version(filepath, filename):
+    curr_file_path = f'{filepath}/{filename}.json'
+    if os.path.exists(curr_file_path):
+        version_counter = 0
+        while True:
+            version_counter += 1
+            curr_file_path = f'{filepath}/{filename}_{str(version_counter)}.json'
+            if not os.path.exists(curr_file_path):
+                break
+    return curr_file_path
+
 
 def get_flight_records():
     data = {
@@ -316,21 +324,6 @@ def get_result(job_id):
     if response_object and response_object['task_status'] == 'finished':
         session['completed_job'] = job_id
         task_result = response_object['task_result']
-    # task = tasks.get_rq_job(job_id)
-    # response_object = {}
-    # if task:
-    #     response_object = {
-    #         'task_id': task.get_id(),
-    #         'task_status': task.get_status(),
-    #         'task_result': task.result,
-    #     }
-    # if task.get_status() == 'finished':
-    #     session['completed_job'] = job_id
-    #     task_result = task.result
-    #     response_object.update({
-    #         'task_status': 'finished',
-    #         'task_result': task_result,
-    #     })
         # removing job so that all the pending requests on this job should abort.
         tasks.remove_rq_job(job_id)
         now = datetime.now()
@@ -342,8 +335,9 @@ def get_result(job_id):
             if job_result.get('is_flight_records_from_kml'):
                 del job_result['is_flight_records_from_kml']
                 for filename, content in job_result.items():
-                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records/{filename}.json'
-                    _write_to_file(filepath, json.dumps(content))
+                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
+                    json_file_version = _get_latest_file_version(filepath, filename)
+                    _write_to_file(json_file_version, json.dumps(content))
                 response_object.update({'is_flight_records_from_kml': True})
             else:
                 job_result = task_result
@@ -427,9 +421,12 @@ def upload_flight_state_files():
         return redirect(url_for('._process_kml', kml_files=json.dumps(kml_files)), code=307)
     return redirect(url_for('.tests'))
 
-@webapp.route('/api/flight-records-upload', methods=['POST'])
-def upload_flight_records():
+
+@webapp.route('/api/flight-records-upload/kml', methods=['POST'])
+def upload_kml_flight_records():
     files = request.files.getlist('files')
+    if not files:
+        abort(400, 'Flight records not provided.')
     # user_id = session['google_id']
     user_id = 'localuser'
     flight_records_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
@@ -444,14 +441,13 @@ def upload_flight_records():
     for file in files:
         if file:
             filename = secure_filename(file.filename)
-            if filename.endswith('.json'):
-                file_path = os.path.join(flight_records_path, filename)
-                file.save(file_path)
-            elif filename.endswith('.kml'):
+            if filename.endswith('.kml'):
                 file_path = os.path.join(kml_files_path, filename)
                 file.save(file_path)
                 kml_files.append(file_path)
-            message += f'\nFile saved: {filename}'
+                message += f'\nFile saved: {filename}'
+            else:
+                message += f'\nInvalid file extension: {filename}'
     if kml_files:
         kml_jobs = []
         for kml_file in kml_files:
@@ -462,6 +458,33 @@ def upload_flight_records():
     else:
         response['status_message'] = message
     return response
+
+
+@webapp.route('/api/flight-records-upload/json', methods=['POST'])
+def upload_json_flight_records():
+    files = request.files.getlist('files')
+    if not files:
+        abort(400, 'Flight records not provided.')
+    # TODO:user_id = session['google_id']
+    user_id = 'localuser'
+    flight_records_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
+    if not os.path.isdir(flight_records_path):
+        os.makedirs(flight_records_path)
+
+    response = {}
+    message = ''
+    for file in files:
+        if file:
+            filename = secure_filename(file.filename)
+            if filename.endswith('.json'):
+                json_file_path = _get_latest_file_version(flight_records_path, filename)
+                file.save(json_file_path)
+                message += f'\nFile saved: {json_file_path}'
+            else:
+                message += f'\nInvalid file extension: {filename}'
+    response['status_message'] = message
+    return response
+
 
 @webapp.route('/process_kml', methods=['POST'])
 def _process_kml():

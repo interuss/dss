@@ -41,6 +41,16 @@ components:
           description: >-
             User authentication configuration.
           type: string
+    BackgroundTaskRunResponse:
+      type: object
+      properties:
+        task_id:
+          $ref: '#/components/schemas/TaskID'
+        status_message:
+          type: string
+          example: 'A task has been started in the background.'
+          description: >-
+            Status of currently running task.
     CreateTestRunResponse:
       type: object
       properties:
@@ -80,6 +90,15 @@ components:
           type: string
           description: >-
             filename if test result is saved in an output report file.
+    FileUploadResponse:
+      type: object
+      required:
+      - status_message
+      properties:
+        status_message:
+          type: string
+          description: >-
+            Returns current status of uploaded files.
 
 paths:
   /api/test_runs:
@@ -124,6 +143,56 @@ paths:
       description: A task ID of an initiated task.
       schema:
         $ref: '#/components/schemas/TaskID'
+  /api/flight-records-upload/json:
+    post:
+      description: 'Upload flight record json files to be used to run tests.'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                  files:
+                    type: array
+                    items:
+                      type: string
+                      format: binary
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploadResponse'
+          description: >-
+            Returns Human readable message of uploaded file status.
+        '400':
+          description: Failed to upload files.
+  /api/flight-records-upload/kml:
+    post:
+      description: 'Upload KML flight records that are processed to generate flight records json files.'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                  files:
+                    type: array
+                    items:
+                      type: string
+                      format: binary
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackgroundTaskRunResponse'
+          description: >-
+            Returns task details of the task launched in the background to process KML files.
+        '400':
+          description: Failed to upload files.
 servers:
   - url: http://localhost:8072
     variables: {}
