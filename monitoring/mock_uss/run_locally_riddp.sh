@@ -25,7 +25,7 @@ docker run ${docker_args} --name mock_uss_riddp \
   -e MOCK_USS_TOKEN_AUDIENCE="${AUD}" \
   -e MOCK_USS_SERVICES="riddp" \
   -p ${PORT}:5000 \
-  -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
+  -v "${SCRIPT_DIR}/../../build/test-certs:/var/test-certs" \
   "$@" \
   local-interuss/mock_uss \
   gunicorn \
