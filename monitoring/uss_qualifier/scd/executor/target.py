@@ -2,7 +2,8 @@
 from typing import Dict, Tuple
 
 from monitoring.monitorlib import infrastructure, auth, fetch
-from monitoring.monitorlib.clients.scd_automated_testing import create_flight, delete_flight, QueryError
+from monitoring.monitorlib.clients.scd_automated_testing import create_flight, delete_flight, QueryError, get_version, \
+    get_capabilities
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResult, \
     DeleteFlightResult, InjectFlightResponse, DeleteFlightResponse
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
@@ -58,3 +59,14 @@ class TestTarget:
 
     def is_managing_flight(self, flight_name: str) -> bool:
         return flight_name in self.created_flight_ids.keys()
+
+
+    def get_target_information(self):
+        resp, _ = get_version(self.client, self.config.injection_base_url)
+        version = resp.version if resp.version is not None else "Unknown"
+        resp, _ = get_capabilities(self.client, self.config.injection_base_url)
+
+        return {
+            "version": version,
+            "capabilities": resp.capabilities
+        }

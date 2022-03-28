@@ -45,7 +45,7 @@ def query_operational_intents(area_of_interest: scd.Volume4D) -> List[scd.Operat
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def scdsc_injection_status() -> Tuple[str, int]:
     """Implements USS status in SCD automated testing injection API."""
-    return flask.jsonify({'status': 'Ready'})
+    return flask.jsonify({'status': 'Ready', 'version': config.Config.CODE_VERSION})
 
 
 @webapp.route('/scdsc/v1/capabilities', methods=['GET'])

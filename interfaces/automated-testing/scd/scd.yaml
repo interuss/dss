@@ -35,6 +35,11 @@ components:
           type: string
           enum: [Starting, Ready]
           example: Ready
+        version:
+          description: |-
+            Arbitrary string representing the version of the USS system to be tested.
+          type: string
+          example: v0.0.1-445ad3
     ################################################################################
     #################### Start of ASTM-standard definitions    #####################
     #################### interfaces/astm-utm/Protocol/utm.yaml #####################
