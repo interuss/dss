@@ -16,4 +16,5 @@ s2sphere==0.2.5
 shapely==1.7.1
 termcolor==1.1.0
 aiohttp==3.8.0
-Jinja2==3.0.3
+Jinja2==3.0.3 # See https://github.com/interuss/dss/issues/745
+Werkzeug==2.0.3 # See https://github.com/interuss/dss/issues/753
