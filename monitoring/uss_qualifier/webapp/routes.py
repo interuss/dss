@@ -422,7 +422,7 @@ def upload_flight_state_files():
     return redirect(url_for('.tests'))
 
 
-@webapp.route('/api/flight-records-upload/kml', methods=['POST'])
+@webapp.route('/api/flight_records/kml', methods=['POST'])
 def upload_kml_flight_records():
     files = request.files.getlist('files')
     if not files:
@@ -460,7 +460,7 @@ def upload_kml_flight_records():
     return response
 
 
-@webapp.route('/api/flight-records-upload/json', methods=['POST'])
+@webapp.route('/api/flight_records/json', methods=['POST'])
 def upload_json_flight_records():
     files = request.files.getlist('files')
     if not files:

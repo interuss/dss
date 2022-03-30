@@ -143,7 +143,7 @@ paths:
       description: A task ID of an initiated task.
       schema:
         $ref: '#/components/schemas/TaskID'
-  /api/flight-records-upload/json:
+  /api/flight_records/json:
     post:
       description: 'Upload flight record json files to be used to run tests.'
       requestBody:
@@ -168,7 +168,7 @@ paths:
             Returns Human readable message of uploaded file status.
         '400':
           description: Failed to upload files.
-  /api/flight-records-upload/kml:
+  /api/flight_records/kml:
     post:
       description: 'Upload KML flight records that are processed to generate flight records json files.'
       requestBody:
