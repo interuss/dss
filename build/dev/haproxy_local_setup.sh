@@ -9,7 +9,6 @@ touch "${RESULTFILE}"
 cat /dev/null > "${RESULTFILE}"
 FLAGS="--network dss_sandbox_default cockroachdb/cockroach:v21.2.3 start --insecure --join=roacha,roachb,roachc"
 
-
 OS=$(uname)
 if [[ "$OS" == "Darwin" ]]; then
 	# OSX uses BSD readlink
@@ -21,7 +20,6 @@ fi
 cd "${BASEDIR}/../.." || exit 1
 
 DC_COMMAND=$*
-
 
 function cleanup() {
 	# ----------- clean up -----------
@@ -122,13 +120,13 @@ docker exec -it roacha ./cockroach gen haproxy --insecure
 
 
 echo "Copy haproxy.cfg file to a local folder"
-docker exec -it roacha cat haproxy.cfg > $(pwd)/haproxy.cfg
+docker exec -it roacha cat haproxy.cfg > "$(pwd)/haproxy.cfg"
 
 echo "Start the HAProxy container by mounting the cfg file."
 docker run -d --name dss-crdb-cluster-for-testing	\
 	--network dss_sandbox_default	\
 	-p 26257:26257	\
-	-v $(pwd)/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy:1.7  
+	-v "$(pwd)/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg":ro haproxy:1.7  
 sleep 1
 
 echo "Bootstrapping RID Database tables"
