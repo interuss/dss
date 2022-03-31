@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2086
 
 set -eo pipefail
 
-echo "Re/Create dss/crdb cluster setup  using HAProxy"
+echo "DSS/crdb cluster setup  using HAProxy"
 RESULTFILE="$(pwd)/haproxy_cluster_setup"
 touch "${RESULTFILE}"
 cat /dev/null > "${RESULTFILE}"
@@ -21,18 +22,6 @@ cd "${BASEDIR}/../.." || exit 1
 
 DC_COMMAND=$*
 
-if [[ "$DC_COMMAND" == "down" ]]; then
-  cleanup || true
-  exit
-fi
-
-echo "HAProxy base directory is ${BASEDIR}"
-# cd "${BASEDIR}"
-
-function gather_logs() {
-	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
-	docker logs core-service-for-testing 2> core-service-for-testing.log
-}
 
 function cleanup() {
 	# ----------- clean up -----------
@@ -53,10 +42,29 @@ function cleanup() {
 
 	echo "Stopping http gateway container"
 	docker kill -f http-gateway-for-testing &> /dev/null || true
+	docker rm -f http-gateway-for-testing &> /dev/null || true
 
 	echo "Stopping core-service container"
 	docker kill -f core-service-for-testing &> /dev/null || true
+	docker rm -f core-service-for-testing &> /dev/null || true
+
+	echo "Removing DSS network"
+	docker network rm dss_sandbox_default
 }
+
+if [[ "$DC_COMMAND" == "down" ]]; then
+  cleanup || true
+  exit
+fi
+
+echo "HAProxy base directory is ${BASEDIR}"
+# cd "${BASEDIR}"
+
+function gather_logs() {
+	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
+	docker logs core-service-for-testing 2> core-service-for-testing.log
+}
+
 
 function on_exit() {
 	gather_logs || true
@@ -82,22 +90,25 @@ docker rm -f roachb &> /dev/null || echo "No CRDB to clean up"
 docker rm -f roachc &> /dev/null || echo "No CRDB to clean up"
 
 echo "Stopping haproxy container"
-	docker rm -f dss-crdb-cluster-for-testing &> /dev/null || true
+docker rm -f dss-crdb-cluster-for-testing &> /dev/null || true
+
+echo "Create DSS network"
+docker network create dss_sandbox_default
 
 echo "Starting roacha with admin port on :8080"
 docker run -d --rm --name roacha \
 	-p 8080:8080 \
-	"$FLAGS" > /dev/null
+	$FLAGS > /dev/null
 
 echo "Starting roachb with admin port on :8088"
 docker run -d --rm --name roachb \
 	-p 8088:8088 \
-	"$FLAGS" > /dev/null
+	$FLAGS > /dev/null
 
 echo "Starting roachc with admin port on :8089"
 docker run -d --rm --name roachc \
 	-p 8089:8089 \
-	"$FLAGS" > /dev/null
+	$FLAGS > /dev/null
 
 echo "Initialize cluster setup"
 docker exec -it roacha	\
@@ -111,11 +122,15 @@ docker exec -it roacha ./cockroach gen haproxy --insecure
 
 
 echo "Copy haproxy.cfg file to a local folder"
-docker exec -it roacha cat haproxy.cfg > ~/Downloads/haproxy/haproxy.cfg
+docker exec -it roacha cat haproxy.cfg > $(pwd)/haproxy.cfg
 
 echo "Start the HAProxy container by mounting the cfg file."
-docker run -d --name dss-crdb-cluster-for-testing --network dss_sandbox_default -p 26257:26257 -v ~/Downloads/haproxy:/usr/local/etc/haproxy:ro haproxy:1.7  
+docker run -d --name dss-crdb-cluster-for-testing	\
+	--network dss_sandbox_default	\
+	-p 26257:26257	\
+	-v $(pwd)/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy:1.7  
 sleep 1
+
 echo "Bootstrapping RID Database tables"
 docker run --rm --name rid-db-manager \
 	--link dss-crdb-cluster-for-testing:crdb \
@@ -156,7 +171,7 @@ docker run -d --name core-service-for-testing \
 	-reflect_api \
 	-log_format console \
 	-dump_requests \
-	-accepted_jwt_audiences local-gateway \
+	-accepted_jwt_audiences local-gateway,localhost \
 	-enable_scd	\
 	-enable_http
 
