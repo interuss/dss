@@ -63,7 +63,6 @@ function gather_logs() {
 	docker logs core-service-for-testing 2> core-service-for-testing.log
 }
 
-
 function on_exit() {
 	gather_logs || true
 }
