@@ -9,7 +9,6 @@ touch "${RESULTFILE}"
 cat /dev/null > "${RESULTFILE}"
 FLAGS="--network dss_sandbox_default cockroachdb/cockroach:v21.2.3 start --insecure --join=roacha,roachb,roachc"
 
-
 OS=$(uname)
 if [[ "$OS" == "Darwin" ]]; then
 	# OSX uses BSD readlink
@@ -21,7 +20,6 @@ fi
 cd "${BASEDIR}/../.." || exit 1
 
 DC_COMMAND=$*
-
 
 function cleanup() {
 	# ----------- clean up -----------
@@ -64,7 +62,6 @@ function gather_logs() {
 	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
 	docker logs core-service-for-testing 2> core-service-for-testing.log
 }
-
 
 function on_exit() {
 	gather_logs || true
