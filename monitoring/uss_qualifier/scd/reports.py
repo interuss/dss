@@ -1,6 +1,6 @@
 import datetime, json
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from monitoring.monitorlib import fetch
 from monitoring.monitorlib.typing import ImplicitDict
@@ -107,9 +107,14 @@ class Findings(ImplicitDict):
         return '[{} issues in {} interactions]'.format(
             len(self.issues), len(self.interactions))
 
+class TargetInformation(ImplicitDict):
+    status: str
+    version: str
+
 class Report(ImplicitDict):
     qualifier_version: str
     configuration: SCDQualifierTestConfiguration
+    targets_information: Dict[str, TargetInformation]
     findings: Findings = Findings()
 
     def save(self):

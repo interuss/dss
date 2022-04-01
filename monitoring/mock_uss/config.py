@@ -22,6 +22,7 @@ KEY_SERVICES = 'SERVICES'
 KEY_DSS_URL = 'DSS_URL'
 KEY_BEHAVIOR_LOCALITY = 'BEHAVIOR_LOCALITY'
 
+KEY_CODE_VERSION = 'CODE_VERSION'
 
 workspace_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'workspace')
 
@@ -35,3 +36,4 @@ class Config(object):
   SERVICES = set(svc.strip().lower() for svc in os.environ.get(ENV_KEY_SERVICES, '').split(','))
   DSS_URL = os.environ[ENV_KEY_DSS]
   BEHAVIOR_LOCALITY = Locality(os.environ.get(ENV_KEY_BEHAVIOR_LOCALITY, 'CHE'))
+  CODE_VERSION = os.environ.get(KEY_CODE_VERSION, 'Unknown')

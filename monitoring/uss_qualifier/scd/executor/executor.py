@@ -82,6 +82,9 @@ def format_combination(combination: Dict[str, TestTarget]) -> List[str]:
     return list(map(lambda t: "{}: {}".format(t[0], t[1].name), combination.items()))
 
 
+def targets_information(targets: List[TestTarget]):
+    return dict(map(lambda target: (target.name, target.get_target_information()), targets))
+
 def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfiguration,
                   auth_spec: str) -> bool:
     automated_tests = load_scd_test_definitions(locale)
@@ -92,8 +95,9 @@ def run_scd_tests(locale: Locality, test_configuration: SCDQualifierTestConfigur
             name='DSS', injection_base_url=test_configuration.dss_base_url),
         auth_spec=auth_spec) if 'dss_base_url' in test_configuration else None
     report = Report(
-            qualifier_version=os.environ.get("SCD_VERSION", "unknown"),
+            qualifier_version=os.environ.get("USS_QUALIFIER_VERSION", "unknown"),
             configuration=test_configuration,
+            targets_information=targets_information(configured_targets)
     )
 
     should_exit = False

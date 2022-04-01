@@ -17,5 +17,5 @@ docker build \
     -f monitoring/uss_qualifier/Dockerfile \
     -t interuss/uss_qualifier \
     --build-arg version="$(scripts/git/commit.sh)" \
-    --build-arg qualifier_scd_version="$(scripts/git/version.sh uss_qualifier --long)" \
+    --build-arg qualifier_version="$(scripts/git/version.sh uss_qualifier --long)" \
     monitoring

@@ -114,3 +114,13 @@ class Capability(str, Enum):
 
 class CapabilitiesResponse(ImplicitDict):
     capabilities: Optional[List[Capability]]
+
+
+class Status(str, Enum):
+    Starting = 'Starting'
+    Ready = 'Ready'
+
+
+class StatusResponse(ImplicitDict):
+    status: str
+    version: str
