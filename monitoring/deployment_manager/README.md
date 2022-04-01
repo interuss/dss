@@ -22,11 +22,13 @@ deployment_manager is designed to interact with deployments managed with Kuberne
 ### Install minikube
 
 * Follow [installation instructions](https://minikube.sigs.k8s.io/docs/start/) up to, and including, "Start your cluster"
-* Enable ingress at 127.0.0.1 with `minikube addons enable ingress`
+* [Enable ingress](https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/) at 127.0.0.1 with `minikube addons enable ingress`
 
 ### minikube usage
 
 If minikube is already installed, then start a session with `minikube start`.
+
+If kubectl is not currently configured to control minikube: `kubectl config use-context minikube`
 
 View the minikube dashboard with `minikube dashboard`.
 

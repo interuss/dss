@@ -4,13 +4,14 @@ from typing import Callable, Dict, Optional
 import kubernetes
 import structlog
 
-from monitoring.deployment_manager.deployment import DeploymentSpec
+from monitoring.deployment_manager.deployment_spec import DeploymentSpec
 
 
 @dataclass
 class Clients(object):
     core: kubernetes.client.CoreV1Api
     apps: kubernetes.client.AppsV1Api
+    networking: kubernetes.client.NetworkingV1Api
 
 
 @dataclass
@@ -32,9 +33,10 @@ def make_context(spec: DeploymentSpec):
             raise ValueError('Found multiple context definitions with the name `{}` in kube-config file'.format(spec.cluster.name))
 
         api_client = kubernetes.config.new_client_from_config(context=matching_contexts[0])
-        core_client = kubernetes.client.CoreV1Api(api_client=api_client)
-        apps_client = kubernetes.client.AppsV1Api(api_client=api_client)
-        clients = Clients(core=core_client, apps=apps_client)
+        clients = Clients(
+            core=kubernetes.client.CoreV1Api(api_client=api_client),
+            apps=kubernetes.client.AppsV1Api(api_client=api_client),
+            networking=kubernetes.client.NetworkingV1Api(api_client=api_client))
     else:
         clients = None
 
