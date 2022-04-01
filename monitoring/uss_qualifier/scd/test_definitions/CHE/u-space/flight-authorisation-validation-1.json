@@ -1,24 +1,24 @@
 {
     "name": "Flight Authorisation validation test",
+    "uss_capabilities": [
+        {
+            "capabilities": ["FlightAuthorisationValidation"],
+            "injection_target": {
+                "uss_role": "Submitting USS"
+            },
+            "generate_issue": {
+                "test_code": "Capabilities",
+                "relevant_requirements": [],
+                "severity": "High",
+                "subject": "",
+                "summary": "Flight authorisation validation not supported",
+                "details": "USSP indicated it does not support flight authorisation validation which is required to perform the flight authorisation U-space service in Switzerland."
+            }
+        }
+    ],
     "steps": [
         {
             "name": "Inject Fight Authorisation data",
-            "uss_capabilities": [
-                {
-                    "capabilities": ["FlightAuthorisationValidation"],
-                    "injection_target": {
-                        "uss_role": "Submitting USS"
-                    },
-                    "generate_issue": {
-                        "test_code": "Capabilities",
-                        "relevant_requirements": [],
-                        "severity": "High",
-                        "subject": "",
-                        "summary": "Flight authorisation validation not supported",
-                        "details": "USSP indicated it does not support flight authorisation validation which is required to perform the flight authorisation U-space service in Switzerland."
-                    }
-                }
-            ],
             "inject_flight": {
                 "reference_time": "2023-02-12T10:34:14.681217+00:00",
                 "name": "8vludg44",

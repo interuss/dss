@@ -1,22 +1,22 @@
 {
     "name": "Nominal Planning Test with Priority",
+    "uss_capabilities": [
+        {
+            "capabilities": ["FlightAuthorisationValidation"],
+            "injection_target": {
+                "uss_role": "First-Mover USS"
+            }
+        },
+        {
+            "capabilities": ["FlightAuthorisationValidation", "HighPriorityFlights"],
+            "injection_target": {
+                "uss_role": "Second USS"
+            }
+        }
+    ],
     "steps": [
         {
             "name": "Inject flight via First-mover USS",
-            "uss_capabilities": [
-                {
-                    "capabilities": ["FlightAuthorisationValidation"],
-                    "injection_target": {
-                        "uss_role": "First-Mover USS"
-                    }
-                },
-                {
-                    "capabilities": ["FlightAuthorisationValidation", "HighPriorityFlights"],
-                    "injection_target": {
-                        "uss_role": "Second USS"
-                    }
-                }
-            ],
             "inject_flight": {
                 "reference_time": "2023-02-12T10:34:14.483425+00:00",
                 "test_injection": {
