@@ -341,7 +341,7 @@ def generate_nominal_with_priority_flight_authorisation_test_data(locale:str ='C
     
     # End build nominal test steps
 
-    test_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning')
+    test_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning-1')
     test_name = test_output_details.group +'/'+test_output_details.name
     nominal_test_details = AutomatedTest(name=test_name, steps = nominal_test_steps)
     nominal_test_and_output_details = AutomatedTestDetails(automated_test = nominal_test_details, output_path_details= test_output_details)
@@ -403,7 +403,7 @@ def generate_nominal_with_priority_flight_authorisation_test_data(locale:str ='C
         
     # End build flight authorisation test steps
     
-    flight_authorisation_test_output_details = TestOutputPathDetails(group='u-space', name ='flight-authorisation-validation')
+    flight_authorisation_test_output_details = TestOutputPathDetails(group='u-space', name ='flight-authorisation-validation-1')
     flight_authorisation_test_name = flight_authorisation_test_output_details.group +'/'+ flight_authorisation_test_output_details.name
     
     flight_authorisation_test = AutomatedTest(name = flight_authorisation_test_name, steps = flight_authorisation_test_steps)
