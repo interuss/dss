@@ -1,6 +1,6 @@
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest
-from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt, InjectionTarget, KnownResponses, AutomatedTest, TestStep
-from monitoring.uss_qualifier.scd.simulator.utils import FlightNameIncorrectField, TestOutputPathDetails, AutomatedTestDetails
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import OperationalIntentTestInjection,FlightAuthorisationData, InjectFlightRequest, UASClass
+from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt, InjectionTarget, KnownResponses, AutomatedTest, TestStep, Capability, RequiredUSSCapabilities, KnownIssueFields
+from monitoring.uss_qualifier.scd.simulator.utils import TestOutputPathDetails, AutomatedTestDetails
 from utils import GeneratedGeometry, GeometryGenerationRule
 from monitoring.monitorlib.formats import OperatorRegistrationNumber, SerialNumber
 from shapely.geometry import asShape
@@ -316,9 +316,8 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
     return flight_injection_attempt
 
 
-def generate_nominal_with_priority_flight_authorisation_test_data(locale:str ='CHE') -> List[AutomatedTestDetails]:
+def generate_nominal_test_data(locale:str ='CHE') -> AutomatedTestDetails:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
-    all_automated_test_details = []
 
     ## Begin nominal test data generation ##
  
@@ -345,75 +344,75 @@ def generate_nominal_with_priority_flight_authorisation_test_data(locale:str ='C
     test_name = test_output_details.group +'/'+test_output_details.name
     nominal_test_details = AutomatedTest(name=test_name, steps = nominal_test_steps)
     nominal_test_and_output_details = AutomatedTestDetails(automated_test = nominal_test_details, output_path_details= test_output_details)
-
-    all_automated_test_details.append(nominal_test_and_output_details)
+    
+    return nominal_test_and_output_details
+    
 
     ## End nominal test data generation ##
-
-    ## Begin nominal test (with priorities) data generation  ##
-    all_flight_names = []
-    injection_attempts = 2
-    for injection_attempt in range(0,injection_attempts):
-        random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
-        all_flight_names.append(random_flight_name)
-    nominal_test_with_priority_steps = []
-    nominal_test_with_priority_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names,locale=locale, with_priority=True)
-
-    # Build nominal test (with priorities) steps
-    for idx, injection_attempt in enumerate(nominal_test_with_priority_flight_injection_attempts):
-        if idx == 0:
-            nominal_test_with_priority_step_1 = TestStep(name="Inject flight via First-mover USS", inject_flight = injection_attempt, delete_flight=None)
-            nominal_test_with_priority_steps.append(nominal_test_with_priority_step_1)
-        elif idx == 1:
-            nominal_test_with_priority_step_2 = TestStep(name="Inject flight via Second USS", inject_flight = injection_attempt, delete_flight=None)
-            nominal_test_with_priority_steps.append(nominal_test_with_priority_step_2)
     
-    # End build nominal test (with priorities) steps 
+    # ## Begin nominal test (with priorities) data generation  ##
+    # all_flight_names = []
+    # injection_attempts = 2
+    # for injection_attempt in range(0,injection_attempts):
+    #     random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
+    #     all_flight_names.append(random_flight_name)
+    # nominal_test_with_priority_steps = []
+    # nominal_test_with_priority_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names,locale=locale, with_priority=True)
 
-    test_with_priority_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning-priority-1')
-    with_priority_test_name = test_with_priority_output_details.group +'/'+test_with_priority_output_details.name
-    nominal_test_with_priority_details = AutomatedTest(name=with_priority_test_name, steps = nominal_test_with_priority_steps)
-    nominal_test_with_priority_and_output_details = AutomatedTestDetails(automated_test = nominal_test_with_priority_details, output_path_details= test_with_priority_output_details)
+    # # Build nominal test (with priorities) steps
+    # for idx, injection_attempt in enumerate(nominal_test_with_priority_flight_injection_attempts):
+    #     if idx == 0:
+    #         nominal_test_with_priority_step_1 = TestStep(name="Inject flight via First-mover USS", inject_flight = injection_attempt, delete_flight=None)
+    #         nominal_test_with_priority_steps.append(nominal_test_with_priority_step_1)
+    #     elif idx == 1:
+    #         nominal_test_with_priority_step_2 = TestStep(name="Inject flight via Second USS", inject_flight = injection_attempt, delete_flight=None)
+    #         nominal_test_with_priority_steps.append(nominal_test_with_priority_step_2)
     
-    all_automated_test_details.append(nominal_test_with_priority_and_output_details)
+    # # End build nominal test (with priorities) steps 
 
-    ## End nominal test (with priorities) data generation  ##
+    # test_with_priority_output_details = TestOutputPathDetails(group='astm-strategic-coordination', name ='nominal-planning-priority-1')
+    # with_priority_test_name = test_with_priority_output_details.group +'/'+test_with_priority_output_details.name
+    # nominal_test_with_priority_details = AutomatedTest(name=with_priority_test_name, steps = nominal_test_with_priority_steps)
+    # nominal_test_with_priority_and_output_details = AutomatedTestDetails(automated_test = nominal_test_with_priority_details, output_path_details= test_with_priority_output_details)
+    
+    # all_automated_test_details.append(nominal_test_with_priority_and_output_details)
 
-    ## Begin flight authorisation test data generation  ##  
-    fields_to_make_incorrect = ["uas_serial_number", "operator_registration_number"]
-    number_of_injections = len(fields_to_make_incorrect)
+    # ## End nominal test (with priorities) data generation  ##
+    
+    # ## Begin flight authorisation test data generation  ##  
+    # fields_to_make_incorrect = ["uas_serial_number", "operator_registration_number"]
+    # number_of_injections = len(fields_to_make_incorrect)
 
-    all_flight_authorisation_test_flights = []
+    # all_flight_authorisation_test_flights = []
 
-    for field_index in range(0,number_of_injections):
-        random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
-        flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name, incorrect_field = fields_to_make_incorrect[field_index])
-        all_flight_authorisation_test_flights.append(flight_name_incorrect_field)
+    # for field_index in range(0,number_of_injections):
+    #     random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
+    #     flight_name_incorrect_field = FlightNameIncorrectField(flight_name = random_flight_name, incorrect_field = fields_to_make_incorrect[field_index])
+    #     all_flight_authorisation_test_flights.append(flight_name_incorrect_field)
 
     
-    all_operational_intents_for_flight_authorisation_test = generate_operational_intents_for_flight_authorisation_test(num_operational_intents= number_of_injections)
+    # all_operational_intents_for_flight_authorisation_test = generate_operational_intents_for_flight_authorisation_test(num_operational_intents= number_of_injections)
 
-    flight_authorisation_test_steps = []
-    # Build flight authorisation test steps
-    for test_id, flight_auth_test_metadata in enumerate(all_flight_authorisation_test_flights):
-        flight_authorisation_test_injection_attempt = generate_flight_authorisation_u_space_format_injection_attempt(field_to_make_incorrect=flight_auth_test_metadata.incorrect_field, flight_name= flight_auth_test_metadata.flight_name, operational_intent_test_injection = all_operational_intents_for_flight_authorisation_test[test_id], locale=locale)
+    # flight_authorisation_test_steps = []
+    # # Build flight authorisation test steps
+    # for test_id, flight_auth_test_metadata in enumerate(all_flight_authorisation_test_flights):
+    #     flight_authorisation_test_injection_attempt = generate_flight_authorisation_u_space_format_injection_attempt(field_to_make_incorrect=flight_auth_test_metadata.incorrect_field, flight_name= flight_auth_test_metadata.flight_name, operational_intent_test_injection = all_operational_intents_for_flight_authorisation_test[test_id], locale=locale)
 
-        inject_test_step = TestStep(name="Inject Fight Authorisation data", inject_flight= flight_authorisation_test_injection_attempt, delete_flight=None)
-        flight_authorisation_test_steps.append(inject_test_step)
+    #     inject_test_step = TestStep(name="Inject Fight Authorisation data", inject_flight= flight_authorisation_test_injection_attempt, delete_flight=None)
+    #     flight_authorisation_test_steps.append(inject_test_step)
         
-    # End build flight authorisation test steps
+    # # End build flight authorisation test steps
     
-    flight_authorisation_test_output_details = TestOutputPathDetails(group='u-space', name ='flight-authorisation-validation-1')
-    flight_authorisation_test_name = flight_authorisation_test_output_details.group +'/'+ flight_authorisation_test_output_details.name
+    # flight_authorisation_test_output_details = TestOutputPathDetails(group='u-space', name ='flight-authorisation-validation-1')
+    # flight_authorisation_test_name = flight_authorisation_test_output_details.group +'/'+ flight_authorisation_test_output_details.name
     
-    flight_authorisation_test = AutomatedTest(name = flight_authorisation_test_name, steps = flight_authorisation_test_steps)
-    flight_authorisation_test_details = AutomatedTestDetails(automated_test = flight_authorisation_test, output_path_details= flight_authorisation_test_output_details)
+    # flight_authorisation_test = AutomatedTest(name = flight_authorisation_test_name, steps = flight_authorisation_test_steps)
+    # flight_authorisation_test_details = AutomatedTestDetails(automated_test = flight_authorisation_test, output_path_details= flight_authorisation_test_output_details)
     
-    all_automated_test_details.append(flight_authorisation_test_details)
+    # all_automated_test_details.append(flight_authorisation_test_details)
 
-    ## End flight authorisation test data generation ##
+    # ## End flight authorisation test data generation ##
     
-    return all_automated_test_details
 
 
 def generate_operational_intent_injection(astm_4d_volume : Volume4D, priority:int = 0) -> OperationalIntentTestInjection:
@@ -421,24 +420,121 @@ def generate_operational_intent_injection(astm_4d_volume : Volume4D, priority:in
     current_operational_intent_reference = OperationalIntentTestInjection(volumes = [astm_4d_volume], state = 'Accepted', off_nominal_volumes = [], priority =priority)
     return current_operational_intent_reference
 
-def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[AutomatedTestDetails], locale ="che") -> None:
-    """A function to write Flight injection attempts to disk so that they can be examined / used by other software like the test executor """
-    # Create test_definition directory if it does not exist    
+# def write_automated_test_to_disk(output_path:os.path, all_automated_tests: List[AutomatedTestDetails], locale ="che") -> None:
+#     """A function to write Flight injection attempts to disk so that they can be examined / used by other software like the test executor """
+#     # Create test_definition directory if it does not exist    
     
-    for automated_test_data in all_automated_tests:           
-        automated_test_file_directory_name = automated_test_data.output_path_details.group
-        automated_test_file_directory = Path(output_path,locale, automated_test_file_directory_name)
-        automated_test_file_directory.mkdir(parents=True, exist_ok=True)
-        automated_test_file_name = automated_test_data.output_path_details.name + '.json'
-        automated_test_file = Path(automated_test_file_directory, automated_test_file_name)
+#     for automated_test_data in all_automated_tests:           
+#         automated_test_file_directory_name = automated_test_data.output_path_details.group
+#         automated_test_file_directory = Path(output_path,locale, automated_test_file_directory_name)
+#         automated_test_file_directory.mkdir(parents=True, exist_ok=True)
+#         automated_test_file_name = automated_test_data.output_path_details.name + '.json'
+#         automated_test_file = Path(automated_test_file_directory, automated_test_file_name)
 
-        with open(automated_test_file, "w") as f:
-            f.write(json.dumps(automated_test_data.automated_test))
+#         with open(automated_test_file, "w") as f:
+#             f.write(json.dumps(automated_test_data.automated_test))
 
-        with open(automated_test_file, 'r') as f:
-            ImplicitDict.parse(json.load(f), AutomatedTest)
+#         with open(automated_test_file, 'r') as f:
+#             ImplicitDict.parse(json.load(f), AutomatedTest)
+
+def update_nominal_test_definition(output_path:os.path, nominal_test_data: AutomatedTestDetails, locale ="che") -> None:
+    """This method updates the default test defnititions in the repository
+    """
+    # read file     
+    automated_test_file_directory_name = nominal_test_data.output_path_details.group
+    automated_test_file_directory = Path(output_path,locale, automated_test_file_directory_name)
+    automated_test_file_directory.mkdir(parents=True, exist_ok=True)
+    automated_test_file_name = nominal_test_data.output_path_details.name + '.json'
+    automated_test_file = Path(automated_test_file_directory, automated_test_file_name)
+
+    with open(automated_test_file, "r") as existing_test:
+        current_test_definition = json.load(existing_test)  
+
+    # Parse the current file stored in the repository
+    
+    raw_test_steps = current_test_definition['steps']
+    current_capabilities = current_test_definition['uss_capabilities']
+
+    all_test_steps: List[TestStep] = []
+    all_uss_capabilities: List[RequiredUSSCapabilities] = []
+
+    for uss_capability in current_capabilities:
+        raw_capabilities = uss_capability['capabilities']
+        raw_generate_issue = uss_capability['generate_issue']
+        raw_injection_target = uss_capability['injection_target']
+        all_capabilities = []
+        for raw_capability in raw_capabilities: 
+            all_capabilities.append(Capability(raw_capability))
+
+        injection_target = InjectionTarget(uss_role=raw_injection_target['uss_role'])
+
+        generate_issue = KnownIssueFields(test_code =raw_generate_issue['test_code'], relevant_requirements =raw_generate_issue['relevant_requirements'] ,severity=raw_generate_issue['severity'] ,  subject=raw_generate_issue['subject'] ,summary=raw_generate_issue['summary'], details= raw_generate_issue['details'])
+
+        required_uss_capabilities = RequiredUSSCapabilities(capabilities = all_capabilities,injection_target = injection_target,  generate_issue = generate_issue)
+
+        all_uss_capabilities.append(required_uss_capabilities)
+
+    for idx, step_details in enumerate(raw_test_steps):
+        print(step_details.keys())
+        inject_flight_details = step_details['inject_flight']
+        
+        test_injection_op_details = inject_flight_details['operational_intent']
+        test_injection_flight_auth_details = inject_flight_details['flight_authorisation']
+        all_volumes_raw = test_injection_op_details['volumes']
+        all_4d_volumes: List[Volume4D] = []
+        for volume in all_volumes_raw:
+            altitude_lower = Altitude(value = volume['volume']['altitude_lower']['value'] , reference = volume['volume']['altitude_lower']['reference'], units =volume['volume']['altitude_lower']['units']  )
+            altitude_upper =  Altitude(value = volume['volume']['altitude_upper']['value'] , reference = volume['volume']['altitude_upper']['reference'], units =volume['volume']['altitude_upper']['units']  )
+
+            if 'outline_polygon' in volume['volume'].keys():
+                all_vertices = volume['volume']['outline_polygon']['vertices']
+                polygon_verticies = []
+                for vertex in all_vertices:
+                    v = LatLngPoint(lat = vertex['lat'],lng=vertex['lng'])
+                    polygon_verticies.append(v)
+
+                outline_polygon = Polygon(vertices=polygon_verticies)
+            else: 
+                outline_polygon = None
+            current_3d_volume = Volume3D(outline_polygon=outline_polygon, altitude_upper=altitude_upper, altitude_lower= altitude_lower )
+            
+            time_start = Time(value = volume['time_start']['value'], format = volume['time_start'][format])
+            time_end = Time(value = volume['time_end']['value'], format = volume['time_end'][format])
+            
+            current_4d_volume = Volume4D(volume = current_3d_volume, time_start=time_start , time_end =time_end)
+
+            all_4d_volumes.append(current_4d_volume)
+
+        all_off_nominal_volumes = test_injection_op_details['all_off_nominal_volumes']
+
+        operational_intent_test_injection = OperationalIntentTestInjection(state = test_injection_op_details['state'], priority = test_injection_op_details['priority'], volumes = all_4d_volumes, off_nominal_volumes = all_off_nominal_volumes)
+
+        flight_authorisation_data = FlightAuthorisationData(uas_serial_number = test_injection_flight_auth_details['uas_serial_number'], operation_mode= test_injection_flight_auth_details['operation_mode'],operation_category = test_injection_flight_auth_details['operation_category'], uas_class=UASClass(test_injection_flight_auth_details['uas_class']),  identification_technologies=test_injection_flight_auth_details['identification_technologies'],uas_type_certificate=test_injection_flight_auth_details['uas_type_certificate'],  connectivity_methods =test_injection_flight_auth_details['connectivity_methods'],endurance_minutes=test_injection_flight_auth_details['endurance_minutes'], emergency_procedure_url=test_injection_flight_auth_details['emergency_procedure_url'],operator_id=test_injection_flight_auth_details['operator_id'],  uas_id=test_injection_flight_auth_details['uas_id'])
+
+        test_injection = InjectFlightRequest(operational_intent = operational_intent_test_injection, flight_authorisation = flight_authorisation_data)
+
+        incorrect_result_details: Dict[str, KnownIssueFields] = {}
+        for k,v in inject_flight_details['known_responses']['incorrect_result_details'].items():
+            incorrect_result_details[k] = KnownIssueFields(test_code = v['test_code'],relevant_requirements = v['relevant_requirements'],severity = v['severity'],  subject = v['subject'], summary = v['summary'],details = v['details'])
+
+        known_responses  = KnownResponses(acceptable_results= step_details['known_responses']['acceptable_results'], incorrect_result_details = incorrect_result_details)
+        
+        inj_target = InjectionTarget(uss_role=step_details['inject_flight']['uss_role'])
+
+        inject_flight = FlightInjectionAttempt(reference_time=step_details['inject_flight']['reference_time'], name = step_details['inject_flight']['name'], test_injection= test_injection, known_responses = known_responses, injection_target =inj_target)
+        
+        current_step = TestStep(name =step_details['name'], inject_flight = inject_flight, delete_flight = [])
+        all_test_steps.append(current_step)
+            
+    # over write the steps with the new steps
+            
+    updated_current_test = AutomatedTest(name = current_test_definition['name'], steps = nominal_test_data.automated_test.steps, uss_capabilities = all_uss_capabilities)
+    
+    with open(automated_test_file, "w") as test_to_overwrite:
+        test_to_overwrite.write(json.dumps(updated_current_test))
+
 
 if __name__ == '__main__':
-    nominal_and_flight_authorisation_test = generate_nominal_with_priority_flight_authorisation_test_data()
+    nominal_test_data = generate_nominal_test_data()
     output_path = os.path.join(Path(__file__).parent.absolute(), "../test_definitions")
-    write_automated_test_to_disk(output_path=output_path, all_automated_tests = nominal_and_flight_authorisation_test)
+    update_nominal_test_definition(output_path=output_path, nominal_test_data = nominal_test_data)
