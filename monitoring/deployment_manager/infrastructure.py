@@ -4,7 +4,7 @@ from typing import Callable, Dict, Optional
 import kubernetes
 import structlog
 
-from monitoring.deployment_manager.deployment_spec import DeploymentSpec
+from monitoring.deployment_manager.systems.configuration import DeploymentSpec
 
 
 @dataclass

@@ -9,7 +9,7 @@ import sys
 
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.deployment_manager import actions
-from monitoring.deployment_manager.deployment_spec import DeploymentSpec
+from monitoring.deployment_manager.systems.configuration import DeploymentSpec
 from monitoring.deployment_manager.infrastructure import make_context
 from monitoring.deployment_manager import infrastructure
 
