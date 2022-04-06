@@ -95,8 +95,12 @@ def logout():
     session.clear()
     return render_template('logout.html')
 
+@webapp.before_request
+def _process_completed_bg_jobs():
+    _reload_latest_kmls_from_redis()
+    _reload_latest_test_run_outcomes_from_redis()
 
-def _start_background_task(user_config, auth_spec, input_files, debug):
+def _initialize_background_test_runs(user_config, auth_spec, input_files, debug):
     job = resources.qualifier_queue.enqueue(
         'monitoring.uss_qualifier.webapp.tasks.call_test_executor',
         user_config, auth_spec, input_files, debug)
@@ -170,7 +174,7 @@ def tests():
                 filepath = f'{input_files_location}/{filename}'
                 with open(filepath) as fo:
                     file_objs.append(fo.read())
-            job_id = _start_background_task(
+            job_id = _initialize_background_test_runs(
                 form.user_config.data,
                 form.auth_spec.data,
                 file_objs,
@@ -222,7 +226,7 @@ def run_tests():
                 else:
                     message = messages.FLIGHT_RECORD_NOT_FOUND.format(filename=filename)
                 forms.json_abort(400, message)
-        task_id = _start_background_task(
+        task_id = _initialize_background_test_runs(
                 form.user_config.data,
                 form.auth_spec.data,
                 file_objs,
@@ -273,6 +277,37 @@ def get_task_status(task_id):
         else:
             logging.info('Task result not available yet..')
     return response_object
+
+
+def _reload_latest_kmls_from_redis():
+    latest_kmls = resources.redis_conn.hgetall(resources.REDIS_KEY_UPLOADED_KMLS)
+    user_id = 'localuser'
+    if latest_kmls:
+        for _, flight_data in latest_kmls.items():
+            flight_data = json.loads(flight_data)
+
+            if flight_data.get('is_flight_records_from_kml'):
+                del flight_data['is_flight_records_from_kml']
+                for filename, content in flight_data.items():
+                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
+                    json_file_version = _get_latest_file_version(filepath, filename)
+                    _write_to_file(json_file_version, json.dumps(content))
+        resources.redis_conn.delete(resources.REDIS_KEY_UPLOADED_KMLS)
+
+
+def _reload_latest_test_run_outcomes_from_redis():
+    latest_test_runs = resources.redis_conn.hgetall(resources.REDIS_KEY_TEST_RUNS)
+    user_id = 'localuser'
+    if latest_test_runs:
+        now = datetime.now()
+        filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
+        filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
+        for _, test_result in latest_test_runs.items():
+            if isinstance(test_result, bytes):
+                        test_result = test_result.decode("utf-8")
+            _write_to_file(filepath, test_result)
+        resources.redis_conn.delete(resources.REDIS_KEY_TEST_RUNS)
+
 
 def _get_latest_file_version(filepath, filename):
     curr_file_path = f'{filepath}/{filename}.json'

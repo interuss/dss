@@ -2,6 +2,7 @@ import json
 from typing import List
 import redis
 import rq
+import uuid
 from . import resources
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid import test_executor
@@ -36,7 +37,15 @@ def call_test_executor(user_config_json: str, auth_spec: str, flight_record_json
         report = test_report.test_data
     else:
         report = test_executor.run_rid_tests(user_config, auth_spec, flight_records)
+    resources.redis_conn.hset(
+        resources.REDIS_KEY_TEST_RUNS, str(uuid.uuid4()), str(report))
     return json.dumps(report)
 
+
 def call_kml_processor(kml_content, output_path):
-    return flight_state_from_kml.main(kml_content, output_path, from_string=True)
+    flight_states = flight_state_from_kml.main(
+        kml_content, output_path, from_string=True)
+    resources.redis_conn.hset(
+        resources.REDIS_KEY_UPLOADED_KMLS, str(uuid.uuid4()), str(flight_states))
+    return flight_states
+
