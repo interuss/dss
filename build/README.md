@@ -8,6 +8,8 @@ interoperate with other DSS instances in a DSS pool.
 To run a local DSS instance for testing, evaluation, or development, see
 [dev/standalone_instance.md](dev/standalone_instance.md).
 
+To create a local DSS instance with multi-node CRDB cluster, see [dev/mutli_node_local_dss.md](dev/mutli_node_local_dss.md).
+
 To create or join a pool consisting of multiple interoperable DSS instances, see
 [information on pooling](pooling.md).
 
