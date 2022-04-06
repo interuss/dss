@@ -36,6 +36,8 @@ MANIFEST
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+haproxy.cfg
+haproxy_cluster_setup
 
 # Unit test / coverage reports
 htmlcov/
