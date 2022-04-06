@@ -20,6 +20,8 @@ def _public_key_bytes(public_key) -> bytes:
 
 @deployment_action('dss/info/print_ca_public_certs')
 def print_ca_public_certs(context: Context):
+    if 'dss' not in context.spec:
+        raise ValueError('DSS system is not defined in deployment configuration')
     backend = cryptography.hazmat.backends.default_backend()
 
     # Read the list of accepted CA certificates
