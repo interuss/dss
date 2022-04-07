@@ -440,11 +440,10 @@ def update_existing_test_definition(output_path:os.path, new_test_data: Automate
     existing_test:AutomatedTest = existing_test_parser.parse_and_load_existing_test(current_test_definition=current_test_definition)
 
     # over write the steps with the new steps    
-    updated_current_test = AutomatedTest(name = existing_test.name, steps = new_test_data.automated_test.steps, uss_capabilities = existing_test.uss_capabilities)
+    updated_current_test = AutomatedTest(name = existing_test.name, uss_capabilities = existing_test.uss_capabilities, steps = new_test_data.automated_test.steps, )
     
     with open(automated_test_file, "w") as test_to_overwrite:
         test_to_overwrite.write(json.dumps(updated_current_test, indent=4))
-
 
 
 if __name__ == '__main__':

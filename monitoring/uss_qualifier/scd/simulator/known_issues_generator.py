@@ -18,26 +18,33 @@ class NominalTestKnownIssuesAcceptableResults():
                                                                 summary ="The operational intent details provided were generated in such a way that they should have been planned.", 
                                                                 details = "The co-ordinates of the 4D Operational intent does not conflict with any existing operational intents in the area and the processing result should be a successful planning of the intent.")             
 
-        self.nominal_planning_test_common_error_notification = KnownIssueFields(test_code = "nominal_planning_test", 
+        self.nominal_planning_test_conflict_with_flight_rejected_error_notification = KnownIssueFields(test_code = "nominal_planning_test", 
                                                         relevant_requirements = [], 
                                                         severity = "High",
                                                         subject= self.nominal_planning_test_subject, 
                                                         summary ="Injection request for a valid flight was unsuccessful", 
-                                                        details = "All operational intent and flight authorisation data provided was complete and correct with no airspace conflicts. The operational intent data should have been processed successfully and flight should have been planned.")        
+                                                        details = "All operational intent and flight authorisation data provided was complete and correct. The operational intent data should have been processed successfully and submitted to the DSS and the flight should not have been planned due to conflicts with existing operations.")        
+                
+        self.nominal_planning_test_conflict_with_flight_failed_error_notification = KnownIssueFields(test_code = "nominal_planning_test", 
+                                                        relevant_requirements = [], 
+                                                        severity = "High",
+                                                        subject= self.nominal_planning_test_subject, 
+                                                        summary ="Injection request for a valid flight was unsuccessful", 
+                                                        details = "All operational intent and flight authorisation data provided was complete and correct. The operational intent data should have been processed successfully and submited to the DSS and the flight should have not been planned due to conflicts with existing operations.")        
                 
         self.nominal_planning_test_rejected_error_notification = KnownIssueFields(test_code = "nominal_planning_test", 
                                                         relevant_requirements = [], 
                                                         severity = "High",
                                                         subject= self.nominal_planning_test_subject, 
                                                         summary ="Injection request for a valid flight was rejected", 
-                                                        details = "All operational intent and flight authorisation data provided was complete and correct with no airspace conflicts. The operational intent data should have been processed successfully and flight should have been planned.")        
+                                                        details = "All operational intent and flight authorisation data provided was complete and correct with no airspace conflicts. The operational intent data should have been processed successfully and operational intent should have been submitted to the DSS.")        
                 
         self.nominal_planning_test_failed_error_notification = KnownIssueFields(test_code = "nominal_planning_test", 
                                                         relevant_requirements = [], 
                                                         severity = "High",
                                                         subject= self.nominal_planning_test_subject, 
                                                         summary ="Injection request for a valid flight failed", 
-                                                        details = "All operational intent and flight authorisation data provided was complete and correct with no airspace conflicts. The operational intent data should have been processed successfully and flight should have been planned.")        
+                                                        details = "All operational intent and flight authorisation data provided was complete and correct with no airspace conflicts. The operational intent data should have been processed successfully and operational intent should have been submitted to the DSS.")        
                 
         self.nominal_planning_test_if_planned_with_conflict_with_flight_notification = KnownIssueFields(test_code = "nominal_planning_test", 
                                                     relevant_requirements = [], 
@@ -63,8 +70,8 @@ class NominalTestKnownIssuesAcceptableResults():
             all_known_issues_fields['Rejected']= self.nominal_planning_test_rejected_error_notification
             all_known_issues_fields['Failed']= self.nominal_planning_test_failed_error_notification
         elif self.expected_operational_intent_processing_result == "ConflictWithFlight":
-            all_known_issues_fields['Rejected']= self.nominal_planning_test_common_error_notification
-            all_known_issues_fields['Failed']= self.nominal_planning_test_common_error_notification
+            all_known_issues_fields['Rejected']= self.nominal_planning_test_conflict_with_flight_rejected_error_notification
+            all_known_issues_fields['Failed']= self.nominal_planning_test_conflict_with_flight_failed_error_notification
             all_known_issues_fields['Planned']= self.nominal_planning_test_if_planned_with_conflict_with_flight_notification
 
         return all_known_issues_fields
@@ -117,8 +124,6 @@ class NominalTestwPrioritiesKnownIssuesAcceptableResults():
             all_known_issues_fields['Failed']= self.nominal_planning_test_with_priority_failed_error_notification
         return all_known_issues_fields
 
-
-
 ### End Nominal planning test (with priority) notifications ###      
 
 ### Begin flight authorisation data validation notifications ###              
@@ -132,18 +137,31 @@ class FlightAuthorisationKnownIssuesAcceptableResults():
         self.expected_operational_intent_processing_result = expected_operational_intent_processing_result
 
         self.flight_authorisation_test_subject = "Flight Authorisation Data"
-        self.flight_authorisation_test_conflict_with_flight_error_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
+        self.flight_authorisation_test_conflict_with_flight_with_correct_data_error_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
+                                                        relevant_requirements = [], 
+                                                        severity = "High",
+                                                        subject= "Operational Intent Processsing",
+                                                        summary ="Flight authorisation request contains valid operational intents, however flight authorisation data contained incorrect fields.", 
+                                                        details = "The test data contains operational intents with no conflicts in space and time, however the flight authorisation data contained invalid fields, USSPs shouldn't have attempted any airspace checks since the flight authorisation data wasn't valid.")
+
+        self.flight_authorisation_test_conflict_with_flight_without_incorrect_data_error_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
                                                         relevant_requirements = [], 
                                                         severity = "High",
                                                         subject= "Operational Intent Processsing",
                                                         summary ="Flight authorisation request contains operational intents with no conflict in space and time and therefore should not lead to a airspace conflict error.", 
                                                         details = "The test data contains operational intents with no conflicts in space and time and therefore should be planned successfully.")        
 
-        self.flight_authorisation_test_failed_with_without_incorrect_field_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
+        self.flight_authorisation_test_failed_without_incorrect_field_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
                                                         relevant_requirements = [], 
                                                         severity = "High",
                                                         subject= self.flight_authorisation_test_subject, 
                                                         summary ="Flight injection request contains flight authorisation with all required fields and a valid operational intent.", details = "The test data contains operational intents and flight authorisation data that are complete and valid and should be processsed by the USSP.")
+                
+        self.flight_authorisation_test_failed_with_incorrect_field_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test", 
+                                                        relevant_requirements = [], 
+                                                        severity = "High",
+                                                        subject= self.flight_authorisation_test_subject, 
+                                                        summary ="Flight injection request contains flight authorisation with some incorrect fields in the Flight Authorisation data and a valid operational intent.", details = "The test data contains operational intents that are complete and valid, however the flight authorisation contains invalid / incorrect data.")
                 
         self.if_planned_with_incorrect_uas_serial_number_notification = KnownIssueFields(test_code = "flight_authorisation_validation_test",
                                                     relevant_requirements = ["ANNEX IV of Commission Implementing Regulation (EU) 2021/664, paragraph 1"], 
@@ -170,8 +188,14 @@ class FlightAuthorisationKnownIssuesAcceptableResults():
         """A method to generate messages for the user to take remedial actions when a flight authorisation test returns a status that is not expected """
 
         all_known_issues_fields = {}
-        all_known_issues_fields["Failed"] = self.flight_authorisation_test_failed_with_without_incorrect_field_notification            
-        all_known_issues_fields["ConflictWithFlight"] = self.flight_authorisation_test_conflict_with_flight_error_notification
+
+        if incorrect_field == None:
+            all_known_issues_fields["Failed"] = self.flight_authorisation_test_failed_without_incorrect_field_notification         
+            all_known_issues_fields["ConflictWithFlight"] = self.flight_authorisation_test_conflict_with_flight_without_incorrect_data_error_notification   
+        else:
+            all_known_issues_fields["Failed"] = self.flight_authorisation_test_failed_with_incorrect_field_notification         
+            all_known_issues_fields["ConflictWithFlight"] = self.flight_authorisation_test_conflict_with_flight_with_correct_data_error_notification
+
 
         if self.expected_flight_authorisation_processing_result == "Rejected":
             if incorrect_field == "uas_serial_number":
