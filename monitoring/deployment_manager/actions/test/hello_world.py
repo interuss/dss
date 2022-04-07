@@ -16,7 +16,7 @@ def deploy(context: Context) -> None:
     active_namespace = deploylib.namespaces.upsert(context.clients.core, context.log, namespace)
     deploylib.systems.upsert_resources(resources, active_namespace, context.clients, context.log)
 
-    context.log.msg('hello_world system deployment complete')
+    context.log.msg('hello_world system deployment complete.  Run `minikube tunnel` and then navigate to http://localhost in a browser to see the web content.')
 
 
 @deployment_action('test/hello_world/destroy')
