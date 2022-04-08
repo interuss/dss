@@ -6,7 +6,7 @@ from monitoring.monitorlib.formats import OperatorRegistrationNumber, SerialNumb
 from shapely.geometry import asShape
 from shapely.geometry import LineString
 from monitoring.monitorlib.scd import Time, Volume3D, Volume4D, Polygon, Altitude, LatLngPoint
-from typing import List
+from typing import List, Tuple
 from pathlib import Path
 import geojson
 import json
@@ -214,12 +214,16 @@ def generate_valid_flight_authorisation_data_for_nominal_test(locale:str ='CHE')
     return flight_authorisation_data
 
 
-def generate_operational_intents_for_flight_authorisation_test(num_operational_intents:int)->List[OperationalIntentTestInjection]:
+def generate_operational_intents_for_flight_authorisation_test(num_operational_intents:int, bbox:Tuple[float, float, float, float]=None, utm_zone:str=None)->List[OperationalIntentTestInjection]:
     """A method to generate well clear operational intents and use them in the flight authorisation data format tests """
 
     all_operational_intent_test_injections = []
-
-    my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone="32T")
+    if bbox:
+        minx, miny, maxx, maxy = bbox
+    else: 
+        minx, miny, maxx, maxy = (7.4735784530639648,46.9746744128218410,7.4786210060119620,46.9776318195799121,)
+    utm_zone = utm_zone if utm_zone else "32T"
+    my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=minx, miny=miny, maxx=maxx, maxy=maxy, utm_zone=utm_zone)
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
 
     for injection_number in range(0,num_operational_intents):
@@ -234,12 +238,17 @@ def generate_operational_intents_for_flight_authorisation_test(num_operational_i
     return all_operational_intent_test_injections
 
 
-def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str],locale:str, with_priority:bool = False) -> List[FlightInjectionAttempt]:
+def generate_nominal_test_flight_injection_attempts(all_flight_names: List[str],locale:str, bbox:Tuple[float, float, float, float], utm_zone:str=None, with_priority:bool = False) -> List[FlightInjectionAttempt]:
     """A method to generate flight injection data and associated messages in case the result of data processing is different from the expectation for the nominal test """
 
     nominal_test_flight_injection_attempts = []
+    if bbox:
+        minx, miny, maxx, maxy = bbox
+    else: 
+        minx, miny, maxx, maxy = (7.4735784530639648,46.9746744128218410,7.4786210060119620,46.9776318195799121,)
+    utm_zone = utm_zone if utm_zone else "32T"
+    my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=minx, miny=miny, maxx=maxx, maxy=maxy, utm_zone=utm_zone)
 
-    my_operational_intent_generator = ProximateOperationalIntentGenerator(minx=7.4735784530639648, miny=46.9746744128218410, maxx=7.4786210060119620, maxy=46.9776318195799121, utm_zone="32T")
     altitude_of_ground_level_wgs_84 = 570 # height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit
 
     for injection_number, flight_name in enumerate(all_flight_names):  
@@ -317,7 +326,7 @@ def generate_flight_authorisation_u_space_format_injection_attempt(flight_name:s
     return flight_injection_attempt
 
 
-def generate_nominal_test_data(locale:str ='CHE') -> AutomatedTestDetails:
+def generate_nominal_test_data(bbox:Tuple[float, float, float, float]=(7.4735784530639648,46.9746744128218410,7.4786210060119620,46.9776318195799121,), utm_zone:str= '32T',locale:str ='CHE') -> AutomatedTestDetails:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
 
     ## Begin nominal test data generation ##
@@ -328,7 +337,7 @@ def generate_nominal_test_data(locale:str ='CHE') -> AutomatedTestDetails:
         random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
         all_flight_names.append(random_flight_name)
     nominal_test_steps = []
-    nominal_test_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names,locale=locale)
+    nominal_test_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names,bbox =bbox, utm_zone = utm_zone, locale=locale)
 
     # Build nominal test steps
     for idx, injection_attempt in enumerate(nominal_test_flight_injection_attempts):
@@ -349,7 +358,7 @@ def generate_nominal_test_data(locale:str ='CHE') -> AutomatedTestDetails:
     return nominal_test_and_output_details
     
 
-def generate_nominal_priority_test_data(locale:str ='CHE') -> AutomatedTestDetails:
+def generate_nominal_priority_test_data(bbox:Tuple[float, float, float, float]=(7.4735784530639648,46.9746744128218410,7.4786210060119620,46.9776318195799121,), utm_zone:str= '32T',locale:str ='CHE') -> AutomatedTestDetails:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
 
     ## Begin nominal test (with priorities) data generation  ##
@@ -359,7 +368,7 @@ def generate_nominal_priority_test_data(locale:str ='CHE') -> AutomatedTestDetai
         random_flight_name = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
         all_flight_names.append(random_flight_name)
     nominal_test_with_priority_steps = []
-    nominal_test_with_priority_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names,locale=locale, with_priority=True)
+    nominal_test_with_priority_flight_injection_attempts = generate_nominal_test_flight_injection_attempts(all_flight_names = all_flight_names,bbox =bbox, utm_zone = utm_zone, locale=locale,with_priority=True)
 
     # Build nominal test (with priorities) steps
     for idx, injection_attempt in enumerate(nominal_test_with_priority_flight_injection_attempts):
@@ -381,7 +390,7 @@ def generate_nominal_priority_test_data(locale:str ='CHE') -> AutomatedTestDetai
 
 
 
-def generate_flight_authorisation_test_data(locale:str ='CHE') -> AutomatedTestDetails:
+def generate_flight_authorisation_test_data(bbox:Tuple[float, float, float, float]=(7.4735784530639648,46.9746744128218410,7.4786210060119620,46.9776318195799121,), utm_zone:str= '32T',locale:str ='CHE') -> AutomatedTestDetails:
     """A method to run the data generator to generate the nominal and flight authorisation data test and the associated steps"""
 
     ## Begin flight authorisation test data generation  ##  
@@ -396,7 +405,7 @@ def generate_flight_authorisation_test_data(locale:str ='CHE') -> AutomatedTestD
         all_flight_authorisation_test_flights.append(flight_name_incorrect_field)
 
     
-    all_operational_intents_for_flight_authorisation_test = generate_operational_intents_for_flight_authorisation_test(num_operational_intents= number_of_injections)
+    all_operational_intents_for_flight_authorisation_test = generate_operational_intents_for_flight_authorisation_test(bbox = bbox, utm_zone= utm_zone, num_operational_intents= number_of_injections)
 
     flight_authorisation_test_steps = []
     # Build flight authorisation test steps
@@ -447,9 +456,16 @@ def update_existing_test_definition(output_path:os.path, new_test_data: Automate
 
 
 if __name__ == '__main__':
-    nominal_test_data = generate_nominal_test_data()
-    flight_authorisation_data = generate_flight_authorisation_test_data()
-    nominal_test_with_priorities_data = generate_nominal_priority_test_data()
+
+    # Set the bounding box for operational intent generation, default is set to Bern, Switzerland
+    minx, miny, maxx, maxy = (7.4735784530639648,46.9746744128218410,7.4786210060119620,46.9776318195799121,)
+    # Set the UTM Zone for coversion / reprojection to spatial coordinates
+    utm_zone="32T"
+    # Set the locale. 
+    locale = 'CHE'
+    nominal_test_data = generate_nominal_test_data(bbox=(minx, miny, maxx, maxy,), utm_zone= utm_zone, locale = locale)
+    flight_authorisation_data = generate_flight_authorisation_test_data(bbox=(minx, miny, maxx, maxy,), utm_zone= utm_zone, locale = locale)
+    nominal_test_with_priorities_data = generate_nominal_priority_test_data(bbox=(minx, miny, maxx, maxy,), utm_zone= utm_zone, locale = locale)
     output_path = os.path.join(Path(__file__).parent.absolute(), "../test_definitions")
     update_existing_test_definition(output_path=output_path, new_test_data = nominal_test_data)
     update_existing_test_definition(output_path=output_path, new_test_data = flight_authorisation_data)
