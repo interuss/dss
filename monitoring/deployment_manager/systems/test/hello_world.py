@@ -3,9 +3,15 @@ from typing import Any, List
 from kubernetes import client as k8s
 
 
-DEPLOYMENT_NAME = 'nginx-deployment'
-WEBSERVER_PORT = 'webserver-port'
+DEPLOYMENT_NAME = 'webserver-deployment'
+CONTAINER_PORT = 8001
 APP_NAME = 'webbserver-app'
+
+SERVICE_NAME = 'webserver-service'
+SERVICE_PORT = 8002
+SERVICE_PORT_NAME = 'webserver-port'
+
+INGRESS_NAME = 'webserver-ingress'
 
 
 def define_namespace(name: str) -> k8s.V1Namespace:
@@ -15,9 +21,10 @@ def define_namespace(name: str) -> k8s.V1Namespace:
 def _define_webserver_deployment() -> k8s.V1Deployment:
     # Define Pod container template
     container = k8s.V1Container(
-        name='nginx',
-        image='nginx:1.15.4',
-        ports=[k8s.V1ContainerPort(container_port=80)],
+        name='echo',
+        image='hashicorp/http-echo',
+        command=['/http-echo', '-listen=:{}'.format(CONTAINER_PORT), '-text="Echo server on port {}"'.format(CONTAINER_PORT)],
+        ports=[k8s.V1ContainerPort(container_port=CONTAINER_PORT)],
         resources=k8s.V1ResourceRequirements(
             requests={'cpu': '100m', 'memory': '200Mi'},
             limits={'cpu': '500m', 'memory': '500Mi'},
@@ -36,7 +43,7 @@ def _define_webserver_deployment() -> k8s.V1Deployment:
 
     # Instantiate the deployment object
     deployment = k8s.V1Deployment(
-        metadata=k8s.V1ObjectMeta(name=DEPLOYMENT_NAME, labels={'app': APP_NAME}),
+        metadata=k8s.V1ObjectMeta(name=DEPLOYMENT_NAME),
         spec=spec,
     )
 
@@ -46,18 +53,18 @@ def _define_webserver_deployment() -> k8s.V1Deployment:
 def _define_webserver_service() -> k8s.V1Service:
     spec = k8s.V1ServiceSpec(
         selector={'app': APP_NAME},
-        type='NodePort',
+        type='LoadBalancer',
         ports=[
             k8s.V1ServicePort(
-                name=WEBSERVER_PORT,
-                port=8080,
-                target_port=80
+                name=SERVICE_PORT_NAME,
+                port=SERVICE_PORT,
+                target_port=CONTAINER_PORT,
             )
         ]
     )
 
     svc = k8s.V1Service(
-        metadata=k8s.V1ObjectMeta(name='webserver-service'),
+        metadata=k8s.V1ObjectMeta(name=SERVICE_NAME),
         spec=spec,
     )
 
@@ -75,8 +82,8 @@ def _define_webserver_ingress() -> k8s.V1Ingress:
                             path_type='Prefix',
                             backend=k8s.V1IngressBackend(
                                 service=k8s.V1IngressServiceBackend(
-                                    name='webserver-service',
-                                    port=k8s.V1ServiceBackendPort(name=WEBSERVER_PORT))))
+                                    name=SERVICE_NAME,
+                                    port=k8s.V1ServiceBackendPort(name=SERVICE_PORT_NAME))))
                     ]
                 )
             )
@@ -84,7 +91,7 @@ def _define_webserver_ingress() -> k8s.V1Ingress:
     )
 
     ingress = k8s.V1Ingress(
-        metadata=k8s.V1ObjectMeta(name='webserver-ingress'),
+        metadata=k8s.V1ObjectMeta(name=INGRESS_NAME),
         spec=spec,
     )
 
@@ -95,5 +102,5 @@ def define_resources() -> List[Any]:
     return [
         _define_webserver_deployment(),
         _define_webserver_service(),
-        #_define_webserver_ingress(),
+        _define_webserver_ingress(),
     ]
