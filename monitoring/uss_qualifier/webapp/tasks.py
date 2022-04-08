@@ -44,15 +44,16 @@ def call_test_executor(
     else:
         report = test_executor.run_rid_tests(user_config, auth_spec, flight_records)
     inputs = {
-        'input_files': flight_inputs,
-        'auth_spec': auth_spec,
-        'user_config': json.loads(user_config_json)
+        'inputs': {
+            'input_files': flight_inputs,
+            'auth_spec': auth_spec,
+            'user_config': json.loads(user_config_json)}
     }
     uniq_id = str(uuid.uuid4())
     resources.redis_conn.hset(
         resources.REDIS_KEY_TEST_RUNS, uniq_id, json.dumps(report))
     resources.redis_conn.hset(
-        resources.REDIS_KEY_TEST_RUN_LOGS, uniq_id, json.dumps(inputs))
+        resources.REDIS_KEY_TEMP_LOGS, uniq_id, json.dumps(inputs))
     return json.dumps(report)
 
 

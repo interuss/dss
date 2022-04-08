@@ -8,6 +8,7 @@ redis_conn = Redis.from_url(webapp.config.get(config.KEY_REDIS_URL))
 
 REDIS_KEY_UPLOADED_KMLS = 'uploaded_kmls'
 REDIS_KEY_TEST_RUNS = 'test_runs'
+REDIS_KEY_TEMP_LOGS = 'temp_logs'
 REDIS_KEY_TEST_RUN_LOGS = 'test_run_logs'
 
 

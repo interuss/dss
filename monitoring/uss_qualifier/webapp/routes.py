@@ -260,7 +260,25 @@ def get_tests_history():
     return {
         'test_runs': list(tests_logs)
     }
-    
+
+
+@webapp.route('/api/tests/<string:test_id>', methods=['GET'])
+def get_test_runs_details(test_id):
+    user_id = 'localuser'
+    test_runs_logs = resources.redis_conn.hgetall(f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
+    test_runs_logs = resources.decode_redis(test_runs_logs)
+    if not test_id in test_runs_logs:
+        abort(400, f'test_id: {test_id} does not exist.')
+    result_set = {}
+    result_set.update(json.loads(test_runs_logs[test_id]))
+    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{test_id}'
+    content = ''
+    with open(filepath) as f:
+        content = f.read()
+        if content:
+            result_set.update({'outputs': json.loads(content)})
+    return result_set
+
 
 @webapp.route('/api/tasks/<string:task_id>', methods=['GET'])
 def get_task_status(task_id):
@@ -322,29 +340,24 @@ def _reload_latest_kmls_from_redis():
 
 
 def _reload_latest_test_run_outcomes_from_redis():
-    latest_test_runs = resources.redis_conn.hgetall(resources.REDIS_KEY_TEST_RUNS)
+    latest_test_runs_report = resources.redis_conn.hgetall(resources.REDIS_KEY_TEST_RUNS)
     user_id = 'localuser'
-    test_runs_logs = resources.redis_conn.hgetall(
-        resources.REDIS_KEY_TEST_RUN_LOGS)
-    test_runs_logs = resources.decode_redis(test_runs_logs)
-    if latest_test_runs:
-        latest_test_runs = resources.decode_redis(latest_test_runs)
+    temp_logs = resources.redis_conn.hgetall(
+        resources.REDIS_KEY_TEMP_LOGS)
+    temp_logs = resources.decode_redis(temp_logs)
+    if latest_test_runs_report:
+        latest_test_runs_report = resources.decode_redis(latest_test_runs_report)
         now = datetime.now()
         counter = 0
-        for k, test_result in latest_test_runs.items():
+        for k, test_result in latest_test_runs_report.items():
             counter += 1
             filename = f'{str(now.date())}_{now.strftime("%H%M%S")}_{counter}.json'
             filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
-            logs_content = {}
-            print('test_runs_logs: ', test_runs_logs)
-            print('type test logs: ', type(test_runs_logs))
-            logs_content['inputs'] = test_runs_logs[k]
-            # logs_content['outputs'] = test_result
             if isinstance(test_result, bytes):
                 test_result = test_result.decode("utf-8")
             resources.redis_conn.hset(
                 f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}',
-                filename, json.dumps({'inputs': test_runs_logs[k]}))
+                filename, temp_logs[k])
             _write_to_file(filepath, test_result)
             resources.redis_conn.delete(resources.REDIS_KEY_TEST_RUN_LOGS)
 
