@@ -6,6 +6,7 @@ import pem
 import yaml
 
 from monitoring.deployment_manager.deploylib.crdb_cluster_api import ClusterAPI
+from monitoring.deployment_manager.deploylib import crdb_sql
 from monitoring.deployment_manager.deploylib.port_forwarding import get_requests_session_for_pod
 from monitoring.deployment_manager.infrastructure import deployment_action, Context
 from monitoring.deployment_manager.actions.dss.v1.common import requires_v1_dss
@@ -23,7 +24,7 @@ def _public_key_bytes(public_key) -> bytes:
         cryptography.hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo)
 
 
-@deployment_action('dss/info/print_ca_public_certs')
+@deployment_action('dss/crdb/print_ca_public_certs')
 @requires_v1_dss
 def print_ca_public_certs(context: Context):
     """Print the accepted CA certificates accepted by the cluster."""
@@ -55,15 +56,9 @@ def print_ca_public_certs(context: Context):
 @deployment_action('dss/crdb/status')
 @requires_v1_dss
 def crdb_status(context: Context):
-    """Retrieve and print information about the CockroachDB cluster.
-
-    The following environment variables must be set to describe a CRDB user with
-    admin priviledges: CRDB_WEBVIEWER_USERNAME,  CRDB_WEBVIEWER_PASSWORD
-    """
-    username = os.environ.get('CRDB_WEBVIEWER_USERNAME', None)
-    password = os.environ.get('CRDB_WEBVIEWER_PASSWORD', None)
-    if username is None or password is None:
-        raise ValueError('Environment variables CRDB_WEBVIEWER_USERNAME and CRDB_WEBVIEWER_PASSWORD must be set; see usage help')
+    """Retrieve and print information about the CockroachDB cluster."""
+    username, password = crdb_sql.get_monitoring_user(
+        context.clients.core, context.spec.dss.v1.namespace, context.spec.cluster.name)
     pod_name = 'cockroachdb-0'
     pod_session, host_port = get_requests_session_for_pod(pod_name, context.spec.dss.v1.namespace, 8080, context.clients.core)
     cluster = ClusterAPI(pod_session, base_url='https://{}/api/v2'.format(host_port), username=username, password=password)
@@ -79,3 +74,19 @@ def crdb_status(context: Context):
         context.log.msg('{} reports:\n'.format(source) + yaml.dump(summary))
     else:
         context.log.msg('{} not ready to query nodes'.format(source))
+
+
+@deployment_action('dss/crdb/print_monitoring_user')
+@requires_v1_dss
+def print_monitoring_user(context: Context):
+    """Print the username and password of the CRDB monitoring user.
+
+    This username and password can be used to view the debug console web UI on
+    one of the CRDB nodes, or to access the cluster API on one of the CRDB
+    nodes.  Its access will expire 1-2 days after this action if no other
+    applicable deployment_manager action is taken.
+    """
+    username, password = crdb_sql.get_monitoring_user(
+        context.clients.core, context.spec.dss.v1.namespace, context.spec.cluster.name)
+    context.log.msg('Username: {} Password: {}'.format(username, password))
+    return
