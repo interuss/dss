@@ -8,8 +8,8 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 
 	"github.com/golang/geo/s2"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/stacktrace"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -56,10 +56,7 @@ func (s *Subscription) ToProto(dependentOperationalIntents []dssmodels.ID) (*scd
 	}
 
 	if s.StartTime != nil {
-		ts, err := ptypes.TimestampProto(*s.StartTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
-		}
+		ts := tspb.New(*s.StartTime)
 		result.TimeStart = &scdpb.Time{
 			Value:  ts,
 			Format: dssmodels.TimeFormatRFC3339,
@@ -67,10 +64,7 @@ func (s *Subscription) ToProto(dependentOperationalIntents []dssmodels.ID) (*scd
 	}
 
 	if s.EndTime != nil {
-		ts, err := ptypes.TimestampProto(*s.EndTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
-		}
+		ts := tspb.New(*s.EndTime)
 		result.TimeEnd = &scdpb.Time{
 			Value:  ts,
 			Format: dssmodels.TimeFormatRFC3339,
