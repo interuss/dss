@@ -144,7 +144,7 @@ dummy_oauth_api: openapi-to-go-server
 
 .PHONY: install-staticcheck
 install-staticcheck:
-	go get honnef.co/go/tools/cmd/staticcheck
+	go install honnef.co/go/tools/cmd/staticcheck
 
 .PHONY: staticcheck
 staticcheck: install-staticcheck
