@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Type
 
-from kubernetes.client import V1ObjectMeta, V1Deployment, V1Ingress, V1Namespace, V1Service
+from kubernetes.client import V1ObjectMeta, V1Deployment, V1Ingress, V1Namespace, V1Service, V1Secret
 
 
 _special_comparisons: Dict[Type, Callable[[Any, Any], bool]] = {}
@@ -29,6 +29,10 @@ def specs_are_the_same(obj1: Any, obj2: Any, field_paths: Optional[List[str]]=No
             return special_are_the_same(obj1, obj2)
         elif hasattr(obj1, 'attribute_map'):
             return specs_are_the_same(obj1, obj2, list(getattr(obj1, 'attribute_map').keys))
+        elif isinstance(obj1, dict) and isinstance(obj2, dict):
+            return all(obj2[k] == v for k, v in obj1.items()) and all(obj1[k] == v for k, v in obj2.items())
+        elif isinstance(obj1, list) and isinstance(obj2, list):
+            return all(v1 == v2 for v1, v2 in zip(obj1, obj2))
         else:
             return obj1 == obj2
 
@@ -89,3 +93,8 @@ def _v1service_are_the_same(svc1: V1Service, svc2: V1Service) -> bool:
 @_special_comparison(V1Ingress)
 def _v1ingress_are_the_same(ingress1: V1Ingress, ingress2: V1Ingress) -> bool:
     return specs_are_the_same(ingress1, ingress2, ['metadata', 'spec'])
+
+
+@_special_comparison(V1Secret)
+def _v1secret_are_the_same(secret1: V1Secret, secret2: V1Secret) -> bool:
+    return specs_are_the_same(secret1, secret2, ['metadata', 'data'])
