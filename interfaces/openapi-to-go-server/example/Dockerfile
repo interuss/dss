@@ -1,9 +1,9 @@
-FROM golang:1.14
+FROM golang:1.17-alpine
 
 WORKDIR /go/src/server_demo
 COPY . .
 
-RUN go get -d -v ./...
+RUN go install -d -v ./...
 RUN go install -v -a
 
 CMD ["example"]

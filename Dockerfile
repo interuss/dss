@@ -4,13 +4,14 @@
 # container for this image, the desired binary must be specified (either
 # /usr/bin/core-service, /usr/bin/http-gateway or /usr/bin/db-manager).
 
-FROM golang:1.14.3-alpine AS build
+FROM golang:1.17-alpine AS build
+RUN apk add build-base
 RUN apk add git bash make
 RUN mkdir /app
 COPY go.mod go.sum /app/
 # Intend to run delve download outside the go module directory to prevent it
 # from being added as a dependency
-RUN go get github.com/go-delve/delve/cmd/dlv
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 WORKDIR /app
 
 # Get dependencies - will also be cached if we won't change mod/sum

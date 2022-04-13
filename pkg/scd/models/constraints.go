@@ -4,11 +4,11 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/stacktrace"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Constraint models a constraint, as known by the DSS
@@ -38,10 +38,7 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 	}
 
 	if c.StartTime != nil {
-		ts, err := ptypes.TimestampProto(*c.StartTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
-		}
+		ts := tspb.New(*c.StartTime)
 		result.TimeStart = &scdpb.Time{
 			Value:  ts,
 			Format: dssmodels.TimeFormatRFC3339,
@@ -49,10 +46,7 @@ func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
 	}
 
 	if c.EndTime != nil {
-		ts, err := ptypes.TimestampProto(*c.EndTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
-		}
+		ts := tspb.New(*c.EndTime)
 		result.TimeEnd = &scdpb.Time{
 			Value:  ts,
 			Format: dssmodels.TimeFormatRFC3339,

@@ -14,18 +14,18 @@ import (
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 
 	"github.com/golang/geo/s2"
-	"github.com/golang/protobuf/ptypes"
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/google/uuid"
 	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var timeout = time.Second * 10
 
 func mustTimestamp(ts *tspb.Timestamp) *time.Time {
-	t, err := ptypes.Timestamp(ts)
+	t := ts.AsTime()
+	err := ts.CheckValid()
 	if err != nil {
 		panic(err)
 	}
