@@ -252,7 +252,7 @@ def run_tests():
         }
 
 
-@webapp.route('/api/tests', methods=['GET'])
+@webapp.route('/api/test_runs', methods=['GET'])
 def get_tests_history():
     user_id = 'localuser'
     tests_logs = resources.redis_conn.hgetall(f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
@@ -262,7 +262,7 @@ def get_tests_history():
     }
 
 
-@webapp.route('/api/tests/<string:test_id>', methods=['GET'])
+@webapp.route('/api/test_runs/<string:test_id>', methods=['GET'])
 def get_test_runs_details(test_id):
     user_id = 'localuser'
     test_runs_logs = resources.redis_conn.hgetall(f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
@@ -365,14 +365,18 @@ def _reload_latest_test_run_outcomes_from_redis():
 
 
 def _get_latest_file_version(filepath, filename):
-    curr_file_path = f'{filepath}/{filename}.json'
+    if not filename.endswith('.json'):
+        curr_file_path = f'{filepath}/{filename}.json'
+    else:
+        curr_file_path = f'{filepath}/{filename}'
     if os.path.exists(curr_file_path):
         version_counter = 0
         while True:
             version_counter += 1
+            filename = filename.replace('.json', '')
             curr_file_path = f'{filepath}/{filename}_{str(version_counter)}.json'
             if not os.path.exists(curr_file_path):
-                break
+                break    
     return curr_file_path
 
 

@@ -155,7 +155,36 @@ paths:
                     description: Testing interface is not activated.
                 "400":
                     description: Flight record not found.
-
+        get:
+            description: "Returns a list of output filenames of test runs"
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/TestsResponse"
+                    description: >-
+                        Returns an object containing list of output files generated from last test runs.
+    /api/test_runs/{test_id}:
+        get:
+            description: "Returns detailed output of a given test_id, where test_id is one of the test runs' output filenames."
+            parameters:
+                - name: test_id
+                  in: path
+                  required: true
+                  description: An output file name for one of the test runs.
+                  schema:
+                      $ref: "#/components/schemas/TestRunID"
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/TestsRunResponse"
+                    description: >-
+                        Returns an object containing input specifications and output generated for a test run.
+                "400":
+                    description: Test execution not found.
     /api/tasks/{task_id}:
         get:
             description: "Get status of the task filter by task id."
@@ -226,37 +255,6 @@ paths:
                         Returns task details of the task launched in the background to process KML files.
                 "400":
                     description: Failed to upload files.
-    /api/tests:
-        get:
-            description: "Returns a list of output filenames of test runs"
-            responses:
-                "200":
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/TestsResponse"
-                    description: >-
-                        Returns an object containing list of output files generated from last test runs.
-    /api/tests/{test_id}:
-        get:
-            description: "Returns detailed output of a given test_id, where test_id is one of the test runs' output filenames."
-            parameters:
-                - name: test_id
-                  in: path
-                  required: true
-                  description: An output file name for one of the test runs.
-                  schema:
-                      $ref: "#/components/schemas/TestRunID"
-            responses:
-                "200":
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/TestsRunResponse"
-                    description: >-
-                        Returns an object containing input specifications and output generated for a test run.
-                "400":
-                    description: Test execution not found.
 
 servers:
     - url: http://localhost:8072
