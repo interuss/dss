@@ -1,5 +1,6 @@
-import datetime
+import pytimeparse
 
+from datetime import datetime, timedelta
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.fetch import scd as fetch_scd
@@ -18,6 +19,15 @@ NUMERIC_PRECISION = 0.001
 def execute(runner, step: TestStep, step_ref: TestStepReference, target: TestTarget) -> None:
     print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
     try:
+        reference_time = datetime.utcnow() + timedelta(seconds=pytimeparse.parse(step.inject_flight.planning_time))
+        step.inject_flight.reference_time = reference_time.isoformat() + "Z"
+        for volume in step.inject_flight.test_injection.operational_intent.volumes:            
+            time_start = reference_time + timedelta(minutes=3)
+            time_end = time_start + timedelta(minutes=5)
+            
+            volume.time_start.value = time_start.isoformat() + "Z"
+            volume.time_end.value = time_end.isoformat() + "Z"
+            break
         resp, query, flight_id = target.inject_flight(step.inject_flight)
     except QueryError as e:
         interaction_id = runner.report_recorder.capture_interaction(step_ref, e.query, 'Inject flight into USS')
@@ -140,9 +150,9 @@ def _verify_operational_intent(runner, step: TestStep, step_ref: TestStepReferen
         error_text = 'Lower altitude specified by USS in operational intent details ({} m WGS84) is above the lower altitude in the injected flight ({} m WGS84)'.format(resp_alts[0], alts[0])
     elif resp_alts[1] < alts[1] - NUMERIC_PRECISION:
         error_text = 'Upper altitude specified by USS in operational intent details ({} m WGS84) is below the upper altitude in the injected flight ({} m WGS84)'.format(resp_alts[1], alts[1])
-    elif resp_start > t0 + datetime.timedelta(seconds=NUMERIC_PRECISION):
+    elif resp_start > t0 + timedelta(seconds=NUMERIC_PRECISION):
         error_text = 'Start time specified by USS in operational intent details ({}) is past the start time of the injected flight ({})'.format(resp_start.isoformat(), t0.isoformat())
-    elif resp_end < t1 - datetime.timedelta(seconds=NUMERIC_PRECISION):
+    elif resp_end < t1 - timedelta(seconds=NUMERIC_PRECISION):
         error_text = 'End time specified by USS in operational intent details ({}) is prior to the end time of the injected flight ({})'.format(resp_end.isoformat(), t1.isoformat())
     if error_text:
         # The USS's flight details are incorrect

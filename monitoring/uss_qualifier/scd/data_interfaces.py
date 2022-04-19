@@ -1,7 +1,8 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict
 from monitoring.monitorlib.locality import Locality
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedTimeDelta, StringBasedDateTime
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, Capability
 from monitoring.uss_qualifier.common_data_definitions import Severity
 
@@ -50,6 +51,12 @@ class FlightInjectionAttempt(ImplicitDict):
     test_injection: InjectFlightRequest
     """Definition of the flight to be injected"""
 
+    planning_time: StringBasedTimeDelta
+    """Time delta from now to the flight time"""
+
+    reference_time: Optional[StringBasedDateTime]
+    """The time result of adding current date and planning time"""
+    
     known_responses: KnownResponses
     """Details about what the USS under test should report after processing the test data"""
 

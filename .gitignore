@@ -126,3 +126,6 @@ test/e2e_test_result
 
 # local go builds
 go
+
+# vscode files
+.vscode
