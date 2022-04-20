@@ -1,11 +1,12 @@
+from time import timezone
 import pytimeparse
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone, tzinfo
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.fetch import scd as fetch_scd
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResponse, InjectFlightResult
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 from monitoring.uss_qualifier.common_data_definitions import Severity, SubjectType, IssueSubject
 from monitoring.uss_qualifier.scd.data_interfaces import TestStep
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
@@ -19,14 +20,22 @@ NUMERIC_PRECISION = 0.001
 def execute(runner, step: TestStep, step_ref: TestStepReference, target: TestTarget) -> None:
     print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
     try:
-        reference_time = datetime.utcnow() + timedelta(seconds=pytimeparse.parse(step.inject_flight.planning_time))
-        step.inject_flight.reference_time = reference_time.isoformat() + "Z"
-        for volume in step.inject_flight.test_injection.operational_intent.volumes:            
-            time_start = reference_time + timedelta(minutes=3)
-            time_end = time_start + timedelta(minutes=5)
+        t_test = datetime.now(timezone.utc)
+        
+        for volume in step.inject_flight.test_injection.operational_intent.volumes:
+            volume.time_start.value = volume.time_start.value
+            volume.time_end.value = volume.time_end.value
+
+            t_delta = (t_test - step.inject_flight.reference_time.datetime) + (step.inject_flight.reference_time.datetime - volume.time_start.value.datetime)     
+
+            if (step.inject_flight.reference_time.datetime - t_test) < step.inject_flight.planning_time.timedelta:
+                t_delta = t_delta + step.inject_flight.planning_time.timedelta
             
-            volume.time_start.value = time_start.isoformat() + "Z"
-            volume.time_end.value = time_end.isoformat() + "Z"
+            t_start_adjusted = (volume.time_start.value.datetime + t_delta).replace(tzinfo=None)
+            t_end_adjusted = (volume.time_end.value.datetime + t_delta).replace(tzinfo=None)            
+            
+            volume.time_start.value = StringBasedDateTime(t_start_adjusted.isoformat())
+            volume.time_end.value = StringBasedDateTime(t_end_adjusted.isoformat())
             break
         resp, query, flight_id = target.inject_flight(step.inject_flight)
     except QueryError as e:
