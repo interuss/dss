@@ -1,7 +1,7 @@
 from time import timezone
 import pytimeparse
 
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.fetch import scd as fetch_scd
@@ -20,19 +20,15 @@ NUMERIC_PRECISION = 0.001
 def execute(runner, step: TestStep, step_ref: TestStepReference, target: TestTarget) -> None:
     print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
     try:
-        t_test = datetime.now(timezone.utc)
+        t_test = datetime.now(timezone.utc) 
+        t_delta = (t_test - step.inject_flight.reference_time.datetime) + step.inject_flight.planning_time.timedelta 
         
-        for volume in step.inject_flight.test_injection.operational_intent.volumes:
-            volume.time_start.value = volume.time_start.value
-            volume.time_end.value = volume.time_end.value
-
-            t_delta = (t_test - step.inject_flight.reference_time.datetime) + (step.inject_flight.reference_time.datetime - volume.time_start.value.datetime)     
-
-            if (step.inject_flight.reference_time.datetime - t_test) < step.inject_flight.planning_time.timedelta:
-                t_delta = t_delta + step.inject_flight.planning_time.timedelta
-            
-            t_start_adjusted = (volume.time_start.value.datetime + t_delta).replace(tzinfo=None)
-            t_end_adjusted = (volume.time_end.value.datetime + t_delta).replace(tzinfo=None)            
+        # add the delta to the reference time so in the next iteration the time delta is not the same than in the previous iteration
+        step.inject_flight.reference_time = StringBasedDateTime(step.inject_flight.reference_time.datetime + t_delta)
+        
+        for volume in step.inject_flight.test_injection.operational_intent.volumes:            
+            t_start_adjusted = (volume.time_start.value.datetime + t_delta).replace(tzinfo=None) 
+            t_end_adjusted = (volume.time_end.value.datetime + t_delta).replace(tzinfo=None)  
             
             volume.time_start.value = StringBasedDateTime(t_start_adjusted.isoformat())
             volume.time_end.value = StringBasedDateTime(t_end_adjusted.isoformat())
