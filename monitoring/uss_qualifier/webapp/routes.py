@@ -22,7 +22,6 @@ from werkzeug.utils import secure_filename
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.uss_qualifier.webapp import webapp
 
-
 client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent,
     'client_secret.json')
@@ -43,6 +42,7 @@ except FileNotFoundError:
 @webapp.route('/info')
 def info():
     return render_template('info.html')
+
 
 def login_required(function):
     @wraps(function)
@@ -103,11 +103,30 @@ def _process_completed_bg_jobs():
 
 
 def _initialize_background_test_runs(
-    user_config, auth_spec, input_files_content, input_files, user_id, debug):
+        user_config, auth_spec, input_files_content, input_files, user_id, debug):
+    now = datetime.now()
+    testruns_id = f'{str(now.date())}_{now.strftime("%H%M%S%f")}.json'
     job = resources.qualifier_queue.enqueue(
         'monitoring.uss_qualifier.webapp.tasks.call_test_executor',
-        user_config, auth_spec, input_files_content, input_files, user_id, debug)
-    return job.get_id()
+        user_config, auth_spec, input_files_content, testruns_id, debug)
+    task_id = job.get_id()
+    task = tasks.get_rq_job(task_id)
+    task_details = {
+        'specifications': {
+            'input_files': input_files,
+            'auth_spec': auth_spec,
+            'user_config': json.loads(user_config)},
+        'metadata': {
+            'task_id': task_id,
+            'task_status': task.get_status()
+        },
+        'user_id': user_id,
+        'status_message': 'A task has been started in the background'
+
+    }
+    resources.redis_conn.hset(
+        resources.REDIS_KEY_TEMP_LOGS, testruns_id, json.dumps(task_details))
+    return task_details
 
 
 def _get_running_jobs():
@@ -158,7 +177,7 @@ def tests():
     flight_record_data = get_flight_records()
 
     if flight_record_data.get('flight_records'):
-        files= [(x, x) for x in flight_record_data['flight_records']]
+        files = [(x, x) for x in flight_record_data['flight_records']]
 
     form = forms.TestsExecuteForm()
     form.flight_records.choices = files
@@ -172,7 +191,8 @@ def tests():
     else:
         job_id = ''
         if form.validate_on_submit():
-            _update_user_local_config(form.auth_spec.data, form.user_config.data)
+            _update_user_local_config(
+                form.auth_spec.data, form.user_config.data)
             file_objs = []
             user_id = session['google_id']
             input_files_location = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
@@ -182,7 +202,7 @@ def tests():
                 filepath = f'{input_files_location}/{filename}'
                 with open(filepath) as fo:
                     file_objs.append(fo.read())
-            job_id = _initialize_background_test_runs(
+            task_details = _initialize_background_test_runs(
                 form.user_config.data,
                 form.auth_spec.data,
                 file_objs,
@@ -191,7 +211,7 @@ def tests():
                 form.sample_report.data)
             if request.method == 'POST':
                 data.update({
-                    'job_id': job_id,
+                    'job_id': task_details['metadata']['task_id'],
                 })
     return render_template(
         'tests.html',
@@ -207,16 +227,21 @@ def run_tests():
     user_id = 'localuser'
     if running_job:
         return {
-            'task_id': running_job,
+            'metadata': {
+                'task_id': running_job,
+            },
+            'status_message': 'A job already running in the background, report is not ready yet',
             'user_id': user_id,
-            'message': 'A job already running in the background'
+            'specifications': 'TODO: yet to fetch for running task',
+            'report': None
         }
     # TODO:(pratibha) user_id hardcoded until Auth is fixed.
     form = forms.TestRunsForm(request.form)
     if not form.validate():
         forms.json_abort(400, 'validation error', details=form.errors)
     else:
-        flight_records_files = [i.strip() for i in (request.form['flight_records']).split(',')]
+        flight_records_files = [i.strip() for i in (
+            request.form['flight_records']).split(',')]
 
         file_objs = []
         input_files = []
@@ -231,41 +256,54 @@ def run_tests():
                 existing_flights = get_flight_records()
                 if existing_flights and existing_flights['flight_records']:
                     message = '%s\n%s' % (
-                        messages.FLIGHT_RECORD_NOT_FOUND.format(filename=filename),
+                        messages.FLIGHT_RECORD_NOT_FOUND.format(
+                            filename=filename),
                         messages.FLIGHT_RECORDS_EXISTING.format(
                             flight_records='\n'.join(existing_flights['flight_records']))
                     )
                 else:
-                    message = messages.FLIGHT_RECORD_NOT_FOUND.format(filename=filename)
+                    message = messages.FLIGHT_RECORD_NOT_FOUND.format(
+                        filename=filename)
                 forms.json_abort(400, message)
-        task_id = _initialize_background_test_runs(
-                form.user_config.data,
-                form.auth_spec.data,
-                file_objs,
-                input_files,
-                user_id,
-                debug=False)
-        return {
-            'task_id': task_id,
-            'user_id': user_id,
-            'message': 'A task has been started in the background'
-        }
+        auth_spec = form.auth_spec.data
+        user_config = form.user_config.data
+        task_details = _initialize_background_test_runs(
+            user_config,
+            auth_spec,
+            file_objs,
+            input_files,
+            user_id,
+            debug=False)
+        return task_details
 
 
 @webapp.route('/api/test_runs', methods=['GET'])
 def get_tests_history():
     user_id = 'localuser'
-    tests_logs = resources.redis_conn.hgetall(f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
+    tests_logs = resources.redis_conn.hgetall(
+        f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
     tests_logs = resources.decode_redis(tests_logs)
+    logs = {}
+    for k, log in tests_logs.items():
+        test_run_logs = json.loads(log)
+        task_id = test_run_logs['metadata']['task_id']
+        task = tasks.get_rq_job(task_id)
+        if task:
+            task_status = task.get_status()
+            test_run_logs['metadata']['task_status'] = task_status
+        else:
+            test_run_logs['metadata']['task_status'] = 'task not available'
+        logs.update({k: test_run_logs})
     return {
-        'test_runs': list(tests_logs)
+        'test_runs': logs
     }
 
 
 @webapp.route('/api/test_runs/<string:test_id>', methods=['GET'])
 def get_test_runs_details(test_id):
     user_id = 'localuser'
-    test_runs_logs = resources.redis_conn.hgetall(f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
+    test_runs_logs = resources.redis_conn.hgetall(
+        f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
     test_runs_logs = resources.decode_redis(test_runs_logs)
     if not test_id in test_runs_logs:
         abort(400, f'test_id: {test_id} does not exist.')
@@ -276,7 +314,8 @@ def get_test_runs_details(test_id):
     with open(filepath) as f:
         content = f.read()
         if content:
-            result_set.update({'outputs': json.loads(content)})
+            result_set.update({'report': json.loads(content)})
+            del result_set['metadata']
     return result_set
 
 
@@ -310,7 +349,8 @@ def get_task_status(task_id):
                 del job_result['is_flight_records_from_kml']
                 for filename, content in job_result.items():
                     filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
-                    json_file_path = _get_latest_file_version(filepath, filename)
+                    json_file_path = _get_latest_file_version(
+                        filepath, filename)
                     _write_to_file(json_file_path, json.dumps(content))
                 response_object.update({'is_flight_records_from_kml': True})
             else:
@@ -323,7 +363,8 @@ def get_task_status(task_id):
 
 
 def _reload_latest_kmls_from_redis():
-    latest_kmls = resources.redis_conn.hgetall(resources.REDIS_KEY_UPLOADED_KMLS)
+    latest_kmls = resources.redis_conn.hgetall(
+        resources.REDIS_KEY_UPLOADED_KMLS)
     user_id = 'localuser'
     if latest_kmls:
         for _, flight_data in latest_kmls.items():
@@ -334,34 +375,38 @@ def _reload_latest_kmls_from_redis():
                 del flight_data['is_flight_records_from_kml']
                 for filename, content in flight_data.items():
                     filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
-                    json_file_version = _get_latest_file_version(filepath, filename)
+                    json_file_version = _get_latest_file_version(
+                        filepath, filename)
                     _write_to_file(json_file_version, json.dumps(content))
         resources.redis_conn.delete(resources.REDIS_KEY_UPLOADED_KMLS)
 
 
 def _reload_latest_test_run_outcomes_from_redis():
-    latest_test_runs_report = resources.redis_conn.hgetall(resources.REDIS_KEY_TEST_RUNS)
+    latest_test_runs_report = resources.redis_conn.hgetall(
+        resources.REDIS_KEY_TEST_RUNS)
     user_id = 'localuser'
     temp_logs = resources.redis_conn.hgetall(
         resources.REDIS_KEY_TEMP_LOGS)
     temp_logs = resources.decode_redis(temp_logs)
-    if latest_test_runs_report:
-        latest_test_runs_report = resources.decode_redis(latest_test_runs_report)
-        now = datetime.now()
-        counter = 0
-        for k, test_result in latest_test_runs_report.items():
-            counter += 1
-            filename = f'{str(now.date())}_{now.strftime("%H%M%S")}_{counter}.json'
-            filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
+
+    latest_test_runs_report = resources.decode_redis(
+        latest_test_runs_report)
+    for filename in temp_logs:
+        filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
+
+        temp_logs[filename] = json.loads(temp_logs[filename])
+
+        if filename in latest_test_runs_report:
+            test_result = latest_test_runs_report[filename]
             if isinstance(test_result, bytes):
                 test_result = test_result.decode("utf-8")
-            resources.redis_conn.hset(
-                f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}',
-                filename, temp_logs[k])
             _write_to_file(filepath, test_result)
-            resources.redis_conn.delete(resources.REDIS_KEY_TEST_RUN_LOGS)
-
-        resources.redis_conn.delete(resources.REDIS_KEY_TEST_RUNS)
+            temp_logs[filename].update(
+                {'report': f'{webapp.config.get(config.KEY_USS_QUALIFIER_HOST_URL)}{request.path}/{filename}'})
+        resources.redis_conn.hset(
+            f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}',
+            filename, json.dumps(temp_logs[filename]))
+        resources.redis_conn.delete(resources.REDIS_KEY_TEST_RUN_LOGS)
 
 
 def _get_latest_file_version(filepath, filename):
@@ -376,7 +421,7 @@ def _get_latest_file_version(filepath, filename):
             filename = filename.replace('.json', '')
             curr_file_path = f'{filepath}/{filename}_{str(version_counter)}.json'
             if not os.path.exists(curr_file_path):
-                break    
+                break
     return curr_file_path
 
 
@@ -390,7 +435,8 @@ def get_flight_records():
     if not os.path.isdir(folder_path):
         data['message'] = 'Flight records not available.'
     else:
-        flight_records = [f for f in os.listdir(folder_path) if f.endswith('.json')]
+        flight_records = [f for f in os.listdir(
+            folder_path) if f.endswith('.json')]
         data['flight_records'] = flight_records
     return data
 
@@ -399,6 +445,7 @@ def _write_to_file(filepath, content):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, 'w') as f:
         f.write(content)
+
 
 def _get_task_status(task_id):
     task = tasks.get_rq_job(task_id)
@@ -410,6 +457,7 @@ def _get_task_status(task_id):
             'task_result': task.result,
         }
     return task_details
+
 
 @webapp.route('/result/<string:job_id>', methods=['GET', 'POST'])
 def get_result(job_id):
@@ -431,7 +479,8 @@ def get_result(job_id):
                 del job_result['is_flight_records_from_kml']
                 for filename, content in job_result.items():
                     filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
-                    json_file_version = _get_latest_file_version(filepath, filename)
+                    json_file_version = _get_latest_file_version(
+                        filepath, filename)
                     _write_to_file(json_file_version, json.dumps(content))
                 response_object.update({'is_flight_records_from_kml': True})
             else:
@@ -456,7 +505,8 @@ def get_report():
             content = f.read()
             if content:
                 output = make_response(content)
-                output.headers['Content-Disposition'] = f'attachment; filename={os.path.basename(f.name)}'
+                output.headers[
+                    'Content-Disposition'] = f'attachment; filename={os.path.basename(f.name)}'
                 output.headers['Content-type'] = 'text/csv'
                 return output
     except FileNotFoundError as e:
@@ -478,6 +528,7 @@ def download_test(filename):
         output.headers['Content-type'] = 'text/csv'
         return output
     return {'error': 'Error downloading file'}
+
 
 @webapp.route('/history')
 def get_test_history():
@@ -572,7 +623,8 @@ def upload_json_flight_records():
         if file:
             filename = secure_filename(file.filename)
             if filename.endswith('.json'):
-                json_file_path = _get_latest_file_version(flight_records_path, filename)
+                json_file_path = _get_latest_file_version(
+                    flight_records_path, filename)
                 file.save(json_file_path)
                 message += f'\nFile saved: {json_file_path}'
             else:
