@@ -43,16 +43,38 @@ components:
                     description: >-
                         User authentication configuration.
                     type: string
-        BackgroundTaskRunResponse:
+        FlightRecordsUploadKmlResponse:
             type: object
             properties:
-                task_id:
+                id:
                     $ref: "#/components/schemas/TaskID"
                 status_message:
                     type: string
                     example: "A task has been started in the background."
                     description: >-
                         Status of currently running task.
+                files:
+                    type: array
+                    items:
+                        type: string
+                background_tasks:
+                    type: array
+                    items:
+                        type: string
+        FlightRecordsUploadJsonResponse:
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/TaskID"
+                status_message:
+                    type: string
+                    example: "A task has been started in the background."
+                    description: >-
+                        Status of currently running task.
+                files:
+                    type: array
+                    items:
+                        type: string
         TestRunResponse:
             type: object
             properties:
@@ -118,15 +140,6 @@ components:
                     type: string
                     description: >-
                         filename if test result is saved in an output report file.
-        FileUploadResponse:
-            type: object
-            required:
-                - status_message
-            properties:
-                status_message:
-                    type: string
-                    description: >-
-                        Returns current status of uploaded files.
 
 paths:
     /api/test_runs:
@@ -219,7 +232,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/FileUploadResponse"
+                                $ref: "#/components/schemas/FlightRecordsUploadJsonResponse"
                     description: >-
                         Returns Human readable message of uploaded file status.
                 "400":
@@ -244,7 +257,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/BackgroundTaskRunResponse"
+                                $ref: "#/components/schemas/FlightRecordsUploadKmlResponse"
                     description: >-
                         Returns task details of the task launched in the background to process KML files.
                 "400":

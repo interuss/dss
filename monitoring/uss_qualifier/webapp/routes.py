@@ -5,6 +5,7 @@ import messages
 import os
 import pathlib
 import requests
+import uuid
 
 from . import config, resources, tasks
 from . import forms
@@ -583,7 +584,7 @@ def upload_kml_flight_records():
         os.makedirs(kml_files_path)
     kml_files = []
     response = {}
-    message = ''
+    message = 'Invalid file type'
     for file in files:
         if file:
             filename = secure_filename(file.filename)
@@ -591,18 +592,23 @@ def upload_kml_flight_records():
                 file_path = os.path.join(kml_files_path, filename)
                 file.save(file_path)
                 kml_files.append(file_path)
-                message += f'\nFile saved: {filename}'
+                message = 'OK'
             else:
-                message += f'\nInvalid file extension: {filename}'
+                message += f'Invalid file extension: {filename}'
     if kml_files:
         kml_jobs = []
         for kml_file in kml_files:
             job_id = _process_kml_files_task(kml_file, flight_records_path)
             kml_jobs.append(job_id)
-        for job_id in kml_jobs:
-            response = _get_task_status(job_id)
+        tasks = []
+        response['id'] = str(uuid.uuid4())
+        response['background_tasks'] = [
+            f'{webapp.config.get(config.KEY_USS_QUALIFIER_HOST_URL)}/api/tasks/{t}' for t in kml_jobs]
+    if message == 'OK':
+        response['status_message'] = 'Background tasks have started to process the KML files.'
     else:
-        response['status_message'] = message
+        abort(400, message)
+    response['files'] = kml_files
     return response
 
 
@@ -619,6 +625,7 @@ def upload_json_flight_records():
 
     response = {}
     message = ''
+    uploaded_files = []
     for file in files:
         if file:
             filename = secure_filename(file.filename)
@@ -626,10 +633,13 @@ def upload_json_flight_records():
                 json_file_path = _get_latest_file_version(
                     flight_records_path, filename)
                 file.save(json_file_path)
-                message += f'\nFile saved: {json_file_path}'
+                message = 'OK'
+                uploaded_files.append(json_file_path)
             else:
-                message += f'\nInvalid file extension: {filename}'
+                message = f'Invalid file extension: {filename}'
     response['status_message'] = message
+    response['files'] = uploaded_files
+    response['id'] = str(uuid.uuid4())
     return response
 
 
