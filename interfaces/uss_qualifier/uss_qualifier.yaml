@@ -47,7 +47,7 @@ components:
             type: object
             properties:
                 id:
-                    $ref: "#/components/schemas/TaskID"
+                    type: string
                 status_message:
                     type: string
                     example: "A task has been started in the background."
@@ -57,15 +57,19 @@ components:
                     type: array
                     items:
                         type: string
+                    description: >-
+                        KML files uploaded to generate flight records.
                 background_tasks:
                     type: array
                     items:
                         type: string
+                    description: >-
+                        A list of task ids running in the background. The status of each such task can be checked through /api/tasks/<task_id>.
         FlightRecordsUploadJsonResponse:
             type: object
             properties:
                 id:
-                    $ref: "#/components/schemas/TaskID"
+                    type: string
                 status_message:
                     type: string
                     example: "A task has been started in the background."
@@ -212,7 +216,7 @@ paths:
               description: A task ID of an initiated task.
               schema:
                   $ref: "#/components/schemas/TaskID"
-    /api/flight_records/json:
+    /api/flight_records:
         post:
             description: "Upload flight record json files to be used to run tests."
             requestBody:
@@ -237,9 +241,9 @@ paths:
                         Returns Human readable message of uploaded file status.
                 "400":
                     description: Failed to upload files.
-    /api/flight_records/kml:
+    /api/kml_import_jobs:
         post:
-            description: "Upload KML flight records that are processed to generate flight records json files."
+            description: "Upload KML flight records that are processed through background tasks to generate flight records json files."
             requestBody:
                 content:
                     multipart/form-data:

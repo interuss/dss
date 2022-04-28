@@ -403,7 +403,7 @@ def _reload_latest_test_run_outcomes_from_redis():
                 test_result = test_result.decode("utf-8")
             _write_to_file(filepath, test_result)
             temp_logs[filename].update(
-                {'report': f'{webapp.config.get(config.KEY_USS_QUALIFIER_HOST_URL)}{request.path}/{filename}'})
+                {'report': f'/{request.path}/{filename}'})
         resources.redis_conn.hset(
             f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}',
             filename, json.dumps(temp_logs[filename]))
@@ -569,7 +569,7 @@ def upload_flight_state_files():
     return redirect(url_for('.tests'))
 
 
-@webapp.route('/api/flight_records/kml', methods=['POST'])
+@webapp.route('/api/kml_import_jobs', methods=['POST'])
 def upload_kml_flight_records():
     files = request.files.getlist('files')
     if not files:
@@ -596,14 +596,12 @@ def upload_kml_flight_records():
             else:
                 message += f'Invalid file extension: {filename}'
     if kml_files:
-        kml_jobs = []
+        bg_tasks = []
         for kml_file in kml_files:
-            job_id = _process_kml_files_task(kml_file, flight_records_path)
-            kml_jobs.append(job_id)
-        tasks = []
+            task_id = _process_kml_files_task(kml_file, flight_records_path)
+            bg_tasks.append(task_id)
         response['id'] = str(uuid.uuid4())
-        response['background_tasks'] = [
-            f'{webapp.config.get(config.KEY_USS_QUALIFIER_HOST_URL)}/api/tasks/{t}' for t in kml_jobs]
+        response['background_tasks'] = bg_tasks
     if message == 'OK':
         response['status_message'] = 'Background tasks have started to process the KML files.'
     else:
@@ -612,7 +610,7 @@ def upload_kml_flight_records():
     return response
 
 
-@webapp.route('/api/flight_records/json', methods=['POST'])
+@webapp.route('/api/flight_records', methods=['POST'])
 def upload_json_flight_records():
     files = request.files.getlist('files')
     if not files:
