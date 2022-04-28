@@ -63,6 +63,6 @@ def run_rid_tests(test_configuration: RIDQualifierTestConfiguration,
     display_data_evaluator.evaluate_system(
         injected_flights, observers, test_configuration.evaluation,
         report.findings)
-    with open('../report.json', 'w') as f:
+    with open('report_rid.json', 'w') as f:            
         json.dump(report, f)
     return report
