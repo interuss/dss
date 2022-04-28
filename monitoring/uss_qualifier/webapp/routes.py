@@ -402,8 +402,10 @@ def _reload_latest_test_run_outcomes_from_redis():
             if isinstance(test_result, bytes):
                 test_result = test_result.decode("utf-8")
             _write_to_file(filepath, test_result)
-            temp_logs[filename].update(
-                {'report': f'/{request.path}/{filename}'})
+            temp_logs[filename].update({
+                'report': f'{request.base_url}/{filename}',
+                'status_message': 'Report Ready'
+            })
         resources.redis_conn.hset(
             f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}',
             filename, json.dumps(temp_logs[filename]))
