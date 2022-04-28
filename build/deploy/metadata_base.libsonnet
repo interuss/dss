@@ -48,6 +48,7 @@
     },
   },
   prometheus: {
+    image: 'prom/prometheus:v2.35.0',
     expose_external: false,
     IP: '',  // This is the static external ip address for promethus ingress, leaving blank means your cloud provider will assign an ephemeral IP
     whitelist_ip_ranges: error 'must specify whitelisted CIDR IP Blocks, or empty list for fully public access',
