@@ -1,4 +1,4 @@
-local base = import 'base.libsonnet'; 
+local base = import 'base.libsonnet';
 local k8sEndpoints = import 'prometheus_configs/k8s-endpoints.libsonnet';
 local istioScrape = import 'prometheus_configs/istio.libsonnet';
 local crdbAggregation = import 'prometheus_configs/crdb-aggregation.libsonnet';
@@ -138,7 +138,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
             containers: [
               {
                 name: 'prometheus',
-                image: 'prom/prometheus',
+                image: metadata.prometheus.image,
                 args: [
                   '--config.file=/etc/prometheus/prometheus.yml',
                   '--storage.tsdb.path=/data/prometheus/',
