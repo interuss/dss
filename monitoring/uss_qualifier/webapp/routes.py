@@ -341,23 +341,7 @@ def get_task_status(task_id):
         tasks.remove_rq_job(task_id)
         now = datetime.now()
         if task_result:
-            filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
-            # TODO:(Pratibha) Use Auth ID for user_id
-            user_id = 'localuser'
-            filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
-            job_result = json.loads(task_result)
-            if job_result.get('is_flight_records_from_kml'):
-                del job_result['is_flight_records_from_kml']
-                for filename, content in job_result.items():
-                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
-                    json_file_path = _get_latest_file_version(
-                        filepath, filename)
-                    _write_to_file(json_file_path, json.dumps(content))
-                response_object.update({'is_flight_records_from_kml': True})
-            else:
-                job_result = task_result
-                _write_to_file(filepath, job_result)
-            response_object.update({'filename': filename})
+            pass
         else:
             logging.info('Task result not available yet..')
     return response_object
@@ -474,9 +458,7 @@ def get_result(job_id):
         tasks.remove_rq_job(job_id)
         now = datetime.now()
         if task_result:
-            filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
             user_id = session['google_id']
-            filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
             job_result = json.loads(task_result)
             if job_result.get('is_flight_records_from_kml'):
                 del job_result['is_flight_records_from_kml']
@@ -487,6 +469,8 @@ def get_result(job_id):
                     _write_to_file(json_file_version, json.dumps(content))
                 response_object.update({'is_flight_records_from_kml': True})
             else:
+                filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
+                filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
                 job_result = task_result
                 _write_to_file(filepath, job_result)
             response_object.update({'filename': filename})
