@@ -106,16 +106,13 @@ components:
                         Content of test runs' json output file.
             required:
                 - user_id
+                - test_id
                 - specification
 
         TestsResponse:
-            type: object
-            properties:
-                test_runs:
-                    type: object
-                    additionalProperties:
-                        type: object
-                        $ref: "#/components/schemas/TestRunResponse"
+            type: array
+            items:
+                $ref: "#/components/schemas/TestRunResponse"
         TaskID:
             description: >-
                 An exisitng/ newly created ID for the running background task.

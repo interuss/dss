@@ -14,7 +14,7 @@ from datetime import datetime
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 import google.auth.transport.requests
-from flask import render_template, request, make_response, redirect, url_for, session, abort
+from flask import render_template, request, make_response, redirect, url_for, session, abort, jsonify
 from functools import wraps
 from pip._vendor import cachecontrol
 from werkzeug.exceptions import HTTPException
@@ -278,13 +278,11 @@ def run_tests():
         return task_details
 
 
-@webapp.route('/api/test_runs', methods=['GET'])
-def get_tests_history():
-    user_id = 'localuser'
+def _get_test_runs_logs(user_id):
     tests_logs = resources.redis_conn.hgetall(
         f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
     tests_logs = resources.decode_redis(tests_logs)
-    logs = {}
+    logs = []
     for k, log in tests_logs.items():
         test_run_logs = json.loads(log)
         task_id = test_run_logs['metadata']['task_id']
@@ -292,32 +290,31 @@ def get_tests_history():
         if task:
             task_status = task.get_status()
             test_run_logs['metadata']['task_status'] = task_status
+            task_result = json.loads(task.result) if task.result else None
+            test_run_logs['report'] = task_result
+            test_run_logs['test_id'] = k
         else:
-            test_run_logs['metadata']['task_status'] = 'task not available'
-        logs.update({k: test_run_logs})
-    return {
-        'test_runs': logs
-    }
+            test_run_logs['metadata']['task_status'] = 'Background task not available'
+        logs.append(test_run_logs)
+    return logs
+
+
+@webapp.route('/api/test_runs', methods=['GET'])
+def get_tests_history():
+    user_id = 'localuser'
+    test_runs_logs = _get_test_runs_logs(user_id)
+    return jsonify(test_runs_logs)
 
 
 @webapp.route('/api/test_runs/<string:test_id>', methods=['GET'])
 def get_test_runs_details(test_id):
     user_id = 'localuser'
-    test_runs_logs = resources.redis_conn.hgetall(
-        f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
-    test_runs_logs = resources.decode_redis(test_runs_logs)
-    if not test_id in test_runs_logs:
-        abort(400, f'test_id: {test_id} does not exist.')
-    result_set = {}
-    result_set.update(json.loads(test_runs_logs[test_id]))
-    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{test_id}'
-    content = ''
-    with open(filepath) as f:
-        content = f.read()
-        if content:
-            result_set.update({'report': json.loads(content)})
-            del result_set['metadata']
-    return result_set
+    test_runs_logs = _get_test_runs_logs(user_id)
+    result_set = list(
+        filter(lambda p: p['test_id'] == test_id, test_runs_logs))
+    if result_set:
+        return jsonify(result_set[0])
+    abort(400, f'test_id: {test_id} does not exist.')
 
 
 @webapp.route('/api/tasks/<string:task_id>', methods=['GET'])
@@ -387,7 +384,8 @@ def _reload_latest_test_run_outcomes_from_redis():
                 test_result = test_result.decode("utf-8")
             _write_to_file(filepath, test_result)
             temp_logs[filename].update({
-                'report': f'{request.base_url}/{filename}',
+                'report': json.loads(test_result),
+                'test_id': filename,
                 'status_message': 'Report Ready'
             })
         resources.redis_conn.hset(
