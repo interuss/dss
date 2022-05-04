@@ -54,7 +54,7 @@
                         refreshIntervalId = setInterval(getCurrentStatus, 1000 * 60 * minutesInterval);
                     } else {
                         clearInterval(refreshIntervalId);
-                        $('#file-upload').removeAttr('disabled');
+                        $('#flight-records-upload').removeAttr('disabled');
                         if(task_status !== 'finished'){
                             $("#status").removeClass("alert-success").addClass("alert-danger");
                             $(".last-job").hide();
@@ -100,15 +100,15 @@
 
 {% block body %}
 <script>
-    $('#file-upload').on("change", function(e) {
+    $('#flight-records-upload').on("change", function(e) {
             var formData = new FormData();
             $.each($("input[type='file']")[0].files, function(i, file) {
-                formData.append('files', file);
+                formData.append('flight_records', file);
             });
-            $('#file-upload').attr('disabled', 'disabled');
+            $('#flight-records-upload').attr('disabled', 'disabled');
             $.ajax({
                 type: "POST",
-                url: "/flight_records" ,
+                url: "/api/flight_records",
                 contentType: false,
                 processData: false,
                 cache: false,
@@ -116,7 +116,28 @@
                 dataType: 'json',
                 data: formData,
                 success: function(response) {
-                    $('#file-upload').removeAttr('disabled');
+                    $('#flight-records-upload').removeAttr('disabled');
+                }
+            });
+        });
+    
+        $('#kml-files-upload').on("change", function(e) {
+            var formData = new FormData();
+            $.each($("input[type='file']")[0].files, function(i, file) {
+                formData.append('kml_files', file);
+            });
+            $('#kml-files-upload').attr('disabled', 'disabled');
+            $.ajax({
+                type: "POST",
+                url: "/api/kml_import_jobs" ,
+                contentType: false,
+                processData: false,
+                cache: false,
+                enctype: 'multipart/form-data',
+                dataType: 'json',
+                data: formData,
+                success: function(response) {
+                    $('#kml-files-upload').removeAttr('disabled');
                 }
             });
         });
@@ -139,7 +160,8 @@
             $("#userConfig").submit(function () {
                 $(".config-submit").attr("disabled", true);
                 $(".config-submit").attr('value', 'Starting Test...');
-                $('#file-upload').attr('disabled', 'disabled');
+                $('#flight-records-upload').attr('disabled', 'disabled');
+                $('#kml-files-upload').attr('disabled', 'disabled');
                 return true;
             });
 
@@ -152,14 +174,21 @@
         <div class="col-8">
             <div class="content-section">
                 <div>
-                    <form id="file-upload-form" action = "/flight_records" method = "POST" enctype = "multipart/form-data">
-                        <label class="btn btn-primary">
-                            <i class="fa fa-image"></i>Add Flight Records/KML<input id="file-upload" type="file" name="files[]" style="display: none;" multiple>
-                        </label>
+                    <form id="flight-records-upload-form" action = "{{url_for('upload_flights_records')}}" method = "POST" enctype = "multipart/form-data">
+                        <label class="btn btn-primary"><i class="fa fa-image"></i>Add Flight Records<input id="flight-records-upload" type="file" name="files[]" style="display: none;" multiple></label>
+                    </form>
+                    <p>OR</p>
+                    <form id="kml-files-upload-form" action = "{{url_for('upload_kmls')}}" method = "POST" enctype = "multipart/form-data">
+                        <label class="btn btn-primary"><i class="fa fa-image"></i>Import KML files to generate Flight Records<input id="kml-files-upload" type="file" name="files[]" style="display: none;" multiple></label>
                     </form>
                     <script>
-                        $("#file-upload-form").on('change', function() {
-                            $("#file-upload-form").submit();
+                        $("#flight-records-upload-form").on('change', function() {
+                            $("#flight-records-upload-form").submit();
+                        })
+                    </script>
+                    <script>
+                        $("#kml-files-upload-form").on('change', function() {
+                            $("#kml-files-upload-form").submit();
                         })
                     </script>
                 </div>
@@ -239,8 +268,8 @@
                 {% endif %}
                 
             </div>
-          </div>
-          <div class="col-4">
+        </div>
+        <div class="col-4">
             <div id="status-container" style="height: 200px;padding-top: 20px;">
                 <div id="status" class="alert " style="display: none;">
                     <div id="current-status"></div>
@@ -265,7 +294,7 @@
                     <p>No existing test results.</p>
                 {% endif %}
             </div>
-          </div>
+        </div>
     </div>
 </div>
 {% endblock %}

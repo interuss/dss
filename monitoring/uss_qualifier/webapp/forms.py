@@ -11,7 +11,8 @@ class MultiCheckboxField(SelectMultipleField):
 
 
 class TestsExecuteForm(FlaskForm):
-    flight_records = MultiCheckboxField('Flight Records', choices=[], validators=[DataRequired()])
+    flight_records = MultiCheckboxField(
+        'Flight Records', choices=[], validators=[DataRequired()])
     auth_spec = StringField('Auth Spec', validators=[DataRequired()])
     user_config = TextAreaField('User Config', validators=[DataRequired()])
     sample_report = BooleanField('Sample Report')
@@ -30,6 +31,7 @@ class TestsExecuteForm(FlaskForm):
         if len(form.flight_records.data) < len(rid_config['injection_targets']):
             raise ValidationError(
                 'Not enough flight states files provided for each injection_targets.')
+
 
 class TestRunsForm(FlaskForm):
     class Meta:

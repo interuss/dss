@@ -14,7 +14,7 @@ from datetime import datetime
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 import google.auth.transport.requests
-from flask import render_template, request, make_response, redirect, url_for, session, abort, jsonify
+from flask import render_template, request, make_response, redirect, url_for, session, abort, jsonify, flash
 from functools import wraps
 from pip._vendor import cachecontrol
 from werkzeug.exceptions import HTTPException
@@ -170,7 +170,6 @@ def _update_user_local_config(auth_spec, config_spec):
 
 
 @webapp.route('/', methods=['GET', 'POST'])
-@webapp.route('/tests', methods=['GET', 'POST'])
 @login_required
 def tests():
     files = []
@@ -526,38 +525,20 @@ def get_test_history():
     return {'tests': executed_tests}
 
 
-@webapp.route('/flight_records', methods=['POST'])
-def upload_flight_state_files():
-    """Upload files."""
-    files = request.files.getlist('files[]')
-    user_id = session['google_id']
-    flight_records_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
-    if not os.path.isdir(flight_records_path):
-        os.makedirs(flight_records_path)
-    kml_files_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/kml_files'
-    if not os.path.isdir(kml_files_path):
-        os.makedirs(kml_files_path)
-    kml_files = []
-    for file in files:
-        if file:
-            filename = secure_filename(file.filename)
-            if filename.endswith('.json'):
-                file_path = os.path.join(flight_records_path, filename)
-                file.save(file_path)
-            elif filename.endswith('.kml'):
-                file_path = os.path.join(kml_files_path, filename)
-                file.save(file_path)
-                kml_files.append(file_path)
-    if kml_files:
-        return redirect(url_for('._process_kml', kml_files=json.dumps(kml_files)), code=307)
+@webapp.route('/upload_kmls', methods=['POST'])
+def upload_kmls():
+    try:
+        upload_kml_flight_records()
+    except HTTPException as e:
+        flash(str(e), 'error')
     return redirect(url_for('.tests'))
 
 
 @webapp.route('/api/kml_import_jobs', methods=['POST'])
 def upload_kml_flight_records():
-    files = request.files.getlist('files')
+    files = request.files.getlist('files') or request.files.getlist('files[]')
     if not files:
-        abort(400, 'Flight records not provided.')
+        abort(400, 'KML files not provided.')
     # user_id = session['google_id']
     user_id = 'localuser'
     flight_records_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
@@ -568,7 +549,7 @@ def upload_kml_flight_records():
         os.makedirs(kml_files_path)
     kml_files = []
     response = {}
-    message = 'Invalid file type'
+    message = ''
     for file in files:
         if file:
             filename = secure_filename(file.filename)
@@ -578,7 +559,9 @@ def upload_kml_flight_records():
                 kml_files.append(file_path)
                 message = 'OK'
             else:
-                message += f'Invalid file extension: {filename}'
+                message = f'Invalid file extension: {filename}'
+                abort(400, message)
+
     if kml_files:
         bg_tasks = []
         for kml_file in kml_files:
@@ -594,9 +577,18 @@ def upload_kml_flight_records():
     return response
 
 
+@webapp.route('/upload_flight_records', methods=['POST'])
+def upload_flights_records():
+    try:
+        resp = upload_json_flight_records()
+    except HTTPException as e:
+        flash(str(e), 'error')
+    return redirect(url_for('.tests'))
+
+
 @webapp.route('/api/flight_records', methods=['POST'])
 def upload_json_flight_records():
-    files = request.files.getlist('files')
+    files = request.files.getlist('files') or request.files.getlist('files[]')
     if not files:
         abort(400, 'Flight records not provided.')
     # TODO:user_id = session['google_id']
@@ -619,6 +611,7 @@ def upload_json_flight_records():
                 uploaded_files.append(json_file_path)
             else:
                 message = f'Invalid file extension: {filename}'
+                abort(400, message)
     response['status_message'] = message
     response['files'] = uploaded_files
     response['id'] = str(uuid.uuid4())
