@@ -1,3 +1,4 @@
+from base64 import encode
 import flask
 import json
 import logging
@@ -143,7 +144,10 @@ def _process_kml_files_task(kml_file, output_path):
         job = resources.qualifier_queue.enqueue(
             'monitoring.uss_qualifier.webapp.tasks.call_kml_processor',
             kml_content, output_path)
-        return job.get_id()
+        job_id = job.get_id()
+        resources.redis_conn.hset(
+            resources.REDIS_KEY_UPLOADED_KMLS, job_id, '')
+        return job_id
 
 
 def _get_user_local_config():
@@ -319,29 +323,35 @@ def get_test_runs_details(test_id):
 
 @webapp.route('/api/tasks/<string:task_id>', methods=['GET'])
 def get_task_status(task_id):
-    if session.get('completed_job') == task_id:
-        abort(400, 'Request already processed')
-    task = tasks.get_rq_job(task_id)
-    response_object = {}
-    if task:
-        response_object = {
-            'task_id': task.get_id(),
-            'task_status': task.get_status(),
-            'task_result': task.result,
-        }
+    task_list = resources.redis_conn.hgetall(
+        resources.REDIS_KEY_UPLOADED_KMLS)
+    curr_task_id = task_id.encode('utf-8')
+    if curr_task_id in task_list:
+        return json.loads(task_list[curr_task_id])
     else:
-        abort(400, f'task_id: {task_id} does not exist.')
-    if task.get_status() == 'finished':
-        session['completed_job'] = task_id
-        task_result = task.result
-        # removing job so that all the pending requests on this job should abort.
-        tasks.remove_rq_job(task_id)
-        now = datetime.now()
-        if task_result:
-            pass
+        if session.get('completed_job') == task_id:
+            abort(400, 'Request already processed')
+        task = tasks.get_rq_job(task_id)
+        response_object = {}
+        if task:
+            response_object = {
+                'task_id': task.get_id(),
+                'task_status': task.get_status(),
+                'task_result': task.result,
+            }
         else:
-            logging.info('Task result not available yet..')
-    return response_object
+            abort(400, f'task_id: {task_id} does not exist.')
+        if task.get_status() == 'finished':
+            session['completed_job'] = task_id
+            task_result = task.result
+            # removing job so that all the pending requests on this job should abort.
+            tasks.remove_rq_job(task_id)
+            now = datetime.now()
+            if task_result:
+                pass
+            else:
+                logging.info('Task result not available yet..')
+        return response_object
 
 
 def _reload_latest_kmls_from_redis():
@@ -349,18 +359,30 @@ def _reload_latest_kmls_from_redis():
         resources.REDIS_KEY_UPLOADED_KMLS)
     user_id = 'localuser'
     if latest_kmls:
-        for _, flight_data in latest_kmls.items():
-            flight_data = json.loads(flight_data)
-            if not isinstance(flight_data, dict):
-                flight_data = json.loads(flight_data)
-            if flight_data.get('is_flight_records_from_kml'):
-                del flight_data['is_flight_records_from_kml']
-                for filename, content in flight_data.items():
-                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
-                    json_file_version = _get_latest_file_version(
-                        filepath, filename)
-                    _write_to_file(json_file_version, json.dumps(content))
-        resources.redis_conn.delete(resources.REDIS_KEY_UPLOADED_KMLS)
+        task_status = {}
+        for task_id, val in latest_kmls.items():
+            if not val or val == '':
+                generated_flight_records = []
+                task_details = _get_task_status(task_id)
+                if task_details['task_status'] == 'finished':
+                    flight_data = json.loads(task_details['task_result'])
+                    if not isinstance(flight_data, dict):
+                        flight_data = json.loads(flight_data)
+                    if flight_data.get('is_flight_records_from_kml'):
+                        del flight_data['is_flight_records_from_kml']
+                        for filename, content in flight_data.items():
+                            filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
+                            json_file_version = _get_latest_file_version(
+                                filepath, filename)
+                            _write_to_file(json_file_version,
+                                           json.dumps(content))
+                            generated_flight_records.append(json_file_version)
+                task_status['generated_flight_records'] = generated_flight_records
+                task_status['task_status'] = task_details['task_status']
+                task_status['task_id'] = task_id.decode("utf-8")
+                resources.redis_conn.hset(
+                    resources.REDIS_KEY_UPLOADED_KMLS,
+                    task_id.decode("utf-8"), json.dumps(task_status))
 
 
 def _reload_latest_test_run_outcomes_from_redis():
@@ -433,6 +455,8 @@ def _write_to_file(filepath, content):
 
 
 def _get_task_status(task_id):
+    if isinstance(task_id, bytes):
+        task_id = task_id.decode("utf-8")
     task = tasks.get_rq_job(task_id)
     task_details = {}
     if task:

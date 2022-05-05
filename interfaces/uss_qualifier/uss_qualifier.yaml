@@ -128,6 +128,8 @@ components:
             required:
                 - task_status
             properties:
+                task_id:
+                    $ref: "#/components/schemas/TaskID"
                 task_status:
                     type: string
                     description: >-
@@ -137,10 +139,11 @@ components:
                     type: object
                     description: >-
                         Tests result if task has completed.
-                filename:
-                    type: string
+                generated_flight_records:
+                    type: array
+                    items: string
                     description: >-
-                        filename if test result is saved in an output report file.
+                        List of generated flight record json files if background task is for KML import jobs.
 
 paths:
     /api/test_runs:

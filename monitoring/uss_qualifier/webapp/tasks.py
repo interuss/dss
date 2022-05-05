@@ -53,6 +53,4 @@ def call_test_executor(
 def call_kml_processor(kml_content, output_path):
     flight_states = flight_state_from_kml.main(
         kml_content, output_path, from_string=True)
-    resources.redis_conn.hset(
-        resources.REDIS_KEY_UPLOADED_KMLS, str(uuid.uuid4()), json.dumps(flight_states))
     return flight_states
