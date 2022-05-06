@@ -376,7 +376,10 @@ def _reload_latest_kmls_from_redis():
                                 filepath, filename)
                             _write_to_file(json_file_version,
                                            json.dumps(content))
-                            generated_flight_records.append(json_file_version)
+                            _, generated_flight_file = os.path.split(
+                                json_file_version)
+                            generated_flight_records.append(
+                                generated_flight_file)
                 task_status['generated_flight_records'] = generated_flight_records
                 task_status['task_status'] = task_details['task_status']
                 task_status['task_id'] = task_id.decode("utf-8")
