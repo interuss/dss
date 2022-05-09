@@ -148,7 +148,9 @@ def _process_kml_files_task(kml_file, output_path):
 
 def _get_user_local_config():
     """Get user's last saved specs."""
-    user_id = session['google_id']
+    # TODO: replace hardcoded user_id with session user.
+    # user_id = session['google_id']
+    user_id = 'localuser'
     user_config_file = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/user_config.json'
     auth_spec = ''
     config_spec = ''
@@ -162,14 +164,16 @@ def _get_user_local_config():
 
 def _update_user_local_config(auth_spec, config_spec):
     """Saves user's local config in  profile specific folder."""
-    user_id = session['google_id']
+    # TODO: replace hardcoded user_id with session user.
+    # user_id = session['google_id']
+    user_id = 'localuser'
     user_config_file = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/user_config.json'
     user_config = {'auth': auth_spec, 'config': config_spec}
     with open(user_config_file, 'w') as f:
         f.write(json.dumps(user_config))
 
 
-@webapp.route('/', methods=['GET', 'POST'])
+@webapp.route('/', methods=['GET'])
 @login_required
 def tests():
     files = []
@@ -179,45 +183,26 @@ def tests():
     if flight_record_data.get('flight_records'):
         files = [(x, x) for x in flight_record_data['flight_records']]
 
+    auth_spec, config_spec = _get_user_local_config()
     form = forms.TestsExecuteForm()
     form.flight_records.choices = files
+    form.auth_spec.data = auth_spec
+    form.user_config.data = config_spec
     data = get_test_history()
-    if request.method == 'GET':
-        auth_spec, config_spec = _get_user_local_config()
-        form.user_config.data = config_spec
-        form.auth_spec.data = auth_spec
     if running_job:
         data.update({'job_id': running_job})
-    else:
-        job_id = ''
-        if form.validate_on_submit():
-            _update_user_local_config(
-                form.auth_spec.data, form.user_config.data)
-            file_objs = []
-            user_id = session['google_id']
-            input_files_location = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
-            input_files = []
-            for filename in form.flight_records.data:
-                input_files.append(filename)
-                filepath = f'{input_files_location}/{filename}'
-                with open(filepath) as fo:
-                    file_objs.append(fo.read())
-            task_details = _initialize_background_test_runs(
-                form.user_config.data,
-                form.auth_spec.data,
-                file_objs,
-                input_files,
-                user_id,
-                form.sample_report.data)
-            if request.method == 'POST':
-                data.update({
-                    'job_id': task_details['metadata']['task_id'],
-                })
     return render_template(
         'tests.html',
         title='Execute tests',
         form=form,
         data=data)
+
+
+@webapp.route('/', methods=['POST'])
+@login_required
+def tests_submit():
+    run_tests()
+    return redirect(url_for('.tests'))
 
 
 @webapp.route('/api/test_runs', methods=['POST'])
@@ -267,6 +252,7 @@ def run_tests():
                 forms.json_abort(400, message)
         auth_spec = form.auth_spec.data
         user_config = form.user_config.data
+        _update_user_local_config(auth_spec, user_config)
         task_details = _initialize_background_test_runs(
             user_config,
             auth_spec,
