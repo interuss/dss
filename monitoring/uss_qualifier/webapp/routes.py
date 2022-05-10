@@ -177,6 +177,7 @@ def _update_user_local_config(auth_spec, config_spec):
 @login_required
 def tests():
     files = []
+    user_id = 'localuser'
     running_job = _get_running_jobs()
     flight_record_data = get_flight_records()
 
@@ -188,7 +189,10 @@ def tests():
     form.flight_records.choices = files
     form.auth_spec.data = auth_spec
     form.user_config.data = config_spec
-    data = get_test_history()
+    test_run_history = _get_test_runs_logs(user_id)
+    completed_tests = [t['test_id']
+                       for t in test_run_history if t['metadata']['task_status'] == 'finished']
+    data = {'tests': completed_tests}
     if running_job:
         data.update({'job_id': running_job})
     return render_template(
@@ -279,7 +283,7 @@ def _get_test_runs_logs(user_id):
             test_run_logs['report'] = task_result
             test_run_logs['test_id'] = k
         else:
-            test_run_logs['metadata']['task_status'] = 'Background task not available'
+            test_run_logs['metadata']['task_status'] = 'finished'
         logs.append(test_run_logs)
     return logs
 
@@ -417,51 +421,6 @@ def _write_to_file(filepath, content):
         f.write(content)
 
 
-def _get_task_status(task_id):
-    task = tasks.get_rq_job(task_id)
-    task_details = {}
-    if task:
-        task_details = {
-            'task_id': task.get_id(),
-            'task_status': task.get_status(),
-            'task_result': task.result,
-        }
-    return task_details
-
-
-@webapp.route('/result/<string:job_id>', methods=['GET', 'POST'])
-def get_result(job_id):
-    if session.get('completed_job') == job_id:
-        abort(400, 'Request already processed')
-    response_object = _get_task_status(job_id)
-    if response_object and response_object['task_status'] == 'finished':
-        session['completed_job'] = job_id
-        task_result = response_object['task_result']
-        # removing job so that all the pending requests on this job should abort.
-        tasks.remove_rq_job(job_id)
-        now = datetime.now()
-        if task_result:
-            user_id = session['google_id']
-            job_result = json.loads(task_result)
-            if job_result.get('is_flight_records_from_kml'):
-                del job_result['is_flight_records_from_kml']
-                for filename, content in job_result.items():
-                    filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
-                    json_file_version = _get_latest_file_version(
-                        filepath, filename)
-                    _write_to_file(json_file_version, json.dumps(content))
-                response_object.update({'is_flight_records_from_kml': True})
-            else:
-                filename = f'{str(now.date())}_{now.strftime("%H%M%S")}.json'
-                filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}'
-                job_result = task_result
-                _write_to_file(filepath, job_result)
-            response_object.update({'filename': filename})
-        else:
-            logging.info('Task result not available yet..')
-    return response_object
-
-
 @webapp.route('/report', methods=['POST'])
 def get_report():
     user_id = session['google_id']
@@ -498,17 +457,6 @@ def download_test(filename):
         output.headers['Content-type'] = 'text/csv'
         return output
     return {'error': 'Error downloading file'}
-
-
-@webapp.route('/history')
-def get_test_history():
-    user_id = session['google_id']
-    output_path = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests'
-    try:
-        executed_tests = os.listdir(output_path)
-    except:
-        executed_tests = []
-    return {'tests': executed_tests}
 
 
 @webapp.route('/upload_kmls', methods=['POST'])
@@ -566,7 +514,7 @@ def upload_kml_flight_records():
 @webapp.route('/upload_flight_records', methods=['POST'])
 def upload_flights_records():
     try:
-        resp = upload_json_flight_records()
+        _ = upload_json_flight_records()
     except HTTPException as e:
         flash(str(e), 'error')
     return redirect(url_for('.tests'))
@@ -602,20 +550,6 @@ def upload_json_flight_records():
     response['files'] = uploaded_files
     response['id'] = str(uuid.uuid4())
     return response
-
-
-@webapp.route('/process_kml', methods=['POST'])
-def _process_kml():
-    kml_files = request.args['kml_files']
-    user_id = session['google_id']
-    flight_records_path = f'{config.Config.FILE_PATH}/{user_id}/flight_records'
-    kml_jobs = []
-    for kml_file in json.loads(kml_files):
-        job_id = _process_kml_files_task(kml_file, flight_records_path)
-        kml_jobs.append(job_id)
-    for job_id in kml_jobs:
-        get_result(job_id)
-    return redirect(url_for('.tests'))
 
 
 @webapp.route('/delete', methods=['GET', 'POST'])

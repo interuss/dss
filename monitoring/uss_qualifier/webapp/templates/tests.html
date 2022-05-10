@@ -29,7 +29,7 @@
     function getCurrentStatus() {
         var current_request = $.ajax({
                 method: 'GET',
-                url: '/result/{{data.job_id}}',
+                url: '/api/tasks/{{data.job_id}}',
                 success: function(response) {
                     currentTime = new Date().getTime();
                     timeTaken = Math.round((((currentTime - startTime) % 86400000) % 3600000) / 60000);
@@ -70,11 +70,13 @@
                                 $(".last-job").hide();
                                 $.ajax({
                                     type: 'GET',
-                                    url: '/history',
+                                    url: '/api/test_runs',
                                     success: function(response) {
                                         result_display = '';
-                                        $.each(response.tests, function(i, file) {
-                                            result_display += '<a href="/result_download/' + file + '">' + file + '</a><br />';
+                                        $.each(response, function(i, test_run_details) {
+                                            if (test_run_details['metadata']['task_status'] == 'finished') {
+                                                result_display += '<a href="/result_download/' + test_run_details['test_ID'] + '">' + test_run_details['test_id'] + '</a><br />';
+                                            }
                                         });
                                         $('#history').html(result_display);
                                     }
@@ -278,17 +280,12 @@
                         <img src="/static/images/spinner.gif"/>
                     </div>
                 </div>
-                <div id="getresult" class="form-group get-result" style="display: none;">
-                    <form method="post" action="/report">
-                        <input type="submit" value="Get Result" >
-                    </form>
-                </div>
             </div>
             <legend class="border-bottom mb-4">Existing Tests results</legend>
             <div id="history" class="container">
                 {% if data.tests %}
-                    {% for file in data.tests %}
-                        <a href="/result_download/{{file}}" >{{file}}</a><br/>
+                    {% for test_result in data.tests %}
+                        <a href="/result_download/{{test_result}}" >{{test_result}}</a><br/>
                     {% endfor %}
                 {% else %}
                     <p>No existing test results.</p>
