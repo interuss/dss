@@ -2,6 +2,7 @@ import json
 from typing import List
 import redis
 import rq
+import uuid
 from . import resources
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid import test_executor
@@ -11,11 +12,12 @@ from monitoring.uss_qualifier.test_data import test_report
 
 
 def get_rq_job(job_id):
-  try:
-      rq_job = resources.qualifier_queue.fetch_job(job_id)
-  except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
-      return None
-  return rq_job
+    try:
+        rq_job = resources.qualifier_queue.fetch_job(job_id)
+    except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
+        return None
+    return rq_job
+
 
 def remove_rq_job(job_id):
     """Removes a job from the queue."""
@@ -26,7 +28,13 @@ def remove_rq_job(job_id):
     return rq_job
 
 
-def call_test_executor(user_config_json: str, auth_spec: str, flight_record_jsons: List[str], debug=False):
+def call_test_executor(
+        user_config_json: str,
+        auth_spec: str,
+        flight_record_jsons: List[str],
+        testruns_id,
+        debug=False):
+
     user_config: RIDQualifierTestConfiguration = ImplicitDict.parse(
         json.loads(user_config_json)['rid'], RIDQualifierTestConfiguration)
     flight_records: List[FullFlightRecord] = [
@@ -35,8 +43,14 @@ def call_test_executor(user_config_json: str, auth_spec: str, flight_record_json
     if debug:
         report = test_report.test_data
     else:
-        report = test_executor.run_rid_tests(user_config, auth_spec, flight_records)
+        report = test_executor.run_rid_tests(
+            user_config, auth_spec, flight_records)
+    resources.redis_conn.hset(
+        resources.REDIS_KEY_TEST_RUNS, testruns_id, json.dumps(report))
     return json.dumps(report)
 
+
 def call_kml_processor(kml_content, output_path):
-    return flight_state_from_kml.main(kml_content, output_path, from_string=True)
+    flight_states = flight_state_from_kml.main(
+        kml_content, output_path, from_string=True)
+    return flight_states
