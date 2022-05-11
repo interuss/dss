@@ -113,13 +113,14 @@ def _initialize_background_test_runs(
     task_id = job.get_id()
     task = tasks.get_rq_job(task_id)
     task_details = {
+        'test_run_id': testruns_id,
         'specifications': {
-            'input_files': input_files,
+            'flight_records': input_files,
             'auth_spec': auth_spec,
             'user_config': json.loads(user_config)},
-        'metadata': {
-            'task_id': task_id,
-            'task_status': task.get_status()
+        'task': {
+            'id': task_id,
+            'status': task.get_status()
         },
         'user_id': user_id,
         'status_message': 'A task has been started in the background'
@@ -190,8 +191,8 @@ def tests():
     form.auth_spec.data = auth_spec
     form.user_config.data = config_spec
     test_run_history = _get_test_runs_logs(user_id)
-    completed_tests = [t['test_id']
-                       for t in test_run_history if t['metadata']['task_status'] == 'finished']
+    completed_tests = [t['test_run_id']
+                       for t in test_run_history if t['task']['status'] == 'finished']
     data = {'tests': completed_tests}
     if running_job:
         data.update({'job_id': running_job})
@@ -216,12 +217,11 @@ def run_tests():
     user_id = 'localuser'
     if running_job:
         return {
-            'metadata': {
-                'task_id': running_job,
+            'task': {
+                'id': running_job,
             },
             'status_message': 'A job already running in the background, report is not ready yet',
             'user_id': user_id,
-            'specifications': 'TODO: yet to fetch for running task',
             'report': None
         }
     # TODO:(pratibha) user_id hardcoded until Auth is fixed.
@@ -272,18 +272,17 @@ def _get_test_runs_logs(user_id):
         f'{user_id}-{resources.REDIS_KEY_TEST_RUN_LOGS}')
     tests_logs = resources.decode_redis(tests_logs)
     logs = []
-    for k, log in tests_logs.items():
+    for _, log in tests_logs.items():
         test_run_logs = json.loads(log)
-        task_id = test_run_logs['metadata']['task_id']
+        task_id = test_run_logs['task']['id']
         task = tasks.get_rq_job(task_id)
         if task:
             task_status = task.get_status()
-            test_run_logs['metadata']['task_status'] = task_status
+            test_run_logs['task']['status'] = task_status
             task_result = json.loads(task.result) if task.result else None
             test_run_logs['report'] = task_result
-            test_run_logs['test_id'] = k
         else:
-            test_run_logs['metadata']['task_status'] = 'finished'
+            test_run_logs['task']['status'] = 'finished'
         logs.append(test_run_logs)
     return logs
 
@@ -300,10 +299,10 @@ def get_test_runs_details(test_id):
     user_id = 'localuser'
     test_runs_logs = _get_test_runs_logs(user_id)
     result_set = list(
-        filter(lambda p: p['test_id'] == test_id, test_runs_logs))
+        filter(lambda p: p['test_run_id'] == test_id, test_runs_logs))
     if result_set:
         return jsonify(result_set[0])
-    abort(400, f'test_id: {test_id} does not exist.')
+    abort(400, f'test_run_id: {test_id} does not exist.')
 
 
 @webapp.route('/api/tasks/<string:task_id>', methods=['GET'])
@@ -374,7 +373,7 @@ def _reload_latest_test_run_outcomes_from_redis():
             _write_to_file(filepath, test_result)
             temp_logs[filename].update({
                 'report': json.loads(test_result),
-                'test_id': filename,
+                'test_run_id': filename,
                 'status_message': 'Report Ready'
             })
         resources.redis_conn.hset(
@@ -501,13 +500,13 @@ def upload_kml_flight_records():
         for kml_file in kml_files:
             task_id = _process_kml_files_task(kml_file, flight_records_path)
             bg_tasks.append(task_id)
-        response['id'] = str(uuid.uuid4())
+        response['kml_import_job_id'] = str(uuid.uuid4())
         response['background_tasks'] = bg_tasks
     if message == 'OK':
         response['status_message'] = 'Background tasks have started to process the KML files.'
     else:
         abort(400, message)
-    response['files'] = kml_files
+    response['kml_imported_files'] = kml_files
     return response
 
 
@@ -532,7 +531,6 @@ def upload_json_flight_records():
         os.makedirs(flight_records_path)
 
     response = {}
-    message = ''
     uploaded_files = []
     for file in files:
         if file:
@@ -541,14 +539,10 @@ def upload_json_flight_records():
                 json_file_path = _get_latest_file_version(
                     flight_records_path, filename)
                 file.save(json_file_path)
-                message = 'OK'
                 uploaded_files.append(json_file_path)
             else:
-                message = f'Invalid file extension: {filename}'
-                abort(400, message)
-    response['status_message'] = message
-    response['files'] = uploaded_files
-    response['id'] = str(uuid.uuid4())
+                abort(400, f'Invalid file extension: {filename}')
+    response['flight_record_ids'] = uploaded_files
     return response
 
 

@@ -74,8 +74,8 @@
                                     success: function(response) {
                                         result_display = '';
                                         $.each(response, function(i, test_run_details) {
-                                            if (test_run_details['metadata']['task_status'] == 'finished') {
-                                                result_display += '<a href="/result_download/' + test_run_details['test_ID'] + '">' + test_run_details['test_id'] + '</a><br />';
+                                            if (test_run_details['task']['status'] == 'finished') {
+                                                result_display += '<a href="/result_download/' + test_run_details['test_run_id'] + '">' + test_run_details['test_run_id'] + '</a><br />';
                                             }
                                         });
                                         $('#history').html(result_display);
