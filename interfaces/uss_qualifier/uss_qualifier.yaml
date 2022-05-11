@@ -15,7 +15,7 @@ components:
                         List of flight record IDs.
                     type: array
                     items:
-                        type: FlightRecordID
+                        $ref: "#/components/schemas/FlightRecordID"
                 auth_spec:
                     description: >-
                         User authentication specification.
@@ -31,7 +31,7 @@ components:
             properties:
                 specification:
                     $ref: "#/components/schemas/TestRunSpecification"
-        CreateKmlImportJobResponse:
+        KmlImportJobsBatchCreateResponse:
             type: object
             properties:
                 kml_import_job_id:
@@ -44,26 +44,16 @@ components:
                 background_tasks:
                     type: array
                     items:
-                        type: TaskID
+                        $ref: "#/components/schemas/TaskID"
                     description: >-
                         A list of task ids running in the background. The status of each such task can be checked through /api/tasks/<task_id>.
-        FlightRecordsUploadJsonResponse:
+        FlightRecordsBatchCreateResponse:
             type: object
             properties:
                 flight_record_ids:
                     type: array
                     items:
-                        type: FlightRecordID
-        GetTestRunResponse:
-            type: object
-            properties:
-                test_run:
-                    $ref: "#/components/schemas/TestRun"
-        CreateTestRunResponse:
-            type: object
-            properties:
-                test_run:
-                    $ref: "#/components/schemas/TestRun"
+                        $ref: "#/components/schemas/FlightRecordID"
         TestRun:
             type: object
             properties:
@@ -105,19 +95,14 @@ components:
             example: 2f8343be-6482-4d1b-a474-16847e01af1e
         TestRunID:
             description: >-
-                Identifier of a test run, formatted like a file name.
+                Identifier of a test run.
             type: string
             example: 2022-04-06_235836_1.json
         FlightRecordID:
             description: >-
-                Identifier of a flight record, formatted like a file name.
+                Identifier of a flight record.
             type: string
             example: flight_1.json
-        GetTaskResponse:
-            type: object
-            properties:
-                task:
-                    $ref: "#/components/schemas/BackgroundTask"
         BackgroundTask:
             type: object
             properties:
@@ -134,7 +119,8 @@ components:
                         Tests result if task has completed.
                 generated_flight_records:
                     type: array
-                    items: FlightRecordID
+                    items:
+                        $ref: "#/components/schemas/FlightRecordID"
                     description: >-
                         List of generated flight record IDs if background task is for a KML import job.
 
@@ -154,8 +140,8 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/CreateTestRunResponse"
-                    description: Test execution request submitted successfully
+                                $ref: "#/components/schemas/TestRun"
+                    description: Test execution request submitted successfully.
                 "404":
                     description: Testing interface is not activated.
                 "400":
@@ -170,7 +156,7 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ListTestRunsResponse"
                     description: >-
-                        Returns a list of test runs.
+                        List of test runs retrieved successfully.
     /test_runs/{test_id}:
         get:
             summary: /test_runs/{test_id}
@@ -187,9 +173,9 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/GetTestRunResponse"
+                                $ref: "#/components/schemas/TestRun"
                     description: >-
-                        Returns an object containing input specifications and output generated for a test run.
+                        Test run retrieved successfully.
                 "400":
                     description: Test execution not found.
     /tasks/{task_id}:
@@ -201,9 +187,9 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/GetTaskResponse"
+                                $ref: "#/components/schemas/BackgroundTask"
                     description: >-
-                        Returns current status of the task, along with result, if result is available.
+                        Background task retrieved successfully.
                 "400":
                     description: Status is not avilable for task ID.
         parameters:
@@ -213,9 +199,9 @@ paths:
               description: A task ID of an initiated task.
               schema:
                   $ref: "#/components/schemas/TaskID"
-    /flight_records:
+    "/flight_records:batchCreate":
         post:
-            summary: /flight_records
+            summary: /flight_records:batchCreate
             description: Upload one or more flight records
             requestBody:
                 content:
@@ -234,15 +220,15 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/FlightRecordsUploadJsonResponse"
+                                $ref: "#/components/schemas/FlightRecordsBatchCreateResponse"
                     description: >-
-                        Returns Human readable message of uploaded file status.
+                        Flight records created successfully.
                 "400":
                     description: Failed to upload files.
-    /kml_import_jobs:
+    "/kml_import_jobs:batchCreate":
         post:
-            summary: /kml_import_jobs
-            description: Process KML files into flight records
+            summary: /kml_import_jobs:batchCreate
+            description: Process one or more KML files into flight records
             requestBody:
                 content:
                     multipart/form-data:
@@ -260,9 +246,9 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/CreateKmlImportJobResponse"
+                                $ref: "#/components/schemas/KmlImportJobsBatchCreateResponse"
                     description: >-
-                        Returns task details of the task launched in the background to process KML files.
+                        KML conversion initiated successfully.
                 "400":
                     description: Failed to upload files.
 
