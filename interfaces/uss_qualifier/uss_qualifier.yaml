@@ -3,7 +3,7 @@ info:
     title: USS Qualifier webapp API
     version: 0.0.1
     description: >-
-        This is an interface to run the qualifier tests via uss_qualifier webapp.
+        This is an interface to run USS qualifier tests via uss_qualifier webapp.
 
 components:
     schemas:
