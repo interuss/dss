@@ -264,7 +264,7 @@ def run_tests():
             input_files,
             user_id,
             debug=False)
-        return task_details
+        return {'test_run': task_details}
 
 
 def _get_test_runs_logs(user_id):
@@ -291,7 +291,7 @@ def _get_test_runs_logs(user_id):
 def get_tests_history():
     user_id = 'localuser'
     test_runs_logs = _get_test_runs_logs(user_id)
-    return jsonify(test_runs_logs)
+    return {'test_runs': test_runs_logs}
 
 
 @webapp.route('/api/test_runs/<string:test_id>', methods=['GET'])
@@ -301,7 +301,7 @@ def get_test_runs_details(test_id):
     result_set = list(
         filter(lambda p: p['test_run_id'] == test_id, test_runs_logs))
     if result_set:
-        return jsonify(result_set[0])
+        return {'test_run': result_set[0]}
     abort(400, f'test_run_id: {test_id} does not exist.')
 
 
@@ -310,9 +310,9 @@ def get_task_status(task_id):
     if session.get('completed_job') == task_id:
         abort(400, 'Request already processed')
     task = tasks.get_rq_job(task_id)
-    response_object = {}
+    response_object = {'task': {}}
     if task:
-        response_object = {
+        response_object['task'] = {
             'task_id': task.get_id(),
             'task_status': task.get_status(),
             'task_result': task.result,
@@ -324,11 +324,6 @@ def get_task_status(task_id):
         task_result = task.result
         # removing job so that all the pending requests on this job should abort.
         tasks.remove_rq_job(task_id)
-        now = datetime.now()
-        if task_result:
-            pass
-        else:
-            logging.info('Task result not available yet..')
     return response_object
 
 
