@@ -13,7 +13,6 @@
     var startedTask = '';
     var startTime = new Date().getTime();
     var xhrPool = [];
-    var currentFile = '';
     function getStatusHtml(task_status, timeTaken, refreshIntervalId) {
         try {
             taskStatusStr = 'Current task status: ' + task_status[0].toUpperCase() + task_status.slice(1);
@@ -33,8 +32,8 @@
                 success: function(response) {
                     currentTime = new Date().getTime();
                     timeTaken = Math.round((((currentTime - startTime) % 86400000) % 3600000) / 60000);
-                    task_status = response.task_status;
-                    currentFile = response.filename;
+                    task = response.task;
+                    task_status = task.task_status;
                     $("#current-status").html(getStatusHtml(task_status, timeTaken, refreshIntervalId));
                     $("#status").show();
                     if(task_status === 'started' || task_status === 'queued') {
@@ -73,7 +72,8 @@
                                     url: '/api/test_runs',
                                     success: function(response) {
                                         result_display = '';
-                                        $.each(response, function(i, test_run_details) {
+                                        test_runs = response['test_runs']
+                                        $.each(test_runs, function(i, test_run_details) {
                                             if (test_run_details['task']['status'] == 'finished') {
                                                 result_display += '<a href="/result_download/' + test_run_details['test_run_id'] + '">' + test_run_details['test_run_id'] + '</a><br />';
                                             }
