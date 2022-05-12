@@ -331,7 +331,6 @@ def get_task_status(task_id):
             abort(400, f'task_id: {task_id} does not exist.')
         if task.get_status() == 'finished':
             session['completed_job'] = task_id
-            task_result = task.result
             # removing job so that all the pending requests on this job should abort.
             tasks.remove_rq_job(task_id)
         return response_object
