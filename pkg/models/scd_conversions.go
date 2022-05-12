@@ -1,10 +1,9 @@
 package models
 
 import (
-	"github.com/golang/protobuf/ptypes"
-
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/stacktrace"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Volume4DFromSCDProto converts vol4 proto to a Volume4D
@@ -20,7 +19,8 @@ func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 
 	if startTime := vol4.GetTimeStart(); startTime != nil {
 		st := startTime.GetValue()
-		ts, err := ptypes.Timestamp(st)
+		ts := st.AsTime()
+		err := st.CheckValid()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error converting start time from proto")
 		}
@@ -29,7 +29,8 @@ func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 
 	if endTime := vol4.GetTimeEnd(); endTime != nil {
 		et := endTime.GetValue()
-		ts, err := ptypes.Timestamp(et)
+		ts := et.AsTime()
+		err := et.CheckValid()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error converting end time from proto")
 		}
@@ -130,10 +131,7 @@ func (vol4 *Volume4D) ToSCDProto() (*scdpb.Volume4D, error) {
 	}
 
 	if vol4.StartTime != nil {
-		ts, err := ptypes.TimestampProto(*vol4.StartTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
-		}
+		ts := tspb.New(*vol4.StartTime)
 		result.TimeStart = &scdpb.Time{
 			Format: TimeFormatRFC3339,
 			Value:  ts,
@@ -141,10 +139,7 @@ func (vol4 *Volume4D) ToSCDProto() (*scdpb.Volume4D, error) {
 	}
 
 	if vol4.EndTime != nil {
-		ts, err := ptypes.TimestampProto(*vol4.EndTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
-		}
+		ts := tspb.New(*vol4.EndTime)
 		result.TimeEnd = &scdpb.Time{
 			Format: TimeFormatRFC3339,
 			Value:  ts,

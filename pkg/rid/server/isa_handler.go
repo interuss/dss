@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -235,7 +234,9 @@ func (s *Server) SearchIdentificationServiceAreas(
 	)
 
 	if et := req.GetEarliestTime(); et != nil {
-		if ts, err := ptypes.Timestamp(et); err == nil {
+		ts := et.AsTime()
+		err := et.CheckValid()
+		if err == nil {
 			earliest = &ts
 		} else {
 			return nil, stacktrace.Propagate(err, "Unable to convert earliest timestamp to ptype")
@@ -243,7 +244,9 @@ func (s *Server) SearchIdentificationServiceAreas(
 	}
 
 	if lt := req.GetLatestTime(); lt != nil {
-		if ts, err := ptypes.Timestamp(lt); err == nil {
+		ts := lt.AsTime()
+		err := lt.CheckValid()
+		if err == nil {
 			latest = &ts
 		} else {
 			return nil, stacktrace.Propagate(err, "Unable to convert latest timestamp to ptype")

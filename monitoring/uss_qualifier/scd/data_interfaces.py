@@ -1,7 +1,8 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict
 from monitoring.monitorlib.locality import Locality
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedTimeDelta, StringBasedDateTime
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, Capability
 from monitoring.uss_qualifier.common_data_definitions import Severity
 
@@ -50,6 +51,12 @@ class FlightInjectionAttempt(ImplicitDict):
     test_injection: InjectFlightRequest
     """Definition of the flight to be injected"""
 
+    planning_time: StringBasedTimeDelta
+    """Time delta between the time uss_qualifier initiates this FlightInjectionAttempt and when a timestamp within the test_injection equal to reference_time occurs"""
+
+    reference_time: StringBasedDateTime
+    """The time that all other times in the FlightInjectionAttempt are relative to. If this FlightInjectionAttempt is initiated by uss_qualifier at t_test, then each t_volume_original timestamp within test_injection should be adjusted to t_volume_adjusted such that t_volume_adjusted = t_test + planning_time when t_volume_original = reference_time"""
+    
     known_responses: KnownResponses
     """Details about what the USS under test should report after processing the test data"""
 

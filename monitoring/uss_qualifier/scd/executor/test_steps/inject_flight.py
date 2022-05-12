@@ -1,10 +1,12 @@
-import datetime
+from time import timezone
+import pytimeparse
 
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.fetch import scd as fetch_scd
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightResponse, InjectFlightResult
-from monitoring.monitorlib.typing import ImplicitDict
+from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
 from monitoring.uss_qualifier.common_data_definitions import Severity, SubjectType, IssueSubject
 from monitoring.uss_qualifier.scd.data_interfaces import TestStep
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
@@ -18,6 +20,19 @@ NUMERIC_PRECISION = 0.001
 def execute(runner, step: TestStep, step_ref: TestStepReference, target: TestTarget) -> None:
     print("[SCD]     Step: Inject flight {} to {}".format(step.inject_flight.name, target.name))
     try:
+        t_test = datetime.now(timezone.utc) 
+        t_delta = (t_test - step.inject_flight.reference_time.datetime) + step.inject_flight.planning_time.timedelta 
+        
+        # add the delta to the reference time so in the next iteration the time delta is not the same than in the previous iteration
+        step.inject_flight.reference_time = StringBasedDateTime(step.inject_flight.reference_time.datetime + t_delta)
+        
+        for volume in step.inject_flight.test_injection.operational_intent.volumes:            
+            t_start_adjusted = (volume.time_start.value.datetime + t_delta).replace(tzinfo=None) 
+            t_end_adjusted = (volume.time_end.value.datetime + t_delta).replace(tzinfo=None)  
+            
+            volume.time_start.value = StringBasedDateTime(t_start_adjusted.isoformat())
+            volume.time_end.value = StringBasedDateTime(t_end_adjusted.isoformat())
+            break
         resp, query, flight_id = target.inject_flight(step.inject_flight)
     except QueryError as e:
         interaction_id = runner.report_recorder.capture_interaction(step_ref, e.query, 'Inject flight into USS')
@@ -140,9 +155,9 @@ def _verify_operational_intent(runner, step: TestStep, step_ref: TestStepReferen
         error_text = 'Lower altitude specified by USS in operational intent details ({} m WGS84) is above the lower altitude in the injected flight ({} m WGS84)'.format(resp_alts[0], alts[0])
     elif resp_alts[1] < alts[1] - NUMERIC_PRECISION:
         error_text = 'Upper altitude specified by USS in operational intent details ({} m WGS84) is below the upper altitude in the injected flight ({} m WGS84)'.format(resp_alts[1], alts[1])
-    elif resp_start > t0 + datetime.timedelta(seconds=NUMERIC_PRECISION):
+    elif resp_start > t0 + timedelta(seconds=NUMERIC_PRECISION):
         error_text = 'Start time specified by USS in operational intent details ({}) is past the start time of the injected flight ({})'.format(resp_start.isoformat(), t0.isoformat())
-    elif resp_end < t1 - datetime.timedelta(seconds=NUMERIC_PRECISION):
+    elif resp_end < t1 - timedelta(seconds=NUMERIC_PRECISION):
         error_text = 'End time specified by USS in operational intent details ({}) is prior to the end time of the injected flight ({})'.format(resp_end.isoformat(), t1.isoformat())
     if error_text:
         # The USS's flight details are incorrect

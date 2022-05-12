@@ -46,6 +46,7 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
           selector: {
             'statefulset.kubernetes.io/pod-name': 'cockroachdb-' + i,
           },
+          publishNotReadyAddresses: true,
         },
       }
       for i in std.range(0, std.length(metadata.cockroach.nodeIPs) - 1)

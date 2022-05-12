@@ -1,8 +1,8 @@
 package models
 
 import (
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	"github.com/interuss/stacktrace"
@@ -22,7 +22,8 @@ func Volume4DFromRIDProto(vol4 *ridpb.Volume4D) (*Volume4D, error) {
 	}
 
 	if startTime := vol4.GetTimeStart(); startTime != nil {
-		ts, err := ptypes.Timestamp(startTime)
+		ts := startTime.AsTime()
+		err := startTime.CheckValid()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error converting start time from proto")
 		}
@@ -30,7 +31,8 @@ func Volume4DFromRIDProto(vol4 *ridpb.Volume4D) (*Volume4D, error) {
 	}
 
 	if endTime := vol4.GetTimeEnd(); endTime != nil {
-		ts, err := ptypes.Timestamp(endTime)
+		ts := endTime.AsTime()
+		err := endTime.CheckValid()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error converting end time from proto")
 		}
@@ -90,18 +92,12 @@ func (vol4 *Volume4D) ToRIDProto() (*ridpb.Volume4D, error) {
 	}
 
 	if vol4.StartTime != nil {
-		ts, err := ptypes.TimestampProto(*vol4.StartTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time from proto")
-		}
+		ts := tspb.New(*vol4.StartTime)
 		result.TimeStart = ts
 	}
 
 	if vol4.EndTime != nil {
-		ts, err := ptypes.TimestampProto(*vol4.EndTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time from proto")
-		}
+		ts := tspb.New(*vol4.EndTime)
 		result.TimeEnd = ts
 	}
 

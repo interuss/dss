@@ -9,8 +9,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/golang/geo/s2"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/stacktrace"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -77,18 +77,12 @@ func (s *Subscription) ToProto() (*ridpb.Subscription, error) {
 	}
 
 	if s.StartTime != nil {
-		ts, err := ptypes.TimestampProto(*s.StartTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
-		}
+		ts := tspb.New(*s.StartTime)
 		result.TimeStart = ts
 	}
 
 	if s.EndTime != nil {
-		ts, err := ptypes.TimestampProto(*s.EndTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
-		}
+		ts := tspb.New(*s.EndTime)
 		result.TimeEnd = ts
 	}
 	return result, nil
@@ -102,7 +96,8 @@ func (s *Subscription) SetExtents(extents *ridpb.Volume4D) error {
 		return nil
 	}
 	if startTime := extents.GetTimeStart(); startTime != nil {
-		ts, err := ptypes.Timestamp(startTime)
+		ts := startTime.AsTime()
+		err := startTime.CheckValid()
 		if err != nil {
 			return stacktrace.Propagate(err, "Error converting start time from proto")
 		}
@@ -110,7 +105,8 @@ func (s *Subscription) SetExtents(extents *ridpb.Volume4D) error {
 	}
 
 	if endTime := extents.GetTimeEnd(); endTime != nil {
-		ts, err := ptypes.Timestamp(endTime)
+		ts := endTime.AsTime()
+		err := endTime.CheckValid()
 		if err != nil {
 			return stacktrace.Propagate(err, "Error converting end time from proto")
 		}

@@ -35,6 +35,7 @@
             "name": "Inject flight via First-mover USS",
             "inject_flight": {
                 "reference_time": "2023-02-12T10:34:14.483425+00:00",
+                "planning_time": "0:05:00",
                 "test_injection": {
                     "operational_intent": {
                         "volumes": [
@@ -354,6 +355,7 @@
             "name": "Inject flight via Blocked USS",
             "inject_flight": {
                 "reference_time": "2023-02-12T10:34:14.483425+00:00",
+                "planning_time": "0:05:00",
                 "test_injection": {
                     "operational_intent": {
                         "volumes": [

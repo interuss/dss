@@ -4,13 +4,13 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/stacktrace"
 	"google.golang.org/protobuf/proto"
+	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // IdentificationServiceArea represents a USS ISA over a given 4D volume.
@@ -47,18 +47,12 @@ func (i *IdentificationServiceArea) ToProto() (*ridpb.IdentificationServiceArea,
 	}
 
 	if i.StartTime != nil {
-		ts, err := ptypes.TimestampProto(*i.StartTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time to proto")
-		}
+		ts := tspb.New(*i.StartTime)
 		result.TimeStart = ts
 	}
 
 	if i.EndTime != nil {
-		ts, err := ptypes.TimestampProto(*i.EndTime)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time to proto")
-		}
+		ts := tspb.New(*i.EndTime)
 		result.TimeEnd = ts
 	}
 	return result, nil
@@ -72,7 +66,8 @@ func (i *IdentificationServiceArea) SetExtents(extents *ridpb.Volume4D) error {
 		return nil
 	}
 	if startTime := extents.GetTimeStart(); startTime != nil {
-		ts, err := ptypes.Timestamp(startTime)
+		ts := startTime.AsTime()
+		err := startTime.CheckValid()
 		if err != nil {
 			return stacktrace.Propagate(err, "Error converting start time from proto")
 		}
@@ -80,7 +75,8 @@ func (i *IdentificationServiceArea) SetExtents(extents *ridpb.Volume4D) error {
 	}
 
 	if endTime := extents.GetTimeEnd(); endTime != nil {
-		ts, err := ptypes.Timestamp(endTime)
+		ts := endTime.AsTime()
+		err := endTime.CheckValid()
 		if err != nil {
 			return stacktrace.Propagate(err, "Error converting end time from proto")
 		}
