@@ -146,6 +146,7 @@ def _process_kml_files_task(kml_file, output_path):
             'monitoring.uss_qualifier.webapp.tasks.call_kml_processor',
             kml_content, output_path)
         job_id = job.get_id()
+        # Adding an empty job id in the queue to mark a latest kml job.
         resources.redis_conn.hset(
             resources.REDIS_KEY_UPLOADED_KMLS, job_id, '')
         return job_id
@@ -311,11 +312,12 @@ def get_test_runs_details(test_id):
 
 @webapp.route('/api/tasks/<string:task_id>', methods=['GET'])
 def get_task_status(task_id):
+    # If task ID is for Imported KML job, the status is maintained through following redis queue.
     task_list = resources.redis_conn.hgetall(
         resources.REDIS_KEY_UPLOADED_KMLS)
     curr_task_id = task_id.encode('utf-8')
-    if curr_task_id in task_list:
-        return json.loads(task_list[curr_task_id])
+    if task_list.get(curr_task_id):
+        return {'task': json.loads(task_list[curr_task_id])}
     else:
         if session.get('completed_job') == task_id:
             abort(400, 'Request already processed')
@@ -343,31 +345,48 @@ def _reload_latest_kmls_from_redis():
     if latest_kmls:
         task_status = {}
         for task_id, val in latest_kmls.items():
-            if not val or val == '':
+            if not is_kml_bg_task_processed(val):
                 generated_flight_records = []
                 task_details = _get_task_status(task_id)
-                if task_details['task_status'] == 'finished':
-                    flight_data = json.loads(task_details['task_result'])
-                    if not isinstance(flight_data, dict):
-                        flight_data = json.loads(flight_data)
-                    if flight_data.get('is_flight_records_from_kml'):
-                        del flight_data['is_flight_records_from_kml']
-                        for filename, content in flight_data.items():
-                            filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
-                            json_file_version = _get_latest_file_version(
-                                filepath, filename)
-                            _write_to_file(json_file_version,
-                                           json.dumps(content))
-                            _, generated_flight_file = os.path.split(
-                                json_file_version)
-                            generated_flight_records.append(
-                                generated_flight_file)
-                task_status['generated_flight_records'] = generated_flight_records
-                task_status['task_status'] = task_details['task_status']
-                task_status['task_id'] = task_id.decode("utf-8")
-                resources.redis_conn.hset(
-                    resources.REDIS_KEY_UPLOADED_KMLS,
-                    task_id.decode("utf-8"), json.dumps(task_status))
+                if task_details:
+                    if task_details['task_status'] == 'finished':
+                        flight_data = json.loads(task_details['task_result'])
+                        if not isinstance(flight_data, dict):
+                            flight_data = json.loads(flight_data)
+                        if flight_data.get('is_flight_records_from_kml'):
+                            del flight_data['is_flight_records_from_kml']
+                            for filename, content in flight_data.items():
+                                filepath = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records'
+                                json_file_version = _get_latest_file_version(
+                                    filepath, filename)
+                                _write_to_file(json_file_version,
+                                               json.dumps(content))
+                                _, generated_flight_file = os.path.split(
+                                    json_file_version)
+                                generated_flight_records.append(
+                                    generated_flight_file)
+                        task_status['generated_flight_records'] = generated_flight_records
+                        task_status['task_status'] = task_details['task_status']
+                        task_status['task_id'] = task_id.decode("utf-8")
+                        task_status['processed'] = True
+                        resources.redis_conn.hset(
+                            resources.REDIS_KEY_UPLOADED_KMLS,
+                            task_id.decode("utf-8"), json.dumps(task_status))
+
+
+def is_kml_bg_task_processed(task_result):
+    if not task_result:
+        return False
+    if not isinstance(task_result, dict):
+        task_result = json.loads(task_result)
+        # In case task result is ready, but not processed yet, result is in the form of binary wrapped in string format.
+        if not isinstance(task_result, dict):
+            task_result = json.loads(task_result)
+    if task_result.get('processed'):
+        return True
+    if task_result.get('task_status') and task_result['task_status'] != 'failed':
+        return False
+    return True
 
 
 def _reload_latest_test_run_outcomes_from_redis():
