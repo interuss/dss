@@ -4,7 +4,7 @@ import argparse
 import json
 import os
 import sys
-from typing import Union
+from typing import Dict
 
 from monitoring.monitorlib.locality import Locality
 from monitoring.monitorlib.typing import ImplicitDict
@@ -31,7 +31,8 @@ def parseArgs() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def uss_test_executor(config, auth_spec, rid_flight_records=None, scd_test_definitions_path=None) -> Union[reports.Report, int]:
+def uss_test_executor(
+        config, auth_spec, rid_flight_records=None, scd_test_definitions_path=None) -> Dict[str, Dict[str, reports.Report]]:
     test_executor = {
         'rid': {},
         'scd': {}
