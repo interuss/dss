@@ -13,7 +13,6 @@
     var startedTask = '';
     var startTime = new Date().getTime();
     var xhrPool = [];
-    var currentFile = '';
     function getStatusHtml(task_status, timeTaken, refreshIntervalId) {
         try {
             taskStatusStr = 'Current task status: ' + task_status[0].toUpperCase() + task_status.slice(1);
@@ -29,12 +28,12 @@
     function getCurrentStatus() {
         var current_request = $.ajax({
                 method: 'GET',
-                url: '/result/{{data.job_id}}',
+                url: '/api/tasks/{{data.job_id}}',
                 success: function(response) {
                     currentTime = new Date().getTime();
                     timeTaken = Math.round((((currentTime - startTime) % 86400000) % 3600000) / 60000);
-                    task_status = response.task_status;
-                    currentFile = response.filename;
+                    task = response.task;
+                    task_status = task.task_status;
                     $("#current-status").html(getStatusHtml(task_status, timeTaken, refreshIntervalId));
                     $("#status").show();
                     if(task_status === 'started' || task_status === 'queued') {
@@ -42,8 +41,8 @@
                         $("#status").removeClass("alert-danger").addClass("alert-success");
                         $('.config-submit').attr('disabled', true);
                         if(firstTimeCheck === 0) {
-                            // check first time response in 10 secs.
-                            minutesInterval = 0.2;
+                            // check first time response in ~3 secs.
+                            minutesInterval = 0.05;
                             firstTimeCheck = 1;
                         } else {
                             minutesInterval = 1;
@@ -54,7 +53,7 @@
                         refreshIntervalId = setInterval(getCurrentStatus, 1000 * 60 * minutesInterval);
                     } else {
                         clearInterval(refreshIntervalId);
-                        $('#file-upload').removeAttr('disabled');
+                        $('#flight-records-upload').removeAttr('disabled');
                         if(task_status !== 'finished'){
                             $("#status").removeClass("alert-success").addClass("alert-danger");
                             $(".last-job").hide();
@@ -62,24 +61,7 @@
                         $('.config-submit').attr('disabled', false);
                         $(".spinner").hide();
                         if(task_status === 'finished') {
-                            if(response.is_flight_records_from_kml) {
-                                location.reload();
-                            }
-                            else {
-                                $(".get-result").show();
-                                $(".last-job").hide();
-                                $.ajax({
-                                    type: 'GET',
-                                    url: '/history',
-                                    success: function(response) {
-                                        result_display = '';
-                                        $.each(response.tests, function(i, file) {
-                                            result_display += '<a href="/result_download/' + file + '">' + file + '</a><br />';
-                                        });
-                                        $('#history').html(result_display);
-                                    }
-                                });
-                            }
+                            window.location.href = '/';
                         }
                     }
                 }
@@ -92,6 +74,7 @@
                     jqXHR.abort();
                 });
                 xhrPool = [];
+                location.reload();
             }
         }
 
@@ -100,15 +83,15 @@
 
 {% block body %}
 <script>
-    $('#file-upload').on("change", function(e) {
+    $('#flight-records-upload').on("change", function(e) {
             var formData = new FormData();
             $.each($("input[type='file']")[0].files, function(i, file) {
-                formData.append('files', file);
+                formData.append('flight_records', file);
             });
-            $('#file-upload').attr('disabled', 'disabled');
+            $('#flight-records-upload').attr('disabled', 'disabled');
             $.ajax({
                 type: "POST",
-                url: "/flight_records" ,
+                url: "/api/flight_records",
                 contentType: false,
                 processData: false,
                 cache: false,
@@ -116,7 +99,28 @@
                 dataType: 'json',
                 data: formData,
                 success: function(response) {
-                    $('#file-upload').removeAttr('disabled');
+                    $('#flight-records-upload').removeAttr('disabled');
+                }
+            });
+        });
+    
+        $('#kml-files-upload').on("change", function(e) {
+            var formData = new FormData();
+            $.each($("input[type='file']")[0].files, function(i, file) {
+                formData.append('kml_files', file);
+            });
+            $('#kml-files-upload').attr('disabled', 'disabled');
+            $.ajax({
+                type: "POST",
+                url: "/api/kml_import_jobs" ,
+                contentType: false,
+                processData: false,
+                cache: false,
+                enctype: 'multipart/form-data',
+                dataType: 'json',
+                data: formData,
+                success: function(response) {
+                    $('#kml-files-upload').removeAttr('disabled');
                 }
             });
         });
@@ -139,7 +143,8 @@
             $("#userConfig").submit(function () {
                 $(".config-submit").attr("disabled", true);
                 $(".config-submit").attr('value', 'Starting Test...');
-                $('#file-upload').attr('disabled', 'disabled');
+                $('#flight-records-upload').attr('disabled', 'disabled');
+                $('#kml-files-upload').attr('disabled', 'disabled');
                 return true;
             });
 
@@ -152,14 +157,21 @@
         <div class="col-8">
             <div class="content-section">
                 <div>
-                    <form id="file-upload-form" action = "/flight_records" method = "POST" enctype = "multipart/form-data">
-                        <label class="btn btn-primary">
-                            <i class="fa fa-image"></i>Add Flight Records/KML<input id="file-upload" type="file" name="files[]" style="display: none;" multiple>
-                        </label>
+                    <form id="flight-records-upload-form" action = "{{url_for('upload_flights_records')}}" method = "POST" enctype = "multipart/form-data">
+                        <label class="btn btn-primary"><i class="fa fa-image"></i>Add Flight Records<input id="flight-records-upload" type="file" name="files[]" style="display: none;" multiple></label>
+                    </form>
+                    <p>OR</p>
+                    <form id="kml-files-upload-form" action = "{{url_for('upload_kmls')}}" method = "POST" enctype = "multipart/form-data">
+                        <label class="btn btn-primary"><i class="fa fa-image"></i>Import KML files to generate Flight Records<input id="kml-files-upload" type="file" name="files[]" style="display: none;" multiple></label>
                     </form>
                     <script>
-                        $("#file-upload-form").on('change', function() {
-                            $("#file-upload-form").submit();
+                        $("#flight-records-upload-form").on('change', function() {
+                            $("#flight-records-upload-form").submit();
+                        })
+                    </script>
+                    <script>
+                        $("#kml-files-upload-form").on('change', function() {
+                            $("#kml-files-upload-form").submit();
                         })
                     </script>
                 </div>
@@ -239,8 +251,8 @@
                 {% endif %}
                 
             </div>
-          </div>
-          <div class="col-4">
+        </div>
+        <div class="col-4">
             <div id="status-container" style="height: 200px;padding-top: 20px;">
                 <div id="status" class="alert " style="display: none;">
                     <div id="current-status"></div>
@@ -249,23 +261,18 @@
                         <img src="/static/images/spinner.gif"/>
                     </div>
                 </div>
-                <div id="getresult" class="form-group get-result" style="display: none;">
-                    <form method="post" action="/report">
-                        <input type="submit" value="Get Result" >
-                    </form>
-                </div>
             </div>
             <legend class="border-bottom mb-4">Existing Tests results</legend>
             <div id="history" class="container">
                 {% if data.tests %}
-                    {% for file in data.tests %}
-                        <a href="/result_download/{{file}}" >{{file}}</a><br/>
+                    {% for test_result in data.tests %}
+                        <a href="/result_download/{{test_result}}" >{{test_result}}</a><br/>
                     {% endfor %}
                 {% else %}
                     <p>No existing test results.</p>
                 {% endif %}
             </div>
-          </div>
+        </div>
     </div>
 </div>
 {% endblock %}
