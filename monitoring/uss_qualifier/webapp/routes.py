@@ -110,7 +110,7 @@ def _initialize_background_test_runs(
     testruns_id = f'{str(now.date())}_{now.strftime("%H%M%S%f")}.json'
     job = resources.qualifier_queue.enqueue(
         'monitoring.uss_qualifier.webapp.tasks.call_test_executor',
-        user_config, auth_spec, input_files_content, testruns_id, debug)
+        user_config, auth_spec, input_files_content, testruns_id, debug, config.Config.SCD_TEST_DEFINITIONS_FILE_PATH)
     task_id = job.get_id()
     task = tasks.get_rq_job(task_id)
     task_details = {
