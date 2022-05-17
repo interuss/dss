@@ -11,7 +11,8 @@ class MultiCheckboxField(SelectMultipleField):
 
 
 class TestsExecuteForm(FlaskForm):
-    flight_records = MultiCheckboxField('Flight Records', choices=[], validators=[DataRequired()])
+    flight_records = MultiCheckboxField(
+        'Flight Records', choices=[], validators=[DataRequired()])
     auth_spec = StringField('Auth Spec', validators=[DataRequired()])
     user_config = TextAreaField('User Config', validators=[DataRequired()])
     sample_report = BooleanField('Sample Report')
@@ -20,16 +21,18 @@ class TestsExecuteForm(FlaskForm):
     def validate_user_config(form, field):
         user_config = json.loads(field.data)
         expected_keys = {'injection_targets', 'observers'}
-        if not user_config.get('rid'):
-            message = f'`rid` field missing in config object'
-            raise ValidationError(message)
-        rid_config = user_config['rid']
-        if not expected_keys.issubset(set(rid_config)):
-            message = f'{rid_config} missing fields in config object {expected_keys - set(rid_config)}'
-            raise ValidationError(message)
-        if len(form.flight_records.data) < len(rid_config['injection_targets']):
+        if not (user_config.get('rid') or user_config.get('scd')):
             raise ValidationError(
-                'Not enough flight states files provided for each injection_targets.')
+                'One of the `rid` or `scd` fields should be provided in config object.')
+        if user_config.get('rid'):
+            rid_config = user_config['rid']
+            if rid_config and not expected_keys.issubset(set(rid_config)):
+                message = f'{rid_config} missing fields in config object {expected_keys - set(rid_config)}'
+                raise ValidationError(message)
+            if len(form.flight_records.data) < len(rid_config['injection_targets']):
+                raise ValidationError(
+                    'Not enough flight states files provided for each injection_targets.')
+
 
 class TestRunsForm(FlaskForm):
     class Meta:
@@ -41,16 +44,17 @@ class TestRunsForm(FlaskForm):
     def validate_user_config(form, field):
         user_config = json.loads(field.data)
         expected_keys = {'injection_targets', 'observers'}
-        if not user_config.get('rid'):
-            message = f'`rid` field missing in config object'
-            raise ValidationError(message)
-        rid_config = user_config['rid']
-        if not expected_keys.issubset(set(rid_config)):
-            message = f'{rid_config} missing fields in config object {expected_keys - set(rid_config)}'
-            raise ValidationError(message)
-        if len(form.flight_records.data) < len(rid_config['injection_targets']):
+        if not (user_config.get('rid') or user_config.get('scd')):
             raise ValidationError(
-                'Not enough flight states files provided for each injection_targets.')
+                'One of the `rid` or `scd` fields should be provided in config object.%s' % user_config)
+        if user_config.get('rid'):
+            rid_config = user_config['rid']
+            if not expected_keys.issubset(set(rid_config)):
+                message = f'{rid_config} missing fields in config object {expected_keys - set(rid_config)}'
+                raise ValidationError(message)
+            if len(form.flight_records.data) < len(rid_config['injection_targets']):
+                raise ValidationError(
+                    'Not enough flight states files provided for each injection_targets.')
 
 
 def json_abort(status_code, message, details=None):

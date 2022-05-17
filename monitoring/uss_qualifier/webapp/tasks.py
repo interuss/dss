@@ -7,6 +7,7 @@ from . import resources
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid import test_executor
 from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration, FullFlightRecord
+from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 from monitoring.uss_qualifier.rid.simulator import flight_state_from_kml
 from monitoring.uss_qualifier.test_data import test_report
 
@@ -35,8 +36,13 @@ def call_test_executor(
         testruns_id,
         debug=False):
 
-    user_config: RIDQualifierTestConfiguration = ImplicitDict.parse(
-        json.loads(user_config_json)['rid'], RIDQualifierTestConfiguration)
+    usr_config = json.loads(user_config_json)
+    if usr_config.get('rid'):
+        user_config: RIDQualifierTestConfiguration = ImplicitDict.parse(
+            usr_config['rid'], RIDQualifierTestConfiguration)
+    elif usr_config.get('scd'):
+        user_config: SCDQualifierTestConfiguration = ImplicitDict.parse(
+            usr_config['scd'], SCDQualifierTestConfiguration)
     flight_records: List[FullFlightRecord] = [
         ImplicitDict.parse(json.loads(j), FullFlightRecord)
         for j in flight_record_jsons]
@@ -53,4 +59,6 @@ def call_test_executor(
 def call_kml_processor(kml_content, output_path):
     flight_states = flight_state_from_kml.main(
         kml_content, output_path, from_string=True)
+    resources.redis_conn.hset(
+        resources.REDIS_KEY_UPLOADED_KMLS, str(uuid.uuid4()), json.dumps(flight_states))
     return flight_states
