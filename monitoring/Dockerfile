@@ -54,7 +54,7 @@ RUN mkdir -p /app/kml-input
 RUN mkdir -p /app/flight-states
 
 # Additional preparations for uss_qualifier/webapp
-RUN mkdir -p /app/rid-host-files
+RUN mkdir -p /app/uss-host-files
 
 ENV PYTHONPATH /app
 ARG version

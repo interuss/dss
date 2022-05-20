@@ -53,6 +53,7 @@ docker run --name uss-host \
   -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
   -v /tmp/uss-host-input-files:/mnt/app/input-files \
   --link redis:redis-server \
+  -w /app/monitoring/uss_qualifier \
   interuss/monitoring \
   gunicorn \
     --preload \
