@@ -1,0 +1,48 @@
+version: '3.9'
+services:
+  mock-rid:
+    extends:
+      file: ../../uss_qualifier/scripts/docker-compose_qualifier_mocks.yaml
+      service: mock
+  mock-scdsc:
+    build:
+      context: ../../
+      dockerfile: mock_uss/Dockerfile
+    command: ../mock_uss/run_locally_scdsc.sh
+  redis:
+    image: redis:3-alpine
+    ports:
+      - 6379:6379
+  uss-host:
+    build:
+      context: ../../
+      dockerfile: uss_qualifier/webapp/Dockerfile
+    environment:
+      MOCK_HOST_USS_QUALIFIER_AUTH_SPEC: DummyOAuth(http://host.docker.internal:8085/token,uss1)
+      MOCK_HOST_USS_QUALIFIER_DSS_URL: http://host.docker.internal:8082
+      MOCK_HOST_USS_QUALIFIER_HOST_URL: http://localhost:8072
+      MOCK_HOST_USS_QUALIFIER_HOST_PORT: 8072
+      MOCK_HOST_USS_QUALIFIER_REDIS_URL: redis://redis-server:6379/0
+    ports:
+      - 8072:5000
+    volumes:
+      - $PWD/build/test-certs:/var/test-certs:ro
+      - ./tmp/uss-host-input-files:/mnt/app/input-files
+    links:
+      - redis:redis-server
+    command: gunicorn --preload --workers=2 --bind=0.0.0.0:5000 monitoring.uss_qualifier.webapp:webapp
+  rq-worker:
+    build:
+      context: ../../
+      dockerfile: uss_qualifier/webapp/Dockerfile
+    environment:
+      MOCK_HOST_USS_QUALIFIER_AUTH_SPEC: DummyOAuth(http://host.docker.internal:8085/token,uss1)
+      MOCK_HOST_USS_QUALIFIER_DSS_URL: http://host.docker.internal:8082
+      MOCK_HOST_USS_QUALIFIER_HOST_URL: http://localhost:8072
+      MOCK_HOST_USS_QUALIFIER_HOST_PORT: 8072
+      MOCK_HOST_USS_QUALIFIER_REDIS_URL: redis://redis-server:6379/0
+    volumes:
+      - ./tmp/uss-host-input-files:/mnt/app/input-files
+    command: rq worker -u redis://redis-server:6379/0 qualifer-tasks
+    links: 
+      - redis:redis-server
