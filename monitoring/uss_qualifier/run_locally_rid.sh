@@ -19,6 +19,8 @@ echo '## (../mock_uss/run_locally_ridsp.sh) and                              ##'
 echo '## (../mock_uss/run_locally_riddp.sh) including related dependencies.  ##'
 echo '#########################################################################'
 
+monitoring/build.sh || exit 1
+
 CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally_rid.json"
 CONFIG='--config config_run_locally_rid.json'
 
@@ -48,13 +50,6 @@ REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report_rid.json"
 # Report file must already exist to share correctly with the Docker container
 touch "${REPORT_FILE}"
 
-docker build \
-    -f monitoring/uss_qualifier/Dockerfile \
-    -t interuss/uss_qualifier \
-    --build-arg version="$(scripts/git/commit.sh)" \
-    --build-arg qualifier_version="$(scripts/git/version.sh uss_qualifier --long)" \
-    monitoring
-
 if [ "$CI" == "true" ]; then
   docker_args="--add-host host.docker.internal:host-gateway" # Required to reach other containers in Ubuntu (used for Github Actions)
 else
@@ -68,7 +63,8 @@ docker run ${docker_args} --name uss_qualifier \
   -e PYTHONBUFFERED=1 \
   -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report_rid.json" \
   -v "$(pwd):/app" \
-  interuss/uss_qualifier \
+  -w /app/monitoring/uss_qualifier \
+  interuss/monitoring \
   python main.py $QUALIFIER_OPTIONS
 
 rm ${CONFIG_LOCATION}
