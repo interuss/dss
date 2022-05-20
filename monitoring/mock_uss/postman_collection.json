@@ -19,8 +19,8 @@
 									"tests[\"Status code is 200\"] = responseCode.code === 200;",
 									"",
 									"var data = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"production_token\", data.access_token);",
-									"postman.setEnvironmentVariable(\"uss_id\", \"uss1\");",
+									"postman.setEnvironmentVariable(\"mock_ridsp_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"mock_ridsp_uss_id\", \"uss1\");",
 									"",
 									""
 								],
@@ -87,6 +87,166 @@
 					"response": []
 				},
 				{
+					"name": "Behavior",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8071/ridsp/behavior",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8071",
+							"path": [
+								"ridsp",
+								"behavior"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Good behavior",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"switch_latitude_and_longitude_when_reporting\": false,\n    \"use_agl_instead_of_wgs84_for_altitude\": false,\n    \"use_feet_instead_of_meters_for_altitude\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8071/ridsp/behavior",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8071",
+							"path": [
+								"ridsp",
+								"behavior"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bad behavior",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"switch_latitude_and_longitude_when_reporting\": false,\n    \"use_agl_instead_of_wgs84_for_altitude\": true,\n    \"use_feet_instead_of_meters_for_altitude\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8071/ridsp/behavior",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8071",
+							"path": [
+								"ridsp",
+								"behavior"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Create test in mock_ridsp",
 					"event": [
 						{
@@ -95,10 +255,10 @@
 								"exec": [
 									"const moment = require('moment');",
 									"pm.globals.set(\"t_1\", moment().add(5, 'seconds').toISOString());",
-									"pm.globals.set(\"t_2\", moment().add(1, 'minutes').toISOString());",
-									"pm.globals.set(\"t_3\", moment().add(2, 'minutes').toISOString());",
+									"pm.globals.set(\"t_2\", moment().add(15, 'seconds').toISOString());",
+									"pm.globals.set(\"t_3\", moment().add(1, 'minutes').toISOString());",
 									"pm.globals.set(\"t_4\", moment().add(2, 'minutes').toISOString());",
-									"pm.globals.set(\"t_5\", moment().add(2, 'minutes').toISOString());",
+									"pm.globals.set(\"t_5\", moment().add(3, 'minutes').toISOString());",
 									""
 								],
 								"type": "text/javascript"
@@ -111,7 +271,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{production_token}}",
+									"value": "{{mock_ridsp_token}}",
 									"type": "string"
 								}
 							]
@@ -152,7 +312,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{production_token}}",
+									"value": "{{mock_ridsp_token}}",
 									"type": "string"
 								}
 							]
@@ -160,7 +320,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8071/mock/ridsp/v1/uss/flights?view=34.122,-118.453,34.125,-118.458&include_recent_positions=false",
+							"raw": "http://localhost:8071/mock/ridsp/v1/uss/flights?view=34.122,-118.453,34.125,-118.458&include_recent_positions=true",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -180,7 +340,7 @@
 								},
 								{
 									"key": "include_recent_positions",
-									"value": "false"
+									"value": "true"
 								}
 							]
 						}
@@ -195,7 +355,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{production_token}}",
+									"value": "{{mock_ridsp_token}}",
 									"type": "string"
 								}
 							]
@@ -241,7 +401,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{production_token}}",
+									"value": "{{mock_ridsp_token}}",
 									"type": "string"
 								}
 							]
@@ -686,8 +846,8 @@
 									"tests[\"Status code is 200\"] = responseCode.code === 200;",
 									"",
 									"var data = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"production_token\", data.access_token);",
-									"postman.setEnvironmentVariable(\"uss_id\", \"uss1\");",
+									"postman.setEnvironmentVariable(\"mock_riddp_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"mock_riddp_uss_id\", \"uss1\");",
 									"",
 									""
 								],
@@ -754,6 +914,166 @@
 					"response": []
 				},
 				{
+					"name": "Behavior",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8073/riddp/behavior",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8073",
+							"path": [
+								"riddp",
+								"behavior"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Good behavior",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"always_omit_recent_paths\": false,\n    \"do_not_display_flights_from\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8073/riddp/behavior",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8073",
+							"path": [
+								"riddp",
+								"behavior"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bad behavior",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"tests[\"Status code is 200\"] = responseCode.code === 200;",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"always_omit_recent_paths\": false,\n    \"do_not_display_flights_from\": [\"uss1\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8073/riddp/behavior",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8073",
+							"path": [
+								"riddp",
+								"behavior"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Flights in mock_ridsp test area",
 					"request": {
 						"auth": {
@@ -761,7 +1081,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{production_token}}",
+									"value": "{{mock_riddp_token}}",
 									"type": "string"
 								}
 							]
@@ -798,7 +1118,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{production_token}}",
+									"value": "{{mock_riddp_token}}",
 									"type": "string"
 								}
 							]

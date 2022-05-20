@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 from monitoring.monitorlib.multiprocessing import SynchronizedValue
 from monitoring.monitorlib.rid_automated_testing import injection_api
 from monitoring.monitorlib.typing import ImplicitDict
+from .behavior import ServiceProviderBehavior
 
 
 class TestRecord(ImplicitDict):
@@ -23,6 +24,7 @@ class TestRecord(ImplicitDict):
 class Database(ImplicitDict):
   """Simple pseudo-database structure tracking the state of the mock system"""
   tests: Dict[str, TestRecord] = {}
+  behavior: ServiceProviderBehavior = ServiceProviderBehavior()
 
 
 db = SynchronizedValue(

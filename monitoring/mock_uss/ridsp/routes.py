@@ -8,3 +8,4 @@ def ridsp_status():
 
 from . import routes_ridsp
 from . import routes_injection
+from . import routes_behavior

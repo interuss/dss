@@ -165,6 +165,9 @@ class ImplicitDict(dict):
     else:
       super(ImplicitDict, self).__setattr__(key, value)
 
+  def has_field_with_value(self, field_name: str) -> bool:
+    return field_name in self and self[field_name] is not None
+
 
 def _parse_value(value, value_type: Type):
   generic_type = get_origin(value_type)
