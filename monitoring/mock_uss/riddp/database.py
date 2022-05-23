@@ -1,6 +1,7 @@
 import json
 from typing import Dict
 
+from .behavior import DisplayProviderBehavior
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.monitorlib.multiprocessing import SynchronizedValue
 
@@ -12,6 +13,7 @@ class FlightInfo(ImplicitDict):
 class Database(ImplicitDict):
   """Simple pseudo-database structure tracking the state of the mock system"""
   flights: Dict[str, FlightInfo] = {}
+  behavior: DisplayProviderBehavior = DisplayProviderBehavior()
 
 
 db = SynchronizedValue(

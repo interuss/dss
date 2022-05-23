@@ -10,6 +10,7 @@ from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlight
 from monitoring.monitorlib.typing import StringBasedDateTime
 from monitoring.mock_uss import webapp
 from monitoring.mock_uss.auth import requires_scope
+from . import behavior
 from .database import db
 
 
@@ -73,6 +74,7 @@ def flights():
     for flight in record.flights:
       reported_flight = _get_report(flight, now, view, include_recent_positions)
       if reported_flight is not None:
+        reported_flight = behavior.adjust_reported_flight(flight, reported_flight, tx.behavior)
         flights.append(reported_flight)
   return flask.jsonify(rid.GetFlightsResponse(timestamp=StringBasedDateTime(now), flights=flights)), 200
 

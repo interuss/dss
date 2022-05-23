@@ -42,12 +42,13 @@ class FetchedISAs(fetch.Query):
     return {isa.get('id', ''): rid.ISA(isa) for isa in isa_list}
 
   @property
-  def flight_urls(self) -> List[str]:
-    urls = set()
+  def flight_urls(self) -> Dict[str, str]:
+    """Returns map of flight URL to USS"""
+    urls = dict()
     for _, isa in self.isas.items():
       if isa.flights_url is not None:
-        urls.add(isa.flights_url)
-    return list(urls)
+        urls[isa.flights_url] = isa.owner
+    return urls
 
   def has_different_content_than(self, other):
     if not isinstance(other, FetchedISAs):
