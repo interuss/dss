@@ -10,18 +10,14 @@ else
 fi
 cd "${BASEDIR}/../../.." || exit 1
 
+monitoring/build.sh || exit 1
+
 # Run monitoring/uss_qualifier/rid/mock/run_locally.sh to produce a mock RID system
 # for use with uss_qualifier
 AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
 PORT=8072
 RID_HOST="http://localhost:${PORT}"
-
-docker build \
-  -t local-interuss/uss-host \
-  -f monitoring/uss_qualifier/webapp/Dockerfile \
-  monitoring \
-  || exit 1
 
 # TODO: Cleaning Redis may not be required.
 echo "cleaning up any Redis containers"
@@ -42,7 +38,7 @@ docker run --name rq-worker -d --rm \
   -v /tmp/uss-host-input-files:/mnt/app/input-files \
   --link redis:redis-server \
   --entrypoint /usr/local/bin/rq \
-  local-interuss/uss-host \
+  interuss/monitoring \
   worker -u redis://redis-server:6379/0 qualifer-tasks
 
 echo "Start Host container"
@@ -57,7 +53,8 @@ docker run --name uss-host \
   -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
   -v /tmp/uss-host-input-files:/mnt/app/input-files \
   --link redis:redis-server \
-  local-interuss/uss-host \
+  -w /app/monitoring/uss_qualifier \
+  interuss/monitoring \
   gunicorn \
     --preload \
     --workers=2 \

@@ -31,11 +31,7 @@ if [[ "$3" == '-d' ]]; then
   echo 'Debug flag set to true.'
 fi
 
-docker build \
-    -f monitoring/uss_qualifier/Dockerfile \
-    -t interuss/uss_qualifier \
-    --build-arg version="$(scripts/git/commit.sh)" \
-    monitoring
+monitoring/build.sh || exit 1
 
 docker run -i  -t --name flight_state_from_kml \
   --rm \
@@ -43,5 +39,6 @@ docker run -i  -t --name flight_state_from_kml \
   -e PYTHONBUFFERED=1 \
   -v "${IN_FILE}:/app/kml-input/${IN_FILE}" \
   -v "${OUT_PATH}:/app/flight-states" \
-  interuss/uss_qualifier \
+  -w /app/monitoring/uss_qualifier \
+  interuss/monitoring \
   python rid/simulator/flight_state_from_kml.py -f "/app/kml-input/${IN_FILE}" -o /app/flight-states -d ${debug}

@@ -2,14 +2,13 @@ from base64 import encode
 import flask
 import json
 import logging
-import messages
 import os
 import pathlib
 import requests
 import uuid
 
 from . import config, resources, tasks
-from . import forms
+from . import forms, messages
 
 from datetime import datetime
 from google.oauth2 import id_token
