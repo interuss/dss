@@ -8,4 +8,4 @@ service providers. It currently includes the following components:
 - [Remote ID](./rid/README.md): ASTM F3411-19 - Remote ID and Tracking
     - See [run_locally_rid.sh](run_locally_rid.sh)
 - [ASTM strategic coordination and UAS Flight Authorisation](./scd/README.md): ASTM WK63418 and U-Space Regulation
-    - See [run_locally_rid.sh](run_locally_scd.sh)
+    - See [run_locally_scd.sh](run_locally_scd.sh)
