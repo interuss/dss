@@ -59,7 +59,7 @@ Resulting files will be generated under `monitoring/uss_qualifier/test_definitio
 
 ## User Config information
 
-uss_qualifier host needs a configuration object and an auth spec (single string e.g. `NoAuth()`) in order to run. Configuration object is a simple nested json string which should have at least a list of `injection_targets` and `observers`. A sample configuration object can be found [here](/monitoring/uss_qualifier/run_locally.sh#L26).
+uss_qualifier host needs a configuration object and an auth spec (single string e.g. `NoAuth()`) in order to run. Configuration object is a simple nested json string which should have at least a list of `injection_targets` and `observers`. A sample configuration object can be found [here](/monitoring/uss_qualifier/run_locally_rid.sh#L26).
 
 A task may take few minutes to finish. A new task can not be launched until current task ends.
 

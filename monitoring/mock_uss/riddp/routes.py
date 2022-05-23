@@ -7,3 +7,4 @@ def riddp_status():
 
 
 from . import routes_observation
+from . import routes_behavior

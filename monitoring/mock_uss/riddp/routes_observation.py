@@ -10,7 +10,8 @@ from monitoring.monitorlib.rid_automated_testing import observation_api
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.mock_uss import resources, webapp
 from monitoring.mock_uss.auth import requires_scope
-from . import database
+from . import clustering, database
+from .behavior import DisplayProviderBehavior
 from .database import db
 
 
@@ -87,35 +88,45 @@ def display_data() -> Tuple[str, int]:
   validated_flights: List[rid.RIDFlight] = []
   tx = db.value
   flight_info: Dict[str, database.FlightInfo] = {k: v for k, v in tx.flights.items()}
+  behavior: DisplayProviderBehavior = tx.behavior
 
-  for flights_url in isas_response.flight_urls:
+  for flights_url, uss in isas_response.flight_urls.items():
+    if uss in behavior.do_not_display_flights_from:
+        continue
     flights_response = fetch.flights(resources.utm_client, flights_url, view, True)
     if not flights_response.success:
-      response = rid.ErrorResponse(message='Error querying {}'.format(flights_url))
+      response = rid.ErrorResponse(message='Error querying {} from {}'.format(flights_url, uss))
       response['errors'] = [flights_response]
       return flask.jsonify(response), 412
     for flight in flights_response.flights:
       try:
         validated_flight: rid.RIDFlight = ImplicitDict.parse(flight, rid.RIDFlight)
       except ValueError as e:
-        response = rid.ErrorResponse(message='Error parsing flight from {}'.format(flights_url))
+        response = rid.ErrorResponse(message='Error parsing flight from {}\'s {}'.format(uss, flights_url))
         response['parse_error'] = str(e)
         response['flights'] = flights_response.flights
         return flask.jsonify(response), 412
       validated_flights.append(validated_flight)
       flight_info[flight.id] = database.FlightInfo(flights_url=flights_url)
 
+  # Update links between flight IDs and flight URLs
+  with db as tx:
+      for k, v in flight_info.items():
+          tx.flights[k] = v
+
+  # Make and return response
+  flights = [_make_flight_observation(f, view) for f in validated_flights]
+  if behavior.always_omit_recent_paths:
+      for f in flights:
+          f.recent_paths = None
   if diagonal <= rid.NetDetailsMaxDisplayAreaDiagonal:
     # Construct detailed flights response
-    response = observation_api.GetDisplayDataResponse(flights=[
-      _make_flight_observation(f, view) for f in validated_flights])
-    with db as tx:
-        for k, v in flight_info.items():
-            tx.flights[k] = v
-    return flask.jsonify(response)
+    response = observation_api.GetDisplayDataResponse(flights=flights)
   else:
     # Construct clusters response
-    return 'Cluster response not yet implemented', 500
+    clusters = clustering.make_clusters(flights, view.lo(), view.hi())
+    response = observation_api.GetDisplayDataResponse(clusters=clusters)
+  return flask.jsonify(response)
 
 
 @webapp.route('/riddp/observation/display_data/<flight_id>', methods=['GET'])

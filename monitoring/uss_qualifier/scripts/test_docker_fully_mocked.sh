@@ -2,7 +2,15 @@
 
 set -eo pipefail
 
-cd "$(dirname "$0")/../../.."
+# Find and change to repo root directory
+OS=$(uname)
+if [[ "$OS" == "Darwin" ]]; then
+	# OSX uses BSD readlink
+	BASEDIR="$(dirname "$0")"
+else
+	BASEDIR=$(readlink -e "$(dirname "$0")")
+fi
+cd "${BASEDIR}/../../.." || exit 1
 
 containers=(mock_uss_ridsp mock_uss_riddp mock_uss_scdsc dss_sandbox_local-dss-http-gateway_1)
 
