@@ -8,7 +8,7 @@ framework to test UAS Service Suppliers (USS). See the [InterUSS website](https:
 The DSS implementation and associated monitoring tools target compliance with the following standards and regulations:
 
 - [ASTM F3411-19](https://www.astm.org/Standards/F3411.htm): Remote ID.
-[See OpenAPI interface](./interfaces/uastech/standards/remoteid)
+[See OpenAPI interface](./interfaces/rid/v1/remoteid)
 - [ASTM WK63418](https://www.astm.org/DATABASE.CART/WORKITEMS/WK63418.htm): UAS Traffic Management (UTM) UAS
 Service Supplier (USS) Interoperability Specification.
 [See OpenAPI interface](./interfaces/astm-utm)

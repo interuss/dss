@@ -25,7 +25,7 @@ enum HorizontalAccuracy {
 enum RIDAircraftType {
   NOT_DECLARED = 0;
   AEROPLANE = 1;
-  ROTORCRAFT = 2;
+  HELICOPTER = 2;
   GYROPLANE = 3;
   VTOL = 4;
   ORNITHOPTER = 5;
@@ -358,7 +358,7 @@ message RIDFlightDetails {
   // If a CAA provides a method of registering UAS, this number is provided by the CAA or its authorized representative.  Required when required by law in a region.
   string registration_number = 6;
 
-  // Can be specified when no registration ID exists and required by law in a region. This is expressed in the ANSI/CTA-2063 Physical Serial Number format.
+  // Can be specified when no registration ID exists and required by law in a region. This is expressed in the ANSI/CTA-2063-A Physical Serial Number format.
   string serial_number = 7;
 }
 

@@ -69,7 +69,7 @@ pkg/api/v1/ridpb/rid.pb.gw.go: pkg/api/v1/ridpb/rid.proto pkg/api/v1/ridpb/rid.p
 
 pkg/api/v1/ridpb/rid.proto: generator
 	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) openapi2proto \
-		-spec interfaces/uastech/standards/remoteid/augmented.yaml -annotate \
+		-spec interfaces/rid/v1/remoteid/augmented.yaml -annotate \
 		-tag dss \
 		-indent 2 \
 		-package ridpb > $@

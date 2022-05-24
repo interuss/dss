@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This core-service executable is the main application logic of the DSS.  It requires a connection to a CockroachDB database and exposes a few gRPC services: [ASTM remote ID](../../interfaces/uastech/standards/remoteid), [auxiliary](../../pkg/api/v1/auxpb/aux_service.proto), and [ASTM strategic coordination](../../interfaces/astm-utm/Protocol) (if specified).
+This core-service executable is the main application logic of the DSS.  It requires a connection to a CockroachDB database and exposes a few gRPC services: [ASTM remote ID](../../interfaces/rid), [auxiliary](../../pkg/api/v1/auxpb/aux_service.proto), and [ASTM strategic coordination](../../interfaces/astm-utm/Protocol) (if specified).
 
 ## Usage
 

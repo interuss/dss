@@ -14,7 +14,7 @@ docker image build -t openapi-to-go-server .
 
 docker container run -it \
   	-v "$(pwd)/../astm-utm/Protocol/utm.yaml:/resources/utm.yaml" \
-  	-v "$(pwd)/../uastech/standards/remoteid/augmented.yaml:/resources/rid.yaml" \
+  	-v "$(pwd)/../rid/v1/remoteid/augmented.yaml:/resources/rid.yaml" \
 	  -v "$(pwd)/example:/resources/example" \
 	  openapi-to-go-server \
 	      --api_import example/api \
