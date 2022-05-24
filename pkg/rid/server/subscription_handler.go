@@ -10,6 +10,7 @@ import (
 	geoerr "github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	apiv1 "github.com/interuss/dss/pkg/rid/models/api/v1"
 	"github.com/interuss/stacktrace"
 	"github.com/pkg/errors"
 )
@@ -39,12 +40,8 @@ func (s *Server) DeleteSubscription(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not delete Subscription")
 	}
-	p, err := subscription.ToProto()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to convert Subscription to proto")
-	}
 	return &ridpb.DeleteSubscriptionResponse{
-		Subscription: p,
+		Subscription: apiv1.ToSubscription(subscription),
 	}, nil
 }
 
@@ -74,10 +71,7 @@ func (s *Server) SearchSubscriptions(
 	}
 	sp := make([]*ridpb.Subscription, len(subscriptions))
 	for i := range subscriptions {
-		sp[i], err = subscriptions[i].ToProto()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
-		}
+		sp[i] = apiv1.ToSubscription(subscriptions[i])
 	}
 
 	return &ridpb.SearchSubscriptionsResponse{
@@ -104,12 +98,8 @@ func (s *Server) GetSubscription(
 	if subscription == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", req.GetId())
 	}
-	p, err := subscription.ToProto()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
-	}
 	return &ridpb.GetSubscriptionResponse{
-		Subscription: p,
+		Subscription: apiv1.ToSubscription(subscription),
 	}, nil
 }
 
@@ -135,6 +125,10 @@ func (s *Server) CreateSubscription(
 	if params.Extents == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
+	extents, err := apiv1.FromVolume4D(params.Extents)
+	if err != nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D")
+	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
@@ -155,7 +149,7 @@ func (s *Server) CreateSubscription(
 		Writer: s.Locality,
 	}
 
-	if err := sub.SetExtents(params.Extents); err != nil {
+	if err := sub.SetExtents(extents); err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
@@ -164,10 +158,7 @@ func (s *Server) CreateSubscription(
 		return nil, stacktrace.Propagate(err, "Could not insert Subscription")
 	}
 
-	p, err := insertedSub.ToProto()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
-	}
+	p := apiv1.ToSubscription(insertedSub)
 
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
@@ -178,10 +169,7 @@ func (s *Server) CreateSubscription(
 	// Convert the ISAs to protos.
 	isaProtos := make([]*ridpb.IdentificationServiceArea, len(isas))
 	for i, isa := range isas {
-		isaProtos[i], err = isa.ToProto()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
-		}
+		isaProtos[i] = apiv1.ToIdentificationServiceArea(isa)
 	}
 
 	return &ridpb.PutSubscriptionResponse{
@@ -222,6 +210,10 @@ func (s *Server) UpdateSubscription(
 	if params.Extents == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
+	extents, err := apiv1.FromVolume4D(params.Extents)
+	if err != nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D")
+	}
 
 	sub := &ridmodels.Subscription{
 		ID:      id,
@@ -231,7 +223,7 @@ func (s *Server) UpdateSubscription(
 		Writer:  s.Locality,
 	}
 
-	if err := sub.SetExtents(params.Extents); err != nil {
+	if err := sub.SetExtents(extents); err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
@@ -240,10 +232,7 @@ func (s *Server) UpdateSubscription(
 		return nil, stacktrace.Propagate(err, "Could not update Subscription")
 	}
 
-	p, err := insertedSub.ToProto()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not convert Subscription to proto")
-	}
+	p := apiv1.ToSubscription(insertedSub)
 
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
@@ -254,10 +243,7 @@ func (s *Server) UpdateSubscription(
 	// Convert the ISAs to protos.
 	isaProtos := make([]*ridpb.IdentificationServiceArea, len(isas))
 	for i, isa := range isas {
-		isaProtos[i], err = isa.ToProto()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
-		}
+		isaProtos[i] = apiv1.ToIdentificationServiceArea(isa)
 	}
 
 	return &ridpb.PutSubscriptionResponse{

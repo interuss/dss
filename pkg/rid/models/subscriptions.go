@@ -3,14 +3,11 @@ package models
 import (
 	"time"
 
-	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/stacktrace"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -51,81 +48,20 @@ func (s *Subscription) SetCells(cids []int64) {
 	s.Cells = cells
 }
 
-// ToNotifyProto converts a subscription to a SubscriberToNotify proto for
-// API consumption.
-func (s *Subscription) ToNotifyProto() *ridpb.SubscriberToNotify {
-	return &ridpb.SubscriberToNotify{
-		Url: s.URL,
-		Subscriptions: []*ridpb.SubscriptionState{
-			{
-				NotificationIndex: int32(s.NotificationIndex),
-				SubscriptionId:    s.ID.String(),
-			},
-		},
-	}
-}
-
-// ToProto converts a subscription struct to a Subscription proto for
-// API consumption.
-func (s *Subscription) ToProto() (*ridpb.Subscription, error) {
-	result := &ridpb.Subscription{
-		Id:                s.ID.String(),
-		Owner:             s.Owner.String(),
-		Callbacks:         &ridpb.SubscriptionCallbacks{IdentificationServiceAreaUrl: s.URL},
-		NotificationIndex: int32(s.NotificationIndex),
-		Version:           s.Version.String(),
-	}
-
-	if s.StartTime != nil {
-		ts := tspb.New(*s.StartTime)
-		result.TimeStart = ts
-	}
-
-	if s.EndTime != nil {
-		ts := tspb.New(*s.EndTime)
-		result.TimeEnd = ts
-	}
-	return result, nil
-}
-
 // SetExtents performs some data validation and sets the 4D volume on the
 // Subscription.
-func (s *Subscription) SetExtents(extents *ridpb.Volume4D) error {
+func (s *Subscription) SetExtents(extents *dssmodels.Volume4D) error {
 	var err error
 	if extents == nil {
 		return nil
 	}
-	if startTime := extents.GetTimeStart(); startTime != nil {
-		ts := startTime.AsTime()
-		err := startTime.CheckValid()
-		if err != nil {
-			return stacktrace.Propagate(err, "Error converting start time from proto")
-		}
-		s.StartTime = &ts
-	}
-
-	if endTime := extents.GetTimeEnd(); endTime != nil {
-		ts := endTime.AsTime()
-		err := endTime.CheckValid()
-		if err != nil {
-			return stacktrace.Propagate(err, "Error converting end time from proto")
-		}
-		s.EndTime = &ts
-	}
-
-	space := extents.GetSpatialVolume()
-	if space == nil {
-		return stacktrace.NewError("Missing required spatial_volume")
-	}
-	s.AltitudeHi = proto.Float32(space.GetAltitudeHi())
-	s.AltitudeLo = proto.Float32(space.GetAltitudeLo())
-	footprint := space.GetFootprint()
-	if footprint == nil {
-		return stacktrace.NewError("spatial_volume missing required footprint")
-	}
-	s.Cells, err = dssmodels.GeoPolygonFromRIDProto(footprint).CalculateCovering()
+	s.StartTime = extents.StartTime
+	s.EndTime = extents.EndTime
+	s.AltitudeHi = extents.SpatialVolume.AltitudeHi
+	s.AltitudeLo = extents.SpatialVolume.AltitudeLo
+	s.Cells, err = extents.SpatialVolume.Footprint.CalculateCovering()
 	if err != nil {
-		return stacktrace.Propagate(err, "Error calculating covering from polygon")
+		return stacktrace.Propagate(err, "Error calculating covering for Subscription")
 	}
 	return nil
 }
