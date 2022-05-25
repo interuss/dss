@@ -4,3 +4,6 @@
 [submodule "interfaces/rid/v1"]
 	path = interfaces/rid/v1
 	url = https://github.com/uastech/standards
+[submodule "interfaces/rid/v2"]
+	path = interfaces/rid/v2
+	url = https://github.com/uastech/standards
