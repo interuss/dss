@@ -1,6 +1,9 @@
-[submodule "interfaces/uastech/standards"]
-	path = interfaces/uastech/standards
-	url = https://github.com/uastech/standards
 [submodule "interfaces/astm-utm/Protocol"]
 	path = interfaces/astm-utm/Protocol
 	url = https://github.com/astm-utm/Protocol
+[submodule "interfaces/rid/v1"]
+	path = interfaces/rid/v1
+	url = https://github.com/uastech/standards
+[submodule "interfaces/rid/v2"]
+	path = interfaces/rid/v2
+	url = https://github.com/uastech/standards
