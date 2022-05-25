@@ -34,7 +34,7 @@ REPORT_SCD_FILE="$(pwd)/monitoring/uss_qualifier/report_scd.json"
 touch "${REPORT_RID_FILE}"
 touch "${REPORT_SCD_FILE}"
 
-"$(pwd)"/monitoring/uss_qualifier/bin/build.sh
+"$(pwd)"/monitoring/build.sh
 
 if [ "$CI" == "true" ]; then
   docker_args="--add-host host.docker.internal:host-gateway" # Required to reach other containers in Ubuntu (used for Github Actions)
@@ -50,5 +50,6 @@ docker run ${docker_args} --name uss_qualifier \
   -v "${REPORT_RID_FILE}:/app/monitoring/uss_qualifier/report.json" \
   -v "${REPORT_SCD_FILE}:/app/monitoring/uss_qualifier/report_scd.json" \
   -v "${CONFIG_LOCATION}:$CONFIG_CONTAINER_LOCATION" \
-  interuss/uss_qualifier \
+  -w /app/monitoring/uss_qualifier \
+  interuss/monitoring \
   python main.py $QUALIFIER_OPTIONS

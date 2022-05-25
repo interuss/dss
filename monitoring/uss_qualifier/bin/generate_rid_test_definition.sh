@@ -12,11 +12,7 @@ else
 fi
 cd "${BASEDIR}/../../.." || exit 1
 
-docker build \
-    -f monitoring/uss_qualifier/Dockerfile \
-    -t interuss/uss_qualifier \
-    --build-arg version="$(scripts/git/commit.sh)" \
-    monitoring
+monitoring/build.sh || exit 1
 
 if [ "$CI" == "true" ]; then
   docker_args=""
@@ -28,5 +24,6 @@ docker run ${docker_args} --name flight_data_generator \
   --rm \
   -e PYTHONBUFFERED=1 \
   -v "$(pwd)/monitoring/uss_qualifier/rid/test_definitions:/app/monitoring/uss_qualifier/rid/test_definitions" \
-  interuss/uss_qualifier \
+  -w /app/monitoring/uss_qualifier \
+  interuss/monitoring \
   python rid/simulator/flight_state.py
