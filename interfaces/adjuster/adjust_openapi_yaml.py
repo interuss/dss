@@ -44,18 +44,40 @@ def fix_key_type(tree):
     }
 
 
+# Prepend the specified prefix to all paths in the tree
+def prefix_path(tree, prefix: str):
+    tree['paths'] = {prefix + path: tree['paths'][path]
+                     for path in tree['paths']}
+
+
 parser = argparse.ArgumentParser(description='Preprocess an OpenAPI YAML')
 parser.add_argument('--input_yaml', dest='input_yaml', type=str,
                     help='source YAML to preprocess')
 parser.add_argument('--output_yaml', dest='output_yaml', type=str,
                     help='destination filename to write resulting YAML')
+parser.add_argument('--adjustment_profile', dest='adjustment_profile', type=str,
+                    help='profile of custom adjustments to use')
+parser.add_argument('--path_prefix', dest='path_prefix', type=str, default='',
+                    help='prefix to add to every path')
 args = parser.parse_args()
 
 with open(args.input_yaml, mode='r') as f:
   spec = yaml.full_load(f)
 
+# Make adjustments common to all files
 fix_string_enums(spec)
-fix_key_type(spec)
+
+# Make custom adjustments depending on type of file
+if args.adjustment_profile == 'scd':
+    fix_key_type(spec)
+elif args.adjustment_profile == 'rid':
+    pass
+else:
+    raise ValueError('Unrecognized adjustment_profile')
+
+# Prefix paths, if specified
+if args.path_prefix:
+    prefix_path(spec, args.path_prefix)
 
 print('Writing to ' + args.output_yaml)
 with open(args.output_yaml, mode='w') as f:
