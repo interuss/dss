@@ -2,13 +2,21 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict
 from monitoring.monitorlib.locality import Locality
-from monitoring.monitorlib.typing import ImplicitDict, StringBasedTimeDelta, StringBasedDateTime
-from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, Capability
+from monitoring.monitorlib.typing import (
+    ImplicitDict,
+    StringBasedTimeDelta,
+    StringBasedDateTime,
+)
+from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
+    InjectFlightRequest,
+    Capability,
+)
 from monitoring.uss_qualifier.common_data_definitions import Severity
 
 
 class KnownIssueFields(ImplicitDict):
     """Information, which can be defined at the time of test design, about a problem detected by an automated test when a USS provides a response that is not same as the expected result"""
+
     test_code: str
     """Code corresponding to check generating this issue"""
 
@@ -30,6 +38,7 @@ class KnownIssueFields(ImplicitDict):
 
 class KnownResponses(ImplicitDict):
     """Mapping of the flight injection attempt's USS response to test outcome"""
+
     acceptable_results: List[str]
     """Acceptable values in the result data field of InjectFlightResponse. The flight injection attempt will be considered successful if the USS under test reports one of these as the result of attempting to inject the flight."""
 
@@ -39,12 +48,14 @@ class KnownResponses(ImplicitDict):
 
 class InjectionTarget(ImplicitDict):
     """The means to identify a particular USS within an AutomatedTest"""
+
     uss_role: str
     """The role of the USS that is the target of a flight injection attempt (e.g., 'Querying USS').  The test executor will assign a USS from the pool of USSs to be tested to each role defined in an AutomatedTest before executing that AutomatedTest."""
 
 
 class FlightInjectionAttempt(ImplicitDict):
     """All information necessary to attempt to create a flight in a USS and to evaluate the outcome of that attempt"""
+
     name: str
     """Name of this flight, used to refer to the flight later in the automated test"""
 
@@ -56,7 +67,7 @@ class FlightInjectionAttempt(ImplicitDict):
 
     reference_time: StringBasedDateTime
     """The time that all other times in the FlightInjectionAttempt are relative to. If this FlightInjectionAttempt is initiated by uss_qualifier at t_test, then each t_volume_original timestamp within test_injection should be adjusted to t_volume_adjusted such that t_volume_adjusted = t_test + planning_time when t_volume_original = reference_time"""
-    
+
     known_responses: KnownResponses
     """Details about what the USS under test should report after processing the test data"""
 
@@ -66,12 +77,14 @@ class FlightInjectionAttempt(ImplicitDict):
 
 class FlightDeletionAttempt(ImplicitDict):
     """All information necessary to attempt to close a flight previously injected into a USS"""
+
     flight_name: str
     """Name of the flight previously injected into the USS to delete"""
 
 
 class TestStep(ImplicitDict):
     """The action taken in one step of a sequence of steps constituting an automated test"""
+
     name: str
     """Human-readable name/summary of this step"""
 
@@ -95,6 +108,7 @@ class RequiredUSSCapabilities(ImplicitDict):
 
 class AutomatedTest(ImplicitDict):
     """Definition of a complete automated test involving some subset of USSs under test"""
+
     name: str
     """Human-readable name of this test (e.g., 'Nominal planning')"""
 
