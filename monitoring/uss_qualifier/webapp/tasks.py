@@ -45,7 +45,7 @@ def call_test_executor(
         ImplicitDict.parse(json.loads(j), FullFlightRecord)
         for j in flight_record_jsons]
     if debug:
-        report = test_report.test_data
+        report = json.dumps(test_report.test_data)
     else:
         report = json.dumps(uss_test_executor(
             config, auth_spec, flight_records, scd_test_definitions_path))

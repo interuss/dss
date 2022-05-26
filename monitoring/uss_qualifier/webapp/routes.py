@@ -1,4 +1,3 @@
-from base64 import encode
 import flask
 import json
 import logging
@@ -174,8 +173,7 @@ def _update_user_local_config(auth_spec, config_spec):
     user_id = 'localuser'
     user_config_file = f'{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/user_config.json'
     user_config = {'auth': auth_spec, 'config': config_spec}
-    with open(user_config_file, 'w') as f:
-        f.write(json.dumps(user_config))
+    _write_to_file(user_config_file, json.dumps(user_config))
 
 
 @webapp.route('/', methods=['GET'])
@@ -210,31 +208,34 @@ def tests():
 @webapp.route('/', methods=['POST'])
 @login_required
 def tests_submit():
-    run_tests()
-    return redirect(url_for('.tests'))
-
-
-@webapp.route('/api/test_runs', methods=['POST'])
-@login_required
-def run_tests():
-    running_job = _get_running_jobs()
-    user_id = 'localuser'
-    if running_job:
-        return {
-            'task': {
-                'id': running_job,
-            },
-            'status_message': 'A job already running in the background, report is not ready yet',
-            'user_id': user_id,
-            'report': None
-        }
-    # TODO:(pratibha) user_id hardcoded until Auth is fixed.
     form = forms.TestRunsForm(request.form)
-    if not form.validate():
-        forms.json_abort(400, 'validation error', details=form.errors)
+    user_id = 'localuser'
+    form_validation_status = _validate_config_form(form, user_id)
+    if form_validation_status['err_message']:
+        return render_template(
+            'tests.html',
+            title='Execute tests',
+            form=form,
+            data=form_validation_status['details'])
     else:
-        flight_records_files = [i.strip() for i in (
-            request.form['flight_records']).split(',')]
+        run_tests(form_validation_status=form_validation_status)
+        return redirect(url_for('.tests'))
+
+
+def _validate_config_form(form, user_id):
+    err_message = ''
+    form_validation_status = {
+        'err_message': '',
+        'details': {}
+    }
+    if not form.validate():
+        form_validation_status['err_message'] = 'validation error'
+        form_validation_status['details'].update(form.errors)
+    else:
+        flight_records_files = []
+        if request.form.get('flight_records'):
+            flight_records_files = [i.strip() for i in (
+                request.form['flight_records']).split(',')]
 
         file_objs = []
         input_files = []
@@ -248,27 +249,53 @@ def run_tests():
             else:
                 existing_flights = get_flight_records()
                 if existing_flights and existing_flights['flight_records']:
-                    message = '%s\n%s' % (
+                    err_message = '%s\n%s' % (
                         messages.FLIGHT_RECORD_NOT_FOUND.format(
                             filename=filename),
                         messages.FLIGHT_RECORDS_EXISTING.format(
                             flight_records='\n'.join(existing_flights['flight_records']))
                     )
                 else:
-                    message = messages.FLIGHT_RECORD_NOT_FOUND.format(
+                    err_message = messages.FLIGHT_RECORD_NOT_FOUND.format(
                         filename=filename)
-                forms.json_abort(400, message)
-        auth_spec = form.auth_spec.data
-        user_config = form.user_config.data
-        _update_user_local_config(auth_spec, user_config)
-        task_details = _initialize_background_test_runs(
-            user_config,
-            auth_spec,
-            file_objs,
-            input_files,
-            user_id,
-            debug=False)
-        return {'test_run': task_details}
+        form_validation_status['err_message'] = err_message
+        form_validation_status['file_objs'] = file_objs
+        form_validation_status['input_files'] = input_files
+    return form_validation_status
+
+
+@webapp.route('/api/test_runs', methods=['POST'])
+@login_required
+def run_tests(form_validation_status=None):
+    running_job = _get_running_jobs()
+    user_id = 'localuser'
+    if running_job:
+        return {
+            'task': {
+                'id': running_job,
+            },
+            'status_message': 'A job already running in the background, report is not ready yet',
+            'user_id': user_id,
+            'report': None
+        }
+    # TODO:(pratibha) user_id hardcoded until Auth is fixed.
+    form = forms.TestRunsForm(request.form)
+    if not form_validation_status:
+        form_validation_status = _validate_config_form(form, user_id)
+        if form_validation_status['err_message']:
+            forms.json_abort(400, form_validation_status['err_message'],
+                             details=form_validation_status['details'])
+    auth_spec = form.auth_spec.data
+    user_config = form.user_config.data
+    _update_user_local_config(auth_spec, user_config)
+    task_details = _initialize_background_test_runs(
+        user_config,
+        auth_spec,
+        form_validation_status['file_objs'],
+        form_validation_status['input_files'],
+        user_id,
+        debug=form.sample_report.data)
+    return {'test_run': task_details}
 
 
 def _get_test_runs_logs(user_id):
