@@ -9,4 +9,4 @@ lint:
 
 .PHONY: format
 format:
-	black **/*.py
+	black -v .
