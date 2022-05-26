@@ -42,6 +42,8 @@ func (i *IdentificationServiceArea) SetExtents(extents *dssmodels.Volume4D) erro
 	}
 	i.StartTime = extents.StartTime
 	i.EndTime = extents.EndTime
+	i.AltitudeHi = extents.SpatialVolume.AltitudeHi
+	i.AltitudeLo = extents.SpatialVolume.AltitudeLo
 	i.Cells, err = extents.SpatialVolume.Footprint.CalculateCovering()
 	if err != nil {
 		return stacktrace.Propagate(err, "Error calculating covering for ISA")
