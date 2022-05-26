@@ -7,3 +7,6 @@ test: lint
 lint:
 	find . -name '*.sh' | xargs docker run --rm -v $(CURDIR):/code -w /code koalaman/shellcheck
 
+.PHONY: format
+format:
+	black **/*.py
