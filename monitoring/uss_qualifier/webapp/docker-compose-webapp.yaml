@@ -59,7 +59,6 @@ services:
       MOCK_HOST_USS_QUALIFIER_HOST_URL: http://localhost:8072
       MOCK_HOST_USS_QUALIFIER_HOST_PORT: 8072
       MOCK_HOST_USS_QUALIFIER_REDIS_URL: redis://redis-server:6379/0
-      MOCK_USS_TOKEN_AUDIENCE: localhost,host.docker.internal
     ports:
       - 8072:5000
     volumes:
@@ -78,7 +77,6 @@ services:
       MOCK_HOST_USS_QUALIFIER_HOST_URL: http://localhost:8072
       MOCK_HOST_USS_QUALIFIER_HOST_PORT: 8072
       MOCK_HOST_USS_QUALIFIER_REDIS_URL: redis://redis-server:6379/0
-      MOCK_USS_TOKEN_AUDIENCE: localhost,host.docker.internal
     volumes:
       - ./tmp/uss-host-input-files:/mnt/app/input-files
     command: rq worker -u redis://redis-server:6379/0 qualifer-tasks

@@ -33,7 +33,11 @@ All the tests run by a user are then available to download from the UI.
 
 ## Run via docker-compose
 
-Change the root directory to dss/. Run the following command to start the new containers:
+Change the root directory to dss/.
+
+Run [./build/dev/run_locally](../../../build/dev/run_locally.sh) to bring up local development DSS
+instance.
+Run the following command to start USS Qualifier webapp containers:
 
 ```bash
  docker-compose -f monitoring/uss_qualifier/webapp/docker-compose-webapp.yaml up
