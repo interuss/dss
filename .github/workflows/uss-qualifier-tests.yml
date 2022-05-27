@@ -22,4 +22,4 @@ jobs:
       - name: Run Qualifier tests
         run: |
           cd monitoring/uss_qualifier
-          make test
+          make ci

@@ -1,3 +1,9 @@
+.PHONY: ci
+ci: install_dependencies test
+
+.PHONY: install_dependencies
+install_dependencies:
+	pip install black
 
 .PHONY: test
 test: lint
