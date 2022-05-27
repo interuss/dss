@@ -37,6 +37,7 @@ Change the root directory to dss/.
 
 Run [./build/dev/run_locally](../../../build/dev/run_locally.sh) to bring up local development DSS
 instance.
+
 Run the following command to start USS Qualifier webapp containers:
 
 ```bash
