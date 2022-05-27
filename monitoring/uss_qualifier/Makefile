@@ -5,6 +5,7 @@ test: lint
 
 .PHONY: lint
 lint:
+	black --check .
 	find . -name '*.sh' | xargs docker run --rm -v $(CURDIR):/code -w /code koalaman/shellcheck
 
 .PHONY: format
