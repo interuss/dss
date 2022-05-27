@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This http-gateway executable is a translation layer that exposes a HTTP interfaces and fulfills them by with RPCs to core-service via gRPC.  It requires a connection to a core-service instance and exposes a few HTTP services: [ASTM remote ID](../../interfaces/uastech/standards/remoteid), [auxiliary](../../pkg/api/v1/auxpb/aux_service.proto), and [ASTM strategic coordination](../../interfaces/astm-utm/Protocol) (if specified).
+This http-gateway executable is a translation layer that exposes a HTTP interfaces and fulfills them by with RPCs to core-service via gRPC.  It requires a connection to a core-service instance and exposes a few HTTP services: [ASTM remote ID](../../interfaces/rid), [auxiliary](../../pkg/api/v1/auxpb/aux_service.proto), and [ASTM strategic coordination](../../interfaces/astm-utm/Protocol) (if specified).
 
 ## Usage
 

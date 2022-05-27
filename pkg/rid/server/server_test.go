@@ -12,6 +12,7 @@ import (
 	"github.com/interuss/dss/pkg/geo/testdata"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	apiv1 "github.com/interuss/dss/pkg/rid/models/api/v1"
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
@@ -33,7 +34,7 @@ func mustTimestamp(ts *tspb.Timestamp) *time.Time {
 }
 
 func mustPolygonToCellIDs(p *ridpb.GeoPolygon) s2.CellUnion {
-	cells, err := dssmodels.GeoPolygonFromRIDProto(p).CalculateCovering()
+	cells, err := apiv1.FromGeoPolygon(p).CalculateCovering()
 	if err != nil {
 		panic(err)
 	}

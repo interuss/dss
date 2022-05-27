@@ -11,6 +11,7 @@ import (
 	geoerr "github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	apiv1 "github.com/interuss/dss/pkg/rid/models/api/v1"
 	"github.com/interuss/stacktrace"
 	"github.com/pkg/errors"
 )
@@ -34,12 +35,8 @@ func (s *Server) GetIdentificationServiceArea(
 	if isa == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", req.GetId())
 	}
-	p, err := isa.ToProto()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
-	}
 	return &ridpb.GetIdentificationServiceAreaResponse{
-		ServiceArea: p,
+		ServiceArea: apiv1.ToIdentificationServiceArea(isa),
 	}, nil
 }
 
@@ -66,6 +63,10 @@ func (s *Server) CreateIdentificationServiceArea(
 	if params.Extents == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
+	extents, err := apiv1.FromVolume4D(params.Extents)
+	if err != nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D")
+	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
@@ -85,7 +86,7 @@ func (s *Server) CreateIdentificationServiceArea(
 		Writer: s.Locality,
 	}
 
-	if err := isa.SetExtents(params.Extents); err != nil {
+	if err := isa.SetExtents(extents); err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
@@ -94,14 +95,11 @@ func (s *Server) CreateIdentificationServiceArea(
 		return nil, stacktrace.Propagate(err, "Could not insert ISA")
 	}
 
-	pbISA, err := insertedISA.ToProto()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
-	}
+	pbISA := apiv1.ToIdentificationServiceArea(insertedISA)
 
 	pbSubscribers := []*ridpb.SubscriberToNotify{}
 	for _, subscriber := range subscribers {
-		pbSubscribers = append(pbSubscribers, subscriber.ToNotifyProto())
+		pbSubscribers = append(pbSubscribers, apiv1.ToSubscriberToNotify(subscriber))
 	}
 
 	return &ridpb.PutIdentificationServiceAreaResponse{
@@ -138,6 +136,10 @@ func (s *Server) UpdateIdentificationServiceArea(
 	if params.Extents == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
+	extents, err := apiv1.FromVolume4D(params.Extents)
+	if err != nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D")
+	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
@@ -151,7 +153,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 		Writer:  s.Locality,
 	}
 
-	if err := isa.SetExtents(params.Extents); err != nil {
+	if err := isa.SetExtents(extents); err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
 	}
 
@@ -160,14 +162,11 @@ func (s *Server) UpdateIdentificationServiceArea(
 		return nil, stacktrace.Propagate(err, "Could not update ISA")
 	}
 
-	pbISA, err := insertedISA.ToProto()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
-	}
+	pbISA := apiv1.ToIdentificationServiceArea(insertedISA)
 
 	pbSubscribers := []*ridpb.SubscriberToNotify{}
 	for _, subscriber := range subscribers {
-		pbSubscribers = append(pbSubscribers, subscriber.ToNotifyProto())
+		pbSubscribers = append(pbSubscribers, apiv1.ToSubscriberToNotify(subscriber))
 	}
 
 	return &ridpb.PutIdentificationServiceAreaResponse{
@@ -200,13 +199,10 @@ func (s *Server) DeleteIdentificationServiceArea(
 		return nil, stacktrace.Propagate(err, "Could not delete ISA")
 	}
 
-	p, err := isa.ToProto()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
-	}
+	p := apiv1.ToIdentificationServiceArea(isa)
 	sp := make([]*ridpb.SubscriberToNotify, len(subscribers))
 	for i := range subscribers {
-		sp[i] = subscribers[i].ToNotifyProto()
+		sp[i] = apiv1.ToSubscriberToNotify(subscribers[i])
 	}
 
 	return &ridpb.DeleteIdentificationServiceAreaResponse{
@@ -262,11 +258,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 
 	areas := make([]*ridpb.IdentificationServiceArea, len(isas))
 	for i := range isas {
-		a, err := isas[i].ToProto()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not convert ISA to proto")
-		}
-		areas[i] = a
+		areas[i] = apiv1.ToIdentificationServiceArea(isas[i])
 	}
 
 	return &ridpb.SearchIdentificationServiceAreasResponse{
