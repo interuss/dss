@@ -7,7 +7,7 @@ import arrow
 import s2sphere
 
 from monitoring.monitorlib import fetch, geo, rid
-from monitoring.monitorlib.infrastructure import DSSTestSession
+from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.monitorlib.typing import ImplicitDict
 from monitoring.uss_qualifier.rid.reports import Findings
 from monitoring.uss_qualifier.rid.utils import EvaluationConfiguration, InjectedFlight
@@ -16,7 +16,7 @@ from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlight
 
 
 class RIDSystemObserver(object):
-  def __init__(self, name: str, session: DSSTestSession):
+  def __init__(self, name: str, session: UTMClientSession):
     self.session = session
     self.name = name
 

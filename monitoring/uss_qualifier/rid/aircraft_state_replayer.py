@@ -1,6 +1,6 @@
 import datetime
 from monitoring.monitorlib.auth import make_auth_adapter
-from monitoring.monitorlib.infrastructure import DSSTestSession
+from monitoring.monitorlib.infrastructure import UTMClientSession
 import json, os
 import uuid
 from pathlib import Path
@@ -89,7 +89,7 @@ class TestHarness():
 
         auth_adapter = make_auth_adapter(auth_spec)
         self._base_url = injection_base_url
-        self.uss_session = DSSTestSession(injection_base_url, auth_adapter)
+        self.uss_session = UTMClientSession(injection_base_url, auth_adapter)
 
     def submit_test(self, payload: CreateTestParameters, test_id: str, setup: reports.Setup) -> None:
         injection_path = '/tests/{}'.format(test_id)

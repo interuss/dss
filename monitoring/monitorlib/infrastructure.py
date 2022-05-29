@@ -63,11 +63,15 @@ class AuthAdapter(object):
     return None
 
 
-class DSSTestSession(requests.Session):
-  """
-  Requests session that provides additional functionality for DSS tests:
-    * Adds a prefix to URLs that start with a '/'.
-    * Automatically applies authorization according to adapter, when present
+class UTMClientSession(requests.Session):
+  """Requests session that enables easy access to ASTM-specified UTM endpoints.
+
+  Automatically applies authorization according to the `auth_adapter` specified
+  at construction, when present.
+
+  If the URL starts with '/', then automatically prefix the URL with the
+  `prefix_url` specified on construction (this is usually the base URL of the
+  DSS).
   """
 
   def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
@@ -201,11 +205,11 @@ def default_scopes(scopes: List[str]):
       # Change <DSSTestSession>.default_scopes to scopes for all DSSTestSession arguments
       old_scopes = []
       for arg in args:
-        if isinstance(arg, DSSTestSession) or isinstance(arg, AsyncUTMTestSession):
+        if isinstance(arg, UTMClientSession) or isinstance(arg, AsyncUTMTestSession):
           old_scopes.append(arg.default_scopes)
           arg.default_scopes = scopes
       for k, v in kwargs.items():
-        if isinstance(v, DSSTestSession) or isinstance(v, AsyncUTMTestSession):
+        if isinstance(v, UTMClientSession) or isinstance(v, AsyncUTMTestSession):
           old_scopes.append(v.default_scopes)
           v.default_scopes = scopes
 
@@ -213,11 +217,11 @@ def default_scopes(scopes: List[str]):
 
       # Restore original values of <DSSTestSession>.default_scopes for all DSSTestSession arguments
       for arg in args:
-        if isinstance(arg, DSSTestSession) or isinstance(arg, AsyncUTMTestSession):
+        if isinstance(arg, UTMClientSession) or isinstance(arg, AsyncUTMTestSession):
           arg.default_scopes = old_scopes[0]
           old_scopes = old_scopes[1:]
       for k, v in kwargs.items():
-        if isinstance(v, DSSTestSession) or isinstance(v, AsyncUTMTestSession):
+        if isinstance(v, UTMClientSession) or isinstance(v, AsyncUTMTestSession):
           v.default_scopes = old_scopes[0]
           old_scopes = old_scopes[1:]
 

@@ -1,7 +1,7 @@
 import argparse
 from typing import Callable, Optional
 
-from monitoring.monitorlib.infrastructure import DSSTestSession, AsyncUTMTestSession
+from monitoring.monitorlib.infrastructure import UTMClientSession, AsyncUTMTestSession
 from monitoring.monitorlib import auth, rid, scd
 from monitoring.prober.infrastructure import add_test_result, IDFactory, ResourceType, VersionString
 
@@ -84,7 +84,7 @@ def pytest_runtest_makereport(item, call):
     add_test_result(item, result)
 
 
-def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[DSSTestSession]:
+def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[UTMClientSession]:
   dss_endpoint = pytestconfig.getoption('dss_endpoint')
   if dss_endpoint is None:
     pytest.skip('dss-endpoint option not set')
@@ -96,7 +96,7 @@ def make_session(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] 
       pytest.skip('%s option not set' % auth_option)
     auth_adapter = auth.make_auth_adapter(auth_spec)
 
-  s = DSSTestSession(dss_endpoint + endpoint_suffix, auth_adapter)
+  s = UTMClientSession(dss_endpoint + endpoint_suffix, auth_adapter)
   return s
 
 def make_session_async(pytestconfig, endpoint_suffix: str, auth_option: Optional[str] = None) -> Optional[AsyncUTMTestSession]:
@@ -116,7 +116,7 @@ def make_session_async(pytestconfig, endpoint_suffix: str, auth_option: Optional
 
 
 @pytest.fixture(scope='session')
-def session(pytestconfig) -> DSSTestSession:
+def session(pytestconfig) -> UTMClientSession:
   return make_session(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
 
 
@@ -128,12 +128,12 @@ def session_async(pytestconfig):
 
 
 @pytest.fixture(scope='session')
-def aux_session(pytestconfig) -> DSSTestSession:
+def aux_session(pytestconfig) -> UTMClientSession:
   return make_session(pytestconfig, BASE_URL_AUX, OPT_RID_AUTH)
 
 
 @pytest.fixture(scope='session')
-def scd_session(pytestconfig) -> DSSTestSession:
+def scd_session(pytestconfig) -> UTMClientSession:
   return make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH1)
 
 @pytest.fixture(scope='session')
@@ -156,7 +156,7 @@ def scd_session_cm(pytestconfig) -> bool:
 
 
 @pytest.fixture(scope='session')
-def scd_session2(pytestconfig) -> DSSTestSession:
+def scd_session2(pytestconfig) -> UTMClientSession:
   return make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH2)
 
 
@@ -203,7 +203,7 @@ def ids(pytestconfig, subscriber) -> Callable[[ResourceType], str]:
 
 
 @pytest.fixture(scope='function')
-def no_auth_session(pytestconfig) -> DSSTestSession:
+def no_auth_session(pytestconfig) -> UTMClientSession:
   return make_session(pytestconfig, BASE_URL_RID)
 
 

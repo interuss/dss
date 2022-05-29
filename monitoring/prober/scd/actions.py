@@ -1,4 +1,4 @@
-from monitoring.monitorlib.infrastructure import DSSTestSession
+from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.scd import SCOPE_CM, SCOPE_SC, SCOPE_CI, SCOPE_CP
 
@@ -12,7 +12,7 @@ def _read_both_scope(scd_api: str) -> str:
         raise NotImplementedError('Unsupported API version {}'.format(scd_api))
 
 
-def delete_constraint_reference_if_exists(id: str, scd_session: DSSTestSession, scd_api: str):
+def delete_constraint_reference_if_exists(id: str, scd_session: UTMClientSession, scd_api: str):
     resp = scd_session.get('/constraint_references/{}'.format(id), scope=SCOPE_CM)
     if resp.status_code == 200:
         if scd_api == scd.API_0_3_5:
@@ -30,7 +30,7 @@ def delete_constraint_reference_if_exists(id: str, scd_session: DSSTestSession, 
         assert False, resp.content
 
 
-def delete_subscription_if_exists(sub_id: str, scd_session: DSSTestSession, scd_api: str):
+def delete_subscription_if_exists(sub_id: str, scd_session: UTMClientSession, scd_api: str):
     resp = scd_session.get('/subscriptions/{}'.format(sub_id), scope=SCOPE_SC)
     if resp.status_code == 200:
         if scd_api == scd.API_0_3_5:
@@ -48,7 +48,7 @@ def delete_subscription_if_exists(sub_id: str, scd_session: DSSTestSession, scd_
         assert False, resp.content
 
 
-def delete_operation_if_exists(id: str, scd_session: DSSTestSession, scd_api: str):
+def delete_operation_if_exists(id: str, scd_session: UTMClientSession, scd_api: str):
     if scd_api == scd.API_0_3_5:
         url = '/operation_references/{}'
     elif scd_api == scd.API_0_3_17:

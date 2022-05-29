@@ -32,7 +32,7 @@ TestContext = collections.namedtuple("TestContext", ["type", "uuid"])
 
 
 class InterOpTestSuite:
-    def __init__(self, dss_clients: Dict[str, infrastructure.DSSTestSession]):
+    def __init__(self, dss_clients: Dict[str, infrastructure.UTMClientSession]):
         self.dss_clients = dss_clients
 
     def startTest(self):
@@ -96,7 +96,7 @@ class TestSteps:
                     returned_subs.add(sub["subscription_id"])
         return returned_subs
 
-    def cleanUp(self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str):
+    def cleanUp(self, dss_map: Dict[str, infrastructure.UTMClientSession], primary_dss: str):
         dss = dss_map[primary_dss]
         for entity_type, stored_uuid in self.context.values():
             if entity_type == "ISA":
@@ -112,7 +112,7 @@ class TestSteps:
                 LOG.warning(f"Unknown Type: {entity_type}")
 
     def testStep1(
-        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.UTMClientSession], primary_dss: str, **kwargs
     ) -> None:
         """Create ISA in Primary DSS with 10 min TTL."""
 
@@ -145,7 +145,7 @@ class TestSteps:
 
     def testStep2(
         self,
-        dss_map: Dict[str, infrastructure.DSSTestSession],
+        dss_map: Dict[str, infrastructure.UTMClientSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -187,7 +187,7 @@ class TestSteps:
 
     def testStep3(
         self,
-        dss_map: Dict[str, infrastructure.DSSTestSession],
+        dss_map: Dict[str, infrastructure.UTMClientSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -206,7 +206,7 @@ class TestSteps:
 
     def testStep4(
         self,
-        dss_map: Dict[str, infrastructure.DSSTestSession],
+        dss_map: Dict[str, infrastructure.UTMClientSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -227,7 +227,7 @@ class TestSteps:
             ), f"{dss} returned too few Subscriptions, missing: {missing_subs}"
 
     def testStep5(
-        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.UTMClientSession], primary_dss: str, **kwargs
     ) -> None:
         """Can modify ISA in primary DSS, ISA modification triggers
         subscription notification requests"""
@@ -264,7 +264,7 @@ class TestSteps:
         ), f"Unsuccessful Update; no change to end time"
 
     def testStep6(
-        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.UTMClientSession], primary_dss: str, **kwargs
     ) -> None:
         """Can delete all Subscription in primary DSS"""
         dss = dss_map[primary_dss]
@@ -278,7 +278,7 @@ class TestSteps:
 
     def testStep7(
         self,
-        dss_map: Dict[str, infrastructure.DSSTestSession],
+        dss_map: Dict[str, infrastructure.UTMClientSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -294,7 +294,7 @@ class TestSteps:
 
     def testStep8(
         self,
-        dss_map: Dict[str, infrastructure.DSSTestSession],
+        dss_map: Dict[str, infrastructure.UTMClientSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -318,7 +318,7 @@ class TestSteps:
 
     def testStep9(
         self,
-        dss_map: Dict[str, infrastructure.DSSTestSession],
+        dss_map: Dict[str, infrastructure.UTMClientSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -366,7 +366,7 @@ class TestSteps:
 
 
     def testStep10(
-        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.UTMClientSession], primary_dss: str, **kwargs
     ) -> None:
         """ISA creation triggers subscription notification requests"""
 
@@ -410,7 +410,7 @@ class TestSteps:
         )
 
     def testStep11(
-        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.UTMClientSession], primary_dss: str, **kwargs
     ) -> None:
         """ISA deletion triggers subscription notification requests"""
         isa_2_uuid = self.context["isa_2_uuid"].uuid
@@ -435,7 +435,7 @@ class TestSteps:
         ), f"{primary_dss} returned too few Subscriptions, missing: {missing_subs}"
 
     def testStep12(
-        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.UTMClientSession], primary_dss: str, **kwargs
     ) -> None:
         """Expired Subscriptions don’t trigger subscription notification requests"""
         time.sleep(SHORT_WAIT_SEC)
@@ -476,7 +476,7 @@ class TestSteps:
 
     def testStep13(
         self,
-        dss_map: Dict[str, infrastructure.DSSTestSession],
+        dss_map: Dict[str, infrastructure.UTMClientSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -498,7 +498,7 @@ class TestSteps:
 
     def testStep14(
         self,
-        dss_map: Dict[str, infrastructure.DSSTestSession],
+        dss_map: Dict[str, infrastructure.UTMClientSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -512,7 +512,7 @@ class TestSteps:
             ), f"Expecting code 200, found {resp.status_code}: {resp.content}"
 
     def testStep15(
-        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.UTMClientSession], primary_dss: str, **kwargs
     ) -> None:
         """ISA deletion does not trigger subscription
         notification requests for expired Subscriptions"""
@@ -533,7 +533,7 @@ class TestSteps:
 
     def testStep16(
         self,
-        dss_map: Dict[str, infrastructure.DSSTestSession],
+        dss_map: Dict[str, infrastructure.UTMClientSession],
         primary_dss: str,
         all_other_dss: List[str],
     ) -> None:
@@ -573,7 +573,7 @@ class TestSteps:
             )
 
     def testStep17(
-        self, dss_map: Dict[str, infrastructure.DSSTestSession], primary_dss: str, **kwargs
+        self, dss_map: Dict[str, infrastructure.UTMClientSession], primary_dss: str, **kwargs
     ) -> None:
         """Clean up SUBS_3"""
         all_sub_3 = set()
