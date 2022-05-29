@@ -11,7 +11,7 @@ class ResourceSet(object):
   """Set of resources necessary to obtain information from the UTM system."""
 
   def __init__(self,
-               dss_client: infrastructure.DSSTestSession,
+               dss_client: infrastructure.UTMClientSession,
                area: s2sphere.LatLngRect,
                logger: tracerlog.Logger,
                start_time: datetime.datetime,
@@ -38,7 +38,7 @@ class ResourceSet(object):
   @classmethod
   def from_arguments(cls, args: argparse.Namespace):
     adapter: auth.AuthAdapter = auth.make_auth_adapter(args.auth)
-    dss_client = infrastructure.DSSTestSession(args.dss, adapter)
+    dss_client = infrastructure.UTMClientSession(args.dss, adapter)
     area: s2sphere.LatLngRect = geo.make_latlng_rect(args.area)
     start_time = datetime.datetime.fromisoformat(args.start_time)
     end_time = start_time + datetime.timedelta(hours=args.trace_hours)

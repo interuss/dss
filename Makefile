@@ -37,8 +37,11 @@ format:
 	clang-format -style=file -i pkg/api/v1/ridpb/rid.proto
 	clang-format -style=file -i pkg/api/v1/scdpb/scd.proto
 	clang-format -style=file -i pkg/api/v1/auxpb/aux_service.proto
+	cd monitoring/uss_qualifier && make format
 
+.PHONY: lint
 lint: go_lint shell_lint
+	cd monitoring/uss_qualifier && make lint
 
 .PHONY: go_lint
 go_lint:

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import List
 
 from monitoring.monitorlib.auth import make_auth_adapter
-from monitoring.monitorlib.infrastructure import DSSTestSession
+from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.uss_qualifier.rid import (
     display_data_evaluator,
     reports,
@@ -79,7 +79,7 @@ def run_rid_tests(
     for observer_config in test_configuration.observers:
         observer = display_data_evaluator.RIDSystemObserver(
             observer_config.name,
-            DSSTestSession(
+            UTMClientSession(
                 observer_config.observation_base_url, make_auth_adapter(auth_spec)
             ),
         )

@@ -63,11 +63,15 @@ class AuthAdapter(object):
     return None
 
 
-class DSSTestSession(requests.Session):
-  """
-  Requests session that provides additional functionality for DSS tests:
-    * Adds a prefix to URLs that start with a '/'.
-    * Automatically applies authorization according to adapter, when present
+class UTMClientSession(requests.Session):
+  """Requests session that enables easy access to ASTM-specified UTM endpoints.
+
+  Automatically applies authorization according to the `auth_adapter` specified
+  at construction, when present.
+
+  If the URL starts with '/', then automatically prefix the URL with the
+  `prefix_url` specified on construction (this is usually the base URL of the
+  DSS).
   """
 
   def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
@@ -185,39 +189,39 @@ class AsyncUTMTestSession:
 
 
 def default_scopes(scopes: List[str]):
-  """Decorator for tests that modifies DSSTestSession args to use scopes.
+  """Decorator for tests that modifies UTMClientSession args to use scopes.
 
   A test function decorated with this decorator will modify all arguments which
-  are DSSTestSessions to set their default_scopes to the scopes specified in
+  are UTMClientSessions to set their default_scopes to the scopes specified in
   this decorator (and restore the original default_scopes afterward).
 
   :param scopes: List of scopes to retrieve (by default) for tokens used to
-    authorize requests sent using any of the DSSTestSession arguments to the
+    authorize requests sent using any of the UTMClientSession arguments to the
     decorated test.
   """
   def decorator_default_scope(func):
     @functools.wraps(func)
     def wrapper_default_scope(*args, **kwargs):
-      # Change <DSSTestSession>.default_scopes to scopes for all DSSTestSession arguments
+      # Change <UTMClientSession>.default_scopes to scopes for all UTMClientSession arguments
       old_scopes = []
       for arg in args:
-        if isinstance(arg, DSSTestSession) or isinstance(arg, AsyncUTMTestSession):
+        if isinstance(arg, UTMClientSession) or isinstance(arg, AsyncUTMTestSession):
           old_scopes.append(arg.default_scopes)
           arg.default_scopes = scopes
       for k, v in kwargs.items():
-        if isinstance(v, DSSTestSession) or isinstance(v, AsyncUTMTestSession):
+        if isinstance(v, UTMClientSession) or isinstance(v, AsyncUTMTestSession):
           old_scopes.append(v.default_scopes)
           v.default_scopes = scopes
 
       result = func(*args, **kwargs)
 
-      # Restore original values of <DSSTestSession>.default_scopes for all DSSTestSession arguments
+      # Restore original values of <UTMClientSession>.default_scopes for all UTMClientSession arguments
       for arg in args:
-        if isinstance(arg, DSSTestSession) or isinstance(arg, AsyncUTMTestSession):
+        if isinstance(arg, UTMClientSession) or isinstance(arg, AsyncUTMTestSession):
           arg.default_scopes = old_scopes[0]
           old_scopes = old_scopes[1:]
       for k, v in kwargs.items():
-        if isinstance(v, DSSTestSession) or isinstance(v, AsyncUTMTestSession):
+        if isinstance(v, UTMClientSession) or isinstance(v, AsyncUTMTestSession):
           v.default_scopes = old_scopes[0]
           old_scopes = old_scopes[1:]
 
@@ -227,14 +231,14 @@ def default_scopes(scopes: List[str]):
 
 
 def default_scope(scope: str):
-  """Decorator for tests that modifies DSSTestSession args to use a scope.
+  """Decorator for tests that modifies UTMClientSession args to use a scope.
 
     A test function decorated with this decorator will modify all arguments which
-    are DSSTestSessions to set their default_scopes to the scope specified in
+    are UTMClientSessions to set their default_scopes to the scope specified in
     this decorator (and restore the original default_scopes afterward).
 
     :param scopes: Single scope to retrieve (by default) for tokens used to
-      authorize requests sent using any of the DSSTestSession arguments to the
+      authorize requests sent using any of the UTMClientSession arguments to the
       decorated test.
     """
   return default_scopes([scope])

@@ -39,7 +39,7 @@ class MutatedSubscription(fetch.Query):
 yaml.add_representer(MutatedSubscription, Representer.represent_dict)
 
 
-def put_subscription(utm_client: infrastructure.DSSTestSession,
+def put_subscription(utm_client: infrastructure.UTMClientSession,
                      area: s2sphere.LatLngRect,
                      start_time: datetime.datetime,
                      end_time: datetime.datetime,
@@ -64,7 +64,7 @@ def put_subscription(utm_client: infrastructure.DSSTestSession,
   return result
 
 
-def delete_subscription(utm_client: infrastructure.DSSTestSession,
+def delete_subscription(utm_client: infrastructure.UTMClientSession,
                         subscription_id: str) -> MutatedSubscription:
   url = '/dss/v1/subscriptions/{}'.format(subscription_id)
   result = MutatedSubscription(fetch.query_and_describe(

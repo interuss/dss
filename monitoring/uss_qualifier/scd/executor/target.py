@@ -24,7 +24,7 @@ class TestTarget:
     def __init__(self, name: str, config: InjectionTargetConfiguration, auth_spec: str):
         self.name = name
         self.config = config
-        self.client = infrastructure.DSSTestSession(
+        self.client = infrastructure.UTMClientSession(
             self.config.injection_base_url, auth.make_auth_adapter(auth_spec)
         )
 

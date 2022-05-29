@@ -127,7 +127,7 @@ def describe_query(resp: requests.Response,
   })
 
 
-def query_and_describe(client: infrastructure.DSSTestSession, method: str, url: str, **kwargs) -> Query:
+def query_and_describe(client: infrastructure.UTMClientSession, method: str, url: str, **kwargs) -> Query:
   req_kwargs = kwargs.copy()
   req_kwargs['timeout'] = TIMEOUTS
   t0 = datetime.datetime.utcnow()

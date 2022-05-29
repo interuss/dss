@@ -27,9 +27,9 @@ def main() -> int:
     args = parseArgs()
 
     adapter = auth.make_auth_adapter(args.auth)
-    dss_clients: Dict[str, infrastructure.DSSTestSession] = {}
+    dss_clients: Dict[str, infrastructure.UTMClientSession] = {}
     for dss in args.DSS:
-        dss_clients[dss] = infrastructure.DSSTestSession(dss, adapter)
+        dss_clients[dss] = infrastructure.UTMClientSession(dss, adapter)
 
     # Begin Tests
     tests = InterOpTestSuite(dss_clients)
