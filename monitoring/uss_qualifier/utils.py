@@ -7,20 +7,21 @@ from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfigura
 
 
 class USSQualifierTestConfiguration(ImplicitDict):
-  locale: str
-  """A three letter ISO 3166 country code to run the qualifier against.
+    locale: str
+    """A three letter ISO 3166 country code to run the qualifier against.
 
   This should be the same one used to simulate the flight_data in
   the flight_data_generator.py module."""
 
-  rid: Optional[RIDQualifierTestConfiguration]
-  """Test configuration for RID"""
+    rid: Optional[RIDQualifierTestConfiguration]
+    """Test configuration for RID"""
 
-  scd: Optional[SCDQualifierTestConfiguration]
-  """Test configuration for SCD"""
+    scd: Optional[SCDQualifierTestConfiguration]
+    """Test configuration for SCD"""
+
 
 def is_url(url_string):
-  try:
-    urlparse(url_string)
-  except ValueError:
-    raise ValueError("A valid url must be passed")
+    try:
+        urlparse(url_string)
+    except ValueError:
+        raise ValueError("A valid url must be passed")
