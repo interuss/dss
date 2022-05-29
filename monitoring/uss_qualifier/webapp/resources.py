@@ -6,16 +6,18 @@ from . import config
 redis_conn = Redis.from_url(webapp.config.get(config.KEY_REDIS_URL))
 
 
-REDIS_KEY_UPLOADED_KMLS = 'uploaded_kmls'
-REDIS_KEY_TEST_RUNS = 'test_runs'
-REDIS_KEY_TEMP_LOGS = 'temp_logs'
-REDIS_KEY_TEST_RUN_LOGS = 'test_run_logs'
+REDIS_KEY_UPLOADED_KMLS = "uploaded_kmls"
+REDIS_KEY_TEST_RUNS = "test_runs"
+REDIS_KEY_TEMP_LOGS = "temp_logs"
+REDIS_KEY_TEST_RUN_LOGS = "test_run_logs"
 
 
 qualifier_queue = rq.Queue(
     webapp.config.get(config.KEY_REDIS_QUEUE),
     connection=redis_conn,
-    default_timeout=3600)
+    default_timeout=3600,
+)
+
 
 def decode_redis(src):
     if isinstance(src, list):
@@ -31,4 +33,4 @@ def decode_redis(src):
     elif isinstance(src, bytes):
         return src.decode()
     else:
-        raise Exception("type not handled: " +type(src))
+        raise Exception("type not handled: " + type(src))

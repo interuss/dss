@@ -15,7 +15,9 @@ Each project should contain the following elements:
 1. `Makefile` including the following rules:
     - `build`
     - `lint`
-    - `format`
+    - `format`: Formats files and, if applicable, fixes linter issues. This repository uses the following formatters:
+      - Go: [`gofmt`](https://pkg.go.dev/cmd/gofmt)
+      - Python: [`black`](https://github.com/psf/black)
     - `test`: Runs unit tests of the project.
     - `test-e2e`: If applicable, runs tests with other components in the repository.
 

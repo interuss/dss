@@ -5,9 +5,11 @@ from . import config
 
 
 def main(argv):
-  del argv
-  webapp.run(host='localhost', port=webapp.config.get(config.KEY_USS_QUALIFIER_HOST_PORT))
+    del argv
+    webapp.run(
+        host="localhost", port=webapp.config.get(config.KEY_USS_QUALIFIER_HOST_PORT)
+    )
 
 
-if __name__ == '__main__':
-  main(sys.argv)
+if __name__ == "__main__":
+    main(sys.argv)

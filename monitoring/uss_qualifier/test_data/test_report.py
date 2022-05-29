@@ -10,17 +10,14 @@ test_data = {
                 "alt": 116.0,
                 "accuracy_h": "HAUnknown",
                 "accuracy_v": "VAUnknown",
-                "extrapolated": False
+                "extrapolated": False,
             },
-            "height": {
-                "distance": 50.0,
-                "reference": "TakeoffLocation"
-            },
+            "height": {"distance": 50.0, "reference": "TakeoffLocation"},
             "track": 99999,
             "speed": 2.0,
             "timestamp_accuracy": 1.0,
             "speed_accuracy": "SA3mps",
-            "vertical_speed": 0.0
+            "vertical_speed": 0.0,
         },
         {
             "timestamp": "2021-07-16T00:14:31.672231",
@@ -31,17 +28,14 @@ test_data = {
                 "alt": 116.23381012888112,
                 "accuracy_h": "HAUnknown",
                 "accuracy_v": "VAUnknown",
-                "extrapolated": False
+                "extrapolated": False,
             },
-            "height": {
-                "distance": 50.0,
-                "reference": "TakeoffLocation"
-            },
+            "height": {"distance": 50.0, "reference": "TakeoffLocation"},
             "track": 99999,
             "speed": 2.0,
             "timestamp_accuracy": 1.0,
             "speed_accuracy": "SA3mps",
-            "vertical_speed": 0.0
+            "vertical_speed": 0.0,
         },
         {
             "timestamp": "2021-07-16T00:14:32.672231",
@@ -52,17 +46,14 @@ test_data = {
                 "alt": 116.8021761394083,
                 "accuracy_h": "HAUnknown",
                 "accuracy_v": "VAUnknown",
-                "extrapolated": False
+                "extrapolated": False,
             },
-            "height": {
-                "distance": 50.0,
-                "reference": "TakeoffLocation"
-            },
+            "height": {"distance": 50.0, "reference": "TakeoffLocation"},
             "track": 99999,
             "speed": 2.0,
             "timestamp_accuracy": 1.0,
             "speed_accuracy": "SA3mps",
-            "vertical_speed": 0.0
+            "vertical_speed": 0.0,
         },
         {
             "timestamp": "2021-07-16T00:14:33.672231",
@@ -73,17 +64,14 @@ test_data = {
                 "alt": 117.25995044067203,
                 "accuracy_h": "HAUnknown",
                 "accuracy_v": "VAUnknown",
-                "extrapolated": False
+                "extrapolated": False,
             },
-            "height": {
-                "distance": 50.0,
-                "reference": "TakeoffLocation"
-            },
+            "height": {"distance": 50.0, "reference": "TakeoffLocation"},
             "track": 99999,
             "speed": 2.0,
             "timestamp_accuracy": 1.0,
             "speed_accuracy": "SA3mps",
-            "vertical_speed": 0.0
+            "vertical_speed": 0.0,
         },
         {
             "timestamp": "2021-07-16T00:14:34.672231",
@@ -94,17 +82,14 @@ test_data = {
                 "alt": 117.72685292451145,
                 "accuracy_h": "HAUnknown",
                 "accuracy_v": "VAUnknown",
-                "extrapolated": False
+                "extrapolated": False,
             },
-            "height": {
-                "distance": 50.0,
-                "reference": "TakeoffLocation"
-            },
+            "height": {"distance": 50.0, "reference": "TakeoffLocation"},
             "track": 99999,
             "speed": 2.0,
             "timestamp_accuracy": 1.0,
             "speed_accuracy": "SA3mps",
-            "vertical_speed": 0.0
+            "vertical_speed": 0.0,
         },
         {
             "timestamp": "2021-07-16T00:14:35.672231",
@@ -115,17 +100,14 @@ test_data = {
                 "alt": 118.20136135553597,
                 "accuracy_h": "HAUnknown",
                 "accuracy_v": "VAUnknown",
-                "extrapolated": False
+                "extrapolated": False,
             },
-            "height": {
-                "distance": 50.0,
-                "reference": "TakeoffLocation"
-            },
+            "height": {"distance": 50.0, "reference": "TakeoffLocation"},
             "track": 99999,
             "speed": 2.0,
             "timestamp_accuracy": 1.0,
             "speed_accuracy": "SA3mps",
-            "vertical_speed": 0.0
+            "vertical_speed": 0.0,
         },
         {
             "timestamp": "2021-07-16T00:14:36.672231",
@@ -136,17 +118,14 @@ test_data = {
                 "alt": 118.6632591208961,
                 "accuracy_h": "HAUnknown",
                 "accuracy_v": "VAUnknown",
-                "extrapolated": False
+                "extrapolated": False,
             },
-            "height": {
-                "distance": 50.0,
-                "reference": "TakeoffLocation"
-            },
+            "height": {"distance": 50.0, "reference": "TakeoffLocation"},
             "track": 99999,
             "speed": 2.0,
             "timestamp_accuracy": 1.0,
             "speed_accuracy": "SA3mps",
-            "vertical_speed": 0.0
-        }
-    ]
+            "vertical_speed": 0.0,
+        },
+    ],
 }
