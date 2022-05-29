@@ -10,21 +10,28 @@ message AirspaceConflictResponse {
   // Human-readable message indicating what error occurred and/or why.
   string message = 1;
 
-  // List of constraint references for which current proof of knowledge was not provided.  If this field is present and contains elements, the calling USS should query the details URLs for these constraints to obtain their details and correct OVNs.  The OVNs can be used to update the key, at which point the USS may retry this call.
+  // List of constraint references for which current proof of knowledge was not provided.  If this field is present and contains elements, the calling
+  // USS should query the details URLs for these constraints to obtain their details and correct OVNs.  The OVNs can be used to update the key, at
+  // which point the USS may retry this call.
   repeated ConstraintReference missing_constraints = 2;
 
-  // List of operational intent references for which current proof of knowledge was not provided.  If this field is present and contains elements, the calling USS should query the details URLs for these operational intents to obtain their details and correct OVNs.  The OVNs can be used to update the key, at which point the USS may retry this call.
+  // List of operational intent references for which current proof of knowledge was not provided.  If this field is present and contains elements, the
+  // calling USS should query the details URLs for these operational intents to obtain their details and correct OVNs.  The OVNs can be used to update
+  // the key, at which point the USS may retry this call.
   repeated OperationalIntentReference missing_operational_intents = 3;
 }
 
 message Altitude {
-  // A code indicating the reference for a vertical distance. See AIXM 5.1 and FIXM 4.2.0. Currently, UTM only allows WGS84 with no immediate plans to allow other options. FIXM and AIXM allow for 'SFC' which is equivalent to AGL.
+  // A code indicating the reference for a vertical distance. See AIXM 5.1 and FIXM 4.2.0. Currently, UTM only allows WGS84 with no immediate plans to
+  // allow other options. FIXM and AIXM allow for 'SFC' which is equivalent to AGL.
   string reference = 1;
 
-  // The reference quantities used to express the value of altitude. See FIXM 4.2. Currently, UTM only allows meters with no immediate plans to allow other options.
+  // The reference quantities used to express the value of altitude. See FIXM 4.2. Currently, UTM only allows meters with no immediate plans to allow
+  // other options.
   string units = 2;
 
-  // The numeric value of the altitude. Note that min and max values are added as a sanity check. As use cases evolve and more options are made available in terms of units of measure or reference systems, these bounds may be re-evaluated.
+  // The numeric value of the altitude. Note that min and max values are added as a sanity check. As use cases evolve and more options are made
+  // available in terms of units of measure or reference systems, these bounds may be re-evaluated.
   double value = 3;
 }
 
@@ -40,7 +47,8 @@ message Authority {
   // Note: in the data coding format, this might be further constrained in order to ensure a valid e-mail format.
   string email = 2;
 
-  // The minimal time interval required between notification or authorization request and starting to operate in the zone, in the format PnnDTnnHnnM (ISO 8601).
+  // The minimal time interval required between notification or authorization request and starting to operate in the zone, in the format PnnDTnnHnnM
+  // (ISO 8601).
   string interval_before = 3;
 
   // The official name of a public or private authority
@@ -64,7 +72,8 @@ message Authority {
 message ChangeConstraintReferenceResponse {
   ConstraintReference constraint_reference = 1;
 
-  // DSS subscribers that this client now has the obligation to notify of the constraint changes just made.  This client must call POST for each provided URL according to the USS-USS `/uss/v1/constraints` path API.  The client's own subscriptions will also be included in this list.
+  // DSS subscribers that this client now has the obligation to notify of the constraint changes just made.  This client must call POST for each
+  // provided URL according to the USS-USS `/uss/v1/constraints` path API.  The client's own subscriptions will also be included in this list.
   repeated SubscriberToNotify subscribers = 2;
 }
 
@@ -72,19 +81,21 @@ message ChangeConstraintReferenceResponse {
 message ChangeOperationalIntentReferenceResponse {
   OperationalIntentReference operational_intent_reference = 1;
 
-  // DSS subscribers that this client now has the obligation to notify of the operational intent changes just made.  This client must call POST for each provided URL according to the USS-USS `/uss/v1/operational_intents` path API.  The client's own subscriptions will also be included in this list.
+  // DSS subscribers that this client now has the obligation to notify of the operational intent changes just made.  This client must call POST for
+  // each provided URL according to the USS-USS `/uss/v1/operational_intents` path API.  The client's own subscriptions will also be included in this
+  // list.
   repeated SubscriberToNotify subscribers = 2;
 }
 
 // A circular area on the surface of the earth.
 message Circle {
   LatLngPoint center = 1;
-  Radius radius = 2;
+  Radius radius      = 2;
 }
 
 // Full specification of a UTM constraint.
 message Constraint {
-  ConstraintDetails details = 1;
+  ConstraintDetails details     = 1;
   ConstraintReference reference = 2;
 }
 
@@ -110,21 +121,27 @@ message ConstraintProviderAssociation {
   string constraint_provider_id = 2;
 }
 
-// A ConstraintReference (area in which a constraint is present, along with other high-level information, but no details).  The DSS reports only these references and clients must exchange details and additional information peer-to-peer.
+// A ConstraintReference (area in which a constraint is present, along with other high-level information, but no details).  The DSS reports only these
+// references and clients must exchange details and additional information peer-to-peer.
 message ConstraintReference {
   string id = 1;
 
-  // Created by the DSS based on creating client's ID (via access token).  Used internal to the DSS for restricting mutation and deletion operations to manager.  Used by USSs to reject constraint update notifications originating from a USS that does not manage the constraint.
+  // Created by the DSS based on creating client's ID (via access token).  Used internal to the DSS for restricting mutation and deletion operations
+  // to manager.  Used by USSs to reject constraint update notifications originating from a USS that does not manage the constraint.
   string manager = 2;
 
-  // Opaque version number of this constraint.  Populated only when the ConstraintReference is managed by the USS retrieving or providing it.  Not populated when the ConstraintReference is not managed by the USS retrieving or providing it (instead, the USS must obtain the OVN from the details retrieved from the managing USS).
-  string ovn = 3;
-  Time time_end = 4;
-  Time time_start = 5;
+  // Opaque version number of this constraint.  Populated only when the ConstraintReference is managed by the USS retrieving or providing it.  Not
+  // populated when the ConstraintReference is not managed by the USS retrieving or providing it (instead, the USS must obtain the OVN from the
+  // details retrieved from the managing USS).
+  string ovn              = 3;
+  Time time_end           = 4;
+  Time time_start         = 5;
   string uss_availability = 6;
-  string uss_base_url = 7;
+  string uss_base_url     = 7;
 
-  // Numeric version of this constraint which increments upon each change in the constraint, regardless of whether any field of the constraint reference changes.  A USS with the details of this constraint when it was at a particular version does not need to retrieve the details again until the version changes.
+  // Numeric version of this constraint which increments upon each change in the constraint, regardless of whether any field of the constraint
+  // reference changes.  A USS with the details of this constraint when it was at a particular version does not need to retrieve the details again
+  // until the version changes.
   int32 version = 8;
 }
 
@@ -207,7 +224,8 @@ message ExchangeRecord {
   // 'Human-readable description of the problem with the exchange, if any.'
   string problem = 3;
 
-  // A coded value that indicates the role of the logging USS: 'Client' (initiating a request to a remote USS) or 'Server' (handling a request from a remote USS)
+  // A coded value that indicates the role of the logging USS: 'Client' (initiating a request to a remote USS) or 'Server' (handling a request from a
+  // remote USS)
   string recorder_role = 4;
 
   // Base64-encoded body content sent/received as a request.
@@ -229,22 +247,29 @@ message ExchangeRecord {
   string url = 10;
 }
 
-// An airspace of defined dimensions, above the land areas or territorial waters of a State, within which a particular restriction or condition for UAS flights applies.
+// An airspace of defined dimensions, above the land areas or territorial waters of a State, within which a particular restriction or condition for
+// UAS flights applies.
 message GeoZone {
-  message AdditionalPropertiesMessage {}
+  message AdditionalPropertiesMessage {
+  }
 
-  // Indicates that exemptions from the national or European regulations are allowed in the UAS Zone, that will be detailed via the "message" property.
+  // Indicates that exemptions from the national or European regulations are allowed in the UAS Zone, that will be detailed via the "message"
+  // property.
   AdditionalPropertiesMessage additional_properties = 1;
 
   // The State that has the authority to declare the zone.
-  // Note - There will be no Zone belonging to two States. Not necessary to code the information that two zones are "in neighboring States" or "related".
+  // Note - There will be no Zone belonging to two States. Not necessary to code the information that two zones are "in neighboring States" or
+  // "related".
   repeated string country = 2;
 
   // A string of characters that uniquely identifies the UAS Zone within the State/Territory identified by the country attribute.
   // Note - The UAS Zone is uniquely identified worldwide by the combination of the country and the identifier attributes
   repeated string identifier = 3;
 
-  // A message to be displayed to the user of the zone, typically on the RPS for the Remote Pilot, to make him/her aware about specific information associated with the zone (typically when it is not only a restriction to fly in the zone, thus not only an alert or an automatic limitation, for example : “image capture prohibited in this zone”, “frequent strong winds in this zone”, “no landing or take-off in this zone”). This message is also used to indicate exemptions from regulation in a zone (see below). Several information can be grouped in a message, separated by a “/”.
+  // A message to be displayed to the user of the zone, typically on the RPS for the Remote Pilot, to make him/her aware about specific information
+  // associated with the zone (typically when it is not only a restriction to fly in the zone, thus not only an alert or an automatic limitation, for
+  // example : “image capture prohibited in this zone”, “frequent strong winds in this zone”, “no landing or take-off in this zone”). This message is
+  // also used to indicate exemptions from regulation in a zone (see below). Several information can be grouped in a message, separated by a “/”.
   repeated string message = 4;
 
   // A free text name by which the zone may be known by the public or by the UAS community.
@@ -274,8 +299,9 @@ message GeoZone {
   repeated string type = 12;
 
   // A code that identifies the category or class of the zone applying a "USpace concept".
-  // Note: Two (draft) classifications exist, one from Eurocontrol and one from CORUS. Therefore, two instances of this attribute are expected, one from each sub-list. This might be later replaced with separate attributes and separate lists of values.
-  repeated string u_space_class = 13;
+  // Note: Two (draft) classifications exist, one from Eurocontrol and one from CORUS. Therefore, two instances of this attribute are expected, one
+  // from each sub-list. This might be later replaced with separate attributes and separate lists of values.
+  repeated string u_space_class     = 13;
   repeated Authority zone_authority = 14;
 }
 
@@ -311,12 +337,14 @@ message GetOperationalIntentReferenceResponse {
 
 // Response to a peer request for telemetry of an off-nominal operational intent.
 message GetOperationalIntentTelemetryResponse {
-  // The next telemetry similar to this telemetry is not expected to be available until at or after this time, so the polling USS should generally not poll the endpoint providing this response data again until at or after that time.  If this field is omitted, then there is no current expectation of new telemetry becoming available.
+  // The next telemetry similar to this telemetry is not expected to be available until at or after this time, so the polling USS should generally not
+  // poll the endpoint providing this response data again until at or after that time.  If this field is omitted, then there is no current expectation
+  // of new telemetry becoming available.
   Time next_telemetry_opportunity = 1;
 
   // ID of the operational intent which the vehicle reporting telemetry is flying.
   string operational_intent_id = 2;
-  VehicleTelemetry telemetry = 3;
+  VehicleTelemetry telemetry   = 3;
 }
 
 message GetSubscriptionRequest {
@@ -336,10 +364,13 @@ message GetUssAvailabilityRequest {
 
 // Information necessary to create a subscription to serve a single operational intent's notification needs.
 message ImplicitSubscriptionParameters {
-  // True if this operational intent's subscription should trigger notifications when constraints change. Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true, and a USS performing the constraint processing role should set this flag true.
+  // True if this operational intent's subscription should trigger notifications when constraints change. Otherwise, changes in constraints should not
+  // trigger notifications.  The scope utm.constraint_processing is required to set this flag true, and a USS performing the constraint processing
+  // role should set this flag true.
   bool notify_for_constraints = 1;
 
-  // The base URL of a USS implementation of the parts of the USS-USS API necessary for receiving the notifications that the operational intent must be aware of.  This includes, at least, notifications for relevant changes in operational intents.
+  // The base URL of a USS implementation of the parts of the USS-USS API necessary for receiving the notifications that the operational intent must
+  // be aware of.  This includes, at least, notifications for relevant changes in operational intents.
   string uss_base_url = 2;
 }
 
@@ -356,7 +387,7 @@ message MakeDssReportRequest {
 
 // Full description of a UTM operational intent.
 message OperationalIntent {
-  OperationalIntentDetails details = 1;
+  OperationalIntentDetails details     = 1;
   OperationalIntentReference reference = 2;
 }
 
@@ -367,7 +398,7 @@ message OperationalIntentDetails {
   // Required with at least one item when the operational intent is Nonconforming or Contingent.
   // May not contain any items when the operational intent is Accepted or Activated.
   repeated Volume4D off_nominal_volumes = 1;
-  int32 priority = 2;
+  int32 priority                        = 2;
 
   // Volumes that wholly contain the operational intent while being as small as practical.
   // Start and end times, as well as lower and upper altitudes, are required for each volume. The end time may not be in the past.
@@ -379,19 +410,23 @@ message OperationalIntentDetails {
 // A record of position data gathered through the course of an operational intent
 message OperationalIntentPositions {
   // ID of the operational intent associated with `positions`
-  string operational_intent_id = 1;
+  string operational_intent_id      = 1;
   repeated PositionRecord positions = 2;
 }
 
-// The high-level information of a planned or active operational intent with the URL of a USS to query for details.  Note: 'ovn' is returned ONLY to the USS that created the operational intent but NEVER to other USS instances.
+// The high-level information of a planned or active operational intent with the URL of a USS to query for details.  Note: 'ovn' is returned ONLY to
+// the USS that created the operational intent but NEVER to other USS instances.
 message OperationalIntentReference {
   string id = 1;
 
-  // Created by the DSS based on creating client's ID (via access token).  Used internal to the DSS for restricting mutation and deletion operations to manager.  Used by USSs to reject operational intent update notifications originating from a USS that does not manage the operational intent.
+  // Created by the DSS based on creating client's ID (via access token).  Used internal to the DSS for restricting mutation and deletion operations
+  // to manager.  Used by USSs to reject operational intent update notifications originating from a USS that does not manage the operational intent.
   string manager = 2;
 
-  // Opaque version number of this operational intent.  Populated only when the OperationalIntentReference is managed by the USS retrieving or providing it.  Not populated when the OperationalIntentReference is not managed by the USS retrieving or providing it (instead, the USS must obtain the OVN from the details retrieved from the managing USS).
-  string ovn = 3;
+  // Opaque version number of this operational intent.  Populated only when the OperationalIntentReference is managed by the USS retrieving or
+  // providing it.  Not populated when the OperationalIntentReference is not managed by the USS retrieving or providing it (instead, the USS must
+  // obtain the OVN from the details retrieved from the managing USS).
+  string ovn   = 3;
   string state = 4;
 
   // The ID of the subscription that is ensuring the operational intent manager receives relevant airspace updates.
@@ -401,11 +436,13 @@ message OperationalIntentReference {
   Time time_end = 6;
 
   // Beginning time of operational intent.
-  Time time_start = 7;
+  Time time_start         = 7;
   string uss_availability = 8;
-  string uss_base_url = 9;
+  string uss_base_url     = 9;
 
-  // Numeric version of this operational intent which increments upon each change in the operational intent, regardless of whether any field of the operational intent reference changes.  A USS with the details of this operational intent when it was at a particular version does not need to retrieve the details again until the version changes.
+  // Numeric version of this operational intent which increments upon each change in the operational intent, regardless of whether any field of the
+  // operational intent reference changes.  A USS with the details of this operational intent when it was at a particular version does not need to
+  // retrieve the details again until the version changes.
   int32 version = 10;
 }
 
@@ -439,7 +476,11 @@ message PlanningRecord {
   Time time = 6;
 }
 
-// An enclosed area on the earth. The bounding edges of this polygon are defined to be the shortest paths between connected vertices.  This means, for instance, that the edge between two points both defined at a particular latitude is not generally contained at that latitude. The winding order must be interpreted as the order which produces the smaller area. The path between two vertices is defined to be the shortest possible path between those vertices. Edges may not cross. Vertices may not be duplicated.  In particular, the final polygon vertex must not be identical to the first vertex.
+// An enclosed area on the earth. The bounding edges of this polygon are defined to be the shortest paths between connected vertices.  This means, for
+// instance, that the edge between two points both defined at a particular latitude is not generally contained at that latitude. The winding order
+// must be interpreted as the order which produces the smaller area. The path between two vertices is defined to be the shortest possible path between
+// those vertices. Edges may not cross. Vertices may not be duplicated.  In particular, the final polygon vertex must not be identical to the first
+// vertex.
 message Polygon {
   repeated LatLngPoint vertices = 1;
 }
@@ -452,8 +493,8 @@ message Position {
 
   // True if this position was generated primarily by computation rather than primarily from a direct instrument measurement.
   bool extrapolated = 4;
-  double latitude = 5;
-  double longitude = 6;
+  double latitude   = 5;
+  double longitude  = 6;
 }
 
 // A record of vehicle telemetry information received by this USS (typically for conformance monitoring).
@@ -464,9 +505,11 @@ message PositionRecord {
   Time time_received = 2;
 }
 
-// Parameters of a message informing of new full information for a constraint.  Pushed (by a client, not the DSS) directly to clients with subscriptions when another client makes a change to airspace within a cell with a subscription.
+// Parameters of a message informing of new full information for a constraint.  Pushed (by a client, not the DSS) directly to clients with
+// subscriptions when another client makes a change to airspace within a cell with a subscription.
 message PutConstraintDetailsParameters {
-  // Full information about the constraint that has changed.  If this field is omitted, the constraint was deleted.  The `ovn` field in the nested `reference` must be populated.
+  // Full information about the constraint that has changed.  If this field is omitted, the constraint was deleted.  The `ovn` field in the nested
+  // `reference` must be populated.
   Constraint constraint = 1;
 
   // ID of constraint that has changed.
@@ -480,14 +523,17 @@ message PutConstraintDetailsParameters {
 message PutConstraintReferenceParameters {
   // Spacetime extents that bound this constraint.
   // The end time may not be in the past.
-  // All volumes of the constraint must be encompassed in these extents. However, these extents do not need to match the precise volumes of the constraint; a single bounding extent may be provided instead, for instance.
+  // All volumes of the constraint must be encompassed in these extents. However, these extents do not need to match the precise volumes of the
+  // constraint; a single bounding extent may be provided instead, for instance.
   repeated Volume4D extents = 1;
-  string uss_base_url = 2;
+  string uss_base_url       = 2;
 }
 
-// Parameters of a message informing of detailed information for a peer operational intent. Pushed (by a client, not the DSS) directly to clients with subscriptions when another client makes a change to airspace within a cell with a subscription.
+// Parameters of a message informing of detailed information for a peer operational intent. Pushed (by a client, not the DSS) directly to clients with
+// subscriptions when another client makes a change to airspace within a cell with a subscription.
 message PutOperationalIntentDetailsParameters {
-  // Full information about the operational intent that has changed.  If this field is omitted, the operational intent was deleted.  The `ovn` field in the nested `reference` must be populated.
+  // Full information about the operational intent that has changed.  If this field is omitted, the operational intent was deleted.  The `ovn` field
+  // in the nested `reference` must be populated.
   OperationalIntent operational_intent = 1;
 
   // ID of operational intent that has changed.
@@ -497,37 +543,54 @@ message PutOperationalIntentDetailsParameters {
   repeated SubscriptionState subscriptions = 3;
 }
 
-// Parameters for a request to create an OperationalIntentReference in the DSS. A subscription to changes overlapping this volume may be implicitly created, but this can be overridden by providing the (optional) 'subscription_id' to use. Note: The implicit subscription is managed by the DSS, not the USS.
+// Parameters for a request to create an OperationalIntentReference in the DSS. A subscription to changes overlapping this volume may be implicitly
+// created, but this can be overridden by providing the (optional) 'subscription_id' to use. Note: The implicit subscription is managed by the DSS,
+// not the USS.
 message PutOperationalIntentReferenceParameters {
   // Spacetime extents that bound this operational intent.
-  // Start and end times, as well as lower and upper altitudes, are required for each volume. The end time may not be in the past. All volumes, both nominal and off-nominal, must be encompassed in these extents. However, these extents do not need to match the precise volumes of the operational intent; a single bounding extent may be provided instead, for instance.
+  // Start and end times, as well as lower and upper altitudes, are required for each volume. The end time may not be in the past. All volumes, both
+  // nominal and off-nominal, must be encompassed in these extents. However, these extents do not need to match the precise volumes of the operational
+  // intent; a single bounding extent may be provided instead, for instance.
   repeated Volume4D extents = 1;
 
-  // Proof that the USS creating or mutating this operational intent was aware of the current state of the airspace, with the expectation that this operational intent is therefore deconflicted from all relevant features in the airspace.  This field is not required when declaring an operational intent Nonconforming or Contingent, or when there are no relevant Entities in the airspace, but is otherwise required. OVNs for constraints are required if and only if the USS managing this operational intent is performing the constraint processing role, which is indicated by whether the subscription associated with this operational intent triggers notifications for constraints.  The key does not need to contain the OVN for the operational intent being updated.
+  // Proof that the USS creating or mutating this operational intent was aware of the current state of the airspace, with the expectation that this
+  // operational intent is therefore deconflicted from all relevant features in the airspace.  This field is not required when declaring an
+  // operational intent Nonconforming or Contingent, or when there are no relevant Entities in the airspace, but is otherwise required. OVNs for
+  // constraints are required if and only if the USS managing this operational intent is performing the constraint processing role, which is indicated
+  // by whether the subscription associated with this operational intent triggers notifications for constraints.  The key does not need to contain the
+  // OVN for the operational intent being updated.
   repeated string key = 2;
 
-  // If an existing subscription is not specified in `subscription_id`, and the operational intent is in the Activated, Nonconforming, or Contingent state, then this field must be populated.  When this field is populated, an implicit subscription will be created and associated with this operational intent, and will generally be deleted automatically upon the deletion of this operational intent.
+  // If an existing subscription is not specified in `subscription_id`, and the operational intent is in the Activated, Nonconforming, or Contingent
+  // state, then this field must be populated.  When this field is populated, an implicit subscription will be created and associated with this
+  // operational intent, and will generally be deleted automatically upon the deletion of this operational intent.
   ImplicitSubscriptionParameters new_subscription = 3;
-  string state = 4;
+  string state                                    = 4;
 
-  // The ID of an existing subscription that the USS will use to keep the operator informed about updates to relevant airspace information. If this field is not provided when the operational intent is in the Activated, Nonconforming, or Contingent state, then the `new_subscription` field must be provided in order to provide notification capability for the operational intent.  The subscription specified by this ID must cover at least the area over which this operational intent is conducted, and it must provide notifications for operational intents.
+  // The ID of an existing subscription that the USS will use to keep the operator informed about updates to relevant airspace information. If this
+  // field is not provided when the operational intent is in the Activated, Nonconforming, or Contingent state, then the `new_subscription` field must
+  // be provided in order to provide notification capability for the operational intent.  The subscription specified by this ID must cover at least
+  // the area over which this operational intent is conducted, and it must provide notifications for operational intents.
   string subscription_id = 5;
-  string uss_base_url = 6;
+  string uss_base_url    = 6;
 }
 
 // Parameters for a request to create/update a subscription in the DSS.  At least one form of notifications must be requested.
 message PutSubscriptionParameters {
   // Spacetime extents of the volume to subscribe to.
-  // This subscription will automatically be deleted after its end time if it has not been refreshed by then. If end time is not specified, the value will be chosen automatically by the DSS. If start time is not specified, it will default to the time the request is processed. The end time may not be in the past.
-  // Note that some Entities triggering notifications may lie entirely outside the requested area.
+  // This subscription will automatically be deleted after its end time if it has not been refreshed by then. If end time is not specified, the value
+  // will be chosen automatically by the DSS. If start time is not specified, it will default to the time the request is processed. The end time may
+  // not be in the past. Note that some Entities triggering notifications may lie entirely outside the requested area.
   Volume4D extents = 1;
 
-  // If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true.
+  // If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger
+  // notifications.  The scope utm.constraint_processing is required to set this flag true.
   bool notify_for_constraints = 2;
 
-  // If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not trigger notifications.  The scope utm.strategic_coordination is required to set this flag true.
+  // If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not
+  // trigger notifications.  The scope utm.strategic_coordination is required to set this flag true.
   bool notify_for_operational_intents = 3;
-  string uss_base_url = 4;
+  string uss_base_url                 = 4;
 }
 
 // Response for a request to create or update a subscription.
@@ -537,7 +600,7 @@ message PutSubscriptionResponse {
 
   // Operational intents in or near the subscription area at the time of creation/update, if `notify_for_operational_intents` is true.
   repeated OperationalIntentReference operational_intent_references = 2;
-  Subscription subscription = 3;
+  Subscription subscription                                         = 3;
 }
 
 // Parameters for a request to find ConstraintReferences matching the provided criteria.
@@ -611,44 +674,50 @@ message SetUssAvailabilityStatusParameters {
   string old_version = 2;
 }
 
-// Subscriber to notify of a change in the airspace.  This is provided by the DSS to a client changing the airspace, and it is the responsibility of that client to send a notification to the specified USS according to the change made to the airspace.
+// Subscriber to notify of a change in the airspace.  This is provided by the DSS to a client changing the airspace, and it is the responsibility of
+// that client to send a notification to the specified USS according to the change made to the airspace.
 message SubscriberToNotify {
   // Subscription(s) prompting this notification.
   repeated SubscriptionState subscriptions = 1;
-  string uss_base_url = 2;
+  string uss_base_url                      = 2;
 }
 
 // Specification of a geographic area that a client is interested in on an ongoing basis (e.g., "planning area").
 message Subscription {
   // List of IDs for operational intents that are dependent on this subscription.
   repeated string dependent_operational_intents = 1;
-  string id = 2;
+  string id                                     = 2;
 
-  // True if this subscription was implicitly created by the DSS via the creation of an operational intent, and should therefore be deleted by the DSS when that operational intent is deleted.
+  // True if this subscription was implicitly created by the DSS via the creation of an operational intent, and should therefore be deleted by the DSS
+  // when that operational intent is deleted.
   bool implicit_subscription = 3;
-  int32 notification_index = 4;
+  int32 notification_index   = 4;
 
-  // If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true.
+  // If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger
+  // notifications.  The scope utm.constraint_processing is required to set this flag true.
   bool notify_for_constraints = 5;
 
-  // If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not trigger notifications.  The scope utm.strategic_coordination is required to set this flag true.
+  // If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not
+  // trigger notifications.  The scope utm.strategic_coordination is required to set this flag true.
   bool notify_for_operational_intents = 6;
 
   // If set, this subscription will not receive notifications involving airspace changes entirely after this time.
   Time time_end = 7;
 
   // If set, this subscription will not receive notifications involving airspace changes entirely before this time.
-  Time time_start = 8;
+  Time time_start     = 8;
   string uss_base_url = 9;
 
-  // Version of the subscription that the DSS changes every time a USS changes the subscription.  The DSS incrementing the notification_index does not constitute a change that triggers a new version.  A USS must specify this version when modifying an existing subscription to ensure consistency in read-modify-write operations and distributed systems.
+  // Version of the subscription that the DSS changes every time a USS changes the subscription.  The DSS incrementing the notification_index does not
+  // constitute a change that triggers a new version.  A USS must specify this version when modifying an existing subscription to ensure consistency
+  // in read-modify-write operations and distributed systems.
   string version = 10;
 }
 
 // State of subscription which is causing a notification to be sent.
 message SubscriptionState {
   int32 notification_index = 1;
-  string subscription_id = 2;
+  string subscription_id   = 2;
 }
 
 message Time {
@@ -660,10 +729,12 @@ message Time {
 
 // The set of log data fulfilling this standard's Logging requirements.
 message USSLogSet {
-  // For a USS that performs constraint management, associations of an authorized constraint provider with all constraints that transition to the valid state.
+  // For a USS that performs constraint management, associations of an authorized constraint provider with all constraints that transition to the
+  // valid state.
   repeated ConstraintProviderAssociation constraint_provider_associations = 1;
 
-  // Outgoing messages sent to other USSs and the DSS, and incoming messages received from other USSs, including instances where an expected response to a request is not received.
+  // Outgoing messages sent to other USSs and the DSS, and incoming messages received from other USSs, including instances where an expected response
+  // to a request is not received.
   repeated ExchangeRecord messages = 2;
 
   // For a USS performing conformance monitoring, all position data used for conformance monitoring that is ingested from the UA.
@@ -678,7 +749,8 @@ message USSLogSet {
   // Instances of operator notifications as specifically required within this standard.
   repeated UserNotificationRecord operator_notifications = 6;
 
-  // For a USS that manages operational intents, instances where an operational intent could not be planned or replanned due to conflicts with other operational intents or constraints.
+  // For a USS that manages operational intents, instances where an operational intent could not be planned or replanned due to conflicts with other
+  // operational intents or constraints.
   repeated PlanningRecord planning_attempts = 7;
 }
 
@@ -761,17 +833,18 @@ message UssAvailabilityStatusResponse {
 
 // Vehicle position, altitude, and velocity.
 message VehicleTelemetry {
-  Position position = 1;
+  Position position  = 1;
   Time time_measured = 2;
-  Velocity velocity = 3;
+  Velocity velocity  = 3;
 }
 
 message Velocity {
   // Ground speed in meters/second.
   float speed = 1;
 
-  // Direction of flight expressed as a "True North-based" ground track angle. This value is provided in degrees East of North with a minimum resolution of 1 degree. A value of 360 indicates invalid, no value, or unknown.
-  float track = 2;
+  // Direction of flight expressed as a "True North-based" ground track angle. This value is provided in degrees East of North with a minimum
+  // resolution of 1 degree. A value of 360 indicates invalid, no value, or unknown.
+  float track        = 2;
   string units_speed = 3;
 }
 
@@ -818,9 +891,10 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Create the specified subscription in the DSS.
-  // 
+  //
   // Create a subscription.
-  // Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
+  // Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced
+  // by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
   rpc CreateSubscription(CreateSubscriptionRequest) returns (PutSubscriptionResponse) {
     option (google.api.http) = {
       put: "/dss/v1/subscriptions/{subscriptionid}"
@@ -843,8 +917,9 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Remove the specified subscription from the DSS.
-  // 
-  // The standard requires each operational intent to have a subscription that cover the 4D volume of the operational intent.  If a USS attempts to delete a subscription upon which an operational intent depends, the deletion will be rejected by the DSS as a bad request.
+  //
+  // The standard requires each operational intent to have a subscription that cover the 4D volume of the operational intent.  If a USS attempts to
+  // delete a subscription upon which an operational intent depends, the deletion will be rejected by the DSS as a bad request.
   rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse) {
     option (google.api.http) = {
       delete: "/dss/v1/subscriptions/{subscriptionid}/{version}"
@@ -866,7 +941,7 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Retrieve the specified subscription from the DSS.
-  // 
+  //
   // Retrieve a specific subscription.
   rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
     option (google.api.http) = {
@@ -875,7 +950,7 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Get availability status of a USS.
-  // 
+  //
   // Get availability status of a USS.
   rpc GetUssAvailability(GetUssAvailabilityRequest) returns (UssAvailabilityStatusResponse) {
     option (google.api.http) = {
@@ -884,7 +959,7 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Report information about communication issues to a DSS.
-  // 
+  //
   // Report issues to a DSS. Data sent to this endpoint is archived.
   rpc MakeDssReport(MakeDssReportRequest) returns (ErrorReport) {
     option (google.api.http) = {
@@ -894,8 +969,10 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Query all constraint references in the specified area/volume from the DSS.
-  // 
-  // Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.  POST is used here instead of GET to ensure robust support for the use of a request body.
+  //
+  // Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for
+  // operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.
+  // POST is used here instead of GET to ensure robust support for the use of a request body.
   rpc QueryConstraintReferences(QueryConstraintReferencesRequest) returns (QueryConstraintReferencesResponse) {
     option (google.api.http) = {
       post: "/dss/v1/constraint_references/query"
@@ -904,8 +981,10 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Query all operational intent references in the specified area/volume/time from the DSS.
-  // 
-  // Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.  POST is used here instead of GET to ensure robust support for the use of a request body.
+  //
+  // Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for
+  // operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.
+  // POST is used here instead of GET to ensure robust support for the use of a request body.
   rpc QueryOperationalIntentReferences(QueryOperationalIntentReferencesRequest) returns (QueryOperationalIntentReferenceResponse) {
     option (google.api.http) = {
       post: "/dss/v1/operational_intent_references/query"
@@ -914,10 +993,13 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Query all subscriptions in the specified area/volume from the DSS.
-  // 
-  // Query subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-  // Note that this parameter is a JSON object (in the 'request-body'). Note that either or both of the 'altitude' and 'time' values may be omitted from this parameter.
-  // Only subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing subscriptions in an area.
+  //
+  // Query subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes
+  // to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry
+  // updates) apart from Entity information. Note that this parameter is a JSON object (in the 'request-body'). Note that either or both of the
+  // 'altitude' and 'time' values may be omitted from this parameter. Only subscriptions belonging to the caller are returned.  This endpoint would be
+  // used if a USS lost track of subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing
+  // subscriptions in an area.
   rpc QuerySubscriptions(QuerySubscriptionsRequest) returns (QuerySubscriptionsResponse) {
     option (google.api.http) = {
       post: "/dss/v1/subscriptions/query"
@@ -926,7 +1008,7 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Set availability status of a USS.
-  // 
+  //
   // Set availability status of a USS.
   rpc SetUssAvailability(SetUssAvailabilityRequest) returns (UssAvailabilityStatusResponse) {
     option (google.api.http) = {
@@ -952,10 +1034,13 @@ service UTMAPIUSSDSSAndUSSUSSService {
   }
 
   // Update the specified subscription in the DSS.
-  // 
+  //
   // Update a subscription.
-  // Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-  // The standard requires each operational intent to have a subscription that cover the 4D volume of the operational intent.  If a USS attempts to update a subscription upon which an operational intent depends, and this update would cause the operational intent to lose subscription coverage, the update will be rejected by the DSS as a bad request.
+  // Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced
+  // by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information. The standard
+  // requires each operational intent to have a subscription that cover the 4D volume of the operational intent.  If a USS attempts to update a
+  // subscription upon which an operational intent depends, and this update would cause the operational intent to lose subscription coverage, the
+  // update will be rejected by the DSS as a bad request.
   rpc UpdateSubscription(UpdateSubscriptionRequest) returns (PutSubscriptionResponse) {
     option (google.api.http) = {
       put: "/dss/v1/subscriptions/{subscriptionid}/{version}"

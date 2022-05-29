@@ -10,7 +10,7 @@ import datetime
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import rid
-from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE
+from monitoring.monitorlib.rid import SCOPE_READ, SCOPE_WRITE, ISA_PATH
 from monitoring.prober.infrastructure import register_resource_type
 from . import common
 
@@ -18,11 +18,11 @@ from . import common
 ISA_TYPE = register_resource_type(324, 'ISA')
 
 
-def test_ensure_clean_workspace(ids, session):
-  resp = session.get('/identification_service_areas/{}'.format(ids(ISA_TYPE)), scope=SCOPE_READ)
+def test_ensure_clean_workspace(ids, session_ridv1):
+  resp = session_ridv1.get('{}/{}'.format(ISA_PATH, ids(ISA_TYPE)), scope=SCOPE_READ)
   if resp.status_code == 200:
     version = resp.json()["service_area"]['version']
-    resp = session.delete('/identification_service_areas/{}/{}'.format(ids(ISA_TYPE), version), scope=SCOPE_WRITE)
+    resp = session_ridv1.delete('{}/{}/{}'.format(ISA_PATH, ids(ISA_TYPE), version), scope=SCOPE_WRITE)
     assert resp.status_code == 200, resp.content
   elif resp.status_code == 404:
     # As expected.
@@ -32,12 +32,12 @@ def test_ensure_clean_workspace(ids, session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_isa_huge_area(ids, session):
+def test_isa_huge_area(ids, session_ridv1):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = session.put(
-      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
+  resp = session_ridv1.put(
+      '{}/{}'.format(ISA_PATH, ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -57,12 +57,12 @@ def test_isa_huge_area(ids, session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_isa_empty_vertices(ids, session):
+def test_isa_empty_vertices(ids, session_ridv1):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = session.put(
-      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
+  resp = session_ridv1.put(
+      '{}/{}'.format(ISA_PATH, ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -82,12 +82,12 @@ def test_isa_empty_vertices(ids, session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_isa_missing_footprint(ids, session):
+def test_isa_missing_footprint(ids, session_ridv1):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = session.put(
-      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
+  resp = session_ridv1.put(
+      '{}/{}'.format(ISA_PATH, ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -104,12 +104,12 @@ def test_isa_missing_footprint(ids, session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_isa_missing_spatial_volume(ids, session):
+def test_isa_missing_spatial_volume(ids, session_ridv1):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = session.put(
-      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
+  resp = session_ridv1.put(
+      '{}/{}'.format(ISA_PATH, ids(ISA_TYPE)),
       json={
           'extents': {
               'time_start': time_start.strftime(rid.DATE_FORMAT),
@@ -122,9 +122,9 @@ def test_isa_missing_spatial_volume(ids, session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_isa_missing_extents(ids, session):
-  resp = session.put(
-      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
+def test_isa_missing_extents(ids, session_ridv1):
+  resp = session_ridv1.put(
+      '{}/{}'.format(ISA_PATH, ids(ISA_TYPE)),
       json={
           'flights_url': 'https://example.com/uss/flights',
       })
@@ -133,12 +133,12 @@ def test_isa_missing_extents(ids, session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_isa_start_time_in_past(ids, session):
+def test_isa_start_time_in_past(ids, session_ridv1):
   time_start = datetime.datetime.utcnow() - datetime.timedelta(minutes=10)
   time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = session.put(
-      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
+  resp = session_ridv1.put(
+      '{}/{}'.format(ISA_PATH, ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -158,12 +158,12 @@ def test_isa_start_time_in_past(ids, session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_isa_start_time_after_time_end(ids, session):
+def test_isa_start_time_after_time_end(ids, session_ridv1):
   time_start = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
   time_end = time_start - datetime.timedelta(minutes=5)
 
-  resp = session.put(
-      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
+  resp = session_ridv1.put(
+      '{}/{}'.format(ISA_PATH, ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {
@@ -183,12 +183,12 @@ def test_isa_start_time_after_time_end(ids, session):
 
 
 @default_scope(SCOPE_WRITE)
-def test_isa_not_on_earth(ids, session):
+def test_isa_not_on_earth(ids, session_ridv1):
   time_start = datetime.datetime.utcnow()
   time_end = time_start + datetime.timedelta(minutes=60)
 
-  resp = session.put(
-      '/identification_service_areas/{}'.format(ids(ISA_TYPE)),
+  resp = session_ridv1.put(
+      '{}/{}'.format(ISA_PATH, ids(ISA_TYPE)),
       json={
           'extents': {
               'spatial_volume': {

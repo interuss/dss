@@ -12,7 +12,7 @@ OPT_RID_AUTH = 'rid_auth'
 OPT_SCD_AUTH1 = 'scd_auth1'
 OPT_SCD_AUTH2 = 'scd_auth2'
 
-BASE_URL_RID = '/v1/dss'
+BASE_URL_RID = ''
 BASE_URL_SCD = '/dss/v1'
 BASE_URL_AUX = '/aux/v1'
 
@@ -116,12 +116,12 @@ def make_session_async(pytestconfig, endpoint_suffix: str, auth_option: Optional
 
 
 @pytest.fixture(scope='session')
-def session(pytestconfig) -> UTMClientSession:
+def session_ridv1(pytestconfig) -> UTMClientSession:
   return make_session(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
 
 
 @pytest.fixture(scope='session')
-def session_async(pytestconfig):
+def session_ridv1_async(pytestconfig):
   session = make_session_async(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
   yield session
   session.close()
@@ -203,7 +203,7 @@ def ids(pytestconfig, subscriber) -> Callable[[ResourceType], str]:
 
 
 @pytest.fixture(scope='function')
-def no_auth_session(pytestconfig) -> UTMClientSession:
+def no_auth_session_ridv1(pytestconfig) -> UTMClientSession:
   return make_session(pytestconfig, BASE_URL_RID)
 
 
