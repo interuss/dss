@@ -22,4 +22,5 @@ docker container run -it \
 	-v "$DIR_OUT":/resources/out \
 	interuss/adjust_openapi_yaml \
 	--input_yaml  "/resources/in/${1##*/}" \
-    --output_yaml "/resources/out/${2##*/}"
+  --output_yaml "/resources/out/${2##*/}" \
+  "${@:3}"

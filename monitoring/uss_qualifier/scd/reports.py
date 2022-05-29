@@ -51,15 +51,16 @@ class Issue(ImplicitDict):
 
     def __init__(self, **kwargs):
         super(Issue, self).__init__(**kwargs)
-        if 'timestamp' not in kwargs:
+        if "timestamp" not in kwargs:
             self.timestamp = datetime.datetime.utcnow().isoformat()
 
 
 class TestPhase(str, Enum):
     """Phase of a test"""
-    Initialization = 'Initialization'
-    Test = 'Test'
-    Cleanup = 'Cleanup'
+
+    Initialization = "Initialization"
+    Test = "Test"
+    Cleanup = "Cleanup"
 
 
 class TestStepReference(ImplicitDict):
@@ -104,12 +105,15 @@ class Findings(ImplicitDict):
         return list(filter(lambda issue: issue.severity.Critical, self.issues))
 
     def __repr__(self):
-        return '[{} issues in {} interactions]'.format(
-            len(self.issues), len(self.interactions))
+        return "[{} issues in {} interactions]".format(
+            len(self.issues), len(self.interactions)
+        )
+
 
 class TargetInformation(ImplicitDict):
     status: str
     version: str
+
 
 class Report(ImplicitDict):
     qualifier_version: str
@@ -119,6 +123,6 @@ class Report(ImplicitDict):
 
     def save(self):
         filepath = "./report_scd.json"
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(self, f)
         print("[SCD] Report saved to {}".format(filepath))

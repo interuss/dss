@@ -4,7 +4,7 @@ from monitoring.monitorlib.typing import ImplicitDict
 
 
 class Severity(str, Enum):
-    Critical = 'Critical'
+    Critical = "Critical"
     """The system does not function correctly on a basic level.
     
     Error is unrecoverable and left the system dirty preventing subsequent correct
@@ -12,7 +12,7 @@ class Severity(str, Enum):
     will conflict with another run with a different combination of targets.
     """
 
-    High = 'High'
+    High = "High"
     """The system may superficially function, but does not meet requirements.
     
     Error interrupts a test run but likely doesn't impact subsequent test runs.
@@ -20,13 +20,13 @@ class Severity(str, Enum):
     during teardown by the test driver.
     """
 
-    Medium = 'Medium'
+    Medium = "Medium"
     """The system functions, but does not meet requirements.
     
     Further test steps can likely be executed without impact.
     """
 
-    Low = 'Low'
+    Low = "Low"
     """The system behaves correctly, but could be improved.
     
     Further test steps can be executed without impact.
@@ -34,8 +34,8 @@ class Severity(str, Enum):
 
 
 class SubjectType(str, Enum):
-    InjectedFlight = 'InjectedFlight'
-    OperationalIntent = 'OperationalIntent'
+    InjectedFlight = "InjectedFlight"
+    OperationalIntent = "OperationalIntent"
 
 
 class IssueSubject(ImplicitDict):
