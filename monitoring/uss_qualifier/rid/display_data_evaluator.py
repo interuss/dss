@@ -16,48 +16,50 @@ from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlight
 
 
 class RIDSystemObserver(object):
-  def __init__(self, name: str, session: UTMClientSession):
-    self.session = session
-    self.name = name
+    def __init__(self, name: str, session: UTMClientSession):
+        self.session = session
+        self.name = name
 
-    def observe_system(
-        self, rect: s2sphere.LatLngRect
-    ) -> Tuple[Optional[observation_api.GetDisplayDataResponse], fetch.Query]:
-        initiated_at = datetime.datetime.utcnow()
-        resp = self.session.get(
-            "/display_data?view={},{},{},{}".format(
-                rect.lo().lat().degrees,
-                rect.lo().lng().degrees,
-                rect.hi().lat().degrees,
-                rect.hi().lng().degrees,
-            ),
-            scope=rid.SCOPE_READ,
-        )
-        try:
-            result = (
-                ImplicitDict.parse(resp.json(), observation_api.GetDisplayDataResponse)
-                if resp.status_code == 200
-                else None
+        def observe_system(
+            self, rect: s2sphere.LatLngRect
+        ) -> Tuple[Optional[observation_api.GetDisplayDataResponse], fetch.Query]:
+            initiated_at = datetime.datetime.utcnow()
+            resp = self.session.get(
+                "/display_data?view={},{},{},{}".format(
+                    rect.lo().lat().degrees,
+                    rect.lo().lng().degrees,
+                    rect.hi().lat().degrees,
+                    rect.hi().lng().degrees,
+                ),
+                scope=rid.SCOPE_READ,
             )
-        except ValueError as e:
-            print("Error parsing observation response: {}".format(e))
-            result = None
-        return (result, fetch.describe_query(resp, initiated_at))
+            try:
+                result = (
+                    ImplicitDict.parse(
+                        resp.json(), observation_api.GetDisplayDataResponse
+                    )
+                    if resp.status_code == 200
+                    else None
+                )
+            except ValueError as e:
+                print("Error parsing observation response: {}".format(e))
+                result = None
+            return (result, fetch.describe_query(resp, initiated_at))
 
-    def observe_flight_details(
-        self, flight_id: str
-    ) -> Tuple[Optional[observation_api.GetDetailsResponse], fetch.Query]:
-        initiated_at = datetime.datetime.utcnow()
-        resp = self.session.get("/display_data/{}".format(flight_id))
-        try:
-            result = (
-                ImplicitDict.parse(resp.json(), observation_api.GetDetailsResponse)
-                if resp.status_code == 200
-                else None
-            )
-        except ValueError:
-            result = None
-        return (result, fetch.describe_query(resp, initiated_at))
+        def observe_flight_details(
+            self, flight_id: str
+        ) -> Tuple[Optional[observation_api.GetDetailsResponse], fetch.Query]:
+            initiated_at = datetime.datetime.utcnow()
+            resp = self.session.get("/display_data/{}".format(flight_id))
+            try:
+                result = (
+                    ImplicitDict.parse(resp.json(), observation_api.GetDetailsResponse)
+                    if resp.status_code == 200
+                    else None
+                )
+            except ValueError:
+                result = None
+            return (result, fetch.describe_query(resp, initiated_at))
 
 
 def _get_query_rect(
