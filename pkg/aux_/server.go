@@ -6,7 +6,7 @@ import (
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	ridserver "github.com/interuss/dss/pkg/rid/server"
+	ridserver "github.com/interuss/dss/pkg/rid/server/v1"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/stacktrace"
 )
