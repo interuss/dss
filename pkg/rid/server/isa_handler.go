@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/interuss/dss/pkg/api/v1/ridpb"
+	ridpb "github.com/interuss/dss/pkg/api/v1/ridpbv1"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"

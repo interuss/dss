@@ -1,7 +1,7 @@
 package apiv1
 
 import (
-	ridpb "github.com/interuss/dss/pkg/api/v1/ridpb"
+	ridpb "github.com/interuss/dss/pkg/api/v1/ridpbv1"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/stacktrace"

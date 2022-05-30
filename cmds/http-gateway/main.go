@@ -16,7 +16,7 @@ import (
 
 	"cloud.google.com/go/profiler"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
-	"github.com/interuss/dss/pkg/api/v1/ridpb"
+	"github.com/interuss/dss/pkg/api/v1/ridpbv1"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/errors"
@@ -75,7 +75,7 @@ func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint str
 	}
 
 	logger.Info("Registering RID service")
-	if err := ridpb.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
+	if err := ridpbv1.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
 		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "context deadline exceeded") {
 			return stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to core-service for remote ID")
