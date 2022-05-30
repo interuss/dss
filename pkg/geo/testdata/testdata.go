@@ -1,7 +1,7 @@
 package testdata
 
 import (
-	"github.com/interuss/dss/pkg/api/v1/ridpb"
+	ridpb "github.com/interuss/dss/pkg/api/v1/ridpbv1"
 
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 )

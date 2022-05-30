@@ -16,7 +16,7 @@ import (
 
 	"cloud.google.com/go/profiler"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
-	"github.com/interuss/dss/pkg/api/v1/ridpb"
+	"github.com/interuss/dss/pkg/api/v1/ridpbv1"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
 	"github.com/interuss/dss/pkg/auth"
 	aux "github.com/interuss/dss/pkg/aux_"
@@ -284,7 +284,7 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 
 	logger.Info("build", zap.Any("description", build.Describe()))
 
-	ridpb.RegisterDiscoveryAndSynchronizationServiceServer(s, ridServerV1)
+	ridpbv1.RegisterDiscoveryAndSynchronizationServiceServer(s, ridServerV1)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
 	if *enableSCD {
 		logger.Info("config", zap.Any("scd", "enabled"))

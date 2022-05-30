@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package ridpb;
+package ridpbv1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
