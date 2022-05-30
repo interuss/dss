@@ -81,7 +81,7 @@ func (s *Server) CreateIdentificationServiceArea(
 
 	isa := &ridmodels.IdentificationServiceArea{
 		ID:     id,
-		URL:    params.GetUssBaseUrl() + "/uss/flights",
+		URL:    params.GetUssBaseUrl(),
 		Owner:  owner,
 		Writer: s.Locality,
 	}
@@ -147,7 +147,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 	isa := &ridmodels.IdentificationServiceArea{
 		ID:      dssmodels.ID(id),
-		URL:     params.UssBaseUrl + "/uss/flights",
+		URL:     params.UssBaseUrl,
 		Owner:   owner,
 		Version: version,
 		Writer:  s.Locality,

@@ -145,7 +145,7 @@ func (s *Server) CreateSubscription(
 	sub := &ridmodels.Subscription{
 		ID:     id,
 		Owner:  owner,
-		URL:    params.UssBaseUrl + "/uss/identification_service_areas",
+		URL:    params.UssBaseUrl,
 		Writer: s.Locality,
 	}
 
@@ -218,7 +218,7 @@ func (s *Server) UpdateSubscription(
 	sub := &ridmodels.Subscription{
 		ID:      id,
 		Owner:   owner,
-		URL:     params.UssBaseUrl + "/uss/identification_service_areas",
+		URL:     params.UssBaseUrl,
 		Version: version,
 		Writer:  s.Locality,
 	}

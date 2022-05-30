@@ -1,7 +1,6 @@
 package apiv2
 
 import (
-	"strings"
 	"time"
 
 	ridpb "github.com/interuss/dss/pkg/api/v2/ridpbv2"
@@ -188,7 +187,7 @@ func ToIdentificationServiceArea(i *ridmodels.IdentificationServiceArea) *ridpb.
 	result := &ridpb.IdentificationServiceArea{
 		Id:         i.ID.String(),
 		Owner:      i.Owner.String(),
-		UssBaseUrl: strings.TrimSuffix(strings.TrimSuffix(i.URL, "/v1/uss/flights"), "/uss/flights"),
+		UssBaseUrl: i.URL,
 		Version:    i.Version.String(),
 		TimeStart:  ToTime(i.StartTime),
 		TimeEnd:    ToTime(i.EndTime),
@@ -201,7 +200,7 @@ func ToIdentificationServiceArea(i *ridmodels.IdentificationServiceArea) *ridpb.
 // for API consumption.
 func ToSubscriberToNotify(s *ridmodels.Subscription) *ridpb.SubscriberToNotify {
 	return &ridpb.SubscriberToNotify{
-		Url: strings.TrimSuffix(strings.TrimSuffix(s.URL, "/v1/uss/identification_service_areas"), "/uss/identification_service_areas"),
+		Url: s.URL,
 		Subscriptions: []*ridpb.SubscriptionState{
 			{
 				NotificationIndex: int32(s.NotificationIndex),
@@ -217,7 +216,7 @@ func ToSubscription(s *ridmodels.Subscription) *ridpb.Subscription {
 	result := &ridpb.Subscription{
 		Id:                s.ID.String(),
 		Owner:             s.Owner.String(),
-		UssBaseUrl:        strings.TrimSuffix(strings.TrimSuffix(s.URL, "/v1/uss/identification_service_areas"), "/uss/identification_service_areas"),
+		UssBaseUrl:        s.URL,
 		NotificationIndex: int32(s.NotificationIndex),
 		Version:           s.Version.String(),
 		TimeStart:         ToTime(s.StartTime),
