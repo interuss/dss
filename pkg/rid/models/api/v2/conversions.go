@@ -77,11 +77,11 @@ func FromVolume4D(vol4 *ridpb.Volume4D) (*dssmodels.Volume4D, error) {
 func FromVolume3D(vol3 *ridpb.Volume3D) (*dssmodels.Volume3D, error) {
 	altitudeLo, err := FromAltitude(vol3.GetAltitudeLower())
 	if err != nil {
-		stacktrace.Propagate(err, "Error parsing lower altitude of Volume3D")
+		return nil, stacktrace.Propagate(err, "Error parsing lower altitude of Volume3D")
 	}
 	altitudeHi, err := FromAltitude(vol3.GetAltitudeUpper())
 	if err != nil {
-		stacktrace.Propagate(err, "Error parsing upper altitude of Volume3D")
+		return nil, stacktrace.Propagate(err, "Error parsing upper altitude of Volume3D")
 	}
 
 	polygon := vol3.GetOutlinePolygon()

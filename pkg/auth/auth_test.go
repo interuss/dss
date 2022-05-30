@@ -164,7 +164,7 @@ func TestMissingScopes(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-	    _, err := ac.validateKeyClaimedScopes(context.Background(), tc.info, tc.scopes)
+		_, err := ac.validateKeyClaimedScopes(context.Background(), tc.info, tc.scopes)
 		require.Equal(t, tc.matchesRequiredScopes, err == nil)
 	}
 }
