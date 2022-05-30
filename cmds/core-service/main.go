@@ -26,7 +26,7 @@ import (
 	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	application "github.com/interuss/dss/pkg/rid/application"
-	rid "github.com/interuss/dss/pkg/rid/server"
+	ridserverv1 "github.com/interuss/dss/pkg/rid/server/v1"
 	ridc "github.com/interuss/dss/pkg/rid/store/cockroach"
 	"github.com/interuss/dss/pkg/scd"
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
@@ -105,7 +105,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid.Server, error) {
+func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*ridserverv1.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = "rid"
 	ridCrdb, err := cockroach.Dial(ctx, connectParameters)
@@ -156,7 +156,7 @@ func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (
 	}
 	ridCron.Start()
 
-	return &rid.Server{
+	return &ridserverv1.Server{
 		App:        application.NewFromTransactor(ridStore, logger),
 		Timeout:    *timeout,
 		Locality:   locality,
@@ -211,9 +211,9 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	}
 
 	var (
-		ridServer *rid.Server
-		scdServer *scd.Server
-		auxServer = &aux.Server{}
+		ridServerV1 *ridserverv1.Server
+		scdServer   *scd.Server
+		auxServer   = &aux.Server{}
 	)
 
 	// Initialize remote ID
@@ -221,10 +221,10 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
-	ridServer = server
+	ridServerV1 = server
 
 	scopesValidators := auth.MergeOperationsAndScopesValidators(
-		ridServer.AuthScopes(), auxServer.AuthScopes(),
+		ridServerV1.AuthScopes(), auxServer.AuthScopes(),
 	)
 
 	// Initialize strategic conflict detection
@@ -232,7 +232,7 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	if *enableSCD {
 		server, err := createSCDServer(ctx, logger)
 		if err != nil {
-			ridServer.Cron.Stop()
+			ridServerV1.Cron.Stop()
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}
 		scdServer = server
@@ -284,7 +284,7 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 
 	logger.Info("build", zap.Any("description", build.Describe()))
 
-	ridpb.RegisterDiscoveryAndSynchronizationServiceServer(s, ridServer)
+	ridpb.RegisterDiscoveryAndSynchronizationServiceServer(s, ridServerV1)
 	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
 	if *enableSCD {
 		logger.Info("config", zap.Any("scd", "enabled"))
