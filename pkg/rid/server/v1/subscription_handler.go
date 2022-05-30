@@ -127,7 +127,7 @@ func (s *Server) CreateSubscription(
 	}
 	extents, err := apiv1.FromVolume4D(params.Extents)
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err))
 	}
 	id, err := dssmodels.IDFromString(req.Id)
 	if err != nil {
@@ -212,7 +212,7 @@ func (s *Server) UpdateSubscription(
 	}
 	extents, err := apiv1.FromVolume4D(params.Extents)
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D")
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err))
 	}
 
 	sub := &ridmodels.Subscription{

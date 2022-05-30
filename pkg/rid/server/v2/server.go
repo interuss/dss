@@ -15,7 +15,7 @@ var (
 		ServiceProvider auth.Scope
 		DisplayProvider auth.Scope
 	}{
-		ServiceProvider: "rid.server_provider",
+		ServiceProvider: "rid.service_provider",
 		DisplayProvider: "rid.display_provider",
 	}
 )

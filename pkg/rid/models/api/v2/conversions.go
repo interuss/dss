@@ -201,7 +201,7 @@ func ToIdentificationServiceArea(i *ridmodels.IdentificationServiceArea) *ridpb.
 // for API consumption.
 func ToSubscriberToNotify(s *ridmodels.Subscription) *ridpb.SubscriberToNotify {
 	return &ridpb.SubscriberToNotify{
-		Url: s.URL,
+		Url: strings.TrimSuffix(strings.TrimSuffix(s.URL, "/v1/uss/identification_service_areas"), "/uss/identification_service_areas"),
 		Subscriptions: []*ridpb.SubscriptionState{
 			{
 				NotificationIndex: int32(s.NotificationIndex),

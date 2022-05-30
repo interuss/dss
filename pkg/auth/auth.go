@@ -161,6 +161,10 @@ type KeyClaimedScopesValidator interface {
 	// ValidateKeyClaimedScopes returns an error if 'scopes' are not sufficient
 	// to authorize an operation, nil otherwise.
 	ValidateKeyClaimedScopes(ctx context.Context, scopes ScopeSet) error
+
+	// Expectation returns a string indicating the scopes expected to validate
+	// successfully.
+	Expectation() string
 }
 
 type allScopesRequiredValidator struct {
@@ -185,6 +189,26 @@ func (v *allScopesRequiredValidator) ValidateKeyClaimedScopes(ctx context.Contex
 	}
 
 	return nil
+}
+
+func scopeSetToString(scopes ScopeSet, separator string) string {
+	var stringScopes []string
+	for scope := range scopes {
+		stringScopes = append(stringScopes, scope.String())
+	}
+	return strings.Join(stringScopes, separator)
+}
+
+func scopesToString(scopes []Scope, separator string) string {
+	var stringScopes []string
+	for _, scope := range scopes {
+		stringScopes = append(stringScopes, scope.String())
+	}
+	return strings.Join(stringScopes, separator)
+}
+
+func (v *allScopesRequiredValidator) Expectation() string {
+	return scopesToString(v.scopes, " and ")
 }
 
 // RequireAllScopes returns a KeyClaimedScopesValidator instance ensuring that
@@ -214,6 +238,10 @@ func (v *anyScopesRequiredValidator) ValidateKeyClaimedScopes(ctx context.Contex
 	return &missingScopesError{
 		s: missing,
 	}
+}
+
+func (v *anyScopesRequiredValidator) Expectation() string {
+	return scopesToString(v.scopes, " or ")
 }
 
 // RequireAnyScope returns a KeyClaimedScopesValidator instance ensuring that
@@ -327,21 +355,28 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 			"Invalid access token audience: %v", keyClaims.Audience)
 	}
 
-	if err := a.validateKeyClaimedScopes(ctx, info, keyClaims.Scopes); err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Access token missing scopes")
+	expectation, err := a.validateKeyClaimedScopes(ctx, info, keyClaims.Scopes)
+	if err != nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Access token missing scopes; found %v while expecting %v", scopeSetToString(keyClaims.Scopes, ", "), expectation)
 	}
 
 	return handler(ContextWithOwner(ctx, models.Owner(keyClaims.Subject)), req)
 }
 
-// Matches keyClaimedScopes against the required scopes and returns true if
-// keyClaimedScopes contains at least one of the required scopes in a.
-func (a *Authorizer) validateKeyClaimedScopes(ctx context.Context, info *grpc.UnaryServerInfo, keyClaimedScopes ScopeSet) error {
+// Matches keyClaimedScopes against the required scopes and returns nil, nil if
+// keyClaimedScopes satisifies the authorizer, otherwise returns the expectation
+// and the error.
+func (a *Authorizer) validateKeyClaimedScopes(ctx context.Context, info *grpc.UnaryServerInfo, keyClaimedScopes ScopeSet) (string, error) {
 	if validator, known := a.scopesValidators[Operation(info.FullMethod)]; known {
-		return validator.ValidateKeyClaimedScopes(ctx, keyClaimedScopes)
+		err := validator.ValidateKeyClaimedScopes(ctx, keyClaimedScopes)
+		expectation := ""
+		if err != nil {
+			expectation = validator.Expectation()
+		}
+		return expectation, err
 	}
 
-	return nil
+	return "", nil
 }
 
 func getToken(ctx context.Context) (string, bool) {
