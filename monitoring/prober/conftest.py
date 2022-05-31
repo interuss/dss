@@ -228,6 +228,4 @@ def no_auth_session_ridv2(pytestconfig) -> UTMClientSession:
 @pytest.fixture(scope='session')
 def scd_api(pytestconfig) -> str:
   api = pytestconfig.getoption('scd_api_version')
-  if api is None:
-    api = scd.API_0_3_5
   return VersionString(api)

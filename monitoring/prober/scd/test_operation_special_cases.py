@@ -23,7 +23,7 @@ OP2_TYPE = register_resource_type(211, 'Operational intent 2')
 SUB_TYPE = register_resource_type(212, 'Subscription')
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_ensure_clean_workspace(ids, scd_api, scd_session):
   for op_id in map(ids, (OP1_TYPE, OP2_TYPE)):
       actions.delete_operation_if_exists(op_id, scd_session, scd_api)
@@ -32,24 +32,10 @@ def test_ensure_clean_workspace(ids, scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5)
-@default_scope(SCOPE_SC)
-def test_op_request_1_v5(ids, scd_api, scd_session):
-  with open('./scd/resources/op_request_1.json', 'r') as f:
-    req = json.load(f)
-  resp = scd_session.put('/operation_references/{}'.format(ids(OP1_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
-
-  resp = scd_session.delete('/operation_references/{}'.format(ids(OP1_TYPE)))
-  assert resp.status_code == 200, resp.content
-
-
-# Preconditions: None
-# Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_op_request_1_v15(ids, scd_api, scd_session):
-  with open('./scd/resources/op_request_1_v15.json', 'r') as f:
+def test_op_request_1(ids, scd_api, scd_session):
+  with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP1_TYPE)), json=req)
   assert resp.status_code == 200, resp.content
@@ -64,21 +50,10 @@ def test_op_request_1_v15(ids, scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5)
-@default_scope(SCOPE_SC)
-def test_op_request_2_v5(ids, scd_api, scd_session):
-  with open('./scd/resources/op_request_2.json', 'r') as f:
-    req = json.load(f)
-  resp = scd_session.put('/operation_references/{}'.format(ids(OP2_TYPE)), json=req)
-  assert resp.status_code == 400, resp.content
-
-
-# Preconditions: None
-# Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_op_request_2_v15(ids, scd_api, scd_session):
-  with open('./scd/resources/op_request_2_v15.json', 'r') as f:
+def test_op_request_2(ids, scd_api, scd_session):
+  with open('./scd/resources/op_request_2.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP2_TYPE)), json=req)
   assert resp.status_code == 400, resp.content
@@ -86,21 +61,10 @@ def test_op_request_2_v15(ids, scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5)
-@default_scope(SCOPE_SC)
-def test_op_query_degenerate_polygon_v5(scd_api, scd_session):
-  with open('./scd/resources/op_request_3.json', 'r') as f:
-    req = json.load(f)
-  resp = scd_session.post('/operation_references/query', json=req)
-  assert resp.status_code == 400, resp.content
-
-
-# Preconditions: None
-# Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_op_query_degenerate_polygon_v15(scd_api, scd_session):
-  with open('./scd/resources/op_request_3_v15.json', 'r') as f:
+def test_op_query_degenerate_polygon(scd_api, scd_session):
+  with open('./scd/resources/op_request_3.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operational_intent_references/query', json=req)
   assert resp.status_code == 400, resp.content
@@ -108,21 +72,10 @@ def test_op_query_degenerate_polygon_v15(scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5)
-@default_scope(SCOPE_SC)
-def test_op_query_not_area_too_large_v5(scd_api, scd_session):
-  with open('./scd/resources/op_request_4.json', 'r') as f:
-    req = json.load(f)
-  resp = scd_session.post('/operation_references/query', json=req)
-  assert resp.status_code == 200, resp.content
-
-
-# Preconditions: None
-# Mutations: None
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_op_query_not_area_too_large_v15(scd_api, scd_session):
-  with open('./scd/resources/op_request_4_v15.json', 'r') as f:
+def test_op_query_not_area_too_large(scd_api, scd_session):
+  with open('./scd/resources/op_request_4.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.post('/operational_intent_references/query', json=req)
   assert resp.status_code == 200, resp.content
@@ -130,9 +83,9 @@ def test_op_query_not_area_too_large_v15(scd_api, scd_session):
 
 # ID conversion bug exposure
 # Reproduces issue #314
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_id_conversion_bug_v5(ids, scd_api, scd_session):
+def test_id_conversion_bug(ids, scd_api, scd_session):
   sub_uuid = ids(SUB_TYPE)
   time_ref = datetime.datetime.utcnow() + datetime.timedelta(days=1)
   time_start = datetime.datetime(time_ref.year, time_ref.month, time_ref.day, 1, 30)
@@ -162,24 +115,19 @@ def test_id_conversion_bug_v5(ids, scd_api, scd_session):
   assert resp.status_code == 200, resp.content
 
   req["extents"]["time_start"]["value"] = (time_start + datetime.timedelta(hours=1)).isoformat() + "Z"
-  if scd_api == scd.API_0_3_5:
-    req["old_version"] = 1
-    resp = scd_session.put('/subscriptions/{}'.format(sub_uuid), json=req)
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     resp = scd_session.put('/subscriptions/{}/{}'.format(sub_uuid, resp.json()['subscription']['version']), json=req)
   else:
     raise NotImplementedError('Unsupported API version {}'.format(scd_api))
   assert resp.status_code == 200, resp.content
 
-  if scd_api == scd.API_0_3_5:
-    resp = scd_session.delete('/subscriptions/{}'.format(sub_uuid))
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     resp = scd_session.delete('/subscriptions/{}/{}'.format(sub_uuid, resp.json()['subscription']['version']))
   else:
     raise NotImplementedError('Unsupported API version {}'.format(scd_api))
   assert resp.status_code == 200, resp.content
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_final_cleanup(ids, scd_api, scd_session):
     test_ensure_clean_workspace(ids, scd_api, scd_session)
