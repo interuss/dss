@@ -21,3 +21,9 @@ categories:
 
 * [ASTM strategic coordination](astm-strategic-coordination)
 * [U-space](u-space)
+
+## Coverage
+
+The following references analyze the tests coverage of the uss_qualifier automated testing suite:
+
+* [U-space: UAS Flight Authorisation](https://docs.google.com/spreadsheets/d/1IJkNS21Ps-2411LGhXBqWF7inQnPVeEA23dWjXpCR-M/edit?usp=sharing)
