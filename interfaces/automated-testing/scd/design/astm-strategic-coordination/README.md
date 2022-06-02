@@ -7,3 +7,4 @@ authorisations.
 ## Tests
 
 * [Nominal planning](nominal-planning/README.md)
+* [Nominal planning with different priorities](nominal-planning-priority/README.md)
