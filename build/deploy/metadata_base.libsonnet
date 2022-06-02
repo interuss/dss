@@ -54,5 +54,6 @@
     whitelist_ip_ranges: error 'must specify whitelisted CIDR IP Blocks, or empty list for fully public access',
     retention: '15d',
     storage_size: '100Gi',
+    custom_rules: [],  // An array of Prometheus recording rules, each of which is an object with "record" and "expr" properties.
   },
 }
