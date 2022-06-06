@@ -5,6 +5,7 @@ import os
 import pathlib
 import requests
 import uuid
+# from . import google_auth
 
 from . import config, resources, tasks
 from . import forms, messages
@@ -31,7 +32,10 @@ from werkzeug.utils import secure_filename
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.uss_qualifier.webapp import webapp
 
-client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "client_secret.json")
+# webapp.register_blueprint(google_auth.app)
+
+client_secrets_file = os.path.join(
+    pathlib.Path(__file__).parent, "client_secret.json")
 
 
 try:
@@ -54,6 +58,8 @@ def info():
 
 
 def login_required(function):
+    print('in login_required.')
+
     @wraps(function)
     def decorated_function(*args, **kwargs):
         if flow and "google_id" not in session:
@@ -61,7 +67,7 @@ def login_required(function):
         elif "google_id" not in session:
             session["google_id"] = "localuser"
             session["name"] = "Local User"
-            session["state"] = "localuser"
+            # session["state"] = "localuser"
         return function(*args, **kwargs)
 
     return decorated_function
@@ -70,29 +76,47 @@ def login_required(function):
 @webapp.route("/login")
 def login():
     # make sure session is empty
+    print('in login.')
     session.clear()
     if not flow:
         return redirect(url_for(".info"))
+
+    auth_header = flask.request.headers.get('Authorization')
+    id_token = auth_header.split('Bearer ')[1]
+    print('id_token.............: ', id_token)
+    print('auth_header: ', auth_header)
+
     authorization_url, state = flow.authorization_url()
     session["state"] = state
+    session['google_id'] = id_token
     return redirect(authorization_url)
 
 
 @webapp.route("/login_callback")
 def login_callback():
-    if not flow:
-        return redirect(url_for(".info"))
+    # if not flow:
+    #     return redirect(url_for(".info"))
+    print('in login_callback.')
     flow.fetch_token(authorization_response=request.url)
 
+    code = request.args.get("code")
     credentials = flow.credentials
     request_session = requests.session()
     cached_session = cachecontrol.CacheControl(request_session)
-    token_request = google.auth.transport.requests.Request(session=cached_session)
+    token_request = google.auth.transport.requests.Request(
+        session=cached_session)
 
     id_info = id_token.verify_oauth2_token(
         id_token=credentials._id_token, request=token_request
     )
 
+    flask.session['credentials'] = {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes}
     session["google_id"] = id_info.get("sub")
     session["name"] = id_info.get("name")
     return redirect("/")
@@ -100,6 +124,7 @@ def login_callback():
 
 @webapp.route("/logout")
 def logout():
+    print('in logout.')
     session.clear()
     return render_template("logout.html")
 
@@ -160,15 +185,16 @@ def _process_kml_files_task(kml_file, output_path):
         )
         job_id = job.get_id()
         # Adding an empty job id in the queue to mark a latest kml job.
-        resources.redis_conn.hset(resources.REDIS_KEY_UPLOADED_KMLS, job_id, "")
+        resources.redis_conn.hset(
+            resources.REDIS_KEY_UPLOADED_KMLS, job_id, "")
         return job_id
 
 
 def _get_user_local_config():
     """Get user's last saved specs."""
     # TODO: replace hardcoded user_id with session user.
-    # user_id = session['google_id']
-    user_id = "localuser"
+    user_id = session['google_id']
+    # user_id = "localuser"
     user_config_file = (
         f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/user_config.json"
     )
@@ -185,8 +211,8 @@ def _get_user_local_config():
 def _update_user_local_config(auth_spec, config_spec):
     """Saves user's local config in  profile specific folder."""
     # TODO: replace hardcoded user_id with session user.
-    # user_id = session['google_id']
-    user_id = "localuser"
+    user_id = session['google_id']
+    # user_id = "localuser"
     user_config_file = (
         f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/user_config.json"
     )
@@ -198,7 +224,8 @@ def _update_user_local_config(auth_spec, config_spec):
 @login_required
 def tests():
     files = []
-    user_id = "localuser"
+    # user_id = "localuser"
+    user_id = session['google_id']
     running_job = _get_running_jobs()
     flight_record_data = get_flight_records()
 
@@ -224,7 +251,8 @@ def tests():
 @login_required
 def tests_submit():
     form = forms.TestRunsForm(request.form)
-    user_id = "localuser"
+    user_id = session['google_id']
+    # user_id = "localuser"
     form_validation_status = _validate_config_form(form, user_id)
     if form_validation_status["err_message"]:
         return render_template(
@@ -264,9 +292,11 @@ def _validate_config_form(form, user_id):
                 existing_flights = get_flight_records()
                 if existing_flights and existing_flights["flight_records"]:
                     err_message = "%s\n%s" % (
-                        messages.FLIGHT_RECORD_NOT_FOUND.format(filename=filename),
+                        messages.FLIGHT_RECORD_NOT_FOUND.format(
+                            filename=filename),
                         messages.FLIGHT_RECORDS_EXISTING.format(
-                            flight_records="\n".join(existing_flights["flight_records"])
+                            flight_records="\n".join(
+                                existing_flights["flight_records"])
                         ),
                     )
                 else:
@@ -283,7 +313,8 @@ def _validate_config_form(form, user_id):
 @login_required
 def run_tests(form_validation_status=None):
     running_job = _get_running_jobs()
-    user_id = "localuser"
+    user_id = session['google_id']
+    # user_id = "localuser"
     if running_job:
         return {
             "task": {
@@ -339,17 +370,22 @@ def _get_test_runs_logs(user_id):
 
 
 @webapp.route("/api/test_runs", methods=["GET"])
+@login_required
 def get_tests_history():
-    user_id = "localuser"
+    user_id = session['google_id']
+    # user_id = "localuser"
     test_runs_logs = _get_test_runs_logs(user_id)
     return {"test_runs": test_runs_logs}
 
 
 @webapp.route("/api/test_runs/<string:test_id>", methods=["GET"])
+@login_required
 def get_test_runs_details(test_id):
-    user_id = "localuser"
+    user_id = session['google_id']
+    # user_id = "localuser"
     test_runs_logs = _get_test_runs_logs(user_id)
-    result_set = list(filter(lambda p: p["test_run_id"] == test_id, test_runs_logs))
+    result_set = list(
+        filter(lambda p: p["test_run_id"] == test_id, test_runs_logs))
     if result_set:
         return {"test_run": result_set[0]}
     abort(400, f"test_run_id: {test_id} does not exist.")
@@ -383,8 +419,10 @@ def get_task_status(task_id):
 
 
 def _reload_latest_kmls_from_redis():
-    latest_kmls = resources.redis_conn.hgetall(resources.REDIS_KEY_UPLOADED_KMLS)
-    user_id = "localuser"
+    latest_kmls = resources.redis_conn.hgetall(
+        resources.REDIS_KEY_UPLOADED_KMLS)
+    user_id = session.get('google_id', 'localuser')
+    # user_id = "localuser"
     if latest_kmls:
         task_status = {}
         for task_id, val in latest_kmls.items():
@@ -403,11 +441,13 @@ def _reload_latest_kmls_from_redis():
                                 json_file_version = _get_latest_file_version(
                                     filepath, filename
                                 )
-                                _write_to_file(json_file_version, json.dumps(content))
+                                _write_to_file(json_file_version,
+                                               json.dumps(content))
                                 _, generated_flight_file = os.path.split(
                                     json_file_version
                                 )
-                                generated_flight_records.append(generated_flight_file)
+                                generated_flight_records.append(
+                                    generated_flight_file)
                         task_status[
                             "generated_flight_records"
                         ] = generated_flight_records
@@ -440,7 +480,8 @@ def _reload_latest_test_run_outcomes_from_redis():
     latest_test_runs_report = resources.redis_conn.hgetall(
         resources.REDIS_KEY_TEST_RUNS
     )
-    user_id = "localuser"
+    user_id = session.get('google_id', 'localuser')
+    # user_id = "localuser"
     temp_logs = resources.redis_conn.hgetall(resources.REDIS_KEY_TEMP_LOGS)
     temp_logs = resources.decode_redis(temp_logs)
 
@@ -470,6 +511,7 @@ def _reload_latest_test_run_outcomes_from_redis():
             json.dumps(temp_logs[filename]),
         )
         resources.redis_conn.delete(resources.REDIS_KEY_TEST_RUN_LOGS)
+        resources.redis_conn.delete(resources.REDIS_KEY_TEMP_LOGS)
 
 
 def _get_latest_file_version(filepath, filename):
@@ -495,7 +537,8 @@ def get_flight_records():
     if not os.path.isdir(folder_path):
         data["message"] = "Flight records not available."
     else:
-        flight_records = [f for f in os.listdir(folder_path) if f.endswith(".json")]
+        flight_records = [f for f in os.listdir(
+            folder_path) if f.endswith(".json")]
         data["flight_records"] = flight_records
     return data
 
@@ -538,7 +581,8 @@ def get_result(job_id):
                 del job_result["is_flight_records_from_kml"]
                 for filename, content in job_result.items():
                     filepath = f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records"
-                    json_file_version = _get_latest_file_version(filepath, filename)
+                    json_file_version = _get_latest_file_version(
+                        filepath, filename)
                     _write_to_file(json_file_version, json.dumps(content))
                 response_object.update({"is_flight_records_from_kml": True})
             else:
@@ -601,12 +645,13 @@ def upload_kmls():
 
 
 @webapp.route("/api/kml_import_jobs", methods=["POST"])
+@login_required
 def upload_kml_flight_records():
     files = request.files.getlist("files") or request.files.getlist("files[]")
     if not files:
         abort(400, "KML files not provided.")
-    # user_id = session['google_id']
-    user_id = "localuser"
+    user_id = session['google_id']
+    # user_id = "localuser"
     flight_records_path = (
         f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records"
     )
@@ -656,12 +701,14 @@ def upload_flights_records():
 
 
 @webapp.route("/api/flight_records", methods=["POST"])
+@login_required
 def upload_json_flight_records():
     files = request.files.getlist("files") or request.files.getlist("files[]")
     if not files:
         abort(400, "Flight records not provided.")
-    # TODO:user_id = session['google_id']
-    user_id = "localuser"
+    # TODO:
+    user_id = session['google_id']
+    # user_id = "localuser"
     flight_records_path = (
         f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records"
     )
@@ -674,7 +721,8 @@ def upload_json_flight_records():
         if file:
             filename = secure_filename(file.filename)
             if filename.endswith(".json"):
-                json_file_path = _get_latest_file_version(flight_records_path, filename)
+                json_file_path = _get_latest_file_version(
+                    flight_records_path, filename)
                 file.save(json_file_path)
                 uploaded_files.append(json_file_path)
             else:
@@ -702,25 +750,25 @@ def status():
     return "Mock Host Service Provider ok {}".format(versioning.get_code_version())
 
 
-@webapp.errorhandler(Exception)
-def handle_exception(e):
-    if isinstance(e, HTTPException):
-        return e
-    elif isinstance(e, auth_validation.InvalidScopeError):
-        return (
-            flask.jsonify(
-                {
-                    "message": "Invalid scope; expected one of {%s}, but received only {%s}"
-                    % (" ".join(e.permitted_scopes), " ".join(e.provided_scopes))
-                }
-            ),
-            403,
-        )
-    elif isinstance(e, auth_validation.InvalidAccessTokenError):
-        return flask.jsonify({"message": e.message}), 401
-    elif isinstance(e, auth_validation.ConfigurationError):
-        return flask.jsonify({"message": e.message}), 500
-    elif isinstance(e, ValueError):
-        return flask.jsonify({"message": str(e)}), 400
+# @webapp.errorhandler(Exception)
+# def handle_exception(e):
+#     if isinstance(e, HTTPException):
+#         return e
+#     elif isinstance(e, auth_validation.InvalidScopeError):
+#         return (
+#             flask.jsonify(
+#                 {
+#                     "message": "Invalid scope; expected one of {%s}, but received only {%s}"
+#                     % (" ".join(e.permitted_scopes), " ".join(e.provided_scopes))
+#                 }
+#             ),
+#             403,
+#         )
+#     elif isinstance(e, auth_validation.InvalidAccessTokenError):
+#         return flask.jsonify({"message": e.message}), 401
+#     elif isinstance(e, auth_validation.ConfigurationError):
+#         return flask.jsonify({"message": e.message}), 500
+#     elif isinstance(e, ValueError):
+#         return flask.jsonify({"message": str(e)}), 400
 
-    return flask.jsonify({"message": str(e)}), 500
+#     return flask.jsonify({"message": str(e)}), 500
