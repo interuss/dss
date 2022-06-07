@@ -1,11 +1,11 @@
 import flask
+import functools
 import json
 import logging
 import os
 import pathlib
 import requests
 import uuid
-# from . import google_auth
 
 from . import config, resources, tasks
 from . import forms, messages
@@ -28,17 +28,19 @@ from functools import wraps
 from pip._vendor import cachecontrol
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
+from google.auth.transport import requests as auth_requests
 
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.uss_qualifier.webapp import webapp
 
-# webapp.register_blueprint(google_auth.app)
+
+_SERVICE_ACCOUNT_TOKEN_HEADER = 'access_token'
 
 client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent, "client_secret.json")
 
 
-try:
+def _create_oauth_flow(state=None):
     flow = Flow.from_client_secrets_file(
         client_secrets_file=client_secrets_file,
         scopes=[
@@ -46,86 +48,138 @@ try:
             "https://www.googleapis.com/auth/userinfo.email",
             "openid",
         ],
-        redirect_uri=f"{webapp.config.get(config.KEY_USS_QUALIFIER_HOST_URL)}/login_callback",
-    )
-except FileNotFoundError:
-    flow = ""
+        state=state)
+    flow.redirect_uri = f"{webapp.config.get(config.KEY_USS_QUALIFIER_HOST_URL)}/login_callback"
+    return flow
 
 
-@webapp.route("/info")
-def info():
-    return render_template("info.html")
+def is_service_account():
+    """Returns True if the logged in user is a service account."""
+    return flask.session.get('is_service_account', False)
 
 
-def login_required(function):
-    print('in login_required.')
+def login_required(fn=None, *, origin_path=None):
+    """Decorator that ensures the user is authenticated with a browser session.
 
-    @wraps(function)
-    def decorated_function(*args, **kwargs):
-        if flow and "google_id" not in session:
-            return redirect(url_for("login", next=request.url))
-        elif "google_id" not in session:
-            session["google_id"] = "localuser"
-            session["name"] = "Local User"
-            # session["state"] = "localuser"
-        return function(*args, **kwargs)
+    Can be used with or without arguments.
 
-    return decorated_function
+    Args:
+      fn: function to wrap.
+      oneof: a list of backend.models.Permissions. The logged-in user must have at
+        least one of these permissions. If None, no permission check is done.
+
+    Returns:
+      Wrapped function.
+    """
+
+    def _outer(fn):
+        """Decorator."""
+
+        @functools.wraps(fn)
+        def _inner(*args, **kwargs):
+            """Decorator."""
+
+            user_email = None
+
+            if credentials_from_session() is not None:
+                logging.debug('User email from session cookie: %s',
+                              flask.session['email'])
+                return fn(*args, **kwargs)
+            else:
+                access_token = flask.request.headers.get('access_token')
+                if access_token:
+                    return _handle_service_account_auth(access_token, origin_path)
+
+            logging.info('User is not authenticated - starting OAuth flow')
+            flow = _create_oauth_flow(state=origin_path)
+            authorization_url, state = flow.authorization_url(
+                login_hint=user_email)
+            flask.session['state'] = state or origin_path
+            return flask.redirect(authorization_url)
+
+        return _inner
+
+    if fn is not None:
+        return _outer(fn)
+    else:
+        return _outer
 
 
-@webapp.route("/login")
-def login():
-    # make sure session is empty
-    print('in login.')
-    session.clear()
-    if not flow:
-        return redirect(url_for(".info"))
+def _handle_service_account_auth(token, origin_path=None):
+    """Login handler for service accounts."""
 
-    auth_header = flask.request.headers.get('Authorization')
-    id_token = auth_header.split('Bearer ')[1]
-    print('id_token.............: ', id_token)
-    print('auth_header: ', auth_header)
+    if _SERVICE_ACCOUNT_TOKEN_HEADER not in flask.request.headers:
+        return 'Credential error', 403  # Deliberately vauge error message.
 
-    authorization_url, state = flow.authorization_url()
-    session["state"] = state
-    session['google_id'] = id_token
-    return redirect(authorization_url)
+    creds = google.oauth2.credentials.Credentials(token)
+    sess = google.auth.transport.requests.AuthorizedSession(creds)
+    resp = sess.get(
+        f'https://oauth2.googleapis.com/tokeninfo?access_token={token}')
+    try:
+        # TODO: Still need to handle in a better way
+        resp.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        return e, 403
+
+    # Populate the session cookie.
+    userinfo = resp.json()
+    flask.session.clear()
+    flask.session.permanent = True
+    flask.session['user_id'] = userinfo['sub']
+    flask.session['email'] = userinfo['email']
+    flask.session['access_token'] = token
+    flask.session['is_service_account'] = True
+
+    logging.info('Successful sign in for service account %s',
+                 userinfo['email'])
+
+    return flask.redirect(origin_path or "/")
 
 
 @webapp.route("/login_callback")
 def login_callback():
-    # if not flow:
-    #     return redirect(url_for(".info"))
-    print('in login_callback.')
-    flow.fetch_token(authorization_response=request.url)
+    """Handles the oauth2 callback."""
 
-    code = request.args.get("code")
-    credentials = flow.credentials
-    request_session = requests.session()
-    cached_session = cachecontrol.CacheControl(request_session)
-    token_request = google.auth.transport.requests.Request(
-        session=cached_session)
+    flow = _create_oauth_flow(state=flask.session['state'])
+    flow.fetch_token(authorization_response=flask.request.url)
 
-    id_info = id_token.verify_oauth2_token(
-        id_token=credentials._id_token, request=token_request
-    )
+    if not flow.credentials:
+        logging.warning('OAuth callback without valid credentials')
+        return 'No credentials', 403
 
-    flask.session['credentials'] = {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes}
-    session["google_id"] = id_info.get("sub")
-    session["name"] = id_info.get("name")
-    return redirect("/")
+    id_info = google.oauth2.id_token.verify_oauth2_token(
+        flow.credentials.id_token, google.auth.transport.requests.Request(),
+        flow.client_config['client_id'])
+
+    # Store the important bits in the signed session cookie.
+    flask.session.clear()  # Remove the CSRF token as it's not needed any more.
+    flask.session.permanent = True
+    flask.session['user_id'] = id_info['sub']
+    flask.session['user_id'] = id_info['sub']
+    flask.session['email'] = id_info['email']
+    flask.session['name'] = id_info['name']
+    flask.session['access_token'] = flow.credentials.token
+
+    logging.info('Successful sign in for email %s', id_info['email'])
+
+    return redirect(request.args.get('next') or "/")
+
+
+def credentials_from_session():
+    """Returns the user's credentials from the session cookie."""
+    if 'access_token' in flask.session and flask.session['access_token']:
+        return google.oauth2.credentials.Credentials(flask.session['access_token'])
+    return None
 
 
 @webapp.route("/logout")
 def logout():
-    print('in logout.')
-    session.clear()
+    """Revokes the access_token, clears the session cookie and redirects to /."""
+
+    logging.info('Logging out user %s', flask.session.get('email'))
+
+    if 'access_token' in flask.session and flask.session['access_token']:
+        flask.session.clear()
     return render_template("logout.html")
 
 
@@ -193,8 +247,7 @@ def _process_kml_files_task(kml_file, output_path):
 def _get_user_local_config():
     """Get user's last saved specs."""
     # TODO: replace hardcoded user_id with session user.
-    user_id = session['google_id']
-    # user_id = "localuser"
+    user_id = session['user_id']
     user_config_file = (
         f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/user_config.json"
     )
@@ -211,8 +264,7 @@ def _get_user_local_config():
 def _update_user_local_config(auth_spec, config_spec):
     """Saves user's local config in  profile specific folder."""
     # TODO: replace hardcoded user_id with session user.
-    user_id = session['google_id']
-    # user_id = "localuser"
+    user_id = session['user_id']
     user_config_file = (
         f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/user_config.json"
     )
@@ -220,12 +272,16 @@ def _update_user_local_config(auth_spec, config_spec):
     _write_to_file(user_config_file, json.dumps(user_config))
 
 
+@webapp.route("/info")
+def info():
+    return render_template("info.html")
+
+
 @webapp.route("/", methods=["GET"])
 @login_required
 def tests():
     files = []
-    # user_id = "localuser"
-    user_id = session['google_id']
+    user_id = session['user_id']
     running_job = _get_running_jobs()
     flight_record_data = get_flight_records()
 
@@ -251,8 +307,7 @@ def tests():
 @login_required
 def tests_submit():
     form = forms.TestRunsForm(request.form)
-    user_id = session['google_id']
-    # user_id = "localuser"
+    user_id = session['user_id']
     form_validation_status = _validate_config_form(form, user_id)
     if form_validation_status["err_message"]:
         return render_template(
@@ -310,11 +365,10 @@ def _validate_config_form(form, user_id):
 
 
 @webapp.route("/api/test_runs", methods=["POST"])
-@login_required
+@login_required(origin_path='/api/test_runs')
 def run_tests(form_validation_status=None):
     running_job = _get_running_jobs()
-    user_id = session['google_id']
-    # user_id = "localuser"
+    user_id = session['user_id']
     if running_job:
         return {
             "task": {
@@ -370,19 +424,17 @@ def _get_test_runs_logs(user_id):
 
 
 @webapp.route("/api/test_runs", methods=["GET"])
-@login_required
+@login_required(origin_path='/api/test_runs')
 def get_tests_history():
-    user_id = session['google_id']
-    # user_id = "localuser"
+    user_id = session['user_id']
     test_runs_logs = _get_test_runs_logs(user_id)
     return {"test_runs": test_runs_logs}
 
 
 @webapp.route("/api/test_runs/<string:test_id>", methods=["GET"])
-@login_required
+@login_required(origin_path='/api/test_runs')
 def get_test_runs_details(test_id):
-    user_id = session['google_id']
-    # user_id = "localuser"
+    user_id = session['user_id']
     test_runs_logs = _get_test_runs_logs(user_id)
     result_set = list(
         filter(lambda p: p["test_run_id"] == test_id, test_runs_logs))
@@ -421,8 +473,7 @@ def get_task_status(task_id):
 def _reload_latest_kmls_from_redis():
     latest_kmls = resources.redis_conn.hgetall(
         resources.REDIS_KEY_UPLOADED_KMLS)
-    user_id = session.get('google_id', 'localuser')
-    # user_id = "localuser"
+    user_id = session.get('user_id', 'localuser')
     if latest_kmls:
         task_status = {}
         for task_id, val in latest_kmls.items():
@@ -480,8 +531,7 @@ def _reload_latest_test_run_outcomes_from_redis():
     latest_test_runs_report = resources.redis_conn.hgetall(
         resources.REDIS_KEY_TEST_RUNS
     )
-    user_id = session.get('google_id', 'localuser')
-    # user_id = "localuser"
+    user_id = session.get('user_id', 'localuser')
     temp_logs = resources.redis_conn.hgetall(resources.REDIS_KEY_TEMP_LOGS)
     temp_logs = resources.decode_redis(temp_logs)
 
@@ -532,7 +582,7 @@ def _get_latest_file_version(filepath, filename):
 
 def get_flight_records():
     data = {"flight_records": [], "message": ""}
-    user_id = session["google_id"]
+    user_id = session["user_id"]
     folder_path = f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records"
     if not os.path.isdir(folder_path):
         data["message"] = "Flight records not available."
@@ -575,7 +625,7 @@ def get_result(job_id):
         tasks.remove_rq_job(job_id)
         now = datetime.now()
         if task_result:
-            user_id = session["google_id"]
+            user_id = session["user_id"]
             job_result = json.loads(task_result)
             if job_result.get("is_flight_records_from_kml"):
                 del job_result["is_flight_records_from_kml"]
@@ -598,7 +648,7 @@ def get_result(job_id):
 
 @webapp.route("/report", methods=["POST"])
 def get_report():
-    user_id = session["google_id"]
+    user_id = session["user_id"]
     output_path = f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests"
     try:
         output_files = os.listdir(output_path)
@@ -622,7 +672,7 @@ def get_report():
 
 @webapp.route("/result_download/<string:filename>", methods=["POST", "GET"])
 def download_test(filename):
-    user_id = session["google_id"]
+    user_id = session["user_id"]
     filepath = f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/tests/{filename}"
     content = ""
     with open(filepath) as f:
@@ -645,13 +695,12 @@ def upload_kmls():
 
 
 @webapp.route("/api/kml_import_jobs", methods=["POST"])
-@login_required
+@login_required(origin_path="/api/kml_import_jobs")
 def upload_kml_flight_records():
     files = request.files.getlist("files") or request.files.getlist("files[]")
     if not files:
         abort(400, "KML files not provided.")
-    user_id = session['google_id']
-    # user_id = "localuser"
+    user_id = session['user_id']
     flight_records_path = (
         f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records"
     )
@@ -701,14 +750,13 @@ def upload_flights_records():
 
 
 @webapp.route("/api/flight_records", methods=["POST"])
-@login_required
+@login_required(origin_path="/api/flight_records")
 def upload_json_flight_records():
     files = request.files.getlist("files") or request.files.getlist("files[]")
     if not files:
         abort(400, "Flight records not provided.")
     # TODO:
-    user_id = session['google_id']
-    # user_id = "localuser"
+    user_id = session['user_id']
     flight_records_path = (
         f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records"
     )
@@ -736,7 +784,7 @@ def delete_file():
     data = json.loads(request.get_data())
     filename = data.get("filename")
     if filename:
-        user_id = session["google_id"]
+        user_id = session["user_id"]
         file = f"{webapp.config.get(config.KEY_FILE_PATH)}/{user_id}/flight_records/{filename}"
         if os.path.exists(file):
             os.remove(file)
@@ -750,25 +798,25 @@ def status():
     return "Mock Host Service Provider ok {}".format(versioning.get_code_version())
 
 
-# @webapp.errorhandler(Exception)
-# def handle_exception(e):
-#     if isinstance(e, HTTPException):
-#         return e
-#     elif isinstance(e, auth_validation.InvalidScopeError):
-#         return (
-#             flask.jsonify(
-#                 {
-#                     "message": "Invalid scope; expected one of {%s}, but received only {%s}"
-#                     % (" ".join(e.permitted_scopes), " ".join(e.provided_scopes))
-#                 }
-#             ),
-#             403,
-#         )
-#     elif isinstance(e, auth_validation.InvalidAccessTokenError):
-#         return flask.jsonify({"message": e.message}), 401
-#     elif isinstance(e, auth_validation.ConfigurationError):
-#         return flask.jsonify({"message": e.message}), 500
-#     elif isinstance(e, ValueError):
-#         return flask.jsonify({"message": str(e)}), 400
+@webapp.errorhandler(Exception)
+def handle_exception(e):
+    if isinstance(e, HTTPException):
+        return e
+    elif isinstance(e, auth_validation.InvalidScopeError):
+        return (
+            flask.jsonify(
+                {
+                    "message": "Invalid scope; expected one of {%s}, but received only {%s}"
+                    % (" ".join(e.permitted_scopes), " ".join(e.provided_scopes))
+                }
+            ),
+            403,
+        )
+    elif isinstance(e, auth_validation.InvalidAccessTokenError):
+        return flask.jsonify({"message": e.message}), 401
+    elif isinstance(e, auth_validation.ConfigurationError):
+        return flask.jsonify({"message": e.message}), 500
+    elif isinstance(e, ValueError):
+        return flask.jsonify({"message": str(e)}), 400
 
-#     return flask.jsonify({"message": str(e)}), 500
+    return flask.jsonify({"message": str(e)}), 500
