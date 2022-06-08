@@ -187,7 +187,7 @@ def credentials_from_session():
 
 @webapp.route("/logout")
 def logout():
-    """Revokes the access_token, clears the session cookie and redirects to /."""
+    """Clears the session cookie."""
 
     logging.info('Logging out user %s', flask.session.get('email'))
 
