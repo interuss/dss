@@ -1,5 +1,4 @@
 import flask
-import functools
 import json
 import logging
 import os
@@ -25,10 +24,8 @@ from flask import (
     flash,
 )
 from functools import wraps
-from pip._vendor import cachecontrol
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
-from google.auth.transport import requests as auth_requests
 
 from monitoring.monitorlib import versioning, auth_validation
 from monitoring.uss_qualifier.webapp import webapp
@@ -41,15 +38,18 @@ client_secrets_file = os.path.join(
 
 
 def _create_oauth_flow(state=None):
-    flow = Flow.from_client_secrets_file(
-        client_secrets_file=client_secrets_file,
-        scopes=[
-            "https://www.googleapis.com/auth/userinfo.profile",
-            "https://www.googleapis.com/auth/userinfo.email",
-            "openid",
-        ],
-        state=state)
-    flow.redirect_uri = f"{webapp.config.get(config.KEY_USS_QUALIFIER_HOST_URL)}/login_callback"
+    try:
+        flow = Flow.from_client_secrets_file(
+            client_secrets_file=client_secrets_file,
+            scopes=[
+                "https://www.googleapis.com/auth/userinfo.profile",
+                "https://www.googleapis.com/auth/userinfo.email",
+                "openid",
+            ],
+            state=state)
+        flow.redirect_uri = f"{webapp.config.get(config.KEY_USS_QUALIFIER_HOST_URL)}/login_callback"
+    except FileNotFoundError:
+        flow = ""
     return flow
 
 
@@ -75,7 +75,7 @@ def login_required(fn=None, *, origin_path=None):
     def _outer(fn):
         """Decorator."""
 
-        @functools.wraps(fn)
+        @wraps(fn)
         def _inner(*args, **kwargs):
             """Decorator."""
 
@@ -92,10 +92,17 @@ def login_required(fn=None, *, origin_path=None):
 
             logging.info('User is not authenticated - starting OAuth flow')
             flow = _create_oauth_flow(state=origin_path)
-            authorization_url, state = flow.authorization_url(
-                login_hint=user_email)
-            flask.session['state'] = state or origin_path
-            return flask.redirect(authorization_url)
+            if flow:
+                authorization_url, state = flow.authorization_url(
+                    login_hint=user_email)
+                flask.session['state'] = state or origin_path
+                return flask.redirect(authorization_url)
+            elif "user_id" not in session:
+                session["user_id"] = "localuser"
+                session["name"] = "Local User"
+                session["state"] = "localuser"
+                session["access_token"] = "localuser"
+            return fn(*args, **kwargs)
 
         return _inner
 
@@ -141,28 +148,34 @@ def login_callback():
     """Handles the oauth2 callback."""
 
     flow = _create_oauth_flow(state=flask.session['state'])
-    flow.fetch_token(authorization_response=flask.request.url)
+    if flow:
+        flow.fetch_token(authorization_response=flask.request.url)
 
-    if not flow.credentials:
-        logging.warning('OAuth callback without valid credentials')
-        return 'No credentials', 403
+        if not flow.credentials:
+            logging.warning('OAuth callback without valid credentials')
+            return 'No credentials', 403
 
-    id_info = google.oauth2.id_token.verify_oauth2_token(
-        flow.credentials.id_token, google.auth.transport.requests.Request(),
-        flow.client_config['client_id'])
+        id_info = google.oauth2.id_token.verify_oauth2_token(
+            flow.credentials.id_token, google.auth.transport.requests.Request(),
+            flow.client_config['client_id'])
 
-    # Store the important bits in the signed session cookie.
-    flask.session.clear()  # Remove the CSRF token as it's not needed any more.
-    flask.session.permanent = True
-    flask.session['user_id'] = id_info['sub']
-    flask.session['user_id'] = id_info['sub']
-    flask.session['email'] = id_info['email']
-    flask.session['name'] = id_info['name']
-    flask.session['access_token'] = flow.credentials.token
+        # Store the important bits in the signed session cookie.
+        # Remove the CSRF token as it's not needed any more.
+        flask.session.clear()
+        flask.session.permanent = True
+        flask.session['user_id'] = id_info['sub']
+        flask.session['email'] = id_info['email']
+        flask.session['name'] = id_info['name']
+        flask.session['access_token'] = flow.credentials.token
 
-    logging.info('Successful sign in for email %s', id_info['email'])
-
-    return redirect(request.args.get('next') or "/")
+        logging.info('Successful sign in for email %s', id_info['email'])
+        return redirect(request.args.get('next') or "/")
+    else:
+        session["user_id"] = "localuser"
+        session["name"] = "Local User"
+        session["state"] = "localuser"
+        session["access_token"] = "localuser"
+        return redirect(url_for(".tests"))
 
 
 def credentials_from_session():
