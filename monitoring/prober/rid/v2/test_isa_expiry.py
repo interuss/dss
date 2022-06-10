@@ -14,7 +14,6 @@ ISA_TYPE = register_resource_type(347, 'ISA')
 
 
 def test_ensure_clean_workspace_v2(ids, session_ridv2):
-  print('In test_ensure_clean_workspace, scope = {}'.format(SCOPE_SP))
   resp = session_ridv2.get('{}/{}'.format(ISA_PATH, ids(ISA_TYPE)), scope=SCOPE_SP)
   if resp.status_code == 200:
     version = resp.json()['service_area']['version']

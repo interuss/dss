@@ -86,6 +86,9 @@ func FromVolume3D(vol3 *ridpb.Volume3D) (*dssmodels.Volume3D, error) {
 
 	polygon := vol3.GetOutlinePolygon()
 	if polygon != nil {
+		if vol3.GetOutlineCircle() != nil {
+			return nil, stacktrace.NewError("Only one of outline_circle or outline_polygon may be specified")
+		}
 		footprint := FromPolygon(polygon)
 
 		result := &dssmodels.Volume3D{

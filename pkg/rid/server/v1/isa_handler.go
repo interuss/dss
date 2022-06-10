@@ -230,9 +230,9 @@ func (s *Server) SearchIdentificationServiceAreas(
 	)
 
 	if et := req.GetEarliestTime(); et != nil {
-		ts := et.AsTime()
 		err := et.CheckValid()
 		if err == nil {
+			ts := et.AsTime()
 			earliest = &ts
 		} else {
 			return nil, stacktrace.Propagate(err, "Unable to convert earliest timestamp to ptype")
@@ -240,9 +240,9 @@ func (s *Server) SearchIdentificationServiceAreas(
 	}
 
 	if lt := req.GetLatestTime(); lt != nil {
-		ts := lt.AsTime()
 		err := lt.CheckValid()
 		if err == nil {
+			ts := lt.AsTime()
 			latest = &ts
 		} else {
 			return nil, stacktrace.Propagate(err, "Unable to convert latest timestamp to ptype")
