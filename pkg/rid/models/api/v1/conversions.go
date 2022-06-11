@@ -23,20 +23,20 @@ func FromVolume4D(vol4 *ridpb.Volume4D) (*dssmodels.Volume4D, error) {
 	}
 
 	if startTime := vol4.GetTimeStart(); startTime != nil {
-		ts := startTime.AsTime()
 		err := startTime.CheckValid()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error converting start time from proto")
 		}
+		ts := startTime.AsTime()
 		result.StartTime = &ts
 	}
 
 	if endTime := vol4.GetTimeEnd(); endTime != nil {
-		ts := endTime.AsTime()
 		err := endTime.CheckValid()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error converting end time from proto")
 		}
+		ts := endTime.AsTime()
 		result.EndTime = &ts
 	}
 

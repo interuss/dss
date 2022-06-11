@@ -9,10 +9,12 @@ import pytest
 
 
 OPT_RID_AUTH = 'rid_auth'
+OPT_RID_V2_AUTH = 'rid_v2_auth'
 OPT_SCD_AUTH1 = 'scd_auth1'
 OPT_SCD_AUTH2 = 'scd_auth2'
 
 BASE_URL_RID = ''
+BASE_URL_RID_V2 = '/rid/v2'
 BASE_URL_SCD = '/dss/v1'
 BASE_URL_AUX = '/aux/v1'
 
@@ -37,9 +39,15 @@ def pytest_addoption(parser):
 
   parser.addoption(
     '--rid-auth',
-    help='Auth spec (see Authorization section of README.md) for performing remote ID actions in the DSS',
+    help='Auth spec (see Authorization section of README.md) for performing remote ID v1 actions in the DSS',
     metavar='SPEC',
     dest='rid_auth')
+
+  parser.addoption(
+    '--rid-v2-auth',
+    help='Auth spec (see Authorization section of README.md) for performing remote ID v2 actions in the DSS',
+    metavar='SPEC',
+    dest='rid_v2_auth')
 
   parser.addoption(
     '--scd-auth1',
@@ -118,6 +126,11 @@ def make_session_async(pytestconfig, endpoint_suffix: str, auth_option: Optional
 @pytest.fixture(scope='session')
 def session_ridv1(pytestconfig) -> UTMClientSession:
   return make_session(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
+
+
+@pytest.fixture(scope='session')
+def session_ridv2(pytestconfig) -> UTMClientSession:
+    return make_session(pytestconfig, BASE_URL_RID_V2, OPT_RID_V2_AUTH)
 
 
 @pytest.fixture(scope='session')
@@ -205,6 +218,11 @@ def ids(pytestconfig, subscriber) -> Callable[[ResourceType], str]:
 @pytest.fixture(scope='function')
 def no_auth_session_ridv1(pytestconfig) -> UTMClientSession:
   return make_session(pytestconfig, BASE_URL_RID)
+
+
+@pytest.fixture(scope='function')
+def no_auth_session_ridv2(pytestconfig) -> UTMClientSession:
+    return make_session(pytestconfig, BASE_URL_RID_V2)
 
 
 @pytest.fixture(scope='session')
