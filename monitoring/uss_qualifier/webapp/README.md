@@ -13,11 +13,11 @@ This project will create the following environment:
 
 -   uss-host Container: A flask application which accepts KML files or flight states' json files as input, collect auth and config spec from the user and allow user to execute USS Qualifier test. Once task finishes successfully, report file becomes available to download from the UI.
 
--   mock-rid and mock-scdsc containers: These are the USS mock containers brought up to handle RID and SCD specific user configurations' test runs.
+-   mock-riddp, mock-rdisp and mock-scdsc containers: These are the USS mock containers brought up to handle RID and SCD specific user configurations' test runs.
 
-This application accepts Auth2 credentials for user-specific login. The process to authenticate using Auth2 is described (here)[/LOGIN.md]. If Auth2 credentials are not provided application uses `Local User` session by default.
+This application accepts Auth2 credentials for user-specific login. The process to authenticate using Auth2 is described [here](LOGIN.md). If Auth2 credentials are not provided application uses `Local User` session by default.
 
--   Additionally, you need to bring up [rid mock instance](/monitoring/uss_qualifier/rid/mock/run_locally.sh) to produce a mock RID system to use with uss_qualifier. The instructions to bring up the rid mock instance can be found [here](/monitoring/uss_qualifier/mock/README.md).
+The application provides [API endpoints](../../../interfaces/uss_qualifier/uss_qualifier.yaml) which are consumable by other applications. The thirdparty application should be configured with OAuth2 and client credentials. The process to enable OAuth2 for Postman is described [here](OAUTH2_CONFIG_POSTMAN.md)
 
 ### Input Files
 
