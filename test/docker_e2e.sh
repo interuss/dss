@@ -9,43 +9,43 @@ cat /dev/null > "${RESULTFILE}"
 
 OS=$(uname)
 if [[ $OS == "Darwin" ]]; then
-	# OSX uses BSD readlink
-	BASEDIR="$(dirname "$0")/.."
+    # OSX uses BSD readlink
+    BASEDIR="$(dirname "$0")/.."
 else
-	BASEDIR=$(readlink -e "$(dirname "$0")/..")
+    BASEDIR=$(readlink -e "$(dirname "$0")/..")
 fi
 
 echo "e2e base directory is ${BASEDIR}"
 cd "${BASEDIR}"
 
 function gather_logs() {
-	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
-	docker logs core-service-for-testing 2> core-service-for-testing.log
+    docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
+    docker logs core-service-for-testing 2> core-service-for-testing.log
 }
 
 function cleanup() {
-	# ----------- clean up -----------
-	echo "Stopping dummy oauth container"
-	docker rm -f dummy-oauth-for-testing &> /dev/null || true
-
-	echo "Stopping http gateway container"
-	docker kill -f http-gateway-for-testing &> /dev/null || true
-
-	echo "Stopping core-service container"
-	docker kill -f core-service-for-testing &> /dev/null || true
-
-	echo "Stopping crdb docker"
-	docker rm -f dss-crdb-for-debugging &> /dev/null || true
+    # ----------- clean up -----------
+    echo "Stopping dummy oauth container"
+    docker rm -f dummy-oauth-for-testing &> /dev/null || true
+    
+    echo "Stopping http gateway container"
+    docker kill -f http-gateway-for-testing &> /dev/null || true
+    
+    echo "Stopping core-service container"
+    docker kill -f core-service-for-testing &> /dev/null || true
+    
+    echo "Stopping crdb docker"
+    docker rm -f dss-crdb-for-debugging &> /dev/null || true
 }
 
 function on_exit() {
-	gather_logs || true
-	cleanup
+    gather_logs || true
+    cleanup
 }
 
 function on_sigint() {
-	cleanup
-	exit
+    cleanup
+    exit
 }
 
 trap on_exit   EXIT
@@ -62,32 +62,32 @@ docker rm -f dss-crdb-for-debugging &> /dev/null || echo "No CRDB to clean up"
 
 echo "Starting cockroachdb with admin port on :8080"
 docker run -d --rm --name dss-crdb-for-debugging \
-	-p 26257:26257 \
-	-p 8080:8080 \
-	cockroachdb/cockroach:v21.2.7 start-single-node \
-	--insecure > /dev/null
+-p 26257:26257 \
+-p 8080:8080 \
+cockroachdb/cockroach:v21.2.7 start-single-node \
+--insecure > /dev/null
 
 sleep 1
 echo "Bootstrapping RID Database tables"
 docker run --rm --name rid-db-manager \
-	--link dss-crdb-for-debugging:crdb \
-	-v "$(pwd)/build/deploy/db_schemas/rid:/db-schemas/rid" \
-	local-interuss-dss-image \
-	/usr/bin/db-manager \
-	--schemas_dir db-schemas/rid \
-	--db_version "latest" \
-	--cockroach_host crdb
+--link dss-crdb-for-debugging:crdb \
+-v "$(pwd)/build/deploy/db_schemas/rid:/db-schemas/rid" \
+local-interuss-dss-image \
+/usr/bin/db-manager \
+--schemas_dir db-schemas/rid \
+--db_version "latest" \
+--cockroach_host crdb
 
 sleep 1
 echo "Bootstrapping SCD Database tables"
 docker run --rm --name scd-db-manager \
-	--link dss-crdb-for-debugging:crdb \
-	-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
-	local-interuss-dss-image \
-	/usr/bin/db-manager \
-	--schemas_dir db-schemas/scd \
-	--db_version "latest" \
-	--cockroach_host crdb
+--link dss-crdb-for-debugging:crdb \
+-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
+local-interuss-dss-image \
+/usr/bin/db-manager \
+--schemas_dir db-schemas/scd \
+--db_version "latest" \
+--cockroach_host crdb
 
 sleep 1
 echo " ------------ CORE SERVICE ---------------- "
@@ -96,18 +96,18 @@ docker rm -f core-service-for-testing &> /dev/null || echo "No core service to c
 
 echo "Starting core service on :8081"
 docker run -d --name core-service-for-testing \
-	--link dss-crdb-for-debugging:crdb \
-	-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
-	local-interuss-dss-image \
-	core-service \
-	--cockroach_host crdb \
-	-public_key_files /app/test.crt \
-	-reflect_api \
-	-log_format console \
-	-dump_requests \
-	-accepted_jwt_audiences local-gateway \
-	-enable_scd	\
-	-enable_http
+--link dss-crdb-for-debugging:crdb \
+-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
+local-interuss-dss-image \
+core-service \
+--cockroach_host crdb \
+-public_key_files /app/test.crt \
+-reflect_api \
+-log_format console \
+-dump_requests \
+-accepted_jwt_audiences local-gateway \
+-enable_scd	\
+-enable_http
 
 sleep 1
 echo " ------------- HTTP GATEWAY -------------- "
@@ -116,13 +116,13 @@ docker rm -f http-gateway-for-testing &> /dev/null || echo "No http gateway to c
 
 echo "Starting http-gateway on :8082"
 docker run -d --name http-gateway-for-testing -p 8082:8082 \
-	--link core-service-for-testing:grpc \
-	local-interuss-dss-image \
-	http-gateway \
-	-core-service grpc:8081 \
-	-addr :8082 \
-	-trace-requests \
-	-enable_scd
+--link core-service-for-testing:grpc \
+local-interuss-dss-image \
+http-gateway \
+-core-service grpc:8081 \
+-addr :8082 \
+-trace-requests \
+-enable_scd
 
 echo " -------------- DUMMY OAUTH -------------- "
 echo "Building dummy-oauth server container"
@@ -133,36 +133,37 @@ docker rm -f dummy-oauth-for-testing &> /dev/null || echo "No dummy oauth to cle
 
 echo "Starting mock oauth server on :8085"
 docker run -d --name dummy-oauth-for-testing -p 8085:8085 \
-	-v "$(pwd)/build/test-certs/auth2.key:/app/test.key" \
-	local-dummy-oauth \
-	-private_key_file /app/test.key
+-v "$(pwd)/build/test-certs/auth2.key:/app/test.key" \
+local-dummy-oauth \
+-private_key_file /app/test.key
 
 sleep 1
 echo " -------------- PYTEST -------------- "
 echo "Building Integration Test container"
-docker build -q --rm -f monitoring/prober/Dockerfile monitoring -t e2e-test
+docker build -q --rm -f monitoring/Dockerfile monitoring -t e2e-test
 
 echo "Finally Begin Testing"
 if ! docker run --link dummy-oauth-for-testing:oauth \
-	--link http-gateway-for-testing:local-gateway \
-	-v "${RESULTFILE}:/app/test_result" \
-	e2e-test \
-	"${1:-.}" \
-	-rsx \
-	--junitxml=/app/test_result \
-	--dss-endpoint http://local-gateway:8082 \
-	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
-	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
-	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
-	--scd-api-version 1.0.0; then
-
-  if [ "$CI" == "true" ]; then
-    echo "=== END OF TEST RESULTS ==="
-    echo "Dumping core-service logs"
-    docker logs core-service-for-testing
-    echo "Dumping http-gateway logs"
-    docker logs http-gateway-for-testing
-  fi
+--link http-gateway-for-testing:local-gateway \
+-v "${RESULTFILE}:/app/test_result" \
+-v "$(pwd):/app" \
+-w /app/monitoring/prober \
+e2e-test \
+pytest /app/monitoring/prober \
+--dss-endpoint http://local-gateway:8082 \
+--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
+--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
+--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
+--scd-api-version 1.0.0	\
+--junitxml=/app/test_result; then
+    
+    if [ "$CI" == "true" ]; then
+        echo "=== END OF TEST RESULTS ==="
+        echo "Dumping core-service logs"
+        docker logs core-service-for-testing
+        echo "Dumping http-gateway logs"
+        docker logs http-gateway-for-testing
+    fi
 fi
 
 echo "Cleaning up http-gateway container"
