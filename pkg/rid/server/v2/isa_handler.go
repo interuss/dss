@@ -1,17 +1,17 @@
-package v1
+package server
 
 import (
 	"context"
 	"time"
 
-	ridpb "github.com/interuss/dss/pkg/api/v1/ridpbv1"
+	ridpb "github.com/interuss/dss/pkg/api/v2/ridpbv2"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	geoerr "github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	apiv1 "github.com/interuss/dss/pkg/rid/models/api/v1"
+	apiv2 "github.com/interuss/dss/pkg/rid/models/api/v2"
 	"github.com/interuss/stacktrace"
 	"github.com/pkg/errors"
 )
@@ -36,7 +36,7 @@ func (s *Server) GetIdentificationServiceArea(
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", req.GetId())
 	}
 	return &ridpb.GetIdentificationServiceAreaResponse{
-		ServiceArea: apiv1.ToIdentificationServiceArea(isa),
+		ServiceArea: apiv2.ToIdentificationServiceArea(isa),
 	}, nil
 }
 
@@ -57,13 +57,13 @@ func (s *Server) CreateIdentificationServiceArea(
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
 	// TODO: put the validation logic in the models layer
-	if params.FlightsUrl == "" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required flightsURL")
+	if params.UssBaseUrl == "" {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required USS base URL")
 	}
 	if params.Extents == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
-	extents, err := apiv1.FromVolume4D(params.Extents)
+	extents, err := apiv2.FromVolume4D(params.Extents)
 	if err != nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err))
 	}
@@ -73,15 +73,15 @@ func (s *Server) CreateIdentificationServiceArea(
 	}
 
 	if !s.EnableHTTP {
-		err = ridmodels.ValidateURL(params.GetFlightsUrl())
+		err = ridmodels.ValidateURL(params.GetUssBaseUrl())
 		if err != nil {
-			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Flight URL")
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
 		}
 	}
 
 	isa := &ridmodels.IdentificationServiceArea{
 		ID:     id,
-		URL:    params.GetFlightsUrl(),
+		URL:    params.GetUssBaseUrl(),
 		Owner:  owner,
 		Writer: s.Locality,
 	}
@@ -95,11 +95,11 @@ func (s *Server) CreateIdentificationServiceArea(
 		return nil, stacktrace.Propagate(err, "Could not insert ISA")
 	}
 
-	pbISA := apiv1.ToIdentificationServiceArea(insertedISA)
+	pbISA := apiv2.ToIdentificationServiceArea(insertedISA)
 
 	pbSubscribers := []*ridpb.SubscriberToNotify{}
 	for _, subscriber := range subscribers {
-		pbSubscribers = append(pbSubscribers, apiv1.ToSubscriberToNotify(subscriber))
+		pbSubscribers = append(pbSubscribers, apiv2.ToSubscriberToNotify(subscriber))
 	}
 
 	return &ridpb.PutIdentificationServiceAreaResponse{
@@ -130,13 +130,13 @@ func (s *Server) UpdateIdentificationServiceArea(
 	if params == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
 	}
-	if params.FlightsUrl == "" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required flightsURL")
+	if params.UssBaseUrl == "" {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required USS base URL")
 	}
 	if params.Extents == nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
 	}
-	extents, err := apiv1.FromVolume4D(params.Extents)
+	extents, err := apiv2.FromVolume4D(params.Extents)
 	if err != nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err))
 	}
@@ -147,7 +147,7 @@ func (s *Server) UpdateIdentificationServiceArea(
 
 	isa := &ridmodels.IdentificationServiceArea{
 		ID:      dssmodels.ID(id),
-		URL:     params.FlightsUrl,
+		URL:     params.UssBaseUrl,
 		Owner:   owner,
 		Version: version,
 		Writer:  s.Locality,
@@ -162,11 +162,11 @@ func (s *Server) UpdateIdentificationServiceArea(
 		return nil, stacktrace.Propagate(err, "Could not update ISA")
 	}
 
-	pbISA := apiv1.ToIdentificationServiceArea(insertedISA)
+	pbISA := apiv2.ToIdentificationServiceArea(insertedISA)
 
 	pbSubscribers := []*ridpb.SubscriberToNotify{}
 	for _, subscriber := range subscribers {
-		pbSubscribers = append(pbSubscribers, apiv1.ToSubscriberToNotify(subscriber))
+		pbSubscribers = append(pbSubscribers, apiv2.ToSubscriberToNotify(subscriber))
 	}
 
 	return &ridpb.PutIdentificationServiceAreaResponse{
@@ -199,10 +199,10 @@ func (s *Server) DeleteIdentificationServiceArea(
 		return nil, stacktrace.Propagate(err, "Could not delete ISA")
 	}
 
-	p := apiv1.ToIdentificationServiceArea(isa)
+	p := apiv2.ToIdentificationServiceArea(isa)
 	sp := make([]*ridpb.SubscriberToNotify, len(subscribers))
 	for i := range subscribers {
-		sp[i] = apiv1.ToSubscriberToNotify(subscribers[i])
+		sp[i] = apiv2.ToSubscriberToNotify(subscribers[i])
 	}
 
 	return &ridpb.DeleteIdentificationServiceAreaResponse{
@@ -230,9 +230,9 @@ func (s *Server) SearchIdentificationServiceAreas(
 	)
 
 	if et := req.GetEarliestTime(); et != nil {
+		ts := et.AsTime()
 		err := et.CheckValid()
 		if err == nil {
-			ts := et.AsTime()
 			earliest = &ts
 		} else {
 			return nil, stacktrace.Propagate(err, "Unable to convert earliest timestamp to ptype")
@@ -240,9 +240,9 @@ func (s *Server) SearchIdentificationServiceAreas(
 	}
 
 	if lt := req.GetLatestTime(); lt != nil {
+		ts := lt.AsTime()
 		err := lt.CheckValid()
 		if err == nil {
-			ts := lt.AsTime()
 			latest = &ts
 		} else {
 			return nil, stacktrace.Propagate(err, "Unable to convert latest timestamp to ptype")
@@ -258,7 +258,7 @@ func (s *Server) SearchIdentificationServiceAreas(
 
 	areas := make([]*ridpb.IdentificationServiceArea, len(isas))
 	for i := range isas {
-		areas[i] = apiv1.ToIdentificationServiceArea(isas[i])
+		areas[i] = apiv2.ToIdentificationServiceArea(isas[i])
 	}
 
 	return &ridpb.SearchIdentificationServiceAreasResponse{
