@@ -34,7 +34,7 @@ When building new monitoring tools, we recommend using Docker containers as a wa
 #### Interoperability Test
 
 - Another monitoring tool with a different binary from prober is the [interoperability](monitoring/interoperability/README.md) test suite. For the moment, ignore [clients.py](monitoring/interoperability/clients.py); that file is obsolete, unused, and should be removed. This tool doesn't use pytest, but instead is just a standard Python script.
-- The main() method is in [interop.py](monitoring/interoperability/interop.py) and then the logic is in [interop_test_suite.py](monitoring/interoperability/interop.py). The `monitorlib` utilities for authorization and infrastructure provide the DSSTestSessions to easily communicate with the DSS instances without worrying about any of the specifics.
+- The main() method is in [interop.py](monitoring/interoperability/interop.py) and then the logic is in [interop_test_suite.py](monitoring/interoperability/interop.py). The `monitorlib` utilities for authorization and infrastructure provide the UTMClientSessions to easily communicate with the DSS instances without worrying about any of the specifics.
 
 #### Load test
 

@@ -4,13 +4,10 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/interuss/dss/pkg/api/v1/ridpb"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/stacktrace"
-	"google.golang.org/protobuf/proto"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // IdentificationServiceArea represents a USS ISA over a given 4D volume.
@@ -36,66 +33,20 @@ func (i *IdentificationServiceArea) SetCells(cids []int64) {
 	i.Cells = geo.CellUnionFromInt64(cids)
 }
 
-// ToProto converts an IdentificationServiceArea struct to an
-// IdentificationServiceArea proto for API consumption.
-func (i *IdentificationServiceArea) ToProto() (*ridpb.IdentificationServiceArea, error) {
-	result := &ridpb.IdentificationServiceArea{
-		Id:         i.ID.String(),
-		Owner:      i.Owner.String(),
-		FlightsUrl: i.URL,
-		Version:    i.Version.String(),
-	}
-
-	if i.StartTime != nil {
-		ts := tspb.New(*i.StartTime)
-		result.TimeStart = ts
-	}
-
-	if i.EndTime != nil {
-		ts := tspb.New(*i.EndTime)
-		result.TimeEnd = ts
-	}
-	return result, nil
-}
-
 // SetExtents performs some data validation and sets the 4D volume on the
 // IdentificationServiceArea.
-func (i *IdentificationServiceArea) SetExtents(extents *ridpb.Volume4D) error {
+func (i *IdentificationServiceArea) SetExtents(extents *dssmodels.Volume4D) error {
 	var err error
 	if extents == nil {
 		return nil
 	}
-	if startTime := extents.GetTimeStart(); startTime != nil {
-		ts := startTime.AsTime()
-		err := startTime.CheckValid()
-		if err != nil {
-			return stacktrace.Propagate(err, "Error converting start time from proto")
-		}
-		i.StartTime = &ts
-	}
-
-	if endTime := extents.GetTimeEnd(); endTime != nil {
-		ts := endTime.AsTime()
-		err := endTime.CheckValid()
-		if err != nil {
-			return stacktrace.Propagate(err, "Error converting end time from proto")
-		}
-		i.EndTime = &ts
-	}
-
-	space := extents.GetSpatialVolume()
-	if space == nil {
-		return stacktrace.NewError("Missing required spatial_volume")
-	}
-	i.AltitudeHi = proto.Float32(space.GetAltitudeHi())
-	i.AltitudeLo = proto.Float32(space.GetAltitudeLo())
-	footprint := space.GetFootprint()
-	if footprint == nil {
-		return stacktrace.NewError("spatial_volume missing required footprint")
-	}
-	i.Cells, err = dssmodels.GeoPolygonFromRIDProto(footprint).CalculateCovering()
+	i.StartTime = extents.StartTime
+	i.EndTime = extents.EndTime
+	i.AltitudeHi = extents.SpatialVolume.AltitudeHi
+	i.AltitudeLo = extents.SpatialVolume.AltitudeLo
+	i.Cells, err = extents.SpatialVolume.Footprint.CalculateCovering()
 	if err != nil {
-		return stacktrace.Propagate(err, "Error calculating covering from polygon")
+		return stacktrace.Propagate(err, "Error calculating covering for ISA")
 	}
 	return nil
 }

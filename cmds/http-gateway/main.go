@@ -16,8 +16,9 @@ import (
 
 	"cloud.google.com/go/profiler"
 	"github.com/interuss/dss/pkg/api/v1/auxpb"
-	"github.com/interuss/dss/pkg/api/v1/ridpb"
+	"github.com/interuss/dss/pkg/api/v1/ridpbv1"
 	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	"github.com/interuss/dss/pkg/api/v2/ridpbv2"
 	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
@@ -74,13 +75,21 @@ func RunHTTPProxy(ctx context.Context, ctxCanceler func(), address, endpoint str
 		grpc.WithTimeout(10 * time.Second),
 	}
 
-	logger.Info("Registering RID service")
-	if err := ridpb.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
+	logger.Info("Registering RID v1 service")
+	if err := ridpbv1.RegisterDiscoveryAndSynchronizationServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
 		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "context deadline exceeded") {
-			return stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to core-service for remote ID")
+			return stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to core-service for remote ID v1")
 		}
-		return stacktrace.Propagate(err, "Error registering RID service handler")
+		return stacktrace.Propagate(err, "Error registering RID v1 service handler")
+	}
+
+	logger.Info("Registering RID v2 service")
+	if err := ridpbv2.RegisterStandardRemoteIDAPIInterfacesServiceHandlerFromEndpoint(ctx, grpcMux, endpoint, opts); err != nil {
+		if strings.Contains(err.Error(), "context deadline exceeded") {
+			return stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to core-service for remote ID v2")
+		}
+		return stacktrace.Propagate(err, "Error registering RID v2 service handler")
 	}
 
 	logger.Info("Registering aux service")

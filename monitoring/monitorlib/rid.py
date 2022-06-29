@@ -11,6 +11,8 @@ MAX_SUB_TIME_HRS = 24
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
+ISA_PATH = '/v1/dss/identification_service_areas'
+SUBSCRIPTION_PATH = '/v1/dss/subscriptions'
 SCOPE_READ = 'dss.read.identification_service_areas'
 SCOPE_WRITE = 'dss.write.identification_service_areas'
 NetMaxNearRealTimeDataPeriod = datetime.timedelta(seconds=60)

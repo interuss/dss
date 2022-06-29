@@ -12,10 +12,11 @@ Once in, you may be prompted to agree to their terms of service. Should you agre
 
 Select the Web application option at the top. You can provide a name for the client in the Name field as well. The name you provide will be displayed to users when they are consenting to your application acting on their behalf.
 
-You’ll be running your web application locally for now, so you can set the Authorized JavaScript origins to http://localhost:8072 and Authorized redirect URIs to http://localhost:8072/callback. This will allow your local Flask application to communicate with Google.
+You’ll be running your web application locally for now, so you can set the Authorized JavaScript origins to http://localhost:8072 and Authorized redirect URIs to http://localhost:8072/login_callback. This will allow your local Flask application to communicate with Google.
 
 Finally, hit Create and download the OAuth client secret file.
 
 ![Download Client Secret](assets/download_secret.png)
 
-Rename the file to client_secret.json and copy place it in dss/monitoring/uss_qualifier/host directory.
+Rename the file to client_secret.json and copy place it in dss/monitoring/uss_qualifier/webapp directory.
+Ensure this file must not be checked-in to the repository.

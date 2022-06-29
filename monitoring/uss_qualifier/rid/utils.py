@@ -7,9 +7,10 @@ from monitoring.monitorlib.rid import RIDAircraftState, RIDFlightDetails
 from monitoring.monitorlib.typing import ImplicitDict, StringBasedTimeDelta
 
 
-#TODO: This class is used in both RID and SCD; it should therefore be moved to a shared tools file rather than an RID utils file
+# TODO: This class is used in both RID and SCD; it should therefore be moved to a shared tools file rather than an RID utils file
 class InjectionTargetConfiguration(ImplicitDict):
-    ''' This object defines the data required for a uss '''
+    """This object defines the data required for a uss"""
+
     name: str
     injection_base_url: str
 
@@ -20,10 +21,10 @@ class ObserverConfiguration(ImplicitDict):
 
 
 class EvaluationConfiguration(ImplicitDict):
-    min_polling_interval: StringBasedTimeDelta = StringBasedTimeDelta('5s')
+    min_polling_interval: StringBasedTimeDelta = StringBasedTimeDelta("5s")
     """Do not repeat system observations with intervals smaller than this."""
 
-    max_propagation_latency: StringBasedTimeDelta = StringBasedTimeDelta('10s')
+    max_propagation_latency: StringBasedTimeDelta = StringBasedTimeDelta("10s")
     """Allow up to this much time for data to propagate through the system."""
 
     min_query_diagonal: float = 100
@@ -33,7 +34,6 @@ class EvaluationConfiguration(ImplicitDict):
     """If set to a value above zero, reuse the most recent query rectangle/view every this many queries."""
 
 
-
 class RIDQualifierTestConfiguration(ImplicitDict):
     injection_targets: List[InjectionTargetConfiguration]
     """Set of Service Providers into which data should be injected"""
@@ -41,7 +41,7 @@ class RIDQualifierTestConfiguration(ImplicitDict):
     observers: List[ObserverConfiguration]
     """Set of Display Providers through with the system should be observed"""
 
-    flight_start_delay: StringBasedTimeDelta = StringBasedTimeDelta('15s')
+    flight_start_delay: StringBasedTimeDelta = StringBasedTimeDelta("15s")
     """Amount of time between starting the test and commencement of flights"""
 
     evaluation: EvaluationConfiguration = EvaluationConfiguration()
@@ -49,7 +49,7 @@ class RIDQualifierTestConfiguration(ImplicitDict):
 
 
 class QueryBoundingBox(NamedTuple):
-    ''' This is the object that stores details of query bounding box '''
+    """This is the object that stores details of query bounding box"""
 
     name: str
     shape: Polygon
@@ -58,23 +58,25 @@ class QueryBoundingBox(NamedTuple):
 
 
 class FlightPoint(NamedTuple):
-    ''' This object holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum '''
+    """This object holds basic information about a point on the flight track, it has latitude, longitude and altitude in WGS 1984 datum"""
 
     lat: float  # Degrees of latitude north of the equator, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1160
     lng: float  # Degrees of longitude east of the Prime Meridian, with reference to the WGS84 ellipsoid. For more information see: https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml#L1170
     alt: float  # meters in WGS 84, normally calculated as height of ground level in WGS84 and altitude above ground level
-    speed: float # speed in m / s
-    bearing: float # forward azimuth for the this and the next point on the track
+    speed: float  # speed in m / s
+    bearing: float  # forward azimuth for the this and the next point on the track
 
 
 class GridCellFlight(NamedTuple):
-    ''' A object to hold details of a grid location and the track within it '''
+    """A object to hold details of a grid location and the track within it"""
+
     bounds: shapely.geometry.polygon.Polygon
     track: List[FlightPoint]
 
 
 class FlightDetails(ImplicitDict):
-    ''' This object stores the metadata associated with generated flight, this data is shared as information in the remote id call '''
+    """This object stores the metadata associated with generated flight, this data is shared as information in the remote id call"""
+
     rid_details: RIDFlightDetails
     operator_name: str
     aircraft_type: str  # Generic type of aircraft https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1711

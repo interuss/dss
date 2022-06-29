@@ -21,11 +21,11 @@
           </div>
           <!-- Navbar Right Side -->
           <div class="navbar-nav">
-            {% if session['google_id'] %}
+            {% if session['user_id'] %}
               <a class="nav-item nav-link" href="">{{session['name']}}</a>
               <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
             {% else %}
-              <a class="nav-item nav-link" href="{{ url_for('login') }}">Login</a>
+              <a class="nav-item nav-link" href="/">Login</a>
             {% endif %}
           </div>
         </div>

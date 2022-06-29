@@ -39,7 +39,7 @@ class MutatedSubscription(fetch.Query):
 yaml.add_representer(MutatedSubscription, Representer.represent_dict)
 
 
-def put_subscription(utm_client: infrastructure.DSSTestSession,
+def put_subscription(utm_client: infrastructure.UTMClientSession,
                      area: s2sphere.LatLngRect,
                      start_time: datetime.datetime,
                      end_time: datetime.datetime,
@@ -72,7 +72,7 @@ def put_subscription(utm_client: infrastructure.DSSTestSession,
   return result
 
 
-def delete_subscription(utm_client: infrastructure.DSSTestSession,
+def delete_subscription(utm_client: infrastructure.UTMClientSession,
                         subscription_id: str,
                         subscription_version: str) -> MutatedSubscription:
   url = '/v1/dss/subscriptions/{}/{}'.format(subscription_id, subscription_version)
@@ -129,7 +129,7 @@ class MutatedISA(ImplicitDict):
   notifications: Dict[str, fetch.Query]
 
 
-def put_isa(utm_client: infrastructure.DSSTestSession,
+def put_isa(utm_client: infrastructure.UTMClientSession,
             area: s2sphere.LatLngRect,
             start_time: datetime.datetime,
             end_time: datetime.datetime,
@@ -180,7 +180,7 @@ def put_isa(utm_client: infrastructure.DSSTestSession,
   return MutatedISA(dss_response=dss_response, notifications=notifications)
 
 
-def delete_isa(utm_client: infrastructure.DSSTestSession,
+def delete_isa(utm_client: infrastructure.UTMClientSession,
                entity_id: str,
                isa_version: str) -> MutatedISA:
   url = '/v1/dss/identification_service_areas/{}/{}'.format(entity_id, isa_version)

@@ -6,7 +6,7 @@ import typing
 from locust import User 
 from monitoring.monitorlib import auth, infrastructure, rid
 
-class DSSClient(infrastructure.DSSTestSession):
+class DSSClient(infrastructure.UTMClientSession):
     _locust_environment = None
 
     def request(self, method: str, url: str, **kwargs):

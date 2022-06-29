@@ -5,7 +5,7 @@ import requests
 from monitoring.monitorlib import fetch
 
 from monitoring.monitorlib.clients.scd import OperationError
-from monitoring.monitorlib.infrastructure import DSSTestSession
+from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, \
     SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, CapabilitiesResponse, StatusResponse
 from monitoring.monitorlib.typing import ImplicitDict
@@ -18,7 +18,7 @@ class QueryError(OperationError):
         self.query = query
 
 
-def create_flight(utm_client: DSSTestSession, uss_base_url: str, flight_request: InjectFlightRequest) -> Tuple[str, InjectFlightResponse, fetch.Query]:
+def create_flight(utm_client: UTMClientSession, uss_base_url: str, flight_request: InjectFlightRequest) -> Tuple[str, InjectFlightResponse, fetch.Query]:
     flight_id = str(uuid.uuid4())
     url = '{}/v1/flights/{}'.format(uss_base_url, flight_id)
     print("[SCD] PUT {}".format(url))
@@ -30,7 +30,7 @@ def create_flight(utm_client: DSSTestSession, uss_base_url: str, flight_request:
     return flight_id, ImplicitDict.parse(resp.json(), InjectFlightResponse), fetch.describe_query(resp, initiated_at)
 
 
-def delete_flight(utm_client: DSSTestSession, uss_base_url: str, flight_id: str) -> Tuple[DeleteFlightResponse, fetch.Query]:
+def delete_flight(utm_client: UTMClientSession, uss_base_url: str, flight_id: str) -> Tuple[DeleteFlightResponse, fetch.Query]:
     url = '{}/v1/flights/{}'.format(uss_base_url, flight_id)
     print("[SCD] DELETE {}".format(url))
 
@@ -42,7 +42,7 @@ def delete_flight(utm_client: DSSTestSession, uss_base_url: str, flight_id: str)
     return ImplicitDict.parse(resp.json(), DeleteFlightResponse), fetch.describe_query(resp, initiated_at)
 
 
-def get_capabilities(utm_client: DSSTestSession, uss_base_url: str) -> Tuple[CapabilitiesResponse, fetch.Query]:
+def get_capabilities(utm_client: UTMClientSession, uss_base_url: str) -> Tuple[CapabilitiesResponse, fetch.Query]:
     url = '{}/v1/capabilities'.format(uss_base_url)
     print("[SCD] GET {}".format(url))
 
@@ -54,7 +54,7 @@ def get_capabilities(utm_client: DSSTestSession, uss_base_url: str) -> Tuple[Cap
     return ImplicitDict.parse(resp.json(), CapabilitiesResponse), fetch.describe_query(resp, initiated_at)
 
 
-def get_version(utm_client: DSSTestSession, uss_base_url: str) -> Tuple[StatusResponse, fetch.Query]:
+def get_version(utm_client: UTMClientSession, uss_base_url: str) -> Tuple[StatusResponse, fetch.Query]:
     url = '{}/v1/status'.format(uss_base_url)
     print("[SCD] GET {}".format(url))
 

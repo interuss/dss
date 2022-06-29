@@ -16,6 +16,7 @@ local PrometheusConfig(metadata) = {
   },
   rule_files: [
     'aggregation.rules.yml',
+    'custom.rules.yml',
   ],
   scrape_configs: k8sEndpoints.scrape_configs + istioScrape.scrape_configs,
 };
@@ -94,6 +95,14 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
       data: {
         'prometheus.yml': std.manifestYamlDoc(PrometheusConfig(metadata)),
         'aggregation.rules.yml': std.manifestYamlDoc(crdbAggregation),
+        'custom.rules.yml': std.manifestYamlDoc({
+          groups: [
+            {
+              name: 'rules/custom.rules',
+              rules: metadata.prometheus.custom_rules
+            },
+          ],
+        }),
       },
     },
     statefulset: base.StatefulSet(metadata, 'prometheus') {

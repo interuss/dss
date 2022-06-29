@@ -11,7 +11,10 @@ InterUSS Project implementation.
 ## Usage
 From the [`root folder of this repo`](../..) folder:
 ```shell script
-docker run --rm $(docker build -q -f monitoring/interoperability/Dockerfile monitoring) \
+   docker run --rm \
+   -w /app/monitoring/interoperability \
+   $(docker build -q -f monitoring/Dockerfile monitoring) \
+   python interop.py \
     --auth <SPEC> \
     https://example.com/v1/dss \
     https://example2.com/v1/dss

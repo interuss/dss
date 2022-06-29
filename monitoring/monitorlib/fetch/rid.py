@@ -68,7 +68,7 @@ class FetchedISAs(fetch.Query):
 yaml.add_representer(FetchedISAs, Representer.represent_dict)
 
 
-def isas(utm_client: infrastructure.DSSTestSession,
+def isas(utm_client: infrastructure.UTMClientSession,
          box: s2sphere.LatLngRect,
          start_time: datetime.datetime,
          end_time: datetime.datetime) -> FetchedISAs:
@@ -98,7 +98,7 @@ class FetchedUSSFlights(fetch.Query):
 yaml.add_representer(FetchedUSSFlights, Representer.represent_dict)
 
 
-def flights(utm_client: infrastructure.DSSTestSession,
+def flights(utm_client: infrastructure.UTMClientSession,
             flights_url: str,
             area: s2sphere.LatLngRect,
             include_recent_positions: bool) -> FetchedUSSFlights:
@@ -136,7 +136,7 @@ class FetchedUSSFlightDetails(fetch.Query):
 yaml.add_representer(FetchedUSSFlightDetails, Representer.represent_dict)
 
 
-def flight_details(utm_client: infrastructure.DSSTestSession,
+def flight_details(utm_client: infrastructure.UTMClientSession,
                    flights_url: str, id: str,
                    enhanced_details: bool=False) -> FetchedUSSFlightDetails:
   suffix = '?enhanced=true' if enhanced_details else ''
@@ -172,7 +172,7 @@ class FetchedFlights(fetch.Query):
 yaml.add_representer(FetchedFlights, Representer.represent_dict)
 
 
-def all_flights(utm_client: infrastructure.DSSTestSession,
+def all_flights(utm_client: infrastructure.UTMClientSession,
                 area: s2sphere.LatLngRect,
                 include_recent_positions: bool,
                 get_details: bool,
@@ -228,7 +228,7 @@ class FetchedSubscription(fetch.Query):
 yaml.add_representer(FetchedSubscription, Representer.represent_dict)
 
 
-def subscription(utm_client: infrastructure.DSSTestSession,
+def subscription(utm_client: infrastructure.UTMClientSession,
                  subscription_id: str) -> FetchedSubscription:
   url = '/v1/dss/subscriptions/{}'.format(subscription_id)
   result = fetch.query_and_describe(
