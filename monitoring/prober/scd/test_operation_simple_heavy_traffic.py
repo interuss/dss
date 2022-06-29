@@ -178,7 +178,7 @@ def test_get_ops_by_search_latest_time_excluded(ids, scd_api, scd_session):
 
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_mutate_ops_v17(ids, scd_api, scd_session):
+def test_mutate_ops(ids, scd_api, scd_session):
   for idx, op_id in enumerate(map(ids, OP_TYPES)):
     # GET current op
     resp = scd_session.get('/operational_intent_references/{}'.format(op_id))

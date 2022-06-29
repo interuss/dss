@@ -23,14 +23,11 @@ def _make_sub_req(time_start, time_end, alt_start, alt_end, radius, scd_api):
 
     "notify_for_constraints": False
   }
-  if scd_api == scd.API_0_3_5:
-    req["notify_for_operations"] = True
-  elif scd_api == scd.API_0_3_17:
-    req["notify_for_operational_intents"] = True
+  req["notify_for_operational_intents"] = True
   return req
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_subscription_with_invalid_start_time(ids, scd_api, scd_session):
   if scd_session is None:

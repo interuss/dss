@@ -77,10 +77,7 @@ def test_create_op(ids, scd_api, scd_session):
   assert op['version'] == 1
   assert 'subscription_id' in op
 
-  if scd_api == scd.API_0_3_5:
-    assert 'state' not in op
-  elif scd_api == scd.API_0_3_17:
-    assert op['state'] == 'Accepted'
+  assert op['state'] == 'Accepted'
 
   # Make sure the implicit Subscription exists when queried separately
   global sub_id
@@ -104,8 +101,6 @@ def test_mutate_sub_shrink_2d(scd_api, scd_session):
   time_start = datetime.datetime.utcnow() + datetime.timedelta(minutes=20)
   time_end = time_start + datetime.timedelta(minutes=60)
   req = _make_sub_req(time_start, time_end, 0, 1000, 50, scd_api)
-  if scd_api == scd.API_0_3_5:
-    req['old_version'] = existing_sub['version']
   req['notify_for_constraints'] = True
 
   resp = scd_session.put('/subscriptions/{}/{}'.format(sub_id, existing_sub['version']), json=req)
@@ -179,7 +174,7 @@ def test_mutate_sub_not_shrink(scd_api, scd_session):
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 @depends_on(test_mutate_sub_not_shrink)
-def test_delete_op_v17(ids, scd_api, scd_session):
+def test_delete_op(ids, scd_api, scd_session):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
   assert resp.status_code == 200, resp.content
   ovn = resp.json()['operational_intent_reference']['ovn']
@@ -189,8 +184,8 @@ def test_delete_op_v17(ids, scd_api, scd_session):
 
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-@depends_on(test_delete_op_v17)
-def test_get_deleted_op_by_id_v17(ids, scd_api, scd_session):
+@depends_on(test_delete_op)
+def test_get_deleted_op_by_id(ids, scd_api, scd_session):
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
   assert resp.status_code == 404, resp.content
 
@@ -198,7 +193,7 @@ def test_get_deleted_op_by_id_v17(ids, scd_api, scd_session):
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_op)
-def test_delete_sub_v17(scd_api, scd_session):
+def test_delete_sub(scd_api, scd_session):
   resp = scd_session.get('/subscriptions/{}'.format(sub_id))
   assert resp.status_code == 200, resp.content
   version = resp.json()['subscription']['version']

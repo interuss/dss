@@ -66,7 +66,7 @@ def test_op_accepted_bad1(ids, scd_api, scd_session):
 
 @for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
-def test_op_bad_state_transition_v17(ids, scd_api, scd_session):
+def test_op_bad_state_transition(ids, scd_api, scd_session):
 
   resp = scd_session.get('/operational_intent_references/{}'.format(ids(OP_TYPE)))
   assert resp.status_code == 200, resp.content

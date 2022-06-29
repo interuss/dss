@@ -531,10 +531,7 @@ def test_mutate_sub2(ids, scd_api, scd_session, scd_session2):
 
   # Attempt mutation without notifying for Operations
   # Perform a valid mutation
-  if scd_api == scd.API_0_3_5:
-    resp = scd_session2.put('/subscriptions/{}'.format(ids(SUB2_TYPE)), json=req)
-  elif scd_api == scd.API_0_3_17:
-    resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version), json=req)
+  resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB2_TYPE), sub2_version), json=req)
   assert resp.status_code == 200, resp.content
 
   # The Subscription response should mention Op1 and Op2, but not include Op1's OVN
