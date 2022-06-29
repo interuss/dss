@@ -156,7 +156,7 @@ if ! docker run --link dummy-oauth-for-testing:oauth \
     --scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
     --scd-api-version 1.0.0	\
     --junitxml=/app/test_result; then
-    
+
     if [ "$CI" == "true" ]; then
         echo "=== END OF TEST RESULTS ==="
         echo "Dumping core-service logs"
