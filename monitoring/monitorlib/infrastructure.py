@@ -42,7 +42,7 @@ class AuthAdapter(object):
       token = self.issue_token(intended_audience, scopes)
     else:
       token = self._tokens[intended_audience][scope_string]
-    payload = jwt.decode(token, verify=False)
+    payload = jwt.decode(token, options={'verify_signature': False})
     expires = EPOCH + datetime.timedelta(seconds=payload['exp'])
     if datetime.datetime.utcnow() > expires - TOKEN_REFRESH_MARGIN:
       token = self.issue_token(intended_audience, scopes)
@@ -57,7 +57,7 @@ class AuthAdapter(object):
     """Retrieve `sub` claim from one of the existing tokens"""
     for _, tokens_by_scope in self._tokens.items():
       for token in tokens_by_scope.values():
-        payload = jwt.decode(token, verify=False)
+        payload = jwt.decode(token, options={'verify_signature': False})
         if 'sub' in payload:
           return payload['sub']
     return None
@@ -254,7 +254,7 @@ def get_token_claims(headers: Dict) -> Dict:
   if token.lower().startswith('bearer '):
     token = token[len('bearer '):]
   try:
-    return jwt.decode(token, verify=False)
+    return jwt.decode(token, options={'verify_signature': False})
   except ValueError as e:
     return {'error': 'ValueError: ' + str(e)}
   except jwt.exceptions.DecodeError as e:
