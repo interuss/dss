@@ -12,7 +12,8 @@ cd "${BASEDIR}/../../.." || exit 1
 
 monitoring/build.sh || exit 1
 
-# Run monitoring/uss_qualifier/rid/mock/run_locally.sh to produce a mock RID system
+# Run monitoring/mock_uss/run_locally_ridsp.sh and
+# monitoring/mock_uss/run_locally_riddp.sh to produce a mock RID system
 # for use with uss_qualifier
 AUTH="DummyOAuth(http://host.docker.internal:8085/token,uss1)"
 DSS="http://host.docker.internal:8082"
