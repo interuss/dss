@@ -31,22 +31,23 @@ cd "${BASEDIR}"
 
 sleep 1
 echo " -------------- PYTEST -------------- "
-echo "Building Integration Test container"
-pwd
-docker build -q --rm -f monitoring/Dockerfile monitoring -t probe-local-test
+echo "Building monitoring (Integration Test) image"
+docker build -q --rm -f monitoring/Dockerfile monitoring -t interuss/monitoring
 
 echo "Finally Begin Testing"
 docker run --network dss_sandbox_default \
   --link $OAUTH_CONTAINER:oauth \
 	--link $GATEWAY_CONTAINER:local-gateway \
 	-v "${RESULTFILE}:/app/test_result" \
-	-v "$(pwd):/app" \
 	-w /app/monitoring/prober \
-	probe-local-test \
-	pytest /app/monitoring/prober	\
+	interuss/monitoring \
+	pytest \
+	"${1:-.}" \
+  -rsx \
 	--junitxml=/app/test_result \
 	--dss-endpoint http://local-gateway:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
+	--rid-v2-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
 	--scd-api-version 1.0.0

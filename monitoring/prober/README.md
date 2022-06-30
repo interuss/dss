@@ -32,25 +32,19 @@ This approach takes slightly longer to execute due to building the prober image,
 but it requires no setup and generally obtains more reproducible results than
 running locally.  From the root of this repo:
 
-```shell script
-docker run --rm $(docker build -q -f monitoring/prober/Dockerfile monitoring) \
-    --dss-endpoint <URL> \
-    [--rid-auth <SPEC>] \
-    [--scd-auth1 <SPEC>] \
-    [--scd-auth2 <SPEC>]
-```
-
-Or, execute the two steps separately.  First, build the prober image:
+First, build the monitoring image:
 
 (from [`monitoring`](../) working directory)
 ```shell script
-docker build -f prober/Dockerfile . -t local-prober
+docker image build . -t interuss/monitoring
 ```
 
 ...then run it:
 
 ```shell script
-docker run --rm local-prober \
+docker run --rm interuss/monitoring \
+    -w /app/monitoring/prober \
+    pytest \
     --dss-endpoint <URL> \
     [--rid-auth <SPEC>] \
     [--scd-auth1 <SPEC>] \
