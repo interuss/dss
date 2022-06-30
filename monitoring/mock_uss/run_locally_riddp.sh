@@ -27,9 +27,5 @@ docker run ${docker_args} --name mock_uss_riddp \
   -p ${PORT}:5000 \
   -v "${SCRIPT_DIR}/../../build/test-certs:/var/test-certs:ro" \
   "$@" \
-  local-interuss/mock_uss \
-  gunicorn \
-    --preload \
-    --workers=1 \
-    --bind=0.0.0.0:5000 \
-    monitoring.mock_uss:webapp
+  interuss/monitoring \
+  mock_uss/start.sh

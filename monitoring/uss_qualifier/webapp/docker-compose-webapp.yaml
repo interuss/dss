@@ -3,7 +3,7 @@ services:
   mock-riddp:
     build:
       context: ../../
-      dockerfile: mock_uss/Dockerfile
+      dockerfile: Dockerfile
     environment:
       MOCK_USS_AUTH_SPEC: DummyOAuth(http://host.docker.internal:8085/token,uss1)
       MOCK_USS_DSS_URL: http://host.docker.internal:8082
@@ -18,13 +18,14 @@ services:
   mock-ridsp:
     build:
       context: ../../
-      dockerfile: mock_uss/Dockerfile
+      dockerfile: Dockerfile
     environment:
       MOCK_USS_AUTH_SPEC: DummyOAuth(http://host.docker.internal:8085/token,uss1)
       MOCK_USS_DSS_URL: http://host.docker.internal:8082
       MOCK_USS_PUBLIC_KEY: /var/test-certs/auth2.pem
       MOCK_USS_TOKEN_AUDIENCE: localhost,host.docker.internal
       MOCK_USS_SERVICES: ridsp
+      MOCK_USS_BASE_URL: http://host.docker.internal:8071
     ports:
       - 8071:5000
     volumes:
@@ -33,13 +34,14 @@ services:
   mock-scdsc:
     build:
       context: ../../
-      dockerfile: mock_uss/Dockerfile
+      dockerfile: Dockerfile
     environment:
       MOCK_USS_AUTH_SPEC: DummyOAuth(http://host.docker.internal:8085/token,uss1)
       MOCK_USS_DSS_URL: http://host.docker.internal:8082
       MOCK_USS_PUBLIC_KEY: /var/test-certs/auth2.pem
       MOCK_USS_TOKEN_AUDIENCE: localhost,host.docker.internal
       MOCK_USS_SERVICES: scdsc
+      MOCK_USS_BASE_URL: http://host.docker.internal:8074
     ports:
       - 8074:5000
     volumes:

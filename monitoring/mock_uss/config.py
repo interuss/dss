@@ -22,7 +22,7 @@ KEY_SERVICES = 'SERVICES'
 KEY_DSS_URL = 'DSS_URL'
 KEY_BEHAVIOR_LOCALITY = 'BEHAVIOR_LOCALITY'
 
-KEY_CODE_VERSION = 'CODE_VERSION'
+KEY_CODE_VERSION = 'MONITORING_VERSION'
 
 workspace_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'workspace')
 
