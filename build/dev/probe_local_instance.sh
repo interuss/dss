@@ -33,15 +33,17 @@ sleep 1
 echo " -------------- PYTEST -------------- "
 echo "Building Integration Test container"
 pwd
-docker build -q --rm -f monitoring/prober/Dockerfile monitoring -t probe-local-test
+docker build -q --rm -f monitoring/Dockerfile monitoring -t probe-local-test
 
 echo "Finally Begin Testing"
 docker run --network dss_sandbox_default \
   --link $OAUTH_CONTAINER:oauth \
 	--link $GATEWAY_CONTAINER:local-gateway \
 	-v "${RESULTFILE}:/app/test_result" \
+	-v "$(pwd):/app" \
+	-w /app/monitoring/prober \
 	probe-local-test \
-	"${1:-.}" \
+	pytest /app/monitoring/prober	\
 	--junitxml=/app/test_result \
 	--dss-endpoint http://local-gateway:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \

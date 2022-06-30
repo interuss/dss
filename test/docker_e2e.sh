@@ -159,13 +159,13 @@ if ! docker run --link dummy-oauth-for-testing:oauth \
 	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
 	--scd-api-version 1.0.0; then
 
-  if [ "$CI" == "true" ]; then
-    echo "=== END OF TEST RESULTS ==="
-    echo "Dumping core-service logs"
-    docker logs core-service-for-testing
-    echo "Dumping http-gateway logs"
-    docker logs http-gateway-for-testing
-  fi
+    if [ "$CI" == "true" ]; then
+        echo "=== END OF TEST RESULTS ==="
+        echo "Dumping core-service logs"
+        docker logs core-service-for-testing
+        echo "Dumping http-gateway logs"
+        docker logs http-gateway-for-testing
+    fi
 fi
 
 echo "Cleaning up http-gateway container"
