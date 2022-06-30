@@ -6,8 +6,8 @@ local crdbAggregation = import 'prometheus_configs/crdb-aggregation.libsonnet';
 
 local PrometheusConfig(metadata) = {
   global: {
-    scrape_interval: '5s',
-    evaluation_interval: '5s',
+    scrape_interval: metadata.prometheus.scrape_interval,
+    evaluation_interval: metadata.prometheus.evaluation_interval,
     // label for federated Prometheus.
     external_labels:{
       k8s_cluster: metadata.clusterName,
@@ -154,7 +154,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                   '--storage.tsdb.retention.time=' + metadata.prometheus.retention,
                   // following thanos recommendation
                   '--storage.tsdb.max-block-duration=2h',
-                ],
+                ] + metadata.prometheus.custom_args,
                 ports: [
                   {
                     containerPort: 9090,
