@@ -47,6 +47,7 @@ RUN pip install -r /app/monitoring/uss_qualifier/webapp/requirements.txt
 RUN rm -rf __pycache__
 
 ADD . /app/monitoring
+COPY health_check.sh /app/health_check.sh
 WORKDIR /app/monitoring
 
 # Additional preparations for uss_qualifier
@@ -55,6 +56,8 @@ RUN mkdir -p /app/flight-states
 
 # Additional preparations for uss_qualifier/webapp
 RUN mkdir -p /app/uss-host-files
+
+HEALTHCHECK CMD sh /app/health_check.sh
 
 ENV PYTHONPATH /app
 ARG version

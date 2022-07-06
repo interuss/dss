@@ -7,7 +7,7 @@ import flask
 import requests.exceptions
 import yaml
 
-from monitoring.monitorlib import scd
+from monitoring.monitorlib import scd, versioning
 from monitoring.monitorlib.clients import scd as scd_client
 from monitoring.monitorlib.scd_automated_testing import scd_injection_api
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, ClearAreaRequest, ClearAreaOutcome, ClearAreaResponse, Capability, CapabilitiesResponse
@@ -45,7 +45,7 @@ def query_operational_intents(area_of_interest: scd.Volume4D) -> List[scd.Operat
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def scdsc_injection_status() -> Tuple[str, int]:
     """Implements USS status in SCD automated testing injection API."""
-    return flask.jsonify({'status': 'Ready', 'version': config.Config.CODE_VERSION})
+    return flask.jsonify({'status': 'Ready', 'version': versioning.get_code_version()})
 
 
 @webapp.route('/scdsc/v1/capabilities', methods=['GET'])

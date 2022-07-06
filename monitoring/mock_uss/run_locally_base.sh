@@ -15,9 +15,4 @@ echo '## NOTE: Prerequisite to run this command is:                          ##'
 echo '## Local DSS instance + Dummy OAuth server (/build/dev/run_locally.sh) ##'
 echo '#########################################################################'
 
-docker build \
-  -t local-interuss/mock_uss \
-  -f monitoring/mock_uss/Dockerfile \
-  --build-arg version="$(scripts/git/commit.sh)" \
-  monitoring \
-  || exit 1
+monitoring/build.sh || exit 1
