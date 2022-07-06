@@ -6,10 +6,10 @@ participant U as "USS under Test"
 
 == Test setup: Load the geozones dataset ==
 TD -> U: PUT /geozones/{geozones_id}
-TD <- U: 200 Ok - Geozones loading\n{"result": "Processing"}
+TD <- U: 200 Ok - Geozones loading\n{"result": "Activating"}
 
 TD -> U: GET /geozones/{geozones_id}
-TD <- U: 200 Ok - Geozones still loading\n{"result": "Processing"}
+TD <- U: 200 Ok - Geozones still loading\n{"result": "Activating"}
 
 ...
 

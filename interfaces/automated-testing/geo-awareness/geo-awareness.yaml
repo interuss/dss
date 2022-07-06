@@ -89,9 +89,9 @@ components:
 
             - `Ready`: the Geozones dataset has been successfully imported and the USS can receive test requests.
             
-            - `Deactivating`: the Geozones dataset is being deactivated. 
+            - `Deleting`: the Geozones dataset is being deactivated and deleted. 
             
-            - `Error`: the Geozones dataset activation or deactivation failed.
+            - `Error`: the Geozones dataset activation or deactivation failed. The description field is required in this case.
           type: string
           enum: [Starting, Ready]
           example: Ready
