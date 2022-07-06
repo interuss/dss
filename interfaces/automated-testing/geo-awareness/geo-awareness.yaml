@@ -116,8 +116,8 @@ paths:
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
         '404':
           description: The USS automated testing interface is not activated.
-      summary: Retrieve the status of the USS automated testing interface
-      description: Get the status of the USS automated testing interface
+      summary: Status of the USS automated testing interface
+      description: Get the status of the USS automated testing interface.
 
 
   /v1/geozones/{geozones_id}:
@@ -151,7 +151,7 @@ paths:
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
       operationId: PutInjectGeozones
-      summary: Instructs the USS to import and activate a Geozones dataset.
+      summary: Activate a Geozones dataset
       description: Instructs the USS to import and activate a Geozones dataset.
 
     get:
@@ -173,8 +173,8 @@ paths:
         '404':
           description: The Geozones dataset has been successfully deleted or didn't exist.
       operationId: PutInjectGeozones
-      summary: Retrieve the status of the Geozones dataset import.
-      description: Get the status of the Geozones dataset import.
+      summary: Status of the Geozones dataset
+      description: Get the status of the Geozones dataset.
 
     delete:
       security:
@@ -193,6 +193,6 @@ paths:
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-      operationId: PutInjectGeozones
-      summary: Retrieve the status of the Geozones dataset import.
-      description: Get the status of the Geozones dataset import.
+      operationId: DeleteGeozones
+      summary: Delete Geozones dataset
+      description: Instructs the USS to deactivate and delete the Geozones dataset.
