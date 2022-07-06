@@ -89,7 +89,9 @@ components:
 
             - `Ready`: the Geozones dataset has been successfully imported and the USS can receive test requests.
             
-            - `Deleting`: the Geozones dataset is being deactivated and deleted. 
+            - `Deleting`: the Geozones dataset is being deactivated and deleted.
+            
+            - `Rejected`: the Geozones dataset was rejected because the dataset is invalid.
             
             - `Error`: the Geozones dataset activation or deactivation failed. The description field is required in this case.
           type: string
