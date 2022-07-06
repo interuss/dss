@@ -4,7 +4,7 @@ title Geo-Awareness
 participant TD as "Test driver"
 participant U as "USS under Test"
 
-== Test setup: Load the geozones dataset ==
+== Test setup: Load the Geozones dataset ==
 TD -> U: PUT /geozones/{geozones_id}
 TD <- U: 200 Ok - Geozones loading\n{"result": "Activating"}
 
@@ -21,7 +21,7 @@ TD <- U: 200 Ok - Geozones ready\n{"result": "Ready"}
 TD -> U: GET /checklist
 TD <- U: 200 Ok - Returns the list of Geo-Awareness information\nfor a specific Volume4D.
 
-== Test tear down: Delete the Geozones dataset ==
+== Test teardown: Delete the Geozones dataset ==
 
 TD -> U: DELETE /geozones/{geozones_id}
 TD <- U: 200 Ok - {"result": "Deleting"}

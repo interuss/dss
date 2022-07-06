@@ -11,6 +11,12 @@ The following steps are represented:
 
 ![Geo-Awareness architecture](./geo_awareness_architecture.png)
 
+### Interfaces
+
+The following sequence diagram outlines the interactions between the test driver and the test harness of the USS under test.  
+
+![Geo-Awareness Test Driver interactions](./sequence.png)
+
 ### Test groups
 
 * ED-269
