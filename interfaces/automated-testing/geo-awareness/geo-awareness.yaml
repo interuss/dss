@@ -57,10 +57,12 @@ components:
       properties:
         source:
           anyOf:
-            - $ref: '#/components/schemas/GeozonesHttpSource'
+            - $ref: '#/components/schemas/GeozonesHttpsSource'
 
-    GeozonesHttpSource:
+    GeozonesHttpsSource:
       type: object
+      required:
+        - url
       properties:
         url:
           type: string
@@ -70,6 +72,28 @@ components:
 
     InjectGeozonesResponse:
       type: object
+      required:
+        - result
+      properties:
+        result:
+          description: >-
+            The status of the Geozones dataset import.
+
+            - `Activating`: the USS is processing the request and is currently activating the dataset.
+
+            - `Ready`: the Geozones dataset has been successfully imported and the USS can receive test requests.
+            
+            - `Deactivating`: the Geozones dataset is being deactivated. 
+            
+            - `Error`: the Geozones dataset activation or deactivation failed.
+          type: string
+          enum: [Starting, Ready]
+          example: Ready
+        description:
+          description: Human-readable explanation of the result for debugging purpose only. This field is required when the result value is `Error`.
+          type: string
+          example: |-
+            Unable to download the dataset https://caa.example.com/geozones.json. Connection refused.
 
 paths:
   /v1/status:
@@ -121,14 +145,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/InjectGeozonesResponse'
           description: >-
-            Request has been correctly handled and the geozones dataset will be imported by the USSP.
+            Request has been correctly handled and the geozones dataset will be imported and activated by the USS.
         '401':
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
       operationId: PutInjectGeozones
-      summary: Instructs the USS to import a Geozones source.
-      description: Instructs the USS to import a Geozones source.
+      summary: Instructs the USS to import and activate a Geozones dataset.
+      description: Instructs the USS to import and activate a Geozones dataset.
 
     get:
       security:
@@ -142,6 +166,29 @@ paths:
                 $ref: '#/components/schemas/InjectGeozonesResponse'
           description: >-
             The Geo-Awareness dataset is handled by the USS and its status was retrieved successfully.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+        '404':
+          description: The Geozones dataset has been successfully deleted or didn't exist.
+      operationId: PutInjectGeozones
+      summary: Retrieve the status of the Geozones dataset import.
+      description: Get the status of the Geozones dataset import.
+
+    delete:
+      security:
+        - Authority:
+            - utm.inject_test_data
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InjectGeozonesResponse'
+          description: >-
+            Request has been correctly handled and the Geozones dataset will be deleted by the USS. 
+            Status of the dataset shall be checked using the GET method until it returns a 404.
         '401':
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
         '403':
