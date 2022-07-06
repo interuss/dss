@@ -5,33 +5,33 @@ participant TD as "Test driver"
 participant U as "USS under Test"
 
 == Test setup: Load the geozones dataset ==
-TD -> U: PUT /inject/geozones/{geozones_id}
+TD -> U: PUT /geozones/{geozones_id}
 TD <- U: 200 Ok - Geozones loading\n{"result": "Processing"}
 
-TD -> U: GET /inject/geozones/{geozones_id}
+TD -> U: GET /geozones/{geozones_id}
 TD <- U: 200 Ok - Geozones still loading\n{"result": "Processing"}
 
 ...
 
-TD -> U: GET /inject/geozones/{geozones_id}
+TD -> U: GET /geozones/{geozones_id}
 TD <- U: 200 Ok - Geozones ready\n{"result": "Ready"}
 
 == Query the USS for Geo-Awareness information ==
 
-TD -> U: GET /observe
-TD <- U: 200 Ok - Checklist
+TD -> U: GET /checklist
+TD <- U: 200 Ok - Returns the list of Geo-Awareness information\nfor a specific Volume4D.
 
 == Test tear down: Delete the Geozones dataset ==
 
-TD -> U: DELETE /inject/geozones/{geozones_id}
+TD -> U: DELETE /geozones/{geozones_id}
 TD <- U: 200 Ok - {"result": "Deleting"}
 
-TD -> U: GET /inject/geozones/{geozones_id}
+TD -> U: GET /geozones/{geozones_id}
 TD <- U: 200 Ok - {"result": "Deleting"}
 
 ...
 
-TD -> U: GET /inject/geozones/{geozones_id}
+TD -> U: GET /geozones/{geozones_id}
 TD <- U: 404 NotFound
 
 @enduml
