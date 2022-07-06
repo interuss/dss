@@ -2,9 +2,15 @@ openapi: 3.0.2
 info:
   title: Geo-Awareness Test Data Injection
   version: 0.0.1
+  license:
+    name: Apache License v2.0
+    url: https://github.com/interuss/dss/blob/master/LICENSE
   description: >-
     This interface is implemented by every USS wishing to be tested by the automated testing framework.
     The automated testing suite calls this interface to inject test data into the USS system under test.
+
+servers:
+  - url: https://uss.example.com/geo-awareness
 
 components:
   securitySchemes:
@@ -172,7 +178,7 @@ paths:
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
         '404':
           description: The Geozones dataset has been successfully deleted or didn't exist.
-      operationId: PutInjectGeozones
+      operationId: GetInjectGeozones
       summary: Status of the Geozones dataset
       description: Get the status of the Geozones dataset.
 
