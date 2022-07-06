@@ -1,0 +1,23 @@
+@startuml
+title Geo-Awareness
+
+participant TD as "Test driver"
+participant U as "USS under Test"
+
+TD -> U: PUT /inject/geozones/{geozones_id}
+TD <- U: 200 Ok - Geozones loading\n{"result": "Processing"}
+
+TD -> U: GET /inject/geozones/{geozones_id}
+TD <- U: 200 Ok - Geozones still loading\n{"result": "Processing"}
+
+...
+
+TD -> U: GET /inject/geozones/{geozones_id}
+TD <- U: 200 Ok - Geozones ready\n{"result": "Ready"}
+
+== Test dataset successfully loaded by the USS. ==
+
+TD -> U: GET /observe
+TD <- U: 200 Ok - Checklist
+
+@enduml

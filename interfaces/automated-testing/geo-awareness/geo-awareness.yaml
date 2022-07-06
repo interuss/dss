@@ -17,9 +17,20 @@ components:
             utm.inject_test_data: |-
               Client may inject test data into a USS for the purpose of conducting automated tests.
       description: |-
-        Authorization from, or on behalf of, an authorization authority, augmenting standard geo-awareness authorization for the purpose of automated testing.
+        Authorization from, or on behalf of, an authorization authority, augmenting standard Geo-Awareness authorization for the purpose of automated testing.
 
   schemas:
+    UUIDv4Format:
+      description: >-
+        String whose format matches a version-4 UUID according to RFC 4122.
+      maxLength: 36
+      minLength: 36
+      type: string
+      format: uuid
+      pattern: >-
+        ^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$
+      example: 03e5572a-f733-49af-bc14-8a18bd53ee39
+
     StatusResponse:
       type: object
       required:
@@ -41,9 +52,29 @@ components:
           type: string
           example: v0.0.1-445ad3
 
+    InjectGeozonesRequest:
+      type: object
+      properties:
+        source:
+          anyOf:
+            - $ref: '#/components/schemas/GeozonesHttpSource'
+
+    GeozonesHttpSource:
+      type: object
+      properties:
+        url:
+          type: string
+          format: url
+          description: The URL at which the geo-awareness information shall be downloaded from.
+          example: https://caa.example.com/geozones.json
+
+    InjectGeozonesResponse:
+      type: object
+
 paths:
   /v1/status:
     get:
+      operationId: GetStatus
       security:
         - Authority:
             - utm.inject_test_data
@@ -63,3 +94,58 @@ paths:
           description: The USS automated testing interface is not activated.
       summary: Retrieve the status of the USS automated testing interface
       description: Get the status of the USS automated testing interface
+
+
+  /v1/geozones/{geozones_id}:
+    parameters:
+      - name: geozones_id
+        in: path
+        required: true
+        description: A UUID string identifying the injected geozones dataset.
+        schema:
+          $ref: '#/components/schemas/UUIDv4Format'
+
+    put:
+      security:
+        - Authority:
+            - utm.inject_test_data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InjectGeozonesRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InjectGeozonesResponse'
+          description: >-
+            Request has been correctly handled and the geozones dataset will be imported by the USSP.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+      operationId: PutInjectGeozones
+      summary: Instructs the USS to import a Geozones source.
+      description: Instructs the USS to import a Geozones source.
+
+    get:
+      security:
+        - Authority:
+            - utm.inject_test_data
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InjectGeozonesResponse'
+          description: >-
+            The Geo-Awareness dataset is handled by the USS and its status was retrieved successfully.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+      operationId: PutInjectGeozones
+      summary: Retrieve the status of the Geozones dataset import.
+      description: Get the status of the Geozones dataset import.
