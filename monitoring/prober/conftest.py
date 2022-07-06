@@ -78,8 +78,8 @@ def pytest_addoption(parser):
   parser.addoption(
     '--scd-api-version',
     help='SCD API version to target',
-    choices=[scd.API_0_3_5, scd.API_0_3_17, scd.API_1_0_0],
-    default=scd.API_0_3_5,
+    choices=[scd.API_1_0_0],
+    default=scd.API_1_0_0,
     dest='scd_api_version')
 
 
@@ -228,6 +228,4 @@ def no_auth_session_ridv2(pytestconfig) -> UTMClientSession:
 @pytest.fixture(scope='session')
 def scd_api(pytestconfig) -> str:
   api = pytestconfig.getoption('scd_api_version')
-  if api is None:
-    api = scd.API_0_3_5
   return VersionString(api)

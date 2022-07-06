@@ -13,7 +13,7 @@ from typing import Dict
 
 from monitoring.monitorlib.infrastructure import default_scope
 from monitoring.monitorlib import scd
-from monitoring.monitorlib.scd import SCOPE_CI, SCOPE_CM, SCOPE_SC, SCOPE_CP
+from monitoring.monitorlib.scd import SCOPE_CM, SCOPE_SC, SCOPE_CP
 from monitoring.prober.infrastructure import for_api_versions, register_resource_type
 from monitoring.prober.scd import actions
 
@@ -54,9 +54,7 @@ def _make_sub_req(base_url: str, notify_ops: bool, notify_constraints: bool) -> 
 
 
 def _read_both_scope(scd_api: str) -> str:
-  if scd_api == scd.API_0_3_5:
-    return '{} {}'.format(SCOPE_SC, SCOPE_CI)
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     return '{} {}'.format(SCOPE_SC, SCOPE_CP)
   else:
     raise NotImplementedError('Unsupported API version {}'.format(scd_api))
@@ -70,15 +68,13 @@ _read_subs_scope = _read_ops_scope
 
 
 def _read_constraints_scope(scd_api: str) -> str:
-  if scd_api == scd.API_0_3_5:
-    return SCOPE_CI
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     return SCOPE_CP
   else:
     raise NotImplementedError('Unsupported API version {}'.format(scd_api))
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_ensure_clean_workspace(ids, scd_api, scd_session, scd_session2):
   actions.delete_constraint_reference_if_exists(ids(CONSTRAINT_TYPE), scd_session, scd_api)
 
@@ -88,7 +84,7 @@ def test_ensure_clean_workspace(ids, scd_api, scd_session, scd_session2):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_subs_do_not_exist(ids, scd_api, scd_session, scd_session2):
   if scd_session is None:
     return
@@ -105,7 +101,7 @@ def test_subs_do_not_exist(ids, scd_api, scd_session, scd_session2):
 
 # Preconditions: None
 # Mutations: {Sub1, Sub2, Sub3} created by scd_session2 user
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_create_subs(ids, scd_api, scd_session, scd_session2):
   if scd_session2 is None:
     return
@@ -125,7 +121,7 @@ def test_create_subs(ids, scd_api, scd_session, scd_session2):
 
 # Preconditions: None
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_CM)
 def test_constraint_does_not_exist(ids, scd_api, scd_session, scd_session2):
   resp = scd_session.get('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)))
@@ -134,7 +130,7 @@ def test_constraint_does_not_exist(ids, scd_api, scd_session, scd_session2):
 
 # Preconditions: {Sub1, Sub2, Sub3} created by scd_session2 user
 # Mutations: Constraint ids(CONSTRAINT_ID) created by scd_session user
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_CM)
 def test_create_constraint(ids, scd_api, scd_session, scd_session2):
   req = _make_c1_request()
@@ -162,7 +158,7 @@ def test_create_constraint(ids, scd_api, scd_session, scd_session2):
 #   * {Sub2, Sub3} received one notification
 #   * Constraint ids(CONSTRAINT_ID) created by scd_session user
 # Mutations: Constraint ids(CONSTRAINT_ID) mutated to second version
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_mutate_constraint(ids, scd_api, scd_session, scd_session2):
   # GET current constraint
   resp = scd_session.get('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)), scope=_read_constraints_scope(scd_api))
@@ -178,9 +174,7 @@ def test_mutate_constraint(ids, scd_api, scd_session, scd_session2):
     'uss_base_url': CONSTRAINT_BASE_URL_2
   }
 
-  if scd_api == scd.API_0_3_5:
-    resp = scd_session.put('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)), json=req, scope=SCOPE_CM)
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     resp = scd_session.put('/constraint_references/{}/{}'.format(ids(CONSTRAINT_TYPE), existing_constraint['ovn']), json=req, scope=SCOPE_CM)
   else:
     raise NotImplementedError('Unsupported API version {}'.format(scd_api))
@@ -204,7 +198,7 @@ def test_mutate_constraint(ids, scd_api, scd_session, scd_session2):
 
 # Preconditions: {Sub1, Sub2, Sub3} created by scd_session2 user
 # Mutations: Sub1 listens for Constraints, Sub3 doesn't listen for Constraints
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_mutate_subs(ids, scd_api, scd_session2, scd_session):
   # GET current sub1 before mutation
   resp = scd_session2.get('/subscriptions/{}'.format(ids(SUB1_TYPE)), scope=_read_subs_scope(scd_api))
@@ -214,10 +208,7 @@ def test_mutate_subs(ids, scd_api, scd_session2, scd_session):
 
   req = _make_sub_req(SUB_BASE_URL_A, notify_ops=True, notify_constraints=True)
   req['old_version'] = existing_sub['version']
-  if scd_api == scd.API_0_3_5:
-    resp = scd_session2.put('/subscriptions/{}'.format(ids(SUB1_TYPE)), json=req, scope=_read_both_scope(scd_api))
-    key = 'constraints'
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB1_TYPE), existing_sub['version']), json=req, scope=_read_both_scope(scd_api))
     key = 'constraint_references'
   else:
@@ -236,18 +227,14 @@ def test_mutate_subs(ids, scd_api, scd_session2, scd_session):
   req = _make_sub_req(SUB_BASE_URL_B, notify_ops=True, notify_constraints=False)
   req['old_version'] = existing_sub['version']
 
-  if scd_api == scd.API_0_3_5:
-    resp = scd_session2.put('/subscriptions/{}'.format(ids(SUB3_TYPE)), json=req, scope=_read_both_scope(scd_api))
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     resp = scd_session2.put('/subscriptions/{}/{}'.format(ids(SUB3_TYPE), existing_sub['version']), json=req, scope=_read_both_scope(scd_api))
   else:
     raise NotImplementedError('Unsupported API version {}'.format(scd_api))
   assert resp.status_code == 200, resp.content
 
   data = resp.json()
-  if scd_api == scd.API_0_3_5:
-    assert not data.get('constraints', []), data
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     assert not data.get('constraint_references', []), data
   else:
     raise NotImplementedError('Unsupported API version {}'.format(scd_api))
@@ -259,7 +246,7 @@ def test_mutate_subs(ids, scd_api, scd_session2, scd_session):
 #   * Sub3 received one notification and mutated by scd_session2 user to not receive Constraints
 #   * Constraint ids(CONSTRAINT_ID) mutated by scd_session user to second version
 # Mutations: Constraint ids(CONSTRAINT_ID) mutated to third version
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_CM)
 def test_mutate_constraint2(ids, scd_api, scd_session, scd_session2):
   # GET current constraint
@@ -276,9 +263,7 @@ def test_mutate_constraint2(ids, scd_api, scd_session, scd_session2):
     'uss_base_url': CONSTRAINT_BASE_URL_3
   }
 
-  if scd_api == scd.API_0_3_5:
-    resp = scd_session.put('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)), json=req, scope=SCOPE_CM)
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     resp = scd_session.put('/constraint_references/{}/{}'.format(ids(CONSTRAINT_TYPE), existing_constraint['ovn']), json=req, scope=SCOPE_CM)
   else:
     raise NotImplementedError('Unsupported API version {}'.format(scd_api))
@@ -312,12 +297,10 @@ def test_mutate_constraint2(ids, scd_api, scd_session, scd_session2):
 
 # Preconditions: Constraint ids(CONSTRAINT_ID) mutated to second version
 # Mutations: Constraint ids(CONSTRAINT_ID) deleted
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_CM)
 def test_delete_constraint(ids, scd_api, scd_session, scd_session2):
-  if scd_api == scd.API_0_3_5:
-    resp = scd_session.delete('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)))
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     resp = scd_session.get('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)))
     assert resp.status_code == 200, resp.content
     existing_constraint = resp.json().get('constraint_reference', None)
@@ -329,14 +312,12 @@ def test_delete_constraint(ids, scd_api, scd_session, scd_session2):
 
 # Preconditions: {Sub1, Sub2, Sub3} created by scd_session2 user
 # Mutations: {Sub1, Sub2, Sub3} deleted
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_delete_subs(ids, scd_api, scd_session2, scd_session):
   if scd_session2 is None:
     return
   for sub_id in (ids(SUB1_TYPE), ids(SUB2_TYPE), ids(SUB3_TYPE)):
-    if scd_api == scd.API_0_3_5:
-      resp = scd_session2.delete('/subscriptions/{}'.format(sub_id), scope=SCOPE_CI)
-    elif scd_api == scd.API_0_3_17:
+    if scd_api == scd.API_0_3_17:
       resp = scd_session2.get('/subscriptions/{}'.format(sub_id), scope=_read_both_scope(scd_api))
       assert resp.status_code == 200, resp.content
       sub = resp.json().get('subscription', None)
@@ -346,6 +327,6 @@ def test_delete_subs(ids, scd_api, scd_session2, scd_session):
     assert resp.status_code == 200, resp.content
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_final_cleanup(ids, scd_api, scd_session, scd_session2):
     test_ensure_clean_workspace(ids, scd_api, scd_session, scd_session2)

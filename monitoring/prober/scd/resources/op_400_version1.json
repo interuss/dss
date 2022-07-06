@@ -4,8 +4,8 @@
       "volume": {
         "outline_circle": {
           "center": {
-            "lng": 9.980582850817164,
-            "lat": 9.98038769564864
+            "lng": -118.456,
+            "lat": 34.123
           },
           "radius": {
             "value": 300.183,
@@ -24,15 +24,11 @@
             },
             {
               "lng": 10.019861937948736,
-              "lat": 110.02005709311726
+              "lat": 10.02005709311726
             },
             {
               "lng": 10.020054117178084,
               "lat": 10.01985896200956
-            },
-            {
-              "lng": 9.980582850817164,
-              "lat": 9.98038769564864
             }
           ]
         },
@@ -57,8 +53,9 @@
       }
     }
   ],
+  "old_version": 1,
   "key": [],
-  "state": "Ended",
+  "state": "Activated",
   "uss_base_url": "https://localhost:8080",
   "new_subscription": {
     "uss_base_url": "https://localhost:8080",

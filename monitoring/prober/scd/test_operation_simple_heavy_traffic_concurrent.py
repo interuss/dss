@@ -118,10 +118,7 @@ def _intersection(list1, list2):
 
 async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_new: bool):
   async with SEMAPHORE:
-    if scd_api == scd.API_0_3_5:
-      req_url = '/operation_references/{}'.format(op_id)
-      result = await scd_session_async.put(req_url, data=req), req_url, req
-    elif scd_api == scd.API_0_3_17:
+    if scd_api == scd.API_0_3_17:
       if create_new:
         req_url = '/operational_intent_references/{}'.format(op_id)
         result = await scd_session_async.put(req_url, data=req), req_url, req
@@ -135,9 +132,7 @@ async def _put_operation_async(req, op_id, scd_session_async, scd_api, create_ne
 
 async def _get_operation_async(op_id, scd_session_async, scd_api):
   async with SEMAPHORE:
-    if scd_api == scd.API_0_3_5:
-      result = await scd_session_async.get('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-    elif scd_api == scd.API_0_3_17:
+    if scd_api == scd.API_0_3_17:
       result = await scd_session_async.get('/operational_intent_references/{}'.format(op_id), scope=SCOPE_SC)
     else:
       raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
@@ -150,9 +145,7 @@ async def _query_operation_async(idx, scd_session_async, scd_api):
     'area_of_interest': scd.make_vol4(None, None, 0, 5000, scd.make_circle(lat, 178, 12000))
   }
   async with SEMAPHORE:
-    if scd_api == scd.API_0_3_5:
-        result = await scd_session_async.post('/operation_references/query', json=req_json, scope=SCOPE_SC)
-    elif scd_api == scd.API_0_3_17:
+    if scd_api == scd.API_0_3_17:
         result = await scd_session_async.post('/operational_intent_references/query', json=req_json, scope=SCOPE_SC)
     else:
       raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
@@ -161,13 +154,7 @@ async def _query_operation_async(idx, scd_session_async, scd_api):
 
 def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
   # GET current op
-  if scd_api == scd.API_0_3_5:
-    resp = scd_session.get('/operation_references/{}'.format(op_id))
-    assert resp.status_code == 200, resp.content
-    existing_op = resp.json().get('operation_reference', None)
-    assert existing_op is not None
-    op_map[op_id] = existing_op
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
     resp = scd_session.get('/operational_intent_references/{}'.format(op_id))
     assert resp.status_code == 200, resp.content
     existing_op = resp.json().get('operational_intent_reference', None)
@@ -191,16 +178,14 @@ def _build_mutate_request(idx, op_id, op_map, scd_session, scd_api):
 
 
 async def _delete_operation_async(op_id, scd_session_async, scd_api):
-  if scd_api == scd.API_0_3_5:
-      result = await scd_session_async.delete('/operation_references/{}'.format(op_id), scope=SCOPE_SC)
-  elif scd_api == scd.API_0_3_17:
+  if scd_api == scd.API_0_3_17:
       result = await scd_session_async.delete('/operational_intent_references/{}/{}'.format(op_id, ovn_map[op_id]), scope=SCOPE_SC)
   else:
     raise ValueError('Unsupported SCD API version: {}'.format(scd_api))
   return result
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_ensure_clean_workspace(ids, scd_api, scd_session):
     for op_id in map(ids, OP_TYPES):
         actions.delete_operation_if_exists(op_id, scd_session, scd_api)
@@ -208,7 +193,7 @@ def test_ensure_clean_workspace(ids, scd_api, scd_session):
 
 # Preconditions: None
 # Mutations: Operations with ids in OP_IDS created by scd_session user
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 def test_create_ops_concurrent(ids, scd_api, scd_session_async):
   start_time = datetime.datetime.utcnow()
@@ -257,10 +242,7 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
     assert resp['status_code'] == 200, resp['content']
     req = op_req_map[op_id]
     data = resp['content']
-    if scd_api == scd.API_0_3_5:
-      op = data['operation_reference']
-    else:
-      op = data['operational_intent_reference']
+    op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
     assert_datetimes_are_equal(op['time_start']['value'], req['extents'][0]['time_start']['value'])
@@ -275,7 +257,7 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @depends_on(test_create_ops_concurrent)
 def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session_async):
   start_time = datetime.datetime.utcnow()
@@ -294,10 +276,7 @@ def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session_async):
     assert resp['status_code'] == 200, resp['content']
 
     data = resp['content']
-    if scd_api == scd.API_0_3_5:
-      op = data['operation_reference']
-    else:
-      op = data['operational_intent_reference']
+    op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == BASE_URL
     assert op['version'] == 1
@@ -306,7 +285,7 @@ def test_get_ops_by_ids_concurrent(ids, scd_api, scd_session_async):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: None
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_ops_concurrent)
 def test_get_ops_by_search_concurrent(ids, scd_api, scd_session_async):
@@ -326,10 +305,7 @@ def test_get_ops_by_search_concurrent(ids, scd_api, scd_session_async):
 
   for idx, resp in op_resp_map.items():
     assert resp['status_code'] == 200, resp['content']
-    if scd_api == scd.API_0_3_5:
-      found_ids = [op['id'] for op in resp['content'].get('operation_references', [])]
-    else:
-      found_ids = [op['id'] for op in resp['content'].get('operational_intent_references', [])]
+    found_ids = [op['id'] for op in resp['content'].get('operational_intent_references', [])]
     total_found_ids.update(found_ids)
 
   assert len(_intersection(map(ids, OP_TYPES), total_found_ids)) == len(OP_TYPES)
@@ -338,7 +314,7 @@ def test_get_ops_by_search_concurrent(ids, scd_api, scd_session_async):
 
 # Preconditions: Operations with ids in OP_IDS created by scd_session user
 # Mutations: Operations with ids in OP_IDS mutated to second version
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @default_scope(SCOPE_SC)
 @depends_on(test_create_ops_concurrent)
 def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
@@ -378,10 +354,7 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
     assert existing_op
     assert resp['status_code'] == 200, resp['content']
     data = resp['content']
-    if scd_api == scd.API_0_3_5:
-      op = data['operation_reference']
-    else:
-      op = data['operational_intent_reference']
+    op = data['operational_intent_reference']
     assert op['id'] == op_id
     assert op['uss_base_url'] == 'https://example.com/uss2'
     assert op['version'] == 2
@@ -394,7 +367,7 @@ def test_mutate_ops_concurrent(ids, scd_api, scd_session, scd_session_async):
 
 # Preconditions: Operations with ids in OP_IDS mutated to second version
 # Mutations: Operations with ids in OP_IDS deleted
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 @depends_on(test_mutate_ops_concurrent)
 def test_delete_op_concurrent(ids, scd_api, scd_session_async):
   start_time = datetime.datetime.utcnow()
@@ -416,6 +389,6 @@ def test_delete_op_concurrent(ids, scd_api, scd_session_async):
   print(f'\n{inspect.stack()[0][3]} time_taken: {datetime.datetime.utcnow() - start_time}')
 
 
-@for_api_versions(scd.API_0_3_5, scd.API_0_3_17)
+@for_api_versions(scd.API_0_3_17)
 def test_final_cleanup(ids, scd_api, scd_session):
     test_ensure_clean_workspace(ids, scd_api, scd_session)
