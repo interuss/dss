@@ -73,8 +73,12 @@ components:
         url:
           type: string
           format: url
-          description: The URL at which the geo-awareness information shall be downloaded from.
+          description: The URL at which the Geo-Awareness information shall be downloaded from.
           example: https://caa.example.com/geozones.json
+        format:
+          type: string
+          description: The Media Type format of the response expected from this source. Only application/json is supported for the moment.
+          example: application/json
 
     InjectGeozonesResponse:
       type: object
@@ -91,13 +95,15 @@ components:
             
             - `Deleting`: the Geozones dataset is being deactivated and deleted.
             
-            - `Rejected`: the Geozones dataset was rejected because the dataset is invalid.
+            - `Unsupported`: the USS cannot process the dataset type specified.
+
+            - `Rejected`: the Geozones dataset was rejected because it is invalid.
             
             - `Error`: the Geozones dataset activation or deactivation failed. The description field is required in this case.
           type: string
-          enum: [Starting, Ready]
+          enum: [Activating, Ready, Deleting, Unsupported, Rejected, Error]
           example: Ready
-        description:
+        message:
           description: Human-readable explanation of the result for debugging purpose only. This field is required when the result value is `Error`.
           type: string
           example: |-
@@ -158,7 +164,7 @@ paths:
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-      operationId: PutInjectGeozones
+      operationId: InjectGeozones
       summary: Activate a Geozones dataset
       description: Instructs the USS to import and activate a Geozones dataset.
 

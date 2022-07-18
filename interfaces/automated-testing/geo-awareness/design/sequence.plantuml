@@ -19,7 +19,7 @@ TD <- U: 200 Ok - Geozones ready\n{"result": "Ready"}
 == Query the USS for Geo-Awareness information ==
 
 TD -> U: GET /checklist
-TD <- U: 200 Ok - Returns the list of Geo-Awareness information\nfor a specific Volume4D.
+TD <- U: 200 Ok - Returns a list of advisories and restrictions (when applicable) for the specified flight
 
 == Test teardown: Delete the Geozones dataset ==
 
