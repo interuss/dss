@@ -8,13 +8,13 @@ local util = import 'util.libsonnet';
       name: name,
       namespace: metadata.namespace,
       clusterName: metadata.clusterName,
-      labels: { 
+      labels: {
         name: std.join('-', std.split(name, ':')),
       },
     },
   },
 
-  _RoleRelated(kind, metadata, name): $._Object('rbac.authorization.k8s.io/v1beta1', kind, metadata, name) {
+  _RoleRelated(kind, metadata, name): $._Object('rbac.authorization.k8s.io/v1', kind, metadata, name) {
     local rr = self,
     app:: "",
     metadata+: {
@@ -38,7 +38,7 @@ local util = import 'util.libsonnet';
     metadata+: {
       namespace: null,
     },
-  }, 
+  },
 
   Role(metadata, name): $._RoleRelated('Role', metadata, name) {
 
@@ -76,7 +76,7 @@ local util = import 'util.libsonnet';
 
   },
 
-  Ingress(metadata, name): $._Object('networking.k8s.io/v1beta1', 'Ingress', metadata, name) {
+  Ingress(metadata, name): $._Object('networking.k8s.io/v1', 'Ingress', metadata, name) {
 
   },
 

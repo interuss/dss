@@ -8,9 +8,13 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
     },
   },
   spec: {
-    backend: {
-      serviceName: 'http-gateway',
-      servicePort: metadata.gateway.port,
+    defaultBackend: {
+      service: {
+        name: 'http-gateway',
+        port: {
+          number: metadata.gateway.port,
+        }
+      }
     },
   },
 };
