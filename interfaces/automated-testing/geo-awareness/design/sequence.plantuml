@@ -4,24 +4,24 @@ title Geo-Awareness
 participant TD as "Test driver"
 participant U as "USS under Test"
 
-== Test setup: Load the Geozones dataset ==
+== Test setup: Load the Geozone data ==
 TD -> U: PUT /geozone_sources/{geozone_source_id}
-TD <- U: 200 Ok - Geozones loading\n{"result": "Activating"}
+TD <- U: 200 Ok - Geozone data loading\n{"result": "Activating"}
 
 TD -> U: GET /geozone_sources/{geozone_source_id}
-TD <- U: 200 Ok - Geozones still loading\n{"result": "Activating"}
+TD <- U: 200 Ok - Geozone data still loading\n{"result": "Activating"}
 
 ...
 
 TD -> U: GET /geozone_sources/{geozone_source_id}
-TD <- U: 200 Ok - Geozones ready\n{"result": "Ready"}
+TD <- U: 200 Ok - Geozone data ready\n{"result": "Ready"}
 
 == Query the USS for Geo-Awareness information ==
 
 TD -> U: GET /checklist
 TD <- U: 200 Ok - Returns a list of advisories and restrictions (when applicable) for the specified flight
 
-== Test teardown: Delete the Geozones dataset ==
+== Test teardown: Delete the Geozone data ==
 
 TD -> U: DELETE /geozone_sources/{geozone_source_id}
 TD <- U: 200 Ok - {"result": "Deactivating"}
