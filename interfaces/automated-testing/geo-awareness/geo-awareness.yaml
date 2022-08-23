@@ -58,14 +58,13 @@ components:
           type: string
           example: v0.0.1-445ad3
 
-    InjectGeozonesRequest:
+    GeozoneSourceRequest:
       type: object
       properties:
-        source:
-          anyOf:
-            - $ref: '#/components/schemas/GeozonesHttpsSource'
+        https_source:
+          $ref: '#/components/schemas/GeozoneHttpsSource'
 
-    GeozonesHttpsSource:
+    GeozoneHttpsSource:
       type: object
       required:
         - url
@@ -73,35 +72,36 @@ components:
         url:
           type: string
           format: url
-          description: The URL at which the Geo-Awareness information shall be downloaded from.
+          description: The URL at which the Geozone data shall be downloaded from.
           example: https://caa.example.com/geozones.json
         format:
           type: string
-          description: The Media Type format of the response expected from this source. Only application/json is supported for the moment.
-          example: application/json
+          description: The format of the response expected from the source.
+          enum: [ED-269]
+          example: ED-269
 
-    InjectGeozonesResponse:
+    GeozoneSourceResponse:
       type: object
       required:
         - result
       properties:
         result:
           description: >-
-            The status of the Geozones dataset import.
+            The status of the Geozone source and the handling of its data by the USS.
 
-            - `Activating`: the USS is processing the request and is currently activating the dataset.
+            - `Activating`: the USS is processing the request and is currently activating the Geozone data.
 
-            - `Ready`: the Geozones dataset has been successfully imported and the USS can receive test requests.
-            
-            - `Deleting`: the Geozones dataset is being deactivated and deleted.
-            
+            - `Ready`: the Geozone data has been successfully activated and the USS is ready to receive test requests.
+
+            - `Deactivating`: the Geozone data is being deactivated.
+
             - `Unsupported`: the USS cannot process the dataset type specified.
 
-            - `Rejected`: the Geozones dataset was rejected because it is invalid.
-            
-            - `Error`: the Geozones dataset activation or deactivation failed. The description field is required in this case.
+            - `Rejected`: the Geozone data was rejected because it is invalid.
+
+            - `Error`: the Geozone data activation or deactivation failed. The message field is required in this case.
           type: string
-          enum: [Activating, Ready, Deleting, Unsupported, Rejected, Error]
+          enum: [Activating, Ready, Deactivating, Unsupported, Rejected, Error]
           example: Ready
         message:
           description: Human-readable explanation of the result for debugging purpose only. This field is required when the result value is `Error`.
@@ -134,12 +134,12 @@ paths:
       description: Get the status of the USS automated testing interface.
 
 
-  /v1/geozones/{geozones_id}:
+  /v1/geozone_sources/{geozone_source_id}:
     parameters:
-      - name: geozones_id
+      - name: geozone_source_id
         in: path
         required: true
-        description: A UUID string identifying the injected geozones dataset.
+        description: A UUID string identifying a Geozone data source.
         schema:
           $ref: '#/components/schemas/UUIDv4Format'
 
@@ -151,22 +151,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InjectGeozonesRequest'
+              $ref: '#/components/schemas/GeozoneSourceRequest'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InjectGeozonesResponse'
+                $ref: '#/components/schemas/GeozoneSourceResponse'
           description: >-
-            Request has been correctly handled and the geozones dataset will be imported and activated by the USS.
+            Request has been correctly handled and the USS has been instructed to import and activate the Geozone data from the source.
         '401':
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-      operationId: InjectGeozones
-      summary: Activate a Geozones dataset
-      description: Instructs the USS to import and activate a Geozones dataset.
+      operationId: PutGeozoneSource
+      summary: Import and activate a Geozone source
+      description: Instructs the USS to import and activate the Geozone data from this source.
 
     get:
       security:
@@ -177,18 +177,18 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InjectGeozonesResponse'
+                $ref: '#/components/schemas/GeozoneResponse'
           description: >-
-            The Geo-Awareness dataset is handled by the USS and its status was retrieved successfully.
+            The Geozone source exists in the USS and its status was retrieved successfully.
         '401':
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
         '404':
-          description: The Geozones dataset has been successfully deleted or didn't exist.
-      operationId: GetInjectGeozones
-      summary: Status of the Geozones dataset
-      description: Get the status of the Geozones dataset.
+          description: The Geozone source has been successfully deactivated or didn't exist.
+      operationId: GetGeozoneSource
+      summary: Status of a Geozone source
+      description: Get the status of the Geozone source and its data.
 
     delete:
       security:
@@ -199,14 +199,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InjectGeozonesResponse'
+                $ref: '#/components/schemas/GeozoneResponse'
           description: >-
-            Request has been correctly handled and the Geozones dataset will be deleted by the USS. 
+            Request has been correctly handled and the Geozones dataset will be deleted by the USS.
             Status of the dataset shall be checked using the GET method until it returns a 404.
         '401':
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-      operationId: DeleteGeozones
-      summary: Delete Geozones dataset
-      description: Instructs the USS to deactivate and delete the Geozones dataset.
+      operationId: DeleteGeozoneSource
+      summary: Deactivate a Geozone source
+      description: Instructs the USS to deactivate the Geozone source and its data.
