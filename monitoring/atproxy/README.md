@@ -17,7 +17,7 @@ different handler endpoint.  The intended sequence of events to handle a
 uss_qualifier call to GET /observation/display_data for RID testing is shown
 below.
 
-![uss_qualifer flow with atproxy](../../assets/atproxy_sequence.png)
+![uss_qualifer flow with atproxy](../../assets/generated/atproxy_sequence.png)
 
 In this way, the "Internal automated testing client" (the USS's implementation
 of required automated testing functionality) can be written using only outgoing
