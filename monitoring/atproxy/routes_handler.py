@@ -17,24 +17,42 @@ _logger.setLevel(logging.DEBUG)
 
 
 class PendingRequest(ImplicitDict):
+    """A pending query the handler client is expected to handle."""
+
     id: str
+    """ID of the query; used to PUT /handler/queries/<id> the result."""
+
     type: str
+    """Type of query -- matches a request_type_name() in requests.py."""
+
     request: dict
+    """All relevant information about the request in the *Request descriptor from requests.py matching `type`."""
 
 
 class ListQueriesResponse(ImplicitDict):
+    """Response body schema for GET /handler/queries."""
+
     requests: List[PendingRequest]
+    """All of the queries available for the handler client to handle."""
 
 
 class PutQueryRequest(ImplicitDict):
+    """Request body schema for PUT /handler/queries/<id>."""
+
     response: Optional[dict] = None
+    """JSON body of the response, or None for no JSON body."""
+
     return_code: int
+    """HTTP return code."""
 
 
 @webapp.route('/handler/queries', methods=['GET'])
 @basic_auth.login_required
 def list_queries() -> Tuple[str, int]:
-    """Lists outstanding queries to be handled"""
+    """Lists outstanding queries to be handled.
+
+    See ListQueriesResponse for response body schema.
+    """
     t_start = datetime.utcnow()
     _logger.debug('Handler requesting queries')
     max_timeout = timedelta(seconds=5)
@@ -55,7 +73,10 @@ def list_queries() -> Tuple[str, int]:
 @webapp.route('/handler/queries/<id>', methods=['PUT'])
 @basic_auth.login_required
 def put_query_result(id: str) -> Tuple[str, int]:
-    """"""
+    """Fulfills an outstanding query.
+
+    See PutQueryRequest for request body schema.
+    """
     try:
         request: PutQueryRequest = ImplicitDict.parse(flask.request.json, PutQueryRequest)
     except ValueError as e:

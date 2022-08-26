@@ -1,8 +1,12 @@
 from monitoring.monitorlib.rid_automated_testing import injection_api
 from monitoring.monitorlib.typing import ImplicitDict
 
+# Each request descriptor in this file is expected to implement a static
+# request_type_name() method which indicates the type of request corresponding
+# with the descriptor.  Handler clients will use this type name to determine
+# what kind of query each query is.
 
-# --- RID observation ---
+# --- RID observation (interfaces/automated_testing/rid/observation.yaml) ---
 class RIDObservationGetDisplayDataRequest(ImplicitDict):
     @staticmethod
     def request_type_name() -> str:
@@ -19,7 +23,7 @@ class RIDObservationGetDetailsRequest(ImplicitDict):
     id: str
 
 
-# --- RID injection ---
+# --- RID injection (interfaces/automated_testing/rid/injection.yaml) ---
 class RIDInjectionCreateTestRequest(ImplicitDict):
     @staticmethod
     def request_type_name() -> str:
