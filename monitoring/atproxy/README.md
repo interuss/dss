@@ -49,6 +49,9 @@ when running in a real environment:
 * ATPROXY_TOKEN_AUDIENCE: Domain name (or comma-separated domain names) of the audience expected in access tokens used to access automated testing endpoints.
 * ATPROXY_CLIENT_BASIC_AUTH: Username and password (in the form `username:password`) of HTTP Basic authentication used to access handler endpoints.
 
+To access the handler endpoints (see [routes_handler.py](routes_handler.py)),
+HTTP Basic authentication matching ATPROXY_CLIENT_BASIC_AUTH must be provided.
+
 ### Internal automated testing client
 
 A USS's internal automated testing client should poll GET /handler/queries for
