@@ -58,7 +58,7 @@ components:
           type: string
           example: v0.0.1-445ad3
 
-    GeozoneSourceRequest:
+    CreateGeozoneSourceRequest:
       type: object
       properties:
         https_source:
@@ -151,7 +151,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GeozoneSourceRequest'
+              $ref: '#/components/schemas/CreateGeozoneSourceRequest'
       responses:
         '200':
           content:
@@ -177,7 +177,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GeozoneResponse'
+                $ref: '#/components/schemas/GeozoneSourceResponse'
           description: >-
             The Geozone source exists in the USS and its status was retrieved successfully.
         '401':
@@ -186,7 +186,7 @@ paths:
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
         '404':
           description: The Geozone source has been successfully deactivated or didn't exist.
-      operationId: GetGeozoneSource
+      operationId: CreateGeozoneSourceRequest
       summary: Status of a Geozone source
       description: Get the status of the Geozone source and its data.
 
@@ -199,7 +199,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GeozoneResponse'
+                $ref: '#/components/schemas/GeozoneSourceResponse'
           description: >-
             Request has been correctly handled and the Geozones dataset will be deleted by the USS.
             Status of the dataset shall be checked using the GET method until it returns a 404.
