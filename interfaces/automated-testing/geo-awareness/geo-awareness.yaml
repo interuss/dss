@@ -2,9 +2,15 @@ openapi: 3.0.2
 info:
   title: Geo-Awareness Test Data Injection
   version: 0.0.1
+  license:
+    name: Apache License v2.0
+    url: https://github.com/interuss/dss/blob/master/LICENSE
   description: >-
     This interface is implemented by every USS wishing to be tested by the automated testing framework.
     The automated testing suite calls this interface to inject test data into the USS system under test.
+
+servers:
+  - url: https://uss.example.com/geo-awareness
 
 components:
   securitySchemes:
@@ -17,9 +23,20 @@ components:
             utm.inject_test_data: |-
               Client may inject test data into a USS for the purpose of conducting automated tests.
       description: |-
-        Authorization from, or on behalf of, an authorization authority, augmenting standard geo-awareness authorization for the purpose of automated testing.
+        Authorization from, or on behalf of, an authorization authority, augmenting standard Geo-Awareness authorization for the purpose of automated testing.
 
   schemas:
+    UUIDv4Format:
+      description: >-
+        String whose format matches a version-4 UUID according to RFC 4122.
+      maxLength: 36
+      minLength: 36
+      type: string
+      format: uuid
+      pattern: >-
+        ^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$
+      example: 03e5572a-f733-49af-bc14-8a18bd53ee39
+
     StatusResponse:
       type: object
       required:
@@ -41,9 +58,61 @@ components:
           type: string
           example: v0.0.1-445ad3
 
+    CreateGeozoneSourceRequest:
+      type: object
+      properties:
+        https_source:
+          $ref: '#/components/schemas/GeozoneHttpsSource'
+
+    GeozoneHttpsSource:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: url
+          description: The URL at which the Geozone data shall be downloaded from.
+          example: https://caa.example.com/geozones.json
+        format:
+          type: string
+          description: The format of the response expected from the source.
+          enum: [ED-269]
+          example: ED-269
+
+    GeozoneSourceResponse:
+      type: object
+      required:
+        - result
+      properties:
+        result:
+          description: >-
+            The status of the Geozone source and the handling of its data by the USS.
+
+            - `Activating`: the USS is processing the request and is currently activating the Geozone data.
+
+            - `Ready`: the Geozone data has been successfully activated and the USS is ready to receive test requests.
+
+            - `Deactivating`: the Geozone data is being deactivated.
+
+            - `Unsupported`: the USS cannot process the dataset type specified.
+
+            - `Rejected`: the Geozone data was rejected because it is invalid.
+
+            - `Error`: the Geozone data activation or deactivation failed. The message field is required in this case.
+          type: string
+          enum: [Activating, Ready, Deactivating, Unsupported, Rejected, Error]
+          example: Ready
+        message:
+          description: Human-readable explanation of the result for debugging purpose only. This field is required when the result value is `Error`.
+          type: string
+          example: |-
+            Unable to download the dataset https://caa.example.com/geozones.json. Connection refused.
+
 paths:
   /v1/status:
     get:
+      operationId: GetStatus
       security:
         - Authority:
             - utm.inject_test_data
@@ -61,5 +130,83 @@ paths:
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
         '404':
           description: The USS automated testing interface is not activated.
-      summary: Retrieve the status of the USS automated testing interface
-      description: Get the status of the USS automated testing interface
+      summary: Status of the USS automated testing interface
+      description: Get the status of the USS automated testing interface.
+
+
+  /v1/geozone_sources/{geozone_source_id}:
+    parameters:
+      - name: geozone_source_id
+        in: path
+        required: true
+        description: A UUID string identifying a Geozone data source.
+        schema:
+          $ref: '#/components/schemas/UUIDv4Format'
+
+    put:
+      security:
+        - Authority:
+            - utm.inject_test_data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGeozoneSourceRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeozoneSourceResponse'
+          description: >-
+            Request has been correctly handled and the USS has been instructed to import and activate the Geozone data from the source.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+      operationId: PutGeozoneSource
+      summary: Import and activate a Geozone source
+      description: Instructs the USS to import and activate the Geozone data from this source.
+
+    get:
+      security:
+        - Authority:
+            - utm.inject_test_data
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeozoneSourceResponse'
+          description: >-
+            The Geozone source exists in the USS and its status was retrieved successfully.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+        '404':
+          description: The Geozone source has been successfully deactivated or didn't exist.
+      operationId: CreateGeozoneSourceRequest
+      summary: Status of a Geozone source
+      description: Get the status of the Geozone source and its data.
+
+    delete:
+      security:
+        - Authority:
+            - utm.inject_test_data
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeozoneSourceResponse'
+          description: >-
+            Request has been correctly handled and the Geozones dataset will be deleted by the USS.
+            Status of the dataset shall be checked using the GET method until it returns a 404.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+      operationId: DeleteGeozoneSource
+      summary: Deactivate a Geozone source
+      description: Instructs the USS to deactivate the Geozone source and its data.
