@@ -1,0 +1,5 @@
+flask==1.1.2
+Flask-HTTPAuth==4.7.0
+gunicorn==20.0.4
+pyopenssl
+-r ../monitorlib/requirements.txt

@@ -44,6 +44,10 @@ RUN mkdir -p /app/monitoring/uss_qualifier/webapp
 COPY uss_qualifier/webapp/requirements.txt /app/monitoring/uss_qualifier/webapp/requirements.txt
 RUN pip install -r /app/monitoring/uss_qualifier/webapp/requirements.txt
 
+RUN mkdir -p /app/monitoring/atproxy
+COPY atproxy/requirements.txt /app/monitoring/atproxy/requirements.txt
+RUN pip install -r /app/monitoring/atproxy/requirements.txt
+
 RUN rm -rf __pycache__
 
 ADD . /app/monitoring
