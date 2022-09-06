@@ -21,5 +21,6 @@ cp health_check.sh /app
 gunicorn \
     --preload \
     --workers=4 \
+    --timeout 60 \
     --bind=0.0.0.0:5000 \
     monitoring.atproxy:webapp

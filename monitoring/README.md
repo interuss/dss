@@ -14,6 +14,14 @@ The tools in this folder test, mock, or implement components of this system.
 
 ## Diagnostic tools
 
+### atproxy
+
+[atproxy](atproxy) exposes automated testing endpoints that can be implemented
+by calling other exposed handler endpoints.  This means that the automated
+testing implementation of a USS can make only outgoing calls to atproxy, which
+can be hosted in an entirely differently location than the automated testing
+implementation.
+
 ### interoperability
 
 ![DSS interoperability test system](../assets/interoperability_system.png)

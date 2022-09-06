@@ -59,7 +59,7 @@
 					"response": []
 				},
 				{
-					"name": "Get RID injection token from dummy OAuth Copy",
+					"name": "Get RID injection token from dummy OAuth",
 					"event": [
 						{
 							"listen": "test",
