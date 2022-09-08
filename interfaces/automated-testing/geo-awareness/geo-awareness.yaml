@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  title: Geo-Awareness Test Data Injection
+  title: Geo-Awareness Automated Test Interfaces
   version: 0.0.1
   license:
     name: Apache License v2.0
@@ -110,6 +110,220 @@ components:
           example: |-
             Unable to download the dataset https://caa.example.com/geozones.json. Connection refused.
 
+    #########################################################################
+    #################### Start of ED-269 definitions    #####################
+    #########################################################################
+    verticalReferenceType:
+      type: string
+      enum:
+        - AGL
+        - AMSL
+
+    polygonType:
+      type: object
+      description: See ED-269 standard for details.
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+            - Polygon
+        coordinates:
+          type: array
+          items:
+            type: array
+            minItems: 4
+            items:
+              type: array
+              minItems: 2
+              maxItems: 2
+              items:
+                type: number
+
+    circleType:
+      type: object
+      description: See ED-269 standard for details.
+      required:
+        - type
+        - center
+        - radius
+      properties:
+        type:
+          type: string
+          enum:
+            - Circle
+        center:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: number
+        radius:
+          type: number
+          exclusiveMinimum: 0
+
+    genericReply:
+      type: object
+      required:
+        - requestStatus
+        - requestProcessedTimeStamp
+      properties:
+        requestStatus:
+          type: string
+          enum:
+            - OK
+            - NOK
+        requestExceptionDescription:
+          type: string
+        requestProcessedTimeStamp:
+          type: string
+
+    UASZoneVersion:
+      type: object
+      required:
+        - identifier
+        - country
+        - type
+        - restriction
+        - zoneAuthority
+        - geometry
+      properties:
+        identifier:
+          type: string
+          maxLength: 7
+        country:
+          type: string
+          minLength: 3
+          maxLength: 3
+        name:
+          type: string
+          maxLength: 200
+        type:
+          type: string
+          enum:
+            - COMMON
+            - CUSTOMIZED
+        restriction:
+          type: string
+          enum:
+            - PROHIBITED
+            - REQ_AUTHORISATION
+            - CONDITIONAL
+            - NO_RESTRICTION
+        restrictionConditions:
+          type: array
+          items:
+            type: string
+        region:
+          type: integer
+        reason:
+          type: array
+          maxItems: 9
+          items:
+            type: string
+            enum:
+              - AIR_TRAFFIC
+              - SENSITIVE
+              - PRIVACY
+              - POPULATION
+              - NATURE
+              - NOISE
+              - FOREIGN_TERRITORY
+              - EMERGENCY
+              - OTHER
+        otherReasonInfo:
+          type: string
+          maxLength: 30
+        regulationExemption:
+          type: string
+          enum:
+            - YES
+            - NO
+        uSpaceClass:
+          type: string
+          maxLength: 100
+        message:
+          type: string
+          maxLength: 200
+        zoneAuthority:
+          type: array
+          items:
+            $ref: '#/components/schemas/UASZoneAuthority'
+          minItems: 1
+        applicability:
+          type: array
+          items:
+            $ref: '#/components/schemas/UASZoneTimePeriod'
+        geometry:
+          type: array
+          items:
+            $ref: '#/components/schemas/UASZoneAirspaceVolume'
+        extendedProperties:
+          type: object
+      additionalProperties: false
+
+    UASZoneAirspaceVolume:
+      type: object
+      properties:
+        uomDimensions:
+          type: string
+          enum:
+            - M
+            - FT
+        lowerLimit:
+          type: integer
+        lowerVerticalReference:
+          $ref: '#/components/schemas/verticalReferenceType'
+        upperLimit:
+          type: integer
+        upperVerticalReference:
+          $ref: '#/components/schemas/verticalReferenceType'
+        horizontalProjection:
+          oneOf:
+            - $ref: '#/components/schemas/polygonType'
+            - $ref: '#/components/schemas/circleType'
+      required:
+        - uomDimensions
+        - lowerVerticalReference
+        - upperVerticalReference
+        - horizontalProjection
+
+    UASZonesRequest:
+      type: object
+      properties:
+        airspaceVolume:
+          $ref: '#/components/schemas/UASZoneAirspaceVolume'
+        regions:
+          type: array
+          items:
+            type: integer
+        startDateTime:
+          type: string
+          format: date-time
+        endDateTime:
+          type: string
+          format: date-time
+
+    UASZonesReply:
+      type: object
+      required:
+        - genericReply
+      properties:
+        UASZoneList:
+          type: array
+          items:
+            # The Open API reference to the abstract class defined in UASZone.json was not found in the standard.
+            # The UASZoneVersion is used instead since it is the only inherited class.
+            $ref: '#/components/schemas/UASZoneVersion'
+        genericReply:
+          $ref: '#/components/schemas/genericReply'
+
+    #######################################################################
+    #################### END of ED-269 definitions    #####################
+    #######################################################################
+
 paths:
   /v1/status:
     get:
@@ -211,3 +425,29 @@ paths:
       operationId: DeleteGeozoneSource
       summary: Deactivate a Geozone source
       description: Instructs the USS to deactivate the Geozone source and its data.
+
+  /v1/geozones/query:
+    post:
+      security:
+        - Authority:
+            - geo-awareness.test
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UASZonesRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UASZonesReply'
+          description: >-
+            Checklist was retrieved successfully.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+      operationId: QueryGeozones
+      summary: Query Geozones
+      description: Query all relevant Geozones that are within or intersect the airspace of interest and are valid for the specified period of interest.
