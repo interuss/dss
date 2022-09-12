@@ -2,13 +2,12 @@ import base64
 import datetime
 import hashlib
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import urllib.parse
 import uuid
 
 import cryptography.exceptions
 import cryptography.hazmat.backends
-from cryptography.hazmat.backends.interfaces import Backend
 import cryptography.hazmat.primitives.hashes
 import cryptography.hazmat.primitives.serialization
 import cryptography.x509
@@ -147,7 +146,7 @@ class UsernamePassword(AuthAdapter):
     return response.json()['access_token']
 
 
-def _load_keypair(key_path: str, cert_url: str, backend: Backend) -> Tuple[jwcrypto.jwk.JWK, jwcrypto.jwk.JWK]:
+def _load_keypair(key_path: str, cert_url: str, backend: Any) -> Tuple[jwcrypto.jwk.JWK, jwcrypto.jwk.JWK]:
     # Retrieve certificate to validate match with private key
     response = requests.get(cert_url)
     assert response.status_code == 200
@@ -197,6 +196,14 @@ def _make_jws(token_headers: Dict[str, str], payload: str, private_jwk: jwcrypto
         raise AccessTokenError('Could not construct a valid cryptographic signature for JWS')
 
     return signed
+
+
+def _make_signature(payload: str, private_jwk: jwcrypto.jwk.JWK, public_jwk: jwcrypto.jwk.JWK) -> str:
+    signer = jwcrypto.jws.JWA.signing_alg('RS256')
+    payload_bytes = payload.encode('utf-8')
+    signature = signer.sign(private_jwk, payload_bytes)
+    signer.verify(public_jwk, payload_bytes, signature)
+    return base64.b64encode(signature).decode('utf-8')
 
 
 class SignedRequest(AuthAdapter):
@@ -267,7 +274,7 @@ class SignedRequest(AuthAdapter):
         content_digest = base64.b64encode(hashlib.sha512(payload.encode('utf-8')).digest()).decode('utf-8')
         path = urllib.parse.urlparse(self._token_endpoint).path
         components = ['@method', '@path', '@query', 'authorization', 'content-type', 'content-digest', 'x-utm-jws-header']
-        signature_base = {
+        signature_content = {
             '@method': 'POST',
             '@path': path,
             '@query': '?',
@@ -278,19 +285,14 @@ class SignedRequest(AuthAdapter):
             '@signature-params': '({});created={}'.format(' '.join('"{}"'.format(c) for c in components), int(datetime.datetime.utcnow().timestamp()))
         }
         components.append('@signature-params')
-        signature_payload = '\n'.join('"{}": {}'.format(c, signature_base[c]) for c in components) + '\n'
-        signature = _make_jws(token_headers, signature_payload, self._private_jwk, self._public_jwk)
-        signature = re.sub(r'[^.]*\.[^.]*\.', '', signature)
-        padding = 4 - (len(signature) % 4)
-        if padding < 4:
-            signature = signature + ('=' * padding)
-        signature = signature.replace('-', '+').replace('_', '/')
+        signature_base = '\n'.join('"{}": {}'.format(c, signature_content[c]) for c in components)
+        signature = _make_signature(signature_base, self._private_jwk, self._public_jwk)
 
-        for k, v in signature_base.items():
+        for k, v in signature_content.items():
             if k[0] != '@':
                 request_headers[k] = v
         request_headers['x-utm-message-signature'] = 'utm-message-signature=:{}:'.format(signature)
-        request_headers['x-utm-message-signature-input'] = 'utm-message-signature={}'.format(signature_base['@signature-params'])
+        request_headers['x-utm-message-signature-input'] = 'utm-message-signature={}'.format(signature_content['@signature-params'])
     else:
         raise ValueError('Invalid signature style')
 
