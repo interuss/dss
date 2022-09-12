@@ -7,7 +7,8 @@ info:
     url: https://github.com/interuss/dss/blob/master/LICENSE
   description: >-
     This interface is implemented by every USS wishing to be tested by the automated testing framework.
-    The automated testing suite calls this interface to inject test data into the USS system under test.
+    The automated testing suite calls this interface to load test data into the USS system under test and
+    read Geo-Awareness information to evaluate its processing and interpretation.
 
 servers:
   - url: https://uss.example.com/geo-awareness
@@ -20,8 +21,8 @@ components:
         clientCredentials:
           tokenUrl: https://auth.example.com/oauth/token
           scopes:
-            utm.inject_test_data: |-
-              Client may inject test data into a USS for the purpose of conducting automated tests.
+            geo-awareness.test: |-
+              Client may instruct the USS under test to load Geozone data and may read Geo-Awareness information.
       description: |-
         Authorization from, or on behalf of, an authorization authority, augmenting standard Geo-Awareness authorization for the purpose of automated testing.
 
@@ -115,7 +116,7 @@ paths:
       operationId: GetStatus
       security:
         - Authority:
-            - utm.inject_test_data
+            - geo-awareness.test
       responses:
         '200':
           content:
@@ -146,7 +147,7 @@ paths:
     put:
       security:
         - Authority:
-            - utm.inject_test_data
+            - geo-awareness.test
       requestBody:
         content:
           application/json:
@@ -171,7 +172,7 @@ paths:
     get:
       security:
         - Authority:
-            - utm.inject_test_data
+            - geo-awareness.test
       responses:
         '200':
           content:
@@ -193,7 +194,7 @@ paths:
     delete:
       security:
         - Authority:
-            - utm.inject_test_data
+            - geo-awareness.test
       responses:
         '200':
           content:
