@@ -113,6 +113,7 @@ components:
     #########################################################################
     #################### Start of ED-269 definitions    #####################
     #########################################################################
+
     verticalReferenceType:
       type: string
       enum:
@@ -179,6 +180,92 @@ components:
           type: string
         requestProcessedTimeStamp:
           type: string
+
+    weekDayType:
+      type: string
+      enum:
+        - MON
+        - TUE
+        - WED
+        - THU
+        - FRI
+        - SAT
+        - SUN
+        - ANY
+
+    dailyPeriod:
+      type: object
+      required:
+        - day
+        - startTime
+        - endTime
+      properties:
+        day:
+          type: array
+          minItems: 1
+          maxItems: 7
+          items:
+            $ref: '#/components/schemas/weekDayType'
+        startTime:
+          type: string
+          format: time
+        endTime:
+          type: string
+          format: time
+
+    UASZoneAuthority:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        service:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          format: email
+        contactName:
+          type: string
+          maxLength: 200
+        siteURL:
+          type: string
+          maxLength: 200
+        phone:
+          type: string
+          maxLength: 200
+        purpose:
+          type: string
+          enum:
+            - AUTHORIZATION
+            - NOTIFICATION
+            - INFORMATION
+        intervalBefore:
+          description: See ED-269 standard for details.
+          type: string
+          format: duration
+
+    UASZoneTimePeriod:
+      type: object
+      required:
+        - permanent
+      properties:
+        permanent:
+          type: string
+          enum:
+            - YES
+            - NO
+        startDateTime:
+          type: string
+          format: date-time
+        endDateTime:
+          type: string
+          format: date-time
+        schedule:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/dailyPeriod'
 
     UASZoneVersion:
       type: object
