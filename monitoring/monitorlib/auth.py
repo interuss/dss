@@ -1,6 +1,8 @@
+import base64
 import datetime
+import hashlib
 import re
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import urllib.parse
 import uuid
 
@@ -144,10 +146,70 @@ class UsernamePassword(AuthAdapter):
     return response.json()['access_token']
 
 
+def _load_keypair(key_path: str, cert_url: str, backend: Any) -> Tuple[jwcrypto.jwk.JWK, jwcrypto.jwk.JWK]:
+    # Retrieve certificate to validate match with private key
+    response = requests.get(cert_url)
+    assert response.status_code == 200
+    if cert_url[-4:].lower() == '.der':
+        cert = cryptography.x509.load_der_x509_certificate(response.content, backend)
+    elif cert_url[-4:].lower() == '.crt':
+        cert = cryptography.x509.load_pem_x509_certificate(response.content, backend)
+    else:
+        raise AccessTokenError('cert_url must end with .der or .crt')
+    cert_public_key = cert.public_key().public_bytes(
+        cryptography.hazmat.primitives.serialization.Encoding.PEM,
+        cryptography.hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo)
+
+    # Generate public key directly from private key
+    with open(key_path, 'r') as f:
+        key_content = f.read().encode('utf-8')
+    if key_path[-4:].lower() == '.key' or key_path[-4:].lower() == '.pem':
+        private_key = cryptography.hazmat.primitives.serialization.load_pem_private_key(
+            key_content, password=None, backend=backend)
+        private_key_bytes = key_content
+    else:
+        raise AccessTokenError('key_path must end with .key or .pem')
+    public_key = private_key.public_key().public_bytes(
+        cryptography.hazmat.primitives.serialization.Encoding.PEM,
+        cryptography.hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo)
+
+    if cert_public_key != public_key:
+        raise AccessTokenError('Public key in certificate does not match private key provided')
+
+    private_jwk = jwcrypto.jwk.JWK.from_pem(private_key_bytes)
+    public_jwk = jwcrypto.jwk.JWK.from_pem(public_key)
+    return private_jwk, public_jwk
+
+
+def _make_jws(token_headers: Dict[str, str], payload: str, private_jwk: jwcrypto.jwk.JWK, public_jwk: jwcrypto.jwk.JWK) -> str:
+    # Create JWS
+    jws = jwcrypto.jws.JWS(payload.encode('utf-8'))
+    jws.add_signature(private_jwk, 'RS256', protected=jwcrypto.common.json_encode(token_headers))
+    signed = jws.serialize(compact=True)
+
+    # Check JWS
+    jws_check = jwcrypto.jws.JWS()
+    jws_check.deserialize(signed)
+    try:
+        jws_check.verify(public_jwk, 'RS256')
+    except jwcrypto.jws.InvalidJWSSignature:
+        raise AccessTokenError('Could not construct a valid cryptographic signature for JWS')
+
+    return signed
+
+
+def _make_signature(payload: str, private_jwk: jwcrypto.jwk.JWK, public_jwk: jwcrypto.jwk.JWK) -> str:
+    signer = jwcrypto.jws.JWA.signing_alg('RS256')
+    payload_bytes = payload.encode('utf-8')
+    signature = signer.sign(private_jwk, payload_bytes)
+    signer.verify(public_jwk, payload_bytes, signature)
+    return base64.b64encode(signature).decode('utf-8')
+
+
 class SignedRequest(AuthAdapter):
   """Auth adapter that gets JWTs by signing its outgoing requests."""
 
-  def __init__(self, token_endpoint: str, client_id: str, key_path: str, cert_url: str, key_id: Optional[str] = None):
+  def __init__(self, token_endpoint: str, client_id: str, key_path: str, cert_url: str, key_id: Optional[str] = None, signature_style: str = 'UPP2'):
     """Create an AuthAdapter that retrieves tokens via message signing.
 
     Args:
@@ -159,47 +221,22 @@ class SignedRequest(AuthAdapter):
         recognized by the authorization server.
       key_id: If specified, the specific ID to supply in the JWS header.  If not
         specified, defaults to the thumbprint of the certificate's public key.
+      signature_style: "UPP2" to use a signature in the style of UPP2, "UFT" to
+        use a signature in the style of UFT (UPP2 and UFT are FAA
+        demonstrations).
     """
     super().__init__()
 
     self._token_endpoint = token_endpoint
     self._client_id = client_id
-    with open(key_path, 'r') as f:
-      self._private_key = f.read()
     self._cert_url = cert_url
     self._backend = cryptography.hazmat.backends.default_backend()
 
-    # Retrieve certificate to validate match with private key
-    response = requests.get(self._cert_url)
-    assert response.status_code == 200
-    if cert_url[-4:].lower() == '.der':
-      cert = cryptography.x509.load_der_x509_certificate(response.content, self._backend)
-    elif cert_url[-4:].lower() == '.crt':
-      cert = cryptography.x509.load_pem_x509_certificate(response.content, self._backend)
-    else:
-      raise AccessTokenError('cert_url must end with .der or .crt')
-    cert_public_key = cert.public_key().public_bytes(
-      cryptography.hazmat.primitives.serialization.Encoding.PEM,
-      cryptography.hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo)
+    self._signature_style = signature_style
+    if signature_style not in ('UPP2', 'UFT'):
+        raise ValueError('signature_style must be either `UPP2` or `UFT`; found `{}`'.format(signature_style))
 
-    # Generate public key directly from private key
-    with open(key_path, 'r') as f:
-      key_content = f.read().encode('utf-8')
-    if key_path[-4:].lower() == '.key' or key_path[-4:].lower() == '.pem':
-      private_key = cryptography.hazmat.primitives.serialization.load_pem_private_key(
-        key_content, password=None, backend=self._backend)
-      private_key_bytes = key_content
-    else:
-      raise AccessTokenError('key_path must end with .key or .pem')
-    public_key = private_key.public_key().public_bytes(
-      cryptography.hazmat.primitives.serialization.Encoding.PEM,
-      cryptography.hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo)
-
-    if cert_public_key != public_key:
-      raise AccessTokenError('Public key in certificate does not match private key provided')
-
-    self._private_jwk = jwcrypto.jwk.JWK.from_pem(private_key_bytes)
-    self._public_jwk = jwcrypto.jwk.JWK.from_pem(public_key)
+    self._private_jwk, self._public_jwk = _load_keypair(key_path, cert_url, self._backend)
 
     # Assign key ID
     if key_id:
@@ -219,33 +256,47 @@ class SignedRequest(AuthAdapter):
     }
     payload = '&'.join([k + '=' + v for k, v in query.items()])
 
-    # Construct JWS
+    # Generate signature
     token_headers = {
       'typ': 'JOSE',
       'alg': 'RS256',
       'x5u': self._cert_url,
       'kid': self._kid,
     }
-    jws = jwcrypto.jws.JWS(payload.encode('utf-8'))
-    jws.add_signature(self._private_jwk, 'RS256', protected=jwcrypto.common.json_encode(token_headers))
-    signed = jws.serialize(compact=True)
 
-    # Check JWS
-    jws_check = jwcrypto.jws.JWS()
-    jws_check.deserialize(signed)
-    try:
-      jws_check.verify(self._public_jwk, 'RS256')
-    except jwcrypto.jws.InvalidJWSSignature:
-      raise AccessTokenError('Could not construct a valid cryptographic signature for JWS')
+    # Add signature header(s) and associated information
+    request_headers: Dict[str, str] = {}
+    if self._signature_style == 'UPP2':
+        signature = _make_jws(token_headers, payload, self._private_jwk, self._public_jwk)
+        request_headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        request_headers['x-utm-message-signature'] = re.sub(r'\.[^.]*\.', '..', signature)
+    elif self._signature_style == 'UFT':
+        content_digest = base64.b64encode(hashlib.sha512(payload.encode('utf-8')).digest()).decode('utf-8')
+        path = urllib.parse.urlparse(self._token_endpoint).path
+        components = ['@method', '@path', '@query', 'authorization', 'content-type', 'content-digest', 'x-utm-jws-header']
+        signature_content = {
+            '@method': 'POST',
+            '@path': path,
+            '@query': '?',
+            'authorization': '',
+            'content-type': 'application/x-www-form-urlencoded',
+            'content-digest': 'sha-512=:{}:'.format(content_digest),
+            'x-utm-jws-header': ', '.join('{}="{}"'.format(k, v) for k, v in token_headers.items()),
+            '@signature-params': '({});created={}'.format(' '.join('"{}"'.format(c) for c in components), int(datetime.datetime.utcnow().timestamp()))
+        }
+        components.append('@signature-params')
+        signature_base = '\n'.join('"{}": {}'.format(c, signature_content[c]) for c in components)
+        signature = _make_signature(signature_base, self._private_jwk, self._public_jwk)
 
-    # Construct signature
-    signature = re.sub(r'\.[^.]*\.', '..', signed)
+        for k, v in signature_content.items():
+            if k[0] != '@':
+                request_headers[k] = v
+        request_headers['x-utm-message-signature'] = 'utm-message-signature=:{}:'.format(signature)
+        request_headers['x-utm-message-signature-input'] = 'utm-message-signature={}'.format(signature_content['@signature-params'])
+    else:
+        raise ValueError('Invalid signature style')
 
     # Make token request
-    request_headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'x-utm-message-signature': signature,
-    }
     response = requests.post(self._token_endpoint, data=payload, headers=request_headers)
     if response.status_code != 200:
       raise AccessTokenError('Request to get SignedRequest access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
