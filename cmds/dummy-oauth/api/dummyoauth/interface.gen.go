@@ -3,11 +3,19 @@ package dummyoauth
 
 import (
 	"context"
+
 	"github.com/interuss/dss/cmds/dummy-oauth/api"
 )
 
 var (
-	GetTokenSecurity = map[string]api.SecurityScheme{}
+	GetTokenSecurity  = map[string]api.SecurityScheme{}
+	PostTokenSecurity = map[string]api.SecurityScheme{
+		"fims-jws": []api.AuthorizationOption{
+			{RequiredScopes: []string{}},
+		},
+	}
+	GetWellKnownOauthAuthorizationServerSecurity = map[string]api.SecurityScheme{}
+	GetWellKnownJwksJsonSecurity                 = map[string]api.SecurityScheme{}
 )
 
 type GetTokenRequest struct {
@@ -40,7 +48,96 @@ type GetTokenResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
+type PostTokenRequest struct {
+	// The signature as defined in https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-message-signatures-11#section-4.2
+	XUtmMessageSignature *string
+
+	// Defines what data is covered by the accompanying signature. Defined in https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-message-signatures-11#section-4.1
+	XUtmMessageSignatureInput *string
+
+	// Contains information necessary to verify a JWS signature
+	XUtmJwsHeader *xUtmMessageSignatureJoseHeader
+
+	// SHA-512 hash of message contents as defined in:https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-digest-headers-10.
+	ContentDigest *string
+
+	// The data contained in the body of this request, if it parsed correctly
+	Body *TokenRequestForm
+
+	// The error encountered when attempting to parse the body of this request
+	BodyParseError error
+
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+type PostTokenResponseSet struct {
+	// OK
+	Response200 *HttpTokenResponse
+
+	// - Request did not conform to the API specification or failed validation.
+	Response400 *HttpErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
+type GetWellKnownOauthAuthorizationServerRequest struct {
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+type GetWellKnownOauthAuthorizationServerResponseSet struct {
+	// OK
+	Response200 *Metadata
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
+type GetWellKnownJwksJsonRequest struct {
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+type GetWellKnownJwksJsonResponseSet struct {
+	// OK
+	Response200 *JsonWebKeySet
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
 type Implementation interface {
 	// Generate an access token
 	GetToken(ctx context.Context, req *GetTokenRequest) GetTokenResponseSet
+
+	// Request an access token.
+	// ---
+	// The primary endpoint for this authorization server.  Used to request an access token
+	// suitable for authorizing data exchanges within the USS Network.
+	//
+	// Implemented per https://tools.ietf.org/html/rfc6749#section-3.2 .
+	//
+	PostToken(ctx context.Context, req *PostTokenRequest) PostTokenResponseSet
+
+	// Provides metadata related to use of this authorization server
+	// ---
+	// Per RFC8414, this endpoint provides metadata related to use of this authorization
+	// server. See https://tools.ietf.org/html/rfc8414#section-3 for more details.
+	//
+	GetWellKnownOauthAuthorizationServer(ctx context.Context, req *GetWellKnownOauthAuthorizationServerRequest) GetWellKnownOauthAuthorizationServerResponseSet
+
+	// Serves the public JWKS of the authorization server
+	// ---
+	// This endpoint serves the signing key(s) the client uses to validate
+	// signatures from the authorization server.
+	//
+	// The JWK Set MAY also contain the server's encryption key or keys,
+	// which are used by clients to encrypt requests to the server.
+	//
+	// When both signing and encryption keys are made available, a "use"
+	// (public key use) parameter value is REQUIRED for all keys in the
+	// referenced JWK Set to indicate each key's intended usage.
+	//
+	// Refer to RFC7517 - https://tools.ietf.org/html/rfc7517
+	//
+	GetWellKnownJwksJson(ctx context.Context, req *GetWellKnownJwksJsonRequest) GetWellKnownJwksJsonResponseSet
 }

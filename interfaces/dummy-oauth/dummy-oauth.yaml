@@ -6,22 +6,6 @@ info:
     This interface exposes the ability to generate OAuth tokens usable by the
     DSS according to parameters specified by the client.
 
-components:
-  schemas:
-    TokenResponse:
-      type: object
-      required:
-      - access_token
-      properties:
-        access_token:
-          description: JWT that may be used as a Bearer token to authorize operations on an appropriately-configured DSS instance
-          type: string
-    BadRequestResponse:
-      type: object
-      properties:
-        message:
-          description: Human-readable message describing problem with request
-          type: string
 
 paths:
   /token:
@@ -79,3 +63,498 @@ paths:
           description: >-
             The request was not properly formed
       summary: Generate an access token
+    post:
+      summary: Request an access token.
+      description: |
+        The primary endpoint for this authorization server.  Used to request an access token
+        suitable for authorizing data exchanges within the USS Network.
+
+        Implemented per https://tools.ietf.org/html/rfc6749#section-3.2 .
+      security:
+        - fims-jws: []
+      parameters:
+        - in: header
+          name: x-utm-message-signature
+          schema:
+            type: string
+          required: true
+          description: |-
+            The signature as defined in https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-message-signatures-11#section-4.2
+          example: "utm-message-signature=:hSVdrDoa0/mQ8Lmc0GN0r0z12TVs5ql2nU5w2DDRZs5vclfPAAfCaBWeYca+1L21MFRbxZJKoamZv9eaZ0Hij4QayKAUTFowSaxregtrhKivWtk+30ix3BljpzCJcd6n3+eOZGj783bFbxpM5p4NaNqdv94cfo/TZfrqhYA8iB8gj5HtmymBd1vTwYFh5lI2q9AIyvVdIihU7I9AmlKFxawJ/o0weiL6AjxqzFs2HUfh6INLQIyaQ4opSPMapspU25540fW+YwHI1UVC9CXCPny+Z2p2ry9G7xenMwcL/adsE5JWPpaUjBs3TtGr7PmGDn6pL8UUR4S8y+pvUXaFRg==:"
+        - in: header
+          name: x-utm-message-signature-input
+          schema:
+            type: string
+          required: true
+          description: |-
+            Defines what data is covered by the accompanying signature. Defined in https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-message-signatures-11#section-4.1
+          example: 'utm-message-signature=("@method" "@path" "@query" "authorization" "content-type" "content-digest" "x-utm-jws-header");created=1661967431'
+        - in: header
+          name: x-utm-jws-header
+          schema:
+            $ref: '#/components/schemas/xUtmMessageSignatureJoseHeader'
+          required: true
+          description: |-
+            Contains information necessary to verify a JWS signature
+        - in: header
+          name: content-digest
+          schema:
+            type: string
+          required: true
+          description: |-
+            SHA-512 hash of message contents as defined in:https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-digest-headers-10.
+          example: "sha-512=:91585ef48a0baad22ec820744a75450bce80519171d41ce039a723e7bae09fe3e82c09c4fed8a5e77094347460cc3970e261b5238969b1e2adbc3fa6841cdb1e:"
+      requestBody:
+        description: Data supplied by the client for a token request.
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRequestForm'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpTokenResponse'
+        '400':
+          description: '- Request did not conform to the API specification or failed validation.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorResponse'
+
+  /.well-known/oauth-authorization-server:
+    get:
+      tags:
+        - /.well-known/
+      summary: Provides metadata related to use of this authorization server
+      description: |
+        Per RFC8414, this endpoint provides metadata related to use of this authorization
+        server. See https://tools.ietf.org/html/rfc8414#section-3 for more details.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metadata'
+  /.well-known/jwks.json:
+    get:
+      tags:
+        - /.well-known/
+      summary: Serves the public JWKS of the authorization server
+      description: |
+        This endpoint serves the signing key(s) the client uses to validate
+        signatures from the authorization server.
+
+        The JWK Set MAY also contain the server's encryption key or keys,
+        which are used by clients to encrypt requests to the server.
+
+        When both signing and encryption keys are made available, a "use"
+        (public key use) parameter value is REQUIRED for all keys in the
+        referenced JWK Set to indicate each key's intended usage.
+
+        Refer to RFC7517 - https://tools.ietf.org/html/rfc7517
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JsonWebKeySet'              
+
+components:
+  securitySchemes:
+    fims-jws:
+      description: |
+        FIMS-Authz uses a JWS-based approach to authentication.
+
+        USS clients are vetted/qualified in advance and provide an owned DNS
+        name that serves as their primary identifer.  That DNS name is then
+        included in a certificate (as a subject alternative name) that the
+        client procures from an approved CA.  The private key related to that
+        public certificate is then used to create a JWS by signing the HTTP
+        body of the token request.
+
+      type: apiKey
+      in: header
+      name: x-utm-message-signature
+  schemas:
+    TokenRequestForm:
+        type: object
+        required:
+        - grant_type
+        - client_id
+        - scope
+        - current_timestamp
+        additionalProperties: false
+        properties:
+          grant_type:
+            type: string
+            description: Type of grant. Must be 'client_credentials'.
+            enum:
+              - client_credentials
+          client_id:
+            description: The client_id (uss_name) of the requesting USS.
+            type: string
+            example: uss12345.co
+          scope:
+            description: |
+              The requested scope(s), a list of space-delimited,
+              case-sensitive names. Same as in RFC 6749.
+            type: string
+            example: utm.strategic_coordination utm.constraint_processing
+          audience:
+            description: |
+              The hostname of the server with which the resulting access token will be used.
+              If valid, this resource value will be included in the access token as an aud claim.
+              Note the format of this field is a single hostname.  This authorization server does not produce of multi-audience tokens.
+              See https://tools.ietf.org/html/rfc7519#section-4.1.3 for more info on how the aud claim is to be used.
+            type: string
+            format: hostname
+            maxLength: 2000
+            example: npsu1.arc.nasa.gov
+          current_timestamp:
+            description: |
+                    A timestamp of the current time generated by the client at request
+                    generation time. UTC only. UTM Commons format with millisecond precision.
+
+                    May be used by the authorization server to validate the request.
+            type: string
+            format: date-time
+            example: '2020-06-19T13:37:52.562Z'
+        example:
+          grant_type: client_credentials
+          client_id: uss1234.co
+          scope: utm.strategic_coordination
+          audience: npsu1.arc.nasa.gov
+          current_timestamp: '2020-06-19T13:37:52.562Z'
+    TokenResponse:
+      type: object
+      required:
+      - access_token
+      properties:
+        access_token:
+          description: JWT that may be used as a Bearer token to authorize operations on an appropriately-configured DSS instance
+          type: string
+    BadRequestResponse:
+      type: object
+      properties:
+        message:
+          description: Human-readable message describing problem with request
+          type: string
+
+    HttpTokenResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        access_token:
+          type: string
+          format: JwsCompactSerialization
+          description: see definitions/JwsCompactSerialization in this spec
+        scope:
+          type: string
+          description: |
+            The granted scope(s), a list of space-delimited,
+            case-sensitive names. Same as in RFC 6749.
+        token_type:
+          type: string
+          enum:
+            - bearer
+        expires_in:
+          type: integer
+          format: int64
+          description: see definitions/JwtClaimsSet.exp property in this spec
+        sub:
+          type: string
+          description: see definitions/JwtClaimsSet in this spec
+        jti:
+          type: string
+          format: uuid
+          description: see definitions/JwtClaimsSet in this spec
+        iss:
+          type: string
+          description: see definitions/JwtClaimsSet in this spec
+        nbf:
+          type: integer
+          format: int64
+          description: see definitions/JwtClaimsSet in this spec
+        aud:
+          type: string
+          description: see definitions/JwtClaimsSet in this spec
+      example:
+        access_token: tokenstring
+        token_type: bearer
+        expires_in: 3599
+        scope: utm.strategic_coordination
+        sub: nuss1.testing.nasa.gov
+        nbf: 1509470774
+        iss: fims.arc.nasa.gov/fimsAuthServer
+        jti: 4d4c1a63-0959-48cc-885a-3648fd582db7
+        aud: npsu1.arc.nasa.gov
+    xUtmMessageSignatureJoseHeader:
+      description: The JOSE (JSON Object Signing and Encryption) header of the JWS used in Message Signing. Refer to UFAA's section 5.12.1 for additional information.
+      type: object
+      properties:
+        alg:
+          type: string
+          description: The algorithm used to sign the JWS, which is required to be a  registered JSON Web Algorithm (JWA). See RFC 7518 for details on JWA.
+          enum:
+            - RS256
+        typ:
+          type: string
+          description: The type is used by JWS applications to declare the media type of  this complete JWS. In this case, it must be “JOSE” per ​RFC 7515​.
+          enum:
+            - JOSE
+        x5u:
+          type: string
+          description: The "x5u" (X.509 URL) Header Parameter is a URI [​RFC 3986]​ that  refers to a resource for the X.509 public key certificate or  certificate chain [​RFC 5280​] corresponding to the key used to  digitally sign the JWS.
+          example: https://example.com/.well-known/uas-traffic-management/public.der
+        kid:
+          type: string
+          description: The Key ID of the JWK used to sign. Note that the jku reference  will provide a set of keys with unique key identifiers. Those  identifiers will be searched to match against this kid.
+    JsonWebToken:
+      description: The token provided by the FIMS Authorization Server is a JWS representing a JWT.  The token is actually a JWS Compact Serialization string as described in RFC 7515.  For clarity of documentation, we represent the pre-serialized components here as a JSON schema.
+      type: object
+      additionalProperties: false
+      properties:
+        header:
+          $ref: '#/components/schemas/JwtHeader'
+        payload:
+          $ref: '#/components/schemas/JwtClaimsSet'
+        signature:
+          type: string
+          description: See RFC 7515 for details.
+    JwtHeader:
+      description: The header of the JWT Bearer Token returned by FIMS-AZ.
+      type: object
+      properties:
+        alg:
+          type: string
+          enum:
+            - RSA
+        typ:
+          type: string
+          enum:
+            - JWT
+          description: The FIMS Authorization Server only support 'JWT' (JSON Web Token) as the algorithm type.
+    JwtClaimsSet:
+      type: object
+      required:
+        - iss
+        - sub
+        - exp
+        - nbf
+        - iat
+        - jti
+        - scope
+        - aud
+      additionalProperties: false
+      description: Claims included within JWT Bearer Token returned by FIMS-AZ.
+      properties:
+        iss:
+          type: string
+          format: URL
+          description: The "iss" (issuer) claim identifies the principal that issued the JWT. The URL of the FIMS Authorization Server.
+        sub:
+          type: string
+          description: The "sub" (suv4-draft identifies the principal that is the subject of the JWT.
+        exp:
+          type: integer
+          description: The "exp" (expiration time) claim identifies the expiration time on or after which the JWT MUST NOT be accepted for processing.  The processing of the "exp" claim requires that the current date/time MUST be before the expiration date/time listed in the "exp" claim.
+        nbf:
+          type: integer
+          description: The "nbf" (not before) claim identifies the time before which the JWT MUST NOT be accepted for processing.  The processing of the "nbf" claim requires that the current date/time MUST be after or equal to the not-before date/time listed in the "nbf" claim.
+        iat:
+          type: integer
+          description: The "iat" (issued at) claim identifies the time at which the JWT was issued.  This claim can be used to determine the age of the JWT.
+        jti:
+          type: string
+          format: uuid
+          description: The "jti" (JWT ID) claim provides a unique identifier for the JWT. For this server, this is satisfied by the use of a UUID.
+        scope:
+          description: |
+            The granted scope(s), a list of space-delimited, case-sensitive names.
+          type: string
+          example: utm.strategic_coordination utm.constraint_processing
+        aud:
+          description: |
+            The "aud" (audience) claim identifies the recipients that the JWT is
+            intended for.  Each server intended to process the JWT MUST
+            identify itself with a value in the audience claim.  If the server
+            processing the claim does not identify itself with a value in the
+            "aud" claim when this claim is present, then the JWT MUST be
+            rejected.  "aud" will contain exactly one identifier of
+            the intended recipient system.
+          type: string
+          format: hostname
+          example: npsu1.arc.nasa.gov
+        authorities:
+          description: An array of all authorities that the client is associated with.
+          type: array
+          items:
+            type: string
+            example: ASTM_USS_BASIC
+          minItems: 1
+        client_id:
+          description: The client_id (uss_name) of the requesting USS.
+          type: string
+          example: uss.example.xyz
+    Metadata:
+      type: object
+      description: Information provided at the `/.well-known/oauth-authorization-server` endpoint.
+      required:
+        - iss
+        - token_endpoint
+        - jwks_uri
+        - scopes_supported
+        - response_types_supported
+        - grant_types_supported
+        - token_endpoint_auth_methods_supported
+        - token_endpoint_auth_signing_alg_values_supported
+        - service_documentation
+        - jwt_claims
+        - signed_metadata
+      additionalProperties: false
+      properties:
+        iss:
+          type: string
+          format: url
+          description: The authorization server's issuer identifier, which is a URL that uses the "https" scheme and has no query or fragment components. This is the location where ".well-known" RFC 8615 resources containing information about the authorization server are published.  Using these well-known resources is described in Section 3.  The issuer identifier is used to prevent authorization server mix-up attacks, as described in "OAuth 2.0 Mix-Up Mitigation".
+        token_endpoint:
+          type: string
+          format: url
+          description: URL of the authorization server's token endpoint [RFC6749].  This is REQUIRED unless only the implicit grant type is used.
+        jwks_uri:
+          type: string
+          format: uri
+          description: |
+            URL of the authorization server's JWK Set
+            document.  The referenced document contains the signing key(s) the
+            client uses to validate signatures from the authorization server.
+            This URL MUST use the "https" scheme.  The JWK Set MAY also
+            contain the server's encryption key or keys, which are used by
+            clients to encrypt requests to the server.  When both signing and
+            encryption keys are made available, a "use" (public key use)
+            parameter value is REQUIRED for all keys in the referenced JWK Set
+            to indicate each key's intended usage.
+        scopes_supported:
+          type: array
+          items:
+            type: string
+          description: JSON array containing a list of the OAuth 2.0 [RFC6749] "scope" values that this authorization server supports. Servers MAY choose not to advertise some supported scope values even when this parameter is used.
+        response_types_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - none
+          minItems: 0
+          maxItems: 0
+          description: |-
+            JSON array containing a list of the OAuth 2.0 "response_type" values that this authorization server supports. These values are required for responses from calls to the authorization endpoint, thus this array may be empty if no grant flows use the authorization endpoint, thus this server returns an empty array. (definitions in RFC 7591)
+            This field is required per RFC 8414, but this auth server does not support the flows that use this field, thus an empty array is returned.
+        grant_types_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - client_credentials
+          minItems: 1
+          maxItems: 1
+          description: JSON array containing a list of the OAuth 2.0 grant type values that this authorization server supports. (definitions in RFC 7591)
+        token_endpoint_auth_methods_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - private_key_jwt
+          minItems: 1
+          maxItems: 1
+          description: JSON array containing a list of client authentication methods supported by this token endpoint.  Client authentication method values are used in the "token_endpoint_auth_method" parameter defined in Section 2 of [RFC7591].  If omitted, the default is "client_secret_basic" -- the HTTP Basic Authentication Scheme specified in Section 2.3.1 of OAuth 2.0 [RFC6749]. FIMS-Authz will only support private_key_jwt.
+        token_endpoint_auth_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - HS256
+              - RS256
+              - ES256
+          minItems: 3
+          maxItems: 3
+          uniqueItems: true
+          description: |-
+            JSON array containing a list of the JWS signing algorithms (alg
+            values) supported by the token endpoint for the signature on the JWT
+            [JWT] used to authenticate the client at the token endpoint for the
+            `private_key_jwt` and `client_secret_jwt` authentication methods.
+            Servers SHOULD support "RS256". The value "none" MUST NOT be used.
+
+            See UFAA doc for details.
+        service_documentation:
+          type: string
+          format: url
+          description: URL of a page containing human-readable information that developers might want or need to know when using the authorization server.  In particular, if the authorization server does not support Dynamic Client Registration, then information on how to register clients needs to be provided in this documentation.
+        jwt_claims:
+          $ref: '#/components/schemas/JwtClaimsSet'
+        signed_metadata:
+          type: string
+          format: JWT
+          description: |
+            A JWT containing metadata values about the authorization server as
+            claims.  This is a string value consisting of the entire signed
+            JWT.  A "signed_metadata" metadata value SHOULD NOT appear as a
+            claim in the JWT.
+
+            Refer to RFC8414 - https://tools.ietf.org/html/rfc8414#section-2.1
+    HttpErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Error Title
+        error_description:
+          type: string
+          example: Human readable description of the error.
+    JsonWebKeySet:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/JsonWebKey'
+    JsonWebKey:
+      type: object
+      description: |-
+        This schema defines what a client may expect to receive when requesting  a JWK/JWKS.
+        NOTE: Not all fields defined in this schema may be returned when in operational use.
+      required:
+        - kty
+      properties:
+        kty:
+          type: string
+        use:
+          type: string
+          enum:
+            - sig
+            - enc
+        kid:
+          type: string
+        alg:
+          type: string
+        crv:
+          type: string
+        x:
+          type: string
+        'y':
+          type: string
+        d:
+          type: string
+        'n':
+          type: string
+        e:
+          type: string
+        k:
+          type: string
