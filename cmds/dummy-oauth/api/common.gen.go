@@ -59,6 +59,7 @@ func WriteJSON(w http.ResponseWriter, code int, obj interface{}) {
 type Handler func(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request)
 
 type Route struct {
+	Method  string
 	Pattern *regexp.Regexp
 	Handler Handler
 }

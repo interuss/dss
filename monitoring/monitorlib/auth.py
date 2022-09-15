@@ -77,6 +77,7 @@ class NoAuth(AuthAdapter):
         return jwt.serialize()
 
 
+<<<<<<< HEAD
 class DummyOAuth(AuthAdapter):
     """Auth adapter that gets JWTs that uses the Dummy OAuth Server"""
 
@@ -103,6 +104,17 @@ class DummyOAuth(AuthAdapter):
                 )
             )
         return response.json()["access_token"]
+=======
+  # Overrides method in AuthAdapter
+  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
+    url = '{}?grant_type=client_credentials&scope={}&intended_audience={}&issuer=dummy&sub={}'.format(
+      self._oauth_token_endpoint, urllib.parse.quote(' '.join(scopes)),
+      urllib.parse.quote(intended_audience), self._sub)
+    response = self._oauth_session.get(url)
+    if response.status_code != 200:
+      raise AccessTokenError('Request to get DummyOAuth access token returned {} "{}" at {}'.format(response.status_code, response.content.decode('utf-8'), response.url))
+    return response.json()['access_token']
+>>>>>>> FRED-1482 Adding new endpoints to dummy-auth
 
 
 class ServiceAccount(AuthAdapter):
