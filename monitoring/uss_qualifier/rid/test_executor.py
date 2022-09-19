@@ -82,13 +82,18 @@ def run_rid_tests(
             UTMClientSession(
                 observer_config.observation_base_url, make_auth_adapter(auth_spec)
             ),
+            test_configuration.rid_version,
         )
         observers.append(observer)
 
     # Evaluate observed RID system states
-    display_data_evaluator.evaluate_system(
-        injected_flights, observers, test_configuration.evaluation, report.findings
+    evaluator = display_data_evaluator.RIDObservationEvaluator(
+        report.findings,
+        injected_flights,
+        test_configuration.evaluation,
+        test_configuration.rid_version,
     )
+    evaluator.evaluate_system(observers)
     with open("report_rid.json", "w") as f:
         json.dump(report, f)
     return report
