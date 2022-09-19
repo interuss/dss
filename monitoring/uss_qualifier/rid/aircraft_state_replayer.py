@@ -131,7 +131,9 @@ class TestHarness:
         setup.injections.append(fetch.describe_query(response, initiated_at))
 
         if response.status_code == 200:
-            changed_test: ChangeTestResponse = ImplicitDict.parse(response.json(), ChangeTestResponse)
+            changed_test: ChangeTestResponse = ImplicitDict.parse(
+                response.json(), ChangeTestResponse
+            )
             print("New test with ID %s created" % test_id)
             return changed_test.injected_flights
         else:

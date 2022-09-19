@@ -70,7 +70,9 @@ def run_rid_tests(
         uss_injection_harness = TestHarness(
             auth_spec=auth_spec, injection_base_url=target.injection_base_url
         )
-        injections = uss_injection_harness.submit_test(test_payloads[i], test_id, report.setup)
+        injections = uss_injection_harness.submit_test(
+            test_payloads[i], test_id, report.setup
+        )
         for flight in injections:
             injected_flights.append(InjectedFlight(uss=target, flight=flight))
 
