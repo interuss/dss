@@ -29,6 +29,7 @@ AUTH='--auth DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
 echo '{
     "locale": "CHE",
     "rid": {
+      "rid_version": "F3411-19",
       "injection_targets": [
         {
           "name": "uss1",
