@@ -12,6 +12,7 @@ from monitoring.monitorlib.rid_automated_testing.injection_api import (
     TestFlight,
     CreateTestParameters,
     SCOPE_RID_QUALIFIER_INJECT,
+    ChangeTestResponse,
 )
 from monitoring.monitorlib.typing import ImplicitDict
 import arrow
@@ -120,18 +121,21 @@ class TestHarness:
 
     def submit_test(
         self, payload: CreateTestParameters, test_id: str, setup: reports.Setup
-    ) -> None:
+    ) -> List[TestFlight]:
         injection_path = "/tests/{}".format(test_id)
 
         initiated_at = datetime.datetime.utcnow()
         response = self.uss_session.put(
             url=injection_path, json=payload, scope=SCOPE_RID_QUALIFIER_INJECT
         )
-        # TODO: Use response to specify flights as actually-injected rather than assuming no modifications
         setup.injections.append(fetch.describe_query(response, initiated_at))
 
         if response.status_code == 200:
+            changed_test: ChangeTestResponse = ImplicitDict.parse(
+                response.json(), ChangeTestResponse
+            )
             print("New test with ID %s created" % test_id)
+            return changed_test.injected_flights
         else:
             raise RuntimeError(
                 "Error {} submitting test ID {} to {}: {}".format(
