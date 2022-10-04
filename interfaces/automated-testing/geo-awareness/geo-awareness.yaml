@@ -110,306 +110,91 @@ components:
           example: |-
             Unable to download the dataset https://caa.example.com/geozones.json. Connection refused.
 
-    #########################################################################
-    #################### Start of ED-269 definitions    #####################
-    #########################################################################
+    #######################################################################
+    #################### Start of ED-269 definitions    ###################
+    #######################################################################
 
-    verticalReferenceType:
+    UomDimensions:
+      type: string
+      enum:
+        - M
+        - FT
+
+    VerticalReferenceType:
       type: string
       enum:
         - AGL
         - AMSL
 
-    polygonType:
-      type: object
-      description: See ED-269 standard for details.
-      required:
-        - type
-        - coordinates
-      properties:
-        type:
-          type: string
-          enum:
-            - Polygon
-        coordinates:
-          type: array
-          items:
-            type: array
-            minItems: 4
-            items:
-              type: array
-              minItems: 2
-              maxItems: 2
-              items:
-                type: number
+    USpaceClass:
+      type: string
+      maxLength: 100
 
-    circleType:
-      type: object
-      description: See ED-269 standard for details.
-      required:
-        - type
-        - center
-        - radius
-      properties:
-        type:
-          type: string
-          enum:
-            - Circle
-        center:
-          type: array
-          minItems: 2
-          maxItems: 2
-          items:
-            type: number
-        radius:
-          type: number
-          exclusiveMinimum: 0
-
-    genericReply:
-      type: object
-      required:
-        - requestStatus
-        - requestProcessedTimeStamp
-      properties:
-        requestStatus:
-          type: string
-          enum:
-            - OK
-            - NOK
-        requestExceptionDescription:
-          type: string
-        requestProcessedTimeStamp:
-          type: string
-
-    weekDayType:
+    Restriction:
       type: string
       enum:
-        - MON
-        - TUE
-        - WED
-        - THU
-        - FRI
-        - SAT
-        - SUN
-        - ANY
-
-    dailyPeriod:
-      type: object
-      required:
-        - day
-        - startTime
-        - endTime
-      properties:
-        day:
-          type: array
-          minItems: 1
-          maxItems: 7
-          items:
-            $ref: '#/components/schemas/weekDayType'
-        startTime:
-          type: string
-          format: time
-        endTime:
-          type: string
-          format: time
-
-    UASZoneAuthority:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 200
-        service:
-          type: string
-          maxLength: 200
-        email:
-          type: string
-          format: email
-        contactName:
-          type: string
-          maxLength: 200
-        siteURL:
-          type: string
-          maxLength: 200
-        phone:
-          type: string
-          maxLength: 200
-        purpose:
-          type: string
-          enum:
-            - AUTHORIZATION
-            - NOTIFICATION
-            - INFORMATION
-        intervalBefore:
-          description: See ED-269 standard for details.
-          type: string
-          format: duration
-
-    UASZoneTimePeriod:
-      type: object
-      required:
-        - permanent
-      properties:
-        permanent:
-          type: string
-          enum:
-            - YES
-            - NO
-        startDateTime:
-          type: string
-          format: date-time
-        endDateTime:
-          type: string
-          format: date-time
-        schedule:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/dailyPeriod'
-
-    UASZoneVersion:
-      type: object
-      required:
-        - identifier
-        - country
-        - type
-        - restriction
-        - zoneAuthority
-        - geometry
-      properties:
-        identifier:
-          type: string
-          maxLength: 7
-        country:
-          type: string
-          minLength: 3
-          maxLength: 3
-        name:
-          type: string
-          maxLength: 200
-        type:
-          type: string
-          enum:
-            - COMMON
-            - CUSTOMIZED
-        restriction:
-          type: string
-          enum:
-            - PROHIBITED
-            - REQ_AUTHORISATION
-            - CONDITIONAL
-            - NO_RESTRICTION
-        restrictionConditions:
-          type: array
-          items:
-            type: string
-        region:
-          type: integer
-        reason:
-          type: array
-          maxItems: 9
-          items:
-            type: string
-            enum:
-              - AIR_TRAFFIC
-              - SENSITIVE
-              - PRIVACY
-              - POPULATION
-              - NATURE
-              - NOISE
-              - FOREIGN_TERRITORY
-              - EMERGENCY
-              - OTHER
-        otherReasonInfo:
-          type: string
-          maxLength: 30
-        regulationExemption:
-          type: string
-          enum:
-            - YES
-            - NO
-        uSpaceClass:
-          type: string
-          maxLength: 100
-        message:
-          type: string
-          maxLength: 200
-        zoneAuthority:
-          type: array
-          items:
-            $ref: '#/components/schemas/UASZoneAuthority'
-          minItems: 1
-        applicability:
-          type: array
-          items:
-            $ref: '#/components/schemas/UASZoneTimePeriod'
-        geometry:
-          type: array
-          items:
-            $ref: '#/components/schemas/UASZoneAirspaceVolume'
-        extendedProperties:
-          type: object
-      additionalProperties: false
-
-    UASZoneAirspaceVolume:
-      type: object
-      properties:
-        uomDimensions:
-          type: string
-          enum:
-            - M
-            - FT
-        lowerLimit:
-          type: integer
-        lowerVerticalReference:
-          $ref: '#/components/schemas/verticalReferenceType'
-        upperLimit:
-          type: integer
-        upperVerticalReference:
-          $ref: '#/components/schemas/verticalReferenceType'
-        horizontalProjection:
-          oneOf:
-            - $ref: '#/components/schemas/polygonType'
-            - $ref: '#/components/schemas/circleType'
-      required:
-        - uomDimensions
-        - lowerVerticalReference
-        - upperVerticalReference
-        - horizontalProjection
-
-    UASZonesRequest:
-      type: object
-      properties:
-        airspaceVolume:
-          $ref: '#/components/schemas/UASZoneAirspaceVolume'
-        regions:
-          type: array
-          items:
-            type: integer
-        startDateTime:
-          type: string
-          format: date-time
-        endDateTime:
-          type: string
-          format: date-time
-
-    UASZonesReply:
-      type: object
-      required:
-        - genericReply
-      properties:
-        UASZoneList:
-          type: array
-          items:
-            # The Open API reference to the abstract class defined in UASZone.json was not found in the standard.
-            # The UASZoneVersion is used instead since it is the only inherited class.
-            $ref: '#/components/schemas/UASZoneVersion'
-        genericReply:
-          $ref: '#/components/schemas/genericReply'
+        - PROHIBITED
+        - REQ_AUTHORISATION
+        - CONDITIONAL
+        - NO_RESTRICTION
 
     #######################################################################
     #################### END of ED-269 definitions    #####################
     #######################################################################
+
+    Position:
+      type: object
+      required:
+        - uomDimensions
+        - verticalReferenceType
+        - verticalReference
+        - longitude
+        - latitude
+      properties:
+        uomDimensions:
+          $ref: '#/components/schemas/UomDimensions'
+        verticalReferenceType:
+          $ref: '#/components/schemas/VerticalReferenceType'
+        verticalReference:
+          type: number
+        longitude:
+          type: number
+        latitude:
+          type: number
+
+    UASZonesCheckRequest:
+      type: object
+      required:
+        - position
+        - uSpaceClass
+        - acceptableRestrictions
+        - startDateTime
+        - endDateTime
+      properties:
+        position:
+          $ref: '#/components/schemas/Position'
+        uSpaceClass:
+          $ref: '#/components/schemas/USpaceClass'
+        acceptableRestrictions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Restriction'
+        startDateTime:
+          type: string
+          format: date-time
+        endDateTime:
+          type: string
+          format: date-time
+
+    UASZonesCheckReply:
+      type: object
+      properties:
+        applicableUASZone:
+          type: boolean
+          description: >-
+            True if there is one or more applicable UASZone under the requested conditions.
+        error:
+          description: Human-readable explanation of the result for debugging purpose only. This field is required when the check do not complete.
 
 paths:
   /v1/status:
@@ -434,7 +219,6 @@ paths:
           description: The USS automated testing interface is not activated.
       summary: Status of the USS automated testing interface
       description: Get the status of the USS automated testing interface.
-
 
   /v1/geozone_sources/{geozone_source_id}:
     parameters:
@@ -513,7 +297,7 @@ paths:
       summary: Deactivate a Geozone source
       description: Instructs the USS to deactivate the Geozone source and its data.
 
-  /v1/geozones/query:
+  /v1/geozones/check:
     post:
       security:
         - Authority:
@@ -522,19 +306,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UASZonesRequest'
+              $ref: '#/components/schemas/UASZonesCheckRequest'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UASZonesReply'
+                $ref: '#/components/schemas/UASZonesCheckReply'
           description: >-
-            Checklist was retrieved successfully.
+            The check was successfully performed.
         '401':
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
       operationId: QueryGeozones
-      summary: Query Geozones
-      description: Query all relevant Geozones that are within or intersect the airspace of interest and are valid for the specified period of interest.
+      summary: Check applicable Geozones
+      description: Check if one or multiple Geozones are applicable at the position of interest for the specified period of time and operational conditions.
