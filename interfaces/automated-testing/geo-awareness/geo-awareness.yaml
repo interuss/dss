@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  title: Geo-Awareness Test Data Injection
+  title: Geo-Awareness Automated Test Interfaces
   version: 0.0.1
   license:
     name: Apache License v2.0
@@ -110,6 +110,92 @@ components:
           example: |-
             Unable to download the dataset https://caa.example.com/geozones.json. Connection refused.
 
+    #######################################################################
+    #################### Start of ED-269 definitions    ###################
+    #######################################################################
+
+    UomDimensions:
+      type: string
+      enum:
+        - M
+        - FT
+
+    VerticalReferenceType:
+      type: string
+      enum:
+        - AGL
+        - AMSL
+
+    USpaceClass:
+      type: string
+      maxLength: 100
+
+    Restriction:
+      type: string
+      enum:
+        - PROHIBITED
+        - REQ_AUTHORISATION
+        - CONDITIONAL
+        - NO_RESTRICTION
+
+    #######################################################################
+    #################### END of ED-269 definitions    #####################
+    #######################################################################
+
+    Position:
+      type: object
+      required:
+        - uomDimensions
+        - verticalReferenceType
+        - verticalReference
+        - longitude
+        - latitude
+      properties:
+        uomDimensions:
+          $ref: '#/components/schemas/UomDimensions'
+        verticalReferenceType:
+          $ref: '#/components/schemas/VerticalReferenceType'
+        verticalReference:
+          type: number
+        longitude:
+          type: number
+        latitude:
+          type: number
+
+    UASZonesCheckRequest:
+      type: object
+      required:
+        - position
+        - uSpaceClass
+        - acceptableRestrictions
+        - startDateTime
+        - endDateTime
+      properties:
+        position:
+          $ref: '#/components/schemas/Position'
+        uSpaceClass:
+          $ref: '#/components/schemas/USpaceClass'
+        acceptableRestrictions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Restriction'
+        startDateTime:
+          type: string
+          format: date-time
+        endDateTime:
+          type: string
+          format: date-time
+
+    UASZonesCheckReply:
+      type: object
+      properties:
+        applicableUASZone:
+          type: boolean
+          description: >-
+            True if there is one or more applicable UASZone under the requested conditions.
+        error:
+          description: Human-readable explanation of the result for debugging purpose only. This field is required when the check do not complete.
+
 paths:
   /v1/status:
     get:
@@ -133,7 +219,6 @@ paths:
           description: The USS automated testing interface is not activated.
       summary: Status of the USS automated testing interface
       description: Get the status of the USS automated testing interface.
-
 
   /v1/geozone_sources/{geozone_source_id}:
     parameters:
@@ -211,3 +296,29 @@ paths:
       operationId: DeleteGeozoneSource
       summary: Deactivate a Geozone source
       description: Instructs the USS to deactivate the Geozone source and its data.
+
+  /v1/geozones/check:
+    post:
+      security:
+        - Authority:
+            - geo-awareness.test
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UASZonesCheckRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UASZonesCheckReply'
+          description: >-
+            The check was successfully performed.
+        '401':
+          description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+        '403':
+          description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+      operationId: QueryGeozones
+      summary: Check applicable Geozones
+      description: Check if one or multiple Geozones are applicable at the position of interest for the specified period of time and operational conditions.

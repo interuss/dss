@@ -16,10 +16,10 @@ TD <- U: 200 Ok - Geozone data still loading\n{"result": "Activating"}
 TD -> U: GET /geozone_sources/{geozone_source_id}
 TD <- U: 200 Ok - Geozone data ready\n{"result": "Ready"}
 
-== Query the USS for Geo-Awareness information ==
+== Check for one or multiple applicable Geozones ==
 
-TD -> U: GET /checklist
-TD <- U: 200 Ok - Returns a list of advisories and restrictions (when applicable) for the specified flight
+TD -> U: POST /geozones/check
+TD <- U: 200 Ok - Returns the result (boolean) for the specified position
 
 == Test teardown: Delete the Geozone data ==
 
@@ -33,5 +33,4 @@ TD <- U: 200 Ok - {"result": "Deactivating"}
 
 TD -> U: GET /geozone_sources/{geozone_source_id}
 TD <- U: 404 NotFound
-
 @enduml
