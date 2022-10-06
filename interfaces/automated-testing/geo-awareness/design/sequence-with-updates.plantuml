@@ -1,0 +1,51 @@
+@startuml
+title Geo-Awareness Test Suite\nUpdates to Applicable UAS Zones check scenario
+
+participant TD as "Test driver"
+participant U as "USS under Test"
+
+== Test setup: Load the Geozone data ==
+TD -> U: PUT /geozone_sources/{geozone_source_id1}
+TD <- U: 200 Ok - Geozone data loading\n{"result": "Activating"}
+
+TD -> U: GET /geozone_sources/{geozone_source_id1}
+TD <- U: 200 Ok - Geozone data still loading\n{"result": "Activating"}
+
+...
+
+TD -> U: GET /geozone_sources/{geozone_source_id1}
+TD <- U: 200 Ok - Geozone data ready\n{"result": "Ready"}
+
+== Load updates to the Geozone data ==
+
+TD -> U: PUT /geozone_sources/{geozone_source_id2}
+TD <- U: 200 Ok - Geozone updates loading\n{"result": "Activating"}
+
+...
+
+TD -> U: GET /geozone_sources/{geozone_source_id2}
+TD <- U: 200 Ok - Geozone updates ready\n{"result": "Ready"}
+
+== Check for one or multiple updated applicable Geozones ==
+
+TD -> U: POST /geozones/check
+TD <- U: 200 Ok - Returns the result (boolean) for the specified position
+
+== Test teardown: Delete datasets ==
+
+TD -> U: DELETE /geozone_sources/{geozone_source_id1}
+TD <- U: 200 Ok - {"result": "Deactivating"}
+
+...
+
+TD -> U: GET /geozone_sources/{geozone_source_id1}
+TD <- U: 404 NotFound
+
+TD -> U: DELETE /geozone_sources/{geozone_source_id2}
+TD <- U: 200 Ok - {"result": "Deactivating"}
+...
+
+TD -> U: GET /geozone_sources/{geozone_source_id2}
+TD <- U: 404 NotFound
+
+@enduml
