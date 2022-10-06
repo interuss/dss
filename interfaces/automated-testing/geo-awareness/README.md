@@ -30,8 +30,8 @@ restrictions, adjacent U-space airspace, and the horizontal and vertical limits 
 described in Chapter VIII ‘UAS geographical zone data model’ of and Appendix 2 to the ED-269 ‘MINIMUM OPERATIONAL
 PERFORMANCE STANDARD FOR GEOFENCING’ standard in the version published in June 2020."
 
-ED-269 do not provide systematic references to requirements, for the purpose of traceability, requirements of this test
-suite are identified with the following IDs.
+ED-269 do not provide systematic references to requirements. For the purpose of traceability, requirements of this test
+suite are identified with the following IDs. 
 
 | Requirement ID | Type           | Requirement                                                                   |
 |----------------|----------------|-------------------------------------------------------------------------------|
@@ -60,7 +60,7 @@ suite are identified with the following IDs.
 ### [GM1 Article 9 Geo-awareness service (c)](https://www.easa.europa.eu/en/downloads/134303/en)
 
 It specifies that the "Geo-Awareness service is used by the UAS flight authorisation service as a source of data to
-inform UAS operators of relevant operational constraints and changes both prior to and during the flight.
+inform UAS operators of relevant operational constraints and changes both prior to and during the flight."
 
 1. **"... both prior to and during the flight"** *requirement is fulfilled by ED-269-102 described above.*
 
