@@ -1,5 +1,5 @@
 @startuml
-title Geo-Awareness Test Suite\nApplicable UAS Zones
+title Geo-Awareness Test Suite\nApplicable UAS Zones scenario
 
 participant TD as "Test driver"
 participant U as "USS under Test"
