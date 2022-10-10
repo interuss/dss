@@ -4,7 +4,7 @@ import json
 from typing import Dict, Optional
 
 from monitoring.monitorlib.multiprocessing import SynchronizedValue
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 # --- All queries ---

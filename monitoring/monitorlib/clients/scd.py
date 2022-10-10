@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.infrastructure import UTMClientSession
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 class OperationError(RuntimeError):

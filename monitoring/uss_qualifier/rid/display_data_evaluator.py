@@ -9,7 +9,7 @@ import s2sphere
 from monitoring.monitorlib import fetch, geo
 from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.monitorlib.rid_common import RIDVersion
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.rid.reports import Findings
 from monitoring.uss_qualifier.rid.utils import (
     EvaluationConfiguration,

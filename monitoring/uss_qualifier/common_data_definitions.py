@@ -1,6 +1,6 @@
 from enum import Enum
 
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 class Severity(str, Enum):

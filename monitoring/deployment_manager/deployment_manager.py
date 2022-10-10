@@ -7,7 +7,7 @@ import os
 import pkgutil
 import sys
 
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.deployment_manager import actions
 from monitoring.deployment_manager.systems.configuration import DeploymentSpec
 from monitoring.deployment_manager.infrastructure import make_context

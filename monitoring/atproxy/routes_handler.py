@@ -6,7 +6,7 @@ from typing import Tuple
 import flask
 from typing import List, Optional
 
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from . import webapp, basic_auth
 from .database import db, Query, QueryState
 

@@ -1,7 +1,7 @@
 import math
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Literal
-from .typing import ImplicitDict, StringBasedDateTime
+from implicitdict import ImplicitDict, StringBasedDateTime
 
 import s2sphere
 import shapely.geometry

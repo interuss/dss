@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple
 
 import arrow
 
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 class Address(ImplicitDict):

@@ -5,7 +5,7 @@ from datetime import datetime
 from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.monitorlib.rid_automated_testing import injection_api
 from monitoring.monitorlib.rid import RIDAircraftState, RIDFlightDetails
-from monitoring.monitorlib.typing import ImplicitDict, StringBasedTimeDelta
+from implicitdict import ImplicitDict, StringBasedTimeDelta
 
 
 # TODO: This class is used in both RID and SCD; it should therefore be moved to a shared tools file rather than an RID utils file

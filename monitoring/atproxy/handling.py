@@ -6,7 +6,7 @@ import uuid
 
 import flask
 
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from .database import db, Query, QueryState
 
 

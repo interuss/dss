@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
 
 

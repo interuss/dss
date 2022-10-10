@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict
 from monitoring.monitorlib.locality import Locality
-from monitoring.monitorlib.typing import (
+from implicitdict import (
     ImplicitDict,
     StringBasedTimeDelta,
     StringBasedDateTime,

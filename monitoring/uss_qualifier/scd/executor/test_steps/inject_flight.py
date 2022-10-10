@@ -9,7 +9,7 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightResponse,
     InjectFlightResult,
 )
-from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
+from implicitdict import ImplicitDict, StringBasedDateTime
 from monitoring.uss_qualifier.common_data_definitions import (
     Severity,
     SubjectType,

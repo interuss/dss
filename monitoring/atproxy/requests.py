@@ -1,5 +1,5 @@
 from monitoring.monitorlib.rid_automated_testing import injection_api
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 # Each request descriptor in this file is expected to implement a static
 # request_type_name() method which indicates the type of request corresponding
