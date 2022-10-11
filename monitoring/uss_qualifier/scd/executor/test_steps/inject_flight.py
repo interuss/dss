@@ -1,5 +1,4 @@
 from time import timezone
-import pytimeparse
 
 from datetime import date, datetime, timedelta, timezone, tzinfo
 from monitoring.monitorlib import scd

@@ -10,7 +10,6 @@ pyjwt==2.4.0
 pykml==0.2.0
 pytest==6.2.4
 pytest-mock==3.6.1
-pytimeparse==1.1.8
 pyyaml==5.4
 requests==2.25.1
 s2sphere==0.2.5
