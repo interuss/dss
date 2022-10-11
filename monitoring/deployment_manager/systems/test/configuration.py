@@ -1,5 +1,5 @@
 from typing import Optional
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 class TestV1(ImplicitDict):

@@ -4,7 +4,7 @@ from typing import Dict, Optional
 from monitoring.monitorlib import scd
 from monitoring.monitorlib.multiprocessing import SynchronizedValue
 from monitoring.monitorlib.scd_automated_testing import scd_injection_api
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 class FlightRecord(ImplicitDict):

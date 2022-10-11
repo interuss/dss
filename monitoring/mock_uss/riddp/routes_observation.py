@@ -7,7 +7,7 @@ import s2sphere
 from monitoring.monitorlib import geo, rid
 from monitoring.monitorlib.fetch import rid as fetch
 from monitoring.monitorlib.rid_automated_testing import observation_api
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.mock_uss import resources, webapp
 from monitoring.mock_uss.auth import requires_scope
 from . import clustering, database

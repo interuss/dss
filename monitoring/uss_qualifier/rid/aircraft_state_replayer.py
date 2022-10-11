@@ -14,7 +14,7 @@ from monitoring.monitorlib.rid_automated_testing.injection_api import (
     SCOPE_RID_QUALIFIER_INJECT,
     ChangeTestResponse,
 )
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 import arrow
 
 from typing import List

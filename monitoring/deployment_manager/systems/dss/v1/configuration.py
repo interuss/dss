@@ -1,4 +1,4 @@
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 class V1DSS(ImplicitDict):

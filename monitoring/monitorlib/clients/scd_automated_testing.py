@@ -8,7 +8,7 @@ from monitoring.monitorlib.clients.scd import OperationError
 from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, \
     SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, CapabilitiesResponse, StatusResponse
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 class QueryError(OperationError):

@@ -4,7 +4,7 @@ from typing import List, Optional
 import s2sphere
 
 from monitoring.monitorlib import fetch
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.rid.utils import (
     InjectedFlight,
     RIDQualifierTestConfiguration,

@@ -2,7 +2,7 @@ from typing import Tuple
 
 import flask
 
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.mock_uss import webapp
 from .behavior import DisplayProviderBehavior
 from .database import db

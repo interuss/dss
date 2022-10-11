@@ -11,7 +11,7 @@ from monitoring.monitorlib import scd, versioning
 from monitoring.monitorlib.clients import scd as scd_client
 from monitoring.monitorlib.scd_automated_testing import scd_injection_api
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import InjectFlightRequest, InjectFlightResponse, SCOPE_SCD_QUALIFIER_INJECT, InjectFlightResult, DeleteFlightResponse, DeleteFlightResult, ClearAreaRequest, ClearAreaOutcome, ClearAreaResponse, Capability, CapabilitiesResponse
-from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
+from implicitdict import ImplicitDict, StringBasedDateTime
 from monitoring.mock_uss import config, resources, webapp
 from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss.scdsc import database

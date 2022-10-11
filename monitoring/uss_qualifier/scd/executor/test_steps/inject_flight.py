@@ -1,5 +1,4 @@
 from time import timezone
-import pytimeparse
 
 from datetime import date, datetime, timedelta, timezone, tzinfo
 from monitoring.monitorlib import scd
@@ -9,7 +8,7 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightResponse,
     InjectFlightResult,
 )
-from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
+from implicitdict import ImplicitDict, StringBasedDateTime
 from monitoring.uss_qualifier.common_data_definitions import (
     Severity,
     SubjectType,

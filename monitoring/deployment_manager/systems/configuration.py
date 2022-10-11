@@ -1,6 +1,6 @@
 from typing import Optional
 
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 from monitoring.deployment_manager.systems.dss.configuration import DSS
 from monitoring.deployment_manager.systems.test.configuration import Test

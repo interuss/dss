@@ -10,7 +10,7 @@ import redis
 import rq
 import uuid
 from . import resources
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 def get_rq_job(job_id):

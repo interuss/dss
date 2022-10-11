@@ -7,7 +7,7 @@ import flask
 from monitoring.monitorlib import rid
 from monitoring.monitorlib.mutate import rid as mutate
 from monitoring.monitorlib.rid_automated_testing import injection_api
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.mock_uss import webapp
 from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss import config, resources

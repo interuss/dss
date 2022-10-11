@@ -2,7 +2,7 @@ from typing import Optional
 
 from monitoring.monitorlib.rid_automated_testing.injection_api import TestFlight
 from monitoring.monitorlib.rid import RIDFlight
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 FEET_PER_METER = 1 / 0.3048

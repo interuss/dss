@@ -4,7 +4,7 @@ from typing import List
 import s2sphere
 
 from monitoring.monitorlib import geo
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.monitorlib.rid_automated_testing import observation_api
 
 

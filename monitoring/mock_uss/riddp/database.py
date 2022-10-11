@@ -2,7 +2,7 @@ import json
 from typing import Dict
 
 from .behavior import DisplayProviderBehavior
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.monitorlib.multiprocessing import SynchronizedValue
 
 

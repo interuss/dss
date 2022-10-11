@@ -5,7 +5,7 @@ import arrow
 import s2sphere
 
 from monitoring.monitorlib import geo, rid
-from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
+from implicitdict import ImplicitDict, StringBasedDateTime
 
 
 SCOPE_RID_QUALIFIER_INJECT = 'rid.inject_test_data'

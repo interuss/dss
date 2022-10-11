@@ -6,7 +6,7 @@ import yaml
 from yaml.representer import Representer
 
 from monitoring.monitorlib import fetch, infrastructure, rid
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 
 
 class MutatedSubscription(fetch.Query):

@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from monitoring.monitorlib.multiprocessing import SynchronizedValue
 from monitoring.monitorlib.rid_automated_testing import injection_api
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from .behavior import ServiceProviderBehavior
 
 

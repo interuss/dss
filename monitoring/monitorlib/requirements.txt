@@ -3,13 +3,13 @@ cryptography==3.3.2
 flask==1.1.2
 itsdangerous==2.0.1 # Version 2.1.0 is not compatible with flask 1.1.2.
 google-auth==1.6.3
+implicitdict==1.0.0
 jwcrypto==1.4
 lxml==4.9.1
 pyjwt==2.4.0
 pykml==0.2.0
 pytest==6.2.4
 pytest-mock==3.6.1
-pytimeparse==1.1.8
 pyyaml==5.4
 requests==2.25.1
 s2sphere==0.2.5

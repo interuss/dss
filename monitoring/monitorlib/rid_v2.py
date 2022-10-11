@@ -1,7 +1,7 @@
 import datetime
 from typing import Literal
 
-from monitoring.monitorlib.typing import ImplicitDict, StringBasedDateTime
+from implicitdict import ImplicitDict, StringBasedDateTime
 from . import rid as rid_v1
 
 

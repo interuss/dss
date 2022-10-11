@@ -1,7 +1,7 @@
 from typing import Optional
 from urllib.parse import urlparse
 
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 
