@@ -123,3 +123,12 @@ def clear_area(
     else:
         result = ImplicitDict.parse(resp.json(), ClearAreaResponse)
     return result, fetch.describe_query(resp, initiated_at)
+
+
+def stop_report(utm_client: UTMClientSession, uss_base_url: str) -> StatusResponse:
+    print("[SCD] Sending request to end mock_uss report")
+    url = '{}/v1/endreport'.format(uss_base_url)
+    resp = utm_client.get(url, scope=SCOPE_SCD_QUALIFIER_INJECT)
+    if resp.status_code != 200:
+        raise QueryError('Unexpected response code for get_version {}. Response: {}'
+                         .format(resp.status_code,resp.content.decode('utf-8')))

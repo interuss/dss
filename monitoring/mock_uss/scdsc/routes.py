@@ -16,3 +16,6 @@ def scdsc_status():
 
 from . import routes_scdsc
 from . import routes_injection
+from . import report_settings
+from . import muss_report_recorder
+from . import muss_reports
