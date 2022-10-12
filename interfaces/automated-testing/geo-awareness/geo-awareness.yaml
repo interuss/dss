@@ -234,10 +234,14 @@ components:
       type: object
       properties:
         applicableGeozone:
-          type: boolean
           description: >-
-            True if and only if one or more applicable Geozones were selected according to the specified selection criteria.
-          default: false
+            Responses to each of the `checks` in the request.  The number of entries in this array should match the number of entries in the `checks` field of the request.
+          type: array
+          items:
+            type: boolean
+            description: >-
+              True if and only if one or more applicable Geozones were selected according to the selection criteria of the corresponding check.
+            default: false
 
 paths:
   /status:
