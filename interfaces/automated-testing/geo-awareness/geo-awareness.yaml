@@ -202,12 +202,12 @@ components:
             - $ref: '#/components/schemas/Position'
         after:
           description: >-
-            If specified, only select Geozones which are defined at or after this time.
+            If specified, only select Geozones which encompass at least some times at or after this time.
           type: string
           format: date-time
         before:
           description: >-
-            If specified, only select Geozones which are defined at or before this time.
+            If specified, only select Geozones which encompass at least some times at or before this time.
           type: string
           format: date-time
         ed269:
@@ -241,7 +241,7 @@ components:
             type: boolean
             description: >-
               True if and only if one or more applicable Geozones were selected according to the selection criteria of the corresponding check.
-            default: false
+          default: []
 
 paths:
   /status:
