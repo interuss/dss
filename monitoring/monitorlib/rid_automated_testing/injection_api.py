@@ -8,36 +8,45 @@ from monitoring.monitorlib import geo, rid
 from implicitdict import ImplicitDict, StringBasedDateTime
 
 
-SCOPE_RID_QUALIFIER_INJECT = 'rid.inject_test_data'
+SCOPE_RID_QUALIFIER_INJECT = "rid.inject_test_data"
 
 # Mirrors of types defined in remote ID automated testing injection API
 
+
 class OperatorLocation(ImplicitDict):
-    ''' A object to hold location of the operator when submitting flight data to USS '''
+    """A object to hold location of the operator when submitting flight data to USS"""
+
     lat: float
     lng: float
 
 
 class TestFlightDetails(ImplicitDict):
-    ''' A object to hold the remote ID Details,  and a date time after which the USS should submit the flight details, it matches the TestFlightDetails in the injection interface, for more details see: https://github.com/interuss/dss/blob/master/interfaces/automated-testing/rid/injection.yaml#L158 '''
-    effective_after: StringBasedDateTime # ISO 8601 datetime string
+    """A object to hold the remote ID Details,  and a date time after which the USS should submit the flight details, it matches the TestFlightDetails in the injection interface, for more details see: https://github.com/interuss/dss/blob/master/interfaces/automated-testing/rid/injection.yaml#L158"""
+
+    effective_after: StringBasedDateTime  # ISO 8601 datetime string
     details: rid.RIDFlightDetails
 
 
 class TestFlight(ImplicitDict):
-    ''' Represents the data necessary to inject a single, complete test flight into a Remote ID Service Provider under test; matches TestFlight in injection interface '''
+    """Represents the data necessary to inject a single, complete test flight into a Remote ID Service Provider under test; matches TestFlight in injection interface"""
 
     injection_id: str
     telemetry: List[rid.RIDAircraftState]
-    details_responses : List[TestFlightDetails]
+    details_responses: List[TestFlightDetails]
 
-    def get_span(self) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
+    def get_span(
+        self,
+    ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
         earliest = None
         latest = None
-        times = [arrow.get(aircraft_state.timestamp).datetime
-                 for aircraft_state in self.telemetry]
-        times.extend(arrow.get(details.effective_after).datetime
-                     for details in self.details_responses)
+        times = [
+            arrow.get(aircraft_state.timestamp).datetime
+            for aircraft_state in self.telemetry
+        ]
+        times.extend(
+            arrow.get(details.effective_after).datetime
+            for details in self.details_responses
+        )
         for t in times:
             if earliest is None or t < earliest:
                 earliest = t
@@ -61,22 +70,24 @@ class TestFlight(ImplicitDict):
         return details.id if details else None
 
     def order_telemetry(self):
-        self.telemetry = sorted(self.telemetry,
-                                key=lambda telemetry: telemetry.timestamp.datetime)
+        self.telemetry = sorted(
+            self.telemetry, key=lambda telemetry: telemetry.timestamp.datetime
+        )
 
     def select_relevant_states(
-            self, view: s2sphere.LatLngRect, t0: datetime.datetime,
-            t1: datetime.datetime) -> List[rid.RIDAircraftState]:
+        self, view: s2sphere.LatLngRect, t0: datetime.datetime, t1: datetime.datetime
+    ) -> List[rid.RIDAircraftState]:
         recent_states: List[rid.RIDAircraftState] = []
         previously_outside = False
         previously_inside = False
         previous_telemetry = None
         for telemetry in self.telemetry:
-            if (telemetry.timestamp.datetime < t0 or
-                telemetry.timestamp.datetime > t1):
+            if telemetry.timestamp.datetime < t0 or telemetry.timestamp.datetime > t1:
                 # Telemetry not relevant based on time
                 continue
-            pt = s2sphere.LatLng.from_degrees(telemetry.position.lat, telemetry.position.lng)
+            pt = s2sphere.LatLng.from_degrees(
+                telemetry.position.lat, telemetry.position.lng
+            )
             inside_now = view.contains(pt)
             if inside_now:
                 if previously_outside:
@@ -93,13 +104,17 @@ class TestFlight(ImplicitDict):
         return recent_states
 
     def get_rect(self) -> Optional[s2sphere.LatLngRect]:
-      return geo.bounding_rect([(t.position.lat, t.position.lng) for t in self.telemetry])
+        return geo.bounding_rect(
+            [(t.position.lat, t.position.lng) for t in self.telemetry]
+        )
 
 
 class CreateTestParameters(ImplicitDict):
     requested_flights: List[TestFlight]
 
-    def get_span(self) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
+    def get_span(
+        self,
+    ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
         if not self.requested_flights:
             return (None, None)
         (earliest, latest) = (None, None)
@@ -112,15 +127,15 @@ class CreateTestParameters(ImplicitDict):
         return (earliest, latest)
 
     def get_rect(self) -> Optional[s2sphere.LatLngRect]:
-      result = None
-      for flight in self.requested_flights:
-        if result is None:
-          result = flight.get_rect()
-        else:
-          result = result.union(flight.get_rect())
-      return result
+        result = None
+        for flight in self.requested_flights:
+            if result is None:
+                result = flight.get_rect()
+            else:
+                result = result.union(flight.get_rect())
+        return result
 
 
 class ChangeTestResponse(ImplicitDict):
-  injected_flights: List[TestFlight]
-  version: str
+    injected_flights: List[TestFlight]
+    version: str
