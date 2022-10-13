@@ -9,9 +9,9 @@ from monitoring.mock_uss import resources, webapp
 from monitoring.mock_uss.scdsc.database import db
 
 
-@webapp.route('/scdsc/status')
+@webapp.route("/scdsc/status")
 def scdsc_status():
-    return 'Mock SCD strategic coordinator ok'
+    return "Mock SCD strategic coordinator ok"
 
 
 from . import routes_scdsc
