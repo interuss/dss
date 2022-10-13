@@ -1,7 +1,7 @@
 openapi: 3.0.2
 info:
   title: Geo-Awareness Automated Test Interfaces
-  version: 0.0.1
+  version: 0.1.0
   license:
     name: Apache License v2.0
     url: https://github.com/interuss/dss/blob/master/LICENSE
@@ -147,57 +147,104 @@ components:
       required:
         - uomDimensions
         - verticalReferenceType
-        - verticalReference
-        - longitude
-        - latitude
       properties:
         uomDimensions:
           $ref: '#/components/schemas/UomDimensions'
         verticalReferenceType:
           $ref: '#/components/schemas/VerticalReferenceType'
-        verticalReference:
+        height:
+          description: >-
+            Height above vertical reference datum indicated in `verticalReferenceType`, in units of `uomDimensions`.
           type: number
+          default: 0
         longitude:
+          description: >-
+            Longitude, degrees east of prime meridian.
           type: number
+          default: 0
         latitude:
+          description: >-
+            Latitude, degrees north of the equator.
           type: number
+          default: 0
 
-    UASZonesCheckRequest:
+    GeozonesCheckRequest:
       type: object
       required:
-        - position
-        - uSpaceClass
-        - acceptableRestrictions
-        - startDateTime
-        - endDateTime
+        - checks
+      properties:
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeozonesCheck'
+
+    GeozonesCheck:
+      type: object
+      required:
+        - filterSets
+      properties:
+        filterSets:
+          description: >-
+            Select Geozones which match any of the specified filter sets.
+          type: array
+          items:
+            $ref: '#/components/schemas/GeozonesFilterSet'
+
+    GeozonesFilterSet:
+      description: >-
+        Set of filters to select only a subset of Geozones.  Only Geozones which are applicable to all specified filters within this filter set should be selected.
+      type: object
       properties:
         position:
-          $ref: '#/components/schemas/Position'
+          description: >-
+            If specified, only select Geozones encompassing this position.
+          anyOf:
+            - $ref: '#/components/schemas/Position'
+        after:
+          description: >-
+            If specified, only select Geozones which encompass at least some times at or after this time.
+          type: string
+          format: date-time
+        before:
+          description: >-
+            If specified, only select Geozones which encompass at least some times at or before this time.
+          type: string
+          format: date-time
+        ed269:
+          $ref: '#/components/schemas/ED269Filters'
+
+    ED269Filters:
+      description: >-
+        Filter criteria for the selection of Geozones according to ED-269 characteristics.
+      type: object
+      properties:
         uSpaceClass:
-          $ref: '#/components/schemas/USpaceClass'
+          description: >-
+            If specified, only select Geozones which are of the specified `uSpaceClass`.
+          anyOf:
+            - $ref: '#/components/schemas/USpaceClass'
         acceptableRestrictions:
+          description: >-
+            If specified and non-empty, only select Geozones which are one of the specified restriction types.
           type: array
           items:
             $ref: '#/components/schemas/Restriction'
-        startDateTime:
-          type: string
-          format: date-time
-        endDateTime:
-          type: string
-          format: date-time
 
-    UASZonesCheckReply:
+    GeozonesCheckReply:
       type: object
       properties:
-        applicableUASZone:
-          type: boolean
+        applicableGeozone:
           description: >-
-            True if there is one or more applicable UASZone under the requested conditions.
-        error:
-          description: Human-readable explanation of the result for debugging purpose only. This field is required when the check do not complete.
+            Responses to each of the `checks` in the request.  The number of entries in this array should match the number of entries in the `checks` field of the request.
+          type: array
+          items:
+            type: boolean
+            description: >-
+              True if and only if one or more applicable Geozones were selected according to the selection criteria of the corresponding check.
+          default: []
 
 paths:
-  /v1/status:
+  /status:
     get:
       operationId: GetStatus
       security:
@@ -220,7 +267,7 @@ paths:
       summary: Status of the USS automated testing interface
       description: Get the status of the USS automated testing interface.
 
-  /v1/geozone_sources/{geozone_source_id}:
+  /geozone_sources/{geozone_source_id}:
     parameters:
       - name: geozone_source_id
         in: path
@@ -272,7 +319,7 @@ paths:
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
         '404':
           description: The Geozone source has been successfully deactivated or didn't exist.
-      operationId: CreateGeozoneSourceRequest
+      operationId: GetGeozoneSourceStatus
       summary: Status of a Geozone source
       description: Get the status of the Geozone source and its data.
 
@@ -297,7 +344,7 @@ paths:
       summary: Deactivate a Geozone source
       description: Instructs the USS to deactivate the Geozone source and its data.
 
-  /v1/geozones/check:
+  /geozones/check:
     post:
       security:
         - Authority:
@@ -306,19 +353,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UASZonesCheckRequest'
+              $ref: '#/components/schemas/GeozonesCheckRequest'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UASZonesCheckReply'
+                $ref: '#/components/schemas/GeozonesCheckReply'
           description: >-
             The check was successfully performed.
         '401':
           description: Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
         '403':
           description: The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-      operationId: QueryGeozones
-      summary: Check applicable Geozones
+      operationId: CheckGeozones
+      summary: Check for applicable Geozones
       description: Check if one or multiple Geozones are applicable at the position of interest for the specified period of time and operational conditions.
