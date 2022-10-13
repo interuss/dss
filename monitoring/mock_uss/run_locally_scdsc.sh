@@ -25,6 +25,7 @@ docker run ${docker_args} --name mock_uss_scdsc \
   -e MOCK_USS_PUBLIC_KEY="${PUBLIC_KEY}" \
   -e MOCK_USS_TOKEN_AUDIENCE="${AUD}" \
   -e MOCK_USS_BASE_URL="${BASE_URL}" \
+  -e PUBLIC_KEY_ENDPOINT="https://xtmnadbeta.arc.nasa.gov/interop/.well-known/uas-traffic-management/uft_pub.der" \
   -e MOCK_USS_SERVICES="scdsc" \
   -p ${PORT}:5000 \
   -v "${SCRIPT_DIR}/../../build/test-certs:/var/test-certs:ro" \

@@ -79,13 +79,12 @@ class MussReport(ImplicitDict):
     findings: Findings = Findings()
 
     def save(self):
-        filepath = "./report/report_mock_uss_scdsc.json"
+        filepath = "./report/report_mock_uss_scdsc_messagesigning.json"
         with open(filepath, "w") as f:
-            json.dump(self, f)
+            f.write(json.dumps(self, indent=4))
         print("[Mock USS] Report saved to {}".format(filepath))
 
 
     def reset(self):
-        print("Resetting report")
         self.findings.issues = []
         self.findings.interactions = []

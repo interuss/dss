@@ -1,6 +1,9 @@
 import flask
 
 from monitoring.mock_uss import config
+from monitoring.monitorlib.infrastructure import get_signed_headers
+
+from loguru import logger
 
 SERVICE_GEOAWARENESS = "geoawareness"
 SERVICE_RIDSP = "ridsp"
@@ -41,3 +44,14 @@ if SERVICE_SCDSC in webapp.config[config.KEY_SERVICES]:
     enabled_services.add(SERVICE_SCDSC)
     from monitoring.mock_uss import scdsc
     from monitoring.mock_uss.scdsc import routes as scdsc_routes
+
+@webapp.after_request
+def sign_response(response):
+    try:
+        type_of_response = str(type(response))
+        if 'None' not in type_of_response:
+            signed_headers = get_signed_headers(response)
+            response.headers.update(signed_headers)
+    except Exception as e:
+        logger.error("Could not sign response: " + str(e))
+    return response

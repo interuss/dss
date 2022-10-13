@@ -31,6 +31,9 @@ from monitoring.mock_uss.scdsc.database import db
 from monitoring.monitorlib.uspace import problems_with_flight_authorisation
 from monitoring.monitorlib.clients.scd import OperationError
 from monitoring.mock_uss.scdsc import report_settings
+from monitoring.mock_uss.scdsc.scd_message_sign import validate_response
+from loguru import logger
+import flask
 
 
 def query_operational_intents(
@@ -56,11 +59,11 @@ def query_operational_intents(
 
     updated_op_intents = []
     for op_intent_ref in get_details_for:
-        updated_op_intents.append(
-            scd_client.get_operational_intent_details(
-                resources.utm_client, op_intent_ref.uss_base_url, op_intent_ref.id
-            )
+        op_int, resp = scd_client.get_operational_intent_details(
+            resources.utm_client, op_intent_ref.uss_base_url, op_intent_ref.id
         )
+        validate_response(resp)
+        updated_op_intents.append(op_int)
 
     with db as tx:
         for op_intent in updated_op_intents:
@@ -95,6 +98,10 @@ def scdsc_injection_end_reporter() -> Tuple[str, int]:
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def scd_capabilities() -> Tuple[str, int]:
     """Implements USS capabilities in SCD automated testing injection API."""
+    try:
+        scd_client.create_subscription(resources.utm_client, str(uuid.uuid4()))
+    except Exception as e:
+        logger.error("Could not create sub: {}".format(str(e)))
     return flask.jsonify(
         CapabilitiesResponse(
             capabilities=[
@@ -105,26 +112,10 @@ def scd_capabilities() -> Tuple[str, int]:
         )
     )
 
-
 @webapp.route("/scdsc/v1/flights/<flight_id>", methods=["PUT"])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def inject_flight(flight_id: str) -> Tuple[str, int]:
     """Implements flight injection in SCD automated testing injection API."""
-    print("Printing Injecting Flight")
-
-    req_info = {
-        'method': flask.request.method,
-        'url': flask.request.url,
-        'initiated_at': datetime.datetime.utcnow().isoformat(),
-        'headers': json.dumps({k:v for k, v in flask.request.headers.items()})
-    }
-    try:
-        body = flask.request.get_json(force=True)
-        req_info['json'] = body
-    except ValueError as e:
-        req_info['body'] = flask.request.data.encode('utf-8')
-
-    query = {'request': req_info}
     try:
         req_json = flask.request.json
         if req_json is None:
@@ -226,15 +217,15 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
         if subscriber.uss_base_url == 'http://host.docker.internal:8074/mock/scd' :
             result.subscribers.remove(subscriber)
 
-    scd_client.notify_subscribers(
-        resources.utm_client,
-        result.operational_intent_reference.id,
+    notify_responses = scd_client.notify_subscribers(
+        resources.utm_client, result.operational_intent_reference.id,
         scd.OperationalIntent(
             reference=result.operational_intent_reference,
-            details=req_body.operational_intent,
-        ),
-        result.subscribers,
-    )
+            details=req_body.operational_intent),
+        result.subscribers)
+
+    for notify_response in notify_responses:
+        validate_response(notify_response)
 
     # Store flight in database
     record = database.FlightRecord(
@@ -245,10 +236,6 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     with db as tx:
         tx.flights[flight_id] = record
 
-    query['response'] = {'status_code': 200, 'body': json.dumps(InjectFlightResponse(result=InjectFlightResult.Planned, operational_intent_id=id)) }
-
-    report_settings.reprt_recorder.capture_interaction(query,
-        "Checking Operation Injection request from UssQualifier for /scdsc/v1/flights/<flight_id>")
     return flask.jsonify(
         InjectFlightResponse(
             result=InjectFlightResult.Planned, operational_intent_id=id
