@@ -33,10 +33,10 @@ class Config(object):
     ).encode("utf-8")
     TOKEN_AUDIENCE = os.environ.get(ENV_KEY_TOKEN_AUDIENCE, "")
     USS_BASE_URL = os.environ.get(ENV_KEY_BASE_URL, None)
-    AUTH_SPEC = os.environ[ENV_KEY_AUTH]
+    AUTH_SPEC = os.environ.get(ENV_KEY_AUTH, None)
     SERVICES = set(
         svc.strip().lower() for svc in os.environ.get(ENV_KEY_SERVICES, "").split(",")
     )
-    DSS_URL = os.environ[ENV_KEY_DSS]
+    DSS_URL = os.environ.get(ENV_KEY_DSS, None)
     BEHAVIOR_LOCALITY = Locality(os.environ.get(ENV_KEY_BEHAVIOR_LOCALITY, "CHE"))
     CODE_VERSION = os.environ.get(KEY_CODE_VERSION, "Unknown")

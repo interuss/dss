@@ -2,6 +2,7 @@ import flask
 
 from monitoring.mock_uss import config
 
+SERVICE_GEOAWARENESS = "geoawareness"
 SERVICE_RIDSP = "ridsp"
 SERVICE_RIDDP = "riddp"
 SERVICE_SCDSC = "scdsc"
@@ -20,6 +21,11 @@ print(
 )
 
 from monitoring.mock_uss import routes as basic_routes
+
+if SERVICE_GEOAWARENESS in webapp.config[config.KEY_SERVICES]:
+    enabled_services.add(SERVICE_GEOAWARENESS)
+    from monitoring.mock_uss import geoawareness
+    from monitoring.mock_uss.geoawareness import routes as geoawareness_routes
 
 if SERVICE_RIDSP in webapp.config[config.KEY_SERVICES]:
     enabled_services.add(SERVICE_RIDSP)

@@ -9,3 +9,4 @@ format:
 
 .PHONY: test
 test: lint
+	TEST="true" ./run_locally_geoawareness.sh
