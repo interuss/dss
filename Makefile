@@ -1,3 +1,4 @@
+USER_GROUP := $(shell id -u):$(shell id -g)
 GOPATH := $(shell go env GOPATH 2> /dev/null)
 GOBIN := $(GOPATH)/bin
 
@@ -158,10 +159,23 @@ protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpbv1/rid.pb.gw.go pk
 
 # --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
 .PHONY: apis
-apis: example_apis dummy_oauth_api
+apis: example_apis dummy_oauth_api dss_apis
 
 openapi-to-go-server:
 	docker image build -t interuss/openapi-to-go-server ./interfaces/openapi-to-go-server
+
+dss_apis: openapi-to-go-server
+	docker container run -u "$(USER_GROUP)" -it \
+      	-v "$(CURDIR)/interfaces/astm-utm/Protocol/utm.yaml:/resources/utm-v1.yaml" \
+      	-v "$(CURDIR)/interfaces/rid/v1/remoteid/augmented.yaml:/resources/rid-v1.yaml" \
+        -v "$(CURDIR)/interfaces/rid/v2/remoteid/canonical.yaml:/resources/rid-v2.yaml" \
+	    -v "$(CURDIR)/:/resources/src" \
+			openapi-to-go-server \
+		  		--api_import github.com/interuss/dss/pkg/api \
+    	      	--api /resources/utm-v1.yaml#dss@scd_v1 \
+				--api /resources/rid-v1.yaml#dss@rid_v1 \
+              	--api /resources/rid-v2.yaml#dss@rid_v2 \
+    	      	--api_folder /resources/src/pkg/api
 
 example_apis: openapi-to-go-server
 	$(CURDIR)/interfaces/openapi-to-go-server/generate_example.sh
