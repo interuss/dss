@@ -286,6 +286,7 @@ components:
           - Present
           - Absent
           - UnsupportedFilter
+          - Error
         message:
           type: string
           description: >-
