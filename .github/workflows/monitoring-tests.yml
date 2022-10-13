@@ -19,11 +19,11 @@ jobs:
           docker images
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Run USS Qualifier tests
-        run: |
-          cd monitoring/uss_qualifier
-          make test
       - name: Run Mock USS tests
         run: |
           cd monitoring/mock_uss
+          make test
+      - name: Run USS Qualifier tests
+        run: |
+          cd monitoring/uss_qualifier
           make test
