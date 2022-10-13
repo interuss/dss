@@ -81,7 +81,7 @@ class MussReport(ImplicitDict):
     def save(self):
         filepath = "./report/report_mock_uss_scdsc_messagesigning.json"
         with open(filepath, "w") as f:
-            f.write(json.dumps(self, indent=4))
+            f.write(json.dumps(self, indent=4, default=str))
         print("[Mock USS] Report saved to {}".format(filepath))
 
 

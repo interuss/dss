@@ -6,7 +6,6 @@ from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss.scdsc.database import db
 from loguru import logger
 
-
 @webapp.route("/mock/scd/uss/v1/operational_intents/<entityid>", methods=["GET"])
 @requires_scope([scd.SCOPE_SC])
 def get_operational_intent_details(entityid: str):

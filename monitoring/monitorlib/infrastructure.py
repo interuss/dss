@@ -2,19 +2,14 @@ import asyncio
 import datetime
 import json
 import functools
+import os
 from typing import Dict, List, Optional
 import urllib.parse
 from aiohttp import ClientSession
 from loguru import logger
 import jwt
 import requests
-import base64
-import hashlib
-import time
-from Crypto.PublicKey import RSA
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
-import os
+import monitoring.messagesigning.message_signer as signer
 
 ALL_SCOPES = [
     "dss.write.identification_service_areas",
@@ -30,103 +25,113 @@ CLIENT_TIMEOUT = 60  # seconds
 
 
 class AuthAdapter(object):
-  """Base class for an adapter that add JWTs to requests."""
+    """Base class for an adapter that add JWTs to requests."""
 
-  def __init__(self):
-    self._tokens = {}
+    def __init__(self):
+        self._tokens = {}
 
-  def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
-    """Subclasses must return a bearer token for the given audience."""
+    def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
+        """Subclasses must return a bearer token for the given audience."""
 
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  def get_headers(self, url: str, scopes: List[str] = None) -> Dict[str, str]:
-    if scopes is None:
-      scopes = ALL_SCOPES
-    intended_audience = urllib.parse.urlparse(url).hostname
-    scope_string = ' '.join(scopes)
-    if intended_audience not in self._tokens:
-      self._tokens[intended_audience] = {}
-    if scope_string not in self._tokens[intended_audience]:
-      token = self.issue_token(intended_audience, scopes)
-    else:
-      token = self._tokens[intended_audience][scope_string]
-    payload = jwt.decode(token, options={'verify_signature': False})
-    expires = EPOCH + datetime.timedelta(seconds=payload['exp'])
-    if datetime.datetime.utcnow() > expires - TOKEN_REFRESH_MARGIN:
-      token = self.issue_token(intended_audience, scopes)
-    self._tokens[intended_audience][scope_string] = token
-    return {'Authorization': 'Bearer ' + token}
+    def get_headers(self, url: str, scopes: List[str] = None) -> Dict[str, str]:
+        if scopes is None:
+            scopes = ALL_SCOPES
+        intended_audience = urllib.parse.urlparse(url).hostname
+        scope_string = " ".join(scopes)
+        if intended_audience not in self._tokens:
+            self._tokens[intended_audience] = {}
+        if scope_string not in self._tokens[intended_audience]:
+            token = self.issue_token(intended_audience, scopes)
+        else:
+            token = self._tokens[intended_audience][scope_string]
+        payload = jwt.decode(token, options={"verify_signature": False})
+        expires = EPOCH + datetime.timedelta(seconds=payload["exp"])
+        if datetime.datetime.utcnow() > expires - TOKEN_REFRESH_MARGIN:
+            token = self.issue_token(intended_audience, scopes)
+        self._tokens[intended_audience][scope_string] = token
+        return {"Authorization": "Bearer " + token}
 
-  def add_headers(self, request: requests.PreparedRequest, scopes: List[str]):
-    for k, v in self.get_headers(request.url, scopes).items():
-      request.headers[k] = v
-    try:
-      signed_headers = get_signed_headers(request)
-      request.headers.update(signed_headers)
-    except Exception as e:
-      logger.error("ERROR signing outgoing request.")
-      logger.error(str(e))
+    def add_headers(self, request: requests.PreparedRequest, scopes: List[str]):
+        for k, v in self.get_headers(request.url, scopes).items():
+            request.headers[k] = v
+        try:
+            if os.environ.get('MESSAGE_SIGNING', None) == "true":
+                signed_headers = signer.get_signed_headers(request)
+                request.headers.update(signed_headers)
+        except Exception as e:
+            logger.error("ERROR signing outgoing request.")
+            logger.error(str(e))
 
-  def get_sub(self) -> Optional[str]:
-    """Retrieve `sub` claim from one of the existing tokens"""
-    for _, tokens_by_scope in self._tokens.items():
-      for token in tokens_by_scope.values():
-        payload = jwt.decode(token, options={'verify_signature': False})
-        if 'sub' in payload:
-          return payload['sub']
-    return None
+    def get_sub(self) -> Optional[str]:
+        """Retrieve `sub` claim from one of the existing tokens"""
+        for _, tokens_by_scope in self._tokens.items():
+            for token in tokens_by_scope.values():
+                payload = jwt.decode(token, options={"verify_signature": False})
+                if "sub" in payload:
+                    return payload["sub"]
+        return None
 
 
 class UTMClientSession(requests.Session):
-  """Requests session that enables easy access to ASTM-specified UTM endpoints.
+    """Requests session that enables easy access to ASTM-specified UTM endpoints.
 
-  Automatically applies authorization according to the `auth_adapter` specified
-  at construction, when present.
+    Automatically applies authorization according to the `auth_adapter` specified
+    at construction, when present.
 
-  If the URL starts with '/', then automatically prefix the URL with the
-  `prefix_url` specified on construction (this is usually the base URL of the
-  DSS).
-  """
+    If the URL starts with '/', then automatically prefix the URL with the
+    `prefix_url` specified on construction (this is usually the base URL of the
+    DSS).
+    """
 
-  def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
-    super().__init__()
+    def __init__(self, prefix_url: str, auth_adapter: Optional[AuthAdapter] = None):
+        super().__init__()
 
-    self._prefix_url = prefix_url[0:-1] if prefix_url[-1] == '/' else prefix_url
-    self.auth_adapter = auth_adapter
-    self.default_scopes = None
+        self._prefix_url = prefix_url[0:-1] if prefix_url[-1] == "/" else prefix_url
+        self.auth_adapter = auth_adapter
+        self.default_scopes = None
 
-  # Overrides method on requests.Session
-  def prepare_request(self, request, **kwargs):
-    # Automatically prefix any unprefixed URLs
-    if request.url.startswith('/'):
-      request.url = self._prefix_url + request.url
-    return super().prepare_request(request, **kwargs)
+    # Overrides method on requests.Session
+    def prepare_request(self, request, **kwargs):
+        # Automatically prefix any unprefixed URLs
+        if request.url.startswith("/"):
+            request.url = self._prefix_url + request.url
 
-  def adjust_request_kwargs(self, kwargs):
-    if self.auth_adapter:
-      scopes = None
-      if 'scopes' in kwargs:
-        scopes = kwargs['scopes']
-        del kwargs['scopes']
-      if 'scope' in kwargs:
-        scopes = [kwargs['scope']]
-        del kwargs['scope']
-      if scopes is None:
-        scopes = self.default_scopes
-      def auth(prepared_request: requests.PreparedRequest) -> requests.PreparedRequest:
-        if not scopes:
-          raise ValueError('All tests must specify auth scope for all session requests.  Either specify as an argument for each individual HTTP call, or decorate the test with @default_scope.')
-        self.auth_adapter.add_headers(prepared_request, scopes)
-        return prepared_request
-      kwargs['auth'] = auth
-    return kwargs
+        return super().prepare_request(request, **kwargs)
 
-  def request(self, method, url, **kwargs):
-    if 'auth' not in kwargs:
-      kwargs = self.adjust_request_kwargs(kwargs)
+    def adjust_request_kwargs(self, kwargs):
+        if self.auth_adapter:
+            scopes = None
+            if "scopes" in kwargs:
+                scopes = kwargs["scopes"]
+                del kwargs["scopes"]
+            if "scope" in kwargs:
+                scopes = [kwargs["scope"]]
+                del kwargs["scope"]
+            if scopes is None:
+                scopes = self.default_scopes
 
-    return super().request(method, url, **kwargs)
+            def auth(
+                prepared_request: requests.PreparedRequest,
+            ) -> requests.PreparedRequest:
+                if not scopes:
+                    raise ValueError(
+                        "All tests must specify auth scope for all session requests.  Either specify as an argument for each individual HTTP call, or decorate the test with @default_scope."
+                    )
+                self.auth_adapter.add_headers(prepared_request, scopes)
+                return prepared_request
+
+            kwargs["auth"] = auth
+        kwargs["timeout"] = CLIENT_TIMEOUT
+        return kwargs
+
+    def request(self, method, url, **kwargs):
+        if "auth" not in kwargs:
+            kwargs = self.adjust_request_kwargs(kwargs)
+
+        return super().request(method, url, **kwargs)
+
 
 class AsyncUTMTestSession:
     """
@@ -309,88 +314,3 @@ class KMLGenerationSession(requests.Session):
             request.url = self._prefix_url + request.url
 
         return super().prepare_request(request, **kwargs)
-
-
-def get_x_utm_jws_header():
-  return '\"alg\"=\"{}\", \"typ\"=\"{}\", \"kid\"=\"{}\", \"x5u\"=\"{}\""'.format(
-        'RS256', 'JOSE', get_key_id(), os.environ['PUBLIC_KEY_ENDPOINT']
-      )
-
-def get_signed_headers(object_to_sign):
-    signed_type = str(type(object_to_sign))
-    sig, sig_input = get_signature(object_to_sign, signed_type)
-    content_digest = get_content_digest(convert_request_dot_body(object_to_sign.body)) if 'Request' in signed_type else get_content_digest('' if not object_to_sign.json else json.dumps(object_to_sign.json))
-    signed_headers = {
-      'x-utm-message-signature-input': 'utm-message-signature={}'.format(sig_input),
-      'x-utm-message-signature': 'utm-message-signature=:{}:'.format(sig),
-      'x-utm-jws-header': get_x_utm_jws_header(),
-      'content-digest': 'sha-512=:{}:'.format(content_digest)
-    }
-    return signed_headers
-
-def get_content_digest(payload):
-  payload = json.dumps(payload) if payload else ''
-  return base64.b64encode(hashlib.sha512(payload.encode('utf-8')).digest()).decode('utf-8')
-
-def get_signature_input(sig_base):
-  sig_base_comps = sig_base.split('\n')
-  sig_param_str = [item for item in sig_base_comps if '@signature-params' in item].pop()
-  start_sig_input_ind = sig_param_str.index('(')
-  end_sig_input_str = len(sig_param_str)
-  return sig_param_str[start_sig_input_ind:end_sig_input_str]
-
-def get_signature(object_to_sign, signed_type):
-  sig_base = get_signature_base(object_to_sign, signed_type)
-  sig_base_bytes =  bytes(sig_base, 'utf-8')
-  sig_input = get_signature_input(sig_base)
-  hash = SHA256.new(sig_base_bytes)
-  with open("uft_priv.pem", "rb") as priv_key_file:
-    private_key = RSA.import_key(priv_key_file.read())
-  return base64.b64encode(pkcs1_15.new(private_key).sign(hash)).decode("utf-8"), sig_input
-
-def convert_request_dot_body(request_body):
-  payload = '' if not request_body else request_body.decode('utf-8')
-  try:
-    payload = json.loads(payload)
-  except Exception:
-    if payload:
-      logger.error("{} was not a valid json string....".format(payload))
-  return payload
-
-def get_key_id():
-  return 'mock_uss_priv_key'
-
-def get_signature_base(object_to_sign, signed_type):
-  covered_components = ["@method", "@path", "@query", "authorization", "content-type", "content-digest", "x-utm-jws-header"] if 'Request' in signed_type else ["@status", "content-type", "content-digest", "x-utm-jws-header"]
-  headers = {key.lower(): value for key,value in object_to_sign.headers.items()}
-  content_digest = get_content_digest(convert_request_dot_body(object_to_sign.body)) if 'Request' in signed_type else get_content_digest('' if not object_to_sign.json else json.dumps(object_to_sign.json))
-  if 'Request' in signed_type:
-    parsed_url = urllib.parse.urlparse(object_to_sign.url)
-    base_value_map = {
-      "@method": object_to_sign.method,
-      "@path": parsed_url.path,
-      "@query": "?" if not parsed_url.query else parsed_url.query,
-      "authorization": headers.get('authorization', ''),
-      "content-type": headers.get('content-type', ''),
-      "content-digest": "sha-512=:{}:".format(content_digest),
-      "x-utm-jws-header": get_x_utm_jws_header()
-      }
-  else:
-    base_value_map = {
-      "@status": object_to_sign.status_code,
-      "content-type": headers['content-type'],
-      "content-digest": "sha-512=:{}:".format(content_digest),
-      "x-utm-jws-header": get_x_utm_jws_header()
-    }
-  curr_time = str(int(time.time()))
-  signature_param_str = "\"{}\": ({});{}".format("@signature-params", wrap_components(covered_components), curr_time)
-  sig_base = ""
-  for component in covered_components:
-    sig_base += "\"{}\": {}\n".format(
-                component, base_value_map[component]
-    )
-  sig_base += signature_param_str
-  return sig_base
-
-def wrap_components(components):
-  return " ".join(list(map(lambda comp: "\"{}\"".format(comp), components)))

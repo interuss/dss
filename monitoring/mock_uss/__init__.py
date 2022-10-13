@@ -1,7 +1,7 @@
 import flask
-
+import os
 from monitoring.mock_uss import config
-from monitoring.monitorlib.infrastructure import get_signed_headers
+import monitoring.messagesigning.message_signer as signer
 
 from loguru import logger
 
@@ -49,8 +49,8 @@ if SERVICE_SCDSC in webapp.config[config.KEY_SERVICES]:
 def sign_response(response):
     try:
         type_of_response = str(type(response))
-        if 'None' not in type_of_response:
-            signed_headers = get_signed_headers(response)
+        if 'None' not in type_of_response and os.environ.get('MESSAGE_SIGNING', None) == "true":
+            signed_headers = signer.get_signed_headers(response)
             response.headers.update(signed_headers)
     except Exception as e:
         logger.error("Could not sign response: " + str(e))

@@ -6,7 +6,7 @@ import jwcrypto.jwk
 import jwt
 import requests
 import datetime
-
+import os
 from loguru import logger
 
 from monitoring.mock_uss.scdsc import report_settings
@@ -56,6 +56,27 @@ def analyze_message_signing_headers():
   message_validator.analyze_headers(interaction_id, request_info, 'request')
 
 
+def analyze_message_signing_headers():
+  request_info = {
+        'method': flask.request.method,
+        'url': flask.request.url,
+        'initiated_at': datetime.datetime.utcnow().isoformat(),
+        'headers': json.dumps({k: v for k, v in flask.request.headers.items()})
+    }
+
+  request_info['body'] = flask.request.data.decode('utf-8')
+  query = {'request': request_info}
+  test_context = {
+            'test_name': "Validating incoming request signatures.",
+            'test_case': 'Message signing headers in the incoming {} request to this mock_uss endpoint:  {} should be valid.'.format(flask.request.method, flask.request.path)
+            }
+  interaction_id = report_settings.reprt_recorder.capture_interaction(
+            query,
+            'Checking that the message signing headers in the incoming {} request to the mock uss endpoint {} are valid.'.format(flask.request.method, flask.request.path),
+            test_context=test_context)
+  message_validator.analyze_headers(interaction_id, request_info, 'request')
+
+
 def requires_scope_decorator(public_key: str, audience: str):
     """Function that produces a decorator to protect a Flask endpoint.
 
@@ -70,7 +91,7 @@ def requires_scope_decorator(public_key: str, audience: str):
             @wraps(fn)
             def wrapper(*args, **kwargs):
                 try:
-                    if '/mock/scd/' in flask.request.path:
+                    if '/mock/scd/' in flask.request.path and os.environ.get('MESSAGE_SIGNING', None) == "true":
                         analyze_message_signing_headers()
                 except Exception as e:
                     logger.error("Could not process message signing headers: {}".format(str(e)))
