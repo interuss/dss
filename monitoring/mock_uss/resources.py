@@ -5,4 +5,5 @@ from . import config
 
 utm_client = infrastructure.UTMClientSession(
     webapp.config[config.KEY_DSS_URL],
-    auth.make_auth_adapter(webapp.config[config.KEY_AUTH_SPEC]))
+    auth.make_auth_adapter(webapp.config[config.KEY_AUTH_SPEC]),
+)

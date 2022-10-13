@@ -2,19 +2,22 @@ import flask
 
 from monitoring.mock_uss import config
 
-SERVICE_RIDSP = 'ridsp'
-SERVICE_RIDDP = 'riddp'
-SERVICE_SCDSC = 'scdsc'
+SERVICE_RIDSP = "ridsp"
+SERVICE_RIDDP = "riddp"
+SERVICE_SCDSC = "scdsc"
 
 webapp = flask.Flask(__name__)
 enabled_services = set()
 
 webapp.config.from_object(config.Config)
 print(
-  '################################################################################\n' + \
-  '################################ Configuration  ################################\n' + \
-  '\n'.join('## {}: {}'.format(key, webapp.config[key]) for key in webapp.config) + '\n' + \
-  '################################################################################', flush=True)
+    "################################################################################\n"
+    + "################################ Configuration  ################################\n"
+    + "\n".join("## {}: {}".format(key, webapp.config[key]) for key in webapp.config)
+    + "\n"
+    + "################################################################################",
+    flush=True,
+)
 
 from monitoring.mock_uss import routes as basic_routes
 
