@@ -56,7 +56,7 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 	}
 	if req.BodyParseError != nil {
 		return restapi.CreateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Malformed params"))}}
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 	// TODO: put the validation logic in the models layer
 	if req.Body.FlightsUrl == "" {
@@ -144,7 +144,7 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 	// TODO: put the validation logic in the models layer
 	if req.BodyParseError != nil {
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Malformed params"))}}
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 	if req.Body.FlightsUrl == "" {
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
