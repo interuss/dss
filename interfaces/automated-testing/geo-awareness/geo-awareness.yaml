@@ -152,9 +152,9 @@ components:
           $ref: '#/components/schemas/UomDimensions'
         verticalReferenceType:
           $ref: '#/components/schemas/VerticalReferenceType'
-        verticalReference:
+        height:
           description: >-
-            Height above vertical reference datum, in units of uomDimensions.
+            Height above vertical reference datum indicated in `verticalReferenceType`, in units of `uomDimensions`.
           type: number
           default: 0
         longitude:
