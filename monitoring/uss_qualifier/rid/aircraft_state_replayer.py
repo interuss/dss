@@ -1,18 +1,11 @@
-import datetime
-from monitoring.monitorlib.auth import make_auth_adapter
-from monitoring.monitorlib.infrastructure import UTMClientSession
 import json, os
 import uuid
 from pathlib import Path
-from monitoring.monitorlib import fetch
 from monitoring.uss_qualifier.rid.utils import FullFlightRecord
-from monitoring.uss_qualifier.rid import reports
 from monitoring.monitorlib.rid_automated_testing.injection_api import (
     TestFlightDetails,
     TestFlight,
     CreateTestParameters,
-    SCOPE_RID_QUALIFIER_INJECT,
-    ChangeTestResponse,
 )
 from implicitdict import ImplicitDict
 import arrow
@@ -60,13 +53,6 @@ class TestBuilder:
         flight_records: List[FullFlightRecord],
     ) -> None:
         self.test_configuration = test_configuration
-        usses = self.test_configuration.injection_targets
-        if len(usses) > len(flight_records):
-            raise ValueError(
-                "There are not enough flight records ({}) to test the specified USSes ({})".format(
-                    len(usses), len(flight_records)
-                )
-            )
         self.disk_flight_records: List[FullFlightRecord] = flight_records
 
     def build_test_payloads(self) -> List[CreateTestParameters]:
@@ -108,40 +94,3 @@ class TestBuilder:
             all_test_payloads.append(test_payload)
 
         return all_test_payloads
-
-
-class TestHarness:
-    """A class to submit Aircraft RID State to the USS test endpoint"""
-
-    def __init__(self, auth_spec: str, injection_base_url: str):
-
-        auth_adapter = make_auth_adapter(auth_spec)
-        self._base_url = injection_base_url
-        self.uss_session = UTMClientSession(injection_base_url, auth_adapter)
-
-    def submit_test(
-        self, payload: CreateTestParameters, test_id: str, setup: reports.Setup
-    ) -> List[TestFlight]:
-        injection_path = "/tests/{}".format(test_id)
-
-        initiated_at = datetime.datetime.utcnow()
-        response = self.uss_session.put(
-            url=injection_path, json=payload, scope=SCOPE_RID_QUALIFIER_INJECT
-        )
-        setup.injections.append(fetch.describe_query(response, initiated_at))
-
-        if response.status_code == 200:
-            changed_test: ChangeTestResponse = ImplicitDict.parse(
-                response.json(), ChangeTestResponse
-            )
-            print("New test with ID %s created" % test_id)
-            return changed_test.injected_flights
-        else:
-            raise RuntimeError(
-                "Error {} submitting test ID {} to {}: {}".format(
-                    response.status_code,
-                    test_id,
-                    self._base_url,
-                    response.content.decode("utf-8"),
-                )
-            )

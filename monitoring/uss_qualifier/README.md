@@ -60,12 +60,4 @@ Note: We are currently in the process of migrating the technical implementation 
     * This means that a complete test configuration can't be tracked in the InterUSS repository because it wouldn't make sense to list, e.g., Display Provider observation endpoint URLs in the SUSI qual-partners environment.
     * Partial test configurations, including RID telemetry to inject, operational intents to inject, etc, can be tracked in the InterUSS repository, but they could not be used without specifying the missing resources describing systems under test.
 
-### Test resources
-
-1. A particular type of test resource must have a globally unique name.
-    * Example: `netrid.service_providers`, which would provide access to the RID injection API for each ASTM NetRID Service Provider under test.
-    * Example: `netrid.flight_data.nominal_flights`, which would provide flight data for nominal flights which could be injected into Service Providers under test.
-2. Every type of test resource must define a "resource specification", which is a serializable data type that fully defines how to create an instance of that resource type.
-3. Only one instance of a particular resource type may be specified in a single test configuration.
-    * The specification of a resource type in a test configuration is accomplished by providing an instance of the resource type's resource specification.
-4. Every type of test resource must define how to create an instance of the test resource from an instance of the resource specification.
+### [Test resources](resources/README.md)

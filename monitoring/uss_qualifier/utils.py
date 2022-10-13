@@ -2,6 +2,8 @@ from typing import Optional
 from urllib.parse import urlparse
 
 from implicitdict import ImplicitDict
+
+from monitoring.uss_qualifier.resources import ResourceCollection
 from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
 
@@ -18,6 +20,9 @@ class USSQualifierTestConfiguration(ImplicitDict):
 
     scd: Optional[SCDQualifierTestConfiguration]
     """Test configuration for SCD"""
+
+    resources: Optional[ResourceCollection]
+    """Declarations for resources used by the test suite"""
 
 
 def is_url(url_string):

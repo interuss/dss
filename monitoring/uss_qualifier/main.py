@@ -35,12 +35,10 @@ def parseArgs() -> argparse.Namespace:
 def uss_test_executor(
     config, auth_spec, rid_flight_records=None, scd_test_definitions_path=None
 ) -> Dict[str, Dict[str, reports.Report]]:
+    resources = config.resources.create_resources()
+
     test_executor = {"rid": {}, "scd": {}}
     if "rid" in config:
-        print(
-            f"[RID] Configuration provided with {len(config.rid.injection_targets)} injection targets."
-        )
-        rid_test_executor.validate_configuration(config.rid)
         if not rid_flight_records:
             rid_flight_records = rid_test_executor.load_rid_test_definitions(
                 config.locale
@@ -48,6 +46,7 @@ def uss_test_executor(
         test_executor["rid"].update(
             {
                 "report": rid_test_executor.run_rid_tests(
+                    resources=resources,
                     test_configuration=config.rid,
                     auth_spec=auth_spec,
                     flight_records=rid_flight_records,
