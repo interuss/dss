@@ -212,8 +212,6 @@ components:
           format: date-time
         ed269:
           $ref: '#/components/schemas/ED269Filters'
-        flightPlanningEffect:
-          $ref: '#/components/schemas/FlightPlanningEffectFilter'
 
     ED269Filters:
       description: >-
@@ -231,31 +229,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Restriction'
-
-    FlightPlanningEffectFilter:
-      description: >-
-        Filter criteria for the selection of Geozones according to how the Geozones would affect the outcome of an attempt to plan a flight.
-      type: object
-      required:
-        - ruleSetName
-        - outcome
-      properties:
-        ruleSetName:
-          type: string
-          description: >-
-            Region-specific name of the set of operating rules under which an attempted flight would be planned.
-          example: Recreational
-        outcome:
-          type: string
-          description: >-
-            Only select Geozones which, if an attempt were made to plan a flight that intersected those Geozones under the operating rules specified by `ruleSetName`, would cause this outcome for the flight planning attempt.
-            
-            * Failure: The USSP would not allow the flight to be created/planned.
-            
-            * Advisory: The USSP would provide the operator with an advisory along with the planned flight if no other factor would cause the flight planning attempt to fail.
-          enum:
-          - Failure
-          - Advisory
 
     GeozonesCheckReply:
       type: object
