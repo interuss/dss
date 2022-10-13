@@ -4,10 +4,9 @@ package rid_v1
 import (
 	"context"
 	"encoding/json"
+	"github.com/interuss/dss/pkg/api"
 	"net/http"
 	"regexp"
-
-	"github.com/interuss/dss/pkg/api"
 )
 
 type APIRouter struct {

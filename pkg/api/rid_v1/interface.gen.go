@@ -3,7 +3,6 @@ package rid_v1
 
 import (
 	"context"
-
 	"github.com/interuss/dss/pkg/api"
 )
 
