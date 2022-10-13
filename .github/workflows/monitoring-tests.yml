@@ -19,6 +19,10 @@ jobs:
           docker images
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Run Monitorlib tests
+        run: |
+          cd monitoring/monitorlib
+          make test
       - name: Run Mock USS tests
         run: |
           cd monitoring/mock_uss
