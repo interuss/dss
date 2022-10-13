@@ -1,9 +1,9 @@
 from monitoring.mock_uss import webapp
 
 
-@webapp.route('/ridsp/status')
+@webapp.route("/ridsp/status")
 def ridsp_status():
-  return 'Mock RID Service Provider ok'
+    return "Mock RID Service Provider ok"
 
 
 from . import routes_ridsp

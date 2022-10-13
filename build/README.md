@@ -155,17 +155,17 @@ a PR to that effect would be greatly appreciated.
 
     GCP:
     ```shell
-#!/bin/bash
+    #!/bin/bash
 
-export CLUSTER_NAME=<your cluster name>
-export REGION=<GCP region in which your cluster resides>
-gcloud config set project <your GCP project name>
-gcloud config set compute/zone $REGION-a
-gcloud container clusters get-credentials $CLUSTER_NAME
-export CLUSTER_CONTEXT=$(kubectl config current-context)
-export NAMESPACE=default
-export DOCKER_URL=docker.io/interuss
-echo "Current CLUSTER_CONTEXT is $CLUSTER_CONTEXT"
+    export CLUSTER_NAME=<your cluster name>
+    export REGION=<GCP region in which your cluster resides>
+    gcloud config set project <your GCP project name>
+    gcloud config set compute/zone $REGION-a
+    gcloud container clusters get-credentials $CLUSTER_NAME
+    export CLUSTER_CONTEXT=$(kubectl config current-context)
+    export NAMESPACE=default
+    export DOCKER_URL=docker.io/interuss
+    echo "Current CLUSTER_CONTEXT is $CLUSTER_CONTEXT
     ```
 
 1.  Create static IP addresses: one for the HTTPS Gateway's ingress, and one

@@ -8,16 +8,16 @@ from .behavior import ServiceProviderBehavior
 from .database import db
 
 
-@webapp.route('/ridsp/behavior', methods=['PUT'])
+@webapp.route("/ridsp/behavior", methods=["PUT"])
 def set_dp_behavior() -> Tuple[str, int]:
     """Set the behavior of the mock Display Provider."""
     try:
         json = flask.request.json
         if json is None:
-            raise ValueError('Request did not contain a JSON payload')
+            raise ValueError("Request did not contain a JSON payload")
         dp_behavior = ImplicitDict.parse(json, ServiceProviderBehavior)
     except ValueError as e:
-        msg = 'Change behavior for Service Provider unable to parse JSON: {}'.format(e)
+        msg = "Change behavior for Service Provider unable to parse JSON: {}".format(e)
         return msg, 400
 
     with db as tx:
@@ -26,7 +26,7 @@ def set_dp_behavior() -> Tuple[str, int]:
     return flask.jsonify(dp_behavior)
 
 
-@webapp.route('/ridsp/behavior', methods=['GET'])
+@webapp.route("/ridsp/behavior", methods=["GET"])
 def get_dp_behavior() -> Tuple[str, int]:
     """Get the behavior of the mock Display Provider."""
     return flask.jsonify(db.value.behavior)

@@ -3,7 +3,8 @@ from enum import Enum
 
 class Locality(str, Enum):
     """Operating locations and their respective regulation and technical variations."""
-    CHE = 'CHE'
+
+    CHE = "CHE"
     """Switzerland"""
 
     @property

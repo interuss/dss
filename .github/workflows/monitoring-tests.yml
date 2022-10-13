@@ -1,12 +1,12 @@
-name: USS Qualifier Tests
+name: Monitoring packages tests (python)
 on:
   pull_request: # All
   push:
     branches:
       - master
 jobs:
-  uss-qualifier-tests:
-    name: USS Qualifier Tests
+  monitoring-tests:
+    name: Test monitoring packages
     runs-on: ubuntu-latest
     steps:
       - name: Job information
@@ -19,7 +19,15 @@ jobs:
           docker images
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Run Qualifier tests
+      - name: Run Monitorlib tests
+        run: |
+          cd monitoring/monitorlib
+          make test
+      - name: Run Mock USS tests
+        run: |
+          cd monitoring/mock_uss
+          make test
+      - name: Run USS Qualifier tests
         run: |
           cd monitoring/uss_qualifier
           make test
