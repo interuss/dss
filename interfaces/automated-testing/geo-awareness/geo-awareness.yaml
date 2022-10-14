@@ -238,10 +238,34 @@ components:
             Responses to each of the `checks` in the request.  The number of entries in this array should match the number of entries in the `checks` field of the request.
           type: array
           items:
-            type: boolean
-            description: >-
-              True if and only if one or more applicable Geozones were selected according to the selection criteria of the corresponding check.
+            $ref: '#/components/schemas/GeozonesCheckResult'
           default: []
+
+    GeozonesCheckResult:
+      type: object
+      required:
+      - geozone
+      properties:
+        geozone:
+          type: string
+          description: >-
+            Indication of whether one or more applicable Geozones were selected according to the selection criteria of the corresponding check.
+            
+            * Present: One or more applicable Geozones were selected.
+            * Absent: No applicable Geozones were selected.
+            * UnsupportedFilter: Applicable Geozones could not be selected because one or more filter criteria are not supported by the USSP.  If this value is specified, `message` must be populated.
+            * Error: An error or condition not enumerated above occurred.  If this value is specified, `message` must be populated.
+          enum:
+          - Present
+          - Absent
+          - UnsupportedFilter
+          - Error
+        message:
+          type: string
+          description: >-
+            A human-readable description of why the non-standard `geozone` value was reported.  Should only be populated when appropriate according to the value of the `geozone` field.
+          example: >-
+            U-space flight authorisations are not blocked by the USSP according to geo-awareness data (GM1 Article 10 (7)).
 
 paths:
   /status:
