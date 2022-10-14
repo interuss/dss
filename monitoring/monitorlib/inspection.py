@@ -10,7 +10,9 @@ def import_submodules(module) -> None:
 
     :param module: Parent module from which to start explicitly importing modules.
     """
-    for loader, module_name, is_pkg in pkgutil.walk_packages(module.__path__, module.__name__ + '.'):
+    for loader, module_name, is_pkg in pkgutil.walk_packages(
+        module.__path__, module.__name__ + "."
+    ):
         importlib.import_module(module_name)
 
 
