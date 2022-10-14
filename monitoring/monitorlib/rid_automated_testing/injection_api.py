@@ -25,6 +25,7 @@ class TestFlightDetails(ImplicitDict):
 
     effective_after: StringBasedDateTime  # ISO 8601 datetime string
     details: rid.RIDFlightDetails
+    aircraft_type: str
 
 
 class TestFlight(ImplicitDict):

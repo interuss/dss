@@ -4,7 +4,6 @@ import shapely.geometry
 from datetime import datetime
 from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.monitorlib.rid_automated_testing import injection_api
-from monitoring.monitorlib.rid import RIDAircraftState, RIDFlightDetails
 from monitoring.uss_qualifier.resources.netrid.service_providers import (
     ServiceProviderConfiguration,
 )
@@ -43,20 +42,6 @@ class GridCellFlight(NamedTuple):
 
     bounds: shapely.geometry.polygon.Polygon
     track: List[FlightPoint]
-
-
-class FlightDetails(ImplicitDict):
-    """This object stores the metadata associated with generated flight, this data is shared as information in the remote id call"""
-
-    rid_details: RIDFlightDetails
-    operator_name: str
-    aircraft_type: str  # Generic type of aircraft https://github.com/uastech/standards/blob/36e7ea23a010ff91053f82ac4f6a9bfc698503f9/remoteid/canonical.yaml#L1711
-
-
-class FullFlightRecord(ImplicitDict):
-    reference_time: str
-    states: List[RIDAircraftState]
-    flight_details: FlightDetails
 
 
 class InjectedFlight(ImplicitDict):

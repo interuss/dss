@@ -1,9 +1,8 @@
-from monitoring.uss_qualifier.test_data import test_report
+from monitoring.uss_qualifier.webapp import test_report
 from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
 from monitoring.uss_qualifier.main import uss_test_executor
 from monitoring.uss_qualifier.rid.simulator import flight_state_from_kml
-from monitoring.uss_qualifier.rid.utils import FullFlightRecord
-from monitoring.uss_qualifier.rid.utils import FullFlightRecord
+from monitoring.uss_qualifier.resources.netrid.flight_data import FullFlightRecord
 import json
 from typing import List
 import redis
@@ -50,9 +49,7 @@ def call_test_executor(
         report = json.dumps(test_report.test_data)
     else:
         report = json.dumps(
-            uss_test_executor(
-                config, auth_spec, flight_records, scd_test_definitions_path
-            )
+            uss_test_executor(config, auth_spec, scd_test_definitions_path)
         )
     resources.redis_conn.hset(resources.REDIS_KEY_TEST_RUNS, testruns_id, report)
     return report

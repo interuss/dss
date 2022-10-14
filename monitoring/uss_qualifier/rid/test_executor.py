@@ -1,71 +1,51 @@
 import json
-import os
 import uuid
-from pathlib import Path
-from typing import List
 
-from monitoring.monitorlib.auth import make_auth_adapter
-from monitoring.monitorlib.infrastructure import UTMClientSession
+from monitoring.monitorlib.rid_automated_testing.injection_api import (
+    CreateTestParameters,
+)
 from monitoring.uss_qualifier.resources import ResourceCollection
 from monitoring.uss_qualifier.resources.netrid import (
     NetRIDServiceProviders,
     NetRIDObserversResource,
+    FlightDataResource,
 )
 from monitoring.uss_qualifier.rid import (
     display_data_evaluator,
     reports,
-    aircraft_state_replayer,
 )
-from monitoring.uss_qualifier.rid.aircraft_state_replayer import (
-    TestBuilder,
-)
-from monitoring.uss_qualifier.rid.simulator import flight_state
 from monitoring.uss_qualifier.rid.utils import (
     RIDQualifierTestConfiguration,
     InjectedFlight,
-    FullFlightRecord,
 )
-from monitoring.uss_qualifier.utils import is_url
-
-
-def load_rid_test_definitions(locale: str):
-    test_definitions_path = Path(os.getcwd(), "rid/test_definitions")
-    aircraft_states_directory = Path(test_definitions_path, locale, "aircraft_states")
-    try:
-        flight_records = aircraft_state_replayer.get_full_flight_records(
-            aircraft_states_directory
-        )
-    except ValueError:
-        print(
-            "[RID] No aircraft state files found in {}; generating them via simulator now".format(
-                aircraft_states_directory
-            )
-        )
-        flight_state.generate_aircraft_states(test_definitions_path)
-        flight_records = aircraft_state_replayer.get_full_flight_records(
-            aircraft_states_directory
-        )
-    return flight_records
 
 
 def run_rid_tests(
     resources: ResourceCollection,
     test_configuration: RIDQualifierTestConfiguration,
-    flight_records: List[FullFlightRecord],
 ) -> reports.Report:
-    my_test_builder = TestBuilder(
-        test_configuration=test_configuration, flight_records=flight_records
-    )
-    test_payloads = my_test_builder.build_test_payloads()
     test_id = str(uuid.uuid4())
     report = reports.Report(setup=reports.Setup(configuration=test_configuration))
 
     # Inject flights into all USSs
+    # TODO: Replace magic string 'netrid_flights_data' with dependency explicitly declared by the test scenario/case/step
+    flights_data: FlightDataResource = resources["netrid_flights_data"]
+    test_flights = flights_data.get_test_flights()
+
     # TODO: Replace magic string 'netrid_service_providers' with dependency explicitly declared by the test scenario/case/step
     injection_targets: NetRIDServiceProviders = resources["netrid_service_providers"]
+    service_providers = injection_targets.service_providers
+    if len(service_providers) > len(test_flights):
+        raise ValueError(
+            "{} service providers were specified, but data for only {} test flights were provided".format(
+                len(service_providers), len(test_flights)
+            )
+        )
+
     injected_flights = []
-    for i, target in enumerate(injection_targets.service_providers):
-        injections = target.submit_test(test_payloads[i], test_id, report.setup)
+    for i, target in enumerate(service_providers):
+        p = CreateTestParameters(requested_flights=[test_flights[i]])
+        injections = target.submit_test(p, test_id, report.setup)
         for flight in injections:
             injected_flights.append(InjectedFlight(uss=target.config, flight=flight))
 
