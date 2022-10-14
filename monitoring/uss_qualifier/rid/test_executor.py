@@ -51,7 +51,6 @@ def load_rid_test_definitions(locale: str):
 def run_rid_tests(
     resources: ResourceCollection,
     test_configuration: RIDQualifierTestConfiguration,
-    auth_spec: str,
     flight_records: List[FullFlightRecord],
 ) -> reports.Report:
     my_test_builder = TestBuilder(
@@ -78,7 +77,8 @@ def run_rid_tests(
     evaluator = display_data_evaluator.RIDObservationEvaluator(
         report.findings,
         injected_flights,
-        test_configuration.evaluation,
+        # TODO: Replace magic string 'netrid_observation_evaluation_configuration' with dependency explicitly declared by the test scenario/case/step
+        resources["netrid_observation_evaluation_configuration"].configuration,
         test_configuration.rid_version,
     )
     evaluator.evaluate_system(observers.observers)

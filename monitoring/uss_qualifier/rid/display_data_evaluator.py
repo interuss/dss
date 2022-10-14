@@ -9,11 +9,9 @@ import s2sphere
 from monitoring.monitorlib import fetch, geo
 from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.uss_qualifier.rid.reports import Findings
+from monitoring.uss_qualifier.resources.netrid.evaluation import EvaluationConfiguration
 from monitoring.uss_qualifier.resources.netrid.observers import RIDSystemObserver
-from monitoring.uss_qualifier.rid.utils import (
-    EvaluationConfiguration,
-    InjectedFlight,
-)
+from monitoring.uss_qualifier.rid.utils import InjectedFlight
 from monitoring.monitorlib.rid_automated_testing import observation_api
 
 

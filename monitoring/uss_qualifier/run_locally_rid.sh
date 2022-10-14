@@ -64,6 +64,10 @@ echo '{
               }
             ]
           }
+        },
+        "netrid_observation_evaluation_configuration": {
+          "resource_type": "netrid.EvaluationConfigurationResource",
+          "specification": {}
         }
       }
     },
