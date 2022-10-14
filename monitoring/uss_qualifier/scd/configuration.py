@@ -1,7 +1,13 @@
 from typing import List, Optional
 
 from implicitdict import ImplicitDict
-from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
+
+
+class InjectionTargetConfiguration(ImplicitDict):
+    """This object defines the data required for a uss"""
+
+    name: str
+    injection_base_url: str
 
 
 class SCDQualifierTestConfiguration(ImplicitDict):

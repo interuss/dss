@@ -5,15 +5,10 @@ from datetime import datetime
 from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.monitorlib.rid_automated_testing import injection_api
 from monitoring.monitorlib.rid import RIDAircraftState, RIDFlightDetails
+from monitoring.uss_qualifier.resources.netrid.service_providers import (
+    ServiceProviderConfiguration,
+)
 from implicitdict import ImplicitDict, StringBasedTimeDelta
-
-
-# TODO: This class is used in both RID and SCD; it should therefore be moved to a shared tools file rather than an RID utils file
-class InjectionTargetConfiguration(ImplicitDict):
-    """This object defines the data required for a uss"""
-
-    name: str
-    injection_base_url: str
 
 
 class ObserverConfiguration(ImplicitDict):
@@ -36,9 +31,6 @@ class EvaluationConfiguration(ImplicitDict):
 
 
 class RIDQualifierTestConfiguration(ImplicitDict):
-    injection_targets: List[InjectionTargetConfiguration]
-    """Set of Service Providers into which data should be injected"""
-
     observers: List[ObserverConfiguration]
     """Set of Display Providers through with the system should be observed"""
 
@@ -93,5 +85,5 @@ class FullFlightRecord(ImplicitDict):
 
 
 class InjectedFlight(ImplicitDict):
-    uss: InjectionTargetConfiguration
+    uss: ServiceProviderConfiguration
     flight: injection_api.TestFlight

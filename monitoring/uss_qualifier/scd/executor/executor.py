@@ -7,8 +7,10 @@ from typing import Dict, List
 
 from monitoring.monitorlib.locality import Locality
 from implicitdict import ImplicitDict
-from monitoring.uss_qualifier.rid.utils import InjectionTargetConfiguration
-from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
+from monitoring.uss_qualifier.scd.configuration import (
+    SCDQualifierTestConfiguration,
+    InjectionTargetConfiguration,
+)
 from monitoring.uss_qualifier.scd.data_interfaces import (
     AutomatedTest,
     TestStep,

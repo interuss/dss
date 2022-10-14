@@ -27,6 +27,10 @@ AUTH='--auth DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
 
 echo '{
     "locale": "CHE",
+    "resources": {
+          "resource_declarations": {
+          }
+    },
     "scd": {
         "injection_targets": [
             {

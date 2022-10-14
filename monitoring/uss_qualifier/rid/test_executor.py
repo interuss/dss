@@ -6,13 +6,14 @@ from typing import List
 
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import UTMClientSession
+from monitoring.uss_qualifier.resources import ResourceCollection
+from monitoring.uss_qualifier.resources.netrid import NetRIDServiceProviders
 from monitoring.uss_qualifier.rid import (
     display_data_evaluator,
     reports,
     aircraft_state_replayer,
 )
 from monitoring.uss_qualifier.rid.aircraft_state_replayer import (
-    TestHarness,
     TestBuilder,
 )
 from monitoring.uss_qualifier.rid.simulator import flight_state
@@ -44,15 +45,8 @@ def load_rid_test_definitions(locale: str):
     return flight_records
 
 
-def validate_configuration(test_configuration: RIDQualifierTestConfiguration):
-    try:
-        for injection_target in test_configuration.injection_targets:
-            is_url(injection_target.injection_base_url)
-    except ValueError:
-        raise ValueError("A valid url for injection_target must be passed")
-
-
 def run_rid_tests(
+    resources: ResourceCollection,
     test_configuration: RIDQualifierTestConfiguration,
     auth_spec: str,
     flight_records: List[FullFlightRecord],
@@ -65,16 +59,13 @@ def run_rid_tests(
     report = reports.Report(setup=reports.Setup(configuration=test_configuration))
 
     # Inject flights into all USSs
+    # TODO: Replace magic string 'netrid_service_providers' with dependency explicitly declared by the test scenario/case/step
+    injection_targets: NetRIDServiceProviders = resources["netrid_service_providers"]
     injected_flights = []
-    for i, target in enumerate(test_configuration.injection_targets):
-        uss_injection_harness = TestHarness(
-            auth_spec=auth_spec, injection_base_url=target.injection_base_url
-        )
-        injections = uss_injection_harness.submit_test(
-            test_payloads[i], test_id, report.setup
-        )
+    for i, target in enumerate(injection_targets.service_providers):
+        injections = target.submit_test(test_payloads[i], test_id, report.setup)
         for flight in injections:
-            injected_flights.append(InjectedFlight(uss=target, flight=flight))
+            injected_flights.append(InjectedFlight(uss=target.config, flight=flight))
 
     # Create observers
     observers: List[display_data_evaluator.RIDSystemObserver] = []
