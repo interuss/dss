@@ -11,11 +11,6 @@ from monitoring.uss_qualifier.resources.netrid.service_providers import (
 from implicitdict import ImplicitDict, StringBasedTimeDelta
 
 
-class ObserverConfiguration(ImplicitDict):
-    name: str
-    observation_base_url: str
-
-
 class EvaluationConfiguration(ImplicitDict):
     min_polling_interval: StringBasedTimeDelta = StringBasedTimeDelta("5s")
     """Do not repeat system observations with intervals smaller than this."""
@@ -31,9 +26,6 @@ class EvaluationConfiguration(ImplicitDict):
 
 
 class RIDQualifierTestConfiguration(ImplicitDict):
-    observers: List[ObserverConfiguration]
-    """Set of Display Providers through with the system should be observed"""
-
     flight_start_delay: StringBasedTimeDelta = StringBasedTimeDelta("15s")
     """Amount of time between starting the test and commencement of flights"""
 

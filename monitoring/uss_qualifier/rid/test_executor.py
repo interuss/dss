@@ -7,7 +7,10 @@ from typing import List
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.uss_qualifier.resources import ResourceCollection
-from monitoring.uss_qualifier.resources.netrid import NetRIDServiceProviders
+from monitoring.uss_qualifier.resources.netrid import (
+    NetRIDServiceProviders,
+    NetRIDObserversResource,
+)
 from monitoring.uss_qualifier.rid import (
     display_data_evaluator,
     reports,
@@ -68,16 +71,8 @@ def run_rid_tests(
             injected_flights.append(InjectedFlight(uss=target.config, flight=flight))
 
     # Create observers
-    observers: List[display_data_evaluator.RIDSystemObserver] = []
-    for observer_config in test_configuration.observers:
-        observer = display_data_evaluator.RIDSystemObserver(
-            observer_config.name,
-            UTMClientSession(
-                observer_config.observation_base_url, make_auth_adapter(auth_spec)
-            ),
-            test_configuration.rid_version,
-        )
-        observers.append(observer)
+    # TODO: Replace magic string 'netrid_observers' with dependency explicitly declared by the test scenario/case/step
+    observers: NetRIDObserversResource = resources["netrid_observers"]
 
     # Evaluate observed RID system states
     evaluator = display_data_evaluator.RIDObservationEvaluator(
@@ -86,7 +81,7 @@ def run_rid_tests(
         test_configuration.evaluation,
         test_configuration.rid_version,
     )
-    evaluator.evaluate_system(observers)
+    evaluator.evaluate_system(observers.observers)
     with open("report_rid.json", "w") as f:
         json.dump(report, f)
     return report
