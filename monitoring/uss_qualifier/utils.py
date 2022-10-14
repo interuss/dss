@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import List, Optional
 from urllib.parse import urlparse
 
 from implicitdict import ImplicitDict
 
 from monitoring.uss_qualifier.resources import ResourceCollection
-from monitoring.uss_qualifier.rid.utils import RIDQualifierTestConfiguration
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
+from monitoring.uss_qualifier.scenarios.scenario import TestScenarioDeclaration
 
 
 class USSQualifierTestConfiguration(ImplicitDict):
@@ -15,14 +15,14 @@ class USSQualifierTestConfiguration(ImplicitDict):
   This should be the same one used to simulate the flight_data in
   the flight_data_generator.py module."""
 
-    rid: Optional[RIDQualifierTestConfiguration]
-    """Test configuration for RID"""
-
     scd: Optional[SCDQualifierTestConfiguration]
     """Test configuration for SCD"""
 
     resources: Optional[ResourceCollection]
     """Declarations for resources used by the test suite"""
+
+    # TODO: Replace this with test suite once designed
+    scenarios: List[TestScenarioDeclaration]
 
 
 def is_url(url_string):

@@ -1,10 +1,8 @@
 #!env/bin/python3
 
 import argparse
-import importlib
 import json
 import os
-import pkgutil
 import sys
 
 from implicitdict import ImplicitDict
@@ -12,11 +10,7 @@ from monitoring.deployment_manager import actions
 from monitoring.deployment_manager.systems.configuration import DeploymentSpec
 from monitoring.deployment_manager.infrastructure import make_context
 from monitoring.deployment_manager import infrastructure
-
-
-def _import_submodules(module):
-    for loader, module_name, is_pkg in pkgutil.walk_packages(module.__path__, module.__name__ + '.'):
-        importlib.import_module(module_name)
+from monitoring.monitorlib.inspection import import_submodules
 
 
 def _parse_args() -> argparse.Namespace:
@@ -33,7 +27,7 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     # Import all submodules from the `actions` module so we can find all actions
-    _import_submodules(actions)
+    import_submodules(actions)
 
     # Parse arguments
     args = _parse_args()

@@ -2,20 +2,11 @@ from typing import List, NamedTuple
 from shapely.geometry import Polygon
 import shapely.geometry
 from datetime import datetime
-from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.monitorlib.rid_automated_testing import injection_api
 from monitoring.uss_qualifier.resources.netrid.service_providers import (
     ServiceProviderConfiguration,
 )
-from implicitdict import ImplicitDict, StringBasedTimeDelta
-
-
-class RIDQualifierTestConfiguration(ImplicitDict):
-    flight_start_delay: StringBasedTimeDelta = StringBasedTimeDelta("15s")
-    """Amount of time between starting the test and commencement of flights"""
-
-    rid_version: RIDVersion
-    """Version of remote ID API/standard to use"""
+from implicitdict import ImplicitDict
 
 
 class QueryBoundingBox(NamedTuple):

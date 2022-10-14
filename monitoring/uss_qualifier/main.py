@@ -4,12 +4,9 @@ import argparse
 import json
 import os
 import sys
-from typing import Dict
 
 from monitoring.monitorlib.locality import Locality
 from implicitdict import ImplicitDict
-from monitoring.uss_qualifier.rid import test_executor as rid_test_executor
-from monitoring.uss_qualifier.rid import reports
 from monitoring.uss_qualifier.scd.executor import executor as scd_test_executor
 from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
 
@@ -32,23 +29,14 @@ def parseArgs() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def uss_test_executor(
-    config, auth_spec, scd_test_definitions_path=None
-) -> Dict[str, Dict[str, reports.Report]]:
-    resources = config.resources.create_resources()
+def uss_test_executor(config, auth_spec, scd_test_definitions_path=None):
+    # TODO: Harmonize and formalize report format shared between all scenarios
+    ad_hoc_report = {"scd": {}}
 
-    test_executor = {"rid": {}, "scd": {}}
-    if "rid" in config:
-        test_executor["rid"].update(
-            {
-                "report": rid_test_executor.run_rid_tests(
-                    resources=resources,
-                    test_configuration=config.rid,
-                )
-            }
-        )
-    else:
-        print("[RID] No configuration provided.")
+    resources = config.resources.create_resources()
+    scenarios = [s.make_test_scenario(resources) for s in config.scenarios]
+    for i, scenario in enumerate(scenarios):
+        ad_hoc_report["Scenario{}".format(i + 1)] = scenario.run()
 
     if "scd" in config:
         print(
@@ -67,15 +55,13 @@ def uss_test_executor(
             auth_spec=auth_spec,
             scd_test_definitions_path=scd_test_definitions_path,
         )
-        test_executor["scd"].update(
-            {
-                "report": scd_test_report,
-                "executed_test_run_count": executed_test_run_count,
-            }
-        )
+        ad_hoc_report["scd"] = {
+            "report": scd_test_report,
+            "executed_test_run_count": executed_test_run_count,
+        }
     else:
         print("[SCD] No configuration provided.")
-    return test_executor
+    return ad_hoc_report
 
 
 def main() -> int:

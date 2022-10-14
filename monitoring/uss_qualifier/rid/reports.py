@@ -5,10 +5,7 @@ import s2sphere
 
 from monitoring.monitorlib import fetch
 from implicitdict import ImplicitDict
-from monitoring.uss_qualifier.rid.utils import (
-    InjectedFlight,
-    RIDQualifierTestConfiguration,
-)
+from monitoring.uss_qualifier.rid.utils import InjectedFlight
 from monitoring.uss_qualifier.common_data_definitions import Severity
 
 
@@ -56,11 +53,6 @@ class Issue(ImplicitDict):
         super(Issue, self).__init__(**kwargs)
         if "timestamp" not in kwargs:
             self.timestamp = datetime.datetime.utcnow().isoformat()
-
-
-class Setup(ImplicitDict):
-    configuration: RIDQualifierTestConfiguration
-    injections: List[fetch.Query] = []
 
 
 class Findings(ImplicitDict):
@@ -223,5 +215,4 @@ class Findings(ImplicitDict):
 
 
 class Report(ImplicitDict):
-    setup: Setup
     findings: Findings = Findings()

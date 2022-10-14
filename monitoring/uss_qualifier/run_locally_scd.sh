@@ -31,6 +31,7 @@ echo '{
           "resource_declarations": {
           }
     },
+    "scenarios": [],
     "scd": {
         "injection_targets": [
             {
