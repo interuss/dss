@@ -68,6 +68,14 @@ echo '{
         "netrid_observation_evaluation_configuration": {
           "resource_type": "netrid.EvaluationConfigurationResource",
           "specification": {}
+        },
+        "netrid_flights_data": {
+          "resource_type": "netrid.FlightDataResource",
+          "specification": {
+            "json_file_source": {
+              "path": "./test_data/che/netrid/circular_flights.json"
+            }
+          }
         }
       }
     },
