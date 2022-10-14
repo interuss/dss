@@ -1,67 +1,18 @@
 import datetime
 import json
 import time
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import arrow
 import s2sphere
 
 from monitoring.monitorlib import fetch, geo
-from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.monitorlib.rid_common import RIDVersion
-from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.rid.reports import Findings
-from monitoring.uss_qualifier.rid.utils import (
-    EvaluationConfiguration,
-    InjectedFlight,
-)
+from monitoring.uss_qualifier.resources.netrid.evaluation import EvaluationConfiguration
+from monitoring.uss_qualifier.resources.netrid.observers import RIDSystemObserver
+from monitoring.uss_qualifier.rid.utils import InjectedFlight
 from monitoring.monitorlib.rid_automated_testing import observation_api
-
-
-class RIDSystemObserver(object):
-    def __init__(self, name: str, session: UTMClientSession, rid_version: RIDVersion):
-        self.session = session
-        self.name = name
-        self.rid_version = rid_version
-
-    def observe_system(
-        self, rect: s2sphere.LatLngRect
-    ) -> Tuple[Optional[observation_api.GetDisplayDataResponse], fetch.Query]:
-        initiated_at = datetime.datetime.utcnow()
-        resp = self.session.get(
-            "/display_data?view={},{},{},{}".format(
-                rect.lo().lat().degrees,
-                rect.lo().lng().degrees,
-                rect.hi().lat().degrees,
-                rect.hi().lng().degrees,
-            ),
-            scope=self.rid_version.read_scope,
-        )
-        try:
-            result = (
-                ImplicitDict.parse(resp.json(), observation_api.GetDisplayDataResponse)
-                if resp.status_code == 200
-                else None
-            )
-        except ValueError as e:
-            print("Error parsing observation response: {}".format(e))
-            result = None
-        return (result, fetch.describe_query(resp, initiated_at))
-
-    def observe_flight_details(
-        self, flight_id: str
-    ) -> Tuple[Optional[observation_api.GetDetailsResponse], fetch.Query]:
-        initiated_at = datetime.datetime.utcnow()
-        resp = self.session.get("/display_data/{}".format(flight_id))
-        try:
-            result = (
-                ImplicitDict.parse(resp.json(), observation_api.GetDetailsResponse)
-                if resp.status_code == 200
-                else None
-            )
-        except ValueError:
-            result = None
-        return (result, fetch.describe_query(resp, initiated_at))
 
 
 class RIDObservationEvaluator(object):

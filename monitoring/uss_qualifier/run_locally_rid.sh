@@ -50,17 +50,29 @@ echo '{
               }
             ]
           }
+        },
+        "netrid_observers": {
+          "resource_type": "netrid.NetRIDObserversResource",
+          "dependencies": {
+            "auth_adapter": "utm_auth"
+          },
+          "specification": {
+            "observers": [
+              {
+                "name": "uss2",
+                "observation_base_url": "http://host.docker.internal:8073/riddp/observation"
+              }
+            ]
+          }
+        },
+        "netrid_observation_evaluation_configuration": {
+          "resource_type": "netrid.EvaluationConfigurationResource",
+          "specification": {}
         }
       }
     },
     "rid": {
-      "rid_version": "F3411-19",
-      "observers": [
-        {
-          "name": "uss2",
-          "observation_base_url": "http://host.docker.internal:8073/riddp/observation"
-        }
-      ]
+      "rid_version": "F3411-19"
     }
 }' > ${CONFIG_LOCATION}
 

@@ -48,7 +48,6 @@ def uss_test_executor(
                 "report": rid_test_executor.run_rid_tests(
                     resources=resources,
                     test_configuration=config.rid,
-                    auth_spec=auth_spec,
                     flight_records=rid_flight_records,
                 )
             }
