@@ -1,0 +1,71 @@
+from abc import ABC, abstractmethod
+import inspect
+from typing import Dict, Type
+
+from implicitdict import ImplicitDict
+
+from monitoring.monitorlib import inspection
+from monitoring.uss_qualifier import scenarios as scenarios_module
+from monitoring.uss_qualifier.resources import Resource
+
+
+class TestScenario(ABC):
+    @abstractmethod
+    def __init__(self, **dependencies):
+        """Create an instance of the test scenario.
+
+        Concrete subclasses of TestScenario must implement their constructor according to this specification.
+
+        :param dependencies: If this scenario depends on any resources, each of these required resources should be declared as an additional typed parameter to the constructor.  Each parameter type should be a class that is a subclass of Resource.
+        """
+        raise NotImplementedError(
+            "A concrete test scenario type must implement __init__ method"
+        )
+
+    @abstractmethod
+    # TODO: have `run` interact with an encapsulated portion of a report, or return contributions to a report
+    def run(self):
+        raise NotImplementedError(
+            "A concrete test scenario must implement `run` method"
+        )
+
+
+class TestScenarioDeclaration(ImplicitDict):
+    scenario_type: str
+    """Type of test scenario, expressed as a Python class name qualified relative to this `scenarios` module"""
+
+    resources: Dict[str, str] = {}
+    """Mapping of resource parameter (additional argument to concrete test scenario constructor) to globally unique name of resource to use"""
+
+    def make_test_scenario(self, resource_pool: Dict[str, Resource]) -> TestScenario:
+        inspection.import_submodules(scenarios_module)
+        scenario_type = inspection.get_module_object_by_name(
+            scenarios_module, self.scenario_type
+        )
+        if not issubclass(scenario_type, TestScenario):
+            raise NotImplementedError(
+                "Scenario type {} is not a subclass of the TestScenario base class".format(
+                    scenario_type.__name__
+                )
+            )
+
+        constructor_signature = inspect.signature(scenario_type.__init__)
+        constructor_args = {}
+        for arg_name, arg in constructor_signature.parameters.items():
+            if arg_name == "self":
+                continue
+            if arg_name not in self.resources:
+                raise ValueError(
+                    'Test scenario declaration for {} is missing a source for resource "{}"'.format(
+                        self.scenario_type, arg
+                    )
+                )
+            if self.resources[arg_name] not in resource_pool:
+                raise ValueError(
+                    'Resource "{}" was not found in the resource pool when trying to create test scenario "{}" ({})'.format(
+                        self.resources[arg_name], self.name, self.type
+                    )
+                )
+            constructor_args[arg_name] = resource_pool[self.resources[arg_name]]
+
+        return scenario_type(**constructor_args)

@@ -54,7 +54,7 @@ class NetRIDServiceProvider(object):
         )
 
     def submit_test(
-        self, payload: CreateTestParameters, test_id: str, setup
+        self, payload: CreateTestParameters, test_id: str
     ) -> List[TestFlight]:
         # Note: this method imported from uss_qualifier/rid/aircraft_state_replayer.py::TestHarness
         # TODO: clean up according to new architecture and encapsulation models
@@ -65,7 +65,8 @@ class NetRIDServiceProvider(object):
         response = self.client.put(
             url=injection_path, json=payload, scope=SCOPE_RID_QUALIFIER_INJECT
         )
-        setup.injections.append(fetch.describe_query(response, initiated_at))
+        # TODO: log injections in report
+        # setup.injections.append(fetch.describe_query(response, initiated_at))
 
         if response.status_code == 200:
             changed_test: ChangeTestResponse = ImplicitDict.parse(
