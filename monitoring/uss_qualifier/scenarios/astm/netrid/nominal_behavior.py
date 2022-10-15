@@ -30,6 +30,7 @@ class NominalBehavior(TestScenario):
         observers: NetRIDObserversResource,
         evaluation_configuration: EvaluationConfigurationResource,
     ):
+        super().__init__()
         self._flights_data = flights_data
         self._service_providers = service_providers
         self._observers = observers

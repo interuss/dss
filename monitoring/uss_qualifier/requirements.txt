@@ -1,5 +1,5 @@
 pyproj==3.0.0
-arrow==1.1.0
 faker===8.1.0
 geojson===2.5.0
+marko==1.2.2
 -r ../monitorlib/requirements.txt

@@ -1,26 +1,30 @@
 from abc import ABC, abstractmethod
 import inspect
-from typing import Dict, Type
+from typing import Dict, TypeVar
 
 from implicitdict import ImplicitDict
 
 from monitoring.monitorlib import inspection
 from monitoring.uss_qualifier import scenarios as scenarios_module
+from monitoring.uss_qualifier.scenarios.documentation import (
+    TestScenarioDocumentation,
+    parse_documentation,
+)
 from monitoring.uss_qualifier.resources import Resource
 
 
 class TestScenario(ABC):
-    @abstractmethod
-    def __init__(self, **dependencies):
-        """Create an instance of the test scenario.
+    """Instance of a test scenario, ready to run after construction.
 
-        Concrete subclasses of TestScenario must implement their constructor according to this specification.
+    Concrete subclasses of TestScenario must:
+      1) Implement a constructor that accepts only parameters with types that are subclasses of Resource
+      2) Call TestScenario.__init__ from the subclass's __init__
+    """
 
-        :param dependencies: If this scenario depends on any resources, each of these required resources should be declared as an additional typed parameter to the constructor.  Each parameter type should be a class that is a subclass of Resource.
-        """
-        raise NotImplementedError(
-            "A concrete test scenario type must implement __init__ method"
-        )
+    documentation: TestScenarioDocumentation
+
+    def __init__(self):
+        self.documentation = parse_documentation(self.__class__)
 
     @abstractmethod
     # TODO: have `run` interact with an encapsulated portion of a report, or return contributions to a report
@@ -28,6 +32,9 @@ class TestScenario(ABC):
         raise NotImplementedError(
             "A concrete test scenario must implement `run` method"
         )
+
+
+TestScenarioType = TypeVar("TestScenarioType", bound=TestScenario)
 
 
 class TestScenarioDeclaration(ImplicitDict):

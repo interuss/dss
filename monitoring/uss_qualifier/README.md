@@ -15,16 +15,7 @@ Note: We are currently in the process of migrating the technical implementation 
 2. A test suite is composed of a list of {test suite|test scenario}.
     * Each element on the list is executed sequentially.
 
-### Test scenarios
-
-1. A test scenario is a logical, self-contained scenario designed to test specific sets of functionality of the systems under test.
-    * The activities in a test scenario should read like a narrative of a simple play with a single plot.
-2. A test scenario is composed of a list of test cases.
-    * Each test case on the list is executed sequentially.
-3. Test scenarios will usually be enumerated/identified/created by mapping a list of requirements onto a set of test scenarios (e.g., [NetRID](https://docs.google.com/spreadsheets/d/1YByckmK6hfMrGec53CxRM2BPvcgm6HQNoFxOrOEfrUQ/edit#gid=0), [Flight Authorisation](https://docs.google.com/spreadsheets/d/1IJkNS21Ps-2411LGhXBqWF7inQnPVeEA23dWjXpCR-M/edit#gid=0), [ED-269](https://docs.google.com/spreadsheets/d/1NIlRHtWzBXOyJ58pYimhDQDqsEyToTQRu2ma3AYXWEU/edit))
-    * While unmapped requirements still exist: create new, simple test scenario that verifies a set of remaining unmapped requirements.
-4. Most test scenarios will require test resources (like NetRID telemetry to inject, NetRID service providers under test, etc) customized to the ecosystem in which the tests are being performed; see [Test definitions](#test-definitions) below
-    * A test scenario declares what kind of resource(s) it requires.
+### [Test scenarios](scenarios/README.md)
 
 ### Test cases
 
@@ -37,7 +28,7 @@ Note: We are currently in the process of migrating the technical implementation 
 
 ### Test steps
 
-1. A test step is a single low-level task that must be performed in order to accomplish its associated test case.
+1. A test step is a single task that must be performed in order to accomplish its associated test case.
    * Test steps are like scenes in the "play/act" of the test scenario/test case they are a part of.
 2. A given test step belongs to exactly one test case.
 3. A test step may have a list of checks associated with it.
