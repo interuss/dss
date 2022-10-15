@@ -16,7 +16,7 @@ cd "${BASEDIR}/../../.." || exit 1
 monitoring/build.sh || exit 1
 
 # shellcheck disable=SC2086
-docker run ${docker_args} --name test_definition_validator \
+docker run --name test_definition_validator \
   --rm \
   interuss/monitoring \
   uss_qualifier/scripts/in_container/validate_test_definitions.sh
