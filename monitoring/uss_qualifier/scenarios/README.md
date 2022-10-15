@@ -55,4 +55,4 @@ Each test case in the documentation must document at least one test step (otherw
 
 Each check a test step performs that may result in a finding/issue must be documented via a subsection of the parent test step, named with a " check" suffix (example: `#### Successful injection check`).
 
-A check should document the requirement(s) violated if the check fails.  Requirements are identified by putting a strong emphasis/bold style around the requirement ID (example: `**ASTM F3411-19::NET0420`).
+A check should document the requirement(s) violated if the check fails.  Requirements are identified by putting a strong emphasis/bold style around the requirement ID (example: `**ASTM F3411-19::NET0420**`).
