@@ -3,9 +3,7 @@ from urllib.parse import urlparse
 
 from implicitdict import ImplicitDict
 
-from monitoring.uss_qualifier.resources import ResourceCollection
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
-from monitoring.uss_qualifier.suites import TestSuiteDeclaration
 
 
 class USSQualifierTestConfiguration(ImplicitDict):
@@ -18,10 +16,8 @@ class USSQualifierTestConfiguration(ImplicitDict):
     scd: Optional[SCDQualifierTestConfiguration]
     """Test configuration for SCD"""
 
-    resources: Optional[ResourceCollection]
-    """Declarations for resources used by the test suite"""
-
-    suite: Optional[TestSuiteDeclaration] = None
+    config: str = ""
+    """Configuration string according to monitoring/uss_qualifier/configurations/README.md"""
 
 
 def is_url(url_string):

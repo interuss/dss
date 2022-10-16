@@ -1,0 +1,61 @@
+{
+  "resources": {
+    "resource_declarations": {
+      "utm_auth": {
+        "resource_type": "communications.AuthAdapter",
+        "specification": {
+          "environment_variable_containing_auth_spec": "AUTH_SPEC"
+        }
+      },
+      "netrid_service_providers": {
+        "resource_type": "netrid.NetRIDServiceProviders",
+        "dependencies": {
+          "auth_adapter": "utm_auth"
+        },
+        "specification": {
+          "service_providers": [
+            {
+              "participant_id": "uss1",
+              "injection_base_url": "http://host.docker.internal:8071/ridsp/injection"
+            }
+          ]
+        }
+      },
+      "netrid_observers": {
+        "resource_type": "netrid.NetRIDObserversResource",
+        "dependencies": {
+          "auth_adapter": "utm_auth"
+        },
+        "specification": {
+          "observers": [
+            {
+              "participant_id": "uss2",
+              "observation_base_url": "http://host.docker.internal:8073/riddp/observation"
+            }
+          ]
+        }
+      },
+      "netrid_observation_evaluation_configuration": {
+        "resource_type": "netrid.EvaluationConfigurationResource",
+        "specification": {}
+      },
+      "netrid_flights_data": {
+        "resource_type": "netrid.FlightDataResource",
+        "specification": {
+          "json_file_source": {
+            "path": "./test_data/che/netrid/circular_flights.json"
+          }
+        }
+      }
+    }
+  },
+  "test_suite": {
+    "suite_type": "astm.netrid.f3411_19",
+    "resources": {
+      "flights_data": "netrid_flights_data",
+      "service_providers": "netrid_service_providers",
+      "observers": "netrid_observers",
+      "evaluation_configuration": "netrid_observation_evaluation_configuration"
+    }
+  }
+}
