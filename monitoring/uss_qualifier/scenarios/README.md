@@ -10,7 +10,10 @@ A test scenario is separated into of a list of test cases.  Each test case on th
 
 ## Creation
 
-Test scenarios will usually be enumerated/identified/created by mapping a list of requirements onto a set of test scenarios (e.g., [NetRID](https://docs.google.com/spreadsheets/d/1YByckmK6hfMrGec53CxRM2BPvcgm6HQNoFxOrOEfrUQ/edit#gid=0), [Flight Authorisation](https://docs.google.com/spreadsheets/d/1IJkNS21Ps-2411LGhXBqWF7inQnPVeEA23dWjXpCR-M/edit#gid=0), [ED-269](https://docs.google.com/spreadsheets/d/1NIlRHtWzBXOyJ58pYimhDQDqsEyToTQRu2ma3AYXWEU/edit)).  To form a complete set of scenarios to cover a set of requirements, While unmapped requirements still exist: create new, simple test scenario that verifies a set of remaining unmapped requirements.
+Test scenarios will usually be enumerated/identified/created by mapping a list of requirements onto a set of test scenarios (e.g., [NetRID](https://docs.google.com/spreadsheets/d/1YByckmK6hfMrGec53CxRM2BPvcgm6HQNoFxOrOEfrUQ/edit#gid=0), [Flight Authorisation](https://docs.google.com/spreadsheets/d/1IJkNS21Ps-2411LGhXBqWF7inQnPVeEA23dWjXpCR-M/edit#gid=0), [ED-269](https://docs.google.com/spreadsheets/d/1NIlRHtWzBXOyJ58pYimhDQDqsEyToTQRu2ma3AYXWEU/edit)).  To form a complete set of scenarios to cover a set of requirements:
+
+    While unmapped requirements still exist:
+        Create new, simple test scenario that verifies a set of remaining unmapped requirements.
 
 ## Resources
 
