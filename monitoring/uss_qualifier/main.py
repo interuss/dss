@@ -4,9 +4,13 @@ import argparse
 import json
 import os
 import sys
+from typing import Dict
+
+import yaml
 
 from monitoring.monitorlib.locality import Locality
 from implicitdict import ImplicitDict
+from monitoring.uss_qualifier.reports import TestScenarioReport, FailedCheck
 from monitoring.uss_qualifier.scd.executor import executor as scd_test_executor
 from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
 
@@ -29,15 +33,36 @@ def parseArgs() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def uss_test_executor(config, auth_spec, scd_test_definitions_path=None):
-    # TODO: Harmonize and formalize report format shared between all scenarios
-    ad_hoc_report = {"scd": {}}
+def _print_failed_check(failed_check: FailedCheck) -> None:
+    print("New failed check:")
+    yaml_lines = yaml.dump(json.loads(json.dumps(failed_check))).split("\n")
+    print("\n".join("  " + line for line in yaml_lines))
 
+
+def uss_test_executor(config, auth_spec, scd_test_definitions_path=None):
     resources = config.resources.create_resources()
     scenarios = [s.make_test_scenario(resources) for s in config.scenarios]
+    scenario_reports: Dict[str, TestScenarioReport] = {}
     for i, scenario in enumerate(scenarios):
-        ad_hoc_report["Scenario{}".format(i + 1)] = scenario.run()
+        print(f'Running "{scenario.documentation.name}" scenario...')
+        scenario.on_failed_check = _print_failed_check
+        try:
+            scenario.run()
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            scenario.record_execution_error(e)
+        report = scenario.get_report()
+        scenario_reports[scenario.documentation.name] = report
+        if report.successful:
+            print(f'SUCCESS for "{scenario.documentation.name}" scenario')
+        else:
+            if "execution_error" in report:
+                lines = report.execution_error.stacktrace.split("\n")
+                print("\n".join("  " + line for line in lines))
+            print(f'FAILURE for "{scenario.documentation.name}" scenario')
 
+    # TODO: Convert SCD tests into new architecture
     if "scd" in config:
         print(
             f"[SCD] Configuration provided with {len(config.scd.injection_targets)} injection targets."
@@ -55,13 +80,14 @@ def uss_test_executor(config, auth_spec, scd_test_definitions_path=None):
             auth_spec=auth_spec,
             scd_test_definitions_path=scd_test_definitions_path,
         )
-        ad_hoc_report["scd"] = {
+        scenario_reports["scd"] = {
             "report": scd_test_report,
             "executed_test_run_count": executed_test_run_count,
         }
     else:
+        scenario_reports["scd"] = {}
         print("[SCD] No configuration provided.")
-    return ad_hoc_report
+    return scenario_reports
 
 
 def main() -> int:
@@ -80,6 +106,8 @@ def main() -> int:
         config_json, USSQualifierTestConfiguration
     )
     reports = uss_test_executor(config, auth_spec)
+    with open("report.json", "w") as f:
+        json.dump(reports, f, indent=2)
     scd_report = reports["scd"].get("report")
     executed_test_run_count = reports["scd"].get("executed_test_run_count")
     if (

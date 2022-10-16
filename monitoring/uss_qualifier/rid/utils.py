@@ -2,11 +2,6 @@ from typing import List, NamedTuple
 from shapely.geometry import Polygon
 import shapely.geometry
 from datetime import datetime
-from monitoring.monitorlib.rid_automated_testing import injection_api
-from monitoring.uss_qualifier.resources.netrid.service_providers import (
-    ServiceProviderConfiguration,
-)
-from implicitdict import ImplicitDict
 
 
 class QueryBoundingBox(NamedTuple):
@@ -33,8 +28,3 @@ class GridCellFlight(NamedTuple):
 
     bounds: shapely.geometry.polygon.Polygon
     track: List[FlightPoint]
-
-
-class InjectedFlight(ImplicitDict):
-    uss: ServiceProviderConfiguration
-    flight: injection_api.TestFlight
