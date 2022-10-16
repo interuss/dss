@@ -27,3 +27,10 @@ def get_module_object_by_name(parent_module, object_name: str):
             )
         module_object = getattr(module_object, component)
     return module_object
+
+
+def fullname(class_type: Type) -> str:
+    module = class_type.__module__
+    if module == "builtins":
+        return class_type.__qualname__  # avoid outputs like 'builtins.str'
+    return module + "." + class_type.__qualname__

@@ -1,6 +1,10 @@
 .PHONY: test
-test: lint
+test: validate_documentation lint
 	./scripts/test_docker_fully_mocked.sh
+
+.PHONY: validate_documentation
+validate_documentation:
+	./scripts/validate_test_definitions.sh
 
 .PHONY: lint
 lint:
