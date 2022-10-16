@@ -57,6 +57,7 @@ class TestScenario(ABC):
             name=self.documentation.name,
             documentation_url=self.documentation.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
+            cases=[],
         )
 
     def begin_test_scenario(self) -> None:
@@ -90,6 +91,7 @@ class TestScenario(ABC):
             name=self._current_case.name,
             documentation_url=self._current_case.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
+            steps=[],
         )
         self._scenario_report.cases.append(self._case_report)
 
@@ -113,6 +115,7 @@ class TestScenario(ABC):
             name=self._current_step.name,
             documentation_url=self._current_step.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
+            failed_checks=[],
         )
         self._case_report.steps.append(self._step_report)
 

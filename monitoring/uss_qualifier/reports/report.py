@@ -24,7 +24,7 @@ class FailedCheck(ImplicitDict):
     details: str
     """Human-readable description of the issue"""
 
-    relevant_requirements: List[str] = []
+    relevant_requirements: List[str]
     """Requirements that this issue relates to"""
 
     severity: Severity
@@ -53,7 +53,7 @@ class TestStepReport(ImplicitDict):
     queries: Optional[List[fetch.Query]]
     """Description of HTTP requests relevant to this issue"""
 
-    failed_checks: List[FailedCheck] = []
+    failed_checks: List[FailedCheck]
     """The checks which failed in this test step"""
 
     end_time: Optional[StringBasedDateTime]
@@ -73,7 +73,7 @@ class TestCaseReport(ImplicitDict):
     end_time: Optional[StringBasedDateTime]
     """Time at which the test case completed or encountered an error"""
 
-    steps: List[TestStepReport] = []
+    steps: List[TestStepReport]
     """Reports for each of the test steps in this test case"""
 
 
@@ -118,7 +118,7 @@ class TestScenarioReport(ImplicitDict):
     successful: bool = False
     """True iff test scenario completed normally with no failed checks"""
 
-    cases: List[TestCaseReport] = []
+    cases: List[TestCaseReport]
     """Reports for each of the test cases in this test scenario"""
 
     execution_error: Optional[ErrorReport]
