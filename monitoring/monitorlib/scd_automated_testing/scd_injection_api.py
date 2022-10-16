@@ -1,5 +1,6 @@
 from enum import Enum
-from monitoring.monitorlib import formats
+from uas_standards.ansi_cta_2063_a import SerialNumber
+from uas_standards.en4709_02 import OperatorRegistrationNumber
 from implicitdict import ImplicitDict, StringBasedDateTime
 from typing import List, Optional
 from monitoring.monitorlib.scd import Volume4D
@@ -50,7 +51,7 @@ class OperationCategory(str, Enum):
 class FlightAuthorisationData(ImplicitDict):
     """A class to hold information about Flight Authorisation Test"""
 
-    uas_serial_number: formats.SerialNumber
+    uas_serial_number: SerialNumber
     operation_mode: OperationMode
     operation_category: Optional[OperationCategory]
     uas_class: UASClass
@@ -59,7 +60,7 @@ class FlightAuthorisationData(ImplicitDict):
     connectivity_methods: List[str]
     endurance_minutes: int
     emergency_procedure_url: str
-    operator_id: formats.OperatorRegistrationNumber
+    operator_id: OperatorRegistrationNumber
     uas_id: Optional[str]
 
 
