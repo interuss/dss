@@ -177,6 +177,7 @@ class TestSuite(object):
             name=self.definition.name,
             documentation_url="",  # TODO: Populate correctly
             start_time=StringBasedDateTime(datetime.utcnow()),
+            actions=[],
         )
         success = True
         for a, action in enumerate(self._actions):

@@ -153,7 +153,7 @@ class TestSuiteReport(ImplicitDict):
     start_time: StringBasedDateTime
     """Time at which the test suite started"""
 
-    actions: List[TestSuiteActionReport] = []
+    actions: List[TestSuiteActionReport]
     """Reports from test scenarios and test suites comprising the test suite for this report"""
 
     end_time: Optional[StringBasedDateTime]
