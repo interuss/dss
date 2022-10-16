@@ -25,6 +25,17 @@ class Resource(ABC, Generic[SpecificationType]):
             "A concrete resource type must implement __init__ method"
         )
 
+    def is_type(self, resource_type: str) -> bool:
+        specified_type = inspection.get_module_object_by_name(
+            resources_module, resource_type
+        )
+        return self.__class__ == specified_type
+        # PREFIX = 'monitoring.uss_qualifier.resources.'
+        # full_type_name = inspection.fullname(self.__class__)
+        # if not full_type_name.startswith(PREFIX):
+        #     raise ValueError(f'All Resource subclasses are expected to be in a submodule of {PREFIX[0:-1]}; found instead {full_type_name}')
+        # return full_type_name[len(PREFIX):]
+
 
 class ResourceDeclaration(ImplicitDict):
     resource_type: str

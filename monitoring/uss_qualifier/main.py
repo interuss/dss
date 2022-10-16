@@ -10,8 +10,13 @@ import yaml
 
 from monitoring.monitorlib.locality import Locality
 from implicitdict import ImplicitDict
-from monitoring.uss_qualifier.reports import TestScenarioReport, FailedCheck
+from monitoring.uss_qualifier.reports import FailedCheck
 from monitoring.uss_qualifier.scd.executor import executor as scd_test_executor
+from monitoring.uss_qualifier.suites.suite import (
+    TestSuiteAction,
+    TestSuiteActionDeclaration,
+    ReactionToFailure,
+)
 from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
 
 
@@ -39,28 +44,22 @@ def _print_failed_check(failed_check: FailedCheck) -> None:
     print("\n".join("  " + line for line in yaml_lines))
 
 
-def uss_test_executor(config, auth_spec, scd_test_definitions_path=None):
-    resources = config.resources.create_resources()
-    scenarios = [s.make_test_scenario(resources) for s in config.scenarios]
-    scenario_reports: Dict[str, TestScenarioReport] = {}
-    for i, scenario in enumerate(scenarios):
-        print(f'Running "{scenario.documentation.name}" scenario...')
-        scenario.on_failed_check = _print_failed_check
-        try:
-            scenario.run()
-        except KeyboardInterrupt:
-            raise
-        except Exception as e:
-            scenario.record_execution_error(e)
-        report = scenario.get_report()
-        scenario_reports[scenario.documentation.name] = report
-        if report.successful:
-            print(f'SUCCESS for "{scenario.documentation.name}" scenario')
-        else:
-            if "execution_error" in report:
-                lines = report.execution_error.stacktrace.split("\n")
-                print("\n".join("  " + line for line in lines))
-            print(f'FAILURE for "{scenario.documentation.name}" scenario')
+def uss_test_executor(
+    config: USSQualifierTestConfiguration, auth_spec, scd_test_definitions_path=None
+):
+    if "suite" in config and config.suite:
+        resources = config.resources.create_resources()
+        suite_action = TestSuiteAction(
+            TestSuiteActionDeclaration(
+                test_suite=config.suite, on_failure=ReactionToFailure.Continue
+            ),
+            resources,
+        )
+        action_report = suite_action.run()
+
+        legacy_reports = {"suite": action_report.test_suite}
+    else:
+        legacy_reports = {}
 
     # TODO: Convert SCD tests into new architecture
     if "scd" in config:
@@ -80,14 +79,14 @@ def uss_test_executor(config, auth_spec, scd_test_definitions_path=None):
             auth_spec=auth_spec,
             scd_test_definitions_path=scd_test_definitions_path,
         )
-        scenario_reports["scd"] = {
+        legacy_reports["scd"] = {
             "report": scd_test_report,
             "executed_test_run_count": executed_test_run_count,
         }
     else:
-        scenario_reports["scd"] = {}
+        legacy_reports["scd"] = {}
         print("[SCD] No configuration provided.")
-    return scenario_reports
+    return legacy_reports
 
 
 def main() -> int:

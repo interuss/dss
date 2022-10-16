@@ -123,3 +123,41 @@ class TestScenarioReport(ImplicitDict):
 
     execution_error: Optional[ErrorReport]
     """If there was an error while executing this test scenario, this field describes the error"""
+
+
+class TestSuiteActionReport(ImplicitDict):
+    test_suite: Optional["TestSuiteReport"]
+    """If this action was a test suite, this field will hold its report"""
+
+    test_scenario: Optional[TestScenarioReport]
+    """If this action was a test scenario, this field will hold its report"""
+
+    def successful(self) -> bool:
+        if "test_suite" in self and self.test_suite is not None:
+            return self.test_suite.successful
+        elif "test_scenario" in self and self.test_scenario is not None:
+            return self.test_scenario.successful
+        else:
+            raise ValueError(
+                "TestSuiteActionReport did not specify either `test_suite` or `test_scenario`"
+            )
+
+
+class TestSuiteReport(ImplicitDict):
+    name: str
+    """Name of this test suite"""
+
+    documentation_url: str
+    """URL at which this test suite is described"""
+
+    start_time: StringBasedDateTime
+    """Time at which the test suite started"""
+
+    actions: List[TestSuiteActionReport] = []
+    """Reports from test scenarios and test suites comprising the test suite for this report"""
+
+    end_time: Optional[StringBasedDateTime]
+    """Time at which the test suite completed"""
+
+    successful: bool = False
+    """True iff test suite completed normally with no failed checks"""

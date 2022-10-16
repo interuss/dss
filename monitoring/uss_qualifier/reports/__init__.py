@@ -4,4 +4,6 @@ from .report import (
     TestStepReport,
     FailedCheck,
     ErrorReport,
+    TestSuiteReport,
+    TestSuiteActionReport,
 )

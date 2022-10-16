@@ -1,0 +1,15 @@
+name: Required U-space services
+resources:
+  qwer1: netrid.FlightDataResource
+  qwer2: netrid.NetRIDServiceProviders
+  qwer3: netrid.NetRIDObserversResource
+  qwer4: netrid.EvaluationConfigurationResource
+actions:
+  - test_suite:
+      suite_type: astm.netrid.f3411_19
+      resources:
+        asdf1: qwer1
+        asdf2: qwer2
+        asdf3: qwer3
+        asdf4: qwer4
+    on_failure: Continue
