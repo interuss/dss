@@ -1,4 +1,4 @@
 from .service_providers import NetRIDServiceProviders
 from .observers import NetRIDObserversResource
 from .evaluation import EvaluationConfigurationResource
-from .flight_data import FlightDataResource
+from .flight_data_resources import FlightDataResource, FlightDataStorageResource

@@ -4,28 +4,28 @@ Testing can be invoked from the command line using:
 `pytest [test_*|*_test.py file/filepath]`
 """
 
-from monitoring.uss_qualifier.rid.simulator import flight_state_from_kml as frk
+from . import kml_flights as frk
 
-PACKAGE = "monitoring.uss_qualifier.rid.simulator"
+PACKAGE = "monitoring.uss_qualifier.resources.netrid.simulation"
 
 
 def test_get_interpolated_value(mocker):
     mocker.patch(
-        f"{PACKAGE}.flight_state_from_kml.get_polygons_distances_from_point",
+        f"{PACKAGE}.kml_flights.get_polygons_distances_from_point",
         return_value=[1.1, 2.0, 3.3, 0.0],
     )
     result_alt = frk.get_interpolated_value("point", "polygons", [10, 20, 30, 40])
     assert result_alt == 40
 
     mocker.patch(
-        f"{PACKAGE}.flight_state_from_kml.get_polygons_distances_from_point",
+        f"{PACKAGE}.kml_flights.get_polygons_distances_from_point",
         return_value=[10, 50, 100],
     )
     result_alt = frk.get_interpolated_value("point", "polygons", [10, 20, 30])
     assert abs(result_alt - 13.1) < 0.1
 
     mocker.patch(
-        f"{PACKAGE}.flight_state_from_kml.get_polygons_distances_from_point",
+        f"{PACKAGE}.kml_flights.get_polygons_distances_from_point",
         return_value=[10, 50, 100],
     )
     result_alt = frk.get_interpolated_value("point", "polygons", [140, 125, 116])
