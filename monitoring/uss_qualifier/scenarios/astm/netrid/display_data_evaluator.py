@@ -214,7 +214,9 @@ class RIDObservationEvaluator(object):
             rect.lo().get_distance(rect.hi()).degrees * geo.EARTH_CIRCUMFERENCE_KM / 360
         )
         if diagonal_km > self._rid_version.max_diagonal_km:
-            self._evaluate_area_too_large_observation(observer, rect, diagonal_km, query)
+            self._evaluate_area_too_large_observation(
+                observer, rect, diagonal_km, query
+            )
         elif diagonal_km > self._rid_version.max_details_diagonal_km:
             self._evaluate_clusters_observation()
         else:
