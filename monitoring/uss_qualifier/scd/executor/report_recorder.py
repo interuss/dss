@@ -1,9 +1,11 @@
 import uuid
 from monitoring.monitorlib import fetch
 from monitoring.uss_qualifier.common_data_definitions import Severity
-from monitoring.uss_qualifier.scd.data_interfaces import (
+from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
     KnownIssueFields,
     FlightInjectionAttempt,
+)
+from monitoring.uss_qualifier.scd.data_interfaces import (
     AutomatedTestContext,
 )
 from monitoring.uss_qualifier.scd.reports import (

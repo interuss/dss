@@ -2,18 +2,18 @@ import itertools
 import json
 import os
 import typing
-from pathlib import Path
 from typing import Dict, List
 
-from monitoring.monitorlib.locality import Locality
 from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.scd.configuration import (
     SCDQualifierTestConfiguration,
     InjectionTargetConfiguration,
 )
-from monitoring.uss_qualifier.scd.data_interfaces import (
+from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
     AutomatedTest,
     TestStep,
+)
+from monitoring.uss_qualifier.scd.data_interfaces import (
     AutomatedTestContext,
 )
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
@@ -23,41 +23,21 @@ from monitoring.uss_qualifier.scd.reports import Report
 from monitoring.uss_qualifier.utils import is_url
 
 
-def get_automated_tests(
-    automated_tests_dir: Path, prefix: str
-) -> Dict[str, AutomatedTest]:
-    """Gets automated tests from the specified directory"""
+def load_scd_test_definitions() -> Dict[str, AutomatedTest]:
+    """Gets automated tests"""
 
-    # Read all JSON files in this directory
+    # TODO: Get test definitions via Resource rather than hardcoding here
+    tests = {
+        "u-space/flight-authorisation-validation-1": "test_data/che/flight_planning/flight-authorisation-validation-1.json",
+        "astm-strategic-coordination/nominal-planning-1": "test_data/che/flight_planning/nominal-planning-1.json",
+        "astm-strategic-coordination/nominal-planning-priority-1": "test_data/che/flight_planning/nominal-planning-priority-1.json",
+    }
     automated_tests: Dict[str, AutomatedTest] = {}
-    for file in automated_tests_dir.glob("*.json"):
-        test_id = prefix + os.path.splitext(os.path.basename(file))[0]
-        with open(file, "r") as f:
-            automated_tests[test_id] = ImplicitDict.parse(json.load(f), AutomatedTest)
-
-    # Read subdirectories
-    for subdir in automated_tests_dir.iterdir():
-        if subdir.is_dir():
-            new_tests = get_automated_tests(subdir, prefix + subdir.name + "/")
-            for k, v in new_tests.items():
-                automated_tests[k] = v
+    for k, v in tests.items():
+        with open(v, "r") as f:
+            automated_tests[k] = ImplicitDict.parse(json.load(f), AutomatedTest)
 
     return automated_tests
-
-
-def load_scd_test_definitions(
-    locale: Locality, scd_test_definitions_path: str
-) -> Dict[str, AutomatedTest]:
-    if not scd_test_definitions_path:
-        automated_tests_dir = Path(os.getcwd(), "scd", "test_definitions", locale.value)
-    else:
-        automated_tests_dir = Path(scd_test_definitions_path, locale.value)
-    if not os.path.exists(automated_tests_dir):
-        print("[SCD] No automated tests files found; generating them via simulator now")
-        # TODO: Call the simulator
-        raise NotImplementedError()
-
-    return get_automated_tests(automated_tests_dir, "")
 
 
 def validate_configuration(test_configuration: SCDQualifierTestConfiguration):
@@ -115,12 +95,11 @@ def targets_information(targets: List[TestTarget]):
 
 
 def run_scd_tests(
-    locale: Locality,
     test_configuration: SCDQualifierTestConfiguration,
     auth_spec: str,
-    scd_test_definitions_path: str,
 ) -> bool:
-    automated_tests = load_scd_test_definitions(locale, scd_test_definitions_path)
+    locale = "CHE"  # TODO: Obtain from configuration instead
+    automated_tests = load_scd_test_definitions()
     configured_targets = list(
         map(
             lambda t: TestTarget(t.name, t, auth_spec),

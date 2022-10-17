@@ -15,7 +15,9 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     DeleteFlightResponse,
 )
 from monitoring.uss_qualifier.scd.configuration import InjectionTargetConfiguration
-from monitoring.uss_qualifier.scd.data_interfaces import FlightInjectionAttempt
+from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
+    FlightInjectionAttempt,
+)
 
 
 class TestTarget:
