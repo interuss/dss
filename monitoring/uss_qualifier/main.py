@@ -24,12 +24,6 @@ def parseArgs() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Execute USS Qualifier for a locale")
 
     parser.add_argument(
-        "--auth",
-        required=True,
-        help="Auth spec for obtaining authorization to DSS instances; see README.md",
-    )
-
-    parser.add_argument(
         "--config",
         required=True,
         help="Configuration of test to be conducted; either JSON describing a utils.USSQualifierTestConfig, or the name of a file with that content",
@@ -44,7 +38,7 @@ def _print_failed_check(failed_check: FailedCheck) -> None:
     print("\n".join("  " + line for line in yaml_lines))
 
 
-def uss_test_executor(config: USSQualifierTestConfiguration, auth_spec):
+def uss_test_executor(config: USSQualifierTestConfiguration):
     if config.config:
         test_config = TestConfiguration.from_string(config.config)
         resources = test_config.resources.create_resources()
@@ -61,15 +55,9 @@ def uss_test_executor(config: USSQualifierTestConfiguration, auth_spec):
         legacy_reports = {}
 
     # TODO: Convert SCD tests into new architecture
-    if "scd" in config:
-        print(
-            f"[SCD] Configuration provided with {len(config.scd.injection_targets)} injection targets."
-        )
-        scd_test_executor.validate_configuration(config.scd)
-
+    if "resources" in config:
         scd_test_report, executed_test_run_count = scd_test_executor.run_scd_tests(
-            test_configuration=config.scd,
-            auth_spec=auth_spec,
+            test_configuration=config
         )
         legacy_reports["scd"] = {
             "report": scd_test_report,
@@ -84,8 +72,6 @@ def uss_test_executor(config: USSQualifierTestConfiguration, auth_spec):
 def main() -> int:
     args = parseArgs()
 
-    auth_spec = args.auth
-
     # Load/parse configuration
     config_input = args.config
     if config_input.lower().endswith(".json"):
@@ -96,7 +82,7 @@ def main() -> int:
     config: USSQualifierTestConfiguration = ImplicitDict.parse(
         config_json, USSQualifierTestConfiguration
     )
-    reports = uss_test_executor(config, auth_spec)
+    reports = uss_test_executor(config)
     with open("report.json", "w") as f:
         json.dump(reports, f, indent=2)
     scd_report = reports["scd"].get("report")

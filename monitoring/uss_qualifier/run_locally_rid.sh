@@ -25,14 +25,13 @@ CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally_rid.json"
 CONFIG='--config config_run_locally_rid.json'
 
 AUTH_SPEC='DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
-AUTH_FLAG="--auth ${AUTH_SPEC}"
 
 echo '{
     "locale": "CHE",
     "config": "dev.local_test"
 }' > ${CONFIG_LOCATION}
 
-QUALIFIER_OPTIONS="$AUTH_FLAG $CONFIG"
+QUALIFIER_OPTIONS="$CONFIG"
 
 REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report.json"
 # Report file must already exist to share correctly with the Docker container

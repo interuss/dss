@@ -23,31 +23,50 @@ monitoring/build.sh || exit 1
 CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally_scd.json"
 CONFIG='--config config_run_locally_scd.json'
 
-AUTH='--auth DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
+AUTH_SPEC='DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
 
 echo '{
-    "locale": "CHE",
     "resources": {
-          "resource_declarations": {
-          }
-    },
-    "scenarios": [],
-    "scd": {
-        "injection_targets": [
-            {
-                "name": "uss1",
-                "injection_base_url": "http://host.docker.internal:8074/scdsc"
-            },
-            {
-                "name": "uss2",
-                "injection_base_url": "http://host.docker.internal:8074/scdsc"
+        "resource_declarations": {
+          "utm_auth": {
+            "resource_type": "communications.AuthAdapter",
+            "specification": {
+              "environment_variable_containing_auth_spec": "AUTH_SPEC"
             }
-        ],
-        "dss_base_url": "http://host.docker.internal:8082"
+          },
+          "flight_planners": {
+            "resource_type": "flight_planning.FlightPlannersResource",
+            "dependencies": {
+              "auth_adapter": "utm_auth"
+            },
+            "specification": {
+              "flight_planners": [
+                {
+                    "participant_id": "uss1",
+                    "injection_base_url": "http://host.docker.internal:8074/scdsc"
+                },
+                {
+                    "participant_id": "uss2",
+                    "injection_base_url": "http://host.docker.internal:8074/scdsc"
+                }
+              ]
+            }
+          },
+          "dss_instance": {
+            "resource_type": "astm.f3548.v21.DSSInstanceResource",
+            "dependencies": {
+              "auth_adapter": "utm_auth"
+            },
+            "specification": {
+              "participant_id": "uss1",
+              "base_url": "http://host.docker.internal:8082"
+            }
+          }
+        }
     }
 }' > ${CONFIG_LOCATION}
 
-QUALIFIER_OPTIONS="$AUTH $CONFIG"
+QUALIFIER_OPTIONS="$CONFIG"
 
 REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report_scd.json"
 # Report file must already exist to share correctly with the Docker container
@@ -64,6 +83,7 @@ docker run ${docker_args} --name uss_qualifier \
   --rm \
   -e QUALIFIER_OPTIONS="${QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
+  -e AUTH_SPEC=${AUTH_SPEC} \
   -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report_scd.json" \
   -v "$(pwd):/app" \
   -w /app/monitoring/uss_qualifier \
