@@ -4,12 +4,12 @@ import argparse
 import json
 import os
 import sys
-from typing import Dict
 
 import yaml
 
 from monitoring.monitorlib.locality import Locality
 from implicitdict import ImplicitDict
+from monitoring.uss_qualifier.configurations.configuration import TestConfiguration
 from monitoring.uss_qualifier.reports import FailedCheck
 from monitoring.uss_qualifier.scd.executor import executor as scd_test_executor
 from monitoring.uss_qualifier.suites.suite import (
@@ -47,11 +47,12 @@ def _print_failed_check(failed_check: FailedCheck) -> None:
 def uss_test_executor(
     config: USSQualifierTestConfiguration, auth_spec, scd_test_definitions_path=None
 ):
-    if "suite" in config and config.suite:
-        resources = config.resources.create_resources()
+    if config.config:
+        test_config = TestConfiguration.from_string(config.config)
+        resources = test_config.resources.create_resources()
         suite_action = TestSuiteAction(
             TestSuiteActionDeclaration(
-                test_suite=config.suite, on_failure=ReactionToFailure.Continue
+                test_suite=test_config.test_suite, on_failure=ReactionToFailure.Continue
             ),
             resources,
         )
