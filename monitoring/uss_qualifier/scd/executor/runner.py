@@ -7,7 +7,7 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
 )
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
-from monitoring.uss_qualifier.scd.data_interfaces import (
+from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
     AutomatedTest,
     TestStep,
     FlightInjectionAttempt,

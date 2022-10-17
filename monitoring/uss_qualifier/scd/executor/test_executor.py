@@ -3,7 +3,7 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightResult,
 )
 from monitoring.uss_qualifier.scd.configuration import InjectionTargetConfiguration
-from monitoring.uss_qualifier.scd.data_interfaces import (
+from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
     AutomatedTest,
     TestStep,
     FlightInjectionAttempt,

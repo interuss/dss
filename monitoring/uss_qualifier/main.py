@@ -44,9 +44,7 @@ def _print_failed_check(failed_check: FailedCheck) -> None:
     print("\n".join("  " + line for line in yaml_lines))
 
 
-def uss_test_executor(
-    config: USSQualifierTestConfiguration, auth_spec, scd_test_definitions_path=None
-):
+def uss_test_executor(config: USSQualifierTestConfiguration, auth_spec):
     if config.config:
         test_config = TestConfiguration.from_string(config.config)
         resources = test_config.resources.create_resources()
@@ -69,16 +67,9 @@ def uss_test_executor(
         )
         scd_test_executor.validate_configuration(config.scd)
 
-        locale = Locality(config.locale.upper())
-        print(
-            f"[SCD] Locale: {locale.value} (is_uspace_applicable:{locale.is_uspace_applicable}, allow_same_priority_intersections:{locale.allow_same_priority_intersections})"
-        )
-
         scd_test_report, executed_test_run_count = scd_test_executor.run_scd_tests(
-            locale=locale,
             test_configuration=config.scd,
             auth_spec=auth_spec,
-            scd_test_definitions_path=scd_test_definitions_path,
         )
         legacy_reports["scd"] = {
             "report": scd_test_report,
