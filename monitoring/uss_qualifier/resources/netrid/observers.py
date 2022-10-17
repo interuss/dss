@@ -14,10 +14,13 @@ from monitoring.uss_qualifier.resources.communications import AuthAdapter
 
 class RIDSystemObserver(object):
     def __init__(
-        self, name: str, base_url: str, auth_adapter: infrastructure.AuthAdapter
+        self,
+        participant_id: str,
+        base_url: str,
+        auth_adapter: infrastructure.AuthAdapter,
     ):
         self.session = UTMClientSession(base_url, auth_adapter)
-        self.name = name
+        self.participant_id = participant_id
 
         # TODO: Change observation API to use an InterUSS scope rather than re-using an ASTM scope
         self.rid_version = RIDVersion.f3411_19
@@ -63,8 +66,8 @@ class RIDSystemObserver(object):
 
 
 class ObserverConfiguration(ImplicitDict):
-    name: str
-    """Name of the NetRID Service Provider into which test data can be injected"""
+    participant_id: str
+    """Participant ID of the observer providing a view of RID data in the system"""
 
     observation_base_url: str
     """Base URL for the observer's implementation of the interfaces/automated-testing/rid/observation.yaml API"""
@@ -83,6 +86,8 @@ class NetRIDObserversResource(Resource[NetRIDObserversSpecification]):
         auth_adapter: AuthAdapter,
     ):
         self.observers = [
-            RIDSystemObserver(o.name, o.observation_base_url, auth_adapter.adapter)
+            RIDSystemObserver(
+                o.participant_id, o.observation_base_url, auth_adapter.adapter
+            )
             for o in specification.observers
         ]

@@ -45,7 +45,7 @@ echo '{
           "specification": {
             "service_providers": [
               {
-                "name": "uss1",
+                "participant_id": "uss1",
                 "injection_base_url": "http://host.docker.internal:8071/ridsp/injection"
               }
             ]
@@ -59,7 +59,7 @@ echo '{
           "specification": {
             "observers": [
               {
-                "name": "uss2",
+                "participant_id": "uss2",
                 "observation_base_url": "http://host.docker.internal:8073/riddp/observation"
               }
             ]
@@ -94,7 +94,7 @@ echo '{
 
 QUALIFIER_OPTIONS="$AUTH_FLAG $CONFIG"
 
-REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report_rid.json"
+REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report.json"
 # Report file must already exist to share correctly with the Docker container
 touch "${REPORT_FILE}"
 
@@ -110,7 +110,7 @@ docker run ${docker_args} --name uss_qualifier \
   -e QUALIFIER_OPTIONS="${QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
   -e AUTH_SPEC=${AUTH_SPEC} \
-  -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report_rid.json" \
+  -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
   -v "$(pwd):/app" \
   -w /app/monitoring/uss_qualifier \
   interuss/monitoring \

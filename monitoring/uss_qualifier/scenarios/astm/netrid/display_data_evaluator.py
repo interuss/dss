@@ -1,5 +1,4 @@
 import datetime
-import json
 import time
 from typing import List, Optional
 
@@ -8,11 +7,21 @@ import s2sphere
 
 from monitoring.monitorlib import fetch, geo
 from monitoring.monitorlib.rid_common import RIDVersion
-from monitoring.uss_qualifier.rid.reports import Findings
+from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.resources.netrid.evaluation import EvaluationConfiguration
 from monitoring.uss_qualifier.resources.netrid.observers import RIDSystemObserver
-from monitoring.uss_qualifier.rid.utils import InjectedFlight
+from monitoring.uss_qualifier.scenarios import TestScenarioType
+from monitoring.uss_qualifier.scenarios.astm.netrid.injection import InjectedFlight
 from monitoring.monitorlib.rid_automated_testing import observation_api
+
+
+def _rect_str(rect) -> str:
+    return "({}, {})-({}, {})".format(
+        rect.lo().lat().degrees,
+        rect.lo().lng().degrees,
+        rect.hi().lat().degrees,
+        rect.hi().lng().degrees,
+    )
 
 
 class RIDObservationEvaluator(object):
@@ -27,12 +36,12 @@ class RIDObservationEvaluator(object):
 
     def __init__(
         self,
-        findings: Findings,
+        test_scenario: TestScenarioType,
         injected_flights: List[InjectedFlight],
         config: EvaluationConfiguration,
         rid_version: RIDVersion,
     ):
-        self.findings = findings
+        self._test_scenario = test_scenario
         self._injected_flights = injected_flights
         self._config = config
         self._rid_version = rid_version
@@ -163,8 +172,7 @@ class RIDObservationEvaluator(object):
                 )
                 last_rect = rect
             self._evaluate_system_instantaneously(observers, rect)
-            print("After observation at {}, {}".format(arrow.utcnow(), self.findings))
-            print(json.dumps(self.findings.issues, indent=2))
+            print("Completed observation at {}".format(arrow.utcnow()))
 
             # Wait until minimum polling interval elapses
             while t_next < arrow.utcnow():
@@ -184,7 +192,7 @@ class RIDObservationEvaluator(object):
         for observer in observers:
             # Conduct an observation, then log and evaluate it
             (observation, query) = observer.observe_system(rect)
-            self.findings.add_observation_query(query)
+            self._test_scenario.record_query(query)
             self._evaluate_observation(
                 observer,
                 rect,
@@ -206,7 +214,9 @@ class RIDObservationEvaluator(object):
             rect.lo().get_distance(rect.hi()).degrees * geo.EARTH_CIRCUMFERENCE_KM / 360
         )
         if diagonal_km > self._rid_version.max_diagonal_km:
-            self._evaluate_area_to_large_observation(observer, diagonal_km, query)
+            self._evaluate_area_too_large_observation(
+                observer, rect, diagonal_km, query
+            )
         elif diagonal_km > self._rid_version.max_details_diagonal_km:
             self._evaluate_clusters_observation()
         else:
@@ -225,7 +235,14 @@ class RIDObservationEvaluator(object):
         query: fetch.Query,
     ) -> None:
         if observation is None:
-            self.findings.add_observation_failure(observer.name, rect, query)
+            self._test_scenario.record_failed_check(
+                name="Successful observation",
+                summary="Observation failed",
+                details=f"When queried for an observation in {_rect_str(rect)}, {observer.participant_id} returned code {query.status_code}",
+                severity=Severity.Critical,
+                relevant_participants=[observer.participant_id],
+                query_timestamps=[query.request.timestamp],
+            )
             return
 
         for expected_flight in self._injected_flights:
@@ -246,26 +263,37 @@ class RIDObservationEvaluator(object):
                 if observed_flight.id == flight_id
             ]
             if len(matching_flights) > 1:
-                self.findings.add_duplicate_flights(
-                    observer.name,
-                    flight_id,
-                    len(matching_flights),
-                    expected_flight.uss.name,
-                    query,
+                self._test_scenario.record_failed_check(
+                    name="Duplicate flights",
+                    summary="Duplicate flights observed",
+                    details=f'When queried for an observation in {_rect_str(rect)}, {observer.participant_id} found {len(matching_flights)} flights with flight ID "{flight_id}" that was injected into {expected_flight.uss_participant_id}',
+                    severity=Severity.Critical,
+                    relevant_participants=[
+                        expected_flight.uss_participant_id,
+                        observer.participant_id,
+                    ],
+                    query_timestamps=[
+                        query.request.timestamp,
+                        expected_flight.query_timestamp,
+                    ],
                 )
 
             if t_response < t_min:
                 # This flight should definitely not have been observed (it starts in the future)
                 if matching_flights:
-                    self.findings.add_premature_flight(
-                        observer.name,
-                        flight_id,
-                        t_min,
-                        t_response,
-                        expected_flight.uss.name,
-                        query,
+                    self._test_scenario.record_failed_check(
+                        name="Premature flight",
+                        summary="Flight observed before it started",
+                        details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was observed by {observer.participant_id} at {t_response.isoformat()} before that flight should have started at {t_min.isoformat()}",
+                        severity=Severity.High,
+                        relevant_participants=[expected_flight.uss_participant_id],
+                        query_timestamps=[
+                            query.request.timestamp,
+                            expected_flight.query_timestamp,
+                        ],
                     )
-                    continue
+                # TODO: attempt to observe flight details
+                continue
             elif (
                 t_response
                 > t_max
@@ -274,13 +302,19 @@ class RIDObservationEvaluator(object):
             ):
                 # This flight should not have been observed (it was too far in the past)
                 if matching_flights:
-                    self.findings.add_lingering_flight(
-                        observer.name,
-                        flight_id,
-                        t_max,
-                        t_initiated,
-                        expected_flight.uss.name,
-                        query,
+                    self._test_scenario.record_failed_check(
+                        name="Lingering flight",
+                        summary="Flight still observed long after it ended",
+                        details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was observed by {observer.participant_id} at {t_response.isoformat()} after it ended at {t_max.isoformat()}",
+                        severity=Severity.High,
+                        relevant_participants=[
+                            expected_flight.uss_participant_id,
+                            observer.participant_id,
+                        ],
+                        query_timestamps=[
+                            query.request.timestamp,
+                            expected_flight.query_timestamp,
+                        ],
                     )
                     continue
             elif (
@@ -290,14 +324,22 @@ class RIDObservationEvaluator(object):
             ):
                 # This flight should definitely have been observed
                 if not matching_flights:
-                    self.findings.add_missing_flight(
-                        observer.name,
-                        expected_flight,
-                        rect,
-                        expected_flight.uss.name,
-                        query,
+                    self._test_scenario.record_failed_check(
+                        name="Missing flight",
+                        summary="Expected flight not observed",
+                        details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was not listed in the observation by {observer.participant_id} at {t_response.isoformat()} even though it should have been active from {t_min.isoformat()} to {t_max.isoformat()}",
+                        severity=Severity.High,
+                        relevant_participants=[
+                            expected_flight.uss_participant_id,
+                            observer.participant_id,
+                        ],
+                        query_timestamps=[
+                            query.request.timestamp,
+                            expected_flight.query_timestamp,
+                        ],
                     )
                     continue
+                # TODO: observe flight details
             elif t_initiated > t_min:
                 # If this flight was not observed, there may be propagation latency
                 pass  # TODO: findings propagation latency
@@ -305,12 +347,21 @@ class RIDObservationEvaluator(object):
             for matching_flight in matching_flights:
                 pass  # TODO: Check position, altitude, flight details, etc
 
-    def _evaluate_area_to_large_observation(
-        self, observer: RIDSystemObserver, diagonal: float, query: fetch.Query
+    def _evaluate_area_too_large_observation(
+        self,
+        observer: RIDSystemObserver,
+        rect: s2sphere.LatLngRect,
+        diagonal: float,
+        query: fetch.Query,
     ) -> None:
         if query.status_code != 413:
-            self.findings.add_area_too_large_not_indicated(
-                observer.name, diagonal, query
+            self._test_scenario.record_failed_check(
+                name="Area too large",
+                summary="Did not receive expected error code for too-large area request",
+                details=f"{observer.participant_id} was queried for flights in {_rect_str(rect)} with a diagonal of {diagonal} which is larger than the maximum allowed diagonal of {self._rid_version.max_diagonal_km}.  The expected error code is 413, but instead code {query.status_code} was received.",
+                severity=Severity.High,
+                relevant_participants=[observer.participant_id],
+                query_timestamps=[query.request.timestamp],
             )
 
     def _evaluate_clusters_observation(self) -> None:

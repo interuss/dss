@@ -19,21 +19,25 @@ TEST_CHECK_SUFFIX = " check"
 
 class TestCheckDocumentation(ImplicitDict):
     name: str
+    url: Optional[str] = None
     applicable_requirements: List[str]
 
 
 class TestStepDocumentation(ImplicitDict):
     name: str
+    url: Optional[str] = None
     checks: List[TestCheckDocumentation]
 
 
 class TestCaseDocumentation(ImplicitDict):
     name: str
+    url: Optional[str] = None
     steps: List[TestStepDocumentation]
 
 
 class TestScenarioDocumentation(ImplicitDict):
     name: str
+    url: Optional[str] = None
     resources: Optional[List[str]]
     cases: List[TestCaseDocumentation]
 
@@ -195,5 +199,9 @@ def parse_documentation(scenario: Type) -> TestScenarioDocumentation:
             c += 1
 
     return TestScenarioDocumentation(
-        name=scenario_name, cases=test_cases, resources=resources
+        # TODO: Populate the documentation URLs
+        name=scenario_name,
+        cases=test_cases,
+        resources=resources,
+        url="",
     )
