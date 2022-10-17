@@ -25,6 +25,12 @@ class Resource(ABC, Generic[SpecificationType]):
             "A concrete resource type must implement __init__ method"
         )
 
+    def is_type(self, resource_type: str) -> bool:
+        specified_type = inspection.get_module_object_by_name(
+            resources_module, resource_type
+        )
+        return self.__class__ == specified_type
+
 
 class ResourceDeclaration(ImplicitDict):
     resource_type: str

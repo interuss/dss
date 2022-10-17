@@ -79,17 +79,15 @@ echo '{
         }
       }
     },
-    "scenarios": [
-      {
-        "scenario_type": "astm.netrid.NominalBehavior",
-        "resources": {
-          "flights_data": "netrid_flights_data",
-          "service_providers": "netrid_service_providers",
-          "observers": "netrid_observers",
-          "evaluation_configuration": "netrid_observation_evaluation_configuration"
-        }
+    "suite": {
+      "suite_type": "astm.netrid.f3411_19",
+      "resources": {
+        "flights_data": "netrid_flights_data",
+        "service_providers": "netrid_service_providers",
+        "observers": "netrid_observers",
+        "evaluation_configuration": "netrid_observation_evaluation_configuration"
       }
-    ]
+    }
 }' > ${CONFIG_LOCATION}
 
 QUALIFIER_OPTIONS="$AUTH_FLAG $CONFIG"

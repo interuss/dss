@@ -5,7 +5,7 @@ from implicitdict import ImplicitDict
 
 from monitoring.uss_qualifier.resources import ResourceCollection
 from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
-from monitoring.uss_qualifier.scenarios.scenario import TestScenarioDeclaration
+from monitoring.uss_qualifier.suites import TestSuiteDeclaration
 
 
 class USSQualifierTestConfiguration(ImplicitDict):
@@ -21,8 +21,7 @@ class USSQualifierTestConfiguration(ImplicitDict):
     resources: Optional[ResourceCollection]
     """Declarations for resources used by the test suite"""
 
-    # TODO: Replace this with test suite once designed
-    scenarios: List[TestScenarioDeclaration]
+    suite: Optional[TestSuiteDeclaration] = None
 
 
 def is_url(url_string):

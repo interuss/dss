@@ -1,0 +1,19 @@
+name: Generate RID test data
+resources:
+  adjacent_circular_flights_data: netrid.FlightDataResource
+  adjacent_circular_storage_config: netrid.FlightDataStorageResource
+  kml_flights_data: netrid.FlightDataResource
+  kml_storage_config: netrid.FlightDataStorageResource
+actions:
+- test_scenario:
+    scenario_type: astm.netrid.StoreFlightData
+    resources:
+      flights_data: adjacent_circular_flights_data
+      storage_configuration: adjacent_circular_storage_config
+  on_failure: Continue
+- test_scenario:
+    scenario_type: astm.netrid.StoreFlightData
+    resources:
+      flights_data: kml_flights_data
+      storage_configuration: kml_storage_config
+  on_failure: Continue

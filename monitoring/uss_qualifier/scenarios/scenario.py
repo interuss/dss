@@ -283,7 +283,7 @@ class TestScenarioDeclaration(ImplicitDict):
     """Type of test scenario, expressed as a Python class name qualified relative to this `scenarios` module"""
 
     resources: Dict[str, str] = {}
-    """Mapping of resource parameter (additional argument to concrete test scenario constructor) to globally unique name of resource to use"""
+    """Mapping of resource parameter (additional argument to concrete test scenario constructor) to ID of resource to use"""
 
     def make_test_scenario(self, resource_pool: Dict[str, Resource]) -> TestScenario:
         inspection.import_submodules(scenarios_module)

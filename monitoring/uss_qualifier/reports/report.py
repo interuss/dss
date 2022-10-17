@@ -123,3 +123,46 @@ class TestScenarioReport(ImplicitDict):
 
     execution_error: Optional[ErrorReport]
     """If there was an error while executing this test scenario, this field describes the error"""
+
+
+class TestSuiteActionReport(ImplicitDict):
+    test_suite: Optional["TestSuiteReport"]
+    """If this action was a test suite, this field will hold its report"""
+
+    test_scenario: Optional[TestScenarioReport]
+    """If this action was a test scenario, this field will hold its report"""
+
+    def successful(self) -> bool:
+        test_suite = "test_suite" in self and self.test_suite is not None
+        test_scenario = "test_scenario" in self and self.test_scenario is not None
+        if sum(1 if case else 0 for case in [test_suite, test_scenario]) != 1:
+            raise ValueError(
+                "Exactly one of `test_suite` or `test_scenario` must be populated"
+            )
+        if test_suite:
+            return self.test_suite.successful
+        if test_scenario:
+            return self.test_scenario.successful
+
+        # This line should not be possible to reach
+        raise RuntimeError("Case selection logic failed for TestSuiteActionReport")
+
+
+class TestSuiteReport(ImplicitDict):
+    name: str
+    """Name of this test suite"""
+
+    documentation_url: str
+    """URL at which this test suite is described"""
+
+    start_time: StringBasedDateTime
+    """Time at which the test suite started"""
+
+    actions: List[TestSuiteActionReport]
+    """Reports from test scenarios and test suites comprising the test suite for this report"""
+
+    end_time: Optional[StringBasedDateTime]
+    """Time at which the test suite completed"""
+
+    successful: bool = False
+    """True iff test suite completed normally with no failed checks"""
