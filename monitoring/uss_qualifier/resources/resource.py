@@ -30,11 +30,6 @@ class Resource(ABC, Generic[SpecificationType]):
             resources_module, resource_type
         )
         return self.__class__ == specified_type
-        # PREFIX = 'monitoring.uss_qualifier.resources.'
-        # full_type_name = inspection.fullname(self.__class__)
-        # if not full_type_name.startswith(PREFIX):
-        #     raise ValueError(f'All Resource subclasses are expected to be in a submodule of {PREFIX[0:-1]}; found instead {full_type_name}')
-        # return full_type_name[len(PREFIX):]
 
 
 class ResourceDeclaration(ImplicitDict):
