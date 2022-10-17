@@ -20,10 +20,15 @@ class StoreFlightData(TestScenario):
         flights_data: FlightDataResource,
         storage_configuration: FlightDataStorageResource,
     ):
+        super().__init__()
         self._flights_data = flights_data
         self._storage_config = storage_configuration
 
     def run(self):
+        self.begin_test_scenario()
+        self.begin_test_case("Store flight data")
+        self.begin_test_step("Store flight data")
+
         if (
             "flight_record_collection_path"
             in self._storage_config.storage_configuration
@@ -72,3 +77,7 @@ class StoreFlightData(TestScenario):
                 )
                 with open(tracks_file_path, "w") as f:
                     f.write(json.dumps(feature_collection))
+
+        self.end_test_step()
+        self.end_test_case()
+        self.end_test_scenario()

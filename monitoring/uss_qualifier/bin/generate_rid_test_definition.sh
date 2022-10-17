@@ -49,22 +49,15 @@ echo '{
         }
       }
     },
-    "scenarios": [
-      {
-        "scenario_type": "astm.netrid.StoreFlightData",
-        "resources": {
-          "flights_data": "adjacent_circular_flights_data",
-          "storage_configuration": "adjacent_circular_storage_config"
-        }
-      },
-      {
-        "scenario_type": "astm.netrid.StoreFlightData",
-        "resources": {
-          "flights_data": "kml_flights_data",
-          "storage_configuration": "kml_storage_config"
-        }
+    "suite": {
+      "suite_type": "interuss.generate_test_data",
+      "resources": {
+        "adjacent_circular_flights_data": "adjacent_circular_flights_data",
+        "adjacent_circular_storage_config": "adjacent_circular_storage_config",
+        "kml_flights_data": "kml_flights_data",
+        "kml_storage_config": "kml_storage_config"
       }
-    ]
+    }
 }' > ${CONFIG_LOCATION}
 
 QUALIFIER_OPTIONS="--auth NA $CONFIG"
