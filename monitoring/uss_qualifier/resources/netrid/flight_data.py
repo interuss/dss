@@ -1,17 +1,8 @@
-import json
 from typing import List, Optional
-import uuid
 
-import arrow
 from implicitdict import ImplicitDict, StringBasedDateTime, StringBasedTimeDelta
-import requests
 
 from monitoring.monitorlib.rid import RIDAircraftState, RIDFlightDetails
-from monitoring.monitorlib.rid_automated_testing.injection_api import (
-    TestFlightDetails,
-    TestFlight,
-)
-from monitoring.uss_qualifier.resources import Resource
 
 
 class FullFlightRecord(ImplicitDict):
@@ -37,6 +28,31 @@ class FlightDataJSONFileConfiguration(ImplicitDict):
     """Path to a file containing a JSON representation of an instance of FlightRecordCollection.  This may be a local file or a web URL."""
 
 
+class AdjacentCircularFlightsSimulatorConfiguration(ImplicitDict):
+    minx: float = 7.4735784530639648
+    """Western edge of bounding box (degrees longitude)"""
+
+    miny: float = 46.9746744128218410
+    """Southern edge of bounding box (degrees latitude)"""
+
+    maxx: float = 7.4786210060119620
+    """Eastern edge of bounding box (degrees longitude)"""
+
+    maxy: float = 46.9776318195799121
+    """Northern edge of bounding box (degrees latitude)"""
+
+    utm_zone: str = "32T"
+    """UTM Zone string for the location, see https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system to identify the zone for the location."""
+
+    altitude_of_ground_level_wgs_84 = 570
+    """Height of the geoid above the WGS84 ellipsoid (using EGM 96) for Bern, rom https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=46%B056%26%238242%3B53%26%238243%3BN+7%B026%26%238242%3B51%26%238243%3BE&option=Submit"""
+
+
+class FlightDataKMLFileConfiguration(ImplicitDict):
+    kml_path: str
+    """Path to a local file containing a KML describing a FlightRecordCollection."""
+
+
 class FlightDataSpecification(ImplicitDict):
     flight_start_delay: StringBasedTimeDelta = StringBasedTimeDelta("15s")
     """Amount of time between starting the test and commencement of flights"""
@@ -44,57 +60,10 @@ class FlightDataSpecification(ImplicitDict):
     json_file_source: Optional[FlightDataJSONFileConfiguration] = None
     """When this field is populated, flight data will be loaded from a JSON file"""
 
+    kml_file_source: Optional[FlightDataKMLFileConfiguration] = None
+    """When this field is populated, flight data will be generated from a KML file"""
 
-class FlightDataResource(Resource[FlightDataSpecification]):
-    _flight_collection: FlightRecordCollection
-
-    def __init__(self, specification: FlightDataSpecification):
-        if specification.json_file_source is not None:
-            if specification.json_file_source.path.startswith("http"):
-                resp = requests.get(specification.json_file_source.path)
-                resp.raise_for_status()
-                self._flight_collection = ImplicitDict.parse(
-                    json.loads(resp.content.decode("utf-8")), FlightRecordCollection
-                )
-            else:
-                with open(specification.json_file_source.path, "r") as f:
-                    self._flight_collection = ImplicitDict.parse(
-                        json.load(f), FlightRecordCollection
-                    )
-            self._flight_start_delay = specification.flight_start_delay
-        else:
-            raise ValueError(
-                "A source of flight data was not identified in the specification for a NetRIDFlightDataResource"
-            )
-
-    def get_test_flights(self) -> List[TestFlight]:
-        t0 = arrow.utcnow() + self._flight_start_delay.timedelta
-
-        test_flights: List[TestFlight] = []
-
-        for flight in self._flight_collection.flights:
-            dt = t0 - flight.reference_time.datetime
-
-            telemetry: List[RIDAircraftState] = []
-            for state in flight.states:
-                shifted_state = RIDAircraftState(state)
-                shifted_state.timestamp = StringBasedDateTime(
-                    state.timestamp.datetime + dt
-                )
-                telemetry.append(shifted_state)
-
-            details = TestFlightDetails(
-                effective_after=StringBasedDateTime(t0),
-                details=flight.flight_details,
-                aircraft_type=flight.aircraft_type,
-            )
-
-            test_flights.append(
-                TestFlight(
-                    injection_id=str(uuid.uuid4()),
-                    telemetry=telemetry,
-                    details_responses=[details],
-                )
-            )
-
-        return test_flights
+    adjacent_circular_flights_simulation_source: Optional[
+        AdjacentCircularFlightsSimulatorConfiguration
+    ] = None
+    """When this field is populated, flight data will be simulated with the AdjacentCircularFlightsSimulator"""

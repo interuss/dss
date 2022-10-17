@@ -14,16 +14,75 @@ cd "${BASEDIR}/../../.." || exit 1
 
 monitoring/build.sh || exit 1
 
+CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally.json"
+CONFIG='--config config_run_locally.json'
+
+echo '{
+    "locale": "CHE",
+    "resources": {
+      "resource_declarations": {
+        "adjacent_circular_flights_data": {
+          "resource_type": "netrid.FlightDataResource",
+          "specification": {
+            "adjacent_circular_flights_simulation_source": {}
+          }
+        },
+        "adjacent_circular_storage_config": {
+          "resource_type": "netrid.FlightDataStorageResource",
+          "specification": {
+            "flight_record_collection_path": "./test_data/che/netrid/circular_flights.json"
+          }
+        },
+        "kml_flights_data": {
+          "resource_type": "netrid.FlightDataResource",
+          "specification": {
+            "kml_file_source": {
+              "kml_path": "./test_data/usa/netrid/dcdemo.kml"
+            }
+          }
+        },
+        "kml_storage_config": {
+          "resource_type": "netrid.FlightDataStorageResource",
+          "specification": {
+            "flight_record_collection_path": "./test_data/usa/netrid/dcdemo_flights.json"
+          }
+        }
+      }
+    },
+    "scenarios": [
+      {
+        "scenario_type": "astm.netrid.StoreFlightData",
+        "resources": {
+          "flights_data": "adjacent_circular_flights_data",
+          "storage_configuration": "adjacent_circular_storage_config"
+        }
+      },
+      {
+        "scenario_type": "astm.netrid.StoreFlightData",
+        "resources": {
+          "flights_data": "kml_flights_data",
+          "storage_configuration": "kml_storage_config"
+        }
+      }
+    ]
+}' > ${CONFIG_LOCATION}
+
+QUALIFIER_OPTIONS="--auth NA $CONFIG"
+
 if [ "$CI" == "true" ]; then
-  docker_args=""
+  docker_args="--add-host host.docker.internal:host-gateway" # Required to reach other containers in Ubuntu (used for Github Actions)
 else
   docker_args="-it"
 fi
 
-docker run ${docker_args} --name flight_data_generator \
+# shellcheck disable=SC2086
+docker run ${docker_args} --name uss_qualifier \
   --rm \
+  -e QUALIFIER_OPTIONS="${QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
-  -v "$(pwd)/monitoring/uss_qualifier/rid/test_definitions:/app/monitoring/uss_qualifier/rid/test_definitions" \
+  -v "$(pwd):/app" \
   -w /app/monitoring/uss_qualifier \
   interuss/monitoring \
-  python rid/simulator/flight_state.py
+  python main.py $QUALIFIER_OPTIONS
+
+rm ${CONFIG_LOCATION}

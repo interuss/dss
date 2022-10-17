@@ -11,8 +11,11 @@ import uuid
 from datetime import datetime, timedelta
 from shapely.geometry import LineString, Point, Polygon
 from monitoring.monitorlib.geo import flatten, unflatten
-from monitoring.uss_qualifier.rid.simulator import kml
-from monitoring.uss_qualifier.rid.utils import FlightDetails, FullFlightRecord
+from monitoring.monitorlib import kml
+from monitoring.uss_qualifier.resources.netrid.flight_data import (
+    FullFlightRecord,
+    FlightRecordCollection,
+)
 from monitoring.monitorlib.rid import (
     RIDAircraftState,
     RIDAircraftPosition,
@@ -183,7 +186,7 @@ def generate_flight_record(
     timestamp = datetime.now()
     now_isoformat = timestamp.isoformat()
 
-    flight_telemetry: List[List[RIDAircraftState]] = []
+    flight_telemetry: List[RIDAircraftState] = []
     for coordinates, speed, angle in zip(
         state_coordinates, flight_state_speeds, flight_track_angles
     ):
@@ -224,15 +227,11 @@ def generate_flight_record(
         registration_number=flight_description.get("registration_number"),
     )
 
-    flight_details = FlightDetails(
-        rid_details=rid_details,
-        aircraft_type=flight_description.get("aircraft_type"),
-        operator_name=flight_description.get("operator_name"),
-    )
     return FullFlightRecord(
         reference_time=now_isoformat,
         states=flight_telemetry,
-        flight_details=flight_details,
+        flight_details=rid_details,
+        aircraft_type=flight_description.get("aircraft_type"),
     )
 
 
@@ -353,20 +352,9 @@ def get_flight_state_coordinates(flight_details):
     return flight_state_coordinates, flight_state_speeds, flight_track_angles
 
 
-def write_to_json_file(data, file_name, output_folder):
-    with open(f"{output_folder}/{file_name}.json", "w") as outfile:
-        outfile.write(json.dumps(data))
-
-
-def create_output_folder(folder_path):
-    if not os.path.isdir(folder_path):
-        os.makedirs(folder_path)
-
-
-def get_flight_records(kml_content, output_folder, debug_mode=False):
-    flight_state_coordinates = {}
-    create_output_folder(output_folder)
-    flight_records = {}
+def get_flight_records(kml_file, debug_mode=False) -> FlightRecordCollection:
+    kml_content = kml.get_kml_content(kml_file, False)
+    flight_records = []
     for flight_name, flight_details in kml_content.items():
         flight_description = flight_details["description"]
         operator_location = flight_details["operator_location"]
@@ -380,6 +368,7 @@ def get_flight_records(kml_content, output_folder, debug_mode=False):
                 ",".join(map(str, p)) for p in flight_state_coordinates
             ]
             flight_state_vertices_str = "\n".join(flight_state_vertices_unflatten)
+            output_folder = os.path.dirname(kml_file)
             with open(f"{output_folder}/kml_state_{flight_name}.txt", "w") as text_file:
                 text_file.write(flight_state_vertices_str)
         flight_record = generate_flight_record(
@@ -389,65 +378,5 @@ def get_flight_records(kml_content, output_folder, debug_mode=False):
             flight_state_speeds,
             flight_track_angles,
         )
-        filename = flight_name.replace("flight: ", "")
-        flight_records.update({filename: flight_record})
-        write_to_json_file(flight_record, filename, output_folder=output_folder)
-    flight_records.update({"is_flight_records_from_kml": True})
-    return json.dumps(flight_records)
-
-
-def main(kml_file, output_folder, debug_mode=None, from_string=False):
-    # kml_file = 'monitoring/uss_qualifier/test_data/dcdemo.kml'
-    try:
-        kml_content = kml.get_kml_content(kml_file, from_string)
-    except ValueError as e:
-        print(e)
-        return e
-    else:
-        return get_flight_records(kml_content, output_folder, debug_mode)
-
-
-def init_argparse() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        usage="%(prog)s [OPTION] [FILE]",
-        description="Generates All Flights' state records from the KML file.",
-    )
-    parser.add_argument(
-        "-f",
-        "--kml-file",
-        help="Path to flight record KML file",
-        type=str,
-        default=None,
-        required=True,
-    )
-    parser.add_argument(
-        "-o",
-        "--output-path",
-        help="Folder path to the output",
-        type=str,
-        default=None,
-        required=True,
-    )
-    parser.add_argument(
-        "-d",
-        "--debug",
-        help="Set Debug to true to generate output coordinates to test in KML.",
-        type=bool,
-        default=None,
-    )
-    return parser
-
-
-if __name__ == "__main__":
-    parser = init_argparse()
-    args = parser.parse_args()
-    if not args.output_path:
-        raise "Path to output folder not provided."
-    if args.kml_file:
-        kml_file = args.kml_file
-        if os.path.isfile(kml_file):
-            file = open(kml_file, "r")
-        else:
-            raise "Invalid file path."
-        debug_mode = args.debug
-        main(kml_file, args.output_path, debug_mode=debug_mode)
+        flight_records.append(flight_record)
+    return FlightRecordCollection(flights=flight_records)
