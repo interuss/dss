@@ -133,14 +133,19 @@ class TestSuiteActionReport(ImplicitDict):
     """If this action was a test scenario, this field will hold its report"""
 
     def successful(self) -> bool:
-        if "test_suite" in self and self.test_suite is not None:
-            return self.test_suite.successful
-        elif "test_scenario" in self and self.test_scenario is not None:
-            return self.test_scenario.successful
-        else:
+        test_suite = "test_suite" in self and self.test_suite is not None
+        test_scenario = "test_scenario" in self and self.test_scenario is not None
+        if sum(1 if case else 0 for case in [test_suite, test_scenario]) != 1:
             raise ValueError(
-                "TestSuiteActionReport did not specify either `test_suite` or `test_scenario`"
+                "Exactly one of `test_suite` or `test_scenario` must be populated"
             )
+        if test_suite:
+            return self.test_suite.successful
+        if test_scenario:
+            return self.test_scenario.successful
+
+        # This line should not be possible to reach
+        raise RuntimeError("Case selection logic failed for TestSuiteActionReport")
 
 
 class TestSuiteReport(ImplicitDict):
