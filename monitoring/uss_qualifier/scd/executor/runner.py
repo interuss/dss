@@ -6,15 +6,16 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightResponse,
 )
 from monitoring.uss_qualifier.common_data_definitions import Severity
-from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
+from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
+from monitoring.uss_qualifier.resources.astm.f3548.v21.dss import DSSInstance
 from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
     AutomatedTest,
     TestStep,
     FlightInjectionAttempt,
 )
+from monitoring.uss_qualifier.resources.flight_planning.target import TestTarget
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
 from monitoring.uss_qualifier.scd.executor.report_recorder import ReportRecorder
-from monitoring.uss_qualifier.scd.executor.target import TestTarget
 from monitoring.uss_qualifier.scd.executor.test_steps import (
     inject_flight,
     delete_flight,
@@ -37,7 +38,7 @@ class TestRunner:
         context: AutomatedTestContext,
         automated_test: AutomatedTest,
         targets: Dict[str, TestTarget],
-        dss_target: Optional[TestTarget],
+        dss_target: Optional[DSSInstance],
         report: Report,
     ):
         self.context = context
@@ -45,11 +46,6 @@ class TestRunner:
         self.targets = targets
         self.dss_target = dss_target
         self.report_recorder = ReportRecorder(report, self.context)
-
-    def get_scd_configuration(self) -> SCDQualifierTestConfiguration:
-        return SCDQualifierTestConfiguration(
-            injection_targets=list(map(lambda t: t.config, self.targets.values()))
-        )
 
     def run_automated_test(self):
         for i, step in enumerate(self.automated_test.steps):

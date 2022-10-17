@@ -16,7 +16,7 @@ from monitoring.uss_qualifier.common_data_definitions import (
 )
 from monitoring.uss_qualifier.resources.flight_planning.automated_test import TestStep
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
-from monitoring.uss_qualifier.scd.executor.target import TestTarget
+from monitoring.uss_qualifier.resources.flight_planning.target import TestTarget
 from monitoring.uss_qualifier.scd.reports import Issue, TestStepReference
 
 

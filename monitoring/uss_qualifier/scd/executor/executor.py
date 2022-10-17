@@ -5,22 +5,18 @@ import typing
 from typing import Dict, List
 
 from implicitdict import ImplicitDict
-from monitoring.uss_qualifier.scd.configuration import (
-    SCDQualifierTestConfiguration,
-    InjectionTargetConfiguration,
-)
+from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
 from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
     AutomatedTest,
     TestStep,
 )
+from monitoring.uss_qualifier.resources.flight_planning.target import TestTarget
 from monitoring.uss_qualifier.scd.data_interfaces import (
     AutomatedTestContext,
 )
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
 from monitoring.uss_qualifier.scd.executor.runner import TestRunner
-from monitoring.uss_qualifier.scd.executor.target import TestTarget
 from monitoring.uss_qualifier.scd.reports import Report
-from monitoring.uss_qualifier.utils import is_url
 
 
 def load_scd_test_definitions() -> Dict[str, AutomatedTest]:
@@ -38,14 +34,6 @@ def load_scd_test_definitions() -> Dict[str, AutomatedTest]:
             automated_tests[k] = ImplicitDict.parse(json.load(f), AutomatedTest)
 
     return automated_tests
-
-
-def validate_configuration(test_configuration: SCDQualifierTestConfiguration):
-    try:
-        for injection_target in test_configuration.injection_targets:
-            is_url(injection_target.injection_base_url)
-    except ValueError:
-        raise ValueError("A valid url for injection_target must be passed")
 
 
 def combine_targets(
@@ -94,29 +82,20 @@ def targets_information(targets: List[TestTarget]):
     )
 
 
-def run_scd_tests(
-    test_configuration: SCDQualifierTestConfiguration,
-    auth_spec: str,
-) -> bool:
+def run_scd_tests(test_configuration: USSQualifierTestConfiguration) -> bool:
     locale = "CHE"  # TODO: Obtain from configuration instead
     automated_tests = load_scd_test_definitions()
-    configured_targets = list(
-        map(
-            lambda t: TestTarget(t.name, t, auth_spec),
-            test_configuration.injection_targets,
-        )
+
+    resources = test_configuration.resources.create_resources()
+    # TODO: Replace hardcoded "flight_planners" string when making this into a TestScenario
+    flight_planners = resources["flight_planners"]
+    # TODO: Replace hardcoded "dss_instance" string when making this into a TestScenario
+    dss_instance = (
+        resources["dss_instance"].dss if "dss_instance" in resources else None
     )
-    dss_target = (
-        TestTarget(
-            "DSS",
-            InjectionTargetConfiguration(
-                name="DSS", injection_base_url=test_configuration.dss_base_url
-            ),
-            auth_spec=auth_spec,
-        )
-        if "dss_base_url" in test_configuration
-        else None
-    )
+
+    configured_targets = flight_planners.flight_planners
+
     report = Report(
         qualifier_version=os.environ.get("USS_QUALIFIER_VERSION", "unknown"),
         configuration=test_configuration,
@@ -148,7 +127,7 @@ def run_scd_tests(
                 )
             )
 
-            runner = TestRunner(context, test, targets_under_test, dss_target, report)
+            runner = TestRunner(context, test, targets_under_test, dss_instance, report)
             try:
                 runner.run_automated_test()
             except TestRunnerError as e:

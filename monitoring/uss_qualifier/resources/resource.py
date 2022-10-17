@@ -32,6 +32,9 @@ class Resource(ABC, Generic[SpecificationType]):
         return self.__class__ == specified_type
 
 
+ResourceType = TypeVar("ResourceType", bound=Resource)
+
+
 class ResourceDeclaration(ImplicitDict):
     resource_type: str
     """Type of resource, expressed as a Python class name qualified relative to this `resources` module"""
@@ -88,8 +91,8 @@ class ResourceCollection(ImplicitDict):
     resource_declarations: Dict[str, ResourceDeclaration]
     """Mapping of globally (within resource collection) unique name identifying a resource to the declaration of that resource"""
 
-    def create_resources(self) -> Dict[str, Resource]:
-        resource_pool: Dict[str, Resource] = {}
+    def create_resources(self) -> Dict[str, ResourceType]:
+        resource_pool: Dict[str, ResourceType] = {}
 
         resources_created = 1
         while resources_created > 0:

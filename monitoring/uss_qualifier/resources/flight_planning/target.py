@@ -1,6 +1,9 @@
 from typing import Dict, Tuple
+from urllib.parse import urlparse
 
-from monitoring.monitorlib import infrastructure, auth, fetch
+from implicitdict import ImplicitDict
+
+from monitoring.monitorlib import infrastructure, fetch
 from monitoring.monitorlib.clients.scd_automated_testing import (
     create_flight,
     delete_flight,
@@ -14,20 +17,39 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightResponse,
     DeleteFlightResponse,
 )
-from monitoring.uss_qualifier.scd.configuration import InjectionTargetConfiguration
 from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
     FlightInjectionAttempt,
 )
 
 
+class FlightPlannerConfiguration(ImplicitDict):
+    participant_id: str
+    """ID of the flight planner into which test data can be injected"""
+
+    injection_base_url: str
+    """Base URL for the flight planner's implementation of the interfaces/automated-testing/scd/scd.yaml API"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(**kwargs)
+        try:
+            urlparse(self.injection_base_url)
+        except ValueError:
+            raise ValueError(
+                "FlightPlannerConfiguration.injection_base_url must be a URL"
+            )
+
+
 class TestTarget:
     """A class managing the state and the interactions with a target"""
 
-    def __init__(self, name: str, config: InjectionTargetConfiguration, auth_spec: str):
-        self.name = name
+    def __init__(
+        self,
+        config: FlightPlannerConfiguration,
+        auth_adapter: infrastructure.AuthAdapter,
+    ):
         self.config = config
         self.client = infrastructure.UTMClientSession(
-            self.config.injection_base_url, auth.make_auth_adapter(auth_spec)
+            self.config.injection_base_url, auth_adapter
         )
 
         # Flights injected by this target.
@@ -36,7 +58,13 @@ class TestTarget:
         self.created_flight_ids: Dict[str, str] = {}
 
     def __repr__(self):
-        return "TestTarget({}, {})".format(self.name, self.config.injection_base_url)
+        return "TestTarget({}, {})".format(
+            self.config.participant_id, self.config.injection_base_url
+        )
+
+    @property
+    def name(self) -> str:
+        return self.config.participant_id
 
     def inject_flight(
         self, flight_request: FlightInjectionAttempt

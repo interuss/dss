@@ -1,7 +1,7 @@
 from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.uss_qualifier.resources.flight_planning.automated_test import TestStep
+from monitoring.uss_qualifier.resources.flight_planning.target import TestTarget
 from monitoring.uss_qualifier.scd.executor.errors import TestRunnerError
-from monitoring.uss_qualifier.scd.executor.target import TestTarget
 from monitoring.uss_qualifier.scd.reports import TestStepReference
 
 

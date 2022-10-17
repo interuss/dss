@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from monitoring.monitorlib import fetch
 from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.common_data_definitions import IssueSubject, Severity
-from monitoring.uss_qualifier.scd.configuration import SCDQualifierTestConfiguration
+from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
 from monitoring.uss_qualifier.scd.data_interfaces import AutomatedTestContext
 
 
@@ -117,7 +117,7 @@ class TargetInformation(ImplicitDict):
 
 class Report(ImplicitDict):
     qualifier_version: str
-    configuration: SCDQualifierTestConfiguration
+    configuration: USSQualifierTestConfiguration
     targets_information: Dict[str, TargetInformation]
     findings: Findings = Findings()
 
