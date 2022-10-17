@@ -19,45 +19,7 @@ CONFIG='--config config_run_locally.json'
 
 echo '{
     "locale": "CHE",
-    "resources": {
-      "resource_declarations": {
-        "adjacent_circular_flights_data": {
-          "resource_type": "netrid.FlightDataResource",
-          "specification": {
-            "adjacent_circular_flights_simulation_source": {}
-          }
-        },
-        "adjacent_circular_storage_config": {
-          "resource_type": "netrid.FlightDataStorageResource",
-          "specification": {
-            "flight_record_collection_path": "./test_data/che/netrid/circular_flights.json"
-          }
-        },
-        "kml_flights_data": {
-          "resource_type": "netrid.FlightDataResource",
-          "specification": {
-            "kml_file_source": {
-              "kml_path": "./test_data/usa/netrid/dcdemo.kml"
-            }
-          }
-        },
-        "kml_storage_config": {
-          "resource_type": "netrid.FlightDataStorageResource",
-          "specification": {
-            "flight_record_collection_path": "./test_data/usa/netrid/dcdemo_flights.json"
-          }
-        }
-      }
-    },
-    "suite": {
-      "suite_type": "interuss.generate_test_data",
-      "resources": {
-        "adjacent_circular_flights_data": "adjacent_circular_flights_data",
-        "adjacent_circular_storage_config": "adjacent_circular_storage_config",
-        "kml_flights_data": "kml_flights_data",
-        "kml_storage_config": "kml_storage_config"
-      }
-    }
+    "config": "dev.generate_test_data"
 }' > ${CONFIG_LOCATION}
 
 QUALIFIER_OPTIONS="--auth NA $CONFIG"
