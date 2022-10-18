@@ -1,5 +1,6 @@
+from datetime import time
 from enum import Enum
-from typing import List, Any, Optional, Dict
+from typing import List, Any, Optional, Dict, Union
 import arrow
 
 from implicitdict import ImplicitDict, StringBasedDateTime
@@ -89,14 +90,17 @@ class WeekDateType(str, Enum):
 
 
 class ED269TimeType(str):
-    """String that allows values which describe a time in ED-269 flavour of ISO 86001 format.
+    """String that allows values which describe a time in ED-269 flavour of ISO 8601 format.
 
     ED-269 standard specifies that a time instant type should be in the form of hh:mmS where S is
     the timezone. However, examples are using the following format: 00:00:00.00Z
-    This class supports both formats.
+    This class supports both formats as inputs and uses the long form as the output format.
     """
 
-    def __new__(cls, value):
+    time: time
+    """`time` representation of the str value with timezone"""
+
+    def __new__(cls, value: Union[str, time]):
         if isinstance(value, str):
             t = arrow.get(value, ["HH:mm:ss.SZ", "HH:mmZ"]).timetz()
         else:
