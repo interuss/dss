@@ -49,6 +49,7 @@ local scd_schema_mount = {
             },
             soloContainer:: base.Container('rid-schema-manager') {
               image: metadata.schema_manager.image,
+              command: ['db-manager'],
               args_:: {
                 cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
                 cockroach_port: metadata.cockroach.grpc_port,
@@ -76,6 +77,7 @@ local scd_schema_mount = {
             },
             soloContainer:: base.Container('scd-schema-manager') {
               image: metadata.schema_manager.image,
+              command: ['db-manager'],
               args_:: {
                 cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
                 cockroach_port: metadata.cockroach.grpc_port,
@@ -84,7 +86,6 @@ local scd_schema_mount = {
                 cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 db_version: metadata.schema_manager.desired_scd_db_version,
                 schemas_dir: scd_schema_mount.mountPath,
-
               },
               volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert + [scd_schema_mount],
             },
