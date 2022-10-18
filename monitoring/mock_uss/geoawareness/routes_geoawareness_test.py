@@ -26,7 +26,6 @@ def client(app):
 @pytest.fixture()
 def client_options(app):
     auth = NoAuth()
-    print(app.config.get(KEY_TOKEN_AUDIENCE))
     token = auth.issue_token("localhost", ["geo-awareness.test"])
     return {"headers": {"Authorization": f"Bearer {token}"}}
 
