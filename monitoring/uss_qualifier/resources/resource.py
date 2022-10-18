@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import inspect
-from typing import Dict, Generic, Type, TypeVar
+from typing import Dict, Generic, TypeVar
 
 from implicitdict import ImplicitDict
 
@@ -43,7 +43,7 @@ class ResourceDeclaration(ImplicitDict):
     """Mapping of dependency parameter (additional argument to concrete resource constructor) to `name` of resource to use"""
 
     specification: dict = {}
-    """Specification of resource; format is the SpecificationType that corresponds to the Resource `type`"""
+    """Specification of resource; format is the SpecificationType that corresponds to the `resource_type`"""
 
     def make_resource(self, resource_pool: Dict[str, Resource]) -> Resource:
         inspection.import_submodules(resources_module)

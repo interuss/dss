@@ -21,7 +21,7 @@ from monitoring.uss_qualifier.scenarios.documentation import (
     TestStepDocumentation,
     parse_documentation,
 )
-from monitoring.uss_qualifier.resources import Resource
+from monitoring.uss_qualifier.resources import Resource, ResourceTypeName
 
 
 class TestScenario(ABC):
@@ -285,7 +285,9 @@ class TestScenarioDeclaration(ImplicitDict):
     resources: Dict[str, str] = {}
     """Mapping of resource parameter (additional argument to concrete test scenario constructor) to ID of resource to use"""
 
-    def make_test_scenario(self, resource_pool: Dict[str, Resource]) -> TestScenario:
+    def make_test_scenario(
+        self, resource_pool: Dict[str, ResourceTypeName]
+    ) -> TestScenario:
         inspection.import_submodules(scenarios_module)
         scenario_type = inspection.get_module_object_by_name(
             scenarios_module, self.scenario_type

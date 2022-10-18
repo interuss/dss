@@ -30,7 +30,7 @@
     }
   },
   "test_suite": {
-    "suite_type": "interuss.generate_test_data",
+    "suite_type": "interuss.generate_test_data_twice",
     "resources": {
       "adjacent_circular_flights_data": "adjacent_circular_flights_data",
       "adjacent_circular_storage_config": "adjacent_circular_storage_config",
