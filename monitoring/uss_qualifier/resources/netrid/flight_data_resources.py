@@ -12,7 +12,7 @@ from monitoring.monitorlib.rid_automated_testing.injection_api import (
     TestFlightDetails,
     TestFlight,
 )
-from monitoring.uss_qualifier.resources import Resource
+from monitoring.uss_qualifier.resources.resource import Resource
 from monitoring.uss_qualifier.resources.netrid.flight_data import (
     FlightDataSpecification,
     FlightRecordCollection,

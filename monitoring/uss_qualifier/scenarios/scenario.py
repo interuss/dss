@@ -21,7 +21,7 @@ from monitoring.uss_qualifier.scenarios.documentation import (
     TestStepDocumentation,
     parse_documentation,
 )
-from monitoring.uss_qualifier.resources import Resource, ResourceTypeName
+from monitoring.uss_qualifier.resources.definitions import ResourceTypeName
 
 
 class TestScenario(ABC):

@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, TypeVar
 from implicitdict import ImplicitDict
 import yaml
 
-from monitoring.uss_qualifier.resources import ResourceID, ResourceTypeName
+from monitoring.uss_qualifier.resources.definitions import ResourceID, ResourceTypeName
 from monitoring.uss_qualifier.scenarios.scenario import (
     TestScenarioDeclaration,
 )

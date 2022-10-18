@@ -57,7 +57,7 @@ class FlightInjectionAttempt(ImplicitDict):
     name: str
     """Name of this flight, used to refer to the flight later in the automated test"""
 
-    test_injection: InjectFlightRequest
+    test_injection: Optional[InjectFlightRequest]
     """Definition of the flight to be injected"""
 
     planning_time: StringBasedTimeDelta

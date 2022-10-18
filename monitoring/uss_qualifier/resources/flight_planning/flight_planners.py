@@ -2,7 +2,7 @@ from typing import List
 
 from implicitdict import ImplicitDict
 
-from monitoring.uss_qualifier.resources import Resource
+from monitoring.uss_qualifier.resources.resource import Resource
 from monitoring.uss_qualifier.resources.communications import AuthAdapter
 from monitoring.uss_qualifier.resources.flight_planning.target import (
     FlightPlannerConfiguration,

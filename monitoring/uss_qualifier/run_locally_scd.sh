@@ -61,6 +61,33 @@ echo '{
               "participant_id": "uss1",
               "base_url": "http://host.docker.internal:8082"
             }
+          },
+          "nominal_intent": {
+            "resource_type": "flight_planning.FlightIntentsResource",
+            "specification": {
+              "planning_time": "0:05:00",
+              "json_file_source": {
+                "path": "./test_data/che/flight_intents/nominal_intent.json"
+              }
+            }
+          },
+          "conflicting_flights": {
+            "resource_type": "flight_planning.FlightIntentsResource",
+            "specification": {
+              "planning_time": "0:05:00",
+              "json_file_source": {
+                "path": "./test_data/che/flight_intents/conflicting_flights.json"
+              }
+            }
+          },
+          "priority_preemption": {
+            "resource_type": "flight_planning.FlightIntentsResource",
+            "specification": {
+              "planning_time": "0:05:00",
+              "json_file_source": {
+                "path": "./test_data/che/flight_intents/priority_preemption.json"
+              }
+            }
           }
         }
     }

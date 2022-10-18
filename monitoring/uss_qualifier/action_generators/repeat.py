@@ -2,7 +2,7 @@ from typing import Dict, List, Optional
 
 from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.reports import TestSuiteActionReport
-from monitoring.uss_qualifier.resources import ResourceID
+from monitoring.uss_qualifier.resources.definitions import ResourceID
 from monitoring.uss_qualifier.resources.resource import ResourceType
 
 from monitoring.uss_qualifier.suites.definitions import TestSuiteActionDeclaration

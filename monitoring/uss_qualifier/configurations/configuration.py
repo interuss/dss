@@ -4,7 +4,7 @@ import os
 from implicitdict import ImplicitDict
 import requests
 
-from monitoring.uss_qualifier.resources import ResourceCollection
+from monitoring.uss_qualifier.resources.definitions import ResourceCollection
 from monitoring.uss_qualifier.suites.definitions import TestSuiteDeclaration
 
 

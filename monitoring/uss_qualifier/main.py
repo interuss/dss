@@ -7,10 +7,10 @@ import sys
 
 import yaml
 
-from monitoring.monitorlib.locality import Locality
 from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.configurations.configuration import TestConfiguration
 from monitoring.uss_qualifier.reports import FailedCheck
+from monitoring.uss_qualifier.resources.resource import create_resources
 from monitoring.uss_qualifier.scd.executor import executor as scd_test_executor
 from monitoring.uss_qualifier.suites.suite import (
     TestSuiteAction,
@@ -41,7 +41,7 @@ def _print_failed_check(failed_check: FailedCheck) -> None:
 def uss_test_executor(config: USSQualifierTestConfiguration):
     if config.config:
         test_config = TestConfiguration.from_string(config.config)
-        resources = test_config.resources.create_resources()
+        resources = create_resources(test_config.resources.resource_declarations)
         suite_action = TestSuiteAction(
             TestSuiteActionDeclaration(
                 test_suite=test_config.test_suite, on_failure=ReactionToFailure.Continue

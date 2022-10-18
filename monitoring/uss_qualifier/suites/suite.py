@@ -19,7 +19,7 @@ from monitoring.uss_qualifier.reports.report import (
     TestSuiteReport,
     TestSuiteActionReport,
 )
-from monitoring.uss_qualifier.resources import ResourceID
+from monitoring.uss_qualifier.resources.definitions import ResourceID
 from monitoring.uss_qualifier.resources.resource import ResourceType
 from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 from monitoring.uss_qualifier.suites.definitions import (

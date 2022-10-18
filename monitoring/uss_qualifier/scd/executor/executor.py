@@ -4,7 +4,11 @@ import os
 import typing
 from typing import Dict, List
 
-from implicitdict import ImplicitDict
+import arrow
+from implicitdict import ImplicitDict, StringBasedDateTime
+
+from monitoring.uss_qualifier.resources.definitions import ResourceID
+from monitoring.uss_qualifier.resources.resource import ResourceType, create_resources
 from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
 from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
     AutomatedTest,
@@ -19,19 +23,46 @@ from monitoring.uss_qualifier.scd.executor.runner import TestRunner
 from monitoring.uss_qualifier.scd.reports import Report
 
 
-def load_scd_test_definitions() -> Dict[str, AutomatedTest]:
+def load_scd_test_definitions(
+    resources: Dict[ResourceID, ResourceType]
+) -> Dict[str, AutomatedTest]:
     """Gets automated tests"""
 
-    # TODO: Get test definitions via Resource rather than hardcoding here
-    tests = {
-        "u-space/flight-authorisation-validation-1": "test_data/che/flight_planning/flight-authorisation-validation-1.json",
-        "astm-strategic-coordination/nominal-planning-1": "test_data/che/flight_planning/nominal-planning-1.json",
-        "astm-strategic-coordination/nominal-planning-priority-1": "test_data/che/flight_planning/nominal-planning-priority-1.json",
-    }
+    # TODO: Replace hardcoded "nominal_intent" string when making this into a TestScenario
+    nominal_intent = resources["nominal_intent"].get_flight_intents()
+    # TODO: Replace hardcoded "conflicting_flights" string when making this into a TestScenario
+    conflicting_flights = resources["conflicting_flights"].get_flight_intents()
+    # TODO: Replace hardcoded "priority_preemption" string when making this into a TestScenario
+    priority_preemption = resources["priority_preemption"].get_flight_intents()
+    reference_time = StringBasedDateTime(arrow.utcnow().datetime)
+
+    tests = [
+        (
+            "u-space/flight-authorisation-validation-1",
+            "test_data/che/flight_planning/flight-authorisation-validation-1.json",
+            nominal_intent,
+        ),
+        (
+            "astm-strategic-coordination/nominal-planning-1",
+            "test_data/che/flight_planning/nominal-planning-1.json",
+            conflicting_flights,
+        ),
+        (
+            "astm-strategic-coordination/nominal-planning-priority-1",
+            "test_data/che/flight_planning/nominal-planning-priority-1.json",
+            priority_preemption,
+        ),
+    ]
     automated_tests: Dict[str, AutomatedTest] = {}
-    for k, v in tests.items():
+    for k, v, intents in tests:
         with open(v, "r") as f:
             automated_tests[k] = ImplicitDict.parse(json.load(f), AutomatedTest)
+        i = 0
+        for step in automated_tests[k].steps:
+            if "inject_flight" in step:
+                step.inject_flight.test_injection = intents[i]
+                step.inject_flight.reference_time = reference_time
+                i += 1
 
     return automated_tests
 
@@ -84,9 +115,9 @@ def targets_information(targets: List[TestTarget]):
 
 def run_scd_tests(test_configuration: USSQualifierTestConfiguration) -> bool:
     locale = "CHE"  # TODO: Obtain from configuration instead
-    automated_tests = load_scd_test_definitions()
+    resources = create_resources(test_configuration.resources.resource_declarations)
+    automated_tests = load_scd_test_definitions(resources)
 
-    resources = test_configuration.resources.create_resources()
     # TODO: Replace hardcoded "flight_planners" string when making this into a TestScenario
     flight_planners = resources["flight_planners"]
     # TODO: Replace hardcoded "dss_instance" string when making this into a TestScenario

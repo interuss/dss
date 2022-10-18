@@ -9,7 +9,7 @@ from monitoring.monitorlib.rid_automated_testing.injection_api import (
     CreateTestParameters,
     SCOPE_RID_QUALIFIER_INJECT,
 )
-from monitoring.uss_qualifier.resources import Resource
+from monitoring.uss_qualifier.resources.resource import Resource
 from monitoring.uss_qualifier.resources.communications import AuthAdapter
 
 

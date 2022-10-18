@@ -5,7 +5,7 @@ from implicitdict import ImplicitDict
 
 from monitoring.monitorlib.auth import make_auth_adapter
 from monitoring.monitorlib import infrastructure
-from monitoring.uss_qualifier.resources import Resource
+from monitoring.uss_qualifier.resources.resource import Resource
 
 
 class AuthAdapterSpecification(ImplicitDict):
