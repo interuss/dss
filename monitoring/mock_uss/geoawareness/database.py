@@ -31,6 +31,10 @@ class Database(ImplicitDict):
         return db.value.sources.get(id, None)
 
     @staticmethod
+    def get_sources(db: SynchronizedValue) -> SourceRecord:
+        return db.value.sources
+
+    @staticmethod
     def insert_source(
         db: SynchronizedValue,
         id: str,

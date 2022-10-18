@@ -22,7 +22,7 @@ def get_geozone_source(geozone_source_id: str):
     if source is None:
         return f"source {geozone_source_id} not found or deleted", 404
     return (
-        flask.jsonify(GeozoneSourceResponse({"result": GeozoneSourceState.Activating})),
+        flask.jsonify(GeozoneSourceResponse({"result": GeozoneSourceState.Ready})),
         200,
     )
 
