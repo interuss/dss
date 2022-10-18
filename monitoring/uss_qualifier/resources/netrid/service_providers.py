@@ -10,7 +10,7 @@ from monitoring.monitorlib.rid_automated_testing.injection_api import (
     SCOPE_RID_QUALIFIER_INJECT,
 )
 from monitoring.uss_qualifier.resources.resource import Resource
-from monitoring.uss_qualifier.resources.communications import AuthAdapter
+from monitoring.uss_qualifier.resources.communications import AuthAdapterResource
 
 
 class ServiceProviderConfiguration(ImplicitDict):
@@ -73,7 +73,7 @@ class NetRIDServiceProviders(Resource[NetRIDServiceProvidersSpecification]):
     def __init__(
         self,
         specification: NetRIDServiceProvidersSpecification,
-        auth_adapter: AuthAdapter,
+        auth_adapter: AuthAdapterResource,
     ):
         self.service_providers = [
             NetRIDServiceProvider(

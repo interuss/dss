@@ -70,13 +70,15 @@ class TestScenario(ABC):
     def me(self) -> str:
         return inspection.fullname(self.__class__)
 
-    def _make_scenario_report(self) -> None:
+    def _make_scenario_report(self, information: Optional[str] = None) -> None:
         self._scenario_report = TestScenarioReport(
             name=self.documentation.name,
             documentation_url=self.documentation.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
             cases=[],
         )
+        if information is not None:
+            self._scenario_report.information = information
 
     def _expect_phase(self, expected_phase: Union[ScenarioPhase, Set[ScenarioPhase]]):
         if isinstance(expected_phase, ScenarioPhase):
@@ -88,9 +90,9 @@ class TestScenario(ABC):
                 f"Test scenario `{self.me()}` was {self._phase} when {caller} was called (expected {acceptable_phases})"
             )
 
-    def begin_test_scenario(self) -> None:
+    def begin_test_scenario(self, information: Optional[str] = None) -> None:
         self._expect_phase(ScenarioPhase.NotStarted)
-        self._make_scenario_report()
+        self._make_scenario_report(information)
         self._phase = ScenarioPhase.ReadyForTestCase
 
     def begin_test_case(self, name: str) -> None:
@@ -311,9 +313,7 @@ class TestScenarioDeclaration(ImplicitDict):
                 )
             if self.resources[arg_name] not in resource_pool:
                 raise ValueError(
-                    'Resource "{}" was not found in the resource pool when trying to create test scenario "{}" ({})'.format(
-                        self.resources[arg_name], self.name, self.type
-                    )
+                    f'Resource "{self.resources[arg_name]}" was not found in the resource pool when trying to create {self.scenario_type} test scenario'
                 )
             constructor_args[arg_name] = resource_pool[self.resources[arg_name]]
 

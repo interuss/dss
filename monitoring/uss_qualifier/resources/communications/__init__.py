@@ -1,1 +1,1 @@
-from .auth_adapter import AuthAdapter
+from .auth_adapter import AuthAdapterResource

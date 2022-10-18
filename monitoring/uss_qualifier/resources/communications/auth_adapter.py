@@ -21,7 +21,7 @@ class AuthAdapterSpecification(ImplicitDict):
     """Name of environment variable containing the auth spec.  This is the preferred method of providing the auth spec."""
 
 
-class AuthAdapter(Resource[AuthAdapterSpecification]):
+class AuthAdapterResource(Resource[AuthAdapterSpecification]):
     adapter: infrastructure.AuthAdapter
 
     def __init__(self, specification: AuthAdapterSpecification):
