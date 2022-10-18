@@ -22,7 +22,11 @@ echo '{
     "config": "dev.generate_test_data"
 }' > ${CONFIG_LOCATION}
 
-QUALIFIER_OPTIONS="--auth NA $CONFIG"
+QUALIFIER_OPTIONS="$CONFIG"
+
+REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report.json"
+# Report file must already exist to share correctly with the Docker container
+touch "${REPORT_FILE}"
 
 if [ "$CI" == "true" ]; then
   docker_args="--add-host host.docker.internal:host-gateway" # Required to reach other containers in Ubuntu (used for Github Actions)
@@ -35,6 +39,7 @@ docker run ${docker_args} --name uss_qualifier \
   --rm \
   -e QUALIFIER_OPTIONS="${QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
+  -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
   -v "$(pwd):/app" \
   -w /app/monitoring/uss_qualifier \
   interuss/monitoring \

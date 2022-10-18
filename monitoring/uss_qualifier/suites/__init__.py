@@ -1,7 +1,9 @@
-from .suite import (
+from .definitions import (
     TestSuiteDeclaration,
-    TestSuite,
     TestSuiteDefinition,
-    TestSuiteAction,
     TestSuiteActionDeclaration,
+)
+from .suite import (
+    TestSuite,
+    TestSuiteAction,
 )
