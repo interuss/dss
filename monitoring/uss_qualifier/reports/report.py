@@ -121,6 +121,9 @@ class TestScenarioReport(ImplicitDict):
     cases: List[TestCaseReport]
     """Reports for each of the test cases in this test scenario"""
 
+    cleanup: Optional[TestStepReport]
+    """If this test scenario performed cleanup, this report captures the relevant information."""
+
     execution_error: Optional[ErrorReport]
     """If there was an error while executing this test scenario, this field describes the error"""
 

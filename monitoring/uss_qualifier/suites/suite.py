@@ -89,6 +89,8 @@ class TestSuiteAction(object):
         scenario.on_failed_check = _print_failed_check
         try:
             scenario.run()
+            scenario.go_to_cleanup()
+            scenario.cleanup()
         except KeyboardInterrupt:
             raise
         except Exception as e:
