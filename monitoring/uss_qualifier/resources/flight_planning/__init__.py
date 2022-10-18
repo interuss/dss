@@ -1,1 +1,2 @@
 from .flight_planners import FlightPlannersResource
+from .flight_intents_resource import FlightIntentsResource

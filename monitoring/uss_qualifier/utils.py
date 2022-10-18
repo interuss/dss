@@ -2,7 +2,7 @@ from typing import Optional
 
 from implicitdict import ImplicitDict
 
-from monitoring.uss_qualifier.resources import ResourceCollection
+from monitoring.uss_qualifier.resources.definitions import ResourceCollection
 
 
 class USSQualifierTestConfiguration(ImplicitDict):

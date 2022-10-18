@@ -8,7 +8,7 @@ from monitoring.monitorlib import fetch, infrastructure
 from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.monitorlib.rid_automated_testing import observation_api
-from monitoring.uss_qualifier.resources import Resource
+from monitoring.uss_qualifier.resources.resource import Resource
 from monitoring.uss_qualifier.resources.communications import AuthAdapter
 
 

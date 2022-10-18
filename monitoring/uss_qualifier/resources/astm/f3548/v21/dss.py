@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 from implicitdict import ImplicitDict
 
 from monitoring.monitorlib import infrastructure
-from monitoring.uss_qualifier.resources import Resource
+from monitoring.uss_qualifier.resources.resource import Resource
 from monitoring.uss_qualifier.resources.communications import AuthAdapter
 
 

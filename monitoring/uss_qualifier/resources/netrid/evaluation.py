@@ -1,6 +1,6 @@
 from implicitdict import ImplicitDict, StringBasedTimeDelta
 
-from monitoring.uss_qualifier.resources import Resource
+from monitoring.uss_qualifier.resources.resource import Resource
 
 
 class EvaluationConfiguration(ImplicitDict):
