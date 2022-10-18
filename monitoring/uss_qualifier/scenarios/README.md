@@ -59,3 +59,12 @@ Each test case in the documentation must document at least one test step (otherw
 Each check a test step performs that may result in a finding/issue must be documented via a subsection of the parent test step, named with a " check" suffix (example: `#### Successful injection check`).
 
 A check should document the requirement(s) violated if the check fails.  Requirements are identified by putting a strong emphasis/bold style around the requirement ID (example: `**ASTM F3411-19::NET0420**`).
+
+### Cleanup phase
+
+If a test scenario wants to perform a cleanup procedure follow any non-error termination of the rest of the scenario, it must:
+
+1) Override the `cleanup()` method on the base `TestScenario` class
+2) Include a main section in the documentation named "Cleanup" that is documented like a test step (including, e.g., test checks when appropriate).
+
+The `cleanup()` method may not be overridden unless the cleanup phase is documented for that test scenario.  If the cleanup phase is documented for the test scenario, the `cleanup()` method must be overridden.

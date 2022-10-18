@@ -66,3 +66,11 @@ The timestamps of the injected telemetry usually start in the future.  If a flig
 #### Area too large check
 
 **ASTM F3411-19::NET0430** and **ASTM F3411-22a::NET0430** require that a NetRID Display Provider reject a request for a very large view area with a diagonal greater than *NetMaxDisplayAreaDiagonal*.  If such a large view is requested and a 413 error code is not received, then this check will fail.
+
+## Cleanup
+
+The cleanup phase of this test scenario attempts to remove injected data from all SPs.
+
+### Successful test deletion check
+
+Per **[injection.yaml::DeleteTestSuccess](../../../../../interfaces/automated-testing/rid/injection.yaml)**, the deletion attempt of the previously-injected test should succeed for every NetRID Service Provider under test.

@@ -11,6 +11,7 @@ from monitoring.monitorlib.inspection import fullname
 
 
 RESOURCES_HEADING = "resources"
+CLEANUP_HEADING = "cleanup"
 TEST_SCENARIO_SUFFIX = " test scenario"
 TEST_CASE_SUFFIX = " test case"
 TEST_STEP_SUFFIX = " test step"
@@ -40,6 +41,7 @@ class TestScenarioDocumentation(ImplicitDict):
     url: Optional[str] = None
     resources: Optional[List[str]]
     cases: List[TestCaseDocumentation]
+    cleanup: Optional[TestStepDocumentation]
 
 
 def _text_of(value) -> str:
@@ -89,7 +91,9 @@ def _parse_test_check(values) -> TestCheckDocumentation:
 
 
 def _parse_test_step(values) -> TestStepDocumentation:
-    name = _text_of(values[0])[0 : -len(TEST_STEP_SUFFIX)]
+    name = _text_of(values[0])
+    if name.lower().endswith(TEST_STEP_SUFFIX):
+        name = name[0 : -len(TEST_STEP_SUFFIX)]
 
     checks: List[TestCheckDocumentation] = []
     c = 1
@@ -171,25 +175,32 @@ def parse_documentation(scenario: Type) -> TestScenarioDocumentation:
     # Step through the document to extract important structured components
     test_cases: List[TestCaseDocumentation] = []
     resources = None
+    cleanup = None
     c = 1
     while c < len(doc.children):
-        if (
-            isinstance(doc.children[c], marko.block.Heading)
-            and _text_of(doc.children[c]).lower().strip() == RESOURCES_HEADING
-        ):
+        if not isinstance(doc.children[c], marko.block.Heading):
+            c += 1
+            continue
+
+        if _text_of(doc.children[c]).lower().strip() == RESOURCES_HEADING:
             # Start of the Resources section
             if resources is not None:
                 raise ValueError(
-                    'Only one major section may be titled "{}"'.format(
-                        RESOURCES_HEADING
-                    )
+                    f'Only one major section may be titled "{RESOURCES_HEADING}"'
                 )
             dc = _length_of_section(doc.children, c)
             resources = _parse_resources(doc.children[c : c + dc + 1])
             c += dc
-        if isinstance(doc.children[c], marko.block.Heading) and _text_of(
-            doc.children[c]
-        ).lower().endswith(TEST_CASE_SUFFIX):
+        elif _text_of(doc.children[c]).lower().strip() == CLEANUP_HEADING:
+            # Start of the Cleanup section
+            if cleanup is not None:
+                raise ValueError(
+                    'Only one major section may be titled "{CLEANUP_HEADING}"'
+                )
+            dc = _length_of_section(doc.children, c)
+            cleanup = _parse_test_step(doc.children[c : c + dc + 1])
+            c += dc
+        elif _text_of(doc.children[c]).lower().endswith(TEST_CASE_SUFFIX):
             # Start of a test case section
             dc = _length_of_section(doc.children, c)
             test_case = _parse_test_case(doc.children[c : c + dc + 1])
@@ -198,10 +209,13 @@ def parse_documentation(scenario: Type) -> TestScenarioDocumentation:
         else:
             c += 1
 
-    return TestScenarioDocumentation(
+    kwargs = {
         # TODO: Populate the documentation URLs
-        name=scenario_name,
-        cases=test_cases,
-        resources=resources,
-        url="",
-    )
+        "name": scenario_name,
+        "cases": test_cases,
+        "resources": resources,
+        "url": "",
+    }
+    if cleanup is not None:
+        kwargs["cleanup"] = cleanup
+    return TestScenarioDocumentation(**kwargs)

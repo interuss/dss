@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from enum import Enum
 import inspect
-from typing import Callable, Dict, List, Optional, TypeVar
+from typing import Callable, Dict, List, Optional, TypeVar, Union, Set
 
 from implicitdict import ImplicitDict, StringBasedDateTime
 
@@ -24,6 +25,17 @@ from monitoring.uss_qualifier.scenarios.documentation import (
 from monitoring.uss_qualifier.resources.definitions import ResourceTypeName
 
 
+class ScenarioPhase(str, Enum):
+    Undefined = "Undefined"
+    NotStarted = "NotStarted"
+    ReadyForTestCase = "ReadyForTestCase"
+    ReadyForTestStep = "ReadyForTestStep"
+    RunningTestStep = "RunningTestStep"
+    ReadyForCleanup = "ReadyForCleanup"
+    CleaningUp = "CleaningUp"
+    Complete = "Complete"
+
+
 class TestScenario(ABC):
     """Instance of a test scenario, ready to run after construction.
 
@@ -34,6 +46,7 @@ class TestScenario(ABC):
 
     documentation: TestScenarioDocumentation
     on_failed_check: Optional[Callable[[FailedCheck], None]] = None
+    _phase: ScenarioPhase = ScenarioPhase.Undefined
     _scenario_report: Optional[TestScenarioReport] = None
     _current_case: Optional[TestCaseDocumentation] = None
     _case_report: Optional[TestCaseReport] = None
@@ -42,12 +55,17 @@ class TestScenario(ABC):
 
     def __init__(self):
         self.documentation = parse_documentation(self.__class__)
+        self._phase = ScenarioPhase.NotStarted
 
     @abstractmethod
     def run(self):
         raise NotImplementedError(
             "A concrete test scenario must implement `run` method"
         )
+
+    def cleanup(self):
+        """Test scenarios needing to clean up after attempting to run should override this method."""
+        self.skip_cleanup()
 
     def me(self) -> str:
         return inspection.fullname(self.__class__)
@@ -60,22 +78,23 @@ class TestScenario(ABC):
             cases=[],
         )
 
-    def begin_test_scenario(self) -> None:
-        if self._scenario_report is not None:
+    def _expect_phase(self, expected_phase: Union[ScenarioPhase, Set[ScenarioPhase]]):
+        if isinstance(expected_phase, ScenarioPhase):
+            expected_phase = {expected_phase}
+        if self._phase not in expected_phase:
+            caller = inspect.stack()[1].function
+            acceptable_phases = ", ".join(expected_phase)
             raise RuntimeError(
-                f"Test scenario `{self.me()}` had already begun when begin_test_scenario was called"
+                f"Test scenario `{self.me()}` was {self._phase} when {caller} was called (expected {acceptable_phases})"
             )
+
+    def begin_test_scenario(self) -> None:
+        self._expect_phase(ScenarioPhase.NotStarted)
         self._make_scenario_report()
+        self._phase = ScenarioPhase.ReadyForTestCase
 
     def begin_test_case(self, name: str) -> None:
-        if self._scenario_report is None:
-            raise RuntimeError(
-                f"Test scenario `{self.me()}` had not yet begun when begin_test_case was called"
-            )
-        if self._case_report is not None:
-            raise RuntimeError(
-                f'Test case "{name}" had already begun when begin_test_case was called in test scenario `{self.me()}`'
-            )
+        self._expect_phase(ScenarioPhase.ReadyForTestCase)
         available_cases = {c.name: c for c in self.documentation.cases}
         if name not in available_cases:
             case_list = ", ".join(available_cases)
@@ -94,16 +113,10 @@ class TestScenario(ABC):
             steps=[],
         )
         self._scenario_report.cases.append(self._case_report)
+        self._phase = ScenarioPhase.ReadyForTestStep
 
     def begin_test_step(self, name: str) -> None:
-        if self._scenario_report is None:
-            raise RuntimeError(
-                f"Test scenario `{self.me()}` had not yet begun when begin_test_step was called"
-            )
-        if self._case_report is None:
-            raise RuntimeError(
-                f"Test case for test scenario `{self.me()}` had not yet begun when begin_test_step was called"
-            )
+        self._expect_phase(ScenarioPhase.ReadyForTestStep)
         available_steps = {c.name: c for c in self._current_case.steps}
         if name not in available_steps:
             step_list = ", ".join(available_steps)
@@ -118,20 +131,10 @@ class TestScenario(ABC):
             failed_checks=[],
         )
         self._case_report.steps.append(self._step_report)
+        self._phase = ScenarioPhase.RunningTestStep
 
     def record_query(self, query: fetch.Query) -> None:
-        if self._scenario_report is None:
-            raise RuntimeError(
-                f"Test scenario `{self.me()}` had not yet begun when record_query was called"
-            )
-        if self._case_report is None:
-            raise RuntimeError(
-                f"Test case for test scenario `{self.me()}` had not yet begun when record_query was called"
-            )
-        if self._step_report is None:
-            raise RuntimeError(
-                f"Test step for test case {self._current_case.name} for test scenario `{self.me()}` had not yet begun when record_query was called"
-            )
+        self._expect_phase({ScenarioPhase.RunningTestStep, ScenarioPhase.CleaningUp})
         if "queries" not in self._step_report:
             self._step_report.queries = []
         self._step_report.queries.append(query)
@@ -146,18 +149,7 @@ class TestScenario(ABC):
         query_timestamps: Optional[List[datetime]] = None,
         additional_data: Optional[dict] = None,
     ) -> None:
-        if self._scenario_report is None:
-            raise RuntimeError(
-                f"Test scenario `{self.me()}` had not yet begun when record_failed_check was called"
-            )
-        if self._case_report is None:
-            raise RuntimeError(
-                f"Test case for test scenario `{self.me()}` had not yet begun when record_failed_check was called"
-            )
-        if self._step_report is None:
-            raise RuntimeError(
-                f"Test step for test case {self._current_case.name} for test scenario `{self.me()}` had not yet begun when record_failed_check was called"
-            )
+        self._expect_phase({ScenarioPhase.RunningTestStep, ScenarioPhase.CleaningUp})
         available_checks = {c.name: c for c in self._current_step.checks}
         if name not in available_checks:
             check_list = ", ".join(available_checks)
@@ -188,90 +180,97 @@ class TestScenario(ABC):
             self.on_failed_check(failed_check)
 
     def end_test_step(self) -> None:
-        if self._scenario_report is None:
-            raise RuntimeError(
-                f"Test scenario `{self.me()}` had not yet begun when end_test_step was called"
-            )
-        if self._case_report is None:
-            raise RuntimeError(
-                f"Test case for test scenario `{self.me()}` had not yet begun when end_test_step was called"
-            )
-        if self._step_report is None:
-            raise RuntimeError(
-                f"Test step for test case {self._current_case.name} for test scenario `{self.me()}` had not yet begun when end_test_step was called"
-            )
+        self._expect_phase(ScenarioPhase.RunningTestStep)
         self._step_report.end_time = StringBasedDateTime(datetime.utcnow())
         self._current_step = None
         self._step_report = None
+        self._phase = ScenarioPhase.ReadyForTestStep
 
     def end_test_case(self) -> None:
-        if self._step_report is not None:
-            raise RuntimeError(
-                f'Test step "{self._current_step.name}" in test case "{self._current_case.name}" in test scenario `{self.me()}` had not ended when end_test_case was called'
-            )
-        if self._scenario_report is None:
-            raise RuntimeError(
-                f"Test scenario `{self.me()}` had not yet begun when end_test_case was called"
-            )
-        if self._case_report is None:
-            raise RuntimeError(
-                f"There was no active test case when end_test_case was called in test scenario `{self.me()}`"
-            )
+        self._expect_phase(ScenarioPhase.ReadyForTestStep)
         self._case_report.end_time = StringBasedDateTime(datetime.utcnow())
         self._current_case = None
         self._case_report = None
+        self._phase = ScenarioPhase.ReadyForTestCase
 
     def end_test_scenario(self) -> None:
-        if self._case_report is not None:
+        self._expect_phase(ScenarioPhase.ReadyForTestCase)
+        self._scenario_report.end_time = StringBasedDateTime(datetime.utcnow())
+        self._phase = ScenarioPhase.ReadyForCleanup
+
+    def go_to_cleanup(self) -> None:
+        self._expect_phase(
+            {
+                ScenarioPhase.ReadyForTestCase,
+                ScenarioPhase.ReadyForTestStep,
+                ScenarioPhase.RunningTestStep,
+                ScenarioPhase.ReadyForCleanup,
+            }
+        )
+        self._phase = ScenarioPhase.ReadyForCleanup
+
+    def begin_cleanup(self) -> None:
+        self._expect_phase(ScenarioPhase.ReadyForCleanup)
+        if "cleanup" not in self.documentation or self.documentation.cleanup is None:
             raise RuntimeError(
-                f'Test case "{self._current_case.name}" in test scenario `{self.me()}` had not ended when end_test_scenario was called'
+                f"Test scenario `{self.me()}` attempted to begin_cleanup, but no cleanup step is documented"
+            )
+        self._current_step = self.documentation.cleanup
+        self._step_report = TestStepReport(
+            name=self._current_step.name,
+            documentation_url=self._current_step.url,
+            start_time=StringBasedDateTime(datetime.utcnow()),
+            failed_checks=[],
+        )
+        self._scenario_report.cleanup = self._step_report
+        self._phase = ScenarioPhase.CleaningUp
+
+    def skip_cleanup(self) -> None:
+        self._expect_phase(ScenarioPhase.ReadyForCleanup)
+        if "cleanup" in self.documentation and self.documentation.cleanup is not None:
+            raise RuntimeError(
+                f"Test scenario `{self.me()}` skipped cleanup even though a cleanup step is documented"
+            )
+        self._phase = ScenarioPhase.Complete
+
+    def end_cleanup(self) -> None:
+        self._expect_phase(ScenarioPhase.CleaningUp)
+        self._phase = ScenarioPhase.Complete
+
+    def record_execution_error(self, e: Exception) -> None:
+        if self._phase == ScenarioPhase.Complete:
+            raise RuntimeError(
+                f"Test scenario `{self.me()}` indicated an execution error even though it was already Complete"
             )
         if self._scenario_report is None:
-            raise RuntimeError(
-                f"Test scenario `{self.me()}` had not yet begun when end_test_scenario was called"
-            )
-        if "end_time" in self._scenario_report:
-            raise RuntimeError(
-                f"Test scenario `{self.me()}` had already ended when end_test_scenario was called"
-            )
-        self._scenario_report.end_time = StringBasedDateTime(datetime.utcnow())
-        self._scenario_report.successful = True
+            self._make_scenario_report()
+        self._scenario_report.execution_error = ErrorReport.create_from_exception(e)
+        self._scenario_report.successful = False
+        self._phase = ScenarioPhase.Complete
 
-        # Look to see if any issues were found
+    def get_report(self) -> TestScenarioReport:
+        if self._scenario_report is None:
+            self._make_scenario_report()
+        if "execution_error" not in self._scenario_report:
+            try:
+                self._expect_phase(ScenarioPhase.Complete)
+            except RuntimeError as e:
+                self.record_execution_error(e)
+
+        # Evaluate success
+        self._scenario_report.successful = (
+            "execution_error" not in self._scenario_report
+        )
         for case_report in self._scenario_report.cases:
             for step_report in case_report.steps:
                 for failed_check in step_report.failed_checks:
                     if failed_check.severity != Severity.Low:
                         self._scenario_report.successful = False
+        if "cleanup" in self._scenario_report:
+            for failed_check in self._scenario_report.cleanup.failed_checks:
+                if failed_check.severity != Severity.Low:
+                    self._scenario_report.successful = False
 
-    def record_execution_error(self, e: Exception) -> None:
-        if self._scenario_report is None:
-            self._make_scenario_report()
-        self._scenario_report.execution_error = ErrorReport.create_from_exception(e)
-        self._scenario_report.successful = False
-
-    def get_report(self) -> TestScenarioReport:
-        if self._scenario_report is None:
-            scenario_not_started = True
-            self._make_scenario_report()
-        else:
-            scenario_not_started = False
-        if "execution_error" not in self._scenario_report:
-            try:
-                if scenario_not_started:
-                    raise RuntimeError(
-                        f"Report was requested for test scenario {self.me()}, but it had not even been started"
-                    )
-                if self._step_report is not None:
-                    raise RuntimeError(
-                        f"Test step {self._current_step.name} in test case {self._current_case.name} for test scenario {self.me()} did not complete"
-                    )
-                if self._case_report is not None:
-                    raise RuntimeError(
-                        f'Test case "{self._current_case.name}" for test scenario {self.me()} did not complete'
-                    )
-            except RuntimeError as e:
-                self.record_execution_error(e)
         return self._scenario_report
 
 

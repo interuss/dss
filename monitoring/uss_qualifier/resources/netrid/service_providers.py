@@ -57,6 +57,15 @@ class NetRIDServiceProvider(object):
         )
         return fetch.describe_query(response, initiated_at)
 
+    def delete_test(self, test_id: str) -> fetch.Query:
+        deletion_path = "/tests/{}".format(test_id)
+
+        initiated_at = datetime.datetime.utcnow()
+        response = self.client.delete(
+            url=deletion_path, scope=SCOPE_RID_QUALIFIER_INJECT
+        )
+        return fetch.describe_query(response, initiated_at)
+
 
 class NetRIDServiceProviders(Resource[NetRIDServiceProvidersSpecification]):
     service_providers: List[NetRIDServiceProvider]
