@@ -14,3 +14,6 @@ def geoawareness_status():
     return StatusResponse(
         status=HarnessStatus.Ready, version=versioning.get_code_version()
     )
+
+
+from . import routes_geoawareness

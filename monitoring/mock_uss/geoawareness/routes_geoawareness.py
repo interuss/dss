@@ -12,16 +12,6 @@ from monitoring.mock_uss.geoawareness.geozone_sources import (
 from monitoring.monitorlib.geoawareness_automated_testing import api as geoawareness_api
 
 
-def _request_body() -> geoawareness_api.GeozoneSourceDefinition:
-    json = flask.request.json
-    if json is None:
-        raise ValueError("Request did not contain a JSON payload")
-    req_body: geoawareness_api.GeozoneSourceDefinition = ImplicitDict.parse(
-        json, geoawareness_api.GeozoneSourceDefinition
-    )
-    return req_body
-
-
 @webapp.route(
     "/geoawareness/geozone_sources/<geozone_source_id>",
     methods=["GET"],
@@ -38,7 +28,12 @@ def get_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
 @requires_scope([geoawareness_api.SCOPE_GEOAWARENESS_TEST])
 def put_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     try:
-        body = _request_body()
+        json = flask.request.json
+        if json is None:
+            raise ValueError("Request did not contain a JSON payload")
+        body: geoawareness_api.GeozoneSourceDefinition = ImplicitDict.parse(
+            json, geoawareness_api.GeozoneSourceDefinition
+        )
     except ValueError as e:
         msg = "Create geozone source {} unable to parse JSON: {}".format(
             geozone_source_id, e
