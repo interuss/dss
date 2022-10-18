@@ -1,10 +1,8 @@
 import json
-from typing import Dict, Any, Optional
-from uuid import UUID
+from typing import Dict, Optional
 
 from implicitdict import ImplicitDict
 from monitoring.mock_uss.geoawareness.parsers.ed269 import ED269Schema
-
 from monitoring.monitorlib.geoawareness_automated_testing.api import (
     GeozoneSourceState,
     GeozoneSourceDefinition,
@@ -46,7 +44,8 @@ class Database(ImplicitDict):
             tx.sources[id] = SourceRecord(
                 definition=definition, state=state, message=message
             )
-        return db.value.sources[id]
+            result = tx.sources[id]
+        return result
 
     @staticmethod
     def update_source_state(
@@ -58,7 +57,8 @@ class Database(ImplicitDict):
         with db as tx:
             tx.sources[id]["state"] = state
             tx.sources[id]["message"] = message
-        return db.value.sources[id]
+            result = tx.sources[id]
+        return result
 
     @staticmethod
     def update_source_geozone_ed269(
@@ -66,7 +66,8 @@ class Database(ImplicitDict):
     ):
         with db as tx:
             tx.sources[id]["geozone_ed269"] = geozone
-        return db.value.sources[id]
+            result = tx.sources[id]
+        return result
 
     @staticmethod
     def delete_source(db: SynchronizedValue, id: str):

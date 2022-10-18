@@ -1,12 +1,12 @@
 import flask
 import requests
-from flask import json
+
 from monitoring.mock_uss.geoawareness.database import (
     db,
     ExistingRecordException,
     Database,
 )
-from monitoring.mock_uss.geoawareness.parsers import ed269
+from monitoring.mock_uss.geoawareness.parsers.ed269 import ED269Schema
 from monitoring.monitorlib.geoawareness_automated_testing import api as geoawareness_api
 from monitoring.monitorlib.geoawareness_automated_testing.api import (
     GeozoneSourceResponse,
@@ -43,7 +43,7 @@ def create_geozone_source(
         try:
             raw_data = requests.get(source.definition.https_source.url).json()
             if source.definition.https_source.format == HttpsSourceFormat.Ed269:
-                geozones = ed269.parse(raw_data)
+                geozones = ED269Schema.from_dict(raw_data)
                 Database.update_source_geozone_ed269(db, id, geozones)
                 source = Database.update_source_state(db, id, GeozoneSourceState.Ready)
         except ValueError as e:

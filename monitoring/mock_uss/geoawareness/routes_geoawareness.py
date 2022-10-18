@@ -12,37 +12,46 @@ from monitoring.mock_uss.geoawareness.geozone_sources import (
 from monitoring.monitorlib.geoawareness_automated_testing import api as geoawareness_api
 
 
+def _request_body() -> geoawareness_api.GeozoneSourceDefinition:
+    json = flask.request.json
+    if json is None:
+        raise ValueError("Request did not contain a JSON payload")
+    req_body: geoawareness_api.GeozoneSourceDefinition = ImplicitDict.parse(
+        json, geoawareness_api.GeozoneSourceDefinition
+    )
+    return req_body
+
+
 @webapp.route(
     "/geoawareness/geozone_sources/<geozone_source_id>",
-    methods=["GET", "PUT", "DELETE"],
+    methods=["GET"],
 )
 @requires_scope([geoawareness_api.SCOPE_GEOAWARENESS_TEST])
-def geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
-    def _request_body() -> geoawareness_api.GeozoneSourceDefinition:
-        json = flask.request.json
-        if json is None:
-            raise ValueError("Request did not contain a JSON payload")
-        req_body: geoawareness_api.GeozoneSourceDefinition = ImplicitDict.parse(
-            json, geoawareness_api.GeozoneSourceDefinition
+def get_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
+    return get_geozone_source(geozone_source_id)
+
+
+@webapp.route(
+    "/geoawareness/geozone_sources/<geozone_source_id>",
+    methods=["PUT"],
+)
+@requires_scope([geoawareness_api.SCOPE_GEOAWARENESS_TEST])
+def put_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
+    try:
+        body = _request_body()
+    except ValueError as e:
+        msg = "Create geozone source {} unable to parse JSON: {}".format(
+            geozone_source_id, e
         )
-        return req_body
+        return msg, 400
 
-    if flask.request.method == "GET":
-        return get_geozone_source(geozone_source_id)
+    return create_geozone_source(geozone_source_id, body)
 
-    elif flask.request.method == "PUT":
-        try:
-            body = _request_body()
-        except ValueError as e:
-            msg = "Create geozone source {} unable to parse JSON: {}".format(
-                geozone_source_id, e
-            )
-            return msg, 400
 
-        return create_geozone_source(geozone_source_id, body)
-
-    elif flask.request.method == "DELETE":
-        return delete_geozone_source(geozone_source_id)
-
-    else:
-        return "Unsupported Method", 405
+@webapp.route(
+    "/geoawareness/geozone_sources/<geozone_source_id>",
+    methods=["DELETE"],
+)
+@requires_scope([geoawareness_api.SCOPE_GEOAWARENESS_TEST])
+def delete_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
+    return delete_geozone_source(geozone_source_id)

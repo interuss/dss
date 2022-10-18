@@ -1,7 +1,6 @@
 from monitoring.mock_uss import webapp
 from monitoring.monitorlib.geoawareness_automated_testing.api import (
     StatusResponse,
-    HarnessStatus,
     SCOPE_GEOAWARENESS_TEST,
     HarnessStatus,
 )
@@ -17,4 +16,3 @@ def geoawareness_status():
     )
 
 
-from . import routes_geoawareness

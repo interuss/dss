@@ -1,7 +1,7 @@
-import json
 from enum import Enum
-from typing import List, Any, Optional, Union, Dict, Tuple
-from implicitdict import ImplicitDict, StringBasedDateTime, StringBasedTimeDelta
+from typing import List, Any, Optional, Dict
+
+from implicitdict import ImplicitDict, StringBasedDateTime
 
 
 class Restriction(str, Enum):
@@ -50,37 +50,16 @@ class VerticalReferenceType(str, Enum):
     AMSL = "AMSL"
 
 
-# TODO: Discuss with @ben about Union[PolygonType, CircleType] which throws a not implemented exception
-#  in implicitdict.
-#
-# class PolygonType(ImplicitDict):
-#     type: str = "Polygon"
-#     coordinates: List[ # min 4 items
-#         List[ # 2 items
-#             float
-#         ]
-#     ]
-#
-#
-# class CircleType(ImplicitDict):
-#     type: str = "Circle"
-#     center: List[float] # 2 items
-#     radius: float # > 0
-
-# Start workaround
-class UniversalHorizontalProjectionType(str, Enum):
+class HorizontalProjectionType(str, Enum):
     Circle = "Circle"
     Polygon = "Polygon"
 
 
-class UniversalHorizontalProjection(ImplicitDict):
-    type: str
+class CircleOrPolygonType(ImplicitDict):
+    type: HorizontalProjectionType
     center: Optional[List[float]]  # 2 items
     radius: Optional[float]  # > 0
     coordinates: Optional[List[List[float]]]  # min 4 items  # 2 items
-
-
-# End workaround
 
 
 class UomDimensions(str, Enum):
@@ -94,7 +73,7 @@ class UASZoneAirspaceVolume(ImplicitDict):
     lowerVerticalReference: VerticalReferenceType
     upperLimit: Optional[int]
     upperVerticalReference: VerticalReferenceType
-    horizontalProjection: UniversalHorizontalProjection  # TODO: Implement Union[PolygonType, CircleType] in implicitdict
+    horizontalProjection: CircleOrPolygonType
 
 
 class WeekDateType(str, Enum):
@@ -146,6 +125,6 @@ class ED269Schema(ImplicitDict):
     description: Optional[str]
     features: List[UASZoneVersion]
 
-
-def parse(raw_data: Dict) -> ED269Schema:
-    return ImplicitDict.parse(raw_data, ED269Schema)
+    @staticmethod
+    def from_dict(raw_data: Dict) -> 'ED269Schema':
+        return ImplicitDict.parse(raw_data, ED269Schema)

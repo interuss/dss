@@ -1,6 +1,6 @@
 import json
 import os
-from monitoring.mock_uss.geoawareness.parsers.ed269 import parse
+from monitoring.mock_uss.geoawareness.parsers.ed269 import ED269Schema
 
 
 def test_sample():
@@ -9,4 +9,4 @@ def test_sample():
     ) as f:
         data = json.load(f)
 
-    parse(data)
+    ED269Schema.from_dict(data)
