@@ -14,5 +14,3 @@ def geoawareness_status():
     return StatusResponse(
         status=HarnessStatus.Ready, version=versioning.get_code_version()
     )
-
-

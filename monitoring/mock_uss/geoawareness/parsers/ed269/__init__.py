@@ -126,5 +126,5 @@ class ED269Schema(ImplicitDict):
     features: List[UASZoneVersion]
 
     @staticmethod
-    def from_dict(raw_data: Dict) -> 'ED269Schema':
+    def from_dict(raw_data: Dict) -> "ED269Schema":
         return ImplicitDict.parse(raw_data, ED269Schema)
