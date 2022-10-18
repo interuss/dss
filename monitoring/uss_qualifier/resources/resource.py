@@ -50,10 +50,12 @@ def create_resources(
             if name in resource_pool:
                 continue
             unmet_dependencies = sum(
-                1 if d in resource_pool else 0 for d in declaration.dependencies
+                0 if d in resource_pool else 1
+                for d in declaration.dependencies.values()
             )
             if unmet_dependencies == 0:
                 resource_pool[name] = _make_resource(declaration, resource_pool)
+                resources_created += 1
 
     if len(resource_pool) != len(resource_declarations):
         uncreated_resources = [
