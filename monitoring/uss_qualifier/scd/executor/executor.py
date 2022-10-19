@@ -30,8 +30,6 @@ def load_scd_test_definitions(
 
     # TODO: Replace hardcoded "nominal_intent" string when making this into a TestScenario
     nominal_intent = resources["nominal_intent"].get_flight_intents()
-    # TODO: Replace hardcoded "conflicting_flights" string when making this into a TestScenario
-    conflicting_flights = resources["conflicting_flights"].get_flight_intents()
     # TODO: Replace hardcoded "priority_preemption" string when making this into a TestScenario
     priority_preemption = resources["priority_preemption"].get_flight_intents()
     reference_time = StringBasedDateTime(arrow.utcnow().datetime)
@@ -41,11 +39,6 @@ def load_scd_test_definitions(
             "u-space/flight-authorisation-validation-1",
             "test_data/che/flight_planning/flight-authorisation-validation-1.json",
             nominal_intent,
-        ),
-        (
-            "astm-strategic-coordination/nominal-planning-1",
-            "test_data/che/flight_planning/nominal-planning-1.json",
-            conflicting_flights,
         ),
         (
             "astm-strategic-coordination/nominal-planning-priority-1",
