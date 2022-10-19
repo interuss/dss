@@ -34,14 +34,14 @@ UPLOAD_CA_KEY=true
 # Delete previous secrets in case they have changed.
 kubectl create namespace "$NAMESPACE"  --context "$CONTEXT" || true
 
-kubectl delete secret cockroachdb.client.root --context "$CONTEXT" || true
+kubectl delete secret cockroachdb.client.root --namespace default --context "$CONTEXT" || true
 kubectl delete secret cockroachdb.client.root --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 kubectl delete secret cockroachdb.node --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 kubectl delete secret cockroachdb.ca.crt --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 kubectl delete secret cockroachdb.ca.key --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 kubectl delete secret dss.public.certs --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 
-kubectl create secret generic cockroachdb.client.root --from-file "$CLIENTS_CERTS_DIR"  --context "$CONTEXT"
+kubectl create secret generic cockroachdb.client.root --namespace default --from-file "$CLIENTS_CERTS_DIR"  --context "$CONTEXT"
 if [[ $NAMESPACE != "default" ]]; then
   kubectl create secret generic cockroachdb.client.root --namespace "$NAMESPACE" --from-file "$CLIENTS_CERTS_DIR"  --context "$CONTEXT"
 fi
