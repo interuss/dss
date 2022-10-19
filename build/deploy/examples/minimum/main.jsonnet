@@ -16,6 +16,7 @@ local metadata = metadataBase {
     nodeIPs: ['VAR_CRDB_NODE_IP1', 'VAR_CRDB_NODE_IP2', 'VAR_CRDB_NODE_IP3'],
     shouldInit: false, // <-- This boolean value is VAR_SHOULD_INIT
     JoinExisting: ['VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1' ],
+    storageClass: 'VAR_CRDB_STORAGE_CLASS',
   },
   gateway+: {
     ipName: 'VAR_INGRESS_NAME',

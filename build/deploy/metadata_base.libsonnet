@@ -17,6 +17,7 @@
     image: 'cockroachdb/cockroach:v21.2.7',
     nodeIPs: error 'must supply the per-node ip addresses as an array',
     JoinExisting: [],
+    storageClass: 'standard',
   },
   PSP: {
     roleRef: '',
