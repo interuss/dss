@@ -1,0 +1,46 @@
+name: Local tests
+resources:
+  adjacent_circular_flights_data: netrid.FlightDataResource
+  adjacent_circular_storage_config: netrid.FlightDataStorageResource
+  kml_flights_data: netrid.FlightDataResource
+  kml_storage_config: netrid.FlightDataStorageResource
+  service_providers: netrid.NetRIDServiceProviders
+  observers: netrid.NetRIDObserversResource
+  evaluation_configuration: netrid.EvaluationConfigurationResource
+actions:
+- test_scenario:
+    scenario_type: astm.netrid.StoreFlightData
+    resources:
+      flights_data: adjacent_circular_flights_data
+      storage_configuration: adjacent_circular_storage_config
+  on_failure: Continue
+- test_scenario:
+    scenario_type: astm.netrid.StoreFlightData
+    resources:
+      flights_data: kml_flights_data
+      storage_configuration: kml_storage_config
+  on_failure: Continue
+- action_generator:
+    generator_type: flight_planning.FlightPlannerCombinations
+    specification:
+      action_to_repeat:
+        test_scenario:
+          scenario_type: flight_planning.RecordPlanners
+          resources:
+            flight_planners: flight_planners
+        on_failure: Continue
+      flight_planners_source: flight_planners
+      roles: 2
+      resources:
+        flight_planners: flight_planners
+    resources:
+      flight_planners: flight_planners
+  on_failure: Continue
+- test_suite:
+    suite_type: astm.netrid.f3411_19
+    resources:
+      flights_data: adjacent_circular_flights_data
+      service_providers: service_providers
+      observers: observers
+      evaluation_configuration: evaluation_configuration
+  on_failure: Continue

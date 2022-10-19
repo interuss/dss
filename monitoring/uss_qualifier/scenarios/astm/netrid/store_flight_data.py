@@ -25,7 +25,17 @@ class StoreFlightData(TestScenario):
         self._storage_config = storage_configuration
 
     def run(self):
-        self.begin_test_scenario()
+        information = [f"{len(self._flights_data.flight_collection.flights)} flights"]
+        cfg = self._storage_config.storage_configuration
+        if "flight_record_collection_path" in cfg:
+            information.append(
+                f"Storing FlightRecordCollection to {os.path.abspath(cfg.flight_record_collection_path)}"
+            )
+        if "geojson_tracks_path" in cfg:
+            information.append(
+                f"Storing GeoJSON tracks to {os.path.abspath(cfg.geojson_tracks_path)}"
+            )
+        self.begin_test_scenario("\n".join(information))
         self.begin_test_case("Store flight data")
         self.begin_test_step("Store flight data")
 

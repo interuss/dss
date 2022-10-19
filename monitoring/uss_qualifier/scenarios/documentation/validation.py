@@ -30,14 +30,3 @@ def validate(test_scenarios: List[TestScenarioType]):
                 raise ValueError(
                     f"Documentation for test scenario {fullname(test_scenario)} specifies a resource named {documented_resource}, but this resource is not declared as a resource in the constructor"
                 )
-
-        # Verify minimal content
-        if not docs.cases:
-            raise ValueError(
-                f"Documentation for test scenario {fullname(test_scenario)} does not specify any test cases"
-            )
-        for test_case in docs.cases:
-            if not test_case.steps:
-                raise ValueError(
-                    f'Documentation for test case "{test_case.name}" in test scenario {fullname(test_scenario)} does not specify any test steps'
-                )

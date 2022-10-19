@@ -9,7 +9,7 @@ from monitoring.monitorlib.infrastructure import UTMClientSession
 from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.monitorlib.rid_automated_testing import observation_api
 from monitoring.uss_qualifier.resources.resource import Resource
-from monitoring.uss_qualifier.resources.communications import AuthAdapter
+from monitoring.uss_qualifier.resources.communications import AuthAdapterResource
 
 
 class RIDSystemObserver(object):
@@ -83,7 +83,7 @@ class NetRIDObserversResource(Resource[NetRIDObserversSpecification]):
     def __init__(
         self,
         specification: NetRIDObserversSpecification,
-        auth_adapter: AuthAdapter,
+        auth_adapter: AuthAdapterResource,
     ):
         self.observers = [
             RIDSystemObserver(

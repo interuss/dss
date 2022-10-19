@@ -68,9 +68,9 @@ for container_name in "${containers[@]}"; do
     done
 done
 
-echo "Run the RID qualifier."
+echo "Run the standard local tests."
 echo "============="
-monitoring/uss_qualifier/run_locally_rid.sh
+monitoring/uss_qualifier/run_locally.sh
 echo "Run the SCD qualifier."
 echo "============="
 monitoring/uss_qualifier/run_locally_scd.sh

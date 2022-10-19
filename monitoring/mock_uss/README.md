@@ -12,4 +12,4 @@ An entire remote ID ecosystem (as described in the diagram above) can be deploye
 1. Deploy DSS instance, including Dummy OAuth server: from `build/dev`, run `./run_locally.sh`
 1. Deploy mock RID Service Provider: from this folder, run `./run_locally_ridsp.sh`
 1. Deploy mock RID Display Provider: from this folder, run `./run_locally_riddp.sh`
-1. Run `uss_qualifier` configured to test this system: from `monitoring/uss_qualifier`, run `./run_locally_rid.sh`
+1. Run `uss_qualifier` configured to test this system: from `monitoring/uss_qualifier`, run `./run_locally.sh`

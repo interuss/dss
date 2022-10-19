@@ -4,7 +4,7 @@ from implicitdict import ImplicitDict
 
 from monitoring.monitorlib import infrastructure
 from monitoring.uss_qualifier.resources.resource import Resource
-from monitoring.uss_qualifier.resources.communications import AuthAdapter
+from monitoring.uss_qualifier.resources.communications import AuthAdapterResource
 
 
 class DSSInstanceSpecification(ImplicitDict):
@@ -43,7 +43,7 @@ class DSSInstanceResource(Resource[DSSInstanceSpecification]):
     def __init__(
         self,
         specification: DSSInstanceSpecification,
-        auth_adapter: AuthAdapter,
+        auth_adapter: AuthAdapterResource,
     ):
         self.dss = DSSInstance(
             specification.participant_id, specification.base_url, auth_adapter.adapter

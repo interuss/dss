@@ -6,6 +6,7 @@ from pyproj import Geod, Transformer, Proj
 import shapely.geometry
 from shapely.geometry import Point, Polygon
 
+from implicitdict import ImplicitDict
 from monitoring.monitorlib.rid import (
     RIDHeight,
     RIDAircraftState,
@@ -25,6 +26,10 @@ from .utils import (
     FlightPoint,
     GridCellFlight,
 )
+
+
+REFERENCE_TIME = arrow.get("2022-10-01T12:00:00Z")
+"""Flight data is generated relative to this reference time"""
 
 
 class AdjacentCircularFlightsSimulator:
@@ -85,7 +90,7 @@ class AdjacentCircularFlightsSimulator:
         transformed_x, transformed_y = transformer.transform(center.x, center.y)
         pt = Point(transformed_x, transformed_y)
         # Now we have a point, we can buffer the point and create bounding boxes of the buffer to get the appropriate polygons, more than three boxes can be created, for the tests three will suffice.
-        now = datetime.now()
+        now = REFERENCE_TIME.datetime
 
         box_diagonals = [
             {
@@ -278,7 +283,7 @@ class AdjacentCircularFlightsSimulator:
         # Get the number of flights
         num_flights = len(self.grid_cells_flight_tracks)
         time_increment_seconds = 1  # the number of seconds it takes to go from one point to next on the track
-        now = arrow.now()
+        now = REFERENCE_TIME
         now_isoformat = now.isoformat()
         for i in range(num_flights):
             flight_positions_len = len(self.grid_cells_flight_tracks[i].track)
@@ -366,4 +371,7 @@ def generate_aircraft_states(
     my_path_generator.generate_rid_state(duration=30)
     flights = my_path_generator.flights
 
-    return FlightRecordCollection(flights=flights)
+    result = FlightRecordCollection(flights=flights)
+
+    # Fix type errors (TODO: fix these at the source rather than here)
+    return ImplicitDict.parse(result, FlightRecordCollection)

@@ -29,7 +29,7 @@ echo '{
     "resources": {
         "resource_declarations": {
           "utm_auth": {
-            "resource_type": "communications.AuthAdapter",
+            "resource_type": "communications.AuthAdapterResource",
             "specification": {
               "environment_variable_containing_auth_spec": "AUTH_SPEC"
             }

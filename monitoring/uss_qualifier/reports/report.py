@@ -109,6 +109,9 @@ class TestScenarioReport(ImplicitDict):
     documentation_url: str
     """URL at which this test scenario is described"""
 
+    information: Optional[str]
+    """Additional information about this scenario that may be useful"""
+
     start_time: StringBasedDateTime
     """Time at which the test scenario started"""
 
