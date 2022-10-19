@@ -1,21 +1,28 @@
-from typing import Dict, Tuple
+import uuid
+from typing import Dict, Tuple, List, Optional
 from urllib.parse import urlparse
 
 from implicitdict import ImplicitDict
 
 from monitoring.monitorlib import infrastructure, fetch
 from monitoring.monitorlib.clients.scd_automated_testing import (
+    clear_area,
     create_flight,
     delete_flight,
     QueryError,
     get_version,
     get_capabilities,
 )
+from monitoring.monitorlib.scd import Volume4D
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightResult,
     DeleteFlightResult,
     InjectFlightResponse,
     DeleteFlightResponse,
+    InjectFlightRequest,
+    Capability,
+    ClearAreaResponse,
+    ClearAreaRequest,
 )
 from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
     FlightInjectionAttempt,
@@ -37,6 +44,13 @@ class FlightPlannerConfiguration(ImplicitDict):
             raise ValueError(
                 "FlightPlannerConfiguration.injection_base_url must be a URL"
             )
+
+
+class FlightPlannerInformation(ImplicitDict):
+    version: str
+    capabilities: List[Capability]
+    version_query: fetch.Query
+    capabilities_query: fetch.Query
 
 
 class TestTarget:
@@ -66,17 +80,33 @@ class TestTarget:
     def name(self) -> str:
         return self.config.participant_id
 
+    @property
+    def participant_id(self):
+        return self.config.participant_id
+
     def inject_flight(
         self, flight_request: FlightInjectionAttempt
     ) -> Tuple[InjectFlightResponse, fetch.Query, str]:
+        return self.request_flight(flight_request.test_injection, flight_request.name)
+
+    def request_flight(
+        self, request: InjectFlightRequest, flight_name: Optional[str] = None
+    ) -> Tuple[InjectFlightResponse, fetch.Query, str]:
         flight_id, resp, query = create_flight(
-            self.client, self.config.injection_base_url, flight_request.test_injection
+            self.client, self.config.injection_base_url, request
         )
+        if flight_name is None:
+            flight_name = flight_id
 
         if resp.result == InjectFlightResult.Planned:
-            self.created_flight_ids[flight_request.name] = flight_id
+            self.created_flight_ids[flight_name] = flight_id
 
         return resp, query, flight_id
+
+    def cleanup_flight(
+        self, flight_id: str
+    ) -> Tuple[DeleteFlightResponse, fetch.Query]:
+        return delete_flight(self.client, self.config.injection_base_url, flight_id)
 
     def delete_flight(
         self, flight_name: str
@@ -109,9 +139,20 @@ class TestTarget:
     def is_managing_flight(self, flight_name: str) -> bool:
         return flight_name in self.created_flight_ids.keys()
 
-    def get_target_information(self):
-        resp, _ = get_version(self.client, self.config.injection_base_url)
+    def get_target_information(self) -> FlightPlannerInformation:
+        resp, version_query = get_version(self.client, self.config.injection_base_url)
         version = resp.version if resp.version is not None else "Unknown"
-        resp, _ = get_capabilities(self.client, self.config.injection_base_url)
+        resp, capabilities_query = get_capabilities(
+            self.client, self.config.injection_base_url
+        )
 
-        return {"version": version, "capabilities": resp.capabilities}
+        return FlightPlannerInformation(
+            version=version,
+            capabilities=resp.capabilities,
+            version_query=version_query,
+            capabilities_query=capabilities_query,
+        )
+
+    def clear_area(self, extent: Volume4D) -> Tuple[ClearAreaResponse, fetch.Query]:
+        req = ClearAreaRequest(request_id=str(uuid.uuid4()), extent=extent)
+        return clear_area(self.client, self.config.injection_base_url, req)

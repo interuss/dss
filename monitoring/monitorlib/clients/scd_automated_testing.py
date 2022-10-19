@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, Optional
 import requests
 from monitoring.monitorlib import fetch
 
@@ -15,6 +15,8 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     DeleteFlightResult,
     CapabilitiesResponse,
     StatusResponse,
+    ClearAreaRequest,
+    ClearAreaResponse,
 )
 from implicitdict import ImplicitDict
 
@@ -111,3 +113,17 @@ def get_version(
     return ImplicitDict.parse(resp.json(), StatusResponse), fetch.describe_query(
         resp, initiated_at
     )
+
+
+def clear_area(
+    utm_client: UTMClientSession, uss_base_url: str, req: ClearAreaRequest
+) -> Tuple[Optional[ClearAreaResponse], fetch.Query]:
+    url = f"{uss_base_url}/v1/clear_area_requests"
+
+    initiated_at = datetime.utcnow()
+    resp = utm_client.post(url, scope=SCOPE_SCD_QUALIFIER_INJECT, json=req)
+    if resp.status_code != 200:
+        result = None
+    else:
+        result = ImplicitDict.parse(resp.json(), ClearAreaResponse)
+    return result, fetch.describe_query(resp, initiated_at)

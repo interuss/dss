@@ -1,0 +1,27 @@
+name: U-space required services
+resources:
+  conflicting_flights: flight_planning.FlightIntentsResource
+  flight_planners: flight_planning.FlightPlannersResource
+  dss: astm.f3548.v21.DSSInstanceResource
+
+  flights_data: netrid.FlightDataResource
+  service_providers: netrid.NetRIDServiceProviders
+  observers: netrid.NetRIDObserversResource
+  evaluation_configuration: netrid.EvaluationConfigurationResource
+
+actions:
+- test_suite:
+    suite_type: astm.utm.f3548_21
+    resources:
+      conflicting_flights: conflicting_flights
+      flight_planners: flight_planners
+      dss: dss
+  on_failure: Continue
+- test_suite:
+    suite_type: astm.netrid.f3411_19
+    resources:
+      flights_data: flights_data
+      service_providers: service_providers
+      observers: observers
+      evaluation_configuration: evaluation_configuration
+  on_failure: Continue

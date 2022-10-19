@@ -22,7 +22,7 @@ from monitoring.uss_qualifier.scenarios.documentation import (
     TestStepDocumentation,
     parse_documentation,
 )
-from monitoring.uss_qualifier.resources.definitions import ResourceTypeName
+from monitoring.uss_qualifier.resources.definitions import ResourceTypeName, ResourceID
 
 
 class ScenarioPhase(str, Enum):
@@ -237,6 +237,7 @@ class TestScenario(ABC):
 
     def end_cleanup(self) -> None:
         self._expect_phase(ScenarioPhase.CleaningUp)
+        self._step_report.end_time = StringBasedDateTime(datetime.utcnow())
         self._phase = ScenarioPhase.Complete
 
     def record_execution_error(self, e: Exception) -> None:
@@ -287,7 +288,7 @@ class TestScenarioDeclaration(ImplicitDict):
     """Mapping of resource parameter (additional argument to concrete test scenario constructor) to ID of resource to use"""
 
     def make_test_scenario(
-        self, resource_pool: Dict[str, ResourceTypeName]
+        self, resource_pool: Dict[ResourceID, ResourceTypeName]
     ) -> TestScenario:
         inspection.import_submodules(scenarios_module)
         scenario_type = inspection.get_module_object_by_name(
@@ -305,16 +306,11 @@ class TestScenarioDeclaration(ImplicitDict):
         for arg_name, arg in constructor_signature.parameters.items():
             if arg_name == "self":
                 continue
-            if arg_name not in self.resources:
+            if arg_name not in resource_pool:
+                available_pool = ", ".join(resource_pool)
                 raise ValueError(
-                    'Test scenario declaration for {} is missing a source for resource "{}"'.format(
-                        self.scenario_type, arg
-                    )
+                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {self.scenario_type} test scenario (resource pool: {available_pool})'
                 )
-            if self.resources[arg_name] not in resource_pool:
-                raise ValueError(
-                    f'Resource "{self.resources[arg_name]}" was not found in the resource pool when trying to create {self.scenario_type} test scenario'
-                )
-            constructor_args[arg_name] = resource_pool[self.resources[arg_name]]
+            constructor_args[arg_name] = resource_pool[arg_name]
 
         return scenario_type(**constructor_args)

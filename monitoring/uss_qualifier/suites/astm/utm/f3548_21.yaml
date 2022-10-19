@@ -1,0 +1,28 @@
+name: ASTM F3548-21
+resources:
+  conflicting_flights: flight_planning.FlightIntentsResource
+  flight_planners: flight_planning.FlightPlannersResource
+  dss: astm.f3548.v21.DSSInstanceResource
+actions:
+- action_generator:
+    generator_type: flight_planning.FlightPlannerCombinations
+    resources:
+      flight_planners: flight_planners
+      conflicting_flights: conflicting_flights
+      dss: dss
+    specification:
+      resources:
+        flight_planners: flight_planners
+        conflicting_flights: conflicting_flights
+        dss: dss
+      action_to_repeat:
+        test_scenario:
+          scenario_type: astm.utm.NominalPlanning
+          resources:
+            flight_intents: conflicting_flights
+            flight_planners: flight_planners
+            dss: dss
+        on_failure: Continue
+      flight_planners_source: flight_planners
+      roles: 2
+  on_failure: Continue

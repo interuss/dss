@@ -21,15 +21,19 @@ echo '#########################################################################'
 
 monitoring/build.sh || exit 1
 
-CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally_rid.json"
-CONFIG='--config config_run_locally_rid.json'
+CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally.json"
+CONFIG='--config config_run_locally.json'
 
 AUTH_SPEC='DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
 
-echo '{
-    "locale": "CHE",
-    "config": "dev.local_test"
-}' > ${CONFIG_LOCATION}
+CONFIG_NAME="${1:-dev.local_test}"
+
+cat > ${CONFIG_LOCATION} <<- EOM
+{
+  "local": "CHE",
+  "config": "${CONFIG_NAME}"
+}
+EOM
 
 QUALIFIER_OPTIONS="$CONFIG"
 

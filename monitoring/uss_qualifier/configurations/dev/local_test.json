@@ -82,6 +82,25 @@
             }
           ]
         }
+      },
+      "conflicting_flights": {
+        "resource_type": "flight_planning.FlightIntentsResource",
+        "specification": {
+          "planning_time": "0:05:00",
+          "json_file_source": {
+            "path": "./test_data/che/flight_intents/conflicting_flights.json"
+          }
+        }
+      },
+      "dss": {
+        "resource_type": "astm.f3548.v21.DSSInstanceResource",
+        "dependencies": {
+          "auth_adapter": "utm_auth"
+        },
+        "specification": {
+          "participant_id": "uss1",
+          "base_url": "http://host.docker.internal:8082"
+        }
       }
     }
   },
@@ -95,7 +114,9 @@
       "service_providers": "netrid_service_providers",
       "observers": "netrid_observers",
       "evaluation_configuration": "netrid_observation_evaluation_configuration",
-      "flight_planners": "flight_planners"
+      "flight_planners": "flight_planners",
+      "conflicting_flights": "conflicting_flights",
+      "dss": "dss"
     }
   }
 }

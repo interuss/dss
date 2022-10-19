@@ -58,6 +58,18 @@ class ReactionToFailure(str, Enum):
     """If the test suite action fails, do not execute any more actions in that test suite"""
 
 
+class ActionType(str, Enum):
+    TestScenario = "test_scenario"
+    TestSuite = "test_suite"
+    ActionGenerator = "action_generator"
+
+    @staticmethod
+    def raise_invalid_action_declaration():
+        raise ValueError(
+            f"Exactly one of ({', '.join(a for a in ActionType)}) must be specified in a TestSuiteActionDeclaration"
+        )
+
+
 class TestSuiteActionDeclaration(ImplicitDict):
     """Defines a step in the sequence of things to do for a test suite.
 
@@ -75,6 +87,34 @@ class TestSuiteActionDeclaration(ImplicitDict):
 
     on_failure: ReactionToFailure
     """What to do if this action fails"""
+
+    def get_action_type(self) -> ActionType:
+        matches = [v for v in ActionType if v in self and self[v]]
+        if len(matches) != 1:
+            ActionType.raise_invalid_action_declaration()
+        return ActionType(matches[0])
+
+    def get_resource_links(self) -> Dict[ResourceID, ResourceID]:
+        action_type = self.get_action_type()
+        if action_type == ActionType.TestScenario:
+            return self.test_scenario.resources
+        elif action_type == ActionType.TestSuite:
+            return self.test_suite.resources
+        elif action_type == ActionType.ActionGenerator:
+            return self.action_generator.resources
+        else:
+            ActionType.raise_invalid_action_declaration()
+
+    def get_child_type(self) -> str:
+        action_type = self.get_action_type()
+        if action_type == ActionType.TestScenario:
+            return self.test_scenario.scenario_type
+        elif action_type == ActionType.TestSuite:
+            return self.test_suite.suite_type
+        elif action_type == ActionType.ActionGenerator:
+            return self.action_generator.generator_type
+        else:
+            ActionType.raise_invalid_action_declaration()
 
 
 class TestSuiteDefinition(ImplicitDict):
