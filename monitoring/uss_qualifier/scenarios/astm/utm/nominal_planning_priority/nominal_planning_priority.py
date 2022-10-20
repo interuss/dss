@@ -1,9 +1,7 @@
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightRequest,
-    InjectFlightResult,
     Capability,
 )
-from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.resources.astm.f3548.v21 import DSSInstanceResource
 from monitoring.uss_qualifier.resources.astm.f3548.v21.dss import DSSInstance
 from monitoring.uss_qualifier.resources.flight_planning import (
@@ -21,9 +19,9 @@ from monitoring.uss_qualifier.scenarios.astm.utm.test_steps import (
 )
 
 
-class NominalPlanning(TestScenario):
+class NominalPlanningPriority(TestScenario):
     first_flight: InjectFlightRequest
-    conflicting_flight: InjectFlightRequest
+    priority_flight: InjectFlightRequest
     uss1: TestTarget
     uss2: TestTarget
     dss: DSSInstance
@@ -46,7 +44,7 @@ class NominalPlanning(TestScenario):
             raise ValueError(
                 f"`{self.me()}` TestScenario requires at least 2 flight_intents; found {len(flight_intents)}"
             )
-        self.first_flight, self.conflicting_flight = flight_intents
+        self.first_flight, self.priority_flight = flight_intents
 
         self.dss = dss.dss
 
@@ -54,11 +52,11 @@ class NominalPlanning(TestScenario):
         self.begin_test_scenario()
 
         self.record_note(
-            "First-mover USS",
+            "First USS",
             f"{self.uss1.config.participant_id} at {self.uss2.config.injection_base_url}",
         )
         self.record_note(
-            "Second USS",
+            "Priority USS",
             f"{self.uss2.config.participant_id} at {self.uss2.config.injection_base_url}",
         )
 
@@ -72,8 +70,13 @@ class NominalPlanning(TestScenario):
             return
         self.end_test_case()
 
-        self.begin_test_case("Attempt second flight")
-        if not self._attempt_second_flight():
+        self.begin_test_case("Plan priority flight")
+        if not self._plan_priority_flight():
+            return
+        self.end_test_case()
+
+        self.begin_test_case("Activate priority flight")
+        if not self._activate_priority_flight():
             return
         self.end_test_case()
 
@@ -86,13 +89,14 @@ class NominalPlanning(TestScenario):
             required_capabilities=[
                 ([self.uss1, self.uss2], Capability.BasicStrategicConflictDetection)
             ],
+            prerequisite_capabilities=[(self.uss2, Capability.HighPriorityFlights)],
         ):
             return False
 
         if not clear_area(
             self,
             "Area clearing",
-            [self.first_flight, self.conflicting_flight],
+            [self.first_flight, self.priority_flight],
             [self.uss1, self.uss2],
         ):
             return False
@@ -117,33 +121,26 @@ class NominalPlanning(TestScenario):
 
         return True
 
-    def _attempt_second_flight(self) -> bool:
-        self.begin_test_step("Inject flight intent")
-
-        resp, query, flight_id = self.uss2.request_flight(self.conflicting_flight)
-        self.record_query(query)
-        if resp.result == InjectFlightResult.Planned:
-            self.record_failed_check(
-                name="Incorrectly planned",
-                summary="Conflict-free flight not created due to conflict",
-                severity=Severity.High,
-                relevant_participants=[self.uss2.participant_id],
-                details="The user's intended flight conflicts with an existing operational intent so the result of attempting to fulfill this flight intent should not be a successful planning of the flight.",
-                query_timestamps=[query.request.timestamp],
-            )
+    def _plan_priority_flight(self) -> bool:
+        resp = inject_successful_flight_intent(
+            self, "Inject flight intent", self.uss2, self.priority_flight
+        )
+        if resp is None:
             return False
-        if resp.result == InjectFlightResult.Failed:
-            self.record_failed_check(
-                name="Failure",
-                summary="Failed to create flight",
-                severity=Severity.High,
-                relevant_participants=[self.uss1.participant_id],
-                details=f'{self.uss1.participant_id} Failed to process the user flight intent: "{resp.notes}"',
-                query_timestamps=[query.request.timestamp],
-            )
-            return False
+        op_intent_id = resp.operational_intent_id
 
-        self.end_test_step()  # Inject flight intent
+        self.begin_test_step("Validate flight creation")
+        # TODO
+        self.end_test_step()  # Validate flight creation
+
+        validate_shared_operational_intent(
+            self, "Validate flight sharing", self.priority_flight, op_intent_id
+        )
+
+        return True
+
+    def _activate_priority_flight(self) -> bool:
+
         return True
 
     def cleanup(self):
