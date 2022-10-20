@@ -19,9 +19,13 @@ local metadata = metadataBase {
     storageClass: 'VAR_CRDB_STORAGE_CLASS',
   },
   gateway+: {
-    ipName: 'VAR_INGRESS_NAME',
     image: 'VAR_DOCKER_IMAGE_NAME',
     hostname: 'VAR_APP_HOSTNAME',
+    ingress: 'none', // <-- This string value is VAR_INGRESS
+    // uncomment if ingress == 'gke'
+    // gkeIngress: {
+    //  ipName: 'VAR_GKE_IP_NAME',
+    // },
     traceRequests: true,
   },
   backend+: {

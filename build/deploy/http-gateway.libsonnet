@@ -3,7 +3,7 @@ local base = import 'base.libsonnet';
 local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
   metadata+: {
     annotations: {
-      'kubernetes.io/ingress.global-static-ip-name': metadata.gateway.ipName,
+      'kubernetes.io/ingress.global-static-ip-name': metadata.gateway.gkeIngress.ipName,
       'kubernetes.io/ingress.allow-http': 'false',
     },
   },
@@ -20,7 +20,7 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
 };
 
 {
-  ManagedCertIngress(metadata): {
+  GkeManagedCertIngress(metadata): {
     ingress: ingress(metadata) {
       metadata+: {
         annotations+: {
@@ -47,7 +47,12 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
 
 
   all(metadata): {
-    ingress: $.ManagedCertIngress(metadata),
+    ingress: if metadata.gateway.ingress == 'gke' then
+                $.GkeManagedCertIngress(metadata)
+             else if metadata.gateway.ingress == 'none' then
+                null
+             else
+                error "'metadata.gateway.ingress' should be one of 'gke', 'none'",
     service: base.Service(metadata, 'http-gateway') {
       app:: 'http-gateway',
       port:: metadata.gateway.port,

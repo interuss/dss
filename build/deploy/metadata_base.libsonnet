@@ -25,10 +25,13 @@
   },
   gateway: {
     port: 8080,
-    ipName: error 'must supply ip name',
     image: error 'must specify image',
     prof_http_name: '',
     hostname: error 'must specify hostname',
+    ingress: 'none',
+    gkeIngress: {
+      ipName: error 'must supply ip name',
+    },
     traceRequests: false,
   },
   backend: {

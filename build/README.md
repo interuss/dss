@@ -309,10 +309,6 @@ a PR to that effect would be greatly appreciated.
         volumes. You can check your cluster's possible values with
         `kubectl get storageclass`.
 
-    1.  `VAR_INGRESS_NAME`: If using Google Kubernetes Engine, set this to the
-        the name of the gateway static IP address created above (e.g.,
-        `CLUSTER_NAME-gateway`).
-
     1.  `VAR_DOCKER_IMAGE_NAME`: Full name of the docker image built in the
         section above.  `build.sh` prints this name as the last thing it does
         when run with `DOCKER_URL` set.  It should look something like
@@ -324,6 +320,14 @@ a PR to that effect would be greatly appreciated.
 
     1.  `VAR_APP_HOSTNAME`: Fully-qualified domain name of your HTTPS Gateway
         ingress endpoint.  For example, `dss.example.com`.
+
+    1.  `VAR_INGRESS`: Optional Ingress configuration. For some Kubernetes
+        instances, a generic Ingress can be created as well. Values can
+        be: `none`, `gke`
+
+    1.  `VAR_GKE_IP_NAME`: If using Google Kubernetes Engine, set this to the
+        the name of the gateway static IP address created above (e.g.,
+        `CLUSTER_NAME-gateway`).
 
     1.  `VAR_PUBLIC_KEY_PEM_PATH`: If providing a .pem file directly as the
         public key to validate incoming access tokens, specify the name of this
