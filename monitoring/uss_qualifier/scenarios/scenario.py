@@ -4,6 +4,8 @@ from enum import Enum
 import inspect
 from typing import Callable, Dict, List, Optional, TypeVar, Union, Set
 
+import arrow
+
 from implicitdict import ImplicitDict, StringBasedDateTime
 
 from monitoring.monitorlib import fetch, inspection
@@ -16,6 +18,7 @@ from monitoring.uss_qualifier.reports import (
     FailedCheck,
     ErrorReport,
 )
+from monitoring.uss_qualifier.reports.report import Note
 from monitoring.uss_qualifier.scenarios.documentation import (
     TestScenarioDocumentation,
     TestCaseDocumentation,
@@ -70,15 +73,13 @@ class TestScenario(ABC):
     def me(self) -> str:
         return inspection.fullname(self.__class__)
 
-    def _make_scenario_report(self, information: Optional[str] = None) -> None:
+    def _make_scenario_report(self) -> None:
         self._scenario_report = TestScenarioReport(
             name=self.documentation.name,
             documentation_url=self.documentation.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
             cases=[],
         )
-        if information is not None:
-            self._scenario_report.information = information
 
     def _expect_phase(self, expected_phase: Union[ScenarioPhase, Set[ScenarioPhase]]):
         if isinstance(expected_phase, ScenarioPhase):
@@ -90,9 +91,30 @@ class TestScenario(ABC):
                 f"Test scenario `{self.me()}` was {self._phase} when {caller} was called (expected {acceptable_phases})"
             )
 
-    def begin_test_scenario(self, information: Optional[str] = None) -> None:
+    def record_note(self, key: str, message: str) -> None:
+        self._expect_phase(
+            {
+                ScenarioPhase.NotStarted,
+                ScenarioPhase.ReadyForTestCase,
+                ScenarioPhase.ReadyForTestStep,
+                ScenarioPhase.RunningTestStep,
+                ScenarioPhase.ReadyForCleanup,
+                ScenarioPhase.CleaningUp,
+            }
+        )
+        if "notes" not in self._scenario_report:
+            self._scenario_report.notes = []
+        self._scenario_report.notes.append(
+            Note(
+                key=key,
+                message=message,
+                timestamp=StringBasedDateTime(arrow.utcnow().datetime),
+            )
+        )
+
+    def begin_test_scenario(self) -> None:
         self._expect_phase(ScenarioPhase.NotStarted)
-        self._make_scenario_report(information)
+        self._make_scenario_report()
         self._phase = ScenarioPhase.ReadyForTestCase
 
     def begin_test_case(self, name: str) -> None:

@@ -102,6 +102,12 @@ class ErrorReport(ImplicitDict):
         )
 
 
+class Note(ImplicitDict):
+    key: str
+    message: str
+    timestamp: StringBasedDateTime
+
+
 class TestScenarioReport(ImplicitDict):
     name: str
     """Name of this test scenario"""
@@ -109,7 +115,7 @@ class TestScenarioReport(ImplicitDict):
     documentation_url: str
     """URL at which this test scenario is described"""
 
-    information: Optional[str]
+    notes: Optional[Note]
     """Additional information about this scenario that may be useful"""
 
     start_time: StringBasedDateTime

@@ -49,6 +49,10 @@ def uss_test_executor(config: USSQualifierTestConfiguration):
             resources,
         )
         action_report = suite_action.run()
+        if action_report.successful():
+            print("Final result: SUCCESS")
+        else:
+            print("Final result: FAILURE")
 
         legacy_reports = {"suite": action_report.test_suite}
     else:

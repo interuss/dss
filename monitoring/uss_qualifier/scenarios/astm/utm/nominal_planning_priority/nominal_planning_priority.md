@@ -1,11 +1,11 @@
-# Nominal planning test scenario
+# Nominal planning with priority test scenario
 
-## Overview
+## Description
 
 This test approximates normal strategic coordination where a user successfully
-plans a flight whose operational intent is shared with other USSs, and where a
-user cannot plan a flight because it would conflict with another operational
-intent.
+plans a flight whose operational intent is shared with other USSs, and where
+another user takes priority over the first flight with an operational intent
+with higher priority.
 
 ## Sequence
 
@@ -15,11 +15,11 @@ intent.
 
 ### flight_intents
 
-FlightIntentsResource that provides at least 2 flight intents.  The first flight intent will be used for the successfully-planned flight and the second flight will be used for the failed flight.  Therefore, the second flight must intersect the first flight.
+FlightIntentsResource that provides at least 2 flight intents.  The first flight intent will be planned normally and then the second flight will be planned on top of the first flight.  Therefore, the second flight must intersect the first flight, and the second flight must have higher priority than the first flight.
 
 ### flight_planners
 
-FlightPlannersResource that provides exactly 2 flight planners (USSs).  The first flight planner will successfully plan the first flight.  The second flight planner will unsuccessfully attempt to plan the second flight.
+FlightPlannersResource that provides exactly 2 flight planners (USSs).  The first flight planner will successfully plan the first flight.  The second flight planner successfully plan the second, higher-priority flight over the first one.
 
 ### dss
 
@@ -37,7 +37,7 @@ If either USS does not respond appropriately to the endpoint queried to determin
 
 #### Support BasicStrategicConflictDetection check
 
-If either USS does not support BasicStrategicConflictDetection, then this check will fail.
+This check will fail if the first flight planner does not support BasicStrategicConflictDetection.  If the second flight planner does not support HighPriorityFlights, this scenario will end normally at this point.
 
 ### Area clearing test step
 
@@ -77,17 +77,27 @@ If a reference to the operational intent for the flight is not found in the DSS 
 
 If the operational intent details reported by the USS do not match the user's flight intent, this check will fail.
 
-## Attempt second flight test case
+## Plan priority flight test case
+
+In this step, the second USS executes a user intent to plan a priority flight that conflicts with the first flight.
 
 ### Inject flight intent test step
 
-#### Incorrectly planned check
+#### Successful planning check
 
-The second flight intent conflicts with the first flight that was already planned.  If the USS successfully plans the flight, it means they failed to detect the conflict with the pre-existing flight, or else they modified the flight more than the user wanted.  Therefore, this check will fail if the second USS indicates success in creating the flight from the user flight intent.
+All flight intent data provided is correct and valid and free of conflict in space and time, therefore it should have been planned by the USS.  If the USS indicates a conflict, this check will fail since the intersecting flight is lower priority.  If the USS indicates that the flight was rejected, this check will fail.  If the USS indicates that the injection attempt failed, this check will fail.
 
-#### Failure check
+## Activate priority flight test case
 
-All flight intent data provided was complete and correct. It should have been processed successfully, allowing the USS to reject or accept the flight.  If the USS indicates that the injection attempt failed, this check will fail.
+In this step, the second USS successfully executes a user intent to activate the priority flight.
+
+TODO: Complete this test case
+
+## Attempt to activate first flight test case
+
+In this step, the first USS fails to activate the flight it previously created.
+
+TODO: Complete this test case
 
 ## Cleanup
 

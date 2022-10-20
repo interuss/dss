@@ -92,6 +92,15 @@
           }
         }
       },
+      "priority_preemption_flights": {
+        "resource_type": "flight_planning.FlightIntentsResource",
+        "specification": {
+          "planning_time": "0:05:00",
+          "json_file_source": {
+            "path": "./test_data/che/flight_intents/priority_preemption.json"
+          }
+        }
+      },
       "dss": {
         "resource_type": "astm.f3548.v21.DSSInstanceResource",
         "dependencies": {
@@ -116,6 +125,7 @@
       "evaluation_configuration": "netrid_observation_evaluation_configuration",
       "flight_planners": "flight_planners",
       "conflicting_flights": "conflicting_flights",
+      "priority_preemption_flights": "priority_preemption_flights",
       "dss": "dss"
     }
   }

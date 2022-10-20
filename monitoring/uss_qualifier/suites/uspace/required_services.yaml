@@ -1,6 +1,7 @@
 name: U-space required services
 resources:
   conflicting_flights: flight_planning.FlightIntentsResource
+  priority_preemption_flights: flight_planning.FlightIntentsResource
   flight_planners: flight_planning.FlightPlannersResource
   dss: astm.f3548.v21.DSSInstanceResource
 
@@ -14,6 +15,7 @@ actions:
     suite_type: astm.utm.f3548_21
     resources:
       conflicting_flights: conflicting_flights
+      priority_preemption_flights: priority_preemption_flights
       flight_planners: flight_planners
       dss: dss
   on_failure: Continue
