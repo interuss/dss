@@ -166,15 +166,15 @@ openapi-to-go-server:
 
 dss_apis: openapi-to-go-server
 	docker container run -u "$(USER_GROUP)" -it \
-      	-v "$(CURDIR)/interfaces/astm-utm/Protocol/utm.yaml:/resources/utm-v1.yaml" \
-      	-v "$(CURDIR)/interfaces/rid/v1/remoteid/augmented.yaml:/resources/rid-v1.yaml" \
-        -v "$(CURDIR)/interfaces/rid/v2/remoteid/canonical.yaml:/resources/rid-v2.yaml" \
+      	-v "$(CURDIR)/interfaces/astm-utm/Protocol/utm.yaml:/resources/scdv1.yaml" \
+      	-v "$(CURDIR)/interfaces/rid/v1/remoteid/augmented.yaml:/resources/ridv1.yaml" \
+        -v "$(CURDIR)/interfaces/rid/v2/remoteid/canonical.yaml:/resources/ridv2.yaml" \
 	    -v "$(CURDIR)/:/resources/src" \
-			openapi-to-go-server \
+			interuss/openapi-to-go-server \
 		  		--api_import github.com/interuss/dss/pkg/api \
-    	      	--api /resources/utm-v1.yaml#dss@scd_v1 \
-				--api /resources/rid-v1.yaml#dss@rid_v1 \
-              	--api /resources/rid-v2.yaml#dss@rid_v2 \
+    	      	--api /resources/scdv1.yaml#dss \
+				--api /resources/ridv1.yaml#dss \
+              	--api /resources/ridv2.yaml#dss \
     	      	--api_folder /resources/src/pkg/api
 
 example_apis: openapi-to-go-server

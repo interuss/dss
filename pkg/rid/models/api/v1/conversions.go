@@ -3,7 +3,7 @@ package apiv1
 import (
 	"time"
 
-	restapi "github.com/interuss/dss/pkg/api/rid_v1"
+	restapi "github.com/interuss/dss/pkg/api/ridv1"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/stacktrace"

@@ -44,8 +44,9 @@ func (w *tracingResponseWriter) WriteHeader(statusCode int) {
 func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
-			start = time.Now()
-			trw   = &tracingResponseWriter{
+			logger = logger
+			start  = time.Now()
+			trw    = &tracingResponseWriter{
 				dumpData: dump,
 				data:     new(bytes.Buffer),
 				next:     w,

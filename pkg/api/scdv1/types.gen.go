@@ -1,5 +1,5 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package scd_v1
+package scdv1
 
 // String whose format matches a version-4 UUID according to RFC 4122.
 type UUIDv4Format string

@@ -1,5 +1,5 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package rid_v2
+package ridv1
 
 import (
 	"context"
@@ -7,55 +7,54 @@ import (
 )
 
 var (
-	SearchIdentificationServiceAreasSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.display_provider"}},
+	SearchIdentificationServiceAreasSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
 		},
 	}
-	GetIdentificationServiceAreaSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.display_provider"}},
+	GetIdentificationServiceAreaSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
 		},
 	}
-	CreateIdentificationServiceAreaSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.service_provider"}},
+	CreateIdentificationServiceAreaSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.write.identification_service_areas"},
 		},
 	}
-	UpdateIdentificationServiceAreaSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.service_provider"}},
+	UpdateIdentificationServiceAreaSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.write.identification_service_areas"},
 		},
 	}
-	DeleteIdentificationServiceAreaSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.service_provider"}},
+	DeleteIdentificationServiceAreaSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.write.identification_service_areas"},
 		},
 	}
-	SearchSubscriptionsSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.display_provider"}},
+	SearchSubscriptionsSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
 		},
 	}
-	GetSubscriptionSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.display_provider"}},
-			{RequiredScopes: []string{"rid.service_provider"}},
+	GetSubscriptionSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas", "dss.write.identification_service_areas"},
 		},
 	}
-	CreateSubscriptionSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.display_provider"}},
+	CreateSubscriptionSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
 		},
 	}
-	UpdateSubscriptionSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.display_provider"}},
+	UpdateSubscriptionSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
 		},
 	}
-	DeleteSubscriptionSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"rid.display_provider"}},
+	DeleteSubscriptionSecurity = []api.AuthorizationOption{
+		{
+			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
 		},
 	}
 )
@@ -64,10 +63,10 @@ type SearchIdentificationServiceAreasRequest struct {
 	// The area in which to search for Identification Service Areas.  Some Identification Service Areas near this area but wholly outside it may also be returned.
 	Area *GeoPolygonString
 
-	// If specified, indicates non-interest in any Identification Service Areas that end before this time.  RFC 3339 format, per OpenAPI specification. The time zone must be 'Z'.
+	// If specified, indicates non-interest in any Identification Service Areas that end before this time.  RFC 3339 format, per OpenAPI specification.
 	EarliestTime *string
 
-	// If specified, indicates non-interest in any Identification Service Areas that start after this time.  RFC 3339 format, per OpenAPI specification. The time zone must be 'Z'.
+	// If specified, indicates non-interest in any Identification Service Areas that start after this time.  RFC 3339 format, per OpenAPI specification.
 	LatestTime *string
 
 	// The result of attempting to authorize this request
@@ -313,6 +312,7 @@ type CreateSubscriptionResponseSet struct {
 	Response401 *ErrorResponse
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
+	// * An EntityType was specified in `types_filter` to which the scopes included in the access token do not provide access.
 	Response403 *ErrorResponse
 
 	// * A Subscription with the specified ID already exists and is owned by a different client.
@@ -354,6 +354,7 @@ type UpdateSubscriptionResponseSet struct {
 	Response401 *ErrorResponse
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
+	// * An EntityType was specified in `types_filter` to which the scopes included in the access token do not provide access.
 	Response403 *ErrorResponse
 
 	// * The specified Subscriptions's current version does not match the provided version.

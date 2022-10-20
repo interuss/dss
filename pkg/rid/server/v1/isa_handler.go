@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"github.com/interuss/dss/pkg/api"
-	restapi "github.com/interuss/dss/pkg/api/rid_v1"
-	"github.com/interuss/dss/pkg/auth"
+	restapi "github.com/interuss/dss/pkg/api/ridv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	geoerr "github.com/interuss/dss/pkg/geo"
@@ -35,7 +34,7 @@ func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *restapi.
 			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get ISA from application layer"))}}
 	}
 	if isa == nil {
-		return restapi.GetIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
+		return restapi.GetIdentificationServiceAreaResponseSet{Response404: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", req.Id))}}
 	}
 	return restapi.GetIdentificationServiceAreaResponseSet{Response200: &restapi.GetIdentificationServiceAreaResponse{
@@ -65,7 +64,7 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 	}
 	if len(req.Body.Extents.SpatialVolume.Footprint.Vertices) == 0 {
 		return restapi.CreateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents"))}}
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing or malformed required extents"))}}
 	}
 	extents, err := apiv1.FromVolume4D(&req.Body.Extents)
 	if err != nil {

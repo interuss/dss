@@ -1,5 +1,5 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package rid_v1
+package ridv1
 
 // A three-dimensional geographic volume consisting of a vertically-extruded polygon.
 type Volume3D struct {

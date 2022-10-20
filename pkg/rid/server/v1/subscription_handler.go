@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/api"
-	restapi "github.com/interuss/dss/pkg/api/rid_v1"
-	"github.com/interuss/dss/pkg/auth"
+	restapi "github.com/interuss/dss/pkg/api/ridv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	geoerr "github.com/interuss/dss/pkg/geo"

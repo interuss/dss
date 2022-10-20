@@ -1,5 +1,5 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package rid_v2
+package ridv2
 
 type Time struct {
 	// RFC3339-formatted time/date string.  The time zone must be 'Z'.
