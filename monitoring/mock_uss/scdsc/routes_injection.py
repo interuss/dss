@@ -28,10 +28,7 @@ from monitoring.mock_uss import config, resources, webapp
 from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss.scdsc import database
 from monitoring.mock_uss.scdsc.database import db
-from monitoring.monitorlib.uspace import (
-    validate_flight_authorisation,
-    problems_with_flight_authorisation,
-)
+from monitoring.monitorlib.uspace import problems_with_flight_authorisation
 
 
 def query_operational_intents(
