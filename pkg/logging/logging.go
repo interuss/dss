@@ -4,14 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/golang/protobuf/proto"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -82,39 +76,9 @@ func Configure(level string, format string) error {
 	return setUpLogger(level, format)
 }
 
-// Interceptor returns a grpc.UnaryServerInterceptor that logs incoming requests
-// and associated tags to "logger".
-func Interceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
-	opts := []grpc_zap.Option{
-		grpc_zap.WithLevels(grpc_zap.DefaultCodeToLevel),
-	}
-	return grpc_middleware.ChainUnaryServer(
-		grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-		grpc_zap.UnaryServerInterceptor(logger, opts...),
-	)
-}
-
 // WithValuesFromContext augments logger with relevant fields from ctx and returns
 // the the resulting logger.
 func WithValuesFromContext(ctx context.Context, logger *zap.Logger) *zap.Logger {
 	// Naive implementation for now, meant to evolve over time.
 	return logger
-}
-
-// DumpRequestResponseInterceptor returns a grpc.UnaryServerInterceptor that
-// logs incoming requests and corresponding responses to 'logger'.
-func DumpRequestResponseInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		logger.Sugar().Infof("Request (%s):\n%s",
-			info.FullMethod,
-			proto.MarshalTextString(req.(proto.Message)))
-		resp, err = handler(ctx, req)
-
-		if resp != nil && err == nil {
-			logger.Sugar().Infof("Response (%s):\n%s",
-				info.FullMethod,
-				proto.MarshalTextString(resp.(proto.Message)))
-		}
-		return
-	}
 }
