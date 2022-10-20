@@ -28,17 +28,9 @@ def load_scd_test_definitions(
 ) -> Dict[str, AutomatedTest]:
     """Gets automated tests"""
 
-    # TODO: Replace hardcoded "nominal_intent" string when making this into a TestScenario
-    nominal_intent = resources["nominal_intent"].get_flight_intents()
     reference_time = StringBasedDateTime(arrow.utcnow().datetime)
 
-    tests = [
-        (
-            "u-space/flight-authorisation-validation-1",
-            "test_data/che/flight_planning/flight-authorisation-validation-1.json",
-            nominal_intent,
-        ),
-    ]
+    tests = []
     automated_tests: Dict[str, AutomatedTest] = {}
     for k, v, intents in tests:
         with open(v, "r") as f:

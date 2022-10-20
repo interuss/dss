@@ -1,0 +1,36 @@
+name: U-space flight authorisation
+resources:
+  conflicting_flights: flight_planning.FlightIntentsResource
+  priority_preemption_flights: flight_planning.FlightIntentsResource
+  invalid_flight_auth_flights: flight_planning.FlightIntentsResource
+  flight_planners: flight_planning.FlightPlannersResource
+  dss: astm.f3548.v21.DSSInstanceResource
+
+actions:
+- test_suite:
+    suite_type: astm.utm.f3548_21
+    resources:
+      conflicting_flights: conflicting_flights
+      priority_preemption_flights: priority_preemption_flights
+      flight_planners: flight_planners
+      dss: dss
+  on_failure: Continue
+- action_generator:
+    generator_type: flight_planning.FlightPlannerCombinations
+    resources:
+      flight_planners: flight_planners
+      invalid_flight_auth_flights: invalid_flight_auth_flights
+    specification:
+      resources:
+        flight_planners: flight_planners
+        invalid_flight_auth_flights: invalid_flight_auth_flights
+      action_to_repeat:
+        test_scenario:
+          scenario_type: uspace.flight_auth.Validation
+          resources:
+            flight_intents: invalid_flight_auth_flights
+            flight_planners: flight_planners
+        on_failure: Continue
+      flight_planners_source: flight_planners
+      roles: 1
+  on_failure: Continue
