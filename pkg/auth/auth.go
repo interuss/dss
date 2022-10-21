@@ -14,56 +14,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang-jwt/jwt"
+	"github.com/interuss/dss/pkg/api"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
-	"github.com/interuss/dss/pkg/models"
-
-	"github.com/golang-jwt/jwt"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"gopkg.in/square/go-jose.v2"
 )
 
-var (
-	// ContextKeyOwner is the key to an owner value.
-	ContextKeyOwner ContextKey = "owner"
-)
-
-// ContextKey models auth-specific keys in a context.
-type ContextKey string
-
-type missingScopesError struct {
-	s []string
-}
-
-func (m *missingScopesError) Error() string {
-	return strings.Join(m.s, ", ")
-}
-
-// ContextWithOwner adds "owner" to "ctx".
-func ContextWithOwner(ctx context.Context, owner models.Owner) context.Context {
-	return context.WithValue(ctx, ContextKeyOwner, owner)
-}
-
-// OwnerFromContext returns the value for owner from "ctx" and a boolean
-// indicating whether a valid value was present or not.
-func OwnerFromContext(ctx context.Context) (models.Owner, bool) {
-	owner, ok := ctx.Value(ContextKeyOwner).(models.Owner)
-	return owner, ok
-}
-
-// ManagerFromContext returns the value for manager from "ctx" and a boolean
-// indicating whether a valid value was present or not.
-func ManagerFromContext(ctx context.Context) (models.Manager, bool) {
-	owner, ok := OwnerFromContext(ctx)
-	return models.Manager(owner), ok
-}
-
 // KeyResolver abstracts resolving keys.
 type KeyResolver interface {
-	// ResolveKey returns a public or private key, most commonly an rsa.PublicKey.
+	// ResolveKeys returns a public or private key, most commonly an rsa.PublicKey.
 	ResolveKeys(context.Context) ([]interface{}, error)
 }
 
@@ -155,118 +117,19 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 	return keys, nil
 }
 
-// KeyClaimedScopesValidator validates a set of scopes claimed by an incoming
-// JWT.
-type KeyClaimedScopesValidator interface {
-	// ValidateKeyClaimedScopes returns an error if 'scopes' are not sufficient
-	// to authorize an operation, nil otherwise.
-	ValidateKeyClaimedScopes(ctx context.Context, scopes ScopeSet) error
-
-	// Expectation returns a string indicating the scopes expected to validate
-	// successfully.
-	Expectation() string
-}
-
-type allScopesRequiredValidator struct {
-	scopes []Scope
-}
-
-func (v *allScopesRequiredValidator) ValidateKeyClaimedScopes(ctx context.Context, scopes ScopeSet) error {
-	var (
-		missing []string
-	)
-
-	for _, scope := range v.scopes {
-		if _, present := scopes[scope]; !present {
-			missing = append(missing, scope.String())
-		}
-	}
-
-	if len(missing) > 0 {
-		return &missingScopesError{
-			s: missing,
-		}
-	}
-
-	return nil
-}
-
-func scopeSetToString(scopes ScopeSet, separator string) string {
-	var stringScopes []string
-	for scope := range scopes {
-		stringScopes = append(stringScopes, scope.String())
-	}
-	return strings.Join(stringScopes, separator)
-}
-
-func scopesToString(scopes []Scope, separator string) string {
-	var stringScopes []string
-	for _, scope := range scopes {
-		stringScopes = append(stringScopes, scope.String())
-	}
-	return strings.Join(stringScopes, separator)
-}
-
-func (v *allScopesRequiredValidator) Expectation() string {
-	return scopesToString(v.scopes, " and ")
-}
-
-// RequireAllScopes returns a KeyClaimedScopesValidator instance ensuring that
-// every element in scopes is claimed by an incoming set of scopes.
-func RequireAllScopes(scopes ...Scope) KeyClaimedScopesValidator {
-	return &allScopesRequiredValidator{
-		scopes: scopes,
-	}
-}
-
-type anyScopesRequiredValidator struct {
-	scopes []Scope
-}
-
-func (v *anyScopesRequiredValidator) ValidateKeyClaimedScopes(ctx context.Context, scopes ScopeSet) error {
-	var (
-		missing []string
-	)
-
-	for _, scope := range v.scopes {
-		if _, present := scopes[scope]; present {
-			return nil
-		}
-		missing = append(missing, scope.String())
-	}
-
-	return &missingScopesError{
-		s: missing,
-	}
-}
-
-func (v *anyScopesRequiredValidator) Expectation() string {
-	return scopesToString(v.scopes, " or ")
-}
-
-// RequireAnyScope returns a KeyClaimedScopesValidator instance ensuring that
-// at least one element in scopes is claimed by an incoming set of scopes.
-func RequireAnyScope(scopes ...Scope) KeyClaimedScopesValidator {
-	return &anyScopesRequiredValidator{
-		scopes: scopes,
-	}
-}
-
 // Authorizer authorizes incoming requests.
 type Authorizer struct {
 	logger            *zap.Logger
 	keys              []interface{}
 	keyGuard          sync.RWMutex
-	scopesValidators  map[Operation]KeyClaimedScopesValidator
 	acceptedAudiences map[string]bool
 }
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
 type Configuration struct {
-	KeyResolver       KeyResolver                             // Used to initialize and periodically refresh keys.
-	KeyRefreshTimeout time.Duration                           // Keys are refreshed on this cadence.
-	ScopesValidators  map[Operation]KeyClaimedScopesValidator // ScopesValidators are used to enforce authorization for operations.
-	AcceptedAudiences []string                                // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
+	KeyResolver       KeyResolver   // Used to initialize and periodically refresh keys.
+	KeyRefreshTimeout time.Duration // Keys are refreshed on this cadence.
+	AcceptedAudiences []string      // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
 }
 
 // NewRSAAuthorizer returns an Authorizer instance using values from configuration.
@@ -284,7 +147,6 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 	}
 
 	authorizer := &Authorizer{
-		scopesValidators:  configuration.ScopesValidators,
 		acceptedAudiences: auds,
 		logger:            logger,
 		keys:              keys,
@@ -319,13 +181,12 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 	a.keyGuard.Unlock()
 }
 
-// AuthInterceptor intercepts incoming gRPC requests and extracts and verifies
-// accompanying bearer tokens.
-func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+// Authorize extracts and verifies bearer tokens from a http.Request.
+func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
 
-	tknStr, ok := getToken(ctx)
+	tknStr, ok := getToken(r)
 	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")
+		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")}
 	}
 
 	a.keyGuard.RLock()
@@ -347,48 +208,85 @@ func (a *Authorizer) AuthInterceptor(ctx context.Context, req interface{}, info 
 		}
 	}
 	if !validated {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")
+		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")}
 	}
 
 	if !a.acceptedAudiences[keyClaims.Audience] {
-		return nil, stacktrace.NewErrorWithCode(dsserr.Unauthenticated,
-			"Invalid access token audience: %v", keyClaims.Audience)
+		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", keyClaims.Audience)}
 	}
 
-	expectation, err := a.validateKeyClaimedScopes(ctx, info, keyClaims.Scopes)
-	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Access token missing scopes; found %v while expecting %v", scopeSetToString(keyClaims.Scopes, ", "), expectation)
+	if pass, missing := validateScopes(authOptions, keyClaims.Scopes); !pass {
+		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
+			"Access token missing scopes (%v) while expecting %v and got %v",
+			missing, describeAuthorizationExpectations(authOptions), strings.Join(keyClaims.Scopes.ToStringSlice(), ", "))}
 	}
 
-	return handler(ContextWithOwner(ctx, models.Owner(keyClaims.Subject)), req)
+	return api.AuthorizationResult{
+		ClientID: &keyClaims.Subject,
+		Scopes:   keyClaims.Scopes.ToStringSlice(),
+	}
 }
 
-// Matches keyClaimedScopes against the required scopes and returns nil, nil if
-// keyClaimedScopes satisifies the authorizer, otherwise returns the expectation
-// and the error.
-func (a *Authorizer) validateKeyClaimedScopes(ctx context.Context, info *grpc.UnaryServerInfo, keyClaimedScopes ScopeSet) (string, error) {
-	if validator, known := a.scopesValidators[Operation(info.FullMethod)]; known {
-		err := validator.ValidateKeyClaimedScopes(ctx, keyClaimedScopes)
-		expectation := ""
-		if err != nil {
-			expectation = validator.Expectation()
+// describeAuthorizationExpectations builds a human-readable string describing the expectations of the authorization options.
+func describeAuthorizationExpectations(authOptions []api.AuthorizationOption) string {
+	if len(authOptions) == 0 {
+		return "no expectation"
+	}
+
+	var expectations []string
+	for _, authOption := range authOptions {
+		var authOptionExpectations []string
+		for scheme, scopes := range authOption {
+
+			scopesStr := make([]string, len(scopes))
+			for scopeIdx, scope := range scopes {
+				scopesStr[scopeIdx] = string(scope)
+			}
+
+			schemeExpectation := fmt.Sprintf("%s: (%s)", scheme, strings.Join(scopesStr, " AND "))
+			authOptionExpectations = append(authOptionExpectations, schemeExpectation)
 		}
-		return expectation, err
-	}
 
-	return "", nil
+		authOptionExpectation := fmt.Sprintf("[%s]", strings.Join(authOptionExpectations, " AND "))
+		expectations = append(expectations, authOptionExpectation)
+	}
+	return strings.Join(expectations, " OR ")
 }
 
-func getToken(ctx context.Context) (string, bool) {
-	headers, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return "", false
-	}
-	authHeader := headers.Get("authorization")
-	if len(authHeader) == 0 {
-		return "", false
+// validateScopes matches scopes against a set of authorization options. Validation against a single one of those is
+// enough for the validation to succeed. Returns true if it succeeds, or returns false and a string describing the
+// missing scopes if it fails. Empty authorization options means that the validation passes.
+func validateScopes(authOptions []api.AuthorizationOption, clientScopes ScopeSet) (bool, string) {
+	if len(authOptions) == 0 {
+		return true, ""
 	}
 
-	// Remove Bearer before returning.
-	return strings.TrimPrefix(authHeader[0], "Bearer "), true
+	var validationFailures []string
+	for authOptionIdx, authOption := range authOptions {
+		var reqScopes []string
+		for _, scopes := range authOption {
+			scopesStr := make([]string, len(scopes))
+			for scopeIdx, scope := range scopes {
+				scopesStr[scopeIdx] = string(scope)
+			}
+			reqScopes = append(reqScopes, scopesStr...)
+		}
+
+		if pass, missing := clientScopes.ValidateRequiredScopes(reqScopes); !pass {
+			validationFailures = append(validationFailures,
+				fmt.Sprintf("AuthOption[%d]: %v", authOptionIdx, strings.Join(missing, ", ")))
+		} else {
+			return true, ""
+		}
+	}
+
+	return false, strings.Join(validationFailures, " ; ")
+}
+
+func getToken(r *http.Request) (string, bool) {
+	authHeader := r.Header.Get("authorization")
+	if len(authHeader) < 7 || strings.ToLower(authHeader[0:6]) != "bearer" {
+		return "", false
+	}
+	return authHeader[7:], true
 }

@@ -20,6 +20,12 @@ import (
 func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *restapi.GetIdentificationServiceAreaRequest,
 ) restapi.GetIdentificationServiceAreaResponseSet {
 
+	if req.Auth.Error != nil {
+		resp := restapi.GetIdentificationServiceAreaResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
 	id, err := dssmodels.IDFromString(string(req.Id))
 	if err != nil {
 		return restapi.GetIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
@@ -45,13 +51,18 @@ func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *restapi.
 func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *restapi.CreateIdentificationServiceAreaRequest,
 ) restapi.CreateIdentificationServiceAreaResponseSet {
 
+	if req.Auth.Error != nil {
+		resp := restapi.CreateIdentificationServiceAreaResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
+	if req.Auth.ClientID == nil {
 		return restapi.CreateIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context"))}}
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	if req.BodyParseError != nil {
 		return restapi.CreateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
@@ -88,7 +99,7 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 	isa := &ridmodels.IdentificationServiceArea{
 		ID:     id,
 		URL:    string(req.Body.FlightsUrl),
-		Owner:  owner,
+		Owner:  dssmodels.Owner(*req.Auth.ClientID),
 		Writer: s.Locality,
 	}
 
@@ -127,6 +138,12 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *restapi.UpdateIdentificationServiceAreaRequest,
 ) restapi.UpdateIdentificationServiceAreaResponseSet {
 
+	if req.Auth.Error != nil {
+		resp := restapi.UpdateIdentificationServiceAreaResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
 	version, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
@@ -135,10 +152,9 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
+	if req.Auth.ClientID == nil {
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context"))}}
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	// TODO: put the validation logic in the models layer
 	if req.BodyParseError != nil {
@@ -167,7 +183,7 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 	isa := &ridmodels.IdentificationServiceArea{
 		ID:      id,
 		URL:     string(req.Body.FlightsUrl),
-		Owner:   owner,
+		Owner:   dssmodels.Owner(*req.Auth.ClientID),
 		Version: version,
 		Writer:  s.Locality,
 	}
@@ -209,10 +225,15 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *restapi.DeleteIdentificationServiceAreaRequest,
 ) restapi.DeleteIdentificationServiceAreaResponseSet {
 
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
+	if req.Auth.Error != nil {
+		resp := restapi.DeleteIdentificationServiceAreaResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	if req.Auth.ClientID == nil {
 		return restapi.DeleteIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context"))}}
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	version, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {
@@ -226,7 +247,7 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 	}
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	isa, subscribers, err := s.App.DeleteISA(ctx, id, owner, version)
+	isa, subscribers, err := s.App.DeleteISA(ctx, id, dssmodels.Owner(*req.Auth.ClientID), version)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete ISA")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -257,6 +278,12 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 // SearchIdentificationServiceAreas queries for all ISAs in the bounds.
 func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *restapi.SearchIdentificationServiceAreasRequest,
 ) restapi.SearchIdentificationServiceAreasResponseSet {
+
+	if req.Auth.Error != nil {
+		resp := restapi.SearchIdentificationServiceAreasResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
 
 	if req.Area == nil {
 		return restapi.SearchIdentificationServiceAreasResponseSet{Response400: &restapi.ErrorResponse{

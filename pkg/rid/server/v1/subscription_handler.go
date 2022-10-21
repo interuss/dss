@@ -19,11 +19,15 @@ import (
 func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubscriptionRequest,
 ) restapi.DeleteSubscriptionResponseSet {
 
-	// TODO: simply verify the owner was set in an upper level.
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
+	if req.Auth.Error != nil {
+		resp := restapi.DeleteSubscriptionResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	if req.Auth.ClientID == nil {
 		return restapi.DeleteSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context"))}}
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	version, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {
@@ -38,7 +42,7 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 	// TODO: put the context with timeout into an interceptor so it's always set.
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.App.DeleteSubscription(ctx, id, owner, version)
+	subscription, err := s.App.DeleteSubscription(ctx, id, dssmodels.Owner(*req.Auth.ClientID), version)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete Subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -64,10 +68,15 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSubscriptionsRequest,
 ) restapi.SearchSubscriptionsResponseSet {
 
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
+	if req.Auth.Error != nil {
+		resp := restapi.SearchSubscriptionsResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	if req.Auth.ClientID == nil {
 		return restapi.SearchSubscriptionsResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context"))}}
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
 	if req.Area == nil {
@@ -86,7 +95,7 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, owner)
+	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, dssmodels.Owner(*req.Auth.ClientID))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not search Subscriptions")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
@@ -111,6 +120,12 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 // GetSubscription gets a single subscription based on ID.
 func (s *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscriptionRequest,
 ) restapi.GetSubscriptionResponseSet {
+
+	if req.Auth.Error != nil {
+		resp := restapi.GetSubscriptionResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
 
 	id, err := dssmodels.IDFromString(string(req.Id))
 	if err != nil {
@@ -137,13 +152,18 @@ func (s *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubscriptionRequest,
 ) restapi.CreateSubscriptionResponseSet {
 
+	if req.Auth.Error != nil {
+		resp := restapi.CreateSubscriptionResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
+	if req.Auth.ClientID == nil {
 		return restapi.CreateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context"))}}
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	if req.BodyParseError != nil {
 		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
@@ -178,7 +198,7 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 
 	sub := &ridmodels.Subscription{
 		ID:     id,
-		Owner:  owner,
+		Owner:  dssmodels.Owner(*req.Auth.ClientID),
 		URL:    string(*req.Body.Callbacks.IdentificationServiceAreaUrl),
 		Writer: s.Locality,
 	}
@@ -234,6 +254,12 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubscriptionRequest,
 ) restapi.UpdateSubscriptionResponseSet {
 
+	if req.Auth.Error != nil {
+		resp := restapi.UpdateSubscriptionResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
 	version, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {
 		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
@@ -248,10 +274,9 @@ func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
+	if req.Auth.ClientID == nil {
 		return restapi.UpdateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context"))}}
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	if req.BodyParseError != nil {
 		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
@@ -273,7 +298,7 @@ func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 
 	sub := &ridmodels.Subscription{
 		ID:      id,
-		Owner:   owner,
+		Owner:   dssmodels.Owner(*req.Auth.ClientID),
 		URL:     string(*req.Body.Callbacks.IdentificationServiceAreaUrl),
 		Version: version,
 		Writer:  s.Locality,
