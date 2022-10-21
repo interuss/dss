@@ -7,7 +7,7 @@ from implicitdict import ImplicitDict
 import yaml
 
 from monitoring.uss_qualifier.resources.definitions import ResourceID, ResourceTypeName
-from monitoring.uss_qualifier.scenarios.scenario import (
+from monitoring.uss_qualifier.scenarios.definitions import (
     TestScenarioDeclaration,
 )
 

@@ -14,28 +14,20 @@ cd "${BASEDIR}/../.." || exit 1
 
 echo '#########################################################################'
 echo '## NOTE: A prerequisite for running this command locally is to have    ##'
-echo '## running instances of mock_uss acting as RID SP and RID DP           ##'
+echo '## running instances of mock_uss acting as RID SP, RID DP, and SCD     ##'
 echo '## (../mock_uss/run_locally_ridsp.sh) and                              ##'
-echo '## (../mock_uss/run_locally_riddp.sh) including related dependencies.  ##'
+echo '## (../mock_uss/run_locally_riddp.sh) and                              ##'
+echo '## (../mock_uss/run_locally_scdsc.sh) including related dependencies.  ##'
 echo '#########################################################################'
 
 monitoring/build.sh || exit 1
 
-CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally.json"
-CONFIG='--config config_run_locally.json'
+CONFIG_NAME="${1:-dev.local_test}"
+CONFIG_FLAG="--config ${CONFIG_NAME}"
 
 AUTH_SPEC='DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
 
-CONFIG_NAME="${1:-dev.local_test}"
-
-cat > ${CONFIG_LOCATION} <<- EOM
-{
-  "local": "CHE",
-  "config": "${CONFIG_NAME}"
-}
-EOM
-
-QUALIFIER_OPTIONS="$CONFIG"
+QUALIFIER_OPTIONS="$CONFIG_FLAG"
 
 REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report.json"
 # Report file must already exist to share correctly with the Docker container
@@ -58,5 +50,3 @@ docker run ${docker_args} --name uss_qualifier \
   -w /app/monitoring/uss_qualifier \
   interuss/monitoring \
   python main.py $QUALIFIER_OPTIONS
-
-rm ${CONFIG_LOCATION}

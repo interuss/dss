@@ -1,5 +1,7 @@
 # USS Qualifier WebApp
 
+# NOTE: WebApp has not yet been upgraded to support newer uss_qualifier architecture
+
 `uss_qualifier webapp` is a development-level web server that provides endpoint to initialize the automated testing of the USS qualifier.
 The local environment for the web server is setup by [run_locally.sh](run_locally.sh) script.
 

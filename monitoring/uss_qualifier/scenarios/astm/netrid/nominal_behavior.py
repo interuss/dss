@@ -17,7 +17,7 @@ from monitoring.uss_qualifier.resources.netrid import (
     NetRIDObserversResource,
     EvaluationConfigurationResource,
 )
-from monitoring.uss_qualifier.scenarios import TestScenario
+from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 from monitoring.uss_qualifier.scenarios.astm.netrid import display_data_evaluator
 from monitoring.uss_qualifier.scenarios.astm.netrid.injection import InjectedFlight
 

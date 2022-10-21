@@ -2,7 +2,8 @@ import inspect
 from typing import List
 
 from monitoring.monitorlib.inspection import fullname
-from monitoring.uss_qualifier.scenarios import documentation, TestScenarioType
+from monitoring.uss_qualifier.scenarios import documentation
+from monitoring.uss_qualifier.scenarios.scenario import TestScenarioType
 
 
 def validate(test_scenarios: List[TestScenarioType]):

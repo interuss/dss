@@ -13,10 +13,10 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
 )
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.resources.flight_planning.target import TestTarget
-from monitoring.uss_qualifier.scd.executor.test_steps.inject_flight import (
+from monitoring.uss_qualifier.scenarios.scenario import TestScenarioType
+from monitoring.uss_qualifier.scenarios.astm.utm.evaluation import (
     validate_op_intent_details,
 )
-from monitoring.uss_qualifier.scenarios import TestScenarioType
 
 
 def clear_area(

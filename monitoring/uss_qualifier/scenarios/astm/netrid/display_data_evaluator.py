@@ -10,7 +10,7 @@ from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.resources.netrid.evaluation import EvaluationConfiguration
 from monitoring.uss_qualifier.resources.netrid.observers import RIDSystemObserver
-from monitoring.uss_qualifier.scenarios import TestScenarioType
+from monitoring.uss_qualifier.scenarios.scenario import TestScenarioType
 from monitoring.uss_qualifier.scenarios.astm.netrid.injection import InjectedFlight
 from monitoring.monitorlib.rid_automated_testing import observation_api
 
