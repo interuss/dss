@@ -62,12 +62,12 @@ echo '{
               "base_url": "http://host.docker.internal:8082"
             }
           },
-          "nominal_intent": {
+          "invalid_flight_auth_flights": {
             "resource_type": "flight_planning.FlightIntentsResource",
             "specification": {
               "planning_time": "0:05:00",
               "json_file_source": {
-                "path": "./test_data/che/flight_intents/nominal_intent.json"
+                "path": "./test_data/che/flight_intents/invalid_flight_auths.json"
               }
             }
           },

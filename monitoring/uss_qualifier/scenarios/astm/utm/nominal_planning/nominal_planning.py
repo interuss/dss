@@ -12,7 +12,7 @@ from monitoring.uss_qualifier.resources.flight_planning import (
 )
 from monitoring.uss_qualifier.resources.flight_planning.target import TestTarget
 from monitoring.uss_qualifier.scenarios import TestScenario
-from monitoring.uss_qualifier.scenarios.astm.utm.test_steps import (
+from monitoring.uss_qualifier.scenarios.flight_planning.test_steps import (
     clear_area,
     check_capabilities,
     inject_successful_flight_intent,
@@ -125,7 +125,7 @@ class NominalPlanning(TestScenario):
         if resp.result == InjectFlightResult.Planned:
             self.record_failed_check(
                 name="Incorrectly planned",
-                summary="Conflict-free flight not created due to conflict",
+                summary="Flight created even though there was a conflict",
                 severity=Severity.High,
                 relevant_participants=[self.uss2.participant_id],
                 details="The user's intended flight conflicts with an existing operational intent so the result of attempting to fulfill this flight intent should not be a successful planning of the flight.",

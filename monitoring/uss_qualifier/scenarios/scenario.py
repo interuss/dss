@@ -111,6 +111,7 @@ class TestScenario(ABC):
                 timestamp=StringBasedDateTime(arrow.utcnow().datetime),
             )
         )
+        print(f"Note: {key} -> {message}")
 
     def begin_test_scenario(self) -> None:
         self._expect_phase(ScenarioPhase.NotStarted)
@@ -162,6 +163,9 @@ class TestScenario(ABC):
         if "queries" not in self._step_report:
             self._step_report.queries = []
         self._step_report.queries.append(query)
+        print(
+            f"Queried {query.request['method']} {query.request['url']} -> {query.response.status_code}"
+        )
 
     def record_failed_check(
         self,

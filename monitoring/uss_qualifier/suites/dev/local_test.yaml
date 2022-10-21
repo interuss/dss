@@ -11,6 +11,7 @@ resources:
   flight_planners: flight_planning.FlightPlannersResource
   conflicting_flights: flight_planning.FlightIntentsResource
   priority_preemption_flights: flight_planning.FlightIntentsResource
+  invalid_flight_auth_flights: flight_planning.FlightIntentsResource
   dss: astm.f3548.v21.DSSInstanceResource
 actions:
 - test_suite:
@@ -26,6 +27,7 @@ actions:
     resources:
       conflicting_flights: conflicting_flights
       priority_preemption_flights: priority_preemption_flights
+      invalid_flight_auth_flights: invalid_flight_auth_flights
       flight_planners: flight_planners
       dss: dss
 
