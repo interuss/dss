@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 import inspect
 import json
-from enum import Enum
 from typing import Dict, List, Optional, TypeVar, Generic
 
 from implicitdict import StringBasedDateTime, ImplicitDict
@@ -30,6 +29,7 @@ from monitoring.uss_qualifier.suites.definitions import (
     ActionGeneratorSpecificationType,
     ActionGeneratorDefinition,
     ActionType,
+    TestSuiteDeclaration,
 )
 
 
@@ -64,17 +64,17 @@ class TestSuiteAction(object):
 
         action_type = action.get_action_type()
         if action_type == ActionType.TestScenario:
-            self._test_scenario = action.test_scenario.make_test_scenario(
-                resources_for_child
+            self._test_scenario = TestScenario.make_test_scenario(
+                declaration=action.test_scenario, resource_pool=resources_for_child
             )
         elif action_type == ActionType.TestSuite:
             self._test_suite = TestSuite(
-                definition=TestSuiteDefinition.load(action.test_suite.suite_type),
-                resources=resources_for_child,
+                declaration=action.test_suite,
+                resources=resources,
             )
         elif action_type == ActionType.ActionGenerator:
             self._action_generator = ActionGenerator.make_from_definition(
-                action.action_generator, resources_for_child
+                definition=action.action_generator, resources=resources_for_child
             )
         else:
             ActionType.raise_invalid_action_declaration()
@@ -116,7 +116,9 @@ class TestSuiteAction(object):
         return report
 
     def _run_action_generator(self) -> ActionGeneratorReport:
-        report = ActionGeneratorReport(actions=[])
+        report = ActionGeneratorReport(
+            actions=[], generator_type=self._action_generator.definition.generator_type
+        )
         while True:
             action_report = self._action_generator.run_next_action()
             if action_report is None:
@@ -126,27 +128,39 @@ class TestSuiteAction(object):
 
 
 class TestSuite(object):
+    declaration: TestSuiteDeclaration
     definition: TestSuiteDefinition
     _actions: List[TestSuiteAction]
 
     def __init__(
-        self, definition: TestSuiteDefinition, resources: Dict[ResourceID, ResourceType]
+        self,
+        declaration: TestSuiteDeclaration,
+        resources: Dict[ResourceID, ResourceType],
     ):
-        self.definition = definition
-        for resource_id, resource_type in definition.resources.items():
-            if resource_id not in resources:
+        self.declaration = declaration
+        self.definition = TestSuiteDefinition.load(self.declaration.suite_type)
+        local_resources = {
+            local_resource_id: resources[parent_resource_id]
+            for local_resource_id, parent_resource_id in declaration.resources.items()
+        }
+        for resource_id, resource_type in self.definition.resources.items():
+            if resource_id not in local_resources:
                 raise ValueError(
-                    f'Test suite "{definition.name}" is missing resource {resource_id} ({resource_type})'
+                    f'Test suite "{self.definition.name}" is missing resource {resource_id} ({resource_type})'
                 )
-            if not resources[resource_id].is_type(resource_type):
+            if not local_resources[resource_id].is_type(resource_type):
                 raise ValueError(
-                    f'Test suite "{definition.name}" expected resource {resource_id} to be {resource_type}, but instead it was provided {fullname(resources[resource_id].__class__)}'
+                    f'Test suite "{self.definition.name}" expected resource {resource_id} to be {resource_type}, but instead it was provided {fullname(resources[resource_id].__class__)}'
                 )
-        self._actions = [TestSuiteAction(a, resources) for a in definition.actions]
+        self._actions = [
+            TestSuiteAction(action=a, resources=local_resources)
+            for a in self.definition.actions
+        ]
 
     def run(self) -> TestSuiteReport:
         report = TestSuiteReport(
             name=self.definition.name,
+            suite_type=self.declaration.suite_type,
             documentation_url="",  # TODO: Populate correctly
             start_time=StringBasedDateTime(datetime.utcnow()),
             actions=[],
@@ -171,6 +185,8 @@ class TestSuite(object):
 
 
 class ActionGenerator(ABC, Generic[ActionGeneratorSpecificationType]):
+    definition: ActionGeneratorDefinition
+
     @abstractmethod
     def __init__(
         self,
@@ -205,7 +221,8 @@ class ActionGenerator(ABC, Generic[ActionGeneratorSpecificationType]):
 
         import_submodules(action_generators_module)
         action_generator_type = get_module_object_by_name(
-            action_generators_module, definition.generator_type
+            parent_module=action_generators_module,
+            object_name=definition.generator_type,
         )
         if not issubclass(action_generator_type, ActionGenerator):
             raise NotImplementedError(
@@ -225,7 +242,9 @@ class ActionGenerator(ABC, Generic[ActionGeneratorSpecificationType]):
                 definition.specification, specification_type
             )
         constructor_args["resources"] = resources
-        return action_generator_type(**constructor_args)
+        generator = action_generator_type(**constructor_args)
+        generator.definition = definition
+        return generator
 
 
 ActionGeneratorType = TypeVar("ActionGeneratorType", bound=ActionGenerator)

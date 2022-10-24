@@ -8,7 +8,7 @@ from monitoring.uss_qualifier.resources.netrid import (
     FlightDataResource,
     FlightDataStorageResource,
 )
-from monitoring.uss_qualifier.scenarios import TestScenario
+from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 
 
 class StoreFlightData(TestScenario):

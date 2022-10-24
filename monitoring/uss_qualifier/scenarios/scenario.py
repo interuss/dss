@@ -6,7 +6,7 @@ from typing import Callable, Dict, List, Optional, TypeVar, Union, Set
 
 import arrow
 
-from implicitdict import ImplicitDict, StringBasedDateTime
+from implicitdict import StringBasedDateTime
 
 from monitoring.monitorlib import fetch, inspection
 from monitoring.uss_qualifier import scenarios as scenarios_module
@@ -19,6 +19,7 @@ from monitoring.uss_qualifier.reports import (
     ErrorReport,
 )
 from monitoring.uss_qualifier.reports.report import Note
+from monitoring.uss_qualifier.scenarios.definitions import TestScenarioDeclaration
 from monitoring.uss_qualifier.scenarios.documentation import (
     TestScenarioDocumentation,
     TestCaseDocumentation,
@@ -47,6 +48,7 @@ class TestScenario(ABC):
       2) Call TestScenario.__init__ from the subclass's __init__
     """
 
+    declaration: TestScenarioDeclaration
     documentation: TestScenarioDocumentation
     on_failed_check: Optional[Callable[[FailedCheck], None]] = None
     _phase: ScenarioPhase = ScenarioPhase.Undefined
@@ -59,6 +61,38 @@ class TestScenario(ABC):
     def __init__(self):
         self.documentation = parse_documentation(self.__class__)
         self._phase = ScenarioPhase.NotStarted
+
+    @staticmethod
+    def make_test_scenario(
+        declaration: TestScenarioDeclaration,
+        resource_pool: Dict[ResourceID, ResourceTypeName],
+    ) -> "TestScenario":
+        inspection.import_submodules(scenarios_module)
+        scenario_type = inspection.get_module_object_by_name(
+            parent_module=scenarios_module, object_name=declaration.scenario_type
+        )
+        if not issubclass(scenario_type, TestScenario):
+            raise NotImplementedError(
+                "Scenario type {} is not a subclass of the TestScenario base class".format(
+                    scenario_type.__name__
+                )
+            )
+
+        constructor_signature = inspect.signature(scenario_type.__init__)
+        constructor_args = {}
+        for arg_name, arg in constructor_signature.parameters.items():
+            if arg_name == "self":
+                continue
+            if arg_name not in resource_pool:
+                available_pool = ", ".join(resource_pool)
+                raise ValueError(
+                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {self.scenario_type} test scenario (resource pool: {available_pool})'
+                )
+            constructor_args[arg_name] = resource_pool[arg_name]
+
+        scenario = scenario_type(**constructor_args)
+        scenario.declaration = declaration
+        return scenario
 
     @abstractmethod
     def run(self):
@@ -76,6 +110,7 @@ class TestScenario(ABC):
     def _make_scenario_report(self) -> None:
         self._scenario_report = TestScenarioReport(
             name=self.documentation.name,
+            scenario_type=self.declaration.scenario_type,
             documentation_url=self.documentation.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
             cases=[],
@@ -103,13 +138,10 @@ class TestScenario(ABC):
             }
         )
         if "notes" not in self._scenario_report:
-            self._scenario_report.notes = []
-        self._scenario_report.notes.append(
-            Note(
-                key=key,
-                message=message,
-                timestamp=StringBasedDateTime(arrow.utcnow().datetime),
-            )
+            self._scenario_report.notes = {}
+        self._scenario_report.notes[key] = Note(
+            message=message,
+            timestamp=StringBasedDateTime(arrow.utcnow().datetime),
         )
         print(f"Note: {key} -> {message}")
 
@@ -306,37 +338,25 @@ class TestScenario(ABC):
 TestScenarioType = TypeVar("TestScenarioType", bound=TestScenario)
 
 
-class TestScenarioDeclaration(ImplicitDict):
-    scenario_type: str
-    """Type of test scenario, expressed as a Python class name qualified relative to this `scenarios` module"""
-
-    resources: Dict[str, str] = {}
-    """Mapping of resource parameter (additional argument to concrete test scenario constructor) to ID of resource to use"""
-
-    def make_test_scenario(
-        self, resource_pool: Dict[ResourceID, ResourceTypeName]
-    ) -> TestScenario:
-        inspection.import_submodules(scenarios_module)
-        scenario_type = inspection.get_module_object_by_name(
-            scenarios_module, self.scenario_type
-        )
-        if not issubclass(scenario_type, TestScenario):
-            raise NotImplementedError(
-                "Scenario type {} is not a subclass of the TestScenario base class".format(
-                    scenario_type.__name__
-                )
-            )
-
-        constructor_signature = inspect.signature(scenario_type.__init__)
-        constructor_args = {}
-        for arg_name, arg in constructor_signature.parameters.items():
-            if arg_name == "self":
-                continue
-            if arg_name not in resource_pool:
-                available_pool = ", ".join(resource_pool)
-                raise ValueError(
-                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {self.scenario_type} test scenario (resource pool: {available_pool})'
-                )
-            constructor_args[arg_name] = resource_pool[arg_name]
-
-        return scenario_type(**constructor_args)
+def find_test_scenarios(
+    module, already_checked: Optional[Set[str]] = None
+) -> Set[TestScenarioType]:
+    if already_checked is None:
+        already_checked = set()
+    already_checked.add(module.__name__)
+    test_scenarios = set()
+    for name, member in inspect.getmembers(module):
+        if (
+            inspect.ismodule(member)
+            and member.__name__ not in already_checked
+            and member.__name__.startswith("monitoring.uss_qualifier.scenarios")
+        ):
+            descendants = find_test_scenarios(member, already_checked)
+            for descendant in descendants:
+                if descendant not in test_scenarios:
+                    test_scenarios.add(descendant)
+        elif inspect.isclass(member) and member is not TestScenario:
+            if issubclass(member, TestScenario):
+                if member not in test_scenarios:
+                    test_scenarios.add(member)
+    return test_scenarios

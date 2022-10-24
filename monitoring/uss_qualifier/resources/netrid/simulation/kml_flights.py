@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
 # A file to generate Flight Records from KML.
-import argparse
 import datetime
-import json
 import math
 import s2sphere
 import os
