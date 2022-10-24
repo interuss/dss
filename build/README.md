@@ -307,7 +307,11 @@ a PR to that effect would be greatly appreciated.
 
     1.  `VAR_STORAGE_CLASS`: Kubernetes Storage Class to use for CockroachDB and
         Prometheus volumes. You can check your cluster's possible values with
-        `kubectl get storageclass`.
+        `kubectl get storageclass`. If you're not sure, each cloud provider has
+        some default storage classes that should work:
+          - Google Cloud: `standard`
+          - Azure: `default`
+          - AWS: `gp2`
 
     1.  `VAR_INGRESS_NAME`: If using Google Kubernetes Engine, set this to the
         the name of the gateway static IP address created above (e.g.,
