@@ -77,6 +77,12 @@ class TestCaseReport(ImplicitDict):
     steps: List[TestStepReport]
     """Reports for each of the test steps in this test case"""
 
+    def get_all_failed_checks(self) -> List[FailedCheck]:
+        result = []
+        for step in self.steps:
+            result += step.failed_checks
+        return result
+
 
 class ErrorReport(ImplicitDict):
     type: str
@@ -138,6 +144,12 @@ class TestScenarioReport(ImplicitDict):
 
     execution_error: Optional[ErrorReport]
     """If there was an error while executing this test scenario, this field describes the error"""
+
+    def get_all_failed_checks(self) -> List[FailedCheck]:
+        result = []
+        for case in self.cases:
+            result += case.get_all_failed_checks()
+        return result
 
 
 class ActionGeneratorReport(ImplicitDict):

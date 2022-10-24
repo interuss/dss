@@ -23,7 +23,7 @@ from monitoring.uss_qualifier.scenarios.flight_planning.test_steps import (
 
 class Validation(TestScenario):
     flight_intents: List[InjectFlightRequest]
-    uss: TestTarget
+    ussp: TestTarget
 
     def __init__(
         self,
@@ -35,7 +35,7 @@ class Validation(TestScenario):
             raise ValueError(
                 f"`{self.me()}` TestScenario requires exactly 1 flight_planner; found {len(flight_planners.flight_planners)}"
             )
-        self.uss = flight_planners.flight_planners[0]
+        self.ussp = flight_planners.flight_planners[0]
 
         intents = flight_intents.get_flight_intents()
         if len(intents) < 2:
@@ -61,6 +61,8 @@ class Validation(TestScenario):
     def run(self):
         self.begin_test_scenario()
 
+        self.record_note("Planner", self.ussp.participant_id)
+
         self.begin_test_case("Setup")
         if not self._setup():
             return
@@ -83,7 +85,7 @@ class Validation(TestScenario):
             self,
             "Check for necessary capabilities",
             required_capabilities=[
-                (self.uss, Capability.FlightAuthorisationValidation)
+                (self.ussp, Capability.FlightAuthorisationValidation)
             ],
         ):
             return False
@@ -92,7 +94,7 @@ class Validation(TestScenario):
             self,
             "Area clearing",
             self.flight_intents,
-            [self.uss],
+            [self.ussp],
         ):
             return False
 
@@ -102,7 +104,7 @@ class Validation(TestScenario):
         self.begin_test_step("Inject invalid flight intent")
 
         for flight_intent in self.flight_intents[0:-1]:
-            resp, query, flight_id = self.uss.request_flight(flight_intent)
+            resp, query, flight_id = self.ussp.request_flight(flight_intent)
             self.record_query(query)
             if resp.result == InjectFlightResult.Planned:
                 problems = ", ".join(
@@ -114,7 +116,7 @@ class Validation(TestScenario):
                     name="Incorrectly planned",
                     summary="Flight planned with invalid flight authorisation",
                     severity=Severity.Medium,
-                    relevant_participants=[self.uss.participant_id],
+                    relevant_participants=[self.ussp.participant_id],
                     details=f"Flight intent resulted in successful flight planning even though the flight authorisation had: {problems}",
                     query_timestamps=[query.request.timestamp],
                 )
@@ -123,8 +125,8 @@ class Validation(TestScenario):
                     name="Failure",
                     summary="Failed to create flight",
                     severity=Severity.Medium,
-                    relevant_participants=[self.uss.participant_id],
-                    details=f'{self.uss.participant_id} Failed to process the user flight intent: "{resp.notes}"',
+                    relevant_participants=[self.ussp.participant_id],
+                    details=f'{self.ussp.participant_id} Failed to process the user flight intent: "{resp.notes}"',
                     query_timestamps=[query.request.timestamp],
                 )
 
@@ -134,7 +136,7 @@ class Validation(TestScenario):
 
     def _plan_valid_flight(self) -> bool:
         resp = inject_successful_flight_intent(
-            self, "Inject valid flight intent", self.uss, self.flight_intents[-1]
+            self, "Inject valid flight intent", self.ussp, self.flight_intents[-1]
         )
         if resp is None:
             return False
@@ -144,13 +146,13 @@ class Validation(TestScenario):
     def cleanup(self):
         self.begin_cleanup()
 
-        flights = {self.uss: list(self.uss.created_flight_ids.values())}
+        flights = {self.ussp: list(self.ussp.created_flight_ids.values())}
         flights = cleanup_flights(self, flights)
 
         names_to_remove = [
-            k for k, v in self.uss.created_flight_ids if v in flights[self.uss]
+            k for k, v in self.ussp.created_flight_ids if v in flights[self.ussp]
         ]
         for name in names_to_remove:
-            del self.uss.created_flight_ids[name]
+            del self.ussp.created_flight_ids[name]
 
         self.end_cleanup()
