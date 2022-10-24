@@ -48,7 +48,9 @@ class FlightDataResource(Resource[FlightDataSpecification]):
             )
         elif specification.kml_file_source is not None:
             self.flight_collection = get_flight_records(
-                specification.kml_file_source.kml_path
+                specification.kml_file_source.kml_path,
+                specification.kml_file_source.reference_time.datetime,
+                specification.kml_file_source.random_seed,
             )
         else:
             raise ValueError(

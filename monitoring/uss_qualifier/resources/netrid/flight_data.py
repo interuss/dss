@@ -29,6 +29,16 @@ class FlightDataJSONFileConfiguration(ImplicitDict):
 
 
 class AdjacentCircularFlightsSimulatorConfiguration(ImplicitDict):
+    reference_time: StringBasedDateTime = StringBasedDateTime("2022-01-01T00:00:00Z")
+    """The reference time relative to which flight data should be generated.
+    
+    The time should be irrelevant in real-world use as times are adjusted to be
+    relative to a time close to the time of test.
+    """
+
+    random_seed: Optional[int] = 12345
+    """Pseudorandom seed that should be used, or specify None to use default Random."""
+
     minx: float = 7.4735784530639648
     """Western edge of bounding box (degrees longitude)"""
 
@@ -49,6 +59,16 @@ class AdjacentCircularFlightsSimulatorConfiguration(ImplicitDict):
 
 
 class FlightDataKMLFileConfiguration(ImplicitDict):
+    reference_time: StringBasedDateTime = StringBasedDateTime("2022-01-01T00:00:00Z")
+    """The reference time relative to which flight data should be generated.
+    
+    The time should be irrelevant in real-world use as times are adjusted to be
+    relative to a time close to the time of test.
+    """
+
+    random_seed: Optional[int] = 12345
+    """Pseudorandom seed that should be used, or specify None to use default Random."""
+
     kml_path: str
     """Path to a local file containing a KML describing a FlightRecordCollection."""
 

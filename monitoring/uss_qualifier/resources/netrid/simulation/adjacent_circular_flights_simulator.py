@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+import random
+from datetime import timedelta
 from typing import List
 
 import arrow
@@ -28,10 +29,6 @@ from .utils import (
 )
 
 
-REFERENCE_TIME = arrow.get("2022-10-01T12:00:00Z")
-"""Flight data is generated relative to this reference time"""
-
-
 class AdjacentCircularFlightsSimulator:
 
     """A class to generate Flight Paths given a bounding box, this is the main module to generate flight path datasets, the data is generated as latitude / longitude pairs with assoiated with the flights. Additional flight metadata e.g. flight id, altitude, registration number can also be generated"""
@@ -44,7 +41,11 @@ class AdjacentCircularFlightsSimulator:
         Raises:
         ValueError: If bounding box has more area than a 500m x 500m square.
         """
-
+        self.reference_time = arrow.get(config.reference_time.datetime)
+        if config.random_seed is None:
+            self.random = random
+        else:
+            self.random = random.Random(x=config.random_seed)
         self.minx = config.minx
         self.miny = config.miny
         self.maxx = config.maxx
@@ -90,7 +91,7 @@ class AdjacentCircularFlightsSimulator:
         transformed_x, transformed_y = transformer.transform(center.x, center.y)
         pt = Point(transformed_x, transformed_y)
         # Now we have a point, we can buffer the point and create bounding boxes of the buffer to get the appropriate polygons, more than three boxes can be created, for the tests three will suffice.
-        now = REFERENCE_TIME.datetime
+        now = self.reference_time
 
         box_diagonals = [
             {
@@ -254,7 +255,7 @@ class AdjacentCircularFlightsSimulator:
         """This class generates details of flights and operator details for a flight, this data is required for identifying flight, operator and operation"""
 
         my_flight_details_generator = (
-            operator_flight_details.OperatorFlightDataGenerator()
+            operator_flight_details.OperatorFlightDataGenerator(self.random)
         )
 
         # TODO: Put operator_location in center of circle rather than stacking operators of all flights on top of each other
@@ -283,7 +284,7 @@ class AdjacentCircularFlightsSimulator:
         # Get the number of flights
         num_flights = len(self.grid_cells_flight_tracks)
         time_increment_seconds = 1  # the number of seconds it takes to go from one point to next on the track
-        now = REFERENCE_TIME
+        now = self.reference_time
         now_isoformat = now.isoformat()
         for i in range(num_flights):
             flight_positions_len = len(self.grid_cells_flight_tracks[i].track)
