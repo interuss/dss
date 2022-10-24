@@ -39,7 +39,10 @@ var (
 	}
 	GetSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas", "dss.write.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
+		},
+		{
+			"AuthFromAuthorizationAuthority": {"dss.write.identification_service_areas"},
 		},
 	}
 	CreateSubscriptionSecurity = []api.AuthorizationOption{
