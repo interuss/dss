@@ -16,7 +16,7 @@ docker container run -it \
   	-v "$(pwd)/../astm-utm/Protocol/utm.yaml:/resources/utm.yaml" \
   	-v "$(pwd)/../rid/v1/remoteid/augmented.yaml:/resources/rid.yaml" \
 	  -v "$(pwd)/example:/resources/example" \
-	  openapi-to-go-server \
+	  interuss/openapi-to-go-server \
 	      --api_import example/api \
 	      --api /resources/utm.yaml#dss@scd \
 	      --api /resources/rid.yaml#dss@rid \

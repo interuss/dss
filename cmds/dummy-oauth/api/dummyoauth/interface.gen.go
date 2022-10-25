@@ -3,11 +3,12 @@ package dummyoauth
 
 import (
 	"context"
+
 	"github.com/interuss/dss/cmds/dummy-oauth/api"
 )
 
 var (
-	GetTokenSecurity = map[string]api.SecurityScheme{}
+	GetTokenSecurity = []api.AuthorizationOption{}
 )
 
 type GetTokenRequest struct {

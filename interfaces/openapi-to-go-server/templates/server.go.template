@@ -11,7 +11,7 @@ type APIRouter struct {
 // *<PACKAGE>.APIRouter (type defined above) implements the <API_PACKAGE>.PartialRouter interface
 func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
     for _, route := range s.Routes {
-        if route.Pattern.MatchString(r.URL.Path) {
+        if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
             route.Handler(route.Pattern, w, r)
             return true
         }
