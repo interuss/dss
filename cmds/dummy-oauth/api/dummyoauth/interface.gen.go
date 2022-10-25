@@ -3,7 +3,6 @@ package dummyoauth
 
 import (
 	"context"
-
 	"github.com/interuss/dss/cmds/dummy-oauth/api"
 )
 

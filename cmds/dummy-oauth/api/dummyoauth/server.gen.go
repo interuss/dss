@@ -3,11 +3,10 @@ package dummyoauth
 
 import (
 	"context"
+	"github.com/interuss/dss/cmds/dummy-oauth/api"
 	"net/http"
 	"regexp"
 	"strconv"
-
-	"github.com/interuss/dss/cmds/dummy-oauth/api"
 )
 
 type APIRouter struct {

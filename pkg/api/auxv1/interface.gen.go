@@ -38,7 +38,7 @@ type ValidateOauthRequest struct {
 	Auth api.AuthorizationResult
 }
 type ValidateOauthResponseSet struct {
-	// The provided token was was validated.
+	// The provided token was validated.
 	Response200 *api.EmptyResponseBody
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
