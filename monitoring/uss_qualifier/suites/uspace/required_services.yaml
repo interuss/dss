@@ -1,19 +1,19 @@
 name: U-space required services
 resources:
-  conflicting_flights: flight_planning.FlightIntentsResource
-  priority_preemption_flights: flight_planning.FlightIntentsResource
-  invalid_flight_auth_flights: flight_planning.FlightIntentsResource
-  flight_planners: flight_planning.FlightPlannersResource
-  dss: astm.f3548.v21.DSSInstanceResource
+  conflicting_flights: resources.flight_planning.FlightIntentsResource
+  priority_preemption_flights: resources.flight_planning.FlightIntentsResource
+  invalid_flight_auth_flights: resources.flight_planning.FlightIntentsResource
+  flight_planners: resources.flight_planning.FlightPlannersResource
+  dss: resources.astm.f3548.v21.DSSInstanceResource
 
-  flights_data: netrid.FlightDataResource
-  service_providers: netrid.NetRIDServiceProviders
-  observers: netrid.NetRIDObserversResource
-  evaluation_configuration: netrid.EvaluationConfigurationResource
+  flights_data: resources.netrid.FlightDataResource
+  service_providers: resources.netrid.NetRIDServiceProviders
+  observers: resources.netrid.NetRIDObserversResource
+  evaluation_configuration: resources.netrid.EvaluationConfigurationResource
 
 actions:
 - test_suite:
-    suite_type: uspace.flight_auth
+    suite_type: suites.uspace.flight_auth
     resources:
       conflicting_flights: conflicting_flights
       priority_preemption_flights: priority_preemption_flights
@@ -22,7 +22,7 @@ actions:
       dss: dss
   on_failure: Continue
 - test_suite:
-    suite_type: astm.netrid.f3411_19
+    suite_type: suites.astm.netrid.f3411_19
     resources:
       flights_data: flights_data
       service_providers: service_providers

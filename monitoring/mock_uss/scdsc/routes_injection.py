@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import List, Tuple
-from urllib.parse import urlparse
 import uuid
 
 import flask
@@ -9,7 +8,6 @@ import yaml
 
 from monitoring.monitorlib import scd, versioning
 from monitoring.monitorlib.clients import scd as scd_client
-from monitoring.monitorlib.scd_automated_testing import scd_injection_api
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightRequest,
     InjectFlightResponse,

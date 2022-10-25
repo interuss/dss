@@ -1,62 +1,11 @@
 {
   "resources": {
     "resource_declarations": {
-      "utm_auth": {
-        "resource_type": "communications.AuthAdapterResource",
-        "specification": {
-          "environment_variable_containing_auth_spec": "AUTH_SPEC"
-        }
-      },
-      "flight_planners": {
-        "resource_type": "flight_planning.FlightPlannersResource",
-        "dependencies": {
-          "auth_adapter": "utm_auth"
-        },
-        "specification": {
-          "flight_planners": [
-            {
-              "participant_id": "uss1",
-              "injection_base_url": "http://host.docker.internal:8074/scdsc"
-            },
-            {
-              "participant_id": "uss2",
-              "injection_base_url": "http://host.docker.internal:8074/scdsc"
-            }
-          ]
-        }
-      },
-      "conflicting_flights": {
-        "resource_type": "flight_planning.FlightIntentsResource",
-        "specification": {
-          "planning_time": "0:05:00",
-          "json_file_source": {
-            "path": "./test_data/che/flight_intents/conflicting_flights.json"
-          }
-        }
-      },
-      "priority_preemption_flights": {
-        "resource_type": "flight_planning.FlightIntentsResource",
-        "specification": {
-          "planning_time": "0:05:00",
-          "json_file_source": {
-            "path": "./test_data/che/flight_intents/priority_preemption.json"
-          }
-        }
-      },
-      "dss": {
-        "resource_type": "astm.f3548.v21.DSSInstanceResource",
-        "dependencies": {
-          "auth_adapter": "utm_auth"
-        },
-        "specification": {
-          "participant_id": "uss1",
-          "base_url": "http://host.docker.internal:8082"
-        }
-      }
+      "$ref": "resources.yaml#/f3548"
     }
   },
   "test_suite": {
-    "suite_type": "astm.utm.f3548_21",
+    "suite_type": "suites.astm.utm.f3548_21",
     "resources": {
       "flight_planners": "flight_planners",
       "conflicting_flights": "conflicting_flights",

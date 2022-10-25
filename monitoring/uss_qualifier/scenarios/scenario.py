@@ -8,6 +8,7 @@ import arrow
 
 from implicitdict import StringBasedDateTime
 
+from monitoring import uss_qualifier as uss_qualifier_module
 from monitoring.monitorlib import fetch, inspection
 from monitoring.uss_qualifier import scenarios as scenarios_module
 from monitoring.uss_qualifier.common_data_definitions import Severity
@@ -69,7 +70,7 @@ class TestScenario(ABC):
     ) -> "TestScenario":
         inspection.import_submodules(scenarios_module)
         scenario_type = inspection.get_module_object_by_name(
-            parent_module=scenarios_module, object_name=declaration.scenario_type
+            parent_module=uss_qualifier_module, object_name=declaration.scenario_type
         )
         if not issubclass(scenario_type, TestScenario):
             raise NotImplementedError(

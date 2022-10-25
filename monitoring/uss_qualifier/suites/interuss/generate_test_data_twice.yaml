@@ -1,16 +1,16 @@
 name: Generate RID test data twice
 resources:
-  adjacent_circular_flights_data: netrid.FlightDataResource
-  adjacent_circular_storage_config: netrid.FlightDataStorageResource
-  kml_flights_data: netrid.FlightDataResource
-  kml_storage_config: netrid.FlightDataStorageResource
+  adjacent_circular_flights_data: resources.netrid.FlightDataResource
+  adjacent_circular_storage_config: resources.netrid.FlightDataStorageResource
+  kml_flights_data: resources.netrid.FlightDataResource
+  kml_storage_config: resources.netrid.FlightDataStorageResource
 actions:
 - action_generator:
-    generator_type: Repeat
+    generator_type: action_generators.Repeat
     specification:
       action_to_repeat:
         test_suite:
-          suite_type: interuss.generate_test_data
+          suite_type: suites.interuss.generate_test_data
           resources:
             adjacent_circular_flights_data: adjacent_circular_flights_data
             adjacent_circular_storage_config: adjacent_circular_storage_config
