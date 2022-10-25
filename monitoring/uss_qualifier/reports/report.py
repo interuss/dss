@@ -212,6 +212,9 @@ class TestSuiteReport(ImplicitDict):
 
 
 class TestRunReport(ImplicitDict):
+    codebase_version: str
+    """Version of codebase used to run uss_qualifier"""
+
     configuration: TestConfiguration
     """Configuration used to run uss_qualifier"""
 

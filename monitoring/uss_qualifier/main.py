@@ -5,6 +5,7 @@ import json
 import os
 import sys
 
+from monitoring.monitorlib.versioning import get_code_version
 from monitoring.uss_qualifier.configurations.configuration import TestConfiguration
 from monitoring.uss_qualifier.reports.report import TestRunReport
 from monitoring.uss_qualifier.resources.resource import create_resources
@@ -26,6 +27,7 @@ def parseArgs() -> argparse.Namespace:
 
 
 def uss_test_executor(config: str):
+    codebase_version = get_code_version()
     test_config = TestConfiguration.from_string(config)
     resources = create_resources(test_config.resources.resource_declarations)
     suite = TestSuite(test_config.test_suite, resources)
@@ -35,7 +37,9 @@ def uss_test_executor(config: str):
     else:
         print("Final result: FAILURE")
 
-    return TestRunReport(configuration=test_config, report=report)
+    return TestRunReport(
+        codebase_version=codebase_version, configuration=test_config, report=report
+    )
 
 
 def main() -> int:
