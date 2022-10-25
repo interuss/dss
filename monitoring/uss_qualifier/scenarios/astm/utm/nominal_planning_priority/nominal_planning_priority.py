@@ -53,11 +53,11 @@ class NominalPlanningPriority(TestScenario):
 
         self.record_note(
             "First USS",
-            f"{self.uss1.config.participant_id} at {self.uss2.config.injection_base_url}",
+            f"{self.uss1.config.participant_id}",
         )
         self.record_note(
             "Priority USS",
-            f"{self.uss2.config.participant_id} at {self.uss2.config.injection_base_url}",
+            f"{self.uss2.config.participant_id}",
         )
 
         self.begin_test_case("Setup")
