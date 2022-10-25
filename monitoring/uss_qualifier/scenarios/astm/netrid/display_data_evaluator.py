@@ -10,6 +10,12 @@ from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.resources.netrid.evaluation import EvaluationConfiguration
 from monitoring.uss_qualifier.resources.netrid.observers import RIDSystemObserver
+from monitoring.uss_qualifier.scenarios.astm.netrid.injected_flight_collection import (
+    InjectedFlightCollection,
+)
+from monitoring.uss_qualifier.scenarios.astm.netrid.virtual_observer import (
+    VirtualObserver,
+)
 from monitoring.uss_qualifier.scenarios.scenario import TestScenarioType
 from monitoring.uss_qualifier.scenarios.astm.netrid.injection import InjectedFlight
 from monitoring.monitorlib.rid_automated_testing import observation_api
@@ -43,148 +49,17 @@ class RIDObservationEvaluator(object):
     ):
         self._test_scenario = test_scenario
         self._injected_flights = injected_flights
+        self._virtual_observer = VirtualObserver(
+            injected_flights=InjectedFlightCollection(injected_flights),
+            repeat_query_rect_period=config.repeat_query_rect_period,
+            min_query_diagonal_m=config.min_query_diagonal,
+            relevant_past_data_period=rid_version.realtime_period
+            + config.max_propagation_latency.timedelta,
+        )
         self._config = config
         self._rid_version = rid_version
 
-    def _get_query_rect(
-        self,
-        t: datetime.datetime,
-    ) -> s2sphere.LatLngRect:
-        data_exists = False
-        lat_min = 90
-        lng_min = 360
-        lat_max = -90
-        lng_max = -360
-
-        # Find the bounds of all relevant points
-        t_min = (
-            t
-            - self._rid_version.realtime_period
-            - self._config.max_propagation_latency.timedelta
-        )
-        t_max = t
-        for injected_flight in self._injected_flights:
-            for telemetry in injected_flight.flight.telemetry:
-                t = arrow.get(telemetry.timestamp).datetime
-                if t_min <= t <= t_max:
-                    data_exists = True
-                    lat_min = min(lat_min, telemetry.position.lat)
-                    lat_max = max(lat_max, telemetry.position.lat)
-                    lng_min = min(lng_min, telemetry.position.lng)
-                    lng_max = max(lng_max, telemetry.position.lng)
-
-        # If there is no flight data yet, look at the center of where the data will be
-        if not data_exists:
-            lat = 0
-            lng = 0
-            n = 0
-            for injected_flight in self._injected_flights:
-                for telemetry in injected_flight.flight.telemetry:
-                    lat += telemetry.position.lat
-                    lng += telemetry.position.lng
-                    n += 1
-            lat_min = lat_max = lat / n
-            lng_min = lng_max = lng / n
-
-        # Expand view size to meet minimum, if necessary
-        OVERSHOOT = 1.01
-        while True:
-            c1 = s2sphere.LatLng.from_degrees(lat_min, lng_min)
-            c2 = s2sphere.LatLng.from_degrees(lat_max, lng_max)
-            diagonal = (
-                c1.get_distance(c2).degrees * geo.EARTH_CIRCUMFERENCE_KM * 1000 / 360
-            )
-            if diagonal >= self._config.min_query_diagonal:
-                break
-            if lat_min == lat_max and lng_min == lng_max:
-                lat_min -= 1e-5
-                lat_max += 1e-5
-                lng_min -= 1e-5
-                lng_max += 1e-5
-                continue
-            lat_center = 0.5 * (lat_min + lat_max)
-            lat_span = (
-                (lat_max - lat_min)
-                * self._config.min_query_diagonal
-                / diagonal
-                * OVERSHOOT
-            )
-            lat_min = lat_center - 0.5 * lat_span
-            lat_max = lat_center + 0.5 * lat_span
-            lng_center = 0.5 * (lng_min + lng_max)
-            lng_span = (
-                (lng_max - lng_min)
-                * self._config.min_query_diagonal
-                / diagonal
-                * OVERSHOOT
-            )
-            lng_min = lng_center - 0.5 * lng_span
-            lng_max = lng_center + 0.5 * lng_span
-
-        p1 = s2sphere.LatLng.from_degrees(lat_min, lng_min)
-        p2 = s2sphere.LatLng.from_degrees(lat_max, lng_max)
-        return s2sphere.LatLngRect.from_point_pair(p1, p2)
-
-    def evaluate_system(self, observers: List[RIDSystemObserver]) -> None:
-        """Evaluate a system by polling system state and comparing to expectations.
-
-        This routine periodically polls each of the specified observers for the system
-        state and checks that each system state matches expectations based on the
-        provided injected flights, updating the provided report findings.
-        """
-
-        # Compute the end of all injected data
-        t_end = arrow.utcnow()
-        for injected_flight in self._injected_flights:
-            for telemetry in injected_flight.flight.telemetry:
-                t = arrow.get(telemetry.timestamp)
-                t_end = max(t_end, t)
-        t_end += (
-            self._rid_version.realtime_period
-            + self._config.max_propagation_latency.timedelta
-        )
-
-        if arrow.utcnow() > t_end:
-            raise RuntimeError(
-                "Cannot evaluate system: injected test flights ended at {}, which is before now ({})".format(
-                    t_end, datetime.datetime.utcnow()
-                )
-            )
-
-        query_counter = 0
-        last_rect = None
-
-        t_next = arrow.utcnow()
-
-        while arrow.utcnow() < t_end:
-            # Evaluate the system at an instant in time
-
-            t_now = arrow.utcnow().datetime
-            if (
-                last_rect
-                and self._config.repeat_query_rect_period > 0
-                and query_counter % self._config.repeat_query_rect_period == 0
-            ):
-                rect = last_rect
-            else:
-                rect = self._get_query_rect(
-                    t_now,
-                )
-                last_rect = rect
-            self._evaluate_system_instantaneously(observers, rect)
-            print("Completed observation at {}".format(arrow.utcnow()))
-
-            # Wait until minimum polling interval elapses
-            while t_next < arrow.utcnow():
-                t_next += self._config.min_polling_interval.timedelta
-            if t_next > t_end:
-                break
-            delay = t_next - arrow.utcnow()
-            if delay.total_seconds() > 0:
-                time.sleep(delay.total_seconds())
-            query_counter += 1
-
-    def _evaluate_system_instantaneously(
+    def evaluate_system_instantaneously(
         self,
         observers: List[RIDSystemObserver],
         rect: s2sphere.LatLngRect,
