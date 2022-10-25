@@ -3,10 +3,12 @@
 # A file to generate Flight Records from KML.
 import datetime
 import math
+import random
+
 import s2sphere
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from shapely.geometry import LineString, Point, Polygon
 from monitoring.monitorlib.geo import flatten, unflatten
 from monitoring.monitorlib import kml
@@ -180,8 +182,13 @@ def generate_flight_record(
     operator_location,
     flight_state_speeds,
     flight_track_angles,
+    timestamp,
+    random_seed,
 ):
-    timestamp = datetime.now()
+    if random_seed is None:
+        r = random
+    else:
+        r = random.Random(x=random_seed)
     now_isoformat = timestamp.isoformat()
 
     flight_telemetry: List[RIDAircraftState] = []
@@ -213,8 +220,11 @@ def generate_flight_record(
             vertical_speed=0.0,
         )
         flight_telemetry.append(rid_aircraft_state)
+    flight_id_bytes = bytes(r.randint(0, 255) for _ in range(16))
     rid_details = RIDFlightDetails(
-        id=flight_description.get("id", str(uuid.uuid4())),
+        id=flight_description.get(
+            "id", str(uuid.UUID(bytes=flight_id_bytes, version=4))
+        ),
         serial_number=flight_description.get("serial_number"),
         operation_description=flight_description.get("operation_description"),
         operator_location=LatLngPoint(
@@ -350,7 +360,9 @@ def get_flight_state_coordinates(flight_details):
     return flight_state_coordinates, flight_state_speeds, flight_track_angles
 
 
-def get_flight_records(kml_file, debug_mode=False) -> FlightRecordCollection:
+def get_flight_records(
+    kml_file, reference_time, random_seed, debug_mode=False
+) -> FlightRecordCollection:
     kml_content = kml.get_kml_content(kml_file, False)
     flight_records = []
     for flight_name, flight_details in kml_content.items():
@@ -375,6 +387,8 @@ def get_flight_records(kml_file, debug_mode=False) -> FlightRecordCollection:
             operator_location,
             flight_state_speeds,
             flight_track_angles,
+            reference_time,
+            random_seed,
         )
         flight_records.append(flight_record)
     return FlightRecordCollection(flights=flight_records)
