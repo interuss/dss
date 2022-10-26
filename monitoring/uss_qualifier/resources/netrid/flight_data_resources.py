@@ -10,7 +10,7 @@ from monitoring.monitorlib.rid_automated_testing.injection_api import (
     TestFlightDetails,
     TestFlight,
 )
-from monitoring.uss_qualifier.fileio import load_dict, load_content
+from monitoring.uss_qualifier.fileio import load_dict_with_references, load_content
 from monitoring.uss_qualifier.resources.resource import Resource
 from monitoring.uss_qualifier.resources.netrid.flight_data import (
     FlightDataSpecification,
@@ -31,7 +31,8 @@ class FlightDataResource(Resource[FlightDataSpecification]):
     def __init__(self, specification: FlightDataSpecification):
         if "record_source" in specification:
             self.flight_collection = ImplicitDict.parse(
-                load_dict(specification.record_source), FlightRecordCollection
+                load_dict_with_references(specification.record_source),
+                FlightRecordCollection,
             )
         elif "adjacent_circular_flights_simulation_source" in specification:
             self.flight_collection = generate_aircraft_states(

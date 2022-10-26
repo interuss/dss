@@ -79,7 +79,7 @@ def _split_anchor(file_name: str) -> Tuple[str, Optional[str]]:
     return base_file_name, anchor
 
 
-def load_dict(data_file: FileReference) -> dict:
+def load_dict_with_references(data_file: FileReference) -> dict:
     """Loads a dict from the specified file reference.
 
     If the data_file has a #<COMPONENT_PATH> suffix, the component at that path
@@ -98,10 +98,10 @@ def load_dict(data_file: FileReference) -> dict:
     base_file_name, anchor = _split_anchor(data_file)
     base_file_name = resolve_filename(base_file_name)
     file_name = base_file_name + (f"#{anchor}" if anchor is not None else "")
-    return _load_dict_from_file_name(file_name, file_name)
+    return _load_dict_with_references_from_file_name(file_name, file_name)
 
 
-def _load_dict_from_file_name(
+def _load_dict_with_references_from_file_name(
     file_name: str, context_file_name: str, cache: Optional[Dict[str, dict]] = None
 ) -> dict:
     if cache is None:
@@ -219,7 +219,9 @@ def _replace_refs(
         parent = parent[0]
         ref_path = parent.pop("$ref")
         if not ref_path.startswith("#"):
-            ref_content = _load_dict_from_file_name(ref_path, context_file_name, cache)
+            ref_content = _load_dict_with_references_from_file_name(
+                ref_path, context_file_name, cache
+            )
         else:
             ref_json_path = jsonpath_ng.parse(
                 ref_path.replace("#", "$").replace("/", ".")

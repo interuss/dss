@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, TypeVar
 
 from implicitdict import ImplicitDict
 
-from monitoring.uss_qualifier.fileio import load_dict, FileReference
+from monitoring.uss_qualifier.fileio import load_dict_with_references, FileReference
 from monitoring.uss_qualifier.resources.definitions import ResourceID, ResourceTypeName
 from monitoring.uss_qualifier.scenarios.definitions import (
     TestScenarioDeclaration,
@@ -125,4 +125,6 @@ class TestSuiteDefinition(ImplicitDict):
 
     @staticmethod
     def load(suite_type: FileReference) -> "TestSuiteDefinition":
-        return ImplicitDict.parse(load_dict(suite_type), TestSuiteDefinition)
+        return ImplicitDict.parse(
+            load_dict_with_references(suite_type), TestSuiteDefinition
+        )

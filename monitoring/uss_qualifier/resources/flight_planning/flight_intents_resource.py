@@ -8,7 +8,7 @@ from implicitdict import ImplicitDict, StringBasedDateTime
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightRequest,
 )
-from monitoring.uss_qualifier.fileio import load_dict
+from monitoring.uss_qualifier.fileio import load_dict_with_references
 from monitoring.uss_qualifier.resources.resource import Resource
 from monitoring.uss_qualifier.resources.flight_planning.flight_intent import (
     FlightIntentCollection,
@@ -22,7 +22,7 @@ class FlightIntentsResource(Resource[FlightIntentsSpecification]):
 
     def __init__(self, specification: FlightIntentsSpecification):
         self._intent_collection = ImplicitDict.parse(
-            load_dict(specification.file_source), FlightIntentCollection
+            load_dict_with_references(specification.file_source), FlightIntentCollection
         )
         self._planning_time = specification.planning_time.timedelta
 
