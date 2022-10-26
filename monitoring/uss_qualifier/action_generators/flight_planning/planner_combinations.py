@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from implicitdict import ImplicitDict
 
 from monitoring.monitorlib.inspection import fullname
-from monitoring.uss_qualifier.reports import TestSuiteActionReport
+from monitoring.uss_qualifier.reports.report import TestSuiteActionReport
 from monitoring.uss_qualifier.resources.definitions import ResourceID
 from monitoring.uss_qualifier.resources.flight_planning import FlightPlannersResource
 from monitoring.uss_qualifier.resources.resource import ResourceType

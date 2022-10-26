@@ -12,20 +12,23 @@ from monitoring import uss_qualifier as uss_qualifier_module
 from monitoring.monitorlib import fetch, inspection
 from monitoring.uss_qualifier import scenarios as scenarios_module
 from monitoring.uss_qualifier.common_data_definitions import Severity
-from monitoring.uss_qualifier.reports import (
+from monitoring.uss_qualifier.reports.report import (
     TestScenarioReport,
     TestCaseReport,
     TestStepReport,
     FailedCheck,
     ErrorReport,
+    Note,
+    ParticipantID,
+    PassedCheck,
 )
-from monitoring.uss_qualifier.reports.report import Note
 from monitoring.uss_qualifier.scenarios.definitions import TestScenarioDeclaration
 from monitoring.uss_qualifier.scenarios.documentation import (
     TestScenarioDocumentation,
     TestCaseDocumentation,
     TestStepDocumentation,
     parse_documentation,
+    TestCheckDocumentation,
 )
 from monitoring.uss_qualifier.resources.definitions import ResourceTypeName, ResourceID
 
@@ -39,6 +42,88 @@ class ScenarioPhase(str, Enum):
     ReadyForCleanup = "ReadyForCleanup"
     CleaningUp = "CleaningUp"
     Complete = "Complete"
+
+
+class PendingCheck(object):
+    _documentation: TestCheckDocumentation
+    _step_report: TestStepReport
+    _on_failed_check: Optional[Callable[[FailedCheck], None]]
+    _participants: List[ParticipantID]
+    _outcome_recorded: bool = False
+
+    def __init__(
+        self,
+        documentation: TestCheckDocumentation,
+        participants: List[ParticipantID],
+        step_report: TestStepReport,
+        on_failed_check: Optional[Callable[[FailedCheck], None]],
+    ):
+        self._documentation = documentation
+        self._participants = participants
+        self._step_report = step_report
+        self._on_failed_check = on_failed_check
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self._outcome_recorded:
+            self.record_passed()
+
+    def record_failed(
+        self,
+        summary: str,
+        severity: Severity,
+        details: str = "",
+        participants: Optional[List[ParticipantID]] = None,
+        query_timestamps: Optional[List[datetime]] = None,
+        additional_data: Optional[dict] = None,
+        requirements: Optional[List[str]] = None,
+    ) -> None:
+        self._outcome_recorded = True
+        if participants is None:
+            participants = self._participants
+        if requirements is None:
+            requirements = self._documentation.applicable_requirements
+
+        kwargs = {
+            "name": self._documentation.name,
+            "documentation_url": self._documentation.url,
+            "timestamp": StringBasedDateTime(datetime.utcnow()),
+            "summary": summary,
+            "details": details,
+            "requirements": requirements,
+            "severity": severity,
+            "participants": participants,
+        }
+        if additional_data is not None:
+            kwargs["additional_data"] = additional_data
+        if query_timestamps is not None:
+            kwargs["query_report_timestamps"] = [
+                StringBasedDateTime(t) for t in query_timestamps
+            ]
+        failed_check = FailedCheck(**kwargs)
+        self._step_report.failed_checks.append(failed_check)
+        if self._on_failed_check is not None:
+            self._on_failed_check(failed_check)
+
+    def record_passed(
+        self,
+        participants: Optional[List[ParticipantID]] = None,
+        requirements: Optional[List[str]] = None,
+    ) -> None:
+        self._outcome_recorded = True
+        if participants is None:
+            participants = self._participants
+        if requirements is None:
+            requirements = self._documentation.applicable_requirements
+
+        passed_check = PassedCheck(
+            name=self._documentation.name,
+            participants=participants,
+            requirements=requirements,
+        )
+        self._step_report.passed_checks.append(passed_check)
 
 
 class TestScenario(ABC):
@@ -187,6 +272,7 @@ class TestScenario(ABC):
             documentation_url=self._current_step.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
             failed_checks=[],
+            passed_checks=[],
         )
         self._case_report.steps.append(self._step_report)
         self._phase = ScenarioPhase.RunningTestStep
@@ -200,45 +286,32 @@ class TestScenario(ABC):
             f"Queried {query.request['method']} {query.request['url']} -> {query.response.status_code}"
         )
 
-    def record_failed_check(
-        self,
-        name: str,
-        summary: str,
-        severity: Severity,
-        relevant_participants: List[str],
-        details: str = "",
-        query_timestamps: Optional[List[datetime]] = None,
-        additional_data: Optional[dict] = None,
-    ) -> None:
+    def _get_check(self, name: str) -> TestCheckDocumentation:
+        available_checks = {c.name: c for c in self._current_step.checks}
+        if name not in available_checks:
+            check_list = ", ".join(available_checks)
+            raise RuntimeError(
+                f'Test scenario `{self.me()}` was instructed to record outcome for check "{name}" during test step "{self._current_step.name}" during test case "{self._current_case.name}", but that check is not declared in documentation; declared checks are: {check_list}'
+            )
+        return available_checks[name]
+
+    def check(
+        self, name: str, participants: Optional[List[ParticipantID]] = None
+    ) -> PendingCheck:
         self._expect_phase({ScenarioPhase.RunningTestStep, ScenarioPhase.CleaningUp})
         available_checks = {c.name: c for c in self._current_step.checks}
         if name not in available_checks:
             check_list = ", ".join(available_checks)
             raise RuntimeError(
-                f'Test scenario `{self.me()}` was instructed to record_failed_check "{name}" during test step "{self._current_step.name}" during test case "{self._current_case.name}", but that check is not declared in documentation; declared checks are: {check_list}'
+                f'Test scenario `{self.me()}` was instructed to prepare to record outcome for check "{name}" during test step "{self._current_step.name}" during test case "{self._current_case.name}", but that check is not declared in documentation; declared checks are: {check_list}'
             )
-        check = available_checks[name]
-
-        kwargs = {
-            "name": check.name,
-            "documentation_url": check.url,
-            "timestamp": StringBasedDateTime(datetime.utcnow()),
-            "summary": summary,
-            "details": details,
-            "relevant_requirements": check.applicable_requirements,
-            "severity": severity,
-            "relevant_participants": relevant_participants,
-        }
-        if additional_data is not None:
-            kwargs["additional_data"] = additional_data
-        if query_timestamps is not None:
-            kwargs["query_report_timestamps"] = [
-                StringBasedDateTime(t) for t in query_timestamps
-            ]
-        failed_check = FailedCheck(**kwargs)
-        self._step_report.failed_checks.append(failed_check)
-        if self.on_failed_check is not None:
-            self.on_failed_check(failed_check)
+        check_documentation = available_checks[name]
+        return PendingCheck(
+            documentation=check_documentation,
+            participants=[] if participants is None else participants,
+            step_report=self._step_report,
+            on_failed_check=self.on_failed_check,
+        )
 
     def end_test_step(self) -> None:
         self._expect_phase(ScenarioPhase.RunningTestStep)
@@ -282,6 +355,7 @@ class TestScenario(ABC):
             documentation_url=self._current_step.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
             failed_checks=[],
+            passed_checks=[],
         )
         self._scenario_report.cleanup = self._step_report
         self._phase = ScenarioPhase.CleaningUp
