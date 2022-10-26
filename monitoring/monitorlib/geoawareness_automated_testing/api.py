@@ -1,7 +1,11 @@
 from enum import Enum
 from typing import List, Optional
 from implicitdict import ImplicitDict, StringBasedDateTime
-from uas_standards.eurocae_ed269 import UomDimensions, VerticalReferenceType, Restriction
+from uas_standards.eurocae_ed269 import (
+    UomDimensions,
+    VerticalReferenceType,
+    Restriction,
+)
 
 SCOPE_GEOAWARENESS_TEST = "geo-awareness.test"
 
