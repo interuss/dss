@@ -10,7 +10,7 @@ fi
 
 cd "${BASEDIR}" || exit
 
-docker image build -t openapi-to-go-server .
+docker image build -t interuss/openapi-to-go-server .
 
 docker container run -it \
   	-v "$(pwd)/../astm-utm/Protocol/utm.yaml:/resources/utm.yaml" \
