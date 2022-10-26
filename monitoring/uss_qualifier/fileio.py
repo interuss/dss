@@ -286,7 +286,6 @@ def _identify_allofs(content: Union[dict, list], root: str = "$") -> List[str]:
             and isinstance(content["allOf"], list)
             and all(
                 isinstance(s, dict)
-                and len(s) == 1
                 and "$ref" in s
                 and isinstance(s["$ref"], str)
                 for s in content["allOf"]
