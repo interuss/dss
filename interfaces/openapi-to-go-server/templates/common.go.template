@@ -17,12 +17,12 @@ type InternalServerErrorBody struct {
 
 // --- Authorization definitions ---
 
-type AuthorizationOption struct {
-    // All of these scopes must be presented simultaneously to use this option
-    RequiredScopes []string
-}
+type SecurityScheme string
 
-type SecurityScheme []AuthorizationOption
+type RequiredScope string
+
+// All RequiredScope of all SecurityScheme must be presented simultaneously to use this option.
+type AuthorizationOption map[SecurityScheme][]RequiredScope
 
 type AuthorizationResult struct {
     // ID of the client making the operation request
@@ -36,7 +36,7 @@ type AuthorizationResult struct {
 }
 
 type Authorizer interface {
-    Authorize(w http.ResponseWriter, r *http.Request, schemes *map[string]SecurityScheme) AuthorizationResult
+    Authorize(w http.ResponseWriter, r *http.Request, authOptions []AuthorizationOption) AuthorizationResult
 }
 
 // --- Utilities ---
@@ -56,6 +56,7 @@ func WriteJSON(w http.ResponseWriter, code int, obj interface{}) {
 type Handler func (exp *regexp.Regexp, w http.ResponseWriter, r *http.Request)
 
 type Route struct {
+    Method  string
     Pattern *regexp.Regexp
     Handler Handler
 }

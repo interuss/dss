@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	GetTokenSecurity = map[string]api.SecurityScheme{}
+	GetTokenSecurity = []api.AuthorizationOption{}
 )
 
 type GetTokenRequest struct {

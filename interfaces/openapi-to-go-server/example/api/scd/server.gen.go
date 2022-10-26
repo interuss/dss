@@ -18,7 +18,7 @@ type APIRouter struct {
 // *scd.APIRouter (type defined above) implements the api.PartialRouter interface
 func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 	for _, route := range s.Routes {
-		if route.Pattern.MatchString(r.URL.Path) {
+		if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
 			route.Handler(route.Pattern, w, r)
 			return true
 		}
@@ -30,7 +30,7 @@ func (s *APIRouter) QueryOperationalIntentReferences(exp *regexp.Regexp, w http.
 	var req QueryOperationalIntentReferencesRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &QueryOperationalIntentReferencesSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, QueryOperationalIntentReferencesSecurity)
 
 	// Parse request body
 	req.Body = new(QueryOperationalIntentReferenceParameters)
@@ -38,7 +38,7 @@ func (s *APIRouter) QueryOperationalIntentReferences(exp *regexp.Regexp, w http.
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.QueryOperationalIntentReferences(ctx, &req)
 
@@ -78,14 +78,14 @@ func (s *APIRouter) GetOperationalIntentReference(exp *regexp.Regexp, w http.Res
 	var req GetOperationalIntentReferenceRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &GetOperationalIntentReferenceSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, GetOperationalIntentReferenceSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Entityid = EntityID(pathMatch[1])
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.GetOperationalIntentReference(ctx, &req)
 
@@ -125,7 +125,7 @@ func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.
 	var req CreateOperationalIntentReferenceRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &CreateOperationalIntentReferenceSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, CreateOperationalIntentReferenceSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -137,7 +137,7 @@ func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.CreateOperationalIntentReference(ctx, &req)
 
@@ -185,7 +185,7 @@ func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.
 	var req UpdateOperationalIntentReferenceRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &UpdateOperationalIntentReferenceSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, UpdateOperationalIntentReferenceSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -198,7 +198,7 @@ func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.UpdateOperationalIntentReference(ctx, &req)
 
@@ -246,7 +246,7 @@ func (s *APIRouter) DeleteOperationalIntentReference(exp *regexp.Regexp, w http.
 	var req DeleteOperationalIntentReferenceRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &DeleteOperationalIntentReferenceSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, DeleteOperationalIntentReferenceSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -254,7 +254,7 @@ func (s *APIRouter) DeleteOperationalIntentReference(exp *regexp.Regexp, w http.
 	req.Ovn = EntityOVN(pathMatch[2])
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.DeleteOperationalIntentReference(ctx, &req)
 
@@ -302,7 +302,7 @@ func (s *APIRouter) QueryConstraintReferences(exp *regexp.Regexp, w http.Respons
 	var req QueryConstraintReferencesRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &QueryConstraintReferencesSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, QueryConstraintReferencesSecurity)
 
 	// Parse request body
 	req.Body = new(QueryConstraintReferenceParameters)
@@ -310,7 +310,7 @@ func (s *APIRouter) QueryConstraintReferences(exp *regexp.Regexp, w http.Respons
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.QueryConstraintReferences(ctx, &req)
 
@@ -350,14 +350,14 @@ func (s *APIRouter) GetConstraintReference(exp *regexp.Regexp, w http.ResponseWr
 	var req GetConstraintReferenceRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &GetConstraintReferenceSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, GetConstraintReferenceSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Entityid = EntityID(pathMatch[1])
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.GetConstraintReference(ctx, &req)
 
@@ -397,7 +397,7 @@ func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.Respons
 	var req CreateConstraintReferenceRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &CreateConstraintReferenceSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, CreateConstraintReferenceSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -409,7 +409,7 @@ func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.Respons
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.CreateConstraintReference(ctx, &req)
 
@@ -453,7 +453,7 @@ func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.Respons
 	var req UpdateConstraintReferenceRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &UpdateConstraintReferenceSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, UpdateConstraintReferenceSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -466,7 +466,7 @@ func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.Respons
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.UpdateConstraintReference(ctx, &req)
 
@@ -510,7 +510,7 @@ func (s *APIRouter) DeleteConstraintReference(exp *regexp.Regexp, w http.Respons
 	var req DeleteConstraintReferenceRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &DeleteConstraintReferenceSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, DeleteConstraintReferenceSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -518,7 +518,7 @@ func (s *APIRouter) DeleteConstraintReference(exp *regexp.Regexp, w http.Respons
 	req.Ovn = EntityOVN(pathMatch[2])
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.DeleteConstraintReference(ctx, &req)
 
@@ -562,7 +562,7 @@ func (s *APIRouter) QuerySubscriptions(exp *regexp.Regexp, w http.ResponseWriter
 	var req QuerySubscriptionsRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &QuerySubscriptionsSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, QuerySubscriptionsSecurity)
 
 	// Parse request body
 	req.Body = new(QuerySubscriptionParameters)
@@ -570,7 +570,7 @@ func (s *APIRouter) QuerySubscriptions(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.QuerySubscriptions(ctx, &req)
 
@@ -610,14 +610,14 @@ func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r
 	var req GetSubscriptionRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &GetSubscriptionSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, GetSubscriptionSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Subscriptionid = SubscriptionID(pathMatch[1])
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.GetSubscription(ctx, &req)
 
@@ -657,7 +657,7 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	var req CreateSubscriptionRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &CreateSubscriptionSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, CreateSubscriptionSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -669,7 +669,7 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.CreateSubscription(ctx, &req)
 
@@ -709,7 +709,7 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	var req UpdateSubscriptionRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &UpdateSubscriptionSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, UpdateSubscriptionSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -722,7 +722,7 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.UpdateSubscription(ctx, &req)
 
@@ -762,7 +762,7 @@ func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	var req DeleteSubscriptionRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &DeleteSubscriptionSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, DeleteSubscriptionSecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -770,7 +770,7 @@ func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	req.Version = pathMatch[2]
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.DeleteSubscription(ctx, &req)
 
@@ -814,7 +814,7 @@ func (s *APIRouter) MakeDssReport(exp *regexp.Regexp, w http.ResponseWriter, r *
 	var req MakeDssReportRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &MakeDssReportSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, MakeDssReportSecurity)
 
 	// Parse request body
 	req.Body = new(ErrorReport)
@@ -822,7 +822,7 @@ func (s *APIRouter) MakeDssReport(exp *regexp.Regexp, w http.ResponseWriter, r *
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.MakeDssReport(ctx, &req)
 
@@ -858,14 +858,14 @@ func (s *APIRouter) GetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 	var req GetUssAvailabilityRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &GetUssAvailabilitySecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, GetUssAvailabilitySecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.UssId = pathMatch[1]
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.GetUssAvailability(ctx, &req)
 
@@ -901,7 +901,7 @@ func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 	var req SetUssAvailabilityRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &SetUssAvailabilitySecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, SetUssAvailabilitySecurity)
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -913,7 +913,7 @@ func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.SetUssAvailability(ctx, &req)
 
@@ -949,58 +949,58 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 18)}
 
 	pattern := regexp.MustCompile("^/scd/dss/v1/operational_intent_references/query$")
-	router.Routes[0] = &api.Route{Pattern: pattern, Handler: router.QueryOperationalIntentReferences}
+	router.Routes[0] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryOperationalIntentReferences}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)$")
-	router.Routes[1] = &api.Route{Pattern: pattern, Handler: router.GetOperationalIntentReference}
+	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetOperationalIntentReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)$")
-	router.Routes[2] = &api.Route{Pattern: pattern, Handler: router.CreateOperationalIntentReference}
+	router.Routes[2] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateOperationalIntentReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[3] = &api.Route{Pattern: pattern, Handler: router.UpdateOperationalIntentReference}
+	router.Routes[3] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateOperationalIntentReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[4] = &api.Route{Pattern: pattern, Handler: router.DeleteOperationalIntentReference}
+	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteOperationalIntentReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/query$")
-	router.Routes[5] = &api.Route{Pattern: pattern, Handler: router.QueryConstraintReferences}
+	router.Routes[5] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryConstraintReferences}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)$")
-	router.Routes[6] = &api.Route{Pattern: pattern, Handler: router.GetConstraintReference}
+	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetConstraintReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)$")
-	router.Routes[7] = &api.Route{Pattern: pattern, Handler: router.CreateConstraintReference}
+	router.Routes[7] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateConstraintReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[8] = &api.Route{Pattern: pattern, Handler: router.UpdateConstraintReference}
+	router.Routes[8] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateConstraintReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[9] = &api.Route{Pattern: pattern, Handler: router.DeleteConstraintReference}
+	router.Routes[9] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteConstraintReference}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/query$")
-	router.Routes[10] = &api.Route{Pattern: pattern, Handler: router.QuerySubscriptions}
+	router.Routes[10] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QuerySubscriptions}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)$")
-	router.Routes[11] = &api.Route{Pattern: pattern, Handler: router.GetSubscription}
+	router.Routes[11] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetSubscription}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)$")
-	router.Routes[12] = &api.Route{Pattern: pattern, Handler: router.CreateSubscription}
+	router.Routes[12] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateSubscription}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[13] = &api.Route{Pattern: pattern, Handler: router.UpdateSubscription}
+	router.Routes[13] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateSubscription}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[14] = &api.Route{Pattern: pattern, Handler: router.DeleteSubscription}
+	router.Routes[14] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteSubscription}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/reports$")
-	router.Routes[15] = &api.Route{Pattern: pattern, Handler: router.MakeDssReport}
+	router.Routes[15] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.MakeDssReport}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/uss_availability/(?P<uss_id>[^/]*)$")
-	router.Routes[16] = &api.Route{Pattern: pattern, Handler: router.GetUssAvailability}
+	router.Routes[16] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetUssAvailability}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/uss_availability/(?P<uss_id>[^/]*)$")
-	router.Routes[17] = &api.Route{Pattern: pattern, Handler: router.SetUssAvailability}
+	router.Routes[17] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.SetUssAvailability}
 
 	return router
 }
