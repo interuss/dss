@@ -46,7 +46,7 @@ def resolve_filename(data_file: FileReference) -> str:
 
         if file_name is None:
             raise NotImplementedError(
-                f"Cannot load find a suitable file to load for {data_file}"
+                f"Cannot find a suitable file to load for {data_file}"
             )
 
 
