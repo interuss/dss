@@ -43,26 +43,23 @@ def clear_area(
     for uss in flight_planners:
         resp, query = uss.clear_area(extent)
         scenario.record_query(query)
-        if query.status_code != 200:
-            scenario.record_failed_check(
-                name="Area cleared successfully",
-                summary="Error occurred attempting to clear area",
-                severity=Severity.High,
-                relevant_participants=[uss.participant_id],
-                details=f"Status code {query.status_code}",
-                query_timestamps=[query.request.timestamp],
-            )
-            return False
-        if not resp.outcome.success:
-            scenario.record_failed_check(
-                name="Area cleared successfully",
-                summary="Area could not be cleared",
-                severity=Severity.High,
-                relevant_participants=[uss.participant_id],
-                details=f'Participant indicated "{resp.outcome.message}"',
-                query_timestamps=[query.request.timestamp],
-            )
-            return False
+        with scenario.check("Area cleared successfully", [uss.participant_id]) as check:
+            if query.status_code != 200:
+                check.record_failed(
+                    summary="Error occurred attempting to clear area",
+                    severity=Severity.High,
+                    details=f"Status code {query.status_code}",
+                    query_timestamps=[query.request.timestamp],
+                )
+                return False
+            if not resp.outcome.success:
+                check.record_failed(
+                    summary="Area could not be cleared",
+                    severity=Severity.High,
+                    details=f'Participant indicated "{resp.outcome.message}"',
+                    query_timestamps=[query.request.timestamp],
+                )
+                return False
 
     scenario.end_test_step()
 
@@ -123,17 +120,17 @@ def check_capabilities(
     flight_planner_capabilities: List[Tuple[TestTarget, List[Capability]]] = []
     flight_planner_capability_query_timestamps: List[Tuple[TestTarget, datetime]] = []
     for flight_planner in all_flight_planners:
+        check = scenario.check("Valid responses", [flight_planner.participant_id])
         try:
             uss_info = flight_planner.get_target_information()
+            check.record_passed()
         except QueryError as e:
             stacktrace = "".join(
                 traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
             )
-            scenario.record_failed_check(
-                name="Valid responses",
+            check.record_failed(
                 summary=f"Failed to query {flight_planner.participant_id} for information",
                 severity=Severity.Medium,
-                relevant_participants=[flight_planner.participant_id],
                 details=stacktrace,
             )
             continue
@@ -155,21 +152,22 @@ def check_capabilities(
                 available_capabilities = [
                     c for p, c in flight_planner_capabilities if p is flight_planner
                 ][0]
-                if required_capability not in available_capabilities:
-                    timestamp = [
-                        t
-                        for p, t in flight_planner_capability_query_timestamps
-                        if p is flight_planner
-                    ][0]
-                    scenario.record_failed_check(
-                        name=f"Support {required_capability}",
-                        summary=f"Flight planner {flight_planner.participant_id} does not support {required_capability}",
-                        severity=Severity.High,
-                        relevant_participants=[flight_planner.participant_id],
-                        details=f"Reported capabilities: ({', '.join(available_capabilities)})",
-                        query_timestamps=[timestamp],
-                    )
-                    return False
+                with scenario.check(
+                    f"Support {required_capability}", [flight_planner.participant_id]
+                ) as check:
+                    if required_capability not in available_capabilities:
+                        timestamp = [
+                            t
+                            for p, t in flight_planner_capability_query_timestamps
+                            if p is flight_planner
+                        ][0]
+                        check.record_failed(
+                            summary=f"Flight planner {flight_planner.participant_id} does not support {required_capability}",
+                            severity=Severity.High,
+                            details=f"Reported capabilities: ({', '.join(available_capabilities)})",
+                            query_timestamps=[timestamp],
+                        )
+                        return False
 
     # Check for prerequisite capabilities
     unsupported_prerequisites: List[str] = []
@@ -218,36 +216,31 @@ def inject_successful_flight_intent(
     scenario.begin_test_step(test_step)
     resp, query, flight_id = flight_planner.request_flight(flight_intent)
     scenario.record_query(query)
-    if resp.result == InjectFlightResult.ConflictWithFlight:
-        scenario.record_failed_check(
-            name="Successful planning",
-            summary="Conflict-free flight not created due to conflict",
-            severity=Severity.High,
-            relevant_participants=[scenario.uss1.participant_id],
-            details=f'{scenario.uss1.participant_id} indicated ConflictWithFlight: "{resp.notes}"',
-            query_timestamps=[query.request.timestamp],
-        )
-        return None
-    if resp.result == InjectFlightResult.Rejected:
-        scenario.record_failed_check(
-            name="Successful planning",
-            summary="Valid flight rejected",
-            severity=Severity.High,
-            relevant_participants=[scenario.uss1.participant_id],
-            details=f'{scenario.uss1.participant_id} indicated Rejected: "{resp.notes}"',
-            query_timestamps=[query.request.timestamp],
-        )
-        return None
-    if resp.result == InjectFlightResult.Failed:
-        scenario.record_failed_check(
-            name="Successful planning",
-            summary="Failed to create flight",
-            severity=Severity.High,
-            relevant_participants=[scenario.uss1.participant_id],
-            details=f'{scenario.uss1.participant_id} Failed to process the user flight intent: "{resp.notes}"',
-            query_timestamps=[query.request.timestamp],
-        )
-        return None
+    with scenario.check("Successful planning", [scenario.uss1.participant_id]) as check:
+        if resp.result == InjectFlightResult.ConflictWithFlight:
+            check.record_failed(
+                summary="Conflict-free flight not created due to conflict",
+                severity=Severity.High,
+                details=f'{scenario.uss1.participant_id} indicated ConflictWithFlight: "{resp.notes}"',
+                query_timestamps=[query.request.timestamp],
+            )
+            return None
+        if resp.result == InjectFlightResult.Rejected:
+            check.record_failed(
+                summary="Valid flight rejected",
+                severity=Severity.High,
+                details=f'{scenario.uss1.participant_id} indicated Rejected: "{resp.notes}"',
+                query_timestamps=[query.request.timestamp],
+            )
+            return None
+        if resp.result == InjectFlightResult.Failed:
+            check.record_failed(
+                summary="Failed to create flight",
+                severity=Severity.High,
+                details=f'{scenario.uss1.participant_id} Failed to process the user flight intent: "{resp.notes}"',
+                query_timestamps=[query.request.timestamp],
+            )
+            return None
     scenario.end_test_step()
     return resp
 
@@ -276,57 +269,59 @@ def validate_shared_operational_intent(
     )
     op_intent_refs, query = scenario.dss.find_op_intent(extent)
     scenario.record_query(query)
-    if query.status_code != 200:
-        scenario.record_failed_check(
-            name="DSS response",
-            summary="Failed to query DSS for operational intents",
-            severity=Severity.High,
-            relevant_participants=[scenario.dss.participant_id],
-            details=f"Received status code {query.status_code} from the DSS",
-            query_timestamps=[query.request.timestamp],
-        )
-        return False
+    with scenario.check("DSS response", [scenario.dss.participant_id]) as check:
+        if query.status_code != 200:
+            check.record_failed(
+                summary="Failed to query DSS for operational intents",
+                severity=Severity.High,
+                details=f"Received status code {query.status_code} from the DSS",
+                query_timestamps=[query.request.timestamp],
+            )
+            return False
 
     matching_op_intent_refs = [
         op_intent_ref
         for op_intent_ref in op_intent_refs
         if op_intent_ref.id == op_intent_id
     ]
-    if not matching_op_intent_refs:
-        scenario.record_failed_check(
-            name="Operational intent shared correctly",
-            summary="Operational intent reference not found in DSS",
-            severity=Severity.High,
-            relevant_participants=[scenario.uss1.participant_id],
-            details=f"USS {scenario.uss1.participant_id} indicated that it created an operational intent with ID {op_intent_id}, but no operational intent references with that ID were found in the DSS in the area of the flight intent",
-            query_timestamps=[query.request.timestamp],
-        )
-        return False
+    with scenario.check(
+        "Operational intent shared correctly", [scenario.uss1.participant_id]
+    ) as check:
+        if not matching_op_intent_refs:
+            check.record_failed(
+                summary="Operational intent reference not found in DSS",
+                severity=Severity.High,
+                details=f"USS {scenario.uss1.participant_id} indicated that it created an operational intent with ID {op_intent_id}, but no operational intent references with that ID were found in the DSS in the area of the flight intent",
+                query_timestamps=[query.request.timestamp],
+            )
+            return False
     op_intent_ref = matching_op_intent_refs[0]
 
     op_intent, query = scenario.dss.get_full_op_intent(op_intent_ref)
-    if query.status_code != 200:
-        scenario.record_failed_check(
-            name="Operational intent shared correctly",
-            summary="Operational intent details could not be retrieved from USS",
-            severity=Severity.High,
-            relevant_participants=[scenario.uss1.participant_id],
-            details=f"Received status code {query.status_code} from {scenario.uss1.participant_id} when querying for details of operational intent {op_intent_id}",
-            query_timestamps=[query.request.timestamp],
-        )
-        return False
+    with scenario.check(
+        "Operational intent shared correctly", [scenario.uss1.participant_id]
+    ) as check:
+        if query.status_code != 200:
+            check.record_failed(
+                summary="Operational intent details could not be retrieved from USS",
+                severity=Severity.High,
+                details=f"Received status code {query.status_code} from {scenario.uss1.participant_id} when querying for details of operational intent {op_intent_id}",
+                query_timestamps=[query.request.timestamp],
+            )
+            return False
 
     error_text = validate_op_intent_details(op_intent, extent)
-    if error_text:
-        scenario.record_failed_check(
-            name="Correct operational intent details",
-            summary="Operational intent details do not match user flight intent",
-            severity=Severity.High,
-            relevant_participants=[scenario.uss1.participant_id],
-            details=error_text,
-            query_timestamps=[query.request.timestamp],
-        )
-        return False
+    with scenario.check(
+        "Correct operational intent details", [scenario.uss1.participant_id]
+    ) as check:
+        if error_text:
+            check.record_failed(
+                summary="Operational intent details do not match user flight intent",
+                severity=Severity.High,
+                details=error_text,
+                query_timestamps=[query.request.timestamp],
+            )
+            return False
 
     scenario.end_test_step()
     return True
@@ -350,16 +345,16 @@ def cleanup_flights(
         for flight_id in flight_ids:
             resp, query = flight_planner.cleanup_flight(flight_id)
             self.record_query(query)
-            if resp.result == DeleteFlightResult.Closed:
-                removed.append(flight_id)
-            else:
-                self.record_failed_check(
-                    name="Successful flight deletion",
-                    summary="Failed to delete flight",
-                    severity=Severity.Medium,
-                    relevant_participants=[flight_planner.participant_id],
-                    details="",
-                    query_timestamps=[query.request.timestamp],
-                )
+            with self.check(
+                "Successful flight deletion", [flight_planner.participant_id]
+            ) as check:
+                if resp.result == DeleteFlightResult.Closed:
+                    removed.append(flight_id)
+                else:
+                    check.record_failed(
+                        summary="Failed to delete flight",
+                        severity=Severity.Medium,
+                        query_timestamps=[query.request.timestamp],
+                    )
         removed_flights[flight_planner] = removed
     return removed_flights

@@ -8,7 +8,7 @@ import marko.element
 import marko.inline
 
 from monitoring.monitorlib.inspection import fullname
-
+from monitoring.uss_qualifier.reports.report import RequirementID
 
 RESOURCES_HEADING = "resources"
 CLEANUP_HEADING = "cleanup"
@@ -21,7 +21,7 @@ TEST_CHECK_SUFFIX = " check"
 class TestCheckDocumentation(ImplicitDict):
     name: str
     url: Optional[str] = None
-    applicable_requirements: List[str]
+    applicable_requirements: List[RequirementID]
 
 
 class TestStepDocumentation(ImplicitDict):

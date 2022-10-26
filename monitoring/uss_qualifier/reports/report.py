@@ -8,6 +8,12 @@ from monitoring.monitorlib import fetch, inspection
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.configurations.configuration import TestConfiguration
 
+ParticipantID = str
+"""String that refers to a participant being qualified by uss_qualifier"""
+
+
+RequirementID = str
+
 
 class FailedCheck(ImplicitDict):
     name: str
@@ -25,20 +31,31 @@ class FailedCheck(ImplicitDict):
     details: str
     """Human-readable description of the issue"""
 
-    relevant_requirements: List[str]
-    """Requirements that this issue relates to"""
+    requirements: List[RequirementID]
+    """Requirements that are not met due to this failed check"""
 
     severity: Severity
     """How severe the issue is"""
 
-    relevant_participants: List[str]
-    """Participant IDs of actors or organizations to which this failure may be relevant"""
+    participants: List[ParticipantID]
+    """Participants that may not meet the relevant requirements due to this failed check"""
 
     query_report_timestamps: Optional[List[str]]
     """List of the `report` timestamp field for queries relevant to this failed check"""
 
     additional_data: Optional[dict]
     """Additional data, structured according to the checks' needs, that may be relevant for understanding this failed check"""
+
+
+class PassedCheck(ImplicitDict):
+    name: str
+    """Name of the check that passed"""
+
+    requirements: List[RequirementID]
+    """Requirements that would not have been met if this check had failed"""
+
+    participants: List[ParticipantID]
+    """Participants that may not have met the relevant requirements if this check had failed"""
 
 
 class TestStepReport(ImplicitDict):
@@ -56,6 +73,9 @@ class TestStepReport(ImplicitDict):
 
     failed_checks: List[FailedCheck]
     """The checks which failed in this test step"""
+
+    passed_checks: List[PassedCheck]
+    """The checks which successfully passed in this test step"""
 
     end_time: Optional[StringBasedDateTime]
     """Time at which the test step completed or encountered an error"""
