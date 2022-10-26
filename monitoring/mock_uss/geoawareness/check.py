@@ -275,7 +275,7 @@ def evaluate_source(source: SourceRecord, filter_sets: List[GeozonesFilterSet]):
     return GeozonesCheckResultName.Absent
 
 
-def check_geozones(req: GeozonesCheckRequest) -> list[GeozonesCheckResultName]:
+def check_geozones(req: GeozonesCheckRequest) -> List[GeozonesCheckResultName]:
     sources: Dict[str, SourceRecord] = Database.get_sources(db)
 
     results: List[GeozonesCheckResultName] = [
