@@ -61,6 +61,7 @@ class NominalBehavior(TestScenario):
             )
         for i, target in enumerate(service_providers):
             p = CreateTestParameters(requested_flights=[test_flights[i]])
+            check = self.check("Successful injection", [target.participant_id])
             try:
                 query = target.submit_test(p, test_id)
             except RequestException as e:
@@ -69,11 +70,9 @@ class NominalBehavior(TestScenario):
                         etype=type(e), value=e, tb=e.__traceback__
                     )
                 )
-                self.record_failed_check(
-                    name="Successful injection",
+                check.record_failed(
                     summary="Error while trying to inject test flight",
-                    severity=Severity.Critical,
-                    relevant_participants=[target.participant_id],
+                    severity=Severity.High,
                     details=f"While trying to inject a test flight into {target.participant_id}, encountered error:\n{stacktrace}",
                 )
                 return
@@ -89,12 +88,11 @@ class NominalBehavior(TestScenario):
                     query.response["json"], ChangeTestResponse
                 )
                 injections = changed_test.injected_flights
+                check.record_passed()
             except ValueError as e:
-                self.record_failed_check(
-                    name="Successful injection",
+                check.record_failed(
                     summary="Error injecting test flight",
-                    severity=Severity.Critical,
-                    relevant_participants=[target.participant_id],
+                    severity=Severity.High,
                     details=f"Attempting to inject a test flight into {target.participant_id}, encountered status code {query.status_code}: {str(e)}",
                 )
                 return
@@ -140,6 +138,7 @@ class NominalBehavior(TestScenario):
                     f"Found {len(matching_sps)} service providers with participant ID {injected_flight.uss_participant_id} ({matching_ids}) when exactly 1 was expected"
                 )
             sp = matching_sps[0]
+            check = self.check("Successful test deletion", [sp.participant_id])
             try:
                 query = sp.delete_test(injected_flight.test_id)
                 self.record_query(query)
@@ -147,17 +146,17 @@ class NominalBehavior(TestScenario):
                     raise ValueError(
                         f"Received status code {query.status_code} after attempting to delete test {injected_flight.test_id} from service provider {sp.participant_id}"
                     )
+                check.record_passed()
             except (RequestException, ValueError) as e:
                 stacktrace = "".join(
                     traceback.format_exception(
                         etype=type(e), value=e, tb=e.__traceback__
                     )
                 )
-                self.record_failed_check(
+                check.record_failed(
                     name="Successful test deletion",
                     summary="Error while trying to delete test flight",
                     severity=Severity.High,
-                    relevant_participants=[sp.participant_id],
                     details=f"While trying to delete a test flight from {sp.participant_id}, encountered error:\n{stacktrace}",
                 )
         self.end_cleanup()

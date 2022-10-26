@@ -234,16 +234,19 @@ class RIDObservationEvaluator(object):
         observation: Optional[observation_api.GetDisplayDataResponse],
         query: fetch.Query,
     ) -> None:
-        if observation is None:
-            self._test_scenario.record_failed_check(
-                name="Successful observation",
-                summary="Observation failed",
-                details=f"When queried for an observation in {_rect_str(rect)}, {observer.participant_id} returned code {query.status_code}",
-                severity=Severity.Critical,
-                relevant_participants=[observer.participant_id],
-                query_timestamps=[query.request.timestamp],
-            )
-            return
+        with self._test_scenario.check(
+            "Successful observation", [observer.participant_id]
+        ) as check:
+            if observation is None:
+                check.record_failed(
+                    summary="Observation failed",
+                    details=f"When queried for an observation in {_rect_str(rect)}, {observer.participant_id} returned code {query.status_code}",
+                    severity=Severity.Critical,
+                    query_timestamps=[query.request.timestamp],
+                )
+                return
+            else:
+                check.record_passed()
 
         for expected_flight in self._injected_flights:
             t_initiated = query.request.timestamp
@@ -262,38 +265,37 @@ class RIDObservationEvaluator(object):
                 for observed_flight in observation.flights
                 if observed_flight.id == flight_id
             ]
-            if len(matching_flights) > 1:
-                self._test_scenario.record_failed_check(
-                    name="Duplicate flights",
-                    summary="Duplicate flights observed",
-                    details=f'When queried for an observation in {_rect_str(rect)}, {observer.participant_id} found {len(matching_flights)} flights with flight ID "{flight_id}" that was injected into {expected_flight.uss_participant_id}',
-                    severity=Severity.Critical,
-                    relevant_participants=[
-                        expected_flight.uss_participant_id,
-                        observer.participant_id,
-                    ],
-                    query_timestamps=[
-                        query.request.timestamp,
-                        expected_flight.query_timestamp,
-                    ],
-                )
-
-            if t_response < t_min:
-                # This flight should definitely not have been observed (it starts in the future)
-                if matching_flights:
-                    self._test_scenario.record_failed_check(
-                        name="Premature flight",
-                        summary="Flight observed before it started",
-                        details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was observed by {observer.participant_id} at {t_response.isoformat()} before that flight should have started at {t_min.isoformat()}",
-                        severity=Severity.High,
-                        relevant_participants=[expected_flight.uss_participant_id],
+            with self._test_scenario.check(
+                "Duplicate flights", [observer.participant_id]
+            ) as check:
+                if len(matching_flights) > 1:
+                    check.record_failed(
+                        summary="Duplicate flights observed",
+                        details=f'When queried for an observation in {_rect_str(rect)}, {observer.participant_id} found {len(matching_flights)} flights with flight ID "{flight_id}" that was injected into {expected_flight.uss_participant_id}',
+                        severity=Severity.Critical,
                         query_timestamps=[
                             query.request.timestamp,
                             expected_flight.query_timestamp,
                         ],
                     )
-                # TODO: attempt to observe flight details
-                continue
+
+            if t_response < t_min:
+                # This flight should definitely not have been observed (it starts in the future)
+                with self._test_scenario.check(
+                    "Premature flight", [expected_flight.uss_participant_id]
+                ) as check:
+                    if matching_flights:
+                        check.record_failed(
+                            summary="Flight observed before it started",
+                            details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was observed by {observer.participant_id} at {t_response.isoformat()} before that flight should have started at {t_min.isoformat()}",
+                            severity=Severity.High,
+                            query_timestamps=[
+                                query.request.timestamp,
+                                expected_flight.query_timestamp,
+                            ],
+                        )
+                    # TODO: attempt to observe flight details
+                    continue
             elif (
                 t_response
                 > t_max
@@ -301,44 +303,48 @@ class RIDObservationEvaluator(object):
                 + self._config.max_propagation_latency.timedelta
             ):
                 # This flight should not have been observed (it was too far in the past)
-                if matching_flights:
-                    self._test_scenario.record_failed_check(
-                        name="Lingering flight",
-                        summary="Flight still observed long after it ended",
-                        details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was observed by {observer.participant_id} at {t_response.isoformat()} after it ended at {t_max.isoformat()}",
-                        severity=Severity.High,
-                        relevant_participants=[
-                            expected_flight.uss_participant_id,
-                            observer.participant_id,
-                        ],
-                        query_timestamps=[
-                            query.request.timestamp,
-                            expected_flight.query_timestamp,
-                        ],
-                    )
-                    continue
+                with self._test_scenario.check(
+                    "Lingering flight",
+                    [
+                        expected_flight.uss_participant_id,
+                        observer.participant_id,
+                    ],
+                ) as check:
+                    if matching_flights:
+                        check.record_failed(
+                            summary="Flight still observed long after it ended",
+                            details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was observed by {observer.participant_id} at {t_response.isoformat()} after it ended at {t_max.isoformat()}",
+                            severity=Severity.High,
+                            query_timestamps=[
+                                query.request.timestamp,
+                                expected_flight.query_timestamp,
+                            ],
+                        )
+                        continue
             elif (
                 t_min + self._config.max_propagation_latency.timedelta
                 < t_initiated
                 < t_max + self._rid_version.realtime_period
             ):
                 # This flight should definitely have been observed
-                if not matching_flights:
-                    self._test_scenario.record_failed_check(
-                        name="Missing flight",
-                        summary="Expected flight not observed",
-                        details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was not listed in the observation by {observer.participant_id} at {t_response.isoformat()} even though it should have been active from {t_min.isoformat()} to {t_max.isoformat()}",
-                        severity=Severity.High,
-                        relevant_participants=[
-                            expected_flight.uss_participant_id,
-                            observer.participant_id,
-                        ],
-                        query_timestamps=[
-                            query.request.timestamp,
-                            expected_flight.query_timestamp,
-                        ],
-                    )
-                    continue
+                with self._test_scenario.check(
+                    "Missing flight",
+                    [
+                        expected_flight.uss_participant_id,
+                        observer.participant_id,
+                    ],
+                ) as check:
+                    if not matching_flights:
+                        check.record_failed(
+                            summary="Expected flight not observed",
+                            details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was not listed in the observation by {observer.participant_id} at {t_response.isoformat()} even though it should have been active from {t_min.isoformat()} to {t_max.isoformat()}",
+                            severity=Severity.High,
+                            query_timestamps=[
+                                query.request.timestamp,
+                                expected_flight.query_timestamp,
+                            ],
+                        )
+                        continue
                 # TODO: observe flight details
             elif t_initiated > t_min:
                 # If this flight was not observed, there may be propagation latency
@@ -354,15 +360,16 @@ class RIDObservationEvaluator(object):
         diagonal: float,
         query: fetch.Query,
     ) -> None:
-        if query.status_code != 413:
-            self._test_scenario.record_failed_check(
-                name="Area too large",
-                summary="Did not receive expected error code for too-large area request",
-                details=f"{observer.participant_id} was queried for flights in {_rect_str(rect)} with a diagonal of {diagonal} which is larger than the maximum allowed diagonal of {self._rid_version.max_diagonal_km}.  The expected error code is 413, but instead code {query.status_code} was received.",
-                severity=Severity.High,
-                relevant_participants=[observer.participant_id],
-                query_timestamps=[query.request.timestamp],
-            )
+        with self._test_scenario.check(
+            "Area too large", [observer.participant_id]
+        ) as check:
+            if query.status_code != 413:
+                check.record_failed(
+                    summary="Did not receive expected error code for too-large area request",
+                    details=f"{observer.participant_id} was queried for flights in {_rect_str(rect)} with a diagonal of {diagonal} which is larger than the maximum allowed diagonal of {self._rid_version.max_diagonal_km}.  The expected error code is 413, but instead code {query.status_code} was received.",
+                    severity=Severity.High,
+                    query_timestamps=[query.request.timestamp],
+                )
 
     def _evaluate_clusters_observation(self) -> None:
         # TODO: Check cluster sizing, aircraft counts, etc
