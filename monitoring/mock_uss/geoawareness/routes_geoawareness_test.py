@@ -178,7 +178,7 @@ def test_geozone_simple_check(client, client_options):
             "longitude": 7.4190915566346405,
             "latitude": 46.78810934830412,
         },
-        "geneve": { # Outside of all geozones
+        "geneve": {  # Outside of all geozones
             "uomDimensions": "M",
             "verticalReferenceType": "AGL",
             "height": 100,
