@@ -59,7 +59,10 @@ def _make_test_scenario_nodes(
     nodes: List[Node] = []
 
     # Make the scenario node
-    label_elements = [report.name, report.scenario_type]
+    scenario_type = report.scenario_type
+    if scenario_type.startswith("scenarios."):
+        scenario_type = scenario_type[len("scenarios.") :]
+    label_elements = [report.name, scenario_type]
     if include_notes and "notes" in report:
         label_elements += [f"{k}={v.message}" for k, v in report.notes.items()]
     scenario_node = Node(
@@ -155,9 +158,12 @@ def _make_test_suite_nodes(
         nodes.extend(new_nodes)
 
     # Make the suite node itself
+    suite_type = report.suite_type
+    if suite_type.startswith("suites."):
+        suite_type = suite_type[len("suites.") :]
     suite_node = Node(
         name=namer.make_name(report.suite_type),
-        label=report.name + "\n" + report.suite_type,
+        label=report.name + "\n" + suite_type,
         children=children,
         attributes={"shape": "folder"},
     )
@@ -188,9 +194,12 @@ def _make_action_generator_nodes(
         else:
             raise NotImplementedError()
         nodes.extend(new_nodes)
+    generator_type = report.generator_type
+    if generator_type.startswith("action_generators."):
+        generator_type = generator_type[len("action_generators.") :]
     generator_node = Node(
         name=namer.make_name(report.generator_type),
-        label="Action generator\n" + report.generator_type,
+        label="Action generator\n" + generator_type,
         children=children,
         attributes={"shape": "box3d"},
     )
@@ -224,9 +233,12 @@ def _make_resource_nodes(
 
             # Create this resource node if there are no uncreated prerequisites
             if not prereqs:
+                resource_type = declaration.resource_type
+                if resource_type.startswith("resources."):
+                    resource_type = resource_type[len("resources.") :]
                 resource_node = Node(
                     name=namer.make_name(resource_id),
-                    label=f"{resource_id}\n{declaration.resource_type}",
+                    label=f"{resource_id}\n{resource_type}",
                     children=[],
                     attributes={
                         "shape": "note",

@@ -1,0 +1,16 @@
+{
+  "resources": {
+    "resource_declarations": {
+      "$ref": "resources.yaml#/net_rid_sims"
+    }
+  },
+  "test_suite": {
+    "suite_type": "suites.interuss.generate_test_data_twice",
+    "resources": {
+      "adjacent_circular_flights_data": "adjacent_circular_flights_data",
+      "adjacent_circular_storage_config": "adjacent_circular_storage_config",
+      "kml_flights_data": "kml_flights_data",
+      "kml_storage_config": "kml_storage_config"
+    }
+  }
+}

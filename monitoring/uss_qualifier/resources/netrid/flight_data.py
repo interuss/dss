@@ -3,6 +3,7 @@ from typing import List, Optional
 from implicitdict import ImplicitDict, StringBasedDateTime, StringBasedTimeDelta
 
 from monitoring.monitorlib.rid import RIDAircraftState, RIDFlightDetails
+from monitoring.uss_qualifier.fileio import FileReference
 
 
 class FullFlightRecord(ImplicitDict):
@@ -69,21 +70,21 @@ class FlightDataKMLFileConfiguration(ImplicitDict):
     random_seed: Optional[int] = 12345
     """Pseudorandom seed that should be used, or specify None to use default Random."""
 
-    kml_path: str
-    """Path to a local file containing a KML describing a FlightRecordCollection."""
+    kml_location: FileReference
+    """Location of KML describing a FlightRecordCollection."""
 
 
 class FlightDataSpecification(ImplicitDict):
     flight_start_delay: StringBasedTimeDelta = StringBasedTimeDelta("15s")
     """Amount of time between starting the test and commencement of flights"""
 
-    json_file_source: Optional[FlightDataJSONFileConfiguration] = None
-    """When this field is populated, flight data will be loaded from a JSON file"""
+    record_source: Optional[FileReference]
+    """When this field is populated, flight record data will be loaded directly from this file"""
 
-    kml_file_source: Optional[FlightDataKMLFileConfiguration] = None
+    kml_source: Optional[FlightDataKMLFileConfiguration]
     """When this field is populated, flight data will be generated from a KML file"""
 
     adjacent_circular_flights_simulation_source: Optional[
         AdjacentCircularFlightsSimulatorConfiguration
-    ] = None
+    ]
     """When this field is populated, flight data will be simulated with the AdjacentCircularFlightsSimulator"""

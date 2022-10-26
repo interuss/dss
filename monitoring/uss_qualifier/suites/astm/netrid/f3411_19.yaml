@@ -1,12 +1,12 @@
 name: ASTM F3411-19
 resources:
-  flights_data: netrid.FlightDataResource
-  service_providers: netrid.NetRIDServiceProviders
-  observers: netrid.NetRIDObserversResource
-  evaluation_configuration: netrid.EvaluationConfigurationResource
+  flights_data: resources.netrid.FlightDataResource
+  service_providers: resources.netrid.NetRIDServiceProviders
+  observers: resources.netrid.NetRIDObserversResource
+  evaluation_configuration: resources.netrid.EvaluationConfigurationResource
 actions:
   - test_scenario:
-      scenario_type: astm.netrid.NominalBehavior
+      scenario_type: scenarios.astm.netrid.NominalBehavior
       resources:
         flights_data: flights_data
         service_providers: service_providers
