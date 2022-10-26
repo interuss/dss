@@ -1,7 +1,8 @@
 import json
 import os
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict, List, Union
 
+import jsonpath_ng
 import requests
 import yaml
 
@@ -133,8 +134,9 @@ def _load_dict_from_file_name(
                 f'Unable to parse data for "{base_file_name}" because its extension-based data format is not supported'
             )
 
-        _replace_refs(dict_content, dict_content, base_file_name, cache)
-        _drop_allof(dict_content)
+        allof_paths = _identify_allofs(dict_content)
+        ref_paths = _identify_refs(dict_content)
+        _replace_refs(dict_content, base_file_name, ref_paths, allof_paths, cache)
         cache[base_file_name] = dict_content
 
     if anchor is not None:
@@ -143,34 +145,112 @@ def _load_dict_from_file_name(
         return dict_content
 
 
-def _replace_refs(
-    content: dict, context_content: dict, context_file_name: str, cache: Dict[str, dict]
-) -> None:
-    if "$ref" in content:
-        ref_path = content.pop("$ref")
-        if not isinstance(ref_path, str):
+def _should_recurse(item):
+    if isinstance(item, dict):
+        return True
+    if isinstance(item, str):
+        return False
+    try:
+        iterable = iter(item)
+    except TypeError:
+        iterable = None
+    if iterable is not None:
+        return True
+    return False
+
+
+def _identify_refs(content: dict) -> List[str]:
+    refs = _find_refs(content)
+    external_refs = [k for k, v in refs.items() if not v.startswith("#")]
+    remaining_internal_refs = {k: v for k, v in refs.items() if v.startswith("#")}
+
+    # Order internal references by dependency
+    internal_refs = []
+    while remaining_internal_refs:
+        ref_to_add = None
+        for potential_ref, ref_path in remaining_internal_refs.items():
+            ref_json_path = ref_path.replace("#", "$").replace("/", ".")
+            dependencies = [
+                r
+                for r in remaining_internal_refs
+                if r != potential_ref and r.startswith(ref_json_path)
+            ]
+            if not dependencies:
+                ref_to_add = potential_ref
+                break
+        if ref_to_add is None:
             raise ValueError(
-                f"$ref link must be a string; found instead: {str(ref_path)}"
+                f'Circular dependency in $refs: {", ".join(remaining_internal_refs)}'
             )
-        if ref_path.startswith("#"):
-            ref_content = _select_path(context_content, ref_path[1:])
-        else:
-            ref_content = _load_dict_from_file_name(ref_path, context_file_name, cache)
-        for k, v in ref_content.items():
-            content[k] = v
-        _replace_refs(content, context_content, context_file_name, cache)
+        internal_refs.append(ref_to_add)
+        del remaining_internal_refs[ref_to_add]
+
+    return external_refs + internal_refs
+
+
+def _find_refs(content: Union[dict, list], root: str = "$") -> Dict[str, str]:
+    paths = {}
+    if isinstance(content, dict):
+        if "$ref" in content and isinstance(content["$ref"], str):
+            paths[root] = content["$ref"]
+        for k, v in content.items():
+            if _should_recurse(v):
+                paths = dict(paths, **_find_refs(v, root + "." + k))
     else:
-        for v in content.values():
-            if isinstance(v, dict):
-                _replace_refs(v, context_content, context_file_name, cache)
-            try:
-                iterable = iter(v)
-            except TypeError:
-                iterable = None
-            if iterable:
-                for item in v:
-                    if isinstance(item, dict):
-                        _replace_refs(item, context_content, context_file_name, cache)
+        for i, item in enumerate(content):
+            if _should_recurse(item):
+                paths = dict(paths, **_find_refs(item, root + f"[{i}]"))
+    return paths
+
+
+def _replace_refs(
+    content: dict,
+    context_file_name: str,
+    ref_parent_paths: List[str],
+    allof_paths: List[str],
+    cache: Optional[Dict[str, dict]] = None,
+) -> None:
+    for path in ref_parent_paths:
+        parent = [m.value for m in jsonpath_ng.parse(path).find(content)]
+        if len(parent) != 1:
+            raise RuntimeError(
+                f'Unexpectedly found {len(parent)} matches for $ref parent JSON Path "{path}"'
+            )
+        parent = parent[0]
+        ref_path = parent.pop("$ref")
+        if not ref_path.startswith("#"):
+            ref_content = _load_dict_from_file_name(ref_path, context_file_name, cache)
+        else:
+            ref_json_path = jsonpath_ng.parse(
+                ref_path.replace("#", "$").replace("/", ".")
+            )
+            ref_content = [m.value for m in ref_json_path.find(content)]
+            if len(ref_content) != 1:
+                raise RuntimeError(
+                    f'Unexpectedly found {len(ref_content)} matches for local $ref path "{ref_path}"'
+                )
+            ref_content = ref_content[0]
+        for k, v in ref_content.items():
+            parent[k] = v
+
+        # See if there is an allOf to resolve and resolve it if so
+        if path.split(".")[-1].startswith("allOf["):
+            allof_parent_path = ".".join(path.split(".")[0:-1])
+            if allof_parent_path + ".allOf" in allof_paths:
+                allof_parent_content = [
+                    m.value for m in jsonpath_ng.parse(allof_parent_path).find(content)
+                ]
+                if len(allof_parent_content) != 1:
+                    raise RuntimeError(
+                        f'Unexpectedly found {len(ref_content)} matches for allOf parent path "{ref_path}"'
+                    )
+                allof_parent_content = allof_parent_content[0]
+                if all("$ref" not in s for s in allof_parent_content["allOf"]):
+                    # This allOf is complete and can be resolved
+                    schemas = allof_parent_content.pop("allOf")
+                    for schema in schemas:
+                        for k, v in schema.items():
+                            allof_parent_content[k] = v
 
 
 def _select_path(content: dict, path: str) -> dict:
@@ -196,21 +276,28 @@ def _select_path(content: dict, path: str) -> dict:
         return _select_path(content[component], subpath)
 
 
-def _drop_allof(content: dict) -> None:
-    if "allOf" in content:
-        all_of = content.pop("allOf")
-        for schema in all_of:
-            _drop_allof(schema)
-            for k, v in schema.items():
-                content[k] = v
-    for v in content.values():
-        if isinstance(v, dict):
-            _drop_allof(v)
-        try:
-            iterable = iter(v)
-        except TypeError:
-            iterable = None
-        if iterable:
-            for item in v:
-                if isinstance(item, dict):
-                    _drop_allof(item)
+def _identify_allofs(content: Union[dict, list], root: str = "$") -> List[str]:
+    paths = []
+    if isinstance(content, dict):
+        if (
+            "allOf" in content
+            and isinstance(content["allOf"], list)
+            and all(
+                isinstance(s, dict)
+                and len(s) == 1
+                and "$ref" in s
+                and isinstance(s["$ref"], str)
+                for s in content["allOf"]
+            )
+        ):
+            paths.append(root + ".allOf")
+        for k, v in content.items():
+            if k == "allOf":
+                continue
+            if _should_recurse(v):
+                paths.extend(_identify_allofs(v, root + "." + k))
+    else:
+        for i, item in enumerate(content):
+            if _should_recurse(item):
+                paths.extend(_identify_allofs(item, root + f"[{i}]"))
+    return paths

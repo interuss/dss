@@ -2,5 +2,6 @@ pyproj==3.0.0
 faker===8.1.0
 geojson===2.5.0
 graphviz==0.20.1
+jsonpath-ng==1.5.3
 marko==1.2.2
 -r ../monitorlib/requirements.txt
