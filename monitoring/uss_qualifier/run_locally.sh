@@ -33,6 +33,12 @@ REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report.json"
 # Report file must already exist to share correctly with the Docker container
 touch "${REPORT_FILE}"
 
+TESTED_REQS_FILE="$(pwd)/monitoring/uss_qualifier/tested_requirements.html"
+touch "${TESTED_REQS_FILE}"
+
+DOT_FILE="$(pwd)/monitoring/uss_qualifier/report.gv"
+touch "${DOT_FILE}"
+
 if [ "$CI" == "true" ]; then
   docker_args="--add-host host.docker.internal:host-gateway" # Required to reach other containers in Ubuntu (used for Github Actions)
 else
@@ -46,7 +52,11 @@ docker run ${docker_args} --name uss_qualifier \
   -e PYTHONBUFFERED=1 \
   -e AUTH_SPEC=${AUTH_SPEC} \
   -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
+  -v "${TESTED_REQS_FILE}:/app/monitoring/uss_qualifier/tested_requirements.html" \
+  -v "${DOT_FILE}:/app/monitoring/uss_qualifier/report.gv" \
   -v "$(pwd):/app" \
   -w /app/monitoring/uss_qualifier \
   interuss/monitoring \
-  python main.py $QUALIFIER_OPTIONS
+  python main.py $QUALIFIER_OPTIONS \
+  --tested_requirements tested_requirements.html \
+  --dot report.gv

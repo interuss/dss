@@ -24,10 +24,10 @@ from monitoring.uss_qualifier.reports.report import (
 )
 from monitoring.uss_qualifier.scenarios.definitions import TestScenarioDeclaration
 from monitoring.uss_qualifier.scenarios.documentation import (
+    get_documentation,
     TestScenarioDocumentation,
     TestCaseDocumentation,
     TestStepDocumentation,
-    parse_documentation,
     TestCheckDocumentation,
 )
 from monitoring.uss_qualifier.resources.definitions import ResourceTypeName, ResourceID
@@ -145,7 +145,7 @@ class TestScenario(ABC):
     _step_report: Optional[TestStepReport] = None
 
     def __init__(self):
-        self.documentation = parse_documentation(self.__class__)
+        self.documentation = get_documentation(self.__class__)
         self._phase = ScenarioPhase.NotStarted
 
     @staticmethod
