@@ -138,17 +138,19 @@ def evaluate_timing(
         end = a.get("endDateTime", StringBasedDateTime(datetime.max))
 
         in_range = _is_in_date_range(start, end, after, before)
+        if not in_range:
+            continue
 
         schedule = a.get("schedule", None)
         if schedule is None:
-            logger.debug(f"     * Date in range => {in_range}")
-            return in_range
+            logger.debug(f"     * Date in range without schedule => True")
+            return True
         else:
             # TODO Implement schedule checks
             logger.warning(
                 f"      * Date in range => {in_range} (Schedule not taken into account)"
             )
-            return in_range
+            return True
     return False
 
 
