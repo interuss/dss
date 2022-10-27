@@ -210,7 +210,6 @@ class NominalBehavior(TestScenario):
                     )
                 )
                 check.record_failed(
-                    name="Successful test deletion",
                     summary="Error while trying to delete test flight",
                     severity=Severity.High,
                     details=f"While trying to delete a test flight from {sp.participant_id}, encountered error:\n{stacktrace}",
