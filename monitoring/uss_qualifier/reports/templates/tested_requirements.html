@@ -1,0 +1,15 @@
+<html>
+<body>
+    <table>
+    {% for row in rows %}
+        <tr>
+        {% for cell in row %}
+            <td>
+                {{ cell }}
+            </td>
+        {% endfor %}
+        </tr>
+    {% endfor %}
+    </table>
+</body>
+</html>
