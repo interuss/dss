@@ -103,7 +103,7 @@ class Validation(TestScenario):
         return True
 
     def _attempt_invalid_flights(self) -> bool:
-        self.begin_test_step("Inject invalid flight intent")
+        self.begin_test_step("Inject invalid flight intents")
 
         for flight_intent in self.flight_intents[0:-1]:
             resp, query, flight_id = self.ussp.request_flight(flight_intent)
@@ -130,7 +130,7 @@ class Validation(TestScenario):
                         query_timestamps=[query.request.timestamp],
                     )
 
-            self.end_test_step()  # Inject flight intent
+            self.end_test_step()  # Inject flight intents
 
         return True
 

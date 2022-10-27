@@ -64,6 +64,7 @@ def clear_area(
                 return False
 
     scenario.end_test_step()
+    return True
 
 
 OneOrMoreFlightPlanners = Union[FlightPlanner, List[FlightPlanner]]
@@ -220,12 +221,14 @@ def inject_successful_flight_intent(
     scenario.begin_test_step(test_step)
     resp, query, flight_id = flight_planner.request_flight(flight_intent)
     scenario.record_query(query)
-    with scenario.check("Successful planning", [scenario.uss1.participant_id]) as check:
+    with scenario.check(
+        "Successful planning", [flight_planner.participant_id]
+    ) as check:
         if resp.result == InjectFlightResult.ConflictWithFlight:
             check.record_failed(
                 summary="Conflict-free flight not created due to conflict",
                 severity=Severity.High,
-                details=f'{scenario.uss1.participant_id} indicated ConflictWithFlight: "{resp.notes}"',
+                details=f'{flight_planner.participant_id} indicated ConflictWithFlight: "{resp.notes}"',
                 query_timestamps=[query.request.timestamp],
             )
             return None
@@ -233,7 +236,7 @@ def inject_successful_flight_intent(
             check.record_failed(
                 summary="Valid flight rejected",
                 severity=Severity.High,
-                details=f'{scenario.uss1.participant_id} indicated Rejected: "{resp.notes}"',
+                details=f'{flight_planner.participant_id} indicated Rejected: "{resp.notes}"',
                 query_timestamps=[query.request.timestamp],
             )
             return None
@@ -241,7 +244,7 @@ def inject_successful_flight_intent(
             check.record_failed(
                 summary="Failed to create flight",
                 severity=Severity.High,
-                details=f'{scenario.uss1.participant_id} Failed to process the user flight intent: "{resp.notes}"',
+                details=f'{flight_planner.participant_id} Failed to process the user flight intent: "{resp.notes}"',
                 query_timestamps=[query.request.timestamp],
             )
             return None
