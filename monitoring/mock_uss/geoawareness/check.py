@@ -7,15 +7,11 @@ from uas_standards.interuss.automated_testing.geo_awareness.v1.api import (
     GeozoneSourceResponseResult,
 )
 from monitoring.mock_uss.geoawareness.ed269 import evaluate_source
-
 from monitoring.mock_uss.geoawareness.database import db, SourceRecord, Database
 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-
-FEET_PER_METER = 1 / 0.3048
 
 
 def combine_results(
