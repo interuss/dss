@@ -108,13 +108,13 @@ def _is_in_date_range(
         return True
 
     elif after is not None and before is not None:
-        if start.datetime <= before.datetime and end.datetime >= after.datetime:
+        if start.datetime < before.datetime and end.datetime > after.datetime:
             return True
     else:
-        if after is not None and end.datetime >= after.datetime:
+        if after is not None and end.datetime > after.datetime:
             return True
 
-        if before is not None and start.datetime <= before.datetime:
+        if before is not None and start.datetime < before.datetime:
             return True
 
     return False
