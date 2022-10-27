@@ -181,7 +181,9 @@ def _adjust_uspace_class(uspace_class: Union[str, List[str]]) -> List[str]:
     return uspace_class
 
 
-def evaluate_non_spacetime(feature: UASZoneVersion, ed269: Optional[ED269Filters]) -> bool:
+def evaluate_non_spacetime(
+    feature: UASZoneVersion, ed269: Optional[ED269Filters]
+) -> bool:
     """Returns True if the feature matches all provided filters"""
     logger.debug(f"     _evaluate_ed269: ed269:{ed269} feature:{feature}")
 
