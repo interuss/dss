@@ -1,10 +1,11 @@
-from typing import List, Optional
+from typing import List
 
 from implicitdict import ImplicitDict, StringBasedDateTime, StringBasedTimeDelta
 
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightRequest,
 )
+from monitoring.uss_qualifier.fileio import FileReference
 
 
 class FlightIntent(ImplicitDict):
@@ -20,14 +21,9 @@ class FlightIntentCollection(ImplicitDict):
     """Flights that users want to create."""
 
 
-class FlightIntentsJSONFileConfiguration(ImplicitDict):
-    path: str
-    """Path to a file containing a JSON representation of an instance of FlightRecordCollection.  This may be a local file or a web URL."""
-
-
 class FlightIntentsSpecification(ImplicitDict):
     planning_time: StringBasedTimeDelta
     """Time delta between the time uss_qualifier initiates this FlightInjectionAttempt and when a timestamp within the test_injection equal to reference_time occurs"""
 
-    json_file_source: Optional[FlightIntentsJSONFileConfiguration] = None
-    """When this field is populated, flight intents will be loaded from a JSON file containing an object with the FlightIntentCollection schema"""
+    file_source: FileReference
+    """Location of file to load"""

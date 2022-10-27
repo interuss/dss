@@ -1,24 +1,18 @@
 from enum import Enum
-import json
-import os
 from typing import Dict, List, Optional, TypeVar
 
 from implicitdict import ImplicitDict
-import yaml
 
+from monitoring.uss_qualifier.fileio import load_dict_with_references, FileReference
 from monitoring.uss_qualifier.resources.definitions import ResourceID, ResourceTypeName
 from monitoring.uss_qualifier.scenarios.definitions import (
     TestScenarioDeclaration,
 )
 
 
-SuiteTypeName = str
-"""This plain string represents a type of test suite, expressed as the file name of the suite definition (without extension) qualified relative to this `suites` folder"""
-
-
 class TestSuiteDeclaration(ImplicitDict):
-    suite_type: SuiteTypeName
-    """Type of test suite"""
+    suite_type: FileReference
+    """Type/location of test suite.  Usually expressed as the file name of the suite definition (without extension) qualified relative to the `uss_qualifier` folder"""
 
     resources: Dict[ResourceID, ResourceID]
     """Mapping of the ID a resource will be known by in the child test suite -> the ID a resource is known by in the parent test suite.
@@ -130,15 +124,7 @@ class TestSuiteDefinition(ImplicitDict):
     """The actions to take when running the test suite.  Components will be executed in order."""
 
     @staticmethod
-    def load(suite_type: str) -> "TestSuiteDefinition":
-        path_parts = [os.path.dirname(__file__)]
-        path_parts += suite_type.split(".")
-        yaml_file = os.path.join(*path_parts) + ".yaml"
-        if os.path.exists(yaml_file):
-            with open(yaml_file, "r") as f:
-                suite_dict = yaml.safe_load(f)
-        else:
-            json_file = os.path.join(*path_parts) + ".json"
-            with open(json_file, "r") as f:
-                suite_dict = json.load(f)
-        return ImplicitDict.parse(suite_dict, TestSuiteDefinition)
+    def load(suite_type: FileReference) -> "TestSuiteDefinition":
+        return ImplicitDict.parse(
+            load_dict_with_references(suite_type), TestSuiteDefinition
+        )

@@ -7,6 +7,7 @@ from implicitdict import ImplicitDict, StringBasedDateTime
 from monitoring.monitorlib import fetch, inspection
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.configurations.configuration import TestConfiguration
+from monitoring.uss_qualifier.fileio import FileReference
 
 ParticipantID = str
 """String that refers to a participant being qualified by uss_qualifier"""
@@ -224,8 +225,8 @@ class TestSuiteReport(ImplicitDict):
     name: str
     """Name of this test suite"""
 
-    suite_type: str
-    """Type of this test suite"""
+    suite_type: FileReference
+    """Type/location of this test suite"""
 
     documentation_url: str
     """URL at which this test suite is described"""

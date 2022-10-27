@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, TypeVar, Generic
 from implicitdict import StringBasedDateTime, ImplicitDict
 import yaml
 
+from monitoring import uss_qualifier as uss_qualifier_module
 from monitoring.monitorlib.inspection import (
     fullname,
     get_module_object_by_name,
@@ -221,7 +222,7 @@ class ActionGenerator(ABC, Generic[ActionGeneratorSpecificationType]):
 
         import_submodules(action_generators_module)
         action_generator_type = get_module_object_by_name(
-            parent_module=action_generators_module,
+            parent_module=uss_qualifier_module,
             object_name=definition.generator_type,
         )
         if not issubclass(action_generator_type, ActionGenerator):

@@ -1,13 +1,12 @@
 import json
 from typing import Dict, Optional
-
 from implicitdict import ImplicitDict
-from monitoring.mock_uss.geoawareness.parsers.ed269 import ED269Schema
-from monitoring.monitorlib.geoawareness_automated_testing.api import (
-    GeozoneSourceState,
-    GeozoneSourceDefinition,
-)
 from monitoring.monitorlib.multiprocessing import SynchronizedValue
+from uas_standards.eurocae_ed269 import ED269Schema
+from uas_standards.interuss.automated_testing.geo_awareness.v1.api import (
+    CreateGeozoneSourceRequest,
+    GeozoneSourceResponseResult,
+)
 
 
 class ExistingRecordException(ValueError):
@@ -15,8 +14,8 @@ class ExistingRecordException(ValueError):
 
 
 class SourceRecord(ImplicitDict):
-    definition: GeozoneSourceDefinition
-    state: GeozoneSourceState
+    definition: CreateGeozoneSourceRequest
+    state: GeozoneSourceResponseResult
     message: Optional[str]
     geozone_ed269: Optional[ED269Schema]
 
@@ -38,8 +37,8 @@ class Database(ImplicitDict):
     def insert_source(
         db: SynchronizedValue,
         id: str,
-        definition: GeozoneSourceDefinition,
-        state: GeozoneSourceState,
+        definition: CreateGeozoneSourceRequest,
+        state: GeozoneSourceResponseResult,
         message: Optional[str] = None,
     ) -> SourceRecord:
         with db as tx:
@@ -55,7 +54,7 @@ class Database(ImplicitDict):
     def update_source_state(
         db: SynchronizedValue,
         id: str,
-        state: GeozoneSourceState,
+        state: GeozoneSourceResponseResult,
         message: Optional[str] = None,
     ):
         with db as tx:

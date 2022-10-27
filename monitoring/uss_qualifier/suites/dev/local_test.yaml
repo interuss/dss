@@ -1,21 +1,21 @@
 name: Local tests
 resources:
-  adjacent_circular_flights_data: netrid.FlightDataResource
-  adjacent_circular_storage_config: netrid.FlightDataStorageResource
-  kml_flights_data: netrid.FlightDataResource
-  kml_storage_config: netrid.FlightDataStorageResource
+  adjacent_circular_flights_data: resources.netrid.FlightDataResource
+  adjacent_circular_storage_config: resources.netrid.FlightDataStorageResource
+  kml_flights_data: resources.netrid.FlightDataResource
+  kml_storage_config: resources.netrid.FlightDataStorageResource
 
-  service_providers: netrid.NetRIDServiceProviders
-  observers: netrid.NetRIDObserversResource
-  evaluation_configuration: netrid.EvaluationConfigurationResource
-  flight_planners: flight_planning.FlightPlannersResource
-  conflicting_flights: flight_planning.FlightIntentsResource
-  priority_preemption_flights: flight_planning.FlightIntentsResource
-  invalid_flight_auth_flights: flight_planning.FlightIntentsResource
-  dss: astm.f3548.v21.DSSInstanceResource
+  service_providers: resources.netrid.NetRIDServiceProviders
+  observers: resources.netrid.NetRIDObserversResource
+  evaluation_configuration: resources.netrid.EvaluationConfigurationResource
+  flight_planners: resources.flight_planning.FlightPlannersResource
+  conflicting_flights: resources.flight_planning.FlightIntentsResource
+  priority_preemption_flights: resources.flight_planning.FlightIntentsResource
+  invalid_flight_auth_flights: resources.flight_planning.FlightIntentsResource
+  dss: resources.astm.f3548.v21.DSSInstanceResource
 actions:
 - test_suite:
-    suite_type: interuss.generate_test_data
+    suite_type: suites.interuss.generate_test_data
     resources:
       adjacent_circular_flights_data: adjacent_circular_flights_data
       adjacent_circular_storage_config: adjacent_circular_storage_config
@@ -23,7 +23,7 @@ actions:
       kml_storage_config: kml_storage_config
   on_failure: Continue
 - test_suite:
-    suite_type: uspace.required_services
+    suite_type: suites.uspace.required_services
     resources:
       conflicting_flights: conflicting_flights
       priority_preemption_flights: priority_preemption_flights

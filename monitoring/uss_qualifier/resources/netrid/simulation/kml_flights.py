@@ -361,9 +361,9 @@ def get_flight_state_coordinates(flight_details):
 
 
 def get_flight_records(
-    kml_file, reference_time, random_seed, debug_mode=False
+    kml_content, reference_time, random_seed
 ) -> FlightRecordCollection:
-    kml_content = kml.get_kml_content(kml_file, False)
+    kml_content = kml.get_kml_content(kml_content.encode("utf-8"), True)
     flight_records = []
     for flight_name, flight_details in kml_content.items():
         flight_description = flight_details["description"]
@@ -373,14 +373,6 @@ def get_flight_records(
             flight_state_speeds,
             flight_track_angles,
         ) = get_flight_state_coordinates(flight_details)
-        if debug_mode:
-            flight_state_vertices_unflatten = [
-                ",".join(map(str, p)) for p in flight_state_coordinates
-            ]
-            flight_state_vertices_str = "\n".join(flight_state_vertices_unflatten)
-            output_folder = os.path.dirname(kml_file)
-            with open(f"{output_folder}/kml_state_{flight_name}.txt", "w") as text_file:
-                text_file.write(flight_state_vertices_str)
         flight_record = generate_flight_record(
             flight_state_coordinates,
             flight_description,
