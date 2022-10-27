@@ -1,14 +1,10 @@
 import logging
 from typing import List, Dict
+from uas_standards.interuss.automated_testing.geo_awareness.v1.api import GeozonesCheckResultGeozone, GeozonesCheckRequest, GeozoneHttpsSourceFormat, GeozoneSourceResponseResult
 from monitoring.mock_uss.geoawareness.ed269 import evaluate_source
 
 from monitoring.mock_uss.geoawareness.database import db, SourceRecord, Database
-from monitoring.monitorlib.geoawareness_automated_testing.api import (
-    GeozonesCheckRequest,
-    GeozoneSourceState,
-    HttpsSourceFormat,
-    GeozonesCheckResultName,
-)
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -18,37 +14,37 @@ FEET_PER_METER = 1 / 0.3048
 
 
 def combine_results(
-    r1: GeozonesCheckResultName, r2: GeozonesCheckResultName
-) -> GeozonesCheckResultName:
+    r1: GeozonesCheckResultGeozone, r2: GeozonesCheckResultGeozone
+) -> GeozonesCheckResultGeozone:
     """
     Logical OR results combination.
     Present == True and Absent == False
     """
-    if GeozonesCheckResultName.Present in [r1, r2]:
-        return GeozonesCheckResultName.Present
-    return GeozonesCheckResultName.Absent
+    if GeozonesCheckResultGeozone.Present in [r1, r2]:
+        return GeozonesCheckResultGeozone.Present
+    return GeozonesCheckResultGeozone.Absent
 
 
-def check_geozones(req: GeozonesCheckRequest) -> List[GeozonesCheckResultName]:
+def check_geozones(req: GeozonesCheckRequest) -> List[GeozonesCheckResultGeozone]:
     sources: Dict[str, SourceRecord] = Database.get_sources(db)
 
-    results: List[GeozonesCheckResultName] = [GeozonesCheckResultName.Absent] * len(
+    results: List[GeozonesCheckResultGeozone] = [GeozonesCheckResultGeozone.Absent] * len(
         req.checks
     )
 
     for i, check in enumerate(req.checks):
         logger.info(f"  Evaluating check {i}: {check}")
 
-        result = GeozonesCheckResultName.Absent
+        result = GeozonesCheckResultGeozone.Absent
         for j, (source_id, source) in enumerate(sources.items()):
-            if source.state != GeozoneSourceState.Ready:
+            if source.state != GeozoneSourceResponseResult.Ready:
                 logger.debug(
                     f" {j+1}. Source {source_id} is not ready ({source.state}). Skip."
                 )
                 continue
 
             fmt = source.definition.https_source.format
-            if fmt == HttpsSourceFormat.Ed269:
+            if fmt == GeozoneHttpsSourceFormat.ED_269:
                 logger.debug(f" {j+1}. ED269 source {source_id} ready.")
                 result = combine_results(
                     result, evaluate_source(source, check.filterSets)

@@ -1,5 +1,6 @@
 import pytest
 from s2sphere import LatLng
+from uas_standards.interuss.automated_testing.geo_awareness.v1.api import Position, ED269Filters
 from implicitdict import StringBasedDateTime
 from monitoring.mock_uss.geoawareness.ed269 import (
     evaluate_non_spacetime,
@@ -8,10 +9,6 @@ from monitoring.mock_uss.geoawareness.ed269 import (
     evaluate_timing,
 )
 from monitoring.monitorlib.geo import unflatten
-from monitoring.monitorlib.geoawareness_automated_testing.api import (
-    ED269Filters,
-    Position,
-)
 from uas_standards.eurocae_ed269 import (
     UASZoneVersion,
     UomDimensions,

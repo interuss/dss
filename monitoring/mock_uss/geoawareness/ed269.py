@@ -11,12 +11,10 @@ from shapely.geometry import Point, Polygon
 from implicitdict import StringBasedDateTime
 from monitoring.mock_uss.geoawareness.database import SourceRecord
 from monitoring.monitorlib.geo import flatten
-from monitoring.monitorlib.geoawareness_automated_testing.api import (
+from uas_standards.interuss.automated_testing.geo_awareness.v1.api import (
     GeozonesFilterSet,
-    GeozoneSourceState,
-    GeozonesCheckResultName,
     Position,
-    ED269Filters,
+    ED269Filters, GeozonesCheckResultGeozone, GeozoneSourceResponseResult,
 )
 from uas_standards.eurocae_ed269 import (
     UASZoneVersion,
@@ -240,26 +238,26 @@ def evaluate_feature(feature: UASZoneVersion, filter_set: GeozonesFilterSet) -> 
 
 def evaluate_features(
     features: List[UASZoneVersion], filter_set: GeozonesFilterSet
-) -> GeozonesCheckResultName:
+) -> GeozonesCheckResultGeozone:
     logger.debug(f"  Evalutating {len(features)} features:")
 
     for i, feature in enumerate(features):
         if evaluate_feature(feature, filter_set):
-            return GeozonesCheckResultName.Present
+            return GeozonesCheckResultGeozone.Present
 
     logger.info(f" => No match - Absent")
-    return GeozonesCheckResultName.Absent
+    return GeozonesCheckResultGeozone.Absent
 
 
 def evaluate_source(source: SourceRecord, filter_sets: List[GeozonesFilterSet]):
-    if not (source.state == GeozoneSourceState.Ready and "geozone_ed269" in source):
+    if not (source.state == GeozoneSourceResponseResult.Ready and "geozone_ed269" in source):
         raise ValueError("Source not loaded correctly. geozone_ed269 field missing.")
 
     if len(filter_sets) == 0:
-        return GeozonesCheckResultName.Present
+        return GeozonesCheckResultGeozone.Present
 
     features = source["geozone_ed269"]["features"]
     for f in filter_sets:
-        if evaluate_features(features, f) == GeozonesCheckResultName.Present:
-            return GeozonesCheckResultName.Present
-    return GeozonesCheckResultName.Absent
+        if evaluate_features(features, f) == GeozonesCheckResultGeozone.Present:
+            return GeozonesCheckResultGeozone.Present
+    return GeozonesCheckResultGeozone.Absent
