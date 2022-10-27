@@ -179,7 +179,7 @@ def _adjust_uspace_class(uspace_class: Union[str, List[str]]) -> List[str]:
     return uspace_class
 
 
-def evaluate_ed269(feature: UASZoneVersion, ed269: Optional[ED269Filters]) -> bool:
+def evaluate_non_spacetime(feature: UASZoneVersion, ed269: Optional[ED269Filters]) -> bool:
     """Returns True if the feature matches all provided filters"""
     logger.debug(f"     _evaluate_ed269: ed269:{ed269} feature:{feature}")
 
@@ -224,9 +224,9 @@ def evaluate_feature(feature: UASZoneVersion, filter_set: GeozonesFilterSet) -> 
         logger.debug(f"    {feature.identifier}: Timing not matched - Absent")
         return False
 
-    # Evaluate U-Space
-    ed269_match = evaluate_ed269(feature, filter_set.get("ed269", None))
-    if not ed269_match:
+    # Evaluate non-spacetime fields
+    non_spacetime_match = evaluate_non_spacetime(feature, filter_set.get("ed269", None))
+    if not non_spacetime_match:
         logger.debug(f"    {feature.identifier}: ED269 not matched - Absent")
         return False
 

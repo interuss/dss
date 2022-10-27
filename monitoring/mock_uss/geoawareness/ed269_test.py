@@ -1,8 +1,8 @@
 import pytest
 from s2sphere import LatLng
 from implicitdict import StringBasedDateTime
-from monitoring.mock_uss.geoawareness.check import (
-    evaluate_ed269,
+from monitoring.mock_uss.geoawareness.ed269 import (
+    evaluate_non_spacetime,
     evaluate_position,
     convert_distance,
     evaluate_timing,
@@ -315,7 +315,7 @@ def test_evaluate_timing():
         )
 
 
-def test_evaluate_ed269():
+def test_evaluate_non_spacetime():
     other_fields = {
         "identifier": "I",
         "country": "CHE",
@@ -327,7 +327,7 @@ def test_evaluate_ed269():
 
     # uSpaceClass match
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(uSpaceClass="C1", restriction="PROHIBITED", **other_fields),
             ED269Filters(uSpaceClass="C1"),
         )
@@ -336,7 +336,7 @@ def test_evaluate_ed269():
 
     # uSpaceClass mismatch
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(uSpaceClass="C1", restriction="PROHIBITED", **other_fields),
             ED269Filters(uSpaceClass="C2"),
         )
@@ -345,7 +345,7 @@ def test_evaluate_ed269():
 
     # uSpaceClass as array
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(
                 uSpaceClass=["C1", "C2"], restriction="PROHIBITED", **other_fields
             ),
@@ -356,7 +356,7 @@ def test_evaluate_ed269():
 
     # uSpaceClass as JSON array in a string
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(
                 uSpaceClass='["C1", "C2"]', restriction="PROHIBITED", **other_fields
             ),
@@ -367,7 +367,7 @@ def test_evaluate_ed269():
 
     # uSpaceClass as Python array in a string
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(
                 uSpaceClass="['C1', 'C2']", restriction="PROHIBITED", **other_fields
             ),
@@ -378,7 +378,7 @@ def test_evaluate_ed269():
 
     # No filter
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(uSpaceClass="C1", restriction="PROHIBITED", **other_fields),
             ED269Filters(),
         )
@@ -387,7 +387,7 @@ def test_evaluate_ed269():
 
     # No filter and no uSpaceClass
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(restriction="PROHIBITED", **other_fields), ED269Filters()
         )
         is True
@@ -395,7 +395,7 @@ def test_evaluate_ed269():
 
     # Missing value
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(restriction="PROHIBITED", **other_fields),
             ED269Filters(uSpaceClass="C1"),
         )
@@ -404,7 +404,7 @@ def test_evaluate_ed269():
 
     # Single match with single acceptable restriction
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(uSpaceClass="C1", restriction="PROHIBITED", **other_fields),
             ED269Filters(acceptableRestrictions=["PROHIBITED"]),
         )
@@ -413,7 +413,7 @@ def test_evaluate_ed269():
 
     # Single match in multiple acceptable restrictions
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(uSpaceClass="C1", restriction="PROHIBITED", **other_fields),
             ED269Filters(acceptableRestrictions=["REQ_AUTHORISATION", "PROHIBITED"]),
         )
@@ -422,7 +422,7 @@ def test_evaluate_ed269():
 
     # Unacceptable restriction only
     assert (
-        evaluate_ed269(
+        evaluate_non_spacetime(
             UASZoneVersion(uSpaceClass="C1", restriction="PROHIBITED", **other_fields),
             ED269Filters(acceptableRestrictions=["REQ_AUTHORISATION"]),
         )
