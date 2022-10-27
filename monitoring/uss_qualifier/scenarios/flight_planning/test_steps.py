@@ -1,6 +1,6 @@
 import traceback
 from datetime import datetime
-from typing import List, Dict, Union, Optional, Tuple
+from typing import List, Dict, Union, Optional, Tuple, Iterable
 
 from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.scd import bounding_vol4
@@ -12,7 +12,9 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     DeleteFlightResult,
 )
 from monitoring.uss_qualifier.common_data_definitions import Severity
-from monitoring.uss_qualifier.resources.flight_planning.target import TestTarget
+from monitoring.uss_qualifier.resources.flight_planning.flight_planner import (
+    FlightPlanner,
+)
 from monitoring.uss_qualifier.scenarios.scenario import TestScenarioType
 from monitoring.uss_qualifier.scenarios.astm.utm.evaluation import (
     validate_op_intent_details,
@@ -23,7 +25,7 @@ def clear_area(
     scenario: TestScenarioType,
     test_step: str,
     flight_intents: List[InjectFlightRequest],
-    flight_planners: List[TestTarget],
+    flight_planners: List[FlightPlanner],
 ) -> bool:
     """Perform a test step to clear the area that will be used in the scenario.
 
@@ -64,7 +66,7 @@ def clear_area(
     scenario.end_test_step()
 
 
-OneOrMoreTestTargets = Union[TestTarget, List[TestTarget]]
+OneOrMoreFlightPlanners = Union[FlightPlanner, List[FlightPlanner]]
 OneOrMoreCapabilities = Union[Capability, List[Capability]]
 
 
@@ -72,10 +74,10 @@ def check_capabilities(
     scenario: TestScenarioType,
     test_step: str,
     required_capabilities: Optional[
-        List[Tuple[OneOrMoreTestTargets, OneOrMoreCapabilities]]
+        List[Tuple[OneOrMoreFlightPlanners, OneOrMoreCapabilities]]
     ] = None,
     prerequisite_capabilities: Optional[
-        List[Tuple[OneOrMoreTestTargets, OneOrMoreCapabilities]]
+        List[Tuple[OneOrMoreFlightPlanners, OneOrMoreCapabilities]]
     ] = None,
 ) -> bool:
     """Perform a check that flight planners support certain capabilities.
@@ -106,7 +108,7 @@ def check_capabilities(
         prerequisite_capabilities = []
 
     # Collect all the flight planners that need to be queried
-    all_flight_planners: List[TestTarget] = []
+    all_flight_planners: List[FlightPlanner] = []
     for flight_planner_list in [p for p, _ in required_capabilities] + [
         p for p, _ in prerequisite_capabilities
     ]:
@@ -117,8 +119,10 @@ def check_capabilities(
                 all_flight_planners.append(flight_planner)
 
     # Query all the flight planners and collect key results
-    flight_planner_capabilities: List[Tuple[TestTarget, List[Capability]]] = []
-    flight_planner_capability_query_timestamps: List[Tuple[TestTarget, datetime]] = []
+    flight_planner_capabilities: List[Tuple[FlightPlanner, List[Capability]]] = []
+    flight_planner_capability_query_timestamps: List[
+        Tuple[FlightPlanner, datetime]
+    ] = []
     for flight_planner in all_flight_planners:
         check = scenario.check("Valid responses", [flight_planner.participant_id])
         try:
@@ -201,7 +205,7 @@ def check_capabilities(
 def inject_successful_flight_intent(
     scenario: TestScenarioType,
     test_step: str,
-    flight_planner: TestTarget,
+    flight_planner: FlightPlanner,
     flight_intent: InjectFlightRequest,
 ) -> Optional[InjectFlightResponse]:
     """Inject a flight intent that should result in success.
@@ -328,21 +332,18 @@ def validate_shared_operational_intent(
 
 
 def cleanup_flights(
-    self: TestScenarioType, flights: Dict[TestTarget, List[str]]
-) -> Dict[TestTarget, List[str]]:
+    self: TestScenarioType, flight_planners: Iterable[FlightPlanner]
+) -> None:
     """Remove flights during a cleanup test step.
 
     This function assumes:
     * `scenario` is currently cleaning up (cleanup has started)
     * "Successful flight deletion" check declared for cleanup phase in `scenario`'s documentation
-
-    Returns:
-      False if the scenario should stop, True otherwise.
     """
-    removed_flights: Dict[TestTarget, List[str]] = {}
-    for flight_planner, flight_ids in flights.items():
+    for flight_planner in flight_planners:
         removed = []
-        for flight_id in flight_ids:
+        to_remove = flight_planner.created_flight_ids.copy()
+        for flight_id in to_remove:
             resp, query = flight_planner.cleanup_flight(flight_id)
             self.record_query(query)
             with self.check(
@@ -356,5 +357,3 @@ def cleanup_flights(
                         severity=Severity.Medium,
                         query_timestamps=[query.request.timestamp],
                     )
-        removed_flights[flight_planner] = removed
-    return removed_flights
