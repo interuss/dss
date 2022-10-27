@@ -14,7 +14,9 @@ from monitoring.monitorlib.geo import flatten
 from uas_standards.interuss.automated_testing.geo_awareness.v1.api import (
     GeozonesFilterSet,
     Position,
-    ED269Filters, GeozonesCheckResultGeozone, GeozoneSourceResponseResult,
+    ED269Filters,
+    GeozonesCheckResultGeozone,
+    GeozoneSourceResponseResult,
 )
 from uas_standards.eurocae_ed269 import (
     UASZoneVersion,
@@ -250,7 +252,9 @@ def evaluate_features(
 
 
 def evaluate_source(source: SourceRecord, filter_sets: List[GeozonesFilterSet]):
-    if not (source.state == GeozoneSourceResponseResult.Ready and "geozone_ed269" in source):
+    if not (
+        source.state == GeozoneSourceResponseResult.Ready and "geozone_ed269" in source
+    ):
         raise ValueError("Source not loaded correctly. geozone_ed269 field missing.")
 
     if len(filter_sets) == 0:

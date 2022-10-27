@@ -1,6 +1,11 @@
 import logging
 from typing import List, Dict
-from uas_standards.interuss.automated_testing.geo_awareness.v1.api import GeozonesCheckResultGeozone, GeozonesCheckRequest, GeozoneHttpsSourceFormat, GeozoneSourceResponseResult
+from uas_standards.interuss.automated_testing.geo_awareness.v1.api import (
+    GeozonesCheckResultGeozone,
+    GeozonesCheckRequest,
+    GeozoneHttpsSourceFormat,
+    GeozoneSourceResponseResult,
+)
 from monitoring.mock_uss.geoawareness.ed269 import evaluate_source
 
 from monitoring.mock_uss.geoawareness.database import db, SourceRecord, Database
@@ -28,9 +33,9 @@ def combine_results(
 def check_geozones(req: GeozonesCheckRequest) -> List[GeozonesCheckResultGeozone]:
     sources: Dict[str, SourceRecord] = Database.get_sources(db)
 
-    results: List[GeozonesCheckResultGeozone] = [GeozonesCheckResultGeozone.Absent] * len(
-        req.checks
-    )
+    results: List[GeozonesCheckResultGeozone] = [
+        GeozonesCheckResultGeozone.Absent
+    ] * len(req.checks)
 
     for i, check in enumerate(req.checks):
         logger.info(f"  Evaluating check {i}: {check}")

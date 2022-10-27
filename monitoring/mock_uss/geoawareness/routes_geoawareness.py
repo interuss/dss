@@ -1,6 +1,10 @@
 from typing import Tuple
 import flask
-from uas_standards.interuss.automated_testing.geo_awareness.v1.api import GeozonesCheckReply, CreateGeozoneSourceRequest, GeozonesCheckRequest
+from uas_standards.interuss.automated_testing.geo_awareness.v1.api import (
+    GeozonesCheckReply,
+    CreateGeozoneSourceRequest,
+    GeozonesCheckRequest,
+)
 from implicitdict import ImplicitDict
 
 from monitoring.mock_uss import webapp
@@ -63,9 +67,7 @@ def check():
         json = flask.request.json
         if json is None:
             raise ValueError("Request did not contain a JSON payload")
-        body: GeozonesCheckRequest = ImplicitDict.parse(
-            json, GeozonesCheckRequest
-        )
+        body: GeozonesCheckRequest = ImplicitDict.parse(json, GeozonesCheckRequest)
     except ValueError as e:
         msg = "Geozone check unable to parse JSON: {}".format(e)
         return msg, 400
