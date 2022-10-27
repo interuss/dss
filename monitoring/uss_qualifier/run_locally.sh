@@ -58,5 +58,6 @@ docker run ${docker_args} --name uss_qualifier \
   -w /app/monitoring/uss_qualifier \
   interuss/monitoring \
   python main.py $QUALIFIER_OPTIONS \
+  --report report.json \
   --tested_requirements tested_requirements.html \
   --dot report.gv

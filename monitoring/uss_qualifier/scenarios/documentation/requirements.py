@@ -78,7 +78,12 @@ def _add_check(
                     participant_id
                 ] = ParticipantRequirementPerformance(successes=[], failures=[])
             performance = requirement.participant_performance[participant_id]
-            performance.successes.append(path)
+            if isinstance(check, PassedCheck):
+                performance.successes.append(path)
+            elif isinstance(check, FailedCheck):
+                performance.failures.append(path)
+            else:
+                raise ValueError("Provided check was not a PassedCheck or FailedCheck")
 
 
 def _evaluate_requirements_in_step(
