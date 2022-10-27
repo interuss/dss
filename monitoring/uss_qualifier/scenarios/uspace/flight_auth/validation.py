@@ -11,7 +11,9 @@ from monitoring.uss_qualifier.resources.flight_planning import (
     FlightIntentsResource,
     FlightPlannersResource,
 )
-from monitoring.uss_qualifier.resources.flight_planning.target import TestTarget
+from monitoring.uss_qualifier.resources.flight_planning.flight_planner import (
+    FlightPlanner,
+)
 from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 from monitoring.uss_qualifier.scenarios.flight_planning.test_steps import (
     clear_area,
@@ -23,7 +25,7 @@ from monitoring.uss_qualifier.scenarios.flight_planning.test_steps import (
 
 class Validation(TestScenario):
     flight_intents: List[InjectFlightRequest]
-    ussp: TestTarget
+    ussp: FlightPlanner
 
     def __init__(
         self,
@@ -101,7 +103,7 @@ class Validation(TestScenario):
         return True
 
     def _attempt_invalid_flights(self) -> bool:
-        self.begin_test_step("Inject invalid flight intent")
+        self.begin_test_step("Inject invalid flight intents")
 
         for flight_intent in self.flight_intents[0:-1]:
             resp, query, flight_id = self.ussp.request_flight(flight_intent)
@@ -128,7 +130,7 @@ class Validation(TestScenario):
                         query_timestamps=[query.request.timestamp],
                     )
 
-            self.end_test_step()  # Inject flight intent
+            self.end_test_step()  # Inject flight intents
 
         return True
 
@@ -143,14 +145,5 @@ class Validation(TestScenario):
 
     def cleanup(self):
         self.begin_cleanup()
-
-        flights = {self.ussp: list(self.ussp.created_flight_ids.values())}
-        flights = cleanup_flights(self, flights)
-
-        names_to_remove = [
-            k for k, v in self.ussp.created_flight_ids if v in flights[self.ussp]
-        ]
-        for name in names_to_remove:
-            del self.ussp.created_flight_ids[name]
-
+        cleanup_flights(self, [self.ussp])
         self.end_cleanup()

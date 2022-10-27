@@ -10,7 +10,9 @@ from monitoring.uss_qualifier.resources.flight_planning import (
     FlightIntentsResource,
     FlightPlannersResource,
 )
-from monitoring.uss_qualifier.resources.flight_planning.target import TestTarget
+from monitoring.uss_qualifier.resources.flight_planning.flight_planner import (
+    FlightPlanner,
+)
 from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 from monitoring.uss_qualifier.scenarios.flight_planning.test_steps import (
     clear_area,
@@ -24,8 +26,8 @@ from monitoring.uss_qualifier.scenarios.flight_planning.test_steps import (
 class NominalPlanning(TestScenario):
     first_flight: InjectFlightRequest
     conflicting_flight: InjectFlightRequest
-    uss1: TestTarget
-    uss2: TestTarget
+    uss1: FlightPlanner
+    uss2: FlightPlanner
     dss: DSSInstance
 
     def __init__(
@@ -146,17 +148,5 @@ class NominalPlanning(TestScenario):
 
     def cleanup(self):
         self.begin_cleanup()
-
-        flights = {
-            uss: list(uss.created_flight_ids.values()) for uss in (self.uss2, self.uss1)
-        }
-        flights = cleanup_flights(self, flights)
-
-        for uss in (self.uss2, self.uss1):
-            names_to_remove = [
-                k for k, v in uss.created_flight_ids if v in flights[uss]
-            ]
-            for name in names_to_remove:
-                del uss.created_flight_ids[name]
-
+        cleanup_flights(self, (self.uss2, self.uss1))
         self.end_cleanup()

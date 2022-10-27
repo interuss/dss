@@ -34,7 +34,6 @@ def create_flight(
 ) -> Tuple[str, InjectFlightResponse, fetch.Query]:
     flight_id = str(uuid.uuid4())
     url = "{}/v1/flights/{}".format(uss_base_url, flight_id)
-    print("[SCD] PUT {}".format(url))
 
     initiated_at = datetime.utcnow()
     resp = utm_client.put(url, json=flight_request, scope=SCOPE_SCD_QUALIFIER_INJECT)
@@ -56,7 +55,6 @@ def delete_flight(
     utm_client: UTMClientSession, uss_base_url: str, flight_id: str
 ) -> Tuple[DeleteFlightResponse, fetch.Query]:
     url = "{}/v1/flights/{}".format(uss_base_url, flight_id)
-    print("[SCD] DELETE {}".format(url))
 
     initiated_at = datetime.utcnow()
     resp = utm_client.delete(url, scope=SCOPE_SCD_QUALIFIER_INJECT)
@@ -77,7 +75,6 @@ def get_capabilities(
     utm_client: UTMClientSession, uss_base_url: str
 ) -> Tuple[CapabilitiesResponse, fetch.Query]:
     url = "{}/v1/capabilities".format(uss_base_url)
-    print("[SCD] GET {}".format(url))
 
     initiated_at = datetime.utcnow()
     resp = utm_client.get(url, scope=SCOPE_SCD_QUALIFIER_INJECT)
@@ -98,7 +95,6 @@ def get_version(
     utm_client: UTMClientSession, uss_base_url: str
 ) -> Tuple[StatusResponse, fetch.Query]:
     url = "{}/v1/status".format(uss_base_url)
-    print("[SCD] GET {}".format(url))
 
     initiated_at = datetime.utcnow()
     resp = utm_client.get(url, scope=SCOPE_SCD_QUALIFIER_INJECT)
