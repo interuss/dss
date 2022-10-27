@@ -1,3 +1,4 @@
+import traceback
 import flask
 from werkzeug.exceptions import HTTPException
 
@@ -36,8 +37,9 @@ def handle_exception(e):
             500,
         )
     elif isinstance(e, ValueError):
+        traceback.print_exc()
         return flask.jsonify({"message": str(e)}), 400
-
+    traceback.print_exc()
     return (
         flask.jsonify({"message": "Unhandled {}: {}".format(type(e).__name__, str(e))}),
         500,
