@@ -314,6 +314,27 @@ def test_evaluate_timing():
             is t[4]
         )
 
+    # Multiple applicability
+    assert (
+        evaluate_timing(
+            feature=UASZoneVersion(
+                applicability=[
+                    ApplicableTimePeriod(
+                        permanent=YESNO.NO, startDateTime=d2, endDateTime=d3
+                    ),  # No match
+                    ApplicableTimePeriod(
+                        permanent=YESNO.NO, startDateTime=d1, endDateTime=d3
+                    ),  # Match
+                ],
+                identifier="Permanent",
+                **other_fields,
+            ),
+            after=None,
+            before=d2,
+        )
+        is True
+    )
+
 
 def test_evaluate_non_spacetime():
     other_fields = {
