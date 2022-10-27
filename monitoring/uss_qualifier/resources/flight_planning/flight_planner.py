@@ -53,8 +53,8 @@ class FlightPlannerInformation(ImplicitDict):
     capabilities_query: fetch.Query
 
 
-class TestTarget:
-    """A class managing the state and the interactions with a target"""
+class FlightPlanner:
+    """Manages the state and the interactions with flight planner USS"""
 
     def __init__(
         self,
@@ -67,12 +67,10 @@ class TestTarget:
         )
 
         # Flights injected by this target.
-        # Key: flight name
-        # Value: flight id
-        self.created_flight_ids: Dict[str, str] = {}
+        self.created_flight_ids: List[str] = []
 
     def __repr__(self):
-        return "TestTarget({}, {})".format(
+        return "FlightPlanner({}, {})".format(
             self.config.participant_id, self.config.injection_base_url
         )
 
@@ -84,60 +82,26 @@ class TestTarget:
     def participant_id(self):
         return self.config.participant_id
 
-    def inject_flight(
-        self, flight_request: FlightInjectionAttempt
-    ) -> Tuple[InjectFlightResponse, fetch.Query, str]:
-        return self.request_flight(flight_request.test_injection, flight_request.name)
-
     def request_flight(
-        self, request: InjectFlightRequest, flight_name: Optional[str] = None
+        self, request: InjectFlightRequest
     ) -> Tuple[InjectFlightResponse, fetch.Query, str]:
         flight_id, resp, query = create_flight(
             self.client, self.config.injection_base_url, request
         )
-        if flight_name is None:
-            flight_name = flight_id
-
         if resp.result == InjectFlightResult.Planned:
-            self.created_flight_ids[flight_name] = flight_id
+            self.created_flight_ids.append(flight_id)
 
         return resp, query, flight_id
 
     def cleanup_flight(
         self, flight_id: str
     ) -> Tuple[DeleteFlightResponse, fetch.Query]:
-        return delete_flight(self.client, self.config.injection_base_url, flight_id)
-
-    def delete_flight(
-        self, flight_name: str
-    ) -> Tuple[DeleteFlightResponse, fetch.Query]:
-        flight_id = self.created_flight_ids[flight_name]
         resp, query = delete_flight(
             self.client, self.config.injection_base_url, flight_id
         )
-
-        if resp.result == DeleteFlightResult.Closed:
-            del self.created_flight_ids[flight_name]
-        elif resp.result == DeleteFlightResult.Failed:
-            raise QueryError(
-                "Unable to delete flight {}. Result: {} Notes: {}".format(
-                    flight_name, resp.result, resp.get("notes", None)
-                ),
-                query,
-            )
-        else:
-            raise NotImplementedError(
-                "Unsupported DeleteFlightResult {}".format(resp.get("result", None))
-            )
-
+        if resp is not None and resp.result == DeleteFlightResult.Closed:
+            self.created_flight_ids.remove(flight_id)
         return resp, query
-
-    def managed_flights(self):
-        """Get flight names managed by this test target"""
-        return list(self.created_flight_ids.keys())
-
-    def is_managing_flight(self, flight_name: str) -> bool:
-        return flight_name in self.created_flight_ids.keys()
 
     def get_target_information(self) -> FlightPlannerInformation:
         resp, version_query = get_version(self.client, self.config.injection_base_url)
