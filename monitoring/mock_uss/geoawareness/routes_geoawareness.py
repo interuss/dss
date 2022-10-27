@@ -9,14 +9,19 @@ from monitoring.mock_uss.geoawareness.geozone_sources import (
     create_geozone_source,
     delete_geozone_source,
 )
-from monitoring.monitorlib.geoawareness_automated_testing import api as geoawareness_api
+from monitoring.monitorlib.geoawareness_automated_testing.api import (
+    SCOPE_GEOAWARENESS_TEST,
+)
+from uas_standards.interuss.automated_testing.geo_awareness.v1 import (
+    api as geoawareness_api,
+)
 
 
 @webapp.route(
     "/geoawareness/geozone_sources/<geozone_source_id>",
     methods=["GET"],
 )
-@requires_scope([geoawareness_api.SCOPE_GEOAWARENESS_TEST])
+@requires_scope([SCOPE_GEOAWARENESS_TEST])
 def get_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     return get_geozone_source(geozone_source_id)
 
@@ -25,14 +30,14 @@ def get_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     "/geoawareness/geozone_sources/<geozone_source_id>",
     methods=["PUT"],
 )
-@requires_scope([geoawareness_api.SCOPE_GEOAWARENESS_TEST])
+@requires_scope([SCOPE_GEOAWARENESS_TEST])
 def put_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     try:
         json = flask.request.json
         if json is None:
             raise ValueError("Request did not contain a JSON payload")
-        body: geoawareness_api.GeozoneSourceDefinition = ImplicitDict.parse(
-            json, geoawareness_api.GeozoneSourceDefinition
+        body: geoawareness_api.CreateGeozoneSourceRequest = ImplicitDict.parse(
+            json, geoawareness_api.CreateGeozoneSourceRequest
         )
     except ValueError as e:
         msg = "Create geozone source {} unable to parse JSON: {}".format(
@@ -47,6 +52,6 @@ def put_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     "/geoawareness/geozone_sources/<geozone_source_id>",
     methods=["DELETE"],
 )
-@requires_scope([geoawareness_api.SCOPE_GEOAWARENESS_TEST])
+@requires_scope([SCOPE_GEOAWARENESS_TEST])
 def delete_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     return delete_geozone_source(geozone_source_id)

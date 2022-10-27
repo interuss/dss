@@ -4,7 +4,6 @@ import pytest
 from flask import json
 
 from monitoring.mock_uss import webapp
-from monitoring.mock_uss.config import KEY_TOKEN_AUDIENCE
 from monitoring.monitorlib.auth import NoAuth
 
 TEST_DATASET_URL = "https://raw.githubusercontent.com/interuss/dss/master/interfaces/automated-testing/geo-awareness/design/CHE/geo-awareness-che-1.json"
