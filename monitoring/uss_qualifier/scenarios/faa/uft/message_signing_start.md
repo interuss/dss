@@ -2,6 +2,12 @@
 
 This test scenario instructs a mock USS to begin capturing message signing data.
 
+## Resources
+
+### mock_uss
+
+The means to communicate with the mock USS that will collect message signing data.
+
 ## Start message signing test case
 
 ### Check mock USS readiness test step

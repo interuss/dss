@@ -2,6 +2,12 @@
 
 This test scenario instructs a mock USS to finalize a message signing report from captured data.
 
+## Resources
+
+### mock_uss
+
+The means to communicate with the mock USS that has been collecting message signing data.
+
 ## Finalize message signing test case
 
 ### Signal mock USS test step
