@@ -4,36 +4,28 @@ import (
 	"context"
 	"time"
 
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
-	"github.com/interuss/dss/pkg/auth"
+	"github.com/interuss/dss/pkg/api"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	scdstore "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/stacktrace"
 )
 
-const (
-	strategicCoordinationScope   = "utm.strategic_coordination"
-	constraintManagementScope    = "utm.constraint_management"
-	constraintProcessingScope    = "utm.constraint_processing"
-	conformanceMonitoringSAScope = "utm.conformance_monitoring_sa"
-	availabilityArbitrationScope = "utm.availability_arbitration"
-)
+func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []restapi.SubscriberToNotify {
+	result := []restapi.SubscriberToNotify{}
 
-func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []*scdpb.SubscriberToNotify {
-	result := []*scdpb.SubscriberToNotify{}
-
-	subscriptionsByURL := map[string][]*scdpb.SubscriptionState{}
+	subscriptionsByURL := map[string][]restapi.SubscriptionState{}
 	for _, sub := range subscriptions {
-		subState := &scdpb.SubscriptionState{
-			SubscriptionId:    sub.ID.String(),
-			NotificationIndex: int32(sub.NotificationIndex),
+		subState := restapi.SubscriptionState{
+			SubscriptionId:    restapi.SubscriptionID(sub.ID.String()),
+			NotificationIndex: restapi.SubscriptionNotificationIndex(sub.NotificationIndex),
 		}
 		subscriptionsByURL[sub.USSBaseURL] = append(subscriptionsByURL[sub.USSBaseURL], subState)
 	}
 	for url, states := range subscriptionsByURL {
-		result = append(result, &scdpb.SubscriberToNotify{
-			UssBaseUrl:    url,
+		result = append(result, restapi.SubscriberToNotify{
+			UssBaseUrl:    restapi.SubscriptionUssBaseURL(url),
 			Subscriptions: states,
 		})
 	}
@@ -41,38 +33,38 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []*scdpb.S
 	return result
 }
 
-// Server implements scdpb.DiscoveryAndSynchronizationService.
+// Server implements scdv1.Implementation.
 type Server struct {
 	Store      scdstore.Store
 	Timeout    time.Duration
 	EnableHTTP bool
 }
 
-// AuthScopes returns a map of endpoint to required Oauth scope.
-func (a *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
-	return map[auth.Operation]auth.KeyClaimedScopesValidator{
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/CreateConstraintReference":        auth.RequireAnyScope(constraintManagementScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/CreateOperationalIntentReference": auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/CreateSubscription":               auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteConstraintReference":        auth.RequireAnyScope(constraintManagementScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteOperationalIntentReference": auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/DeleteSubscription":               auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetConstraintReference":           auth.RequireAnyScope(constraintManagementScope, constraintProcessingScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetOperationalIntentReference":    auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetSubscription":                  auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/GetUssAvailability":               auth.RequireAnyScope(strategicCoordinationScope, availabilityArbitrationScope, conformanceMonitoringSAScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/MakeDssReport":                    auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope, constraintManagementScope, availabilityArbitrationScope, conformanceMonitoringSAScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QueryConstraintReferences":        auth.RequireAnyScope(constraintProcessingScope, constraintManagementScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QueryOperationalIntentReferences": auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/QuerySubscriptions":               auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/SetUssAvailability":               auth.RequireAnyScope(availabilityArbitrationScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/UpdateConstraintReference":        auth.RequireAnyScope(constraintManagementScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/UpdateOperationalIntentReference": auth.RequireAnyScope(strategicCoordinationScope, conformanceMonitoringSAScope),
-		"/scdpb.UTMAPIUSSDSSAndUSSUSSService/UpdateSubscription":               auth.RequireAnyScope(strategicCoordinationScope, constraintProcessingScope),
+// MakeDssReport creates an error report about a DSS.
+func (a *Server) MakeDssReport(ctx context.Context, req *restapi.MakeDssReportRequest,
+) restapi.MakeDssReportResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.MakeDssReportResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
 	}
+
+	if req.BodyParseError != nil {
+		return restapi.MakeDssReportResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+
+	return restapi.MakeDssReportResponseSet{Response400: &restapi.ErrorResponse{
+		Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Not yet implemented"))}}
 }
 
-// MakeDssReport creates an error report about a DSS.
-func (a *Server) MakeDssReport(ctx context.Context, req *scdpb.MakeDssReportRequest) (*scdpb.ErrorReport, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Not yet implemented")
+func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {
+	switch stacktrace.GetCode(authErr) {
+	case dsserr.Unauthenticated:
+		*resp401 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+	case dsserr.PermissionDenied:
+		*resp403 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+	default:
+		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
+	}
 }
