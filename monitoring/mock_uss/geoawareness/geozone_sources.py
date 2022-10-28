@@ -21,7 +21,7 @@ def get_geozone_source(geozone_source_id: str):
     if source is None:
         return f"source {geozone_source_id} not found or deleted", 404
     return (
-        GeozoneSourceResponse(result=GeozoneSourceResponseResult.Activating),
+        GeozoneSourceResponse(result=GeozoneSourceResponseResult.Ready),
         200,
     )
 
