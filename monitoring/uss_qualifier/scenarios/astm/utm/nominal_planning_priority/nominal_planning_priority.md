@@ -37,7 +37,7 @@ If either USS does not respond appropriately to the endpoint queried to determin
 
 #### Support BasicStrategicConflictDetection check
 
-This check will fail if the first flight planner does not support BasicStrategicConflictDetection.  If the second flight planner does not support HighPriorityFlights, this scenario will end normally at this point.
+This check will fail if the first flight planner does not support BasicStrategicConflictDetection per **astm.f3548.v21.GEN0310** as the USS does not support the InterUSS implementation of that requirement.  If the second flight planner does not support HighPriorityFlights, this scenario will end normally at this point.
 
 ### Area clearing test step
 
@@ -45,7 +45,7 @@ Both USSs are requested to remove all flights from the area under test.
 
 #### Area cleared successfully check
 
-If either USS does not respond appropriately or fails to clear the area of operations, this check will fail.
+**interuss.automated_testing.flight_planning.ClearArea**
 
 ## Plan first flight test case
 
@@ -54,10 +54,6 @@ If either USS does not respond appropriately or fails to clear the area of opera
 The first flight intent should be successfully planned by the first flight planner.
 
 ### [Validate flight sharing test step](../validate_shared_operational_intent.md)
-
-### Validate flight creation test step
-
-TODO: uss_qualifier should verify that the flight actually planned is not too different from the flight request
 
 ## Plan priority flight test case
 
@@ -68,10 +64,6 @@ In this step, the second USS executes a user intent to plan a priority flight th
 The first flight intent should be successfully planned by the first flight planner.
 
 ### [Validate flight sharing test step](../validate_shared_operational_intent.md)
-
-### Validate flight creation test step
-
-TODO: uss_qualifier should verify that the flight actually planned is not too different from the flight request
 
 ## Activate priority flight test case
 
@@ -85,8 +77,10 @@ In this step, the first USS fails to activate the flight it previously created.
 
 TODO: Complete this test case
 
+**astm.f3548.v21.SCD0015**
+
 ## Cleanup
 
 ### Successful flight deletion check
 
-Per **[scd.yaml::DeleteFlightSuccess](../../../../../interfaces/automated-testing/scd/scd.yaml)**, the deletion attempt of the previously-created flight should succeed for every flight planner under test.
+**interuss.automated_testing.flight_planning.DeleteFlightSuccess**

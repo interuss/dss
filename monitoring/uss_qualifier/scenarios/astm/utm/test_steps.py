@@ -1,3 +1,5 @@
+from uas_standards.astm.f3548.v21.api import OperationalIntentState
+
 from monitoring.monitorlib.scd import bounding_vol4
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightRequest,
@@ -60,7 +62,7 @@ def validate_shared_operational_intent(
 
     op_intent, query = scenario.dss.get_full_op_intent(op_intent_ref)
     with scenario.check(
-        "Operational intent shared correctly", [scenario.uss1.participant_id]
+        "Operational intent details retrievable", [scenario.uss1.participant_id]
     ) as check:
         if query.status_code != 200:
             check.record_failed(
@@ -83,6 +85,38 @@ def validate_shared_operational_intent(
                 query_timestamps=[query.request.timestamp],
             )
             return False
+
+    with scenario.check("Off-nominal volumes", [scenario.uss1.participant_id]) as check:
+        if (
+            op_intent.reference.state == OperationalIntentState.Accepted
+            or op_intent.reference.state == OperationalIntentState.Activated
+        ) and op_intent.details.get("off_nominal_volumes", None):
+            check.record_failed(
+                summary="Accepted or Activated operational intents are not allowed off-nominal volumes",
+                severity=Severity.Medium,
+                details=f"Operational intent {op_intent.reference.id} was {op_intent.reference.state} and had {len(op_intent.details.off_nominal_volumes)} off-nominal volumes",
+                query_timestamps=[query.request.timestamp],
+            )
+
+    all_volumes = op_intent.details.get("volumes", []) + op_intent.details.get(
+        "off_nominal_volumes", []
+    )
+
+    def volume_vertices(v4):
+        if "outline_circle" in v4.volume:
+            return 1
+        if "outline_polygon" in v4.volume:
+            return len(v4.volume.outline_polygon.vertices)
+
+    n_vertices = sum(volume_vertices(v) for v in all_volumes)
+    with scenario.check("Vertices", [scenario.uss1.participant_id]) as check:
+        if n_vertices > 10000:
+            check.record_failed(
+                summary="Too many vertices",
+                severity=Severity.Medium,
+                details=f"Operational intent {op_intent.reference.id} had {n_vertices} vertices total",
+                query_timestamps=[query.request.timestamp],
+            )
 
     scenario.end_test_step()
     return True

@@ -60,7 +60,7 @@ If the entire test step heading is enclosed in a link, the contents of that link
 
 Each check a test step performs that may result in a finding/issue must be documented via a subsection of the parent test step, named with a " check" suffix (example: `#### Successful injection check`).
 
-A check should document the requirement(s) violated if the check fails.  Requirements are identified by putting a strong emphasis/bold style around the requirement ID (example: `**astm.f3411.v19.NET0420**`).
+A check should document the requirement(s) violated if the check fails.  Requirements are identified by putting a strong emphasis/bold style around the requirement ID (example: `**astm.f3411.v19.NET0420**`).  The description of a check should generally explain why the relevant requirement would fail when that information is useful, but the requirement itself should generally not be re-iterated in this description.  If the check is self-evident from the requirement, the requirement can be noted without further explanation.
 
 ### Cleanup phase
 

@@ -115,10 +115,6 @@ class NominalPlanningPriority(TestScenario):
             return False
         op_intent_id = resp.operational_intent_id
 
-        self.begin_test_step("Validate flight creation")
-        # TODO
-        self.end_test_step()  # Validate flight creation
-
         validate_shared_operational_intent(
             self, "Validate flight sharing", self.first_flight, op_intent_id
         )
@@ -132,10 +128,6 @@ class NominalPlanningPriority(TestScenario):
         if resp is None:
             return False
         op_intent_id = resp.operational_intent_id
-
-        self.begin_test_step("Validate flight creation")
-        # TODO
-        self.end_test_step()  # Validate flight creation
 
         validate_shared_operational_intent(
             self, "Validate flight sharing", self.priority_flight, op_intent_id

@@ -273,6 +273,7 @@ def cleanup_flights(
                 else:
                     check.record_failed(
                         summary="Failed to delete flight",
+                        details=f"USS indicated: {resp.notes}",
                         severity=Severity.Medium,
                         query_timestamps=[query.request.timestamp],
                     )
