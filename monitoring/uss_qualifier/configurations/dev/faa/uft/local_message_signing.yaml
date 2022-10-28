@@ -1,0 +1,19 @@
+resources:
+  resource_declarations:
+    "$ref": ../../resources.yaml#/f3548
+    mock_uss:
+      resource_type: resources.interuss.MockUSSResource
+      dependencies:
+        auth_adapter: utm_auth
+      specification:
+        participant_id: mock_uss
+        mock_uss_base_url: http://host.docker.internal:8074
+
+test_suite:
+  suite_type: suites.faa.uft.message_signing
+  resources:
+    mock_uss: mock_uss
+    flight_planners: flight_planners
+    conflicting_flights: conflicting_flights
+    priority_preemption_flights: priority_preemption_flights
+    dss: dss

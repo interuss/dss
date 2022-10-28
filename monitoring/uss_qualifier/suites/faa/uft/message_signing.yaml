@@ -1,0 +1,26 @@
+name: UFT message signing
+resources:
+  mock_uss: resources.interuss.MockUSSResource
+  flight_planners: resources.flight_planning.FlightPlannersResource
+  dss: resources.astm.f3548.v21.DSSInstanceResource
+  conflicting_flights: resources.flight_planning.FlightIntentsResource
+  priority_preemption_flights: resources.flight_planning.FlightIntentsResource
+actions:
+- test_scenario:
+    scenario_type: scenarios.faa.uft.StartMessageSigningReport
+    resources:
+      mock_uss: mock_uss
+  on_failure: Abort
+- test_suite:
+    suite_type: suites.astm.utm.f3548_21
+    resources:
+      conflicting_flights: conflicting_flights
+      priority_preemption_flights: priority_preemption_flights
+      flight_planners: flight_planners
+      dss: dss
+  on_failure: Continue
+- test_scenario:
+    scenario_type: scenarios.faa.uft.FinalizeMessageSigningReport
+    resources:
+      mock_uss: mock_uss
+  on_failure: Continue
