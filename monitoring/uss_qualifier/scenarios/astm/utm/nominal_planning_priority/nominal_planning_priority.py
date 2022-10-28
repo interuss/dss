@@ -11,12 +11,14 @@ from monitoring.uss_qualifier.resources.flight_planning import (
 from monitoring.uss_qualifier.resources.flight_planning.flight_planner import (
     FlightPlanner,
 )
+from monitoring.uss_qualifier.scenarios.astm.utm.test_steps import (
+    validate_shared_operational_intent,
+)
 from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 from monitoring.uss_qualifier.scenarios.flight_planning.test_steps import (
     clear_area,
     check_capabilities,
     inject_successful_flight_intent,
-    validate_shared_operational_intent,
     cleanup_flights,
 )
 

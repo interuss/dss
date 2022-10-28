@@ -49,63 +49,29 @@ If either USS does not respond appropriately or fails to clear the area of opera
 
 ## Plan first flight test case
 
-### Inject flight intent test step
+### [Inject flight intent test step](../../../flight_planning/inject_successful_flight_intent.md)
 
-uss_qualifier indicates to the first flight planner a user intent to create the first flight.
+The first flight intent should be successfully planned by the first flight planner.
 
-#### Successful planning check
-
-All flight intent data provided is correct and valid and free of conflict in space and time, therefore it should have been planned by the USS.  If the USS indicates a conflict, this check will fail.  If the USS indicates that the flight was rejected, this check will fail.  If the USS indicates that the injection attempt failed, this check will fail.
+### [Validate flight sharing test step](../validate_shared_operational_intent.md)
 
 ### Validate flight creation test step
 
 TODO: uss_qualifier should verify that the flight actually planned is not too different from the flight request
-
-### Validate flight sharing test step
-
-This step verifies that the created flight is shared properly per ASTM F3548-21 by querying the DSS for flights in the area of the flight intent, and then retrieving the details from the USS if the operational intent reference is found.
-
-#### DSS response check
-
-If the DSS does not respond properly to the query that should yield the planned flight, this check will fail.
-
-#### Operational intent shared correctly check
-
-If a reference to the operational intent for the flight is not found in the DSS or the details cannot be retrieved from the USS, this check will fail and one of the requirements **ASTM F3548-21::USS0005** or **ASTM F3548-21::USS0105** were not met.
-
-#### Correct operational intent details check
-
-If the operational intent details reported by the USS do not match the user's flight intent, this check will fail.
 
 ## Plan priority flight test case
 
 In this step, the second USS executes a user intent to plan a priority flight that conflicts with the first flight.
 
-### Inject flight intent test step
+### [Inject flight intent test step](../../../flight_planning/inject_successful_flight_intent.md)
 
-#### Successful planning check
+The first flight intent should be successfully planned by the first flight planner.
 
-All flight intent data provided is correct and valid and free of conflict in space and time, therefore it should have been planned by the USS.  If the USS indicates a conflict, this check will fail since the intersecting flight is lower priority.  If the USS indicates that the flight was rejected, this check will fail.  If the USS indicates that the injection attempt failed, this check will fail.
+### [Validate flight sharing test step](../validate_shared_operational_intent.md)
 
 ### Validate flight creation test step
 
 TODO: uss_qualifier should verify that the flight actually planned is not too different from the flight request
-
-### Validate flight sharing test step
-
-This step verifies that the created flight is shared properly per ASTM F3548-21 by querying the DSS for flights in the area of the flight intent, and then retrieving the details from the USS if the operational intent reference is found.
-
-#### DSS response check
-
-If the DSS does not respond properly to the query that should yield the planned flight, this check will fail.
-
-#### Operational intent shared correctly check
-
-If a reference to the operational intent for the flight is not found in the DSS or the details cannot be retrieved from the USS, this check will fail and one of the requirements **ASTM F3548-21::USS0005** or **ASTM F3548-21::USS0105** were not met.
-
-#### Correct operational intent details check
-
-If the operational intent details reported by the USS do not match the user's flight intent, this check will fail.
 
 ## Activate priority flight test case
 
