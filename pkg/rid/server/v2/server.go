@@ -1,26 +1,19 @@
 package server
 
 import (
+	"context"
 	"time"
 
+	"github.com/interuss/dss/pkg/api"
+	restapi "github.com/interuss/dss/pkg/api/ridv2"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/stacktrace"
 	"github.com/robfig/cron/v3"
 
-	"github.com/interuss/dss/pkg/auth"
 	"github.com/interuss/dss/pkg/rid/application"
 )
 
-var (
-	// Scopes bundles up auth scopes for the remote-id server.
-	Scopes = struct {
-		ServiceProvider auth.Scope
-		DisplayProvider auth.Scope
-	}{
-		ServiceProvider: "rid.service_provider",
-		DisplayProvider: "rid.display_provider",
-	}
-)
-
-// Server implements ridpbv2.StandardRemoteIDAPIInterfacesServiceServer.
+// Server implements ridv2.Implementation.
 type Server struct {
 	App        application.App
 	Timeout    time.Duration
@@ -29,18 +22,13 @@ type Server struct {
 	Cron       *cron.Cron
 }
 
-// AuthScopes returns a map of endpoint to required Oauth scope.
-func (s *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
-	return map[auth.Operation]auth.KeyClaimedScopesValidator{
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/CreateIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ServiceProvider),
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/DeleteIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ServiceProvider),
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/GetIdentificationServiceArea":     auth.RequireAnyScope(Scopes.ServiceProvider, Scopes.DisplayProvider),
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/SearchIdentificationServiceAreas": auth.RequireAnyScope(Scopes.ServiceProvider, Scopes.DisplayProvider),
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/UpdateIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ServiceProvider),
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/CreateSubscription":               auth.RequireAllScopes(Scopes.DisplayProvider),
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/DeleteSubscription":               auth.RequireAllScopes(Scopes.DisplayProvider),
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/GetSubscription":                  auth.RequireAllScopes(Scopes.DisplayProvider),
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/SearchSubscriptions":              auth.RequireAllScopes(Scopes.DisplayProvider),
-		"/ridpbv2.StandardRemoteIDAPIInterfacesService/UpdateSubscription":               auth.RequireAllScopes(Scopes.DisplayProvider),
+func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {
+	switch stacktrace.GetCode(authErr) {
+	case dsserr.Unauthenticated:
+		*resp401 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+	case dsserr.PermissionDenied:
+		*resp403 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+	default:
+		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
 	}
 }

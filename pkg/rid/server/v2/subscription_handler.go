@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 
-	ridpb "github.com/interuss/dss/pkg/api/v2/ridpbv2"
-	"github.com/interuss/dss/pkg/auth"
+	"github.com/interuss/dss/pkg/api"
+	restapi "github.com/interuss/dss/pkg/api/ridv2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	geoerr "github.com/interuss/dss/pkg/geo"
@@ -16,238 +16,326 @@ import (
 )
 
 // DeleteSubscription deletes an existing subscription.
-func (s *Server) DeleteSubscription(
-	ctx context.Context, req *ridpb.DeleteSubscriptionRequest) (
-	*ridpb.DeleteSubscriptionResponse, error) {
+func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubscriptionRequest,
+) restapi.DeleteSubscriptionResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.DeleteSubscriptionResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
 
-	// TODO: simply verify the owner was set in an upper level.
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+	if req.Auth.ClientID == nil {
+		return restapi.DeleteSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
-	version, err := dssmodels.VersionFromString(req.GetVersion())
+	version, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
+		return restapi.DeleteSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version"))}}
 	}
-	id, err := dssmodels.IDFromString(req.Id)
+	id, err := dssmodels.IDFromString(string(req.Id))
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return restapi.DeleteSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
-	//TODO: put the context with timeout into an interceptor so it's always set.
+	// TODO: put the context with timeout into an interceptor so it's always set.
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscription, err := s.App.DeleteSubscription(ctx, id, owner, version)
+	subscription, err := s.App.DeleteSubscription(ctx, id, dssmodels.Owner(*req.Auth.ClientID), version)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not delete Subscription")
+		err = stacktrace.Propagate(err, "Could not delete Subscription")
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.PermissionDenied:
+			return restapi.DeleteSubscriptionResponseSet{Response403: errResp}
+		case dsserr.VersionMismatch:
+			return restapi.DeleteSubscriptionResponseSet{Response409: errResp}
+		case dsserr.NotFound:
+			return restapi.DeleteSubscriptionResponseSet{Response404: errResp}
+		default:
+			return restapi.DeleteSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
 	}
-	return &ridpb.DeleteSubscriptionResponse{
-		Subscription: apiv2.ToSubscription(subscription),
-	}, nil
+
+	return restapi.DeleteSubscriptionResponseSet{Response200: &restapi.DeleteSubscriptionResponse{
+		Subscription: *apiv2.ToSubscription(subscription),
+	}}
 }
 
 // SearchSubscriptions queries for existing subscriptions in the given bounds.
-func (s *Server) SearchSubscriptions(
-	ctx context.Context, req *ridpb.SearchSubscriptionsRequest) (
-	*ridpb.SearchSubscriptionsResponse, error) {
-
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSubscriptionsRequest,
+) restapi.SearchSubscriptionsResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.SearchSubscriptionsResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
 	}
 
-	cu, err := geo.AreaToCellIDs(req.GetArea())
+	if req.Auth.ClientID == nil {
+		return restapi.SearchSubscriptionsResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
+	}
+
+	if req.Area == nil {
+		return restapi.SearchSubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area"))}}
+	}
+	cu, err := geo.AreaToCellIDs(string(*req.Area))
 	if err != nil {
 		if errors.Is(err, geoerr.ErrAreaTooLarge) {
-			return nil, stacktrace.Propagate(err, "Invalid area")
+			return restapi.SearchSubscriptionsResponseSet{Response413: &restapi.ErrorResponse{
+				Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Invalid area"))}}
 		}
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
+		return restapi.SearchSubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area"))}}
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
-	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, owner)
+	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, dssmodels.Owner(*req.Auth.ClientID))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not search Subscriptions")
-	}
-	sp := make([]*ridpb.Subscription, len(subscriptions))
-	for i := range subscriptions {
-		sp[i] = apiv2.ToSubscription(subscriptions[i])
+		err = stacktrace.Propagate(err, "Could not search Subscriptions")
+		if stacktrace.GetCode(err) == dsserr.BadRequest {
+			return restapi.SearchSubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
+				Message: dsserr.Handle(ctx, err)}}
+		} else {
+			return restapi.SearchSubscriptionsResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
 	}
 
-	return &ridpb.SearchSubscriptionsResponse{
-		Subscriptions: sp,
-	}, nil
+	sp := make([]restapi.Subscription, 0, len(subscriptions))
+	for _, sub := range subscriptions {
+		sp = append(sp, *apiv2.ToSubscription(sub))
+	}
+
+	return restapi.SearchSubscriptionsResponseSet{Response200: &restapi.SearchSubscriptionsResponse{
+		Subscriptions: &sp,
+	}}
 }
 
 // GetSubscription gets a single subscription based on ID.
-func (s *Server) GetSubscription(
-	ctx context.Context, req *ridpb.GetSubscriptionRequest) (
-	*ridpb.GetSubscriptionResponse, error) {
+func (s *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscriptionRequest,
+) restapi.GetSubscriptionResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.GetSubscriptionResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
 
-	id, err := dssmodels.IDFromString(req.Id)
+	id, err := dssmodels.IDFromString(string(req.Id))
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return restapi.GetSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 	subscription, err := s.App.GetSubscription(ctx, id)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not get Subscription")
+		return restapi.GetSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get Subscription"))}}
 	}
 	if subscription == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", req.GetId())
+		return restapi.GetSubscriptionResponseSet{Response404: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", req.Id))}}
 	}
-	return &ridpb.GetSubscriptionResponse{
-		Subscription: apiv2.ToSubscription(subscription),
-	}, nil
+	return restapi.GetSubscriptionResponseSet{Response200: &restapi.GetSubscriptionResponse{
+		Subscription: *apiv2.ToSubscription(subscription)}}
 }
 
 // CreateSubscription creates a single subscription.
-func (s *Server) CreateSubscription(
-	ctx context.Context, req *ridpb.CreateSubscriptionRequest) (
-	*ridpb.PutSubscriptionResponse, error) {
+func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubscriptionRequest,
+) restapi.CreateSubscriptionResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.CreateSubscriptionResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
 
-	params := req.GetParams()
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+	if req.Auth.ClientID == nil {
+		return restapi.CreateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
-	if params == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
+	if req.BodyParseError != nil {
+		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	if params.UssBaseUrl == "" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required USS base URL")
+	if req.Body.UssBaseUrl == "" {
+		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required USS base URL"))}}
 	}
-	if params.Extents == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
-	}
-	extents, err := apiv2.FromVolume4D(params.Extents)
+	extents, err := apiv2.FromVolume4D(&req.Body.Extents)
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err))
+		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err)))}}
 	}
-	id, err := dssmodels.IDFromString(req.Id)
+	id, err := dssmodels.IDFromString(string(req.Id))
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
 	if !s.EnableHTTP {
-		err = ridmodels.ValidateURL(params.UssBaseUrl)
+		err = ridmodels.ValidateURL(string(req.Body.UssBaseUrl))
 		if err != nil {
-			return nil, stacktrace.PropagateWithCode(
-				err, dsserr.BadRequest, "Failed to validate IdentificationServiceAreaUrl")
+			return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+				Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate UssBaseUrl"))}}
 		}
 	}
 
 	sub := &ridmodels.Subscription{
 		ID:     id,
-		Owner:  owner,
-		URL:    params.UssBaseUrl,
+		Owner:  dssmodels.Owner(*req.Auth.ClientID),
+		URL:    string(req.Body.UssBaseUrl),
 		Writer: s.Locality,
 	}
 
 	if err := sub.SetExtents(extents); err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
+		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents"))}}
 	}
 
 	insertedSub, err := s.App.InsertSubscription(ctx, sub)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not insert Subscription")
+		err = stacktrace.Propagate(err, "Could not insert Subscription")
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.AlreadyExists:
+			return restapi.CreateSubscriptionResponseSet{Response409: errResp}
+		case dsserr.BadRequest:
+			return restapi.CreateSubscriptionResponseSet{Response400: errResp}
+		case dsserr.Exhausted:
+			return restapi.CreateSubscriptionResponseSet{Response429: errResp}
+		default:
+			return restapi.CreateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
 	}
-
-	p := apiv2.ToSubscription(insertedSub)
 
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not search ISAs")
+		err = stacktrace.Propagate(err, "Could not search ISAs")
+		if stacktrace.GetCode(err) == dsserr.BadRequest {
+			return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+				Message: dsserr.Handle(ctx, err)}}
+		} else {
+			return restapi.CreateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
 	}
 
-	// Convert the ISAs to protos.
-	isaProtos := make([]*ridpb.IdentificationServiceArea, len(isas))
-	for i, isa := range isas {
-		isaProtos[i] = apiv2.ToIdentificationServiceArea(isa)
+	// Convert the ISAs to REST.
+	restIsas := make([]restapi.IdentificationServiceArea, 0, len(isas))
+	for _, isa := range isas {
+		restIsas = append(restIsas, *apiv2.ToIdentificationServiceArea(isa))
 	}
 
-	return &ridpb.PutSubscriptionResponse{
-		Subscription: p,
-		ServiceAreas: isaProtos,
-	}, nil
+	return restapi.CreateSubscriptionResponseSet{Response200: &restapi.PutSubscriptionResponse{
+		Subscription: *apiv2.ToSubscription(insertedSub),
+		ServiceAreas: &restIsas,
+	}}
 }
 
 // UpdateSubscription updates a single subscription.
-func (s *Server) UpdateSubscription(
-	ctx context.Context, req *ridpb.UpdateSubscriptionRequest) (
-	*ridpb.PutSubscriptionResponse, error) {
-
-	params := req.GetParams()
-
-	version, err := dssmodels.VersionFromString(req.GetVersion())
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
+func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubscriptionRequest,
+) restapi.UpdateSubscriptionResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.UpdateSubscriptionResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
 	}
-	id, err := dssmodels.IDFromString(req.Id)
+
+	version, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version"))}}
+	}
+	id, err := dssmodels.IDFromString(string(req.Id))
+	if err != nil {
+		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	defer cancel()
 
-	owner, ok := auth.OwnerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner from context")
+	if req.Auth.ClientID == nil {
+		return restapi.UpdateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
-	if params == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Params not set")
+	if req.BodyParseError != nil {
+		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	if params.UssBaseUrl == "" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required USS base URL")
+	if req.Body.UssBaseUrl == "" {
+		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required USS base URL"))}}
 	}
-	if params.Extents == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
-	}
-	extents, err := apiv2.FromVolume4D(params.Extents)
+	extents, err := apiv2.FromVolume4D(&req.Body.Extents)
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err))
+		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err)))}}
 	}
 
 	sub := &ridmodels.Subscription{
 		ID:      id,
-		Owner:   owner,
-		URL:     params.UssBaseUrl,
+		Owner:   dssmodels.Owner(*req.Auth.ClientID),
+		URL:     string(req.Body.UssBaseUrl),
 		Version: version,
 		Writer:  s.Locality,
 	}
 
 	if err := sub.SetExtents(extents); err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
+		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents"))}}
 	}
 
 	insertedSub, err := s.App.UpdateSubscription(ctx, sub)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not update Subscription")
+		err = stacktrace.Propagate(err, "Could not update Subscription")
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.PermissionDenied:
+			return restapi.UpdateSubscriptionResponseSet{Response403: errResp}
+		case dsserr.VersionMismatch:
+			return restapi.UpdateSubscriptionResponseSet{Response409: errResp}
+		case dsserr.BadRequest, dsserr.NotFound:
+			return restapi.UpdateSubscriptionResponseSet{Response400: errResp}
+		case dsserr.Exhausted:
+			return restapi.UpdateSubscriptionResponseSet{Response429: errResp}
+		default:
+			return restapi.UpdateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
 	}
-
-	p := apiv2.ToSubscription(insertedSub)
 
 	// Find ISAs that were in this subscription's area.
 	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not search ISAs")
+		err = stacktrace.Propagate(err, "Could not search ISAs")
+		if stacktrace.GetCode(err) == dsserr.BadRequest {
+			return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+				Message: dsserr.Handle(ctx, err)}}
+		} else {
+			return restapi.UpdateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
 	}
 
-	// Convert the ISAs to protos.
-	isaProtos := make([]*ridpb.IdentificationServiceArea, len(isas))
-	for i, isa := range isas {
-		isaProtos[i] = apiv2.ToIdentificationServiceArea(isa)
+	// Convert the ISAs to REST.
+	restIsas := make([]restapi.IdentificationServiceArea, 0, len(isas))
+	for _, isa := range isas {
+		restIsas = append(restIsas, *apiv2.ToIdentificationServiceArea(isa))
 	}
 
-	return &ridpb.PutSubscriptionResponse{
-		Subscription: p,
-		ServiceAreas: isaProtos,
-	}, nil
+	return restapi.UpdateSubscriptionResponseSet{Response200: &restapi.PutSubscriptionResponse{
+		Subscription: *apiv2.ToSubscription(insertedSub),
+		ServiceAreas: &restIsas,
+	}}
 }
