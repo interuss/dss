@@ -4,18 +4,17 @@ resources:
   dss: resources.astm.f3548.v21.DSSInstanceResource
   conflicting_flights: resources.flight_planning.FlightIntentsResource
   priority_preemption_flights: resources.flight_planning.FlightIntentsResource
+  nominal_planning_selector: resources.flight_planning.FlightPlannerCombinationSelectorResource?
+  priority_planning_selector: resources.flight_planning.FlightPlannerCombinationSelectorResource?
 actions:
 - action_generator:
     generator_type: action_generators.flight_planning.FlightPlannerCombinations
     resources:
       flight_planners: flight_planners
+      nominal_planning_selector: nominal_planning_selector?
       conflicting_flights: conflicting_flights
       dss: dss
     specification:
-      resources:
-        flight_planners: flight_planners
-        conflicting_flights: conflicting_flights
-        dss: dss
       action_to_repeat:
         test_scenario:
           scenario_type: scenarios.astm.utm.NominalPlanning
@@ -24,6 +23,7 @@ actions:
             flight_planners: flight_planners
             dss: dss
         on_failure: Continue
+      combination_selector_source: nominal_planning_selector
       flight_planners_source: flight_planners
       roles: 2
   on_failure: Continue
@@ -31,13 +31,10 @@ actions:
     generator_type: action_generators.flight_planning.FlightPlannerCombinations
     resources:
       flight_planners: flight_planners
+      priority_planning_selector: priority_planning_selector?
       priority_preemption_flights: priority_preemption_flights
       dss: dss
     specification:
-      resources:
-        flight_planners: flight_planners
-        priority_preemption_flights: priority_preemption_flights
-        dss: dss
       action_to_repeat:
         test_scenario:
           scenario_type: scenarios.astm.utm.NominalPlanningPriority
@@ -46,6 +43,7 @@ actions:
             flight_planners: flight_planners
             dss: dss
         on_failure: Continue
+      combination_selector_source: priority_planning_selector
       flight_planners_source: flight_planners
       roles: 2
   on_failure: Continue

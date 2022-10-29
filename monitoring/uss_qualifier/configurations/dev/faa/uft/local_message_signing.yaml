@@ -9,8 +9,17 @@ resources:
         flight_planners:
         - participant_id: uss1
           injection_base_url: http://host.docker.internal:8074/scdsc
+        - participant_id: uss2
+          injection_base_url: http://host.docker.internal:8074/scdsc
         - participant_id: mock_uss
           injection_base_url: http://host.docker.internal:8074/scdsc
+    combination_selector:
+      resource_type: resources.flight_planning.FlightPlannerCombinationSelectorResource
+      specification:
+        must_include:
+        - mock_uss
+        maximum_roles:
+          mock_uss: 1
     conflicting_flights:
       resource_type: resources.flight_planning.FlightIntentsResource
       specification:
@@ -41,6 +50,7 @@ test_suite:
   resources:
     mock_uss: mock_uss
     flight_planners: flight_planners
+    combination_selector: combination_selector
     conflicting_flights: conflicting_flights
     priority_preemption_flights: priority_preemption_flights
     dss: dss

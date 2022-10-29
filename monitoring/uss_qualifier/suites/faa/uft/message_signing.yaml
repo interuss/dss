@@ -2,6 +2,7 @@ name: UFT message signing
 resources:
   mock_uss: resources.interuss.MockUSSResource
   flight_planners: resources.flight_planning.FlightPlannersResource
+  combination_selector: resources.flight_planning.FlightPlannerCombinationSelectorResource
   dss: resources.astm.f3548.v21.DSSInstanceResource
   conflicting_flights: resources.flight_planning.FlightIntentsResource
   priority_preemption_flights: resources.flight_planning.FlightIntentsResource
@@ -17,6 +18,8 @@ actions:
       conflicting_flights: conflicting_flights
       priority_preemption_flights: priority_preemption_flights
       flight_planners: flight_planners
+      nominal_planning_selector: combination_selector
+      priority_planning_selector: combination_selector
       dss: dss
   on_failure: Continue
 - test_scenario:

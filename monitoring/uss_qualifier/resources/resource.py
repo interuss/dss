@@ -117,3 +117,22 @@ def _make_resource(
         )
 
     return resource_type(**constructor_args)
+
+
+def make_child_resources(
+    parent_resources: Dict[ResourceID, ResourceType],
+    child_resource_map: Dict[ResourceID, ResourceID],
+    subject: str,
+) -> Dict[ResourceID, ResourceType]:
+    child_resources = {}
+    for child_id, parent_id in child_resource_map.items():
+        is_optional = parent_id.endswith("?")
+        if is_optional:
+            parent_id = parent_id[:-1]
+        if parent_id in parent_resources:
+            child_resources[child_id] = parent_resources[parent_id]
+        elif not is_optional:
+            raise ValueError(
+                f'{subject} could not find required resource ID "{parent_id}" used to populate child resource ID "{child_id}"'
+            )
+    return child_resources
