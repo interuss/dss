@@ -9,7 +9,6 @@ from requests.exceptions import RequestException
 
 from monitoring.monitorlib.rid_automated_testing.injection_api import (
     CreateTestParameters,
-    ChangeTestResponse,
 )
 from monitoring.monitorlib.rid_common import RIDVersion
 from monitoring.uss_qualifier.common_data_definitions import Severity
@@ -28,6 +27,7 @@ from monitoring.uss_qualifier.scenarios.astm.netrid.virtual_observer import (
 from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 from monitoring.uss_qualifier.scenarios.astm.netrid import display_data_evaluator
 from monitoring.uss_qualifier.scenarios.astm.netrid.injection import InjectedFlight
+from uas_standards.interuss.automated_testing.rid.v1.injection import ChangeTestResponse
 
 
 class NominalBehavior(TestScenario):
