@@ -5,36 +5,14 @@ import arrow
 import s2sphere
 
 from monitoring.monitorlib import geo, rid
-from implicitdict import ImplicitDict, StringBasedDateTime
+
+from uas_standards.interuss.automated_testing.rid.v1 import injection
 
 
 SCOPE_RID_QUALIFIER_INJECT = "rid.inject_test_data"
 
-# Mirrors of types defined in remote ID automated testing injection API
 
-
-class OperatorLocation(ImplicitDict):
-    """A object to hold location of the operator when submitting flight data to USS"""
-
-    lat: float
-    lng: float
-
-
-class TestFlightDetails(ImplicitDict):
-    """A object to hold the remote ID Details,  and a date time after which the USS should submit the flight details, it matches the TestFlightDetails in the injection interface, for more details see: https://github.com/interuss/dss/blob/master/interfaces/automated-testing/rid/injection.yaml#L158"""
-
-    effective_after: StringBasedDateTime  # ISO 8601 datetime string
-    details: rid.RIDFlightDetails
-    aircraft_type: str
-
-
-class TestFlight(ImplicitDict):
-    """Represents the data necessary to inject a single, complete test flight into a Remote ID Service Provider under test; matches TestFlight in injection interface"""
-
-    injection_id: str
-    telemetry: List[rid.RIDAircraftState]
-    details_responses: List[TestFlightDetails]
-
+class TestFlight(injection.TestFlight):
     def get_span(
         self,
     ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
@@ -59,7 +37,7 @@ class TestFlight(ImplicitDict):
         latest_after: Optional[datetime.datetime] = None
         tf_details = None
         for response in self.details_responses:
-            t_response = response.effective_after.datetime
+            t_response = arrow.get(response.effective_after).datetime
             if t_now >= t_response:
                 if latest_after is None or t_response > latest_after:
                     latest_after = t_response
@@ -110,9 +88,7 @@ class TestFlight(ImplicitDict):
         )
 
 
-class CreateTestParameters(ImplicitDict):
-    requested_flights: List[TestFlight]
-
+class CreateTestParameters(injection.CreateTestParameters):
     def get_span(
         self,
     ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
@@ -120,6 +96,7 @@ class CreateTestParameters(ImplicitDict):
             return (None, None)
         (earliest, latest) = (None, None)
         for flight in self.requested_flights:
+            flight = TestFlight(flight)
             (t0, t1) = flight.get_span()
             if earliest is None or t0 < earliest:
                 earliest = t0
@@ -130,13 +107,9 @@ class CreateTestParameters(ImplicitDict):
     def get_rect(self) -> Optional[s2sphere.LatLngRect]:
         result = None
         for flight in self.requested_flights:
+            flight = TestFlight(flight)
             if result is None:
                 result = flight.get_rect()
             else:
                 result = result.union(flight.get_rect())
         return result
-
-
-class ChangeTestResponse(ImplicitDict):
-    injected_flights: List[TestFlight]
-    version: str
