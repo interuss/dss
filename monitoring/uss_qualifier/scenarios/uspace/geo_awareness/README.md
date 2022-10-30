@@ -1,7 +1,6 @@
 # Geo-Awareness Test Suite
 
-This folder contains the Geo-Awareness test suite description,
-the [interface for Geo-Awareness automated testing](geo-awareness.yaml) and
+This folder contains the Geo-Awareness test suite description, and
 the [design of Geo-Awareness automated testing](design) documentation.
 
 ## Overview
@@ -13,7 +12,7 @@ It has been designed to not impose additional requirements to USSP
 implementation. [See discussion for details](https://github.com/interuss/dss/pull/809#discussion_r982930704)
 
 A USSP wishing to qualify its service using this test suite must implement
-the [interface for Geo-Awareness automated testing](geo-awareness.yaml).
+the [interface for Geo-Awareness automated testing](../../../../../interfaces/automated_testing/geo-awareness/geo-awareness.yaml).
 
 ## Scope
 
@@ -75,7 +74,7 @@ This test suite is composed of the following scenarios:
 
 - Geo-Awareness test provider
 - Geo-Awareness test dataset
-- USSP under test implementing the [test interface](geo-awareness.yaml)
+- USSP under test implementing the [test interface](../../../../../interfaces/automated_testing/geo-awareness/geo-awareness.yaml)
 
 ### Test scenario 1: Applicable UAS Zones
 
