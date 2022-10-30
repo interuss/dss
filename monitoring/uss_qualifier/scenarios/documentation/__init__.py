@@ -1,6 +1,6 @@
 import inspect
 import os
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Dict
 
 from implicitdict import ImplicitDict
 import marko
@@ -42,6 +42,9 @@ class TestScenarioDocumentation(ImplicitDict):
     resources: Optional[List[str]]
     cases: List[TestCaseDocumentation]
     cleanup: Optional[TestStepDocumentation]
+
+
+_test_step_cache: Dict[str, TestStepDocumentation] = {}
 
 
 def _text_of(value) -> str:
@@ -90,10 +93,51 @@ def _parse_test_check(values) -> TestCheckDocumentation:
     return TestCheckDocumentation(name=name, applicable_requirements=reqs)
 
 
-def _parse_test_step(values) -> TestStepDocumentation:
+def _get_linked_test_step(
+    doc_filename: str, origin_filename: str
+) -> TestStepDocumentation:
+    absolute_path = os.path.abspath(
+        os.path.join(os.path.dirname(origin_filename), doc_filename)
+    )
+    if absolute_path not in _test_step_cache:
+        if not os.path.exists(absolute_path):
+            raise ValueError(
+                f'Test step document "{doc_filename}" linked from "{origin_filename}" does not exist at "{absolute_path}"'
+            )
+        with open(absolute_path, "r") as f:
+            doc = marko.parse(f.read())
+
+        if (
+            not isinstance(doc.children[0], marko.block.Heading)
+            or doc.children[0].level != 1
+            or not _text_of(doc.children[0]).lower().endswith(TEST_STEP_SUFFIX)
+        ):
+            raise ValueError(
+                f'The first line of "{absolute_path}" must be a level-1 heading with the name of the test step + "{TEST_STEP_SUFFIX}" (e.g., "# Successful flight injection{TEST_STEP_SUFFIX}")'
+            )
+
+        values = doc.children
+        dc = _length_of_section(values, 0)
+        _test_step_cache[absolute_path] = _parse_test_step(
+            values[0 : dc + 1], doc_filename
+        )
+    return _test_step_cache[absolute_path]
+
+
+def _parse_test_step(values, doc_filename: str) -> TestStepDocumentation:
     name = _text_of(values[0])
     if name.lower().endswith(TEST_STEP_SUFFIX):
         name = name[0 : -len(TEST_STEP_SUFFIX)]
+
+    if values[0].children and isinstance(
+        values[0].children[0], marko.block.inline.Link
+    ):
+        # We should include the content of the linked test step document rather
+        # than extracting content from this section.
+        step = _get_linked_test_step(values[0].children[0].dest, doc_filename)
+        step = TestStepDocumentation(step)
+        step.name = name
+        return step
 
     checks: List[TestCheckDocumentation] = []
     c = 1
@@ -112,7 +156,7 @@ def _parse_test_step(values) -> TestStepDocumentation:
     return TestStepDocumentation(name=name, checks=checks)
 
 
-def _parse_test_case(values) -> TestCaseDocumentation:
+def _parse_test_case(values, doc_filename: str) -> TestCaseDocumentation:
     name = _text_of(values[0])[0 : -len(TEST_CASE_SUFFIX)]
 
     steps: List[TestStepDocumentation] = []
@@ -123,7 +167,7 @@ def _parse_test_case(values) -> TestCaseDocumentation:
         ).lower().endswith(TEST_STEP_SUFFIX):
             # Start of a test step section
             dc = _length_of_section(values, c)
-            step = _parse_test_step(values[c : c + dc + 1])
+            step = _parse_test_step(values[c : c + dc + 1], doc_filename)
             steps.append(step)
             c += dc
         else:
@@ -198,12 +242,12 @@ def parse_documentation(scenario: Type) -> TestScenarioDocumentation:
                     'Only one major section may be titled "{CLEANUP_HEADING}"'
                 )
             dc = _length_of_section(doc.children, c)
-            cleanup = _parse_test_step(doc.children[c : c + dc + 1])
+            cleanup = _parse_test_step(doc.children[c : c + dc + 1], doc_filename)
             c += dc
         elif _text_of(doc.children[c]).lower().endswith(TEST_CASE_SUFFIX):
             # Start of a test case section
             dc = _length_of_section(doc.children, c)
-            test_case = _parse_test_case(doc.children[c : c + dc + 1])
+            test_case = _parse_test_case(doc.children[c : c + dc + 1], doc_filename)
             test_cases.append(test_case)
             c += dc
         else:
