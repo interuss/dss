@@ -4,8 +4,12 @@ import graphviz
 
 from implicitdict import ImplicitDict
 
-from monitoring.uss_qualifier.reports import TestSuiteReport, TestScenarioReport
-from monitoring.uss_qualifier.reports.report import ActionGeneratorReport, TestRunReport
+from monitoring.uss_qualifier.reports.report import (
+    ActionGeneratorReport,
+    TestRunReport,
+    TestSuiteReport,
+    TestScenarioReport,
+)
 from monitoring.uss_qualifier.resources.definitions import (
     ResourceID,
     ResourceCollection,

@@ -9,7 +9,7 @@ from monitoring.uss_qualifier.scenarios.scenario import TestScenarioType
 def validate(test_scenarios: List[TestScenarioType]):
     for test_scenario in test_scenarios:
         # Verify that documentation parses
-        docs = documentation.parse_documentation(test_scenario)
+        docs = documentation.get_documentation(test_scenario)
 
         # Verify that all resources are documented
         constructor_signature = inspect.signature(test_scenario.__init__)

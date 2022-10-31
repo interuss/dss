@@ -1,0 +1,94 @@
+all:
+  allOf:
+  - $ref: '#/uspace'
+  - $ref: '#/net_rid_sims'
+
+uspace:
+  allOf:
+  - $ref: '#/net_rid'
+  - $ref: '#/flight_auth'
+
+net_rid:
+  $ref: '#/common'
+  netrid_service_providers:
+    resource_type: resources.netrid.NetRIDServiceProviders
+    dependencies:
+      auth_adapter: utm_auth
+    specification:
+      service_providers:
+      - participant_id: uss1
+        injection_base_url: http://localhost:8071/ridsp/injection
+  netrid_observers:
+    resource_type: resources.netrid.NetRIDObserversResource
+    dependencies:
+      auth_adapter: utm_auth
+    specification:
+      observers:
+      - participant_id: uss2
+        observation_base_url: http://localhost:8073/riddp/observation
+  netrid_observation_evaluation_configuration:
+    resource_type: resources.netrid.EvaluationConfigurationResource
+    specification: {}
+
+net_rid_sims:
+  adjacent_circular_flights_data:
+    resource_type: resources.netrid.FlightDataResource
+    specification:
+      adjacent_circular_flights_simulation_source: {}
+  adjacent_circular_storage_config:
+    resource_type: resources.netrid.FlightDataStorageResource
+    specification:
+      flight_record_collection_path: "./test_data/che/netrid/circular_flights.json"
+  kml_flights_data:
+    resource_type: resources.netrid.FlightDataResource
+    specification:
+      kml_source:
+        kml_location: file://./test_data/usa/netrid/dcdemo.kml
+  kml_storage_config:
+    resource_type: resources.netrid.FlightDataStorageResource
+    specification:
+      flight_record_collection_path: "./test_data/usa/netrid/dcdemo_flights.json"
+
+flight_auth:
+  $ref: '#/f3548'
+  invalid_flight_auth_flights:
+    resource_type: resources.flight_planning.FlightIntentsResource
+    specification:
+      planning_time: '0:05:00'
+      file_source: file://./test_data/che/flight_intents/invalid_flight_auths.json
+
+f3548:
+  $ref: '#/common'
+  flight_planners:
+    resource_type: resources.flight_planning.FlightPlannersResource
+    dependencies:
+      auth_adapter: utm_auth
+    specification:
+      flight_planners:
+      - participant_id: uss1
+        injection_base_url: http://localhost:8074/scdsc
+      - participant_id: uss2
+        injection_base_url: http://localhost:8074/scdsc
+  conflicting_flights:
+    resource_type: resources.flight_planning.FlightIntentsResource
+    specification:
+      planning_time: '0:05:00'
+      file_source: file://./test_data/che/flight_intents/conflicting_flights.json
+  priority_preemption_flights:
+    resource_type: resources.flight_planning.FlightIntentsResource
+    specification:
+      planning_time: '0:05:00'
+      file_source: test_data.che.flight_intents.priority_preemption
+  dss:
+    resource_type: resources.astm.f3548.v21.DSSInstanceResource
+    dependencies:
+      auth_adapter: utm_auth
+    specification:
+      participant_id: uss1
+      base_url: http://localhost:8082
+
+common:
+  utm_auth:
+    resource_type: resources.communications.AuthAdapterResource
+    specification:
+      environment_variable_containing_auth_spec: AUTH_SPEC

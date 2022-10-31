@@ -7,7 +7,8 @@ import marko
 import marko.element
 import marko.inline
 
-from monitoring.monitorlib.inspection import fullname
+from monitoring import uss_qualifier as uss_qualifier_module
+from monitoring.monitorlib.inspection import fullname, get_module_object_by_name
 from monitoring.uss_qualifier.reports.report import RequirementID
 
 RESOURCES_HEADING = "resources"
@@ -35,6 +36,12 @@ class TestCaseDocumentation(ImplicitDict):
     url: Optional[str] = None
     steps: List[TestStepDocumentation]
 
+    def get_step_by_name(self, step_name: str) -> Optional[TestStepDocumentation]:
+        for step in self.steps:
+            if step.name == step_name:
+                return step
+        return None
+
 
 class TestScenarioDocumentation(ImplicitDict):
     name: str
@@ -42,6 +49,12 @@ class TestScenarioDocumentation(ImplicitDict):
     resources: Optional[List[str]]
     cases: List[TestCaseDocumentation]
     cleanup: Optional[TestStepDocumentation]
+
+    def get_case_by_name(self, case_name: str) -> Optional[TestCaseDocumentation]:
+        for case in self.cases:
+            if case.name == case_name:
+                return case
+        return None
 
 
 _test_step_cache: Dict[str, TestStepDocumentation] = {}
@@ -191,7 +204,7 @@ def _parse_resources(values) -> List[str]:
     return resources
 
 
-def parse_documentation(scenario: Type) -> TestScenarioDocumentation:
+def _parse_documentation(scenario: Type) -> TestScenarioDocumentation:
     # Load the .md file matching the Python file where this scenario type is defined
     doc_filename = os.path.splitext(inspect.getfile(scenario))[0] + ".md"
     if not os.path.exists(doc_filename):
@@ -263,3 +276,15 @@ def parse_documentation(scenario: Type) -> TestScenarioDocumentation:
     if cleanup is not None:
         kwargs["cleanup"] = cleanup
     return TestScenarioDocumentation(**kwargs)
+
+
+def get_documentation(scenario: Type) -> TestScenarioDocumentation:
+    DOC_CACHE_ATTRIBUTE = "_md_documentation"
+    if not hasattr(scenario, DOC_CACHE_ATTRIBUTE):
+        setattr(scenario, DOC_CACHE_ATTRIBUTE, _parse_documentation(scenario))
+    return getattr(scenario, DOC_CACHE_ATTRIBUTE)
+
+
+def get_documentation_by_name(scenario_type_name: str) -> TestScenarioDocumentation:
+    scenario_type = get_module_object_by_name(uss_qualifier_module, scenario_type_name)
+    return get_documentation(scenario_type)
