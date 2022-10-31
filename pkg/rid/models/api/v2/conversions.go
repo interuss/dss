@@ -22,7 +22,7 @@ func FromTime(t *restapi.Time) (*time.Time, error) {
 	if t.Value == "" {
 		return nil, stacktrace.NewError("Time structure specified, but `value` was missing")
 	}
-	ts, err := time.Parse(time.RFC3339, t.Value)
+	ts, err := time.Parse(time.RFC3339Nano, t.Value)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error converting time")
 	}
@@ -158,7 +158,7 @@ func ToTime(t *time.Time) *restapi.Time {
 
 	result := &restapi.Time{
 		Format: "RFC3339",
-		Value:  t.Format(time.RFC3339),
+		Value:  t.Format(time.RFC3339Nano),
 	}
 
 	return result

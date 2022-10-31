@@ -8,5 +8,5 @@ type TokenResponse struct {
 
 type BadRequestResponse struct {
 	// Human-readable message describing problem with request
-	Message *string `json:"message"`
+	Message *string `json:"message,omitempty"`
 }

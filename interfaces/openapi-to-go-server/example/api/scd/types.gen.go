@@ -62,24 +62,24 @@ type LatLngPoint struct {
 
 // A circular area on the surface of the earth.
 type Circle struct {
-	Center *LatLngPoint `json:"center"`
+	Center *LatLngPoint `json:"center,omitempty"`
 
-	Radius *Radius `json:"radius"`
+	Radius *Radius `json:"radius,omitempty"`
 }
 
 // A three-dimensional geographic volume consisting of a vertically-extruded shape. Exactly one outline must be specified.
 type Volume3D struct {
 	// A circular geographic shape on the surface of the earth.
-	OutlineCircle *Circle `json:"outline_circle"`
+	OutlineCircle *Circle `json:"outline_circle,omitempty"`
 
 	// A polygonal geographic shape on the surface of the earth.
-	OutlinePolygon *Polygon `json:"outline_polygon"`
+	OutlinePolygon *Polygon `json:"outline_polygon,omitempty"`
 
 	// Minimum bounding altitude of this volume. Must be less than altitude_upper, if specified.
-	AltitudeLower *Altitude `json:"altitude_lower"`
+	AltitudeLower *Altitude `json:"altitude_lower,omitempty"`
 
 	// Maximum bounding altitude of this volume. Must be greater than altitude_lower, if specified.
-	AltitudeUpper *Altitude `json:"altitude_upper"`
+	AltitudeUpper *Altitude `json:"altitude_upper,omitempty"`
 }
 
 // Contiguous block of geographic spacetime.
@@ -87,16 +87,16 @@ type Volume4D struct {
 	Volume Volume3D `json:"volume"`
 
 	// Beginning time of this volume. Must be before time_end.
-	TimeStart *Time `json:"time_start"`
+	TimeStart *Time `json:"time_start,omitempty"`
 
 	// End time of this volume. Must be after time_start.
-	TimeEnd *Time `json:"time_end"`
+	TimeEnd *Time `json:"time_end,omitempty"`
 }
 
 // Human-readable string returned when an error occurs as a result of a USS - DSS transaction.
 type ErrorResponse struct {
 	// Human-readable message indicating what error occurred and/or why.
-	Message *string `json:"message"`
+	Message *string `json:"message,omitempty"`
 }
 
 // State of subscription which is causing a notification to be sent.
@@ -124,24 +124,24 @@ type Subscription struct {
 	NotificationIndex SubscriptionNotificationIndex `json:"notification_index"`
 
 	// If set, this subscription will not receive notifications involving airspace changes entirely before this time.
-	TimeStart *Time `json:"time_start"`
+	TimeStart *Time `json:"time_start,omitempty"`
 
 	// If set, this subscription will not receive notifications involving airspace changes entirely after this time.
-	TimeEnd *Time `json:"time_end"`
+	TimeEnd *Time `json:"time_end,omitempty"`
 
 	UssBaseUrl SubscriptionUssBaseURL `json:"uss_base_url"`
 
 	// If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not trigger notifications.  The scope utm.strategic_coordination is required to set this flag true.
-	NotifyForOperationalIntents *bool `json:"notify_for_operational_intents"`
+	NotifyForOperationalIntents *bool `json:"notify_for_operational_intents,omitempty"`
 
 	// If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true.
-	NotifyForConstraints *bool `json:"notify_for_constraints"`
+	NotifyForConstraints *bool `json:"notify_for_constraints,omitempty"`
 
 	// True if this subscription was implicitly created by the DSS via the creation of an operational intent, and should therefore be deleted by the DSS when that operational intent is deleted.
-	ImplicitSubscription *bool `json:"implicit_subscription"`
+	ImplicitSubscription *bool `json:"implicit_subscription,omitempty"`
 
 	// List of IDs for operational intents that are dependent on this subscription.
-	DependentOperationalIntents *[]EntityID `json:"dependent_operational_intents"`
+	DependentOperationalIntents *[]EntityID `json:"dependent_operational_intents,omitempty"`
 }
 
 // Tracks the notifications sent for a subscription so the subscriber can detect missed notifications more easily.
@@ -149,7 +149,7 @@ type SubscriptionNotificationIndex int32
 
 // Parameters for a request to find subscriptions matching the provided criteria.
 type QuerySubscriptionParameters struct {
-	AreaOfInterest *Volume4D `json:"area_of_interest"`
+	AreaOfInterest *Volume4D `json:"area_of_interest,omitempty"`
 }
 
 // Response to DSS query for subscriptions in a particular geographic area.
@@ -173,10 +173,10 @@ type PutSubscriptionParameters struct {
 	UssBaseUrl SubscriptionUssBaseURL `json:"uss_base_url"`
 
 	// If true, trigger notifications when operational intents are created, updated, or deleted.  Otherwise, changes in operational intents should not trigger notifications.  The scope utm.strategic_coordination is required to set this flag true.
-	NotifyForOperationalIntents *bool `json:"notify_for_operational_intents"`
+	NotifyForOperationalIntents *bool `json:"notify_for_operational_intents,omitempty"`
 
 	// If true, trigger notifications when constraints are created, updated, or deleted.  Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true.
-	NotifyForConstraints *bool `json:"notify_for_constraints"`
+	NotifyForConstraints *bool `json:"notify_for_constraints,omitempty"`
 }
 
 // The base URL of a USS implementation of the parts of the USS-USS API necessary for receiving the notifications requested by this subscription.
@@ -187,10 +187,10 @@ type PutSubscriptionResponse struct {
 	Subscription Subscription `json:"subscription"`
 
 	// Operational intents in or near the subscription area at the time of creation/update, if `notify_for_operational_intents` is true.
-	OperationalIntentReferences *[]OperationalIntentReference `json:"operational_intent_references"`
+	OperationalIntentReferences *[]OperationalIntentReference `json:"operational_intent_references,omitempty"`
 
 	// Constraints in or near the subscription area at the time of creation/update, if `notify_for_constraints` is true.
-	ConstraintReferences *[]ConstraintReference `json:"constraint_references"`
+	ConstraintReferences *[]ConstraintReference `json:"constraint_references,omitempty"`
 }
 
 // Response for a successful request to delete a subscription.
@@ -234,7 +234,7 @@ type OperationalIntentReference struct {
 	State OperationalIntentState `json:"state"`
 
 	// Opaque version number of this operational intent.  Populated only when the OperationalIntentReference is managed by the USS retrieving or providing it.  Not populated when the OperationalIntentReference is not managed by the USS retrieving or providing it (instead, the USS must obtain the OVN from the details retrieved from the managing USS).
-	Ovn *EntityOVN `json:"ovn"`
+	Ovn *EntityOVN `json:"ovn,omitempty"`
 
 	// Beginning time of operational intent.
 	TimeStart Time `json:"time_start"`
@@ -258,17 +258,17 @@ type PutOperationalIntentReferenceParameters struct {
 	Extents []Volume4D `json:"extents"`
 
 	// Proof that the USS creating or mutating this operational intent was aware of the current state of the airspace, with the expectation that this operational intent is therefore deconflicted from all relevant features in the airspace.  This field is not required when declaring an operational intent Nonconforming or Contingent, or when there are no relevant Entities in the airspace, but is otherwise required. OVNs for constraints are required if and only if the USS managing this operational intent is performing the constraint processing role, which is indicated by whether the subscription associated with this operational intent triggers notifications for constraints.  The key does not need to contain the OVN for the operational intent being updated.
-	Key *Key `json:"key"`
+	Key *Key `json:"key,omitempty"`
 
 	State OperationalIntentState `json:"state"`
 
 	UssBaseUrl OperationalIntentUssBaseURL `json:"uss_base_url"`
 
 	// The ID of an existing subscription that the USS will use to keep the operator informed about updates to relevant airspace information. If this field is not provided when the operational intent is in the Activated, Nonconforming, or Contingent state, then the `new_subscription` field must be provided in order to provide notification capability for the operational intent.  The subscription specified by this ID must cover at least the area over which this operational intent is conducted, and it must provide notifications for operational intents.
-	SubscriptionId *EntityID `json:"subscription_id"`
+	SubscriptionId *EntityID `json:"subscription_id,omitempty"`
 
 	// If an existing subscription is not specified in `subscription_id`, and the operational intent is in the Activated, Nonconforming, or Contingent state, then this field must be populated.  When this field is populated, an implicit subscription will be created and associated with this operational intent, and will generally be deleted automatically upon the deletion of this operational intent.
-	NewSubscription *ImplicitSubscriptionParameters `json:"new_subscription"`
+	NewSubscription *ImplicitSubscriptionParameters `json:"new_subscription,omitempty"`
 }
 
 // Information necessary to create a subscription to serve a single operational intent's notification needs.
@@ -277,7 +277,7 @@ type ImplicitSubscriptionParameters struct {
 	UssBaseUrl SubscriptionUssBaseURL `json:"uss_base_url"`
 
 	// True if this operational intent's subscription should trigger notifications when constraints change. Otherwise, changes in constraints should not trigger notifications.  The scope utm.constraint_processing is required to set this flag true, and a USS performing the constraint processing role should set this flag true.
-	NotifyForConstraints *bool `json:"notify_for_constraints"`
+	NotifyForConstraints *bool `json:"notify_for_constraints,omitempty"`
 }
 
 // Response to DSS request for the OperationalIntentReference with the given ID.
@@ -295,7 +295,7 @@ type ChangeOperationalIntentReferenceResponse struct {
 
 // Parameters for a request to find OperationalIntentReferences matching the provided criteria.
 type QueryOperationalIntentReferenceParameters struct {
-	AreaOfInterest *Volume4D `json:"area_of_interest"`
+	AreaOfInterest *Volume4D `json:"area_of_interest,omitempty"`
 }
 
 // Response to DSS query for OperationalIntentReferences in an area of interest.
@@ -317,7 +317,7 @@ type ConstraintReference struct {
 	Version int32 `json:"version"`
 
 	// Opaque version number of this constraint.  Populated only when the ConstraintReference is managed by the USS retrieving or providing it.  Not populated when the ConstraintReference is not managed by the USS retrieving or providing it (instead, the USS must obtain the OVN from the details retrieved from the managing USS).
-	Ovn *EntityOVN `json:"ovn"`
+	Ovn *EntityOVN `json:"ovn,omitempty"`
 
 	TimeStart Time `json:"time_start"`
 
@@ -354,7 +354,7 @@ type ChangeConstraintReferenceResponse struct {
 
 // Parameters for a request to find ConstraintReferences matching the provided criteria.
 type QueryConstraintReferenceParameters struct {
-	AreaOfInterest *Volume4D `json:"area_of_interest"`
+	AreaOfInterest *Volume4D `json:"area_of_interest,omitempty"`
 }
 
 // Response to DSS query for ConstraintReferences in an area of interest.
@@ -366,13 +366,13 @@ type QueryConstraintReferencesResponse struct {
 // Data provided when an airspace conflict was encountered.
 type AirspaceConflictResponse struct {
 	// Human-readable message indicating what error occurred and/or why.
-	Message *string `json:"message"`
+	Message *string `json:"message,omitempty"`
 
 	// List of operational intent references for which current proof of knowledge was not provided.  If this field is present and contains elements, the calling USS should query the details URLs for these operational intents to obtain their details and correct OVNs.  The OVNs can be used to update the key, at which point the USS may retry this call.
-	MissingOperationalIntents *[]OperationalIntentReference `json:"missing_operational_intents"`
+	MissingOperationalIntents *[]OperationalIntentReference `json:"missing_operational_intents,omitempty"`
 
 	// List of constraint references for which current proof of knowledge was not provided.  If this field is present and contains elements, the calling USS should query the details URLs for these constraints to obtain their details and correct OVNs.  The OVNs can be used to update the key, at which point the USS may retry this call.
-	MissingConstraints *[]ConstraintReference `json:"missing_constraints"`
+	MissingConstraints *[]ConstraintReference `json:"missing_constraints,omitempty"`
 }
 
 type UssAvailabilityStatus struct {
@@ -418,7 +418,7 @@ type ExchangeRecord struct {
 	Method string `json:"method"`
 
 	// Set of headers associated with request or response. Requires 'Authorization:' field (at a minimum)
-	Headers *[]string `json:"headers"`
+	Headers *[]string `json:"headers,omitempty"`
 
 	// A coded value that indicates the role of the logging USS: 'Client' (initiating a request to a remote USS) or 'Server' (handling a request from a remote USS)
 	RecorderRole string `json:"recorder_role"`
@@ -427,25 +427,25 @@ type ExchangeRecord struct {
 	RequestTime Time `json:"request_time"`
 
 	// Base64-encoded body content sent/received as a request.
-	RequestBody *string `json:"request_body"`
+	RequestBody *string `json:"request_body,omitempty"`
 
 	// The time at which the response was sent/received.
-	ResponseTime *Time `json:"response_time"`
+	ResponseTime *Time `json:"response_time,omitempty"`
 
 	// Base64-encoded body content sent/received in response to request.
-	ResponseBody *string `json:"response_body"`
+	ResponseBody *string `json:"response_body,omitempty"`
 
 	// HTTP response code sent/received in response to request.
-	ResponseCode *int32 `json:"response_code"`
+	ResponseCode *int32 `json:"response_code,omitempty"`
 
 	// 'Human-readable description of the problem with the exchange, if any.'
-	Problem *string `json:"problem"`
+	Problem *string `json:"problem,omitempty"`
 }
 
 // A report informing a server of a communication problem.
 type ErrorReport struct {
 	// ID assigned by the server receiving the report.  Not populated when submitting a report.
-	ReportId *string `json:"report_id"`
+	ReportId *string `json:"report_id,omitempty"`
 
 	// The request (by this USS) and response associated with the error.
 	Exchange ExchangeRecord `json:"exchange"`

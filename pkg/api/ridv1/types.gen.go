@@ -7,10 +7,10 @@ type Volume3D struct {
 	Footprint GeoPolygon `json:"footprint"`
 
 	// Minimum bounding altitude of this volume.
-	AltitudeLo *Altitude `json:"altitude_lo"`
+	AltitudeLo *Altitude `json:"altitude_lo,omitempty"`
 
 	// Maximum bounding altitude of this volume.
-	AltitudeHi *Altitude `json:"altitude_hi"`
+	AltitudeHi *Altitude `json:"altitude_hi,omitempty"`
 }
 
 // Contiguous block of geographic spacetime.
@@ -19,10 +19,10 @@ type Volume4D struct {
 	SpatialVolume Volume3D `json:"spatial_volume"`
 
 	// Beginning time of this volume.  RFC 3339 format, per OpenAPI specification.
-	TimeStart *string `json:"time_start"`
+	TimeStart *string `json:"time_start,omitempty"`
 
 	// End time of this volume.  RFC 3339 format, per OpenAPI specification.
-	TimeEnd *string `json:"time_end"`
+	TimeEnd *string `json:"time_end,omitempty"`
 }
 
 // Response to DSS request for the subscription with the given id.
@@ -44,9 +44,9 @@ type SubscriptionNotificationIndex int32
 
 // State of AreaSubscription which is causing a notification to be sent.
 type SubscriptionState struct {
-	SubscriptionId *SubscriptionUUID `json:"subscription_id"`
+	SubscriptionId *SubscriptionUUID `json:"subscription_id,omitempty"`
 
-	NotificationIndex *SubscriptionNotificationIndex `json:"notification_index"`
+	NotificationIndex *SubscriptionNotificationIndex `json:"notification_index,omitempty"`
 }
 
 // UUID v4.
@@ -64,7 +64,7 @@ type SubscriptionUUID UUIDv4
 // Data provided when an off-nominal condition was encountered.
 type ErrorResponse struct {
 	// Human-readable message indicating what error occurred and/or why.
-	Message *string `json:"message"`
+	Message *string `json:"message,omitempty"`
 }
 
 // Response for a successful request to delete an Subscription.
@@ -143,13 +143,13 @@ type IdentificationServiceAreaURL string
 // Endpoints that should be called when an applicable event occurs.  At least one field must be specified.
 type SubscriptionCallbacks struct {
 	// If specified, other clients will be instructed by the DSS to call this endpoint when an Identification Service Area relevant to this Subscription is created, modified, or deleted.  Must implement PUT and DELETE according to the `/uss/identification_service_areas/{id}` path API.
-	IdentificationServiceAreaUrl *IdentificationServiceAreaURL `json:"identification_service_area_url"`
+	IdentificationServiceAreaUrl *IdentificationServiceAreaURL `json:"identification_service_area_url,omitempty"`
 }
 
 // Response for a request to create or update a subscription.
 type PutSubscriptionResponse struct {
 	// Identification Service Areas in or near the subscription area at the time of creation/update, if `identification_service_area_url` callback was specified.
-	ServiceAreas *[]IdentificationServiceArea `json:"service_areas"`
+	ServiceAreas *[]IdentificationServiceArea `json:"service_areas,omitempty"`
 
 	// Result of the operation on the subscription.
 	Subscription Subscription `json:"subscription"`
@@ -217,10 +217,10 @@ type Subscription struct {
 	NotificationIndex SubscriptionNotificationIndex `json:"notification_index"`
 
 	// If set, this subscription will be automatically removed after this time.  RFC 3339 format, per OpenAPI specification.
-	TimeEnd *string `json:"time_end"`
+	TimeEnd *string `json:"time_end,omitempty"`
 
 	// If set, this Subscription will not generate any notifications before this time.  RFC 3339 format, per OpenAPI specification.
-	TimeStart *string `json:"time_start"`
+	TimeStart *string `json:"time_start,omitempty"`
 
 	Version Version `json:"version"`
 }

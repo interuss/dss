@@ -18,24 +18,24 @@ type Radius struct {
 
 // A circular area on the surface of the earth.
 type Circle struct {
-	Center *LatLngPoint `json:"center"`
+	Center *LatLngPoint `json:"center,omitempty"`
 
-	Radius *Radius `json:"radius"`
+	Radius *Radius `json:"radius,omitempty"`
 }
 
 // A three-dimensional geographic volume consisting of a vertically-extruded shape. Exactly one outline must be specified.
 type Volume3D struct {
 	// A circular geographic shape on the surface of the earth.
-	OutlineCircle *Circle `json:"outline_circle"`
+	OutlineCircle *Circle `json:"outline_circle,omitempty"`
 
 	// A polygonal geographic shape on the surface of the earth.
-	OutlinePolygon *Polygon `json:"outline_polygon"`
+	OutlinePolygon *Polygon `json:"outline_polygon,omitempty"`
 
 	// Minimum bounding altitude of this volume. Must be less than altitude_upper, if specified.
-	AltitudeLower *Altitude `json:"altitude_lower"`
+	AltitudeLower *Altitude `json:"altitude_lower,omitempty"`
 
 	// Maximum bounding altitude of this volume. Must be greater than altitude_lower, if specified.
-	AltitudeUpper *Altitude `json:"altitude_upper"`
+	AltitudeUpper *Altitude `json:"altitude_upper,omitempty"`
 }
 
 // Contiguous block of geographic spacetime.
@@ -43,10 +43,10 @@ type Volume4D struct {
 	Volume Volume3D `json:"volume"`
 
 	// Beginning time of this volume. Must be before time_end.
-	TimeStart *Time `json:"time_start"`
+	TimeStart *Time `json:"time_start,omitempty"`
 
 	// End time of this volume. Must be after time_start.
-	TimeEnd *Time `json:"time_end"`
+	TimeEnd *Time `json:"time_end,omitempty"`
 }
 
 // Response to DSS request for the subscription with the given id.
@@ -57,7 +57,7 @@ type GetSubscriptionResponse struct {
 // Response to DSS query for subscriptions in a particular area.
 type SearchSubscriptionsResponse struct {
 	// Subscriptions that overlap the specified area.
-	Subscriptions *[]Subscription `json:"subscriptions"`
+	Subscriptions *[]Subscription `json:"subscriptions,omitempty"`
 }
 
 // Valid http or https URL.
@@ -70,7 +70,7 @@ type SubscriptionNotificationIndex int32
 type SubscriptionState struct {
 	SubscriptionId SubscriptionUUID `json:"subscription_id"`
 
-	NotificationIndex *SubscriptionNotificationIndex `json:"notification_index"`
+	NotificationIndex *SubscriptionNotificationIndex `json:"notification_index,omitempty"`
 }
 
 // UUID v4.
@@ -88,7 +88,7 @@ type SubscriptionUUID UUIDv4
 // Data provided when an off-nominal condition was encountered.
 type ErrorResponse struct {
 	// Human-readable message indicating what error occurred and/or why.
-	Message *string `json:"message"`
+	Message *string `json:"message,omitempty"`
 }
 
 // Response for a successful request to delete an Subscription.
@@ -138,7 +138,7 @@ type Polygon struct {
 // Response to a request to create or update a reference to an Identification Service Area in the DSS.
 type PutIdentificationServiceAreaResponse struct {
 	// DSS subscribers that this client now has the obligation to notify of the Identification Service Area changes just made.  This client must call POST for each provided URL according to the `/uss/identification_service_areas/{id}` path API.
-	Subscribers *[]SubscriberToNotify `json:"subscribers"`
+	Subscribers *[]SubscriberToNotify `json:"subscribers,omitempty"`
 
 	// Resulting service area stored in DSS.
 	ServiceArea IdentificationServiceArea `json:"service_area"`
@@ -147,7 +147,7 @@ type PutIdentificationServiceAreaResponse struct {
 // Response to DSS query for Identification Service Areas in an area of interest.
 type SearchIdentificationServiceAreasResponse struct {
 	// Identification Service Areas in the area of interest.
-	ServiceAreas *[]IdentificationServiceArea `json:"service_areas"`
+	ServiceAreas *[]IdentificationServiceArea `json:"service_areas,omitempty"`
 }
 
 // Subscriber to notify of a creation/change/deletion of a change in the airspace.  This is provided by the DSS to a client changing the airspace, and it is the responsibility of the client changing the airspace (they will receive a set of these notification requests) to send a notification to each specified `url`.
@@ -165,13 +165,13 @@ type DeleteIdentificationServiceAreaResponse struct {
 	ServiceArea IdentificationServiceArea `json:"service_area"`
 
 	// DSS subscribers that this client now has the obligation to notify of the Identification Service Area just deleted.  This client must call POST for each provided URL according to the `/uss/identification_service_areas` path API.
-	Subscribers *[]SubscriberToNotify `json:"subscribers"`
+	Subscribers *[]SubscriberToNotify `json:"subscribers,omitempty"`
 }
 
 // Response for a request to create or update a subscription.
 type PutSubscriptionResponse struct {
 	// Identification Service Areas in or near the subscription area at the time of creation/update, if `identification_service_area_url` callback was specified.
-	ServiceAreas *[]IdentificationServiceArea `json:"service_areas"`
+	ServiceAreas *[]IdentificationServiceArea `json:"service_areas,omitempty"`
 
 	// Result of the operation on the subscription.
 	Subscription Subscription `json:"subscription"`
@@ -236,13 +236,13 @@ type Subscription struct {
 	// Assigned by the DSS based on creating client’s ID (via access token).  Used for restricting mutation and deletion operations to owner.
 	Owner string `json:"owner"`
 
-	NotificationIndex *SubscriptionNotificationIndex `json:"notification_index"`
+	NotificationIndex *SubscriptionNotificationIndex `json:"notification_index,omitempty"`
 
 	// If set, this subscription will be automatically removed after this time.
-	TimeEnd *Time `json:"time_end"`
+	TimeEnd *Time `json:"time_end,omitempty"`
 
 	// If set, this Subscription will not generate any notifications before this time.
-	TimeStart *Time `json:"time_start"`
+	TimeStart *Time `json:"time_start,omitempty"`
 
 	Version Version `json:"version"`
 }
