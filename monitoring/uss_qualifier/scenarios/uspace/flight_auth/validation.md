@@ -70,4 +70,4 @@ All flight intent data provided is correct and valid and free of conflict in spa
 
 ### Successful flight deletion check
 
-Per **[scd.yaml::DeleteFlightSuccess](../../../../../interfaces/automated-testing/scd/scd.yaml)**, the deletion attempt of the previously-created flight should succeed for every flight planner under test.
+**interuss.automated_testing.flight_planning.DeleteFlightSuccess**

@@ -2,6 +2,7 @@ import inspect
 from typing import List
 
 from monitoring.monitorlib.inspection import fullname
+from monitoring.uss_qualifier.requirements.documentation import get_requirement
 from monitoring.uss_qualifier.scenarios import documentation
 from monitoring.uss_qualifier.scenarios.scenario import TestScenarioType
 
@@ -31,3 +32,24 @@ def validate(test_scenarios: List[TestScenarioType]):
                 raise ValueError(
                     f"Documentation for test scenario {fullname(test_scenario)} specifies a resource named {documented_resource}, but this resource is not declared as a resource in the constructor"
                 )
+
+        # Verify that all requirements are documented
+        for case in docs.cases:
+            for step in case.steps:
+                for check in step.checks:
+                    for req in check.applicable_requirements:
+                        try:
+                            get_requirement(req)
+                        except ValueError as e:
+                            raise ValueError(
+                                f'Error verifying documentation for requirement "{req}" in check "{check.name}" of step "{step.name}" for case "{case.name}" in scenario "{fullname(test_scenario)}": {str(e)}'
+                            )
+        if "cleanup" in docs:
+            for check in docs.cleanup.checks:
+                for req in check.applicable_requirements:
+                    try:
+                        get_requirement(req)
+                    except ValueError as e:
+                        raise ValueError(
+                            f'Error verifying documentation for requirement "{req}" in check "{check.name}" of cleanup phase in scenario "{fullname(test_scenario)}": {str(e)}'
+                        )
