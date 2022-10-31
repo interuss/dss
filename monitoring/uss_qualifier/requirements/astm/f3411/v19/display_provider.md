@@ -1,4 +1,4 @@
-# ASTM F3411-19: Display Provider Role
+# ASTM F3411-19: Display Provider Role requirement set
 
 This file describes the set of ASTM F3411-19 requirements with which a USS fulfilling the Display Provider role must comply.
 

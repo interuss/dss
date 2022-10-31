@@ -60,4 +60,7 @@ docker run ${docker_args} --name uss_qualifier \
   python main.py $QUALIFIER_OPTIONS \
   --report report.json \
   --tested_requirements tested_requirements.html \
+  --role_requirements uss1,uss2=astm.f3548.v21.scd \
+  --role_requirements uss1=astm.f3411.v19.service_provider \
+  --role_requirements uss2=astm.f3411.v19.display_provider \
   --dot report.gv

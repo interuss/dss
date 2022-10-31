@@ -1,4 +1,4 @@
-# ASTM F3411-19: DSS Provider
+# ASTM F3411-19: DSS Provider requirement set
 
 This file describes the set of ASTM F3411-19 requirements with which a USS providing a DSS instance must comply.
 

@@ -1,4 +1,4 @@
-# ASTM F3411-19: Service Provider Role
+# ASTM F3411-19: Service Provider Role requirement set
 
 This file describes the set of ASTM F3411-19 requirements with which a USS fulfilling the Service Provider role must comply.
 

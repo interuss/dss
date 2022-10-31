@@ -1,4 +1,4 @@
-# ASTM F3548-21: Strategic Conflict Detection Service
+# ASTM F3548-21: Strategic Conflict Detection Service requirement set
 
 This file describes the set of ASTM F3548-21 requirements with which a USS providing the strategic conflict detection service must comply.
 
