@@ -7,7 +7,7 @@ from monitoring.mock_uss import webapp
 from monitoring.mock_uss.config import KEY_TOKEN_AUDIENCE
 from monitoring.monitorlib.auth import NoAuth
 
-TEST_DATASET_URL = "https://raw.githubusercontent.com/interuss/dss/master/interfaces/automated-testing/geo-awareness/design/CHE/geo-awareness-che-1.json"
+TEST_DATASET_URL = "https://raw.githubusercontent.com/interuss/dss/517595ad4074bdb621feb4ab81c2d2f4fc11eff1/monitoring/uss_qualifier/scenarios/uspace/geo_awareness/design/CHE/geo-awareness-che-1.json"
 
 
 @pytest.fixture()
