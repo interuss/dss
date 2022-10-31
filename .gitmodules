@@ -7,3 +7,6 @@
 [submodule "interfaces/rid/v2"]
 	path = interfaces/rid/v2
 	url = https://github.com/uastech/standards
+[submodule "interfaces/automated_testing"]
+	path = interfaces/automated_testing
+	url = https://github.com/interuss/automated_testing_interfaces
