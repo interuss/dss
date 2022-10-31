@@ -293,7 +293,7 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *rest
 	)
 
 	if req.EarliestTime != nil {
-		ts, err := time.Parse(time.RFC3339, *req.EarliestTime)
+		ts, err := time.Parse(time.RFC3339Nano, *req.EarliestTime)
 		if err != nil {
 			return restapi.SearchIdentificationServiceAreasResponseSet{Response400: &restapi.ErrorResponse{
 				Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Unable to convert earliest timestamp"))}}
@@ -302,7 +302,7 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *rest
 	}
 
 	if req.LatestTime != nil {
-		ts, err := time.Parse(time.RFC3339, *req.LatestTime)
+		ts, err := time.Parse(time.RFC3339Nano, *req.LatestTime)
 		if err != nil {
 			return restapi.SearchIdentificationServiceAreasResponseSet{Response400: &restapi.ErrorResponse{
 				Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Unable to convert latest timestamp"))}}

@@ -8,5 +8,5 @@ type VersionResponse struct {
 
 type ErrorResponse struct {
 	// Human-readable message indicating what error occurred and/or why.
-	Message *string `json:"message"`
+	Message *string `json:"message,omitempty"`
 }

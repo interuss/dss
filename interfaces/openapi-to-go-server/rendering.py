@@ -86,9 +86,10 @@ def _object_field(field: data_types.ObjectField) -> List[str]:
     :return: Lines of Go code defining the provided field
     """
     lines = comment(field.description.split('\n')) if field.description else []
-    lines.append('{} {}{} `json:"{}"`'.format(field.go_name,
+    lines.append('{} {}{} `json:"{}{}"`'.format(field.go_name,
                                               '*' if not field.required else '',
-                                              field.go_type, field.api_name))
+                                              field.go_type, field.api_name,
+                                              ',omitempty' if not field.required else ''))
     return lines
 
 

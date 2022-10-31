@@ -18,17 +18,17 @@ func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 	}
 
 	if vol4.TimeStart != nil {
-		ts, err := time.Parse(time.RFC3339, *vol4.TimeStart)
+		ts, err := time.Parse(time.RFC3339Nano, *vol4.TimeStart)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time from proto")
+			return nil, stacktrace.Propagate(err, "Error converting start time")
 		}
 		result.StartTime = &ts
 	}
 
 	if vol4.TimeEnd != nil {
-		ts, err := time.Parse(time.RFC3339, *vol4.TimeEnd)
+		ts, err := time.Parse(time.RFC3339Nano, *vol4.TimeEnd)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time from proto")
+			return nil, stacktrace.Propagate(err, "Error converting end time")
 		}
 		result.EndTime = &ts
 	}
@@ -78,12 +78,12 @@ func ToVolume4D(vol4 *dssmodels.Volume4D) (*restapi.Volume4D, error) {
 	}
 
 	if vol4.StartTime != nil {
-		ts := vol4.StartTime.Format(time.RFC3339)
+		ts := vol4.StartTime.Format(time.RFC3339Nano)
 		result.TimeStart = &ts
 	}
 
 	if vol4.EndTime != nil {
-		ts := vol4.EndTime.Format(time.RFC3339)
+		ts := vol4.EndTime.Format(time.RFC3339Nano)
 		result.TimeEnd = &ts
 	}
 
@@ -154,11 +154,11 @@ func ToIdentificationServiceArea(i *ridmodels.IdentificationServiceArea) *restap
 	}
 
 	if i.StartTime != nil {
-		result.TimeStart = i.StartTime.Format(time.RFC3339)
+		result.TimeStart = i.StartTime.Format(time.RFC3339Nano)
 	}
 
 	if i.EndTime != nil {
-		result.TimeEnd = i.EndTime.Format(time.RFC3339)
+		result.TimeEnd = i.EndTime.Format(time.RFC3339Nano)
 	}
 	return result
 }
@@ -193,12 +193,12 @@ func ToSubscription(s *ridmodels.Subscription) *restapi.Subscription {
 	}
 
 	if s.StartTime != nil {
-		ts := s.StartTime.Format(time.RFC3339)
+		ts := s.StartTime.Format(time.RFC3339Nano)
 		result.TimeStart = &ts
 	}
 
 	if s.EndTime != nil {
-		ts := s.EndTime.Format(time.RFC3339)
+		ts := s.EndTime.Format(time.RFC3339Nano)
 		result.TimeEnd = &ts
 	}
 	return result
