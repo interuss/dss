@@ -8,12 +8,6 @@ import shapely.geometry
 from shapely.geometry import Point, Polygon
 
 from implicitdict import ImplicitDict
-from monitoring.monitorlib.rid import (
-    RIDHeight,
-    RIDAircraftState,
-    RIDAircraftPosition,
-    RIDFlightDetails,
-)
 from monitoring.uss_qualifier.resources.netrid.flight_data import (
     FullFlightRecord,
     FlightRecordCollection,
@@ -21,6 +15,14 @@ from monitoring.uss_qualifier.resources.netrid.flight_data import (
 )
 from monitoring.uss_qualifier.resources.netrid.simulation import (
     operator_flight_details,
+)
+from uas_standards.astm.f3411.v19.api import (
+    HorizontalAccuracy,
+    VerticalAccuracy,
+    RIDAircraftPosition,
+    RIDAircraftState,
+    RIDHeight,
+    RIDFlightDetails,
 )
 from .utils import (
     QueryBoundingBox,
@@ -140,8 +142,8 @@ class AdjacentCircularFlightsSimulator:
                 QueryBoundingBox(
                     name=box_diagonals[box_id]["name"],
                     shape=buffered_box,
-                    timestamp_after=box_diagonals[box_id]["timestamp_after"],
-                    timestamp_before=box_diagonals[box_id]["timestamp_before"],
+                    timestamp_after=box_diagonals[box_id]["timestamp_after"].datetime,
+                    timestamp_before=box_diagonals[box_id]["timestamp_before"].datetime,
                 )
             )
 
@@ -320,8 +322,8 @@ class AdjacentCircularFlightsSimulator:
                         lat=flight_point.lat,
                         lng=flight_point.lng,
                         alt=flight_point.alt,
-                        accuracy_h="HAUnkown",
-                        accuracy_v="VAUnknown",
+                        accuracy_h=HorizontalAccuracy.HAUnknown,
+                        accuracy_v=VerticalAccuracy.VAUnknown,
                         extrapolated=False,
                     )
                     aircraft_height = RIDHeight(

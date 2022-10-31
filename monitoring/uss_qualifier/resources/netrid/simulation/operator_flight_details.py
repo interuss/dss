@@ -3,7 +3,7 @@ import string
 import random
 import uuid
 
-from monitoring.monitorlib.rid_automated_testing.injection_api import OperatorLocation
+from uas_standards.astm.f3411.v19.api import LatLngPoint
 
 
 class OperatorFlightDataGenerator:
@@ -37,7 +37,7 @@ class OperatorFlightDataGenerator:
         return self.random.choice(operation_description)
 
     def generate_operator_location(self, centroid):
-        operator_location = OperatorLocation(lat=centroid.y, lng=centroid.x)
+        operator_location = LatLngPoint(lat=centroid.y, lng=centroid.x)
         return operator_location
 
     def generate_operator_id(self, prefix="OP-"):

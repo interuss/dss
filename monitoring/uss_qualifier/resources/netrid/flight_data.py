@@ -2,8 +2,8 @@ from typing import List, Optional
 
 from implicitdict import ImplicitDict, StringBasedDateTime, StringBasedTimeDelta
 
-from monitoring.monitorlib.rid import RIDAircraftState, RIDFlightDetails
 from monitoring.uss_qualifier.fileio import FileReference
+from uas_standards.astm.f3411.v19.api import RIDAircraftState, RIDFlightDetails
 
 
 class FullFlightRecord(ImplicitDict):

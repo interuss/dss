@@ -4,10 +4,10 @@ import uuid
 
 import arrow
 from implicitdict import ImplicitDict, StringBasedDateTime
+from uas_standards.interuss.automated_testing.rid.v1.injection import TestFlightDetails
 
 from monitoring.monitorlib.rid import RIDAircraftState
 from monitoring.monitorlib.rid_automated_testing.injection_api import (
-    TestFlightDetails,
     TestFlight,
 )
 from monitoring.uss_qualifier.fileio import load_dict_with_references, load_content

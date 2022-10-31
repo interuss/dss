@@ -54,11 +54,13 @@ A scenario must document at least one test case (otherwise the scenario is doing
 
 Each test case in the documentation must document at least one test step (otherwise nothing is happening in the test case).  Each test step must be documented via a subsection of the parent test case named with a " test step" suffix (example: `### Injection test step`).
 
+If the entire test step heading is enclosed in a link, the contents of that linked file will be used to populate the test step (example: `### [Plan flight test step](plan_flight_step.md)`) and any content in this section will be ignored.  The linked file must follow the format requirements for a test step, starting with the first line being a top-level heading ending with " test step" (example: `# Plan flight test step`).
+
 ### Test checks
 
 Each check a test step performs that may result in a finding/issue must be documented via a subsection of the parent test step, named with a " check" suffix (example: `#### Successful injection check`).
 
-A check should document the requirement(s) violated if the check fails.  Requirements are identified by putting a strong emphasis/bold style around the requirement ID (example: `**ASTM F3411-19::NET0420**`).
+A check should document the requirement(s) violated if the check fails.  Requirements are identified by putting a strong emphasis/bold style around the requirement ID (example: `**astm.f3411.v19.NET0420**`).  The description of a check should generally explain why the relevant requirement would fail when that information is useful, but the requirement itself should generally not be re-iterated in this description.  If the check is self-evident from the requirement, the requirement can be noted without further explanation.
 
 ### Cleanup phase
 
