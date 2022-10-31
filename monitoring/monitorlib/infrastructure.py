@@ -18,7 +18,8 @@ ALL_SCOPES = [
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 TOKEN_REFRESH_MARGIN = datetime.timedelta(seconds=15)
-CLIENT_TIMEOUT = 15 # seconds
+CLIENT_TIMEOUT = 15  # seconds
+
 
 class AuthAdapter(object):
     """Base class for an adapter that add JWTs to requests."""
