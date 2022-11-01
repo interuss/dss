@@ -18,6 +18,7 @@ ALL_SCOPES = [
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 TOKEN_REFRESH_MARGIN = datetime.timedelta(seconds=15)
+CLIENT_TIMEOUT = 60  # seconds
 
 
 class AuthAdapter(object):
@@ -112,6 +113,7 @@ class UTMClientSession(requests.Session):
                 return prepared_request
 
             kwargs["auth"] = auth
+        kwargs["timeout"] = CLIENT_TIMEOUT
         return kwargs
 
     def request(self, method, url, **kwargs):
@@ -166,6 +168,8 @@ class AsyncUTMTestSession:
             if method == "PUT" and kwargs.get("data"):
                 kwargs["json"] = kwargs["data"]
                 del kwargs["data"]
+
+        kwargs["timeout"] = CLIENT_TIMEOUT
         return kwargs
 
     async def put(self, url, **kwargs):
