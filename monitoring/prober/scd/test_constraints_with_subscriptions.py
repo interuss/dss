@@ -135,7 +135,7 @@ def test_constraint_does_not_exist(ids, scd_api, scd_session, scd_session2):
 def test_create_constraint(ids, scd_api, scd_session, scd_session2):
   req = _make_c1_request()
   resp = scd_session.put('/constraint_references/{}'.format(ids(CONSTRAINT_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
 
   data = resp.json()
   subscribers = data['subscribers']

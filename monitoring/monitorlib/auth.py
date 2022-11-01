@@ -95,7 +95,7 @@ class DummyOAuth(AuthAdapter):
             urllib.parse.quote(intended_audience),
             self._sub,
         )
-        response = self._oauth_session.post(url)
+        response = self._oauth_session.get(url)
         if response.status_code != 200:
             raise AccessTokenError(
                 'Request to get DummyOAuth access token returned {} "{}" at {}'.format(

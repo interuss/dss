@@ -114,7 +114,7 @@ def test_create_op(ids, scd_api, scd_session, scd_session_cp, scd_session_cm):
     assert resp.status_code == 403, resp.content
 
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req, scope=SCOPE_SC)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
 
   data = resp.json()
   op = data['operational_intent_reference']

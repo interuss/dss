@@ -108,7 +108,7 @@ def test_create_constraint(ids, scd_api, scd_session):
   assert resp.status_code == 403, resp.content
 
   resp = scd_session.put('/constraint_references/{}'.format(id), json=req, scope=SCOPE_CM)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
 
   data = resp.json()
   constraint = data['constraint_reference']
