@@ -21,7 +21,10 @@ from monitoring.uss_qualifier.reports.report import (
     TestSuiteActionReport,
 )
 from monitoring.uss_qualifier.resources.definitions import ResourceID
-from monitoring.uss_qualifier.resources.resource import ResourceType
+from monitoring.uss_qualifier.resources.resource import (
+    ResourceType,
+    make_child_resources,
+)
 from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 from monitoring.uss_qualifier.suites.definitions import (
     TestSuiteActionDeclaration,
@@ -52,16 +55,11 @@ class TestSuiteAction(object):
         resources: Dict[ResourceID, ResourceType],
     ):
         self.declaration = action
-
-        for parent_resource_id in action.get_resource_links().values():
-            if parent_resource_id not in resources:
-                raise ValueError(
-                    f"Test suite action to run {action.get_action_type()} {action.get_child_type()} is missing resource {parent_resource_id} from the parent test suite"
-                )
-        resources_for_child = {
-            child_resource_id: resources[parent_resource_id]
-            for child_resource_id, parent_resource_id in action.get_resource_links().items()
-        }
+        resources_for_child = make_child_resources(
+            resources,
+            action.get_resource_links(),
+            f"Test suite action to run {action.get_action_type()} {action.get_child_type()}",
+        )
 
         action_type = action.get_action_type()
         if action_type == ActionType.TestScenario:
@@ -145,11 +143,16 @@ class TestSuite(object):
             for local_resource_id, parent_resource_id in declaration.resources.items()
         }
         for resource_id, resource_type in self.definition.resources.items():
-            if resource_id not in local_resources:
+            is_optional = resource_type.endswith("?")
+            if is_optional:
+                resource_type = resource_type[:-1]
+            if not is_optional and resource_id not in local_resources:
                 raise ValueError(
                     f'Test suite "{self.definition.name}" is missing resource {resource_id} ({resource_type})'
                 )
-            if not local_resources[resource_id].is_type(resource_type):
+            if resource_id in local_resources and not local_resources[
+                resource_id
+            ].is_type(resource_type):
                 raise ValueError(
                     f'Test suite "{self.definition.name}" expected resource {resource_id} to be {resource_type}, but instead it was provided {fullname(resources[resource_id].__class__)}'
                 )
