@@ -16,6 +16,9 @@ var (
 		{
 			"Authority": {"rid.display_provider"},
 		},
+		{
+			"Authority": {"rid.service_provider"},
+		},
 	}
 	CreateIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{
