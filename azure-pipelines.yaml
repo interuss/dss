@@ -33,7 +33,7 @@ jobs:
         persistCredentials: true
       - task: GoTool@0
         inputs:
-          version: '1.14'
+          version: '1.17'
       - bash: |
           set -exo pipefail
           export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
@@ -53,7 +53,7 @@ jobs:
         persistCredentials: true
       - task: GoTool@0
         inputs:
-          version: '1.14'
+          version: '1.17'
       - bash: |
           set -eo pipefail
           export PATH=/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}
