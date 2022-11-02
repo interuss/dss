@@ -62,6 +62,8 @@ Each check a test step performs that may result in a finding/issue must be docum
 
 A check should document the requirement(s) violated if the check fails.  Requirements are identified by putting a strong emphasis/bold style around the requirement ID (example: `**astm.f3411.v19.NET0420**`).  The description of a check should generally explain why the relevant requirement would fail when that information is useful, but the requirement itself should generally not be re-iterated in this description.  If the check is self-evident from the requirement, the requirement can be noted without further explanation.
 
+Any requirements identified (e.g., `**astm.f3411.v19.NET0420**`) must be documented as well.  See [the requirements documentation](../requirements/README.md) for more information.
+
 ### Cleanup phase
 
 If a test scenario wants to perform a cleanup procedure follow any non-error termination of the rest of the scenario, it must:
