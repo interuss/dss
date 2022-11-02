@@ -523,34 +523,34 @@ func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 10)}
 
-	pattern := regexp.MustCompile("^/dss/identification_service_areas$")
+	pattern := regexp.MustCompile("^/rid/v2/dss/identification_service_areas$")
 	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.SearchIdentificationServiceAreas}
 
-	pattern = regexp.MustCompile("^/dss/identification_service_areas/(?P<id>[^/]*)$")
+	pattern = regexp.MustCompile("^/rid/v2/dss/identification_service_areas/(?P<id>[^/]*)$")
 	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetIdentificationServiceArea}
 
-	pattern = regexp.MustCompile("^/dss/identification_service_areas/(?P<id>[^/]*)$")
+	pattern = regexp.MustCompile("^/rid/v2/dss/identification_service_areas/(?P<id>[^/]*)$")
 	router.Routes[2] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateIdentificationServiceArea}
 
-	pattern = regexp.MustCompile("^/dss/identification_service_areas/(?P<id>[^/]*)/(?P<version>[^/]*)$")
+	pattern = regexp.MustCompile("^/rid/v2/dss/identification_service_areas/(?P<id>[^/]*)/(?P<version>[^/]*)$")
 	router.Routes[3] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateIdentificationServiceArea}
 
-	pattern = regexp.MustCompile("^/dss/identification_service_areas/(?P<id>[^/]*)/(?P<version>[^/]*)$")
+	pattern = regexp.MustCompile("^/rid/v2/dss/identification_service_areas/(?P<id>[^/]*)/(?P<version>[^/]*)$")
 	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteIdentificationServiceArea}
 
-	pattern = regexp.MustCompile("^/dss/subscriptions$")
+	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions$")
 	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.SearchSubscriptions}
 
-	pattern = regexp.MustCompile("^/dss/subscriptions/(?P<id>[^/]*)$")
+	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions/(?P<id>[^/]*)$")
 	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetSubscription}
 
-	pattern = regexp.MustCompile("^/dss/subscriptions/(?P<id>[^/]*)$")
+	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions/(?P<id>[^/]*)$")
 	router.Routes[7] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateSubscription}
 
-	pattern = regexp.MustCompile("^/dss/subscriptions/(?P<id>[^/]*)/(?P<version>[^/]*)$")
+	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions/(?P<id>[^/]*)/(?P<version>[^/]*)$")
 	router.Routes[8] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateSubscription}
 
-	pattern = regexp.MustCompile("^/dss/subscriptions/(?P<id>[^/]*)/(?P<version>[^/]*)$")
+	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions/(?P<id>[^/]*)/(?P<version>[^/]*)$")
 	router.Routes[9] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteSubscription}
 
 	return router
