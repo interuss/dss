@@ -15,7 +15,7 @@ if [[ -z $(command -v jq) ]]; then
 fi
 
 # Retrieve token from dummy OAuth server
-ACCESS_TOKEN=$(curl --silent -X POST \
+ACCESS_TOKEN=$(curl --silent -X GET \
   "http://localhost:8085/token?grant_type=client_credentials&scope=dss.read.identification_service_areas&intended_audience=localhost&issuer=localhost" \
   | jq -r '.access_token')
 

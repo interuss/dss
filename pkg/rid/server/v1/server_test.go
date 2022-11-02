@@ -23,7 +23,7 @@ import (
 var timeout = time.Second * 10
 
 func mustTimestamp(ts *string) *time.Time {
-	t, err := time.Parse(time.RFC3339, *ts)
+	t, err := time.Parse(time.RFC3339Nano, *ts)
 	if err != nil {
 		panic(err)
 	}

@@ -8,7 +8,7 @@ constraint_id=$1
 [[ -z "$constraint_id" ]] && { echo "Error: Constraint ID not provided."; exit 1; }
 
 # Retrieve token from dummy OAuth server
-ACCESS_TOKEN=$(curl --silent -X POST \
+ACCESS_TOKEN=$(curl --silent -X GET \
     "http://localhost:8085/token?grant_type=client_credentials&scope=utm.constraint_processing&intended_audience=localhost&issuer=localhost&sub=check_scd" \
 | jq -r '.access_token')
 

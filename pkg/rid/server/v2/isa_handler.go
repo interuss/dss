@@ -318,10 +318,9 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *rest
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
 			return restapi.SearchIdentificationServiceAreasResponseSet{Response400: &restapi.ErrorResponse{
 				Message: dsserr.Handle(ctx, err)}}
-		} else {
-			return restapi.SearchIdentificationServiceAreasResponseSet{Response500: &api.InternalServerErrorBody{
-				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+		return restapi.SearchIdentificationServiceAreasResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
 	areas := make([]restapi.IdentificationServiceArea, 0, len(isas))

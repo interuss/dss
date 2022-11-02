@@ -6,8 +6,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -140,7 +140,7 @@ func main() {
 
 		// Read migration SQL into string
 		fullFilePath := filepath.Join(*path, sqlFile)
-		rawMigrationSQL, err := ioutil.ReadFile(fullFilePath)
+		rawMigrationSQL, err := os.ReadFile(fullFilePath)
 		if err != nil {
 			log.Panicf("Failed to load SQL content from %s: %v", fullFilePath, err)
 		}
@@ -178,7 +178,7 @@ func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {
 	steps := make(map[semver.Version]MigrationStep)
 
 	// Identify files defining version migration steps
-	files, err := ioutil.ReadDir(*path)
+	files, err := os.ReadDir(*path)
 	if err != nil {
 		return make([]MigrationStep, 0), stacktrace.Propagate(err, "Failed to read schema files directory")
 	}

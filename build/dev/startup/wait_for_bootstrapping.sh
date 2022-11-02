@@ -13,4 +13,4 @@ while [ ! -e /var/local-dss-data/rid_bootstrap ] || [ ! -e /var/local-dss-data/s
   fi
   sleep 3
 done
-echo "DB bootstrap complete; starting HTTP gateway..."
+echo "DB bootstrap complete; starting core service..."

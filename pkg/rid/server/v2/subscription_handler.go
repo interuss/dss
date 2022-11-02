@@ -99,10 +99,9 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
 			return restapi.SearchSubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
 				Message: dsserr.Handle(ctx, err)}}
-		} else {
-			return restapi.SearchSubscriptionsResponseSet{Response500: &api.InternalServerErrorBody{
-				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+		return restapi.SearchSubscriptionsResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
 	sp := make([]restapi.Subscription, 0, len(subscriptions))
@@ -224,10 +223,9 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
 			return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 				Message: dsserr.Handle(ctx, err)}}
-		} else {
-			return restapi.CreateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
-				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+		return restapi.CreateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
 	// Convert the ISAs to REST.
@@ -322,10 +320,9 @@ func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
 			return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 				Message: dsserr.Handle(ctx, err)}}
-		} else {
-			return restapi.UpdateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
-				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+		return restapi.UpdateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
 	// Convert the ISAs to REST.

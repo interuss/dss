@@ -5,14 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
-	spb "google.golang.org/genproto/googleapis/rpc/status"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -60,27 +56,6 @@ func MakeErrID() string {
 		return fmt.Sprintf("E:%s", errUUID.String())
 	}
 	return fmt.Sprintf("E:<error ID could not be constructed: %s>", err)
-}
-
-// MakeStatusProto adds the content of a proto as a detail to a Status proto
-// consisting of the provided code and message.
-func MakeStatusProto(code codes.Code, message string, detail proto.Message) (*spb.Status, error) {
-	serialized, err := proto.MarshalOptions{Deterministic: true}.Marshal(detail)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error serializing detail proto")
-	}
-
-	p := &spb.Status{
-		Code:    int32(code),
-		Message: message,
-		Details: []*any.Any{
-			{
-				TypeUrl: "github.com/interuss/dss/" + string(detail.ProtoReflect().Descriptor().FullName()),
-				Value:   serialized,
-			},
-		},
-	}
-	return p, nil
 }
 
 // Handle parses and handles an error that happen in a REST handler. The error

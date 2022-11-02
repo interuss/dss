@@ -65,8 +65,6 @@ func setUpLogger(level string, format string) error {
 	}
 
 	Logger = l
-	// Make sure that log statements internal to gRPC library are logged using the Logger as well.
-	grpcReplaceLogger(Logger)
 
 	return nil
 }
@@ -77,7 +75,7 @@ func Configure(level string, format string) error {
 }
 
 // WithValuesFromContext augments logger with relevant fields from ctx and returns
-// the the resulting logger.
+// the resulting logger.
 func WithValuesFromContext(ctx context.Context, logger *zap.Logger) *zap.Logger {
 	// Naive implementation for now, meant to evolve over time.
 	return logger

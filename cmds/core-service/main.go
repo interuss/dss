@@ -277,7 +277,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		Handler: handler,
 	}
 
-	signals := make(chan os.Signal)
+	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(signals)
 

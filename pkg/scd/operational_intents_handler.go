@@ -192,10 +192,9 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi
 		err = stacktrace.Propagate(err, "Could not get operational intent")
 		if stacktrace.GetCode(err) == dsserr.NotFound {
 			return restapi.GetOperationalIntentReferenceResponseSet{Response404: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}}
-		} else {
-			return restapi.GetOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
-				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+		return restapi.GetOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
 	return restapi.GetOperationalIntentReferenceResponseSet{Response200: response}
@@ -265,10 +264,9 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 		err = stacktrace.Propagate(err, "Could not query operational intent")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
 			return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}}
-		} else {
-			return restapi.QueryOperationalIntentReferencesResponseSet{Response500: &api.InternalServerErrorBody{
-				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+		return restapi.QueryOperationalIntentReferencesResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
 	return restapi.QueryOperationalIntentReferencesResponseSet{Response200: response}

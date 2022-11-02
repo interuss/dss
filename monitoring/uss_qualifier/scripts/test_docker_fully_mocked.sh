@@ -13,7 +13,7 @@ else
 fi
 cd "${BASEDIR}/../../.." || exit 1
 
-containers=(mock_uss_ridsp mock_uss_riddp mock_uss_scdsc dss_sandbox_local-dss-http-gateway_1)
+containers=(mock_uss_ridsp mock_uss_riddp mock_uss_scdsc dss_sandbox_local-dss-core-service_1)
 
 echo "Ensure the environment is clean"
 echo "============="

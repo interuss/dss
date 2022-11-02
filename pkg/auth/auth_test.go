@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -16,7 +15,6 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/status"
 )
 
 func rsaTokenReq(key *rsa.PrivateKey, exp, nbf int64) *http.Request {
@@ -55,7 +53,7 @@ func TestNewRSAAuthClient(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tmpfile, err := ioutil.TempFile("/tmp", "bad.pem")
+	tmpfile, err := os.CreateTemp("/tmp", "bad.pem")
 	require.NoError(t, err)
 	require.NoError(t, tmpfile.Close())
 	// Test catches previous segfault.
@@ -118,7 +116,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 			res := a.Authorize(nil, test.req, []api.AuthorizationOption{})
 			if test.code != stacktrace.ErrorCode(0) && stacktrace.GetCode(res.Error) != test.code {
 				t.Logf("%v", res.Error)
-				t.Errorf("expected: %v, got: %v, with message %s", test.code, status.Code(res.Error), res.Error.Error())
+				t.Errorf("expected: %v, got: %v, with message %s", test.code, stacktrace.GetCode(res.Error), res.Error.Error())
 			}
 		})
 	}

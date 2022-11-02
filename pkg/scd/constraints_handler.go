@@ -162,10 +162,9 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetCon
 		err = stacktrace.Propagate(err, "Could not get constraint")
 		if stacktrace.GetCode(err) == dsserr.NotFound {
 			return restapi.GetConstraintReferenceResponseSet{Response404: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}}
-		} else {
-			return restapi.GetConstraintReferenceResponseSet{Response500: &api.InternalServerErrorBody{
-				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+		return restapi.GetConstraintReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
 	return restapi.GetConstraintReferenceResponseSet{Response200: response}
