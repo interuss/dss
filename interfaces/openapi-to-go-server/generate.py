@@ -16,7 +16,7 @@ def _parse_args():
 
     # Input/output specifications
     parser.add_argument('--api', dest='apis', type=str, action='append',
-                        help='Source YAML to preprocess along with tags (if applicable) and the name of the API.  Form of --api PATH_TO_YAML#TAG1,TAG2@API_NAME')
+                        help='Source YAML to preprocess along with tags (if applicable) and the name of the API.  Form of --api PATH_TO_YAML#TAG1,TAG2@API_NAME[/PATH_PREFIX]')
     parser.add_argument('--api_folder', dest='api_folder', type=str,
                         default=None,
                         help='Folder that will hold the generated output for APIs')
@@ -132,7 +132,10 @@ def main():
     for api_declaration in args.apis:
         if '@' in api_declaration:
             input_yaml, package = api_declaration.split('@')
-            api_path = package
+            if '/' in package:
+                package, api_path = package.split('/', 1)
+            else:
+                api_path = package
         else:
             input_yaml = api_declaration
             package = os.path.split(api_declaration)[-1].split('.')[0]
