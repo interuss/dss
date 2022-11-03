@@ -29,12 +29,20 @@ class MockUSSClient(object):
         return fetch.describe_query(resp, initiated_at)
 
     # TODO: Add other methods to interact with the mock USS in other ways (like starting/stopping message signing data collection)
+    def start_msg_sign_recording(self) -> fetch.Query:
+        initiated_at = arrow.utcnow().datetime
+        resp = self.session.post("/scdsc/v1/startreport", scope=SCOPE_SCD_QUALIFIER_INJECT)
+        return fetch.describe_query(resp, initiated_at)
 
+    def stop_msg_sign_recording(self) -> fetch.Query:
+        initiated_at = arrow.utcnow().datetime
+        resp = self.session.post("/scdsc/v1/endreport", scope=SCOPE_SCD_QUALIFIER_INJECT)
+        return fetch.describe_query(resp, initiated_at)
 
 class MockUSSSpecification(ImplicitDict):
     mock_uss_base_url: str
     """The base URL for the mock USS.
-    
+
     If the mock USS had scdsc enabled, for instance, then these URLs would be
     valid:
       * <mock_uss_base_url>/mock/scd/uss/v1/reports

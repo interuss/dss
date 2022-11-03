@@ -1,6 +1,6 @@
 import datetime, json
 from typing import Dict, List, Optional
-from monitoring.monitorlib.typing import ImplicitDict
+from implicitdict import ImplicitDict
 from monitoring.monitorlib import fetch
 from pathlib import Path
 
