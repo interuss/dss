@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -51,7 +51,7 @@ func (r *FromFileKeyResolver) ResolveKeys(context.Context) ([]interface{}, error
 	}
 
 	for _, f := range r.KeyFiles {
-		bytes, err := ioutil.ReadFile(f)
+		bytes, err := os.ReadFile(f)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error reading key file")
 		}

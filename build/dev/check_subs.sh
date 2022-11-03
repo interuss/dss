@@ -15,7 +15,7 @@ if jq --version > /dev/null; then
 fi
 
 # Retrieve token from dummy OAuth server
-ACCESS_TOKEN=$(curl --silent -X POST \
+ACCESS_TOKEN=$(curl --silent -X GET \
   "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost" \
   | jq -r '.access_token')
 

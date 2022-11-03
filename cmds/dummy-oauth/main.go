@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/rsa"
 	"flag"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -94,7 +94,7 @@ func main() {
 	flag.Parse()
 
 	// Read private key
-	bytes, err := ioutil.ReadFile(*keyFile)
+	bytes, err := os.ReadFile(*keyFile)
 	if err != nil {
 		log.Panic(err)
 	}

@@ -10,7 +10,6 @@ COMMIT := $(shell scripts/git/commit.sh)
 # (ie v0.0.1-g6a64c20, see RELEASE.md for more details).
 DSS_VERSION_TAG := $(shell scripts/git/version.sh dss)
 
-GENERATOR_TAG := generator:${DSS_VERSION_TAG}
 
 # Build and version information is baked into the executable itself.
 BUILD_LDFLAGS := -X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/build.commit=$(COMMIT) -X github.com/interuss/dss/pkg/build.host=$(shell hostname)
@@ -35,10 +34,6 @@ go.mod:
 
 .PHONY: format
 format:
-	clang-format -style=file -i pkg/api/v1/ridpbv1/rid.proto
-	clang-format -style=file -i pkg/api/v2/ridpbv2/rid.proto
-	clang-format -style=file -i pkg/api/v1/scdpb/scd.proto
-	clang-format -style=file -i pkg/api/v1/auxpb/aux_service.proto
 	cd monitoring/uss_qualifier && make format
 	cd monitoring/monitorlib && make format
 	gofmt -s -w .
@@ -49,113 +44,11 @@ lint: go_lint shell_lint
 
 .PHONY: go_lint
 go_lint:
-	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
-	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all --skip-dirs /dss/build/workspace -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
+	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.50.1 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace --skip-files '.*\.gen\.go' -v -E gofmt,bodyclose,rowserrcheck,misspell,golint,staticcheck,vet
 
 .PHONY: shell_lint
 shell_lint:
 	find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
-
-
-
-pkg/api/v1/ridpbv1/rid.pb.go: pkg/api/v1/ridpbv1/rid.proto generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I/src \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--go_out=plugins=grpc:. $<
-
-pkg/api/v1/ridpbv1/rid.pb.gw.go: pkg/api/v1/ridpbv1/rid.proto pkg/api/v1/ridpbv1/rid.pb.go generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
-
-pkg/api/v1/ridpbv1/rid.proto: generator
-	[ -d $@ ] || mkdir -p pkg/api/v1/ridpbv1
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) openapi2proto \
-		-spec interfaces/rid/v1/remoteid/augmented.yaml -annotate \
-		-tag dss \
-		-indent 2 \
-		-package ridpbv1 > $@
-
-pkg/api/v2/ridpbv2/rid.pb.go: pkg/api/v2/ridpbv2/rid.proto generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I/src \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--go_out=plugins=grpc:. $<
-
-pkg/api/v2/ridpbv2/rid.pb.gw.go: pkg/api/v2/ridpbv2/rid.proto pkg/api/v2/ridpbv2/rid.pb.go generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
-
-pkg/api/v2/ridpbv2/rid.proto: interfaces/rid_v2_adjusted.yaml generator
-	[ -d $@ ] || mkdir -p pkg/api/v2/ridpbv2
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) openapi2proto \
-		-spec interfaces/rid_v2_adjusted.yaml -annotate \
-		-tag dss \
-		-indent 2 \
-		-package ridpbv2 > $@
-
-interfaces/rid_v2_adjusted.yaml: interfaces/rid/v2/remoteid/canonical.yaml
-	./interfaces/adjuster/adjust_openapi_yaml.sh ./interfaces/rid/v2/remoteid/canonical.yaml ./interfaces/rid_v2_adjusted.yaml --adjustment_profile rid --path_prefix /rid/v2
-
-pkg/api/v1/auxpb/aux_service.pb.go: pkg/api/v1/auxpb/aux_service.proto generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--go_out=plugins=grpc:. $<
-
-pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.proto pkg/api/v1/auxpb/aux_service.pb.go generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
-
-pkg/api/v1/scdpb/scd.pb.go: pkg/api/v1/scdpb/scd.proto generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--go_out=plugins=grpc:. $<
-
-pkg/api/v1/scdpb/scd.pb.gw.go: pkg/api/v1/scdpb/scd.proto pkg/api/v1/scdpb/scd.pb.go generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
-
-interfaces/scd_adjusted.yaml: interfaces/astm-utm/Protocol/utm.yaml
-	./interfaces/adjuster/adjust_openapi_yaml.sh ./interfaces/astm-utm/Protocol/utm.yaml ./interfaces/scd_adjusted.yaml --adjustment_profile scd
-
-pkg/api/v1/scdpb/scd.proto: interfaces/scd_adjusted.yaml generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) openapi2proto \
-		-spec interfaces/scd_adjusted.yaml -annotate \
-		-tag dss \
-		-indent 2 \
-		-package scdpb > $@
-
-generator:
-	docker build --rm -t $(GENERATOR_TAG) build/generator
-
-.PHONY: protos
-protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpbv1/rid.pb.gw.go pkg/api/v1/scdpb/scd.pb.gw.go pkg/api/v2/ridpbv2/rid.pb.gw.go format
 
 # --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
 .PHONY: apis

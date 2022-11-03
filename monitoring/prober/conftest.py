@@ -178,19 +178,19 @@ def subscriber(pytestconfig) -> Optional[str]:
   """Subscriber of USS making UTM API calls"""
   if pytestconfig.getoption(OPT_RID_AUTH):
     session = make_session(pytestconfig, BASE_URL_RID, OPT_RID_AUTH)
-    session.get('/status', scope=rid.SCOPE_READ)
+    session.get('/healthy', scope=rid.SCOPE_READ)
     rid_sub = session.auth_adapter.get_sub()
     if rid_sub:
       return rid_sub
   if pytestconfig.getoption(OPT_SCD_AUTH1):
     scd_session = make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH1)
-    scd_session.get('/status', scope=scd.SCOPE_SC)
+    scd_session.get('/healthy', scope=scd.SCOPE_SC)
     scd_sub = scd_session.auth_adapter.get_sub()
     if scd_sub:
       return scd_sub
   if pytestconfig.getoption(OPT_SCD_AUTH2):
     scd_session2 = make_session(pytestconfig, BASE_URL_SCD, OPT_SCD_AUTH2)
-    scd_session2.get('/status', scope=scd.SCOPE_SC)
+    scd_session2.get('/healthy', scope=scd.SCOPE_SC)
     scd2_sub = scd_session2.auth_adapter.get_sub()
     if scd2_sub:
       return scd2_sub

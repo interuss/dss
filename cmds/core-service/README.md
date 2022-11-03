@@ -2,7 +2,9 @@
 
 ## Introduction
 
-This core-service executable is the main application logic of the DSS.  It requires a connection to a CockroachDB database and exposes a few gRPC services: [ASTM remote ID](../../interfaces/rid), [auxiliary](../../pkg/api/v1/auxpb/aux_service.proto), and [ASTM strategic coordination](../../interfaces/astm-utm/Protocol) (if specified).
+This core-service executable is the main application logic of the DSS.  It requires a connection to a CockroachDB
+database and exposes a few REST services: [ASTM remote ID](../../interfaces/rid),
+[auxiliary](../../interfaces/aux), and [ASTM strategic coordination](../../interfaces/astm-utm/Protocol) (if specified).
 
 ## Usage
 
@@ -16,7 +18,6 @@ To run this executable directly on a local machine using Go rather than a Docker
 go run ./cmds/core-service \
   -cockroach_host localhost \
   -public_key_files build/test-certs/auth2.pem \
-  -reflect_api \
   -log_format console \
   -dump_requests \
   -accepted_jwt_audiences localhost \

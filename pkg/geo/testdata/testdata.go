@@ -42,8 +42,8 @@ var (
 		Footprint:  LoopPolygon,
 	}
 
-	TimeStart = time.Unix(10000, 0).Format(time.RFC3339)
-	TimeEnd   = time.Unix(10060, 0).Format(time.RFC3339)
+	TimeStart = time.Unix(10000, 0).Format(time.RFC3339Nano)
+	TimeEnd   = time.Unix(10060, 0).Format(time.RFC3339Nano)
 
 	LoopVolume4D = restapi.Volume4D{
 		SpatialVolume: LoopVolume3D,
