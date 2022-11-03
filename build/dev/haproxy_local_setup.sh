@@ -152,7 +152,7 @@ echo "Cleaning up any pre-existing core-service container"
 docker rm -f core-service-for-testing &> /dev/null || echo "No core service to clean up"
 
 echo "Starting core service on :8082"
-docker run -d --name core-service-for-testing \
+docker run -d --name core-service-for-testing -p 8082:8082 \
 	--link dss-crdb-cluster-for-testing:crdb \
 	--network dss_sandbox_default	\
 	-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
