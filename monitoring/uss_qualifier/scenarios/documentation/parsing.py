@@ -1,15 +1,19 @@
 import inspect
 import os
-from typing import List, Optional, Type, Dict
+from typing import List, Dict, Type
 
-from implicitdict import ImplicitDict
 import marko
 import marko.element
 import marko.inline
 
 from monitoring import uss_qualifier as uss_qualifier_module
 from monitoring.monitorlib.inspection import fullname, get_module_object_by_name
-from monitoring.uss_qualifier.reports.report import RequirementID
+from monitoring.uss_qualifier.scenarios.documentation.definitions import (
+    TestStepDocumentation,
+    TestCheckDocumentation,
+    TestCaseDocumentation,
+    TestScenarioDocumentation,
+)
 
 RESOURCES_HEADING = "resources"
 CLEANUP_HEADING = "cleanup"
@@ -17,44 +21,6 @@ TEST_SCENARIO_SUFFIX = " test scenario"
 TEST_CASE_SUFFIX = " test case"
 TEST_STEP_SUFFIX = " test step"
 TEST_CHECK_SUFFIX = " check"
-
-
-class TestCheckDocumentation(ImplicitDict):
-    name: str
-    url: Optional[str] = None
-    applicable_requirements: List[RequirementID]
-
-
-class TestStepDocumentation(ImplicitDict):
-    name: str
-    url: Optional[str] = None
-    checks: List[TestCheckDocumentation]
-
-
-class TestCaseDocumentation(ImplicitDict):
-    name: str
-    url: Optional[str] = None
-    steps: List[TestStepDocumentation]
-
-    def get_step_by_name(self, step_name: str) -> Optional[TestStepDocumentation]:
-        for step in self.steps:
-            if step.name == step_name:
-                return step
-        return None
-
-
-class TestScenarioDocumentation(ImplicitDict):
-    name: str
-    url: Optional[str] = None
-    resources: Optional[List[str]]
-    cases: List[TestCaseDocumentation]
-    cleanup: Optional[TestStepDocumentation]
-
-    def get_case_by_name(self, case_name: str) -> Optional[TestCaseDocumentation]:
-        for case in self.cases:
-            if case.name == case_name:
-                return case
-        return None
 
 
 _test_step_cache: Dict[str, TestStepDocumentation] = {}
@@ -204,9 +170,13 @@ def _parse_resources(values) -> List[str]:
     return resources
 
 
+def get_documentation_filename(scenario: Type) -> str:
+    return os.path.splitext(inspect.getfile(scenario))[0] + ".md"
+
+
 def _parse_documentation(scenario: Type) -> TestScenarioDocumentation:
     # Load the .md file matching the Python file where this scenario type is defined
-    doc_filename = os.path.splitext(inspect.getfile(scenario))[0] + ".md"
+    doc_filename = get_documentation_filename(scenario)
     if not os.path.exists(doc_filename):
         raise ValueError(
             "Test scenario `{}` does not have the required documentation file `{}`".format(
