@@ -24,7 +24,6 @@ def get_operational_intent_details(entityid: str):
             flight = f
             break
     response = None
-    status_code = 200
 
     # If requested operational intent doesn't exist, return 404
     if flight is None:
@@ -59,6 +58,7 @@ def get_operational_intent_details(entityid: str):
                     'code': 200,
                     'json': response
                 }
+                status_code = 200
             else:
                 failure_reasons = results['validation_issue']
                 error_message = "{}: {}".format(failure_reasons['summary'], failure_reasons['details'])
@@ -87,7 +87,6 @@ def get_operational_intent_details(entityid: str):
 def notify_operational_intent_details_changed():
     """Implements notifyOperationalIntentDetailsChanged in ASTM SCD API."""
     # Check message signing headers only if the message signing feature is on.
-    status_code = 204
     response = ''
     if os.environ.get('MESSAGE_SIGNING', None) == "true":
         try:
@@ -100,6 +99,7 @@ def notify_operational_intent_details_changed():
                     'code': 204,
                     'json': None
                 }
+                status_code = 204
             else:
                 failure_reasons = results['validation_issue']
                 error_message = "{}: {}".format(failure_reasons['summary'], failure_reasons['details'])
