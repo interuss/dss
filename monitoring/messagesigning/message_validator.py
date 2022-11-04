@@ -16,8 +16,12 @@ class MessageValidatorService:
         self.request_covered_components = ['@method', '@path', '@query', 'authorization', 'content-type', 'content-digest', 'x-utm-jws-header']
         self.response_covered_components = ["@status", "content-type", "content-digest", "x-utm-jws-header"]
         self.public_key = None
+        self.results = {
+            'validation_passed': True
+        }
 
     def analyze_headers(self, interaction_id, signature_info, validation_type):
+        self.results = {'validation_passed': True}
         self.scan_for_missing_headers(interaction_id, signature_info, validation_type)
 
     def scan_for_missing_headers(self, interaction_id, signature_info, validation_type):
@@ -26,13 +30,12 @@ class MessageValidatorService:
         incoming_headers_set = set(list(self.headers.keys()))
         is_missing_message_signing_headers = len(self.required_message_signing_headers.intersection(incoming_headers_set)) < len(self.required_message_signing_headers)
         if is_missing_message_signing_headers:
-            error_message = "Incoming {} request to {} is missing message signing headers.\nRequired: {}\nProvided: {}".format(
-            signature_info['method'], signature_info['url'], self.required_message_signing_headers, incoming_headers_set)
-
+            error_message = "The {} headers are missing some message signing headers.\nRequired: {}\nProvided: {}".format(
+            validation_type, self.required_message_signing_headers, incoming_headers_set)
             logger.warning(error_message)
         else:
-            logger.info("{} request to {} has the required message signing headers. Validating...".format(
-         signature_info['method'], signature_info['url']
+            logger.info("{} headers have all the required message signing headers. Validating...".format(
+                validation_type
         ))
             self.check_content_digests(interaction_id, signature_info, validation_type)
             self.check_message_signing_headers(interaction_id, signature_info, validation_type)
@@ -58,7 +61,15 @@ class MessageValidatorService:
                 'details': "Mismatched content-digest values. From the header: {} Content Digest value that was calculated from the {} body: {}".format(content_digest_from_header, validation_type, generated_content_digest),
                 'interactions': [interaction_id]
             }
-            report_settings.reprt_recorder.capture_issue(issue)
+            if validation_type == 'response': # Only responses will have an interaction id at this point
+                report_settings.reprt_recorder.capture_issue(issue)
+            else:
+                self.results['validation_passed'] = False
+                self.results['validation_issue'] = {
+                    'test_context': test_context,
+                    'summary': error_message,
+                    'details': issue['details']
+                }
         else:
             logger.info("Content digests validated!")
 
@@ -88,7 +99,15 @@ class MessageValidatorService:
                 'details': error_message,
                 'interactions': [interaction_id]
             }
-            report_settings.reprt_recorder.capture_issue(issue)
+            if validation_type == 'response': # Only responses will have an interaction id at this point
+                report_settings.reprt_recorder.capture_issue(issue)
+            else:
+                self.results['validation_passed'] = False
+                self.results['validation_issue'] = {
+                    'test_context': test_context,
+                    'summary': error_message,
+                    'details': issue['details']
+                }
             return
         try:
             pub_key_response = requests.get(endpoint_for_public_key)
@@ -107,7 +126,15 @@ class MessageValidatorService:
                 ),
                 'interactions': [interaction_id]
             }
-            report_settings.reprt_recorder.capture_issue(issue)
+            if validation_type == 'response': # Only responses will have an interaction id at this point
+                report_settings.reprt_recorder.capture_issue(issue)
+            else:
+                self.results['validation_passed'] = False
+                self.results['validation_issue'] = {
+                    'test_context': test_context,
+                    'summary': error_message,
+                    'details': issue['details']
+                }
             return
         logger.info("Successfully retreived public key! Verifying signature...")
         self.verify(interaction_id, signature_info, validation_type)
@@ -157,7 +184,15 @@ class MessageValidatorService:
                 'details': "Error building signature base: " + str(e),
                 'interactions': [interaction_id]
             }
-            report_settings.reprt_recorder.capture_issue(issue)
+            if validation_type == 'response': # Only responses will have an interaction id at this point
+                report_settings.reprt_recorder.capture_issue(issue)
+            else:
+                self.results['validation_passed'] = False
+                self.results['validation_issue'] = {
+                    'test_context': test_context,
+                    'summary': "There was an error building the signature base during the validation process. There might be some malformed signature headers.",
+                    'details': issue['details']
+                }
 
     def verify(self, interaction_id, signature_info, validation_type):
         test_context = {
@@ -185,7 +220,15 @@ class MessageValidatorService:
                 'details': str(e),
                 'interactions': [interaction_id]
             }
-            report_settings.reprt_recorder.capture_issue(issue)
+            if validation_type == 'response':
+                report_settings.reprt_recorder.capture_issue(issue) # Only responses will have an interaction id at this point
+            else:
+                self.results['validation_passed'] = False
+                self.results['validation_issue'] = {
+                    'test_context': test_context,
+                    'summary': error_message,
+                    'details': issue['details']
+                }
 
     def http_dictionary_to_dict(self, http_dictionary):
        return {item.split('=')[0].strip().strip('\"'): item.split('=')[1].strip().strip('\"') for item in http_dictionary.split(',')}

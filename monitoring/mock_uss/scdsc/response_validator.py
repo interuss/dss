@@ -19,6 +19,12 @@ def validate_response(response):
         }
         signature_info['body'] = json.dumps(response_body) if response_body else ''
         query = {
+           'request': {
+               'method': associated_request.method,
+               'url': associated_request.url,
+               'headers': json.dumps({k: v for k, v in associated_request.headers.items()}),
+               'body': associated_request.body.decode('utf-8') if associated_request.body else None 
+           },
            'response':  {
                'code': response.status_code,
                'headers': response.headers,
@@ -42,8 +48,6 @@ def validate_response(response):
 def get_response_body(response):
     try:
         data = response.json()
-        logger.info("The RESPONSE BODY STRING ALL CHARS IS: \n")
-        print(repr(json.dumps(data)))
         return data
     except Exception:
         return ''
