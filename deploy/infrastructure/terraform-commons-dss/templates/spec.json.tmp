@@ -1,0 +1,11 @@
+{
+  "apiVersion": "tanka.dev/v1alpha1",
+  "kind": "Environment",
+  "metadata": {
+    "name": "${cluster_context}"
+  },
+  "spec": {
+    "apiServer": "${api_server}",
+    "namespace": "${VAR_NAMESPACE}"
+  }
+}
