@@ -10,6 +10,7 @@ from implicitdict import StringBasedDateTime
 
 from monitoring import uss_qualifier as uss_qualifier_module
 from monitoring.monitorlib import fetch, inspection
+from monitoring.monitorlib.inspection import fullname
 from monitoring.uss_qualifier import scenarios as scenarios_module
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.reports.report import (
@@ -23,14 +24,14 @@ from monitoring.uss_qualifier.reports.report import (
     PassedCheck,
 )
 from monitoring.uss_qualifier.scenarios.definitions import TestScenarioDeclaration
-from monitoring.uss_qualifier.scenarios.documentation import (
-    get_documentation,
+from monitoring.uss_qualifier.scenarios.documentation.definitions import (
     TestScenarioDocumentation,
     TestCaseDocumentation,
     TestStepDocumentation,
     TestCheckDocumentation,
 )
 from monitoring.uss_qualifier.resources.definitions import ResourceTypeName, ResourceID
+from monitoring.uss_qualifier.scenarios.documentation.parsing import get_documentation
 
 
 class ScenarioPhase(str, Enum):
@@ -415,7 +416,7 @@ TestScenarioType = TypeVar("TestScenarioType", bound=TestScenario)
 
 def find_test_scenarios(
     module, already_checked: Optional[Set[str]] = None
-) -> Set[TestScenarioType]:
+) -> List[TestScenarioType]:
     if already_checked is None:
         already_checked = set()
     already_checked.add(module.__name__)
@@ -434,4 +435,6 @@ def find_test_scenarios(
             if issubclass(member, TestScenario):
                 if member not in test_scenarios:
                     test_scenarios.add(member)
-    return test_scenarios
+    result = list(test_scenarios)
+    result.sort(key=lambda s: fullname(s))
+    return result
