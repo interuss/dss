@@ -19,4 +19,4 @@ class DSSInteroperability(TestScenario):
         raise NotImplementedError()
 
     def run(self):
-        raise NotImplementedError('TODO: adapt from monitoring/interoperability')
+        raise NotImplementedError("TODO: adapt from monitoring/interoperability")
