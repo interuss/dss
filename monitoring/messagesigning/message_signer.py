@@ -8,11 +8,11 @@ import os
 import json
 from loguru import logger
 import urllib.parse
-
+from monitoring.messagesigning.config import Config
 
 def get_x_utm_jws_header():
       return '\"alg\"=\"{}\", \"typ\"=\"{}\", \"kid\"=\"{}\", \"x5u\"=\"{}\"'.format(
-        'RS256', 'JOSE', get_key_id(), os.environ['PUBLIC_KEY_ENDPOINT']
+        'RS256', 'JOSE', get_key_id(), 'http://host.docker.internal:8077/mock/scd/.well-known/uas-traffic-management/mock_pub.der'
       )
 
 def get_signed_headers(object_to_sign):
@@ -43,7 +43,7 @@ def get_signature(object_to_sign, signed_type):
   sig_base_bytes =  bytes(sig_base, 'utf-8')
   sig_input = get_signature_input(sig_base)
   hash = SHA256.new(sig_base_bytes)
-  with open("uft_priv.pem", "rb") as priv_key_file:
+  with open(Config.PRIVATE_KEY_PATH, "rb") as priv_key_file:
     private_key = RSA.import_key(priv_key_file.read())
   return base64.b64encode(pkcs1_15.new(private_key).sign(hash)).decode("utf-8"), sig_input
 

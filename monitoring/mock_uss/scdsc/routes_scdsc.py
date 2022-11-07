@@ -6,8 +6,10 @@ from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss.scdsc.database import db
 from loguru import logger
 import os
+import json
 import monitoring.mock_uss.scdsc.request_validator as request_validator
 from monitoring.mock_uss.scdsc import report_settings
+import monitoring.messagesigning.message_signer as signer
 
 import traceback
 
@@ -27,12 +29,12 @@ def get_operational_intent_details(entityid: str):
 
     # If requested operational intent doesn't exist, return 404
     if flight is None:
-        err_resp = scd.ErrorResponse(
+        response = scd.ErrorResponse(
             message='Operational intent {} not known by this USS'.format(
                 entityid
             )
         )
-        return flask.jsonify(err_resp), 404
+        status_code = 404
     else:
         # Return nominal response with details
         response = scd.GetOperationalIntentDetailsResponse(
@@ -62,12 +64,14 @@ def get_operational_intent_details(entityid: str):
             else:
                 failure_reasons = results['validation_issue']
                 error_message = "{}: {}".format(failure_reasons['summary'], failure_reasons['details'])
+                response = scd.ErrorResponse(message=error_message)
                 query['response'] = {
                     'code': 403,
-                    'json': {'message': error_message}
+                    'json': response
                 }
-                response = scd.ErrorResponse(message=error_message)
                 status_code = 403
+            resp = sign_response(flask.jsonify(response))
+            query['response']['headers'] = json.dumps({k: v for k, v in resp.headers.items()})
             interaction_id = report_settings.reprt_recorder.capture_interaction(
              query,
         'Checking that the message signing headers in the incoming {} request to the mock uss endpoint {} are valid.'.format(flask.request.method, flask.request.path),
@@ -79,7 +83,7 @@ def get_operational_intent_details(entityid: str):
             logger.error("Exception raised while validating message signing headers: " + str(e))
             logger.error(traceback.format_exc())
 
-    return flask.jsonify(response), status_code
+    return response, status_code
 
 
 @webapp.route("/mock/scd/uss/v1/operational_intents", methods=["POST"])
@@ -87,7 +91,7 @@ def get_operational_intent_details(entityid: str):
 def notify_operational_intent_details_changed():
     """Implements notifyOperationalIntentDetailsChanged in ASTM SCD API."""
     # Check message signing headers only if the message signing feature is on.
-    response = ''
+    response = flask.jsonify('')
     if os.environ.get('MESSAGE_SIGNING', None) == "true":
         try:
             analysis_result = request_validator.validate_message_signing_headers()
@@ -109,6 +113,8 @@ def notify_operational_intent_details_changed():
                 }
                 response = flask.jsonify(scd.ErrorResponse(message=error_message))
                 status_code = 403
+            resp = sign_response(response)
+            query['response']['headers'] = json.dumps({k: v for k, v in resp.headers.items()})
             interaction_id = report_settings.reprt_recorder.capture_interaction(
                 query,
             'Checking that the message signing headers in the incoming {} request to the mock uss endpoint {} are valid.'.format(flask.request.method, flask.request.path),
@@ -141,3 +147,13 @@ def make_uss_report():
 
     # Return the ErrorReport as the nominal response
     # TODO: Implement
+
+def sign_response(response):
+    try:
+        type_of_response = str(type(response))
+        if 'None' not in type_of_response and os.environ.get('MESSAGE_SIGNING', None) == "true":
+            signed_headers = signer.get_signed_headers(response)
+            response.headers.update(signed_headers)
+    except Exception as e:
+        logger.error("Could not sign response: " + str(e))
+    return response

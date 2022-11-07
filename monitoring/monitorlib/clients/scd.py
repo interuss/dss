@@ -7,23 +7,24 @@ from implicitdict import ImplicitDict
 import datetime
 import json
 from loguru import logger
+import os
 
 
 def create_subscription(utm_client: UTMClientSession, id: str):
     time_start = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
     time_end = (datetime.datetime.utcnow() + datetime.timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
     payload = {
-  "extents": {
-        "volume": {
-            "outline_circle": None,
-            "outline_polygon": {
-                "vertices": [
-                    {"lat": 7.40, "lng": 46.5 },
-                    {"lat": 7.50, "lng": 46.5 },
-                    {"lat": 7.50, "lng": 47.5 },
-                    {"lat": 7.40, "lng": 47.5 }
-                ]
-        },
+        "extents": {
+            "volume": {
+                "outline_circle": None,
+                "outline_polygon": {
+                    "vertices": [
+                        {"lat": 7.40, "lng": 46.5 },
+                        {"lat": 7.50, "lng": 46.5 },
+                        {"lat": 7.50, "lng": 47.5 },
+                        {"lat": 7.40, "lng": 47.5 }
+                    ]
+            },
             "altitude_lower": {
                 "value": 0.0,
                 "reference": "W84",
