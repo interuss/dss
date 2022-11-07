@@ -13,7 +13,7 @@ implementation.
 
 ### dss_instances
 
-A NetRIDDSSInstance containing at least two DSS instances complying with ASTM F3411-19.  The first instance is the "Primary DSS" instance and the other instances are the "Other DSS" instances.
+An astm.f3411.DSSInstance containing at least two DSS instances complying with ASTM F3411-19.  The first instance is the "Primary DSS" instance and the other instances are the "Other DSS" instances.
 
 ## Test sequence legend
 
