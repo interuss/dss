@@ -92,6 +92,5 @@ def _add_requirement_links(parent: marko.element.Element, doc_path: str) -> None
                     raise ValueError(
                         f"Found a {child.children[0].__class__.__name__} content element in a bolded (**strong emphasis**) section of documentation, but expected either a Link or RawText"
                     )
-                x = parent.children[i]
             else:
                 _add_requirement_links(child, doc_path)
