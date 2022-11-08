@@ -72,3 +72,9 @@ If a test scenario wants to perform a cleanup procedure follow any non-error ter
 2) Include a main section in the documentation named "Cleanup" that is documented like a test step (including, e.g., test checks when appropriate).
 
 The `cleanup()` method may not be overridden unless the cleanup phase is documented for that test scenario.  If the cleanup phase is documented for the test scenario, the `cleanup()` method must be overridden.
+
+### Reserved stylings
+
+#### Strong emphasis
+
+The strong emphasis styling (`**example**`) may only be used to identify requirement IDs (see "Test checks" section).  Requirement IDs must also link to the document in which they are defined, but this can be performed automatically with `make format` (which transforms, e.g., `**example.req.ID**` into `**[example.req.ID](path/to/example/req.md)`).

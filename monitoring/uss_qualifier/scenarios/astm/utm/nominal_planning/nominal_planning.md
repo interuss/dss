@@ -37,7 +37,7 @@ If either USS does not respond appropriately to the endpoint queried to determin
 
 #### Support BasicStrategicConflictDetection check
 
-If either USS does not support BasicStrategicConflictDetection, then this check will fail per **astm.f3548.v21.GEN0310** as the USS does not support the InterUSS implementation of that requirement.
+If either USS does not support BasicStrategicConflictDetection, then this check will fail per **[astm.f3548.v21.GEN0310](../../../../requirements/astm/f3548/v21.md)** as the USS does not support the InterUSS implementation of that requirement.
 
 ### Area clearing test step
 
@@ -45,7 +45,7 @@ Both USSs are requested to remove all flights from the area under test.
 
 #### Area cleared successfully check
 
-**interuss.automated_testing.flight_planning.ClearArea**
+**[interuss.automated_testing.flight_planning.ClearArea](../../../../requirements/interuss/automated_testing/flight_planning.md)**
 
 ## Plan first flight test case
 
@@ -61,14 +61,14 @@ The first flight intent should be successfully planned by the first flight plann
 
 #### Incorrectly planned check
 
-The second flight intent conflicts with the first flight that was already planned.  If the USS successfully plans the flight, it means they failed to detect the conflict with the pre-existing flight.  Therefore, this check will fail if the second USS indicates success in creating the flight from the user flight intent, per **astm.f3548.v21.SCD0035**.
+The second flight intent conflicts with the first flight that was already planned.  If the USS successfully plans the flight, it means they failed to detect the conflict with the pre-existing flight.  Therefore, this check will fail if the second USS indicates success in creating the flight from the user flight intent, per **[astm.f3548.v21.SCD0035](../../../../requirements/astm/f3548/v21.md)**.
 
 #### Failure check
 
-All flight intent data provided was complete and correct. It should have been processed successfully, allowing the USS to reject or accept the flight.  If the USS indicates that the injection attempt failed, this check will fail per **interuss.automated_testing.flight_planning.ExpectedBehavior**.
+All flight intent data provided was complete and correct. It should have been processed successfully, allowing the USS to reject or accept the flight.  If the USS indicates that the injection attempt failed, this check will fail per **[interuss.automated_testing.flight_planning.ExpectedBehavior](../../../../requirements/interuss/automated_testing/flight_planning.md)**.
 
 ## Cleanup
 
 ### Successful flight deletion check
 
-**interuss.automated_testing.flight_planning.DeleteFlightSuccess**
+**[interuss.automated_testing.flight_planning.DeleteFlightSuccess](../../../../requirements/interuss/automated_testing/flight_planning.md)**

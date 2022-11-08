@@ -21,11 +21,13 @@ from monitoring.uss_qualifier.reports.report import (
     PassedCheck,
     FailedCheck,
 )
-from monitoring.uss_qualifier.scenarios.documentation import (
-    get_documentation_by_name,
+from monitoring.uss_qualifier.scenarios.documentation.definitions import (
     TestScenarioDocumentation,
     TestCaseDocumentation,
     TestStepDocumentation,
+)
+from monitoring.uss_qualifier.scenarios.documentation.parsing import (
+    get_documentation_by_name,
 )
 
 JSONPath = str
