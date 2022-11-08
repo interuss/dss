@@ -1,5 +1,4 @@
 import os
-import sys
 import flask
 from loguru import logger
 from config import Config
