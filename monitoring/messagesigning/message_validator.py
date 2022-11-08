@@ -30,9 +30,27 @@ class MessageValidatorService:
         incoming_headers_set = set(list(self.headers.keys()))
         is_missing_message_signing_headers = len(self.required_message_signing_headers.intersection(incoming_headers_set)) < len(self.required_message_signing_headers)
         if is_missing_message_signing_headers:
-            error_message = "The {} headers are missing some message signing headers.\nRequired: {}\nProvided: {}".format(
+            error_message = "The {} headers are missing some message signing headers. Required: {}, Provided: {}".format(
             validation_type, self.required_message_signing_headers, incoming_headers_set)
-            logger.warning(error_message)
+            logger.error(error_message)
+            test_context = {
+            'test_name': 'Checking for the presence of message signing headers within the {}'.format(validation_type),
+            'test_case': 'The {} should have all required message signing headers.'.format(validation_type)}
+            issue = {
+                'context': test_context,
+                'summary': "Missing message signing headers.",
+                'details': error_message,
+                'interactions': [interaction_id]
+            }
+            if validation_type == 'response': # Only responses will have an interaction id at this point
+                report_settings.reprt_recorder.capture_issue(issue)
+            else:
+                self.results['validation_passed'] = False
+                self.results['validation_issue'] = {
+                    'test_context': test_context,
+                    'summary': error_message,
+                    'details': issue['details']
+                }
         else:
             logger.info("{} headers have all the required message signing headers. Validating...".format(
                 validation_type
