@@ -72,6 +72,10 @@ variable "dss_configuration" {
 
     # Fully-qualified domain name of your HTTPS Gateway ingress endpoint. For example, dss.example.com.
     crdb_external_nodes = list(string)
+
+    # Desired schemas versions
+    desired_rid_db_version = optional(string, "4.0.0")
+    desired_scd_db_version = optional(string, "3.1.0")
   })
 
   validation {
