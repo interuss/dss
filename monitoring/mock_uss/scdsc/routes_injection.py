@@ -83,7 +83,6 @@ def query_operational_intents(
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def scdsc_injection_status() -> Tuple[str, int]:
     """Implements USS status in SCD automated testing injection API."""
-    report_settings.reset()
     return flask.jsonify({'status': 'Ready', 'version': versioning.get_code_version()})
 
 @webapp.route('/scdsc/v1/startreport', methods=['POST'])
