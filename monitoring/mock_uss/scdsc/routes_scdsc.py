@@ -26,7 +26,7 @@ def get_operational_intent_details(entityid: str):
             flight = f
             break
     response = None
-
+    status_code = None
     # If requested operational intent doesn't exist, return 404
     if flight is None:
         response = scd.ErrorResponse(
@@ -47,6 +47,7 @@ def get_operational_intent_details(entityid: str):
                 )
             )
         )
+        status_code = 200
 
     # Check message signing headers only if the message signing feature is on.
     if os.environ.get('MESSAGE_SIGNING', None) == "true":

@@ -49,12 +49,9 @@ def query_operational_intents(
     op_intent_refs = scd_client.query_operational_intent_references(
         resources.utm_client, area_of_interest
     )
-    logger.info("DSS returned {} ops for the area".format(len(op_intent_refs)))
-
     tx = db.value
     get_details_for = []
     for op_intent_ref in op_intent_refs:
-        logger.info("Checking if need to get info for op id {}".format(op_intent_ref.id))
         if (
             op_intent_ref.id not in tx.cached_operations
             or tx.cached_operations[op_intent_ref.id].reference.version
@@ -64,7 +61,6 @@ def query_operational_intents(
 
     updated_op_intents = []
     for op_intent_ref in get_details_for:
-        logger.info("GETing details for {}".format(op_intent_ref.id))
         op_int, resp = scd_client.get_operational_intent_details(
             resources.utm_client, op_intent_ref.uss_base_url, op_intent_ref.id
         )
