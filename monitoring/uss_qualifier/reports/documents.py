@@ -62,14 +62,12 @@ def _parse_role_arguments(args: List[str]) -> List[TestedRequirementsTable]:
             raise ValueError(
                 f'Argument "{arg}" is invalid; arguments must be in the form of <PARTICIPANT_ID>[,<PARTICIPANT_ID>,...]=<REQUIREMENT_SET_ID>'
             )
-        req_set_id = cols[1]
+        req_set_id = RequirementSetID(cols[1])
         if req_set_id not in tables:
             tables[req_set_id] = []
         tables[req_set_id].extend(ParticipantID(s.strip()) for s in cols[0].split(","))
     return [
-        TestedRequirementsTable(
-            requirement_set=get_requirement_set(RequirementSetID(k)), participants=v
-        )
+        TestedRequirementsTable(requirement_set=get_requirement_set(k), participants=v)
         for k, v in tables.items()
     ]
 

@@ -70,4 +70,4 @@ All flight intent data provided is correct and valid and free of conflict in spa
 
 ### Successful flight deletion check
 
-**interuss.automated_testing.flight_planning.DeleteFlightSuccess**
+**[interuss.automated_testing.flight_planning.DeleteFlightSuccess](../../../requirements/interuss/automated_testing/flight_planning.md)**

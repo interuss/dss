@@ -13,7 +13,7 @@ ParticipantID = str
 """String that refers to a participant being qualified by uss_qualifier"""
 
 
-RequirementID = str
+RequirementID = str  # TODO: Use uss_qualifier.requirements.documentation.RequirementID
 
 
 class FailedCheck(ImplicitDict):
