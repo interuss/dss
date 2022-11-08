@@ -6,6 +6,6 @@
   },
   "spec": {
     "apiServer": "${api_server}",
-    "namespace": "${VAR_NAMESPACE}"
+    "namespace": "${namespace}"
   }
 }

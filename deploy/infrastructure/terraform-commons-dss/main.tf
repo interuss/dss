@@ -29,7 +29,7 @@ resource "local_file" "tanka_config_main" {
 resource "local_file" "tanka_config_spec" {
   content = templatefile("${path.module}/templates/spec.json.tmp", {
     root_path       = path.module
-    VAR_NAMESPACE   = var.dss_configuration.namespace
+    namespace       = var.dss_configuration.namespace
     cluster_context = var.kubernetes.kubectl_cluster_context_name
     api_server      = var.kubernetes.api_endpoint
   })
