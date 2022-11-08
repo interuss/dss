@@ -1,4 +1,3 @@
-
 output "generated_files_location" {
   value = <<-EOT
   Generated files location:

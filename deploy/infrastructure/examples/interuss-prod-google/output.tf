@@ -1,4 +1,3 @@
-
 output "crdb_addresses" {
   value = module.terraform-google-dss.crdb_addresses
 }
