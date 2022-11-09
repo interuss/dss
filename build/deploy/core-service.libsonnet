@@ -1,11 +1,56 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
+local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
+  metadata+: {
+    annotations: {
+      'kubernetes.io/ingress.global-static-ip-name': metadata.backend.ipName,
+      'kubernetes.io/ingress.allow-http': 'false',
+    },
+  },
+  spec: {
+    defaultBackend: {
+      service: {
+        name: 'core-service',
+        port: {
+          number: metadata.backend.port,
+        }
+      }
+    },
+  },
+};
+
 {
+  ManagedCertIngress(metadata): {
+    ingress: ingress(metadata) {
+      metadata+: {
+        annotations+: {
+          'networking.gke.io/managed-certificates': 'https-certificate',
+        },
+      },
+    },
+    managedCert: base.ManagedCert(metadata, 'https-certificate') {
+      spec: {
+        domains: [
+          metadata.backend.hostname,
+        ],
+      },
+    },
+  },
+
+  PresharedCertIngress(metadata, certName): ingress(metadata) {
+    metadata+: {
+      annotations+: {
+        'ingress.gcp.kubernetes.io/pre-shared-cert': certName,
+      },
+    },
+  },
+
   all(metadata): {
     service: base.Service(metadata, 'core-service') {
       app:: 'core-service',
       port:: metadata.backend.port,
+      type:: 'NodePort',
       enable_monitoring:: false,
     },
 
@@ -25,7 +70,7 @@ local volumes = import 'volumes.libsonnet';
               ports: [
                 {
                   containerPort: metadata.backend.port,
-                  name: 'grpc',
+                  name: 'http',
                 },
               ],
               volumeMounts: volumes.backendMounts,
@@ -42,10 +87,16 @@ local volumes = import 'volumes.libsonnet';
                 public_key_files: std.join(",", metadata.backend.pubKeys),
                 jwks_endpoint: metadata.backend.jwksEndpoint,
                 jwks_key_ids: std.join(",", metadata.backend.jwksKeyIds),
-                dump_requests: true,
-                accepted_jwt_audiences: metadata.gateway.hostname,
+                dump_requests: metadata.backend.dumpRequests,
+                accepted_jwt_audiences: metadata.backend.hostname,
                 locality: metadata.cockroach.locality,
                 enable_scd: metadata.enableScd,
+              },
+              readinessProbe: {
+                httpGet: {
+                  path: '/healthy',
+                  port: metadata.backend.port,
+                },
               },
             },
           },
