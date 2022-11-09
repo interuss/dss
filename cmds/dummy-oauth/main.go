@@ -90,52 +90,7 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth
 func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoauth.PostTokenRequest) dummyoauth.PostTokenResponseSet {
 	resp := dummyoauth.PostTokenResponseSet{}
 
-	var msgSig string
-	if req.XUtmMessageSignature != nil {
-		msgSig = *req.XUtmMessageSignature
-	} else {
-		e := "Missing XUtmMessageSignature header`"
-		eDisc := "XUtmMessageSignature header is required"
-		resp.Response400 = &dummyoauth.HttpErrorResponse{Error: &e, ErrorDescription: &eDisc}
-		return resp
-	}
-	log.Printf("XUtmMessageSignature header - %s ", msgSig)
-
-	// var msgSigInput string
-	// if (req.XUtmMessageSignatureInput != nil) && (*req.XUtmMessageSignatureInput != "") {
-	// 	msgSigInput = *req.XUtmMessageSignatureInput
-	// } else {
-	// 	e := "Missing XUtmMessageSignatureInput header`"
-	// 	eDisc := "XUtmMessageSignatureInput header is required"
-	// 	resp.Response400 = &dummyoauth.HttpErrorResponse{Error: &e, ErrorDescription: &eDisc}
-	// 	return resp
-	// }
-	// log.Printf("XUtmMessageSignatureInput header - %s ", msgSigInput)
-
-	// if req.XUtmJwsHeader != nil {
-	// 	log.Println("x-utm-jws-header is not nil")
-	// } else {
-	// 	e := "Missing XUtmJwsHeader header`"
-	// 	eDisc := "XUtmJwsHeader header is required"
-	// 	resp.Response400 = &dummyoauth.HttpErrorResponse{Error: &e, ErrorDescription: &eDisc}
-	// 	return resp
-	// }
-
-	// log.Printf("XUtmJwsHeader header - %s  %s %s %s", *req.XUtmJwsHeader.Alg, *req.XUtmJwsHeader.Kid,
-	// 	*req.XUtmJwsHeader.Typ, *req.XUtmJwsHeader.X5U)
-
-	// var contentDigest string
-	// if req.ContentDigest != nil {
-	// 	contentDigest = *req.ContentDigest
-	// } else {
-	// 	e := "Missing ContentDigest header`"
-	// 	eDisc := "ContentDigest header is required"
-	// 	resp.Response400 = &dummyoauth.HttpErrorResponse{Error: &e, ErrorDescription: &eDisc}
-	// 	return resp
-	// }
-
-	// log.Printf("ContentDigest header - %s ", contentDigest)
-
+    // Note - validation for message signed headers in token request can be added here
 	var body dummyoauth.TokenRequestForm
 	if req.Body != nil {
 		body = *req.Body
