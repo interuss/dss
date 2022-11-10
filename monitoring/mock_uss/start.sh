@@ -20,6 +20,6 @@ cp health_check.sh /app
 # Start mock_uss server on port 5000
 gunicorn \
     --preload \
-    --workers=4 \
+    --workers=1 \
     --bind=0.0.0.0:5000 \
     monitoring.mock_uss:webapp
