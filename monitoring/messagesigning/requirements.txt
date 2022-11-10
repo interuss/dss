@@ -1,0 +1,5 @@
+flask==1.1.2
+loguru
+itsdangerous==2.0.1 # Version 2.1.0 is not compatible with flask 1.1.2.
+Jinja2==3.0.3
+Werkzeug==2.0.3
