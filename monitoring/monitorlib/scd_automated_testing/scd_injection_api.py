@@ -111,7 +111,6 @@ class ClearAreaOutcome(ImplicitDict):
 
 
 class ClearAreaResponse(ImplicitDict):
-    request: ClearAreaRequest
     outcome: ClearAreaOutcome
 
 
