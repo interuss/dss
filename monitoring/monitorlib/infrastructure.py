@@ -1,12 +1,15 @@
 import asyncio
 import datetime
+import json
 import functools
+import os
 from typing import Dict, List, Optional
 import urllib.parse
 from aiohttp import ClientSession
-
+from loguru import logger
 import jwt
 import requests
+import monitoring.messagesigning.message_signer as signer
 
 ALL_SCOPES = [
     "dss.write.identification_service_areas",
@@ -53,6 +56,13 @@ class AuthAdapter(object):
     def add_headers(self, request: requests.PreparedRequest, scopes: List[str]):
         for k, v in self.get_headers(request.url, scopes).items():
             request.headers[k] = v
+        try:
+            if os.environ.get('MESSAGE_SIGNING', None) == "true":
+                signed_headers = signer.get_signed_headers(request)
+                request.headers.update(signed_headers)
+        except Exception as e:
+            logger.error("ERROR signing outgoing request.")
+            logger.error(str(e))
 
     def get_sub(self) -> Optional[str]:
         """Retrieve `sub` claim from one of the existing tokens"""
