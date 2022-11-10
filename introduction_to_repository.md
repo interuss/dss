@@ -48,8 +48,6 @@ When building new monitoring tools, we recommend using Docker containers as a wa
 - [tracer_subscribe](monitoring/tracer/tracer_subscribe.py) creates Subscriptions in the DSS for various object types (ISAs, Operations, Constraints) and then listens for incoming push notifications from other USSs when there are changes to any of those monitored object types.  tracer_subscribe also exposes a small web interface to make its logs easily accessible (the ones from both tracer_subscribe and tracer_poll, if they are both running at the same time).
 - [tracer_subscribe](monitoring/tracer/tracer_subscribe.py) also has the capability to make a single, one-off RID poll involving querying the DSS for ISAs, and then calling out to each applicable USS's /flights endpoint (and /flights/{id}/details, when appropriate) to get the current information.
 
-#### Remote ID Qualifier
+#### USS Qualifier
 
-- The [rid_qualifier](monitoring/uss_qualifier/rid/README.md) is a test suite for testing / qualifying remote-ID performance and qualification, this is useful for testing out USS compliance with RemoteID standard.
-- The RemoteID qualifier develops flight tracks for a geographical bounding and a payload object based on these tracks.
-- The test suite then performs various queries based on the bounding boxes to test output data from the USS.
+The [uss_qualifier](monitoring/uss_qualifier/README.md) is a test suite for testing / qualifying USS compliance with requirements including ASTM NetRID, flight planning, and more.

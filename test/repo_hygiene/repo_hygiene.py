@@ -24,6 +24,8 @@ def main() -> int:
 
     check_md_files(args.repo_location, args.repo_location)
 
+    print("No repository hygiene problems found.")
+
     return os.EX_OK
 
 

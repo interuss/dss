@@ -42,9 +42,6 @@ Management (UTM) UAS Service Supplier (USS) Interoperability Specification.
 
 - [Introduction to monitoring, conformance and interoperability testing](./monitoring/README.md)<br>Modules:
   - [USS qualifier](./monitoring/uss_qualifier)
-    - [Remote ID qualification](./monitoring/uss_qualifier/rid)
-    - [Strategic Coordination and UAS Flight Authorisation qualification](./monitoring/uss_qualifier/scd)
-  - [DSSs interoperability tests](./monitoring/interoperability)
   - [DSS integration test: prober](./monitoring/prober)
   - [DSS load test](./monitoring/loadtest)
   - [Diagnostic tool to monitor DSS and USS interactions: tracer](./monitoring/tracer)
