@@ -8,13 +8,13 @@ else
 	BASEDIR=$(readlink -e "$(dirname "$0")")
 fi
 
-cd "${BASEDIR}"
+cd "${BASEDIR}" || exit
 
 docker image build . -t interuss/repo_hygiene
 
-cd ../..
+cd ../.. || exit
 
 docker container run \
-	-v $(pwd):/repo \
+	-v "$(pwd):/repo" \
 	interuss/repo_hygiene \
   /repo
