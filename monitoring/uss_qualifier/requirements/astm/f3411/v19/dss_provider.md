@@ -25,6 +25,20 @@ All DSS instance provider requirements can be verified by automation.
 * **astm.f3411.v19.DSS0110**
 * **astm.f3411.v19.DSS0120**
 * **astm.f3411.v19.DSS0130**
+    * **astm.f3411.v19.A2-6-1,1a**
+    * **astm.f3411.v19.A2-6-1,1b**
+    * **astm.f3411.v19.A2-6-1,1c**
+    * **astm.f3411.v19.A2-6-1,1d**
+    * **astm.f3411.v19.A2-6-1,2a**
+    * **astm.f3411.v19.A2-6-1,2b**
+    * **astm.f3411.v19.A2-6-1,3a**
+    * **astm.f3411.v19.A2-6-1,3b**
+    * **astm.f3411.v19.A2-6-1,3c**
+    * **astm.f3411.v19.A2-6-1,3d**
+    * **astm.f3411.v19.A2-6-1,4a**
+    * **astm.f3411.v19.A2-6-1,4b**
+    * **astm.f3411.v19.A2-6-1,5**
+    * **astm.f3411.v19.A2-6-1,6**
 
 #### Test Environment Requirements
 
