@@ -33,6 +33,7 @@ from monitoring.mock_uss.scdsc.database import db
 from monitoring.monitorlib.uspace import problems_with_flight_authorisation
 from monitoring.monitorlib.clients.scd import OperationError
 from monitoring.mock_uss.scdsc import report_settings
+import monitoring.mock_uss.scdsc.response_validator as response_validator
 from loguru import logger
 import flask
 
@@ -63,6 +64,7 @@ def query_operational_intents(
         op_int, resp = scd_client.get_operational_intent_details(
             resources.utm_client, op_intent_ref.uss_base_url, op_intent_ref.id
         )
+        response_validator.validate_response(resp)
         updated_op_intents.append(op_int)
 
     with db as tx:
@@ -97,6 +99,10 @@ def scdsc_injection_end_reporter() -> Tuple[str, int]:
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def scd_capabilities() -> Tuple[str, int]:
     """Implements USS capabilities in SCD automated testing injection API."""
+    try:
+        scd_client.create_subscription(resources.utm_client, str(uuid.uuid4()))
+    except Exception as e:
+        logger.error("Could not create subscription: {}".format(str(e)))
     return flask.jsonify(
         CapabilitiesResponse(
             capabilities=[
@@ -218,6 +224,9 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
             reference=result.operational_intent_reference,
             details=req_body.operational_intent),
         result.subscribers)
+
+    for notify_response in notify_responses:
+        response_validator.validate_response(notify_response)
 
     # Store flight in database
     record = database.FlightRecord(
