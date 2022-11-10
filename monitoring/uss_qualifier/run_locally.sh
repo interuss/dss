@@ -51,6 +51,7 @@ docker run ${docker_args} --name uss_qualifier \
   -e QUALIFIER_OPTIONS="${QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
   -e AUTH_SPEC=${AUTH_SPEC} \
+  -e MESSAGE_SIGNING="true" \
   -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
   -v "${TESTED_REQS_FILE}:/app/monitoring/uss_qualifier/tested_requirements.html" \
   -v "${DOT_FILE}:/app/monitoring/uss_qualifier/report.gv" \
