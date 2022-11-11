@@ -376,7 +376,7 @@ a PR to that effect would be greatly appreciated.
       finished their rolling restarts.
 
 1.  Wait for services to initialize.  Verify that basic services are functioning
-    by navigating to https://your-domain.com/healthy.
+    by navigating to https://your-domain.example.com/healthy.
 
     - On Google Cloud, the highest-latency operation is provisioning of the
       HTTPS certificate which generally takes 10-45 minutes.  To track this
