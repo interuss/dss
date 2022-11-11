@@ -12,7 +12,7 @@ A "DSS Region" consists of one or more DSS instances sharing the same
 DSS Airspace Representation (DAR) by forming a single CockroachDB
 cluster.  In the simplified diagram above, two DSS instances share the
 same DAR via CRDB certificates and configuration which means the two
-Core Service may be used interchangeably.  USS 1 chooses to use only
+Core Services may be used interchangeably.  USS 1 chooses to use only
 instance 1 while USS 2 uses both instances for improved resilience to
 failures.
 
