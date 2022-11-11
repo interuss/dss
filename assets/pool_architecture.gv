@@ -41,8 +41,8 @@ digraph G {
     }
     CRDB1a -> PrivateKey1 [dir=back,style=dotted];
     CRDB1b -> PrivateKey1 [dir=back,style=dotted];
-    CoreService1a -> CoreService1b -> CRDB1a;
-    CoreService1b -> CoreService1a -> CRDB1b;
+    CoreService1b -> CRDB1a;
+    CoreService1a -> CRDB1b;
     LoadBalancer1 -> CoreService1a
     LoadBalancer1 -> CoreService1b
     }
@@ -59,8 +59,8 @@ digraph G {
     }
     CRDB2a -> PrivateKey2 [dir=back,style=dotted];
     CRDB2b -> PrivateKey2 [dir=back,style=dotted];
-    CoreService2a -> CoreService2b -> CRDB2a;
-    CoreService2b -> CoreService2a -> CRDB2b;
+    CoreService2b -> CRDB2a;
+    CoreService2a -> CRDB2b;
     LoadBalancer2 -> CoreService2a
     LoadBalancer2 -> CoreService2b
     }
@@ -77,8 +77,8 @@ digraph G {
     }
     CRDB3a -> PrivateKey3 [dir=back,style=dotted];
     CRDB3b -> PrivateKey3 [dir=back,style=dotted];
-    CoreService3a -> CoreService3b -> CRDB3a;
-    CoreService3b -> CoreService3a -> CRDB3b;
+    CoreService3b -> CRDB3a;
+    CoreService3a -> CRDB3b;
     LoadBalancer3 -> CoreService3a
     LoadBalancer3 -> CoreService3b
     }
