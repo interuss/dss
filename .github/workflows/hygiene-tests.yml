@@ -1,0 +1,26 @@
+name: Repository hygiene
+on:
+  pull_request: # All
+  push:
+    branches:
+    - master
+jobs:
+  hygiene-tests:
+    name: Test repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+    - name: Job information
+      run: |
+        echo "Job information"
+        echo "Trigger: ${{ github.event_name }}"
+        echo "Host: ${{ runner.os }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref }}"
+        docker images
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Run repo_hygiene
+      run: |
+        make hygiene

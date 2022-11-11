@@ -33,7 +33,7 @@ simply add its name as the first argument to `docker_e2e.sh`.  For example:
 
 ### Examining Core Service logs
 After a `docker_e2e.sh` run, the Core Service logs are automatically captured
-to [core-service-for-testing.log](../core-service-for-testing.log).
+to core-service-for-testing.log in the repository root.
 
 ## Lint checks
 One of the continuous integration presubmit checks on this repository checks Go

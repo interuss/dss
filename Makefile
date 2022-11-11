@@ -208,6 +208,10 @@ cleanup-test-cockroach:
 test-e2e:
 	test/docker_e2e.sh
 
+.PHONY: hygiene
+hygiene:
+	test/repo_hygiene/repo_hygiene.sh
+
 tag: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
 
 tag:
