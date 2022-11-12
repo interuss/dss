@@ -63,6 +63,7 @@ paths:
           description: >-
             The request was not properly formed
       summary: Generate an access token
+  /fims/token:
     post:
       summary: Request an access token.
       description: |
@@ -70,8 +71,6 @@ paths:
         suitable for authorizing data exchanges within the USS Network.
 
         Implemented per https://tools.ietf.org/html/rfc6749#section-3.2 .
-      security:
-        - fims-jws: []
       parameters:
         - in: header
           name: x-utm-message-signature
@@ -125,7 +124,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPErrorResponse'
 
-  /.well-known/oauth-authorization-server:
+  /fims/.well-known/oauth-authorization-server:
     get:
       tags:
         - /.well-known/
@@ -140,7 +139,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Metadata'
-  /.well-known/jwks.json:
+  /fims/.well-known/jwks.json:
     get:
       tags:
         - /.well-known/
@@ -237,8 +236,6 @@ components:
       properties:
         access_token:
           type: string
-          format: JwsCompactSerialization
-          description: see definitions/JwsCompactSerialization in this spec
         scope:
           type: string
           description: |
@@ -391,27 +388,9 @@ components:
       type: object
       description: Information provided at the `/.well-known/oauth-authorization-server` endpoint.
       required:
-        - iss
-        - token_endpoint
         - jwks_uri
-        - scopes_supported
-        - response_types_supported
-        - grant_types_supported
-        - token_endpoint_auth_methods_supported
-        - token_endpoint_auth_signing_alg_values_supported
-        - service_documentation
-        - jwt_claims
-        - signed_metadata
       additionalProperties: false
       properties:
-        iss:
-          type: string
-          format: url
-          description: The authorization server's issuer identifier, which is a URL that uses the "https" scheme and has no query or fragment components. This is the location where ".well-known" RFC 8615 resources containing information about the authorization server are published.  Using these well-known resources is described in Section 3.  The issuer identifier is used to prevent authorization server mix-up attacks, as described in "OAuth 2.0 Mix-Up Mitigation".
-        token_endpoint:
-          type: string
-          format: url
-          description: URL of the authorization server's token endpoint [RFC6749].  This is REQUIRED unless only the implicit grant type is used.
         jwks_uri:
           type: string
           format: uri
@@ -425,75 +404,6 @@ components:
             encryption keys are made available, a "use" (public key use)
             parameter value is REQUIRED for all keys in the referenced JWK Set
             to indicate each key's intended usage.
-        scopes_supported:
-          type: array
-          items:
-            type: string
-          description: JSON array containing a list of the OAuth 2.0 [RFC6749] "scope" values that this authorization server supports. Servers MAY choose not to advertise some supported scope values even when this parameter is used.
-        response_types_supported:
-          type: array
-          items:
-            type: string
-            enum:
-              - none
-          minItems: 0
-          maxItems: 0
-          description: |-
-            JSON array containing a list of the OAuth 2.0 "response_type" values that this authorization server supports. These values are required for responses from calls to the authorization endpoint, thus this array may be empty if no grant flows use the authorization endpoint, thus this server returns an empty array. (definitions in RFC 7591)
-            This field is required per RFC 8414, but this auth server does not support the flows that use this field, thus an empty array is returned.
-        grant_types_supported:
-          type: array
-          items:
-            type: string
-            enum:
-              - client_credentials
-          minItems: 1
-          maxItems: 1
-          description: JSON array containing a list of the OAuth 2.0 grant type values that this authorization server supports. (definitions in RFC 7591)
-        token_endpoint_auth_methods_supported:
-          type: array
-          items:
-            type: string
-            enum:
-              - private_key_jwt
-          minItems: 1
-          maxItems: 1
-          description: JSON array containing a list of client authentication methods supported by this token endpoint.  Client authentication method values are used in the "token_endpoint_auth_method" parameter defined in Section 2 of [RFC7591].  If omitted, the default is "client_secret_basic" -- the HTTP Basic Authentication Scheme specified in Section 2.3.1 of OAuth 2.0 [RFC6749]. FIMS-Authz will only support private_key_jwt.
-        token_endpoint_auth_signing_alg_values_supported:
-          type: array
-          items:
-            type: string
-            enum:
-              - HS256
-              - RS256
-              - ES256
-          minItems: 3
-          maxItems: 3
-          uniqueItems: true
-          description: |-
-            JSON array containing a list of the JWS signing algorithms (alg
-            values) supported by the token endpoint for the signature on the JWT
-            [JWT] used to authenticate the client at the token endpoint for the
-            `private_key_jwt` and `client_secret_jwt` authentication methods.
-            Servers SHOULD support "RS256". The value "none" MUST NOT be used.
-
-            See UFAA doc for details.
-        service_documentation:
-          type: string
-          format: url
-          description: URL of a page containing human-readable information that developers might want or need to know when using the authorization server.  In particular, if the authorization server does not support Dynamic Client Registration, then information on how to register clients needs to be provided in this documentation.
-        jwt_claims:
-          $ref: '#/components/schemas/JwtClaimsSet'
-        signed_metadata:
-          type: string
-          format: JWT
-          description: |
-            A JWT containing metadata values about the authorization server as
-            claims.  This is a string value consisting of the entire signed
-            JWT.  A "signed_metadata" metadata value SHOULD NOT appear as a
-            claim in the JWT.
-
-            Refer to RFC8414 - https://tools.ietf.org/html/rfc8414#section-2.1
     HTTPErrorResponse:
       type: object
       properties:

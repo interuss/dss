@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-
 	"github.com/interuss/dss/cmds/dummy-oauth/api"
 )
 
@@ -82,11 +81,11 @@ func (s *APIRouter) GetToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func (s *APIRouter) PostToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
-	var req PostTokenRequest = *new(PostTokenRequest)
+func (s *APIRouter) PostFimsToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req PostFimsTokenRequest = *new(PostFimsTokenRequest)
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &PostTokenSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, &PostFimsTokenSecurity)
 
 	msig := r.Header.Get("x-utm-message-signature")
 	req.XUtmMessageSignature = &msig
@@ -99,7 +98,7 @@ func (s *APIRouter) PostToken(exp *regexp.Regexp, w http.ResponseWriter, r *http
 	var jwsh xUtmMessageSignatureJoseHeader
 	err := json.Unmarshal([]byte(r.Header.Get("x-utm-jws-header")), &jwsh)
 	if err != nil {
-		log.Printf("Unable to unmarshal x-utm-jws-header %s", err)
+		log.Printf("Unable to unmarshal x-utm-jws-header %s \n", err)
 	}
 	req.XUtmJwsHeader = &jwsh
 
@@ -124,15 +123,15 @@ func (s *APIRouter) PostToken(exp *regexp.Regexp, w http.ResponseWriter, r *http
 		api.WriteJSON(w, 400, data)
 		return
 	}
-	body.GrantType = r.FormValue("grant_type")
-	body.ClientID = r.FormValue("client_id")
+// 	body.GrantType = r.FormValue("grant_type")
+// 	body.ClientID = r.FormValue("client_id")
 	body.Audience = r.FormValue("audience")
 	body.Scope = r.FormValue("scope")
 	req.Body = &body
 	// Call implementation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	response := s.Implementation.PostToken(ctx, &req)
+	response := s.Implementation.PostFimsToken(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -150,16 +149,16 @@ func (s *APIRouter) PostToken(exp *regexp.Regexp, w http.ResponseWriter, r *http
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func (s *APIRouter) GetWellKnownOauthAuthorizationServer(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
-	var req GetWellKnownOauthAuthorizationServerRequest
+func (s *APIRouter) GetFimsWellKnownOauthAuthorizationServer(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req GetFimsWellKnownOauthAuthorizationServerRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &GetWellKnownOauthAuthorizationServerSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, &GetFimsWellKnownOauthAuthorizationServerSecurity)
 
 	// Call implementation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	response := s.Implementation.GetWellKnownOauthAuthorizationServer(ctx, &req)
+	response := s.Implementation.GetFimsWellKnownOauthAuthorizationServer(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -173,16 +172,16 @@ func (s *APIRouter) GetWellKnownOauthAuthorizationServer(exp *regexp.Regexp, w h
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func (s *APIRouter) GetWellKnownJwksJSON(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
-	var req GetWellKnownJwksJSONRequest
+func (s *APIRouter) GetFimsWellKnownJwksJSON(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req GetFimsWellKnownJwksJSONRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &GetWellKnownJwksJSONSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, &GetFimsWellKnownJwksJSONSecurity)
 
 	// Call implementation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	response := s.Implementation.GetWellKnownJwksJSON(ctx, &req)
+	response := s.Implementation.GetFimsWellKnownJwksJSON(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -202,14 +201,14 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	pattern := regexp.MustCompile("^/token")
 	router.Routes[0] = &api.Route{Method: "GET", Pattern: pattern, Handler: router.GetToken}
 
-	pattern = regexp.MustCompile("^/token")
-	router.Routes[1] = &api.Route{Method: "POST", Pattern: pattern, Handler: router.PostToken}
+	pattern = regexp.MustCompile("^/fims/token$")
+	router.Routes[1] = &api.Route{Method: "POST", Pattern: pattern, Handler: router.PostFimsToken}
 
-	pattern = regexp.MustCompile("^/.well-known/oauth-authorization-server$")
-	router.Routes[2] = &api.Route{Method: "GET", Pattern: pattern, Handler: router.GetWellKnownOauthAuthorizationServer}
+	pattern = regexp.MustCompile("^/fims/.well-known/oauth-authorization-server$")
+	router.Routes[2] = &api.Route{Method: "GET", Pattern: pattern, Handler: router.GetFimsWellKnownOauthAuthorizationServer}
 
-	pattern = regexp.MustCompile("^/.well-known/jwks.json$")
-	router.Routes[3] = &api.Route{Method: "GET", Pattern: pattern, Handler: router.GetWellKnownJwksJSON}
+	pattern = regexp.MustCompile("^/fims/.well-known/jwks.json$")
+	router.Routes[3] = &api.Route{Method: "GET", Pattern: pattern, Handler: router.GetFimsWellKnownJwksJSON}
 
 	return router
 }

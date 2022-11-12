@@ -86,8 +86,8 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth
 	return resp
 }
 
-func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoauth.PostTokenRequest) dummyoauth.PostTokenResponseSet {
-	resp := dummyoauth.PostTokenResponseSet{}
+func (s *DummyOAuthImplementation) PostFimsToken(ctx context.Context, req *dummyoauth.PostFimsTokenRequest) dummyoauth.PostFimsTokenResponseSet {
+	resp := dummyoauth.PostFimsTokenResponseSet{}
 
 	// Note - validation for message signed headers in token request can be added here
 	var body dummyoauth.TokenRequestForm
@@ -116,21 +116,21 @@ func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoaut
 		return resp
 	}
 
-	var grantType string = body.GrantType
-	if &grantType == nil {
-		e := "Missing grant_type in request `body`"
-		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
-		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
-		return resp
-	}
-
-	var curTime string = body.CurrentTimestamp
-	if &curTime == nil {
-		e := "Missing current_timestamp in request `body`"
-		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
-		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
-		return resp
-	}
+// 	var grantType string = body.GrantType
+// 	if &grantType == nil {
+// 		e := "Missing grant_type in request `body`"
+// 		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
+// 		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
+// 		return resp
+// 	}
+//
+// 	var curTime string = body.CurrentTimestamp
+// 	if &curTime == nil {
+// 		e := "Missing current_timestamp in request `body`"
+// 		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
+// 		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
+// 		return resp
+// 	}
 
 	var aud string = body.Audience
 	if &aud == nil {
@@ -168,15 +168,15 @@ func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoaut
 	return resp
 }
 
-func (s *DummyOAuthImplementation) GetWellKnownOauthAuthorizationServer(ctx context.Context, req *dummyoauth.GetWellKnownOauthAuthorizationServerRequest) dummyoauth.GetWellKnownOauthAuthorizationServerResponseSet {
-	response := dummyoauth.GetWellKnownOauthAuthorizationServerResponseSet{}
+func (s *DummyOAuthImplementation) GetFimsWellKnownOauthAuthorizationServer(ctx context.Context, req *dummyoauth.GetFimsWellKnownOauthAuthorizationServerRequest) dummyoauth.GetFimsWellKnownOauthAuthorizationServerResponseSet {
+	response := dummyoauth.GetFimsWellKnownOauthAuthorizationServerResponseSet{}
 
 	response.Response200 = &dummyoauth.Metadata{JwksURI: *jwksURI}
 	return response
 }
 
-func (s *DummyOAuthImplementation) GetWellKnownJwksJSON(ctx context.Context, req *dummyoauth.GetWellKnownJwksJSONRequest) dummyoauth.GetWellKnownJwksJSONResponseSet {
-	response := dummyoauth.GetWellKnownJwksJSONResponseSet{}
+func (s *DummyOAuthImplementation) GetFimsWellKnownJwksJSON(ctx context.Context, req *dummyoauth.GetFimsWellKnownJwksJSONRequest) dummyoauth.GetFimsWellKnownJwksJSONResponseSet {
+	response := dummyoauth.GetFimsWellKnownJwksJSONResponseSet{}
 
 	var jwkey dummyoauth.JSONWebKey = *new(dummyoauth.JSONWebKey)
 	e := "AQAB"

@@ -39,7 +39,6 @@ type BadRequestResponse struct {
 }
 
 type HTTPTokenResponse struct {
-	// see definitions/JwsCompactSerialization in this spec
 	AccessToken *string `json:"access_token"`
 
 	// The granted scope(s), a list of space-delimited,
@@ -144,12 +143,6 @@ type JwtClaimsSet struct {
 
 // Information provided at the `/.well-known/oauth-authorization-server` endpoint.
 type Metadata struct {
-	// The authorization server's issuer identifier, which is a URL that uses the "https" scheme and has no query or fragment components. This is the location where ".well-known" RFC 8615 resources containing information about the authorization server are published.  Using these well-known resources is described in Section 3.  The issuer identifier is used to prevent authorization server mix-up attacks, as described in "OAuth 2.0 Mix-Up Mitigation".
-	Iss string `json:"iss"`
-
-	// URL of the authorization server's token endpoint [RFC6749].  This is REQUIRED unless only the implicit grant type is used.
-	TokenEndpoint string `json:"token_endpoint"`
-
 	// URL of the authorization server's JWK Set
 	// document.  The referenced document contains the signing key(s) the
 	// client uses to validate signatures from the authorization server.
@@ -161,42 +154,6 @@ type Metadata struct {
 	// to indicate each key's intended usage.
 	//
 	JwksURI string `json:"jwks_uri"`
-
-	// JSON array containing a list of the OAuth 2.0 [RFC6749] "scope" values that this authorization server supports. Servers MAY choose not to advertise some supported scope values even when this parameter is used.
-	ScopesSupported []string `json:"scopes_supported"`
-
-	// JSON array containing a list of the OAuth 2.0 "response_type" values that this authorization server supports. These values are required for responses from calls to the authorization endpoint, thus this array may be empty if no grant flows use the authorization endpoint, thus this server returns an empty array. (definitions in RFC 7591)
-	// This field is required per RFC 8414, but this auth server does not support the flows that use this field, thus an empty array is returned.
-	ResponseTypesSupported []string `json:"response_types_supported"`
-
-	// JSON array containing a list of the OAuth 2.0 grant type values that this authorization server supports. (definitions in RFC 7591)
-	GrantTypesSupported []string `json:"grant_types_supported"`
-
-	// JSON array containing a list of client authentication methods supported by this token endpoint.  Client authentication method values are used in the "token_endpoint_auth_method" parameter defined in Section 2 of [RFC7591].  If omitted, the default is "client_secret_basic" -- the HTTP Basic Authentication Scheme specified in Section 2.3.1 of OAuth 2.0 [RFC6749]. FIMS-Authz will only support private_key_jwt.
-	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
-
-	// JSON array containing a list of the JWS signing algorithms (alg
-	// values) supported by the token endpoint for the signature on the JWT
-	// [JWT] used to authenticate the client at the token endpoint for the
-	// `private_key_jwt` and `client_secret_jwt` authentication methods.
-	// Servers SHOULD support "RS256". The value "none" MUST NOT be used.
-	//
-	// See UFAA doc for details.
-	TokenEndpointAuthSigningAlgValuesSupported []string `json:"token_endpoint_auth_signing_alg_values_supported"`
-
-	// URL of a page containing human-readable information that developers might want or need to know when using the authorization server.  In particular, if the authorization server does not support Dynamic Client Registration, then information on how to register clients needs to be provided in this documentation.
-	ServiceDocumentation string `json:"service_documentation"`
-
-	JwtClaims JwtClaimsSet `json:"jwt_claims"`
-
-	// A JWT containing metadata values about the authorization server as
-	// claims.  This is a string value consisting of the entire signed
-	// JWT.  A "signed_metadata" metadata value SHOULD NOT appear as a
-	// claim in the JWT.
-	//
-	// Refer to RFC8414 - https://tools.ietf.org/html/rfc8414#section-2.1
-	//
-	SignedMetadata string `json:"signed_metadata"`
 }
 
 type HTTPErrorResponse struct {

@@ -3,19 +3,15 @@ package dummyoauth
 
 import (
 	"context"
-
 	"github.com/interuss/dss/cmds/dummy-oauth/api"
 )
 
 var (
 	GetTokenSecurity  = map[string]api.SecurityScheme{}
-	PostTokenSecurity = map[string]api.SecurityScheme{
-		"fims-jws": []api.AuthorizationOption{
-			{RequiredScopes: []string{}},
-		},
-	}
-	GetWellKnownOauthAuthorizationServerSecurity = map[string]api.SecurityScheme{}
-	GetWellKnownJwksJSONSecurity                 = map[string]api.SecurityScheme{}
+	PostFimsTokenSecurity = map[string]api.SecurityScheme{
+    }
+	GetFimsWellKnownOauthAuthorizationServerSecurity = map[string]api.SecurityScheme{}
+	GetFimsWellKnownJwksJSONSecurity                 = map[string]api.SecurityScheme{}
 )
 
 type GetTokenRequest struct {
@@ -48,7 +44,7 @@ type GetTokenResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
-type PostTokenRequest struct {
+type PostFimsTokenRequest struct {
 	// The signature as defined in https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-message-signatures-11#section-4.2
 	XUtmMessageSignature *string
 
@@ -70,7 +66,7 @@ type PostTokenRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
-type PostTokenResponseSet struct {
+type PostFimsTokenResponseSet struct {
 	// OK
 	Response200 *HTTPTokenResponse
 
@@ -81,11 +77,11 @@ type PostTokenResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
-type GetWellKnownOauthAuthorizationServerRequest struct {
+type GetFimsWellKnownOauthAuthorizationServerRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
-type GetWellKnownOauthAuthorizationServerResponseSet struct {
+type GetFimsWellKnownOauthAuthorizationServerResponseSet struct {
 	// OK
 	Response200 *Metadata
 
@@ -93,11 +89,11 @@ type GetWellKnownOauthAuthorizationServerResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
-type GetWellKnownJwksJSONRequest struct {
+type GetFimsWellKnownJwksJSONRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
-type GetWellKnownJwksJSONResponseSet struct {
+type GetFimsWellKnownJwksJSONResponseSet struct {
 	// OK
 	Response200 *JSONWebKeySet
 
@@ -116,14 +112,14 @@ type Implementation interface {
 	//
 	// Implemented per https://tools.ietf.org/html/rfc6749#section-3.2 .
 	//
-	PostToken(ctx context.Context, req *PostTokenRequest) PostTokenResponseSet
+	PostFimsToken(ctx context.Context, req *PostFimsTokenRequest) PostFimsTokenResponseSet
 
 	// Provides metadata related to use of this authorization server
 	// ---
 	// Per RFC8414, this endpoint provides metadata related to use of this authorization
 	// server. See https://tools.ietf.org/html/rfc8414#section-3 for more details.
 	//
-	GetWellKnownOauthAuthorizationServer(ctx context.Context, req *GetWellKnownOauthAuthorizationServerRequest) GetWellKnownOauthAuthorizationServerResponseSet
+	GetFimsWellKnownOauthAuthorizationServer(ctx context.Context, req *GetFimsWellKnownOauthAuthorizationServerRequest) GetFimsWellKnownOauthAuthorizationServerResponseSet
 
 	// Serves the public JWKS of the authorization server
 	// ---
@@ -139,5 +135,5 @@ type Implementation interface {
 	//
 	// Refer to RFC7517 - https://tools.ietf.org/html/rfc7517
 	//
-	GetWellKnownJwksJSON(ctx context.Context, req *GetWellKnownJwksJSONRequest) GetWellKnownJwksJSONResponseSet
+	GetFimsWellKnownJwksJSON(ctx context.Context, req *GetFimsWellKnownJwksJSONRequest) GetFimsWellKnownJwksJSONResponseSet
 }
