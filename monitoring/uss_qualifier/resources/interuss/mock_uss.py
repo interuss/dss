@@ -28,7 +28,6 @@ class MockUSSClient(object):
         resp = self.session.get("/scdsc/v1/status", scope=SCOPE_SCD_QUALIFIER_INJECT)
         return fetch.describe_query(resp, initiated_at)
 
-    # TODO: Add other methods to interact with the mock USS in other ways (like starting/stopping message signing data collection)
     def start_msg_sign_recording(self) -> fetch.Query:
         initiated_at = arrow.utcnow().datetime
         resp = self.session.post("/scdsc/v1/startreport", scope=SCOPE_SCD_QUALIFIER_INJECT)

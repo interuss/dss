@@ -8,7 +8,8 @@ resources:
       specification:
         flight_planners:
         - participant_id: uss1
-          injection_base_url: http://host.docker.internal:10230/ussq
+          # Set injection_base_url to USS-under-test interface url. Eg - http://host.docker.internal:10230/ussq
+          injection_base_url: http://host.docker.internal:8074/scdsc
         - participant_id: mock_uss
           injection_base_url: http://host.docker.internal:8074/scdsc
     combination_selector:

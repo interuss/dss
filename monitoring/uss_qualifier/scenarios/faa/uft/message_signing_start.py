@@ -50,13 +50,12 @@ class StartMessageSigningReport(TestScenario):
 
         self.begin_test_step("Signal mock USS")
 
-        # TODO: Add call to mock USS to start message signing report
         start_query = self._mock_uss.start_msg_sign_recording()
         self.record_query(start_query)
         with self.check(
             "Successful start", participants=[self._mock_uss.participant_id]
         ) as check:
-            if start_query.status_code != 200:  # TODO: Insert appropriate check
+            if start_query.status_code != 200:
                 check.record_failed(
                     summary="Failed to start message signing report",
                     details="Status code {start_query.status_code}",
