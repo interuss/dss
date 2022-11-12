@@ -7,9 +7,8 @@ import (
 )
 
 var (
-	GetTokenSecurity  = map[string]api.SecurityScheme{}
-	PostFimsTokenSecurity = map[string]api.SecurityScheme{
-    }
+	GetTokenSecurity                                 = map[string]api.SecurityScheme{}
+	PostFimsTokenSecurity                            = map[string]api.SecurityScheme{}
 	GetFimsWellKnownOauthAuthorizationServerSecurity = map[string]api.SecurityScheme{}
 	GetFimsWellKnownJwksJSONSecurity                 = map[string]api.SecurityScheme{}
 )

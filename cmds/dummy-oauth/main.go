@@ -116,22 +116,6 @@ func (s *DummyOAuthImplementation) PostFimsToken(ctx context.Context, req *dummy
 		return resp
 	}
 
-// 	var grantType string = body.GrantType
-// 	if &grantType == nil {
-// 		e := "Missing grant_type in request `body`"
-// 		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
-// 		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
-// 		return resp
-// 	}
-//
-// 	var curTime string = body.CurrentTimestamp
-// 	if &curTime == nil {
-// 		e := "Missing current_timestamp in request `body`"
-// 		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
-// 		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
-// 		return resp
-// 	}
-
 	var aud string = body.Audience
 	if &aud == nil {
 		log.Print("Missing audience in requst body, setting it to no-aud")

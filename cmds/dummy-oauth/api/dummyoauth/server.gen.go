@@ -4,11 +4,11 @@ package dummyoauth
 import (
 	"context"
 	"encoding/json"
+	"github.com/interuss/dss/cmds/dummy-oauth/api"
 	"log"
 	"net/http"
 	"regexp"
 	"strconv"
-	"github.com/interuss/dss/cmds/dummy-oauth/api"
 )
 
 type APIRouter struct {
@@ -104,8 +104,6 @@ func (s *APIRouter) PostFimsToken(exp *regexp.Regexp, w http.ResponseWriter, r *
 
 	// Parse request body
 	var body TokenRequestForm
-	// defer r.Body.Close()
-	// req.BodyParseError = json.NewDecoder(r.Body).Decode(&body)
 
 	cd := r.Header.Get("content_digest")
 	if cd != "" {
@@ -123,8 +121,6 @@ func (s *APIRouter) PostFimsToken(exp *regexp.Regexp, w http.ResponseWriter, r *
 		api.WriteJSON(w, 400, data)
 		return
 	}
-// 	body.GrantType = r.FormValue("grant_type")
-// 	body.ClientID = r.FormValue("client_id")
 	body.Audience = r.FormValue("audience")
 	body.Scope = r.FormValue("scope")
 	req.Body = &body
