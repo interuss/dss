@@ -6,7 +6,7 @@ type TokenRequestForm struct {
 	GrantType string `json:"grant_type"`
 
 	// The client_id (uss_name) of the requesting USS.
-	ClientId string `json:"client_id"`
+	ClientID string `json:"client_id"`
 
 	// The requested scope(s), a list of space-delimited,
 	// case-sensitive names. Same as in RFC 6749.
@@ -38,7 +38,7 @@ type BadRequestResponse struct {
 	Message *string `json:"message"`
 }
 
-type HttpTokenResponse struct {
+type HTTPTokenResponse struct {
 	// see definitions/JwsCompactSerialization in this spec
 	AccessToken *string `json:"access_token"`
 
@@ -84,7 +84,7 @@ type xUtmMessageSignatureJoseHeader struct {
 }
 
 // The token provided by the FIMS Authorization Server is a JWS representing a JWT.  The token is actually a JWS Compact Serialization string as described in RFC 7515.  For clarity of documentation, we represent the pre-serialized components here as a JSON schema.
-type JsonWebToken struct {
+type JSONWebToken struct {
 	Header *JwtHeader `json:"header"`
 
 	Payload *JwtClaimsSet `json:"payload"`
@@ -139,7 +139,7 @@ type JwtClaimsSet struct {
 	Authorities *[]string `json:"authorities"`
 
 	// The client_id (uss_name) of the requesting USS.
-	ClientId *string `json:"client_id"`
+	ClientID *string `json:"client_id"`
 }
 
 // Information provided at the `/.well-known/oauth-authorization-server` endpoint.
@@ -160,7 +160,7 @@ type Metadata struct {
 	// parameter value is REQUIRED for all keys in the referenced JWK Set
 	// to indicate each key's intended usage.
 	//
-	JwksUri string `json:"jwks_uri"`
+	JwksURI string `json:"jwks_uri"`
 
 	// JSON array containing a list of the OAuth 2.0 [RFC6749] "scope" values that this authorization server supports. Servers MAY choose not to advertise some supported scope values even when this parameter is used.
 	ScopesSupported []string `json:"scopes_supported"`
@@ -199,19 +199,19 @@ type Metadata struct {
 	SignedMetadata string `json:"signed_metadata"`
 }
 
-type HttpErrorResponse struct {
+type HTTPErrorResponse struct {
 	Error *string `json:"error"`
 
 	ErrorDescription *string `json:"error_description"`
 }
 
-type JsonWebKeySet struct {
-	Keys *[]JsonWebKey `json:"keys"`
+type JSONWebKeySet struct {
+	Keys *[]JSONWebKey `json:"keys"`
 }
 
 // This schema defines what a client may expect to receive when requesting  a JWK/JWKS.
 // NOTE: Not all fields defined in this schema may be returned when in operational use.
-type JsonWebKey struct {
+type JSONWebKey struct {
 	Kty string `json:"kty"`
 
 	Use *string `json:"use"`

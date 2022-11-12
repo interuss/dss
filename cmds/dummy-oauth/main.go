@@ -16,10 +16,9 @@ import (
 )
 
 var (
-	address  = flag.String("addr", ":8085", "address")
-	keyFile  = flag.String("private_key_file", "../../build/test-certs/auth2.key", "OAuth private key file")
-	pemFile  = flag.String("public_key_file", "../../build/test-certs/auth2.pem", "OAuth public key file")
-	jwks_uri = flag.String("jwks_uri", "http://host.docker.internal:8085/.well-known/jwks.json", "JWKS URI")
+	address = flag.String("addr", ":8085", "address")
+	keyFile = flag.String("private_key_file", "../../build/test-certs/auth2.key", "OAuth private key file")
+	jwksURI = flag.String("jwks_uri", "http://host.docker.internal:8085/.well-known/jwks.json", "JWKS URI")
 )
 
 type DummyOAuthImplementation struct {
@@ -90,32 +89,30 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth
 func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoauth.PostTokenRequest) dummyoauth.PostTokenResponseSet {
 	resp := dummyoauth.PostTokenResponseSet{}
 
-    // Note - validation for message signed headers in token request can be added here
+	// Note - validation for message signed headers in token request can be added here
 	var body dummyoauth.TokenRequestForm
 	if req.Body != nil {
 		body = *req.Body
 	} else {
 		e := "Missing request `body`"
 		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
-		resp.Response400 = &dummyoauth.HttpErrorResponse{Error: &e, ErrorDescription: &eDisc}
+		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
 		return resp
 	}
 
-	var scope string
-	scope = body.Scope
+	var scope string = body.Scope
 	if &scope == nil {
 		e := "Missing scope in request `body`"
 		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
-		resp.Response400 = &dummyoauth.HttpErrorResponse{Error: &e, ErrorDescription: &eDisc}
+		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
 		return resp
 	}
 
-	var sub string
-	sub = body.ClientId
+	var sub string = body.ClientID
 	if &scope == nil {
 		e := "Missing clientId in request `body`"
 		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
-		resp.Response400 = &dummyoauth.HttpErrorResponse{Error: &e, ErrorDescription: &eDisc}
+		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
 		return resp
 	}
 
@@ -123,7 +120,7 @@ func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoaut
 	if &grantType == nil {
 		e := "Missing grant_type in request `body`"
 		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
-		resp.Response400 = &dummyoauth.HttpErrorResponse{Error: &e, ErrorDescription: &eDisc}
+		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
 		return resp
 	}
 
@@ -131,7 +128,7 @@ func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoaut
 	if &curTime == nil {
 		e := "Missing current_timestamp in request `body`"
 		eDisc := "Body is required with grant_type, client_id, scope, audience, current_timestamp"
-		resp.Response400 = &dummyoauth.HttpErrorResponse{Error: &e, ErrorDescription: &eDisc}
+		resp.Response400 = &dummyoauth.HTTPErrorResponse{Error: &e, ErrorDescription: &eDisc}
 		return resp
 	}
 
@@ -141,11 +138,9 @@ func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoaut
 		aud = "no-aud"
 	}
 
-	var expireTime int64
-	expireTime = time.Now().Add(time.Hour).Unix()
+	var expireTime int64 = time.Now().Add(time.Hour).Unix()
 
-	var nbf int64
-	nbf = time.Now().Unix()
+	var nbf int64 = time.Now().Unix()
 
 	var issuer string = "dummy.auth"
 	var tokenType string = "bearer"
@@ -168,7 +163,7 @@ func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoaut
 		return resp
 	}
 
-	resp.Response200 = &dummyoauth.HttpTokenResponse{AccessToken: &tokenString, Scope: &scope,
+	resp.Response200 = &dummyoauth.HTTPTokenResponse{AccessToken: &tokenString, Scope: &scope,
 		TokenType: &tokenType, ExpiresIn: &expireTime, Nbf: &nbf, Sub: &sub, Jti: &jti, Aud: &aud}
 	return resp
 }
@@ -176,14 +171,14 @@ func (s *DummyOAuthImplementation) PostToken(ctx context.Context, req *dummyoaut
 func (s *DummyOAuthImplementation) GetWellKnownOauthAuthorizationServer(ctx context.Context, req *dummyoauth.GetWellKnownOauthAuthorizationServerRequest) dummyoauth.GetWellKnownOauthAuthorizationServerResponseSet {
 	response := dummyoauth.GetWellKnownOauthAuthorizationServerResponseSet{}
 
-	response.Response200 = &dummyoauth.Metadata{JwksUri: *jwks_uri}
+	response.Response200 = &dummyoauth.Metadata{JwksURI: *jwksURI}
 	return response
 }
 
-func (s *DummyOAuthImplementation) GetWellKnownJwksJson(ctx context.Context, req *dummyoauth.GetWellKnownJwksJsonRequest) dummyoauth.GetWellKnownJwksJsonResponseSet {
-	response := dummyoauth.GetWellKnownJwksJsonResponseSet{}
+func (s *DummyOAuthImplementation) GetWellKnownJwksJSON(ctx context.Context, req *dummyoauth.GetWellKnownJwksJSONRequest) dummyoauth.GetWellKnownJwksJSONResponseSet {
+	response := dummyoauth.GetWellKnownJwksJSONResponseSet{}
 
-	var jwkey dummyoauth.JsonWebKey = *new(dummyoauth.JsonWebKey)
+	var jwkey dummyoauth.JSONWebKey = *new(dummyoauth.JSONWebKey)
 	e := "AQAB"
 	n := "eQ22nLcYHRhMKXZUIJ3baLSsnAgYFJrMPhBEq8fqtyHQg_iKBv7Tavu3Rf_-26PRVvC0nPdwQgI_w4ZKqt1NIIaPljTc5raA-TH_RzRXwPR5JdL8JQLSqtgecAYuqSjt5bzsdbSuHueeXZsHgu75Hx86ZC3l-sInl5OTPArlhzM"
 	kid := "cadd2909-8638-4b2d-8e47-2d9816fe360e"
@@ -201,8 +196,8 @@ func (s *DummyOAuthImplementation) GetWellKnownJwksJson(ctx context.Context, req
 	// }
 	// jwkey.Alg = &josejwk.Algorithm
 
-	var arr = []dummyoauth.JsonWebKey{jwkey}
-	response.Response200 = &dummyoauth.JsonWebKeySet{Keys: &arr}
+	var arr = []dummyoauth.JSONWebKey{jwkey}
+	response.Response200 = &dummyoauth.JSONWebKeySet{Keys: &arr}
 	return response
 }
 

@@ -117,13 +117,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HttpTokenResponse'
+                $ref: '#/components/schemas/HTTPTokenResponse'
         '400':
           description: '- Request did not conform to the API specification or failed validation.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HttpErrorResponse'
+                $ref: '#/components/schemas/HTTPErrorResponse'
 
   /.well-known/oauth-authorization-server:
     get:
@@ -163,24 +163,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JsonWebKeySet'              
+                $ref: '#/components/schemas/JSONWebKeySet'
 
 components:
-  securitySchemes:
-    fims-jws:
-      description: |
-        FIMS-Authz uses a JWS-based approach to authentication.
-
-        USS clients are vetted/qualified in advance and provide an owned DNS
-        name that serves as their primary identifer.  That DNS name is then
-        included in a certificate (as a subject alternative name) that the
-        client procures from an approved CA.  The private key related to that
-        public certificate is then used to create a JWS by signing the HTTP
-        body of the token request.
-
-      type: apiKey
-      in: header
-      name: x-utm-message-signature
   schemas:
     TokenRequestForm:
         type: object
@@ -246,7 +231,7 @@ components:
           description: Human-readable message describing problem with request
           type: string
 
-    HttpTokenResponse:
+    HTTPTokenResponse:
       type: object
       additionalProperties: false
       properties:
@@ -315,7 +300,7 @@ components:
         kid:
           type: string
           description: The Key ID of the JWK used to sign. Note that the jku reference  will provide a set of keys with unique key identifiers. Those  identifiers will be searched to match against this kid.
-    JsonWebToken:
+    JSONWebToken:
       description: The token provided by the FIMS Authorization Server is a JWS representing a JWT.  The token is actually a JWS Compact Serialization string as described in RFC 7515.  For clarity of documentation, we represent the pre-serialized components here as a JSON schema.
       type: object
       additionalProperties: false
@@ -509,7 +494,7 @@ components:
             claim in the JWT.
 
             Refer to RFC8414 - https://tools.ietf.org/html/rfc8414#section-2.1
-    HttpErrorResponse:
+    HTTPErrorResponse:
       type: object
       properties:
         error:
@@ -518,14 +503,14 @@ components:
         error_description:
           type: string
           example: Human readable description of the error.
-    JsonWebKeySet:
+    JSONWebKeySet:
       type: object
       properties:
         keys:
           type: array
           items:
-            $ref: '#/components/schemas/JsonWebKey'
-    JsonWebKey:
+            $ref: '#/components/schemas/JSONWebKey'
+    JSONWebKey:
       type: object
       description: |-
         This schema defines what a client may expect to receive when requesting  a JWK/JWKS.

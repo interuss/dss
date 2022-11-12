@@ -4,6 +4,7 @@ package dummyoauth
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -96,8 +97,10 @@ func (s *APIRouter) PostToken(exp *regexp.Regexp, w http.ResponseWriter, r *http
 	}
 
 	var jwsh xUtmMessageSignatureJoseHeader
-	json.Unmarshal([]byte(r.Header.Get("x-utm-jws-header")), &jwsh)
-
+	err := json.Unmarshal([]byte(r.Header.Get("x-utm-jws-header")), &jwsh)
+	if err != nil {
+		log.Printf("Unable to unmarshal x-utm-jws-header %s", err)
+	}
 	req.XUtmJwsHeader = &jwsh
 
 	// Parse request body
@@ -110,9 +113,19 @@ func (s *APIRouter) PostToken(exp *regexp.Regexp, w http.ResponseWriter, r *http
 		req.ContentDigest = &cd
 	}
 
-	r.ParseForm()
+	er := r.ParseForm()
+	if er != nil {
+		e := "Invalid request `body`"
+		eDisc := "Could not parse the body form"
+		data := map[string]interface{}{
+			"Error":            &e,
+			"ErrorDescription": &eDisc,
+		}
+		api.WriteJSON(w, 400, data)
+		return
+	}
 	body.GrantType = r.FormValue("grant_type")
-	body.ClientId = r.FormValue("client_id")
+	body.ClientID = r.FormValue("client_id")
 	body.Audience = r.FormValue("audience")
 	body.Scope = r.FormValue("scope")
 	req.Body = &body
@@ -160,16 +173,16 @@ func (s *APIRouter) GetWellKnownOauthAuthorizationServer(exp *regexp.Regexp, w h
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func (s *APIRouter) GetWellKnownJwksJson(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
-	var req GetWellKnownJwksJsonRequest
+func (s *APIRouter) GetWellKnownJwksJSON(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req GetWellKnownJwksJSONRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &GetWellKnownJwksJsonSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, &GetWellKnownJwksJSONSecurity)
 
 	// Call implementation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	response := s.Implementation.GetWellKnownJwksJson(ctx, &req)
+	response := s.Implementation.GetWellKnownJwksJSON(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -196,7 +209,7 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	router.Routes[2] = &api.Route{Method: "GET", Pattern: pattern, Handler: router.GetWellKnownOauthAuthorizationServer}
 
 	pattern = regexp.MustCompile("^/.well-known/jwks.json$")
-	router.Routes[3] = &api.Route{Method: "GET", Pattern: pattern, Handler: router.GetWellKnownJwksJson}
+	router.Routes[3] = &api.Route{Method: "GET", Pattern: pattern, Handler: router.GetWellKnownJwksJSON}
 
 	return router
 }

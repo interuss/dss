@@ -15,7 +15,7 @@ var (
 		},
 	}
 	GetWellKnownOauthAuthorizationServerSecurity = map[string]api.SecurityScheme{}
-	GetWellKnownJwksJsonSecurity                 = map[string]api.SecurityScheme{}
+	GetWellKnownJwksJSONSecurity                 = map[string]api.SecurityScheme{}
 )
 
 type GetTokenRequest struct {
@@ -72,10 +72,10 @@ type PostTokenRequest struct {
 }
 type PostTokenResponseSet struct {
 	// OK
-	Response200 *HttpTokenResponse
+	Response200 *HTTPTokenResponse
 
 	// - Request did not conform to the API specification or failed validation.
-	Response400 *HttpErrorResponse
+	Response400 *HTTPErrorResponse
 
 	// Auto-generated internal server error response
 	Response500 *api.InternalServerErrorBody
@@ -93,13 +93,13 @@ type GetWellKnownOauthAuthorizationServerResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
-type GetWellKnownJwksJsonRequest struct {
+type GetWellKnownJwksJSONRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
-type GetWellKnownJwksJsonResponseSet struct {
+type GetWellKnownJwksJSONResponseSet struct {
 	// OK
-	Response200 *JsonWebKeySet
+	Response200 *JSONWebKeySet
 
 	// Auto-generated internal server error response
 	Response500 *api.InternalServerErrorBody
@@ -139,5 +139,5 @@ type Implementation interface {
 	//
 	// Refer to RFC7517 - https://tools.ietf.org/html/rfc7517
 	//
-	GetWellKnownJwksJson(ctx context.Context, req *GetWellKnownJwksJsonRequest) GetWellKnownJwksJsonResponseSet
+	GetWellKnownJwksJSON(ctx context.Context, req *GetWellKnownJwksJSONRequest) GetWellKnownJwksJSONResponseSet
 }
