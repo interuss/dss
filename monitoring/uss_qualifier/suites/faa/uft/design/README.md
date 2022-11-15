@@ -36,7 +36,7 @@ The property to set is `resources.resource_declarations.flight_planners.specific
    ./run_locally_scdsc.sh
     ```
    Note - This script has an environment variable MESSAGE_SIGNING. It is set to true to turn message signing validation on in mock uss.
-4. Run well-known server with public key for mock_uss. [run_well_known.sh](../../../../../messagesigning/run_well_known.sh)
+4. Run well-known server with public key for mock_uss. [run_well_known.sh]
     ```bash
    ./run_well_known.sh
    ```
@@ -54,19 +54,19 @@ The property to set is `resources.resource_declarations.flight_planners.specific
 The USS Qualifier tests run produces two reports.
 1. SCD tests report is generated under [uss_qualifier](../../../../../uss_qualifier).
 The report file name is - report.json
-2. Message signing test report is generated under [mock_uss/report](../../../../../mock_uss/report)
+2. Message signing test report is generated under [mock_uss/report]
 The report file name is - report_mock_uss_scdsc_messagesigning.json.
 
 There will be 3 runs of tests, with the above two reports for each run.
 
 ### Positive tests -
-A valid set of private/public keys will be provided under [keys folder](../../../../../messagesigning/keys)
+A valid set of private/public keys will be provided under [keys folder]
 A USS should pass all the uss_qualifier tests in this suite.
 As well as the message_signing report should have no issues reported. A USS will provide both of these reports.
 The message_signing report includes interactions and issues between the mock_uss and the USS-under-test.
 No issues indicate the USS-under-test message-signed all its requests and responses.
 
-For analysis of the message signing reports, please refer to [Analyzing the message signing report in README.md](../../../../../messagesigning/README.md)
+For analysis of the message signing reports, please refer to [Analyzing the message signing report in README.md]
 
 ### Negative tests -
 Replace the private/public keys with invalid key pair, the message signing by mock_uss will be invalid.
