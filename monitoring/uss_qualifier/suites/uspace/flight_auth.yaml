@@ -29,8 +29,9 @@ actions:
           scenario_type: scenarios.uspace.flight_auth.Validation
           resources:
             flight_intents: invalid_flight_auth_flights
-            flight_planners: flight_planners
+            flight_planner: flight_planner
         on_failure: Continue
       flight_planners_source: flight_planners
-      roles: 1
+      roles:
+      - flight_planner
   on_failure: Continue
