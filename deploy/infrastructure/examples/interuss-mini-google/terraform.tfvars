@@ -40,6 +40,8 @@ dss_configuration = {
 
   jwks_key_id = "" # VAR_JWKS_KEY_ID
 
+  crdb_node_count = 1 # Number of Cockroach nodes. Example: 3 for production. 1 for development.
+
   crdb_hostname_suffix = "interuss.example.com" # VAR_CRDB_HOSTNAME_SUFFIX
 
   crdb_external_nodes = [] # VAR_EXTERNAL_CRDB_NODEn
