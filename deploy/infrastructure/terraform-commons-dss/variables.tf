@@ -17,7 +17,7 @@ variable "dss_configuration" {
 
     # Number of pool nodes.
     # Example: 3 for production. 1 for development.
-    crdb_node_count = number
+    crdb_node_count = optional(number, 3)
 
     # Kubernetes Storage Class to use for CockroachDB and Prometheus volumes. You can
     # check your cluster's possible values with kubectl get storageclass.
