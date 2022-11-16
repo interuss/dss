@@ -86,7 +86,7 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth
 
 type PermissiveAuthorizer struct{}
 
-func (*PermissiveAuthorizer) Authorize(w http.ResponseWriter, r *http.Request, schemes *map[string]api.SecurityScheme) api.AuthorizationResult {
+func (*PermissiveAuthorizer) Authorize(w http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
 	return api.AuthorizationResult{}
 }
 
