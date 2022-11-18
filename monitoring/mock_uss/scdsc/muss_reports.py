@@ -75,6 +75,7 @@ class Findings(ImplicitDict):
             len(self.issues), len(self.interactions)
         )
 
+
 class MussReport(ImplicitDict):
     findings: Findings = Findings()
 
@@ -83,7 +84,6 @@ class MussReport(ImplicitDict):
         with open(filepath, "w") as f:
             f.write(json.dumps(self, indent=4, default=str))
         print("[Mock USS] Report saved to {}".format(filepath))
-
 
     def reset(self):
         self.findings.issues = []

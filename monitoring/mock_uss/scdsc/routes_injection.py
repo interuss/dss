@@ -79,21 +79,24 @@ def query_operational_intents(
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def scdsc_injection_status() -> Tuple[str, int]:
     """Implements USS status in SCD automated testing injection API."""
-    return flask.jsonify({'status': 'Ready', 'version': versioning.get_code_version()})
+    return flask.jsonify({"status": "Ready", "version": versioning.get_code_version()})
 
-@webapp.route('/scdsc/v1/startreport', methods=['POST'])
+
+@webapp.route("/scdsc/v1/startreport", methods=["POST"])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def scdsc_injection_start_reporter() -> Tuple[str, int]:
     """Implements USS status in SCD automated testing injection API."""
     report_settings.reset()
-    return flask.jsonify({'report': 'started'})
+    return flask.jsonify({"report": "started"})
 
-@webapp.route('/scdsc/v1/endreport', methods=['POST'])
+
+@webapp.route("/scdsc/v1/endreport", methods=["POST"])
 def scdsc_injection_end_reporter() -> Tuple[str, int]:
     """Implements USS status in SCD automated testing injection API."""
     report_settings.reprt.save()
     report_settings.reset()
-    return flask.jsonify({'report': 'ended'})
+    return flask.jsonify({"report": "ended"})
+
 
 @webapp.route("/scdsc/v1/capabilities", methods=["GET"])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
@@ -113,6 +116,7 @@ def scd_capabilities() -> Tuple[str, int]:
         )
     )
 
+
 @webapp.route("/scdsc/v1/flights/<flight_id>", methods=["PUT"])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def inject_flight(flight_id: str) -> Tuple[str, int]:
@@ -120,9 +124,10 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     try:
         req_json = flask.request.json
         if req_json is None:
-            raise ValueError('Request did not contain a JSON payload')
+            raise ValueError("Request did not contain a JSON payload")
         req_body: InjectFlightRequest = ImplicitDict.parse(
-            req_json, InjectFlightRequest)
+            req_json, InjectFlightRequest
+        )
     except ValueError as e:
         msg = "Create flight {} unable to parse JSON: {}".format(flight_id, e)
         return msg, 400
@@ -215,15 +220,18 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
 
     # remove self as a notification subscriber for mock uss POST operation
     for subscriber in result.subscribers.copy():
-        if subscriber.uss_base_url == 'http://host.docker.internal:8074/mock/scd' :
+        if subscriber.uss_base_url == "http://host.docker.internal:8074/mock/scd":
             result.subscribers.remove(subscriber)
 
     notify_responses = scd_client.notify_subscribers(
-        resources.utm_client, result.operational_intent_reference.id,
+        resources.utm_client,
+        result.operational_intent_reference.id,
         scd.OperationalIntent(
             reference=result.operational_intent_reference,
-            details=req_body.operational_intent),
-        result.subscribers)
+            details=req_body.operational_intent,
+        ),
+        result.subscribers,
+    )
 
     for notify_response in notify_responses:
         response_validator.validate_response(notify_response)
@@ -242,6 +250,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
             result=InjectFlightResult.Planned, operational_intent_id=id
         )
     )
+
 
 @webapp.route("/scdsc/v1/flights/<flight_id>", methods=["DELETE"])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
@@ -283,7 +292,7 @@ def delete_flight(flight_id: str) -> Tuple[str, int]:
             200,
         )
     for subscriber in result.subscribers.copy():
-        if subscriber.uss_base_url == 'http://host.docker.internal:8074/mock/scd' :
+        if subscriber.uss_base_url == "http://host.docker.internal:8074/mock/scd":
             result.subscribers.remove(subscriber)
     try:
         scd_client.notify_subscribers(
@@ -303,7 +312,7 @@ def clear_area() -> Tuple[str, int]:
     try:
         req_json = flask.request.json
         if req_json is None:
-            raise ValueError('Request did not contain a JSON payload')
+            raise ValueError("Request did not contain a JSON payload")
         req = ImplicitDict.parse(req_json, ClearAreaRequest)
     except ValueError as e:
         msg = "Unable to parse ClearAreaRequest JSON request: {}".format(e)

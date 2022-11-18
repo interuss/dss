@@ -30,9 +30,7 @@ def get_operational_intent_details(entityid: str):
     # If requested operational intent doesn't exist, return 404
     if flight is None:
         response = scd.ErrorResponse(
-            message='Operational intent {} not known by this USS'.format(
-                entityid
-            )
+            message="Operational intent {} not known by this USS".format(entityid)
         )
         status_code = 404
     else:
@@ -43,45 +41,50 @@ def get_operational_intent_details(entityid: str):
                 details=scd.OperationalIntentDetails(
                     volumes=flight.op_intent_injection.volumes,
                     off_nominal_volumes=flight.op_intent_injection.off_nominal_volumes,
-                    priority=flight.op_intent_injection.priority
-                )
+                    priority=flight.op_intent_injection.priority,
+                ),
             )
         )
         status_code = 200
 
     # Check message signing headers only if the message signing feature is on.
-    if os.environ.get('MESSAGE_SIGNING', None) == "true":
+    if os.environ.get("MESSAGE_SIGNING", None) == "true":
         try:
             analysis_result = request_validator.validate_message_signing_headers()
-            test_context = analysis_result['test_context']
-            query = analysis_result['query']
-            results = analysis_result['results']
-            if results['validation_passed']:
-                query['response'] = {
-                    'code': 200,
-                    'json': response
-                }
+            test_context = analysis_result["test_context"]
+            query = analysis_result["query"]
+            results = analysis_result["results"]
+            if results["validation_passed"]:
+                query["response"] = {"code": 200, "json": response}
                 status_code = 200
             else:
-                failure_reasons = results['validation_issue']
-                error_message = "{}: {}".format(failure_reasons['summary'], failure_reasons['details'])
+                failure_reasons = results["validation_issue"]
+                error_message = "{}: {}".format(
+                    failure_reasons["summary"], failure_reasons["details"]
+                )
                 response = scd.ErrorResponse(message=error_message)
-                query['response'] = {
-                    'code': 403,
-                    'json': response
-                }
+                query["response"] = {"code": 403, "json": response}
                 status_code = 403
             resp = sign_response(flask.jsonify(response))
-            query['response']['headers'] = json.dumps({k: v for k, v in resp.headers.items()})
+            query["response"]["headers"] = json.dumps(
+                {k: v for k, v in resp.headers.items()}
+            )
             interaction_id = report_settings.reprt_recorder.capture_interaction(
-             query,
-        'Checking that the message signing headers in the incoming {} request to the mock uss endpoint {} are valid.'.format(flask.request.method, flask.request.path),
-        test_context=test_context)
-            if not results['validation_passed']:
-                results['validation_issue']['interactions'] = [interaction_id]
-                report_settings.reprt_recorder.capture_issue(results['validation_issue'])
+                query,
+                "Checking that the message signing headers in the incoming {} request to the mock uss endpoint {} are valid.".format(
+                    flask.request.method, flask.request.path
+                ),
+                test_context=test_context,
+            )
+            if not results["validation_passed"]:
+                results["validation_issue"]["interactions"] = [interaction_id]
+                report_settings.reprt_recorder.capture_issue(
+                    results["validation_issue"]
+                )
         except Exception as e:
-            logger.error("Exception raised while validating message signing headers: " + str(e))
+            logger.error(
+                "Exception raised while validating message signing headers: " + str(e)
+            )
             logger.error(traceback.format_exc())
 
     return response, status_code
@@ -92,40 +95,45 @@ def get_operational_intent_details(entityid: str):
 def notify_operational_intent_details_changed():
     """Implements notifyOperationalIntentDetailsChanged in ASTM SCD API."""
     # Check message signing headers only if the message signing feature is on.
-    response = flask.jsonify('')
+    response = flask.jsonify("")
     status_code = 204
-    if os.environ.get('MESSAGE_SIGNING', None) == "true":
+    if os.environ.get("MESSAGE_SIGNING", None) == "true":
         try:
             analysis_result = request_validator.validate_message_signing_headers()
-            test_context = analysis_result['test_context']
-            query = analysis_result['query']
-            results = analysis_result['results']
-            if results['validation_passed']:
-                query['response'] = {
-                    'code': 204,
-                    'json': None
-                }
+            test_context = analysis_result["test_context"]
+            query = analysis_result["query"]
+            results = analysis_result["results"]
+            if results["validation_passed"]:
+                query["response"] = {"code": 204, "json": None}
                 status_code = 204
             else:
-                failure_reasons = results['validation_issue']
-                error_message = "{}: {}".format(failure_reasons['summary'], failure_reasons['details'])
-                query['response'] = {
-                    'code': 403,
-                    'json': {'message': error_message}
-                }
+                failure_reasons = results["validation_issue"]
+                error_message = "{}: {}".format(
+                    failure_reasons["summary"], failure_reasons["details"]
+                )
+                query["response"] = {"code": 403, "json": {"message": error_message}}
                 response = flask.jsonify(scd.ErrorResponse(message=error_message))
                 status_code = 403
             resp = sign_response(response)
-            query['response']['headers'] = json.dumps({k: v for k, v in resp.headers.items()})
+            query["response"]["headers"] = json.dumps(
+                {k: v for k, v in resp.headers.items()}
+            )
             interaction_id = report_settings.reprt_recorder.capture_interaction(
                 query,
-            'Checking that the message signing headers in the incoming {} request to the mock uss endpoint {} are valid.'.format(flask.request.method, flask.request.path),
-            test_context=test_context)
-            if not results['validation_passed']:
-                results['validation_issue']['interactions'] = [interaction_id]
-                report_settings.reprt_recorder.capture_issue(results['validation_issue'])
+                "Checking that the message signing headers in the incoming {} request to the mock uss endpoint {} are valid.".format(
+                    flask.request.method, flask.request.path
+                ),
+                test_context=test_context,
+            )
+            if not results["validation_passed"]:
+                results["validation_issue"]["interactions"] = [interaction_id]
+                report_settings.reprt_recorder.capture_issue(
+                    results["validation_issue"]
+                )
         except Exception as e:
-            logger.error("Exception raised while validating message signing headers: " + str(e))
+            logger.error(
+                "Exception raised while validating message signing headers: " + str(e)
+            )
             logger.error(traceback.format_exc())
     return response, status_code
 
@@ -150,10 +158,14 @@ def make_uss_report():
     # Return the ErrorReport as the nominal response
     # TODO: Implement
 
+
 def sign_response(response):
     try:
         type_of_response = str(type(response))
-        if 'None' not in type_of_response and os.environ.get('MESSAGE_SIGNING', None) == "true":
+        if (
+            "None" not in type_of_response
+            and os.environ.get("MESSAGE_SIGNING", None) == "true"
+        ):
             signed_headers = signer.get_signed_headers(response)
             response.headers.update(signed_headers)
     except Exception as e:

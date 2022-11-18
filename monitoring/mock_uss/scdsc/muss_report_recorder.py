@@ -8,6 +8,7 @@ from monitoring.mock_uss.scdsc.muss_reports import (
     MockUssTestContext,
 )
 
+
 class MussReportRecorder:
     """Class providing helper to capture interactions and issues in a report"""
 
@@ -22,7 +23,7 @@ class MussReportRecorder:
             interaction_id=interaction_id,
             purpose=purpose,
             query=query,
-            context=test_context
+            context=test_context,
         )
         self.reprt.findings.add_interaction(interaction)
         return interaction_id

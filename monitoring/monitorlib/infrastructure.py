@@ -57,7 +57,7 @@ class AuthAdapter(object):
         for k, v in self.get_headers(request.url, scopes).items():
             request.headers[k] = v
         try:
-            if os.environ.get('MESSAGE_SIGNING', None) == "true":
+            if os.environ.get("MESSAGE_SIGNING", None) == "true":
                 signed_headers = signer.get_signed_headers(request)
                 request.headers.update(signed_headers)
         except Exception as e:

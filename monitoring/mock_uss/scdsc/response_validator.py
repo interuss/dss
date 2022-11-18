@@ -3,8 +3,10 @@ import json
 import os
 import datetime
 from monitoring.mock_uss.scdsc import report_settings
-from  monitoring.messagesigning.message_validator import MessageValidatorService
+from monitoring.messagesigning.message_validator import MessageValidatorService
+
 message_validator = MessageValidatorService()
+
 
 def validate_response(response):
     if os.environ.get("MESSAGE_SIGNING", None) == "true":
@@ -12,43 +14,51 @@ def validate_response(response):
             associated_request = response.request
             response_body = get_response_body(response)
             signature_info = {
-                'method': associated_request.method,
-                'url': associated_request.url,
-                'initiated_at': datetime.datetime.utcnow().isoformat(),
-                'headers': json.dumps({k: v for k, v in response.headers.items()}),
-                "status": response.status_code
+                "method": associated_request.method,
+                "url": associated_request.url,
+                "initiated_at": datetime.datetime.utcnow().isoformat(),
+                "headers": json.dumps({k: v for k, v in response.headers.items()}),
+                "status": response.status_code,
             }
-            signature_info['body'] = response.content
+            signature_info["body"] = response.content
             query = {
-            'request': {
-                'method': associated_request.method,
-                'url': associated_request.url,
-                'headers': json.dumps({k: v for k, v in associated_request.headers.items()}),
-                'body': associated_request.body.decode('utf-8') if associated_request.body else None 
-            },
-            'response':  {
-                'code': response.status_code,
-                'headers': response.headers,
-                'json': None if not response_body else response_body
-            } 
+                "request": {
+                    "method": associated_request.method,
+                    "url": associated_request.url,
+                    "headers": json.dumps(
+                        {k: v for k, v in associated_request.headers.items()}
+                    ),
+                    "body": associated_request.body.decode("utf-8")
+                    if associated_request.body
+                    else None,
+                },
+                "response": {
+                    "code": response.status_code,
+                    "headers": response.headers,
+                    "json": None if not response_body else response_body,
+                },
             }
-            test_description = 'Message signing headers in the response from the outgoing {} request to {} should be valid.'.format(
+            test_description = "Message signing headers in the response from the outgoing {} request to {} should be valid.".format(
                 associated_request.method, associated_request.url
             )
             test_context = {
-                'test_name': 'Validating response signatures.',
-                'test_case': test_description}
-            interaction_id = report_settings.reprt_recorder.capture_interaction(query,
-                                                                test_description,
-                                                                test_context=test_context)
-            message_validator.analyze_headers(interaction_id, signature_info, 'response')
+                "test_name": "Validating response signatures.",
+                "test_case": test_description,
+            }
+            interaction_id = report_settings.reprt_recorder.capture_interaction(
+                query, test_description, test_context=test_context
+            )
+            message_validator.analyze_headers(
+                interaction_id, signature_info, "response"
+            )
 
         except Exception as e:
             logger.info(str(type(response)))
             logger.error("Error validating response: " + str(e))
 
+
 def get_response_body(response):
     try:
         return response.json()
     except Exception as e:
-        return ''
+        return ""

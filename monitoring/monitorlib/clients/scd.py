@@ -11,48 +11,43 @@ import os
 
 
 def create_subscription(utm_client: UTMClientSession, id: str):
-    time_start = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-    time_end = (datetime.datetime.utcnow() + datetime.timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    time_start = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    time_end = (datetime.datetime.utcnow() + datetime.timedelta(minutes=30)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
     payload = {
         "extents": {
             "volume": {
                 "outline_circle": None,
                 "outline_polygon": {
                     "vertices": [
-                        {"lat": 7.40, "lng": 46.5 },
-                        {"lat": 7.50, "lng": 46.5 },
-                        {"lat": 7.50, "lng": 47.5 },
-                        {"lat": 7.40, "lng": 47.5 }
+                        {"lat": 7.40, "lng": 46.5},
+                        {"lat": 7.50, "lng": 46.5},
+                        {"lat": 7.50, "lng": 47.5},
+                        {"lat": 7.40, "lng": 47.5},
                     ]
+                },
+                "altitude_lower": {"value": 0.0, "reference": "W84", "units": "M"},
+                "altitude_upper": {"value": 1000.0, "reference": "W84", "units": "M"},
             },
-            "altitude_lower": {
-                "value": 0.0,
-                "reference": "W84",
-                "units": "M"
-            },
-            "altitude_upper": {
-                "value": 1000.0,
-                "reference": "W84",
-                "units": "M"
-            }
+            "time_start": {"value": "{}".format(time_start), "format": "RFC3339"},
+            "time_end": {"value": "{}".format(time_end), "format": "RFC3339"},
         },
-        "time_start": {
-            "value": "{}".format(time_start),
-            "format": "RFC3339"
-        },
-        "time_end": {
-            "value": "{}".format(time_end),
-            "format": "RFC3339"
-        }
-    },
-    "uss_base_url": "http://host.docker.internal:10206/interop",
-    "notify_for_operational_intents": True,
-    "notify_for_constraints": True
+        "uss_base_url": "http://host.docker.internal:10206/interop",
+        "notify_for_operational_intents": True,
+        "notify_for_constraints": True,
     }
-    if os.environ.get('MESSAGE_SIGNING', None) == "true":
-        subscription_response = utm_client.put('/dss/v1/subscriptions/{}'.format(id), json=payload, scope=scd.SCOPE_SC)
-        logger.info("Create Subscription response: {}".format(str(subscription_response.status_code)))
+    if os.environ.get("MESSAGE_SIGNING", None) == "true":
+        subscription_response = utm_client.put(
+            "/dss/v1/subscriptions/{}".format(id), json=payload, scope=scd.SCOPE_SC
+        )
+        logger.info(
+            "Create Subscription response: {}".format(
+                str(subscription_response.status_code)
+            )
+        )
         subscription_response.raise_for_status()
+
 
 class OperationError(RuntimeError):
     """An error encountered when interacting with a DSS or a USS"""
@@ -159,6 +154,7 @@ def notify_operational_intent_details_changed(
         )
     return resp
 
+
 # === Custom actions ===
 
 
@@ -177,5 +173,9 @@ def notify_subscribers(
         if operational_intent is not None:
             kwargs["operational_intent"] = operational_intent
         update = scd.PutOperationalIntentDetailsParameters(**kwargs)
-        notify_responses.append(notify_operational_intent_details_changed(utm_client, subscriber.uss_base_url, update))
+        notify_responses.append(
+            notify_operational_intent_details_changed(
+                utm_client, subscriber.uss_base_url, update
+            )
+        )
     return notify_responses
