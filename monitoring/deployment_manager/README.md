@@ -13,7 +13,7 @@ deployment_manager actions all accept a declarative definition of the InterUSS d
 
 ## Usage
 
-To use deployment_manager, first define an InterUSS deployment in a JSON file according to the [DeploymentSpec](deployments.py) schema.  From a context with kubectl already configured to work with the target Kubernetes cluster, run [deployment_manager.py](deployment_manager.py) according to its help (`python3 deployment_manager.py --help`).
+To use deployment_manager, first define an InterUSS deployment in a JSON file according to the [DeploymentSpec](systems/configuration.py) schema.  From a context with kubectl already configured to work with the target Kubernetes cluster, run [deployment_manager.py](deployment_manager.py) according to its help (`python3 deployment_manager.py --help`).
 
 ### Prerequisites
 

@@ -1,0 +1,457 @@
+{
+  "title": "UASZoneTestData 2022-10-16",
+  "description": "Sample data for Automated Testing development",
+  "features": [
+    {
+      "identifier": "Montreux Concert Area",
+      "country": "CHE",
+      "name": "Sample protected area active during evening",
+      "type": "COMMON",
+      "restriction": "PROHIBITED",
+      "reason": [
+        "OTHER"
+      ],
+      "otherReasonInfo": "Concert Area",
+      "message": "Concert area - prohibited flights during active times",
+      "applicability": [
+        {
+          "startDateTime": "2022-06-15T09:00:00.00Z",
+          "endDateTime": "2023-06-15T09:00:00.00Z",
+          "permanent": "NO",
+          "schedule": [
+            {
+              "day": [
+                "SAT",
+                "SUN"
+              ],
+              "startTime": "17:00:00.00Z",
+              "endTime": "23:59:59.00Z"
+            }
+          ]
+        }
+      ],
+      "zoneAuthority": [
+        {
+          "name": "Local Canton",
+          "contactName": "Commune de Montreux",
+          "siteURL": "https://www.montreux.ch/accueil",
+          "purpose": "AUTHORIZATION"
+        }
+      ],
+      "geometry": [
+        {
+          "uomDimensions": "M",
+          "lowerLimit": 0,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 6259,
+          "upperVerticalReference": "AMSL",
+          "horizontalProjection": {
+            "type": "Circle",
+            "center": [
+              6.913146,
+              46.430758
+            ],
+            "radius": 3000
+          }
+        }
+      ]
+    },
+    {
+      "identifier": "Flugplatz Reichenbach",
+      "country": "CHE",
+      "name": "Flugplatz Reichenbach",
+      "type": "COMMON",
+      "restriction": "PROHIBITED",
+      "reason": [
+        "AIR_TRAFFIC"
+      ],
+      "message": "Flugplatz Reichenbach Drone Access Restrictions",
+      "applicability": [
+        {
+          "startDateTime": "2022-06-15T09:00:00.00Z",
+          "endDateTime": "2023-06-15T09:00:00.00Z",
+          "permanent": "NO"
+        }
+      ],
+      "zoneAuthority": [
+        {
+          "name": "Flugplatz Reichenbach",
+          "contactName": "Flugplatzleitung",
+          "siteURL": "https://www.flugplatz-reichenbach.ch/",
+          "phone": "079 642 17 61"
+        }
+      ],
+      "geometry": [
+        {
+          "uomDimensions": "M",
+          "lowerLimit": 0,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 120,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Circle",
+            "center": [
+              7.67807,
+              46.612893
+            ],
+            "radius": 1000
+          }
+        },
+        {
+          "uomDimensions": "M",
+          "lowerLimit": 50,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 120,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Circle",
+            "center": [
+              7.67807,
+              46.612893
+            ],
+            "radius": 2500
+          }
+        },
+        {
+          "uomDimensions": "M",
+          "lowerLimit": 100,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 120,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Circle",
+            "center": [
+              7.67807,
+              46.612893
+            ],
+            "radius": 3500
+          }
+        }
+      ]
+    },
+    {
+      "identifier": "Lausanne Airport",
+      "country": "CHE",
+      "name": "Lausanne Airport",
+      "type": "COMMON",
+      "restriction": "PROHIBITED",
+      "reason": [
+        "AIR_TRAFFIC",
+        "OTHER"
+      ],
+      "otherReasonInfo": "Lausanne Airport Operational Restrictions",
+      "message": "Drone operations must only fly below the maximum allowed ceiling near active airports",
+      "applicability": [
+        {
+          "permanent": "YES"
+        }
+      ],
+      "zoneAuthority": [
+        {
+          "name": "Lausanne Airport",
+          "siteURL": "http://www.lausanne-airport.ch/"
+        }
+      ],
+      "geometry": [
+        {
+          "uomDimensions": "M",
+          "lowerLimit": 0,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 120,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  6.609821,
+                  46.532886
+                ],
+                [
+                  6.624755,
+                  46.532886
+                ],
+                [
+                  6.624755,
+                  46.558624
+                ],
+                [
+                  6.609821,
+                  46.558624
+                ],
+                [
+                  6.609821,
+                  46.532886
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "uomDimensions": "M",
+          "lowerLimit": 30,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 120,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  6.596603,
+                  46.531941
+                ],
+                [
+                  6.596603,
+                  46.531941
+                ],
+                [
+                  6.637458,
+                  46.55945
+                ],
+                [
+                  6.596603,
+                  46.55945
+                ],
+                [
+                  6.596603,
+                  46.531941
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "uomDimensions": "M",
+          "lowerLimit": 60,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 120,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  6.585617,
+                  46.526036
+                ],
+                [
+                  6.585617,
+                  46.526036
+                ],
+                [
+                  6.649818,
+                  46.565233
+                ],
+                [
+                  6.585617,
+                  46.565233
+                ],
+                [
+                  6.585617,
+                  46.526036
+                ]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identifier": "MONTREUX Wildlife Preserve",
+      "country": "CHE",
+      "name": "Lake Geneva Wildlife Preserve",
+      "type": "COMMON",
+      "restriction": "REQ_AUTHORISATION",
+      "reason": [
+        "NATURE"
+      ],
+      "otherReasonInfo": "Lake Geneva Wildlife Preserve",
+      "message": "Drone operations must only be permitted inside the Lake Geneva Wild Preserve with prior authorisation",
+      "applicability": [
+        {
+          "permanent": "YES"
+        }
+      ],
+      "zoneAuthority": [
+        {
+          "name": "Lake Geneva Wildlife Preserve",
+          "siteURL": "https://www.nationalpark.ch/en/"
+        }
+      ],
+      "geometry": [
+        {
+          "uomDimensions": "M",
+          "lowerLimit": 0,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 120,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  6.852035,
+                  46.453943
+                ],
+                [
+                  6.806716,
+                  46.3917
+                ],
+                [
+                  6.827659,
+                  46.383649
+                ],
+                [
+                  6.893234,
+                  46.393239
+                ],
+                [
+                  6.932373,
+                  46.403302
+                ],
+                [
+                  6.920871,
+                  46.42993
+                ],
+                [
+                  6.852035,
+                  46.453943
+                ]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identifier": "Gantrisch Nature Park",
+      "country": "CHE",
+      "name": "Gantrisch Nature Park",
+      "type": "COMMON",
+      "restriction": "NO_RESTRICTION",
+      "reason": [
+        "NATURE"
+      ],
+      "uSpaceClass": "OPEN",
+      "message": "Drone operations inside Gantrisch Nature Park should minimise disturbance to wildlife",
+      "applicability": [
+        {
+          "permanent": "YES"
+        }
+      ],
+      "zoneAuthority": [
+        {
+          "name": "Gantrisch Nature Park",
+          "siteURL": "https://www.nationalpark.ch/en/"
+        }
+      ],
+      "geometry": [
+        {
+          "uomDimensions": "FT",
+          "lowerLimit": 0,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 250,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  7.315521,
+                  46.818857
+                ],
+                [
+                  7.282562,
+                  46.703143
+                ],
+                [
+                  7.506408,
+                  46.717268
+                ],
+                [
+                  7.516021,
+                  46.797239
+                ],
+                [
+                  7.404785,
+                  46.844225
+                ],
+                [
+                  7.315521,
+                  46.818857
+                ]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identifier": "Gantrisch Nature Park",
+      "country": "CHE",
+      "name": "Gantrisch Nature Park",
+      "type": "COMMON",
+      "restriction": "REQ_AUTHORISATION",
+      "reason": [
+        "NATURE"
+      ],
+      "uSpaceClass": [
+        "SPECIFIC",
+        "CERTIFIED"
+      ],
+      "message": "Drone operations inside Gantrisch Nature Park can only be permitted in VLOS unless prior authorisation is granted",
+      "applicability": [
+        {
+          "permanent": "YES"
+        }
+      ],
+      "zoneAuthority": [
+        {
+          "name": "Gantrisch Nature Park",
+          "siteURL": "https://www.nationalpark.ch/en/"
+        }
+      ],
+      "geometry": [
+        {
+          "uomDimensions": "FT",
+          "lowerLimit": 0,
+          "lowerVerticalReference": "AGL",
+          "upperLimit": 250,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  7.315521,
+                  46.818857
+                ],
+                [
+                  7.282562,
+                  46.703143
+                ],
+                [
+                  7.506408,
+                  46.717268
+                ],
+                [
+                  7.516021,
+                  46.797239
+                ],
+                [
+                  7.404785,
+                  46.844225
+                ],
+                [
+                  7.315521,
+                  46.818857
+                ]
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -303,9 +303,13 @@ a PR to that effect would be greatly appreciated.
           pool, including newly joined instances. See CockroachDB's note on the
           [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
 
-    1.  `VAR_CRDB_STORAGE_CLASS`: Kubernetes Storage Class to use for CockroachDB
-        volumes. You can check your cluster's possible values with
-        `kubectl get storageclass`.
+    1.  `VAR_STORAGE_CLASS`: Kubernetes Storage Class to use for CockroachDB and
+        Prometheus volumes. You can check your cluster's possible values with
+        `kubectl get storageclass`. If you're not sure, each cloud provider has
+        some default storage classes that should work:
+          - Google Cloud: `standard`
+          - Azure: `default`
+          - AWS: `gp2`
 
     1.  `VAR_INGRESS_NAME`: If using Google Kubernetes Engine, set this to the
         the name of the core-service static IP address created above (e.g.,

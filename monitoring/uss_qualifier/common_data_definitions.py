@@ -1,7 +1,5 @@
 from enum import Enum
 
-from implicitdict import ImplicitDict
-
 
 class Severity(str, Enum):
     Critical = "Critical"
@@ -31,13 +29,3 @@ class Severity(str, Enum):
     
     Further test steps can be executed without impact.
     """
-
-
-class SubjectType(str, Enum):
-    InjectedFlight = "InjectedFlight"
-    OperationalIntent = "OperationalIntent"
-
-
-class IssueSubject(ImplicitDict):
-    subject_type: SubjectType
-    subject: str

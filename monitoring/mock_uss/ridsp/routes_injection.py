@@ -11,6 +11,7 @@ from implicitdict import ImplicitDict
 from monitoring.mock_uss import webapp
 from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss import config, resources
+from uas_standards.interuss.automated_testing.rid.v1.injection import ChangeTestResponse
 from . import database
 from .database import db
 
@@ -62,9 +63,7 @@ def create_test(test_id: str) -> Tuple[str, int]:
     with db as tx:
         tx.tests[test_id] = record
     return flask.jsonify(
-        injection_api.ChangeTestResponse(
-            version=record.version, injected_flights=record.flights
-        )
+        ChangeTestResponse(version=record.version, injected_flights=record.flights)
     )
 
 
@@ -94,7 +93,5 @@ def delete_test(test_id: str) -> Tuple[str, int]:
     with db as tx:
         del tx.tests[test_id]
     return flask.jsonify(
-        injection_api.ChangeTestResponse(
-            version=record.version, injected_flights=record.flights
-        )
+        ChangeTestResponse(version=record.version, injected_flights=record.flights)
     )

@@ -35,6 +35,7 @@ go.mod:
 .PHONY: format
 format:
 	cd monitoring/uss_qualifier && make format
+	cd monitoring/mock_uss && make format
 	cd monitoring/monitorlib && make format
 	gofmt -s -w .
 
@@ -115,6 +116,10 @@ cleanup-test-cockroach:
 .PHONY: test-e2e
 test-e2e:
 	test/docker_e2e.sh
+
+.PHONY: hygiene
+hygiene:
+	test/repo_hygiene/repo_hygiene.sh
 
 tag: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
 

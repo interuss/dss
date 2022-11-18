@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Literal
 from implicitdict import ImplicitDict, StringBasedDateTime
 
+import arrow
 import s2sphere
 import shapely.geometry
 
@@ -32,9 +33,7 @@ def latitude_degrees(distance_meters: float) -> float:
 
 def parse_time(time: Dict) -> datetime:
     t_str = time["value"]
-    if t_str[-1] == "Z":
-        t_str = t_str[0:-1]
-    return datetime.fromisoformat(t_str)
+    return arrow.get(t_str).datetime
 
 
 def offset_time(vol4s: List[Dict], dt: timedelta) -> List[Dict]:
@@ -233,7 +232,10 @@ def make_vol4(
 
 
 def make_time(t: datetime) -> Time:
-    return Time(value=t.isoformat() + "Z", format="RFC3339")
+    s = t.isoformat()
+    if t.tzinfo is None:
+        s += "Z"
+    return Time(value=StringBasedDateTime(s), format="RFC3339")
 
 
 def make_altitude(alt_meters: float) -> Altitude:
@@ -337,6 +339,33 @@ def meter_altitude_bounds_of(vol4s: List[Volume4D]) -> Tuple[float, float]:
     ):
         raise ValueError("altitude_upper units must always be M")
     return alt_lo, alt_hi
+
+
+def bounding_vol4(vol4s: List[Volume4D]) -> Volume4D:
+    t_start = start_of(vol4s)
+    t_end = end_of(vol4s)
+    v_min, v_max = meter_altitude_bounds_of(vol4s)
+    rect_bound = rect_bounds_of(vol4s)
+    lat_lo = rect_bound.lat_lo().degrees
+    lng_lo = rect_bound.lng_lo().degrees
+    lat_hi = rect_bound.lat_hi().degrees
+    lng_hi = rect_bound.lng_hi().degrees
+    return Volume4D(
+        time_start=make_time(t_start),
+        time_end=make_time(t_end),
+        volume=Volume3D(
+            altitude_lower=make_altitude(v_min),
+            altitude_upper=make_altitude(v_max),
+            outline_polygon=Polygon(
+                vertices=[
+                    LatLngPoint(lat=lat_lo, lng=lng_lo),
+                    LatLngPoint(lat=lat_hi, lng=lng_lo),
+                    LatLngPoint(lat=lat_hi, lng=lng_hi),
+                    LatLngPoint(lat=lat_lo, lng=lng_hi),
+                ]
+            ),
+        ),
+    )
 
 
 def vol4_intersect(vol4_1: Volume4D, vol4_2: Volume4D) -> bool:

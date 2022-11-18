@@ -1,5 +1,5 @@
 from monitoring.uss_qualifier.resources.flight_planning import FlightPlannersResource
-from monitoring.uss_qualifier.scenarios import TestScenario
+from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 
 
 class RecordPlanners(TestScenario):
@@ -10,9 +10,14 @@ class RecordPlanners(TestScenario):
         self._flight_planners = flight_planners
 
     def run(self):
-        information = "Available flight planners:\n" + "\n".join(
-            f"* {fp.config.participant_id}: {fp.config.injection_base_url}"
-            for fp in self._flight_planners.flight_planners
+        self.begin_test_scenario()
+
+        self.record_note(
+            "Available flight planners",
+            "\n".join(
+                f"* {fp.config.participant_id}: {fp.config.injection_base_url}"
+                for fp in self._flight_planners.flight_planners
+            ),
         )
-        self.begin_test_scenario(information)
+
         self.end_test_scenario()

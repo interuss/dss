@@ -4,25 +4,34 @@ from enum import Enum
 import inspect
 from typing import Callable, Dict, List, Optional, TypeVar, Union, Set
 
-from implicitdict import ImplicitDict, StringBasedDateTime
+import arrow
 
+from implicitdict import StringBasedDateTime
+
+from monitoring import uss_qualifier as uss_qualifier_module
 from monitoring.monitorlib import fetch, inspection
+from monitoring.monitorlib.inspection import fullname
 from monitoring.uss_qualifier import scenarios as scenarios_module
 from monitoring.uss_qualifier.common_data_definitions import Severity
-from monitoring.uss_qualifier.reports import (
+from monitoring.uss_qualifier.reports.report import (
     TestScenarioReport,
     TestCaseReport,
     TestStepReport,
     FailedCheck,
     ErrorReport,
+    Note,
+    ParticipantID,
+    PassedCheck,
 )
-from monitoring.uss_qualifier.scenarios.documentation import (
+from monitoring.uss_qualifier.scenarios.definitions import TestScenarioDeclaration
+from monitoring.uss_qualifier.scenarios.documentation.definitions import (
     TestScenarioDocumentation,
     TestCaseDocumentation,
     TestStepDocumentation,
-    parse_documentation,
+    TestCheckDocumentation,
 )
-from monitoring.uss_qualifier.resources.definitions import ResourceTypeName
+from monitoring.uss_qualifier.resources.definitions import ResourceTypeName, ResourceID
+from monitoring.uss_qualifier.scenarios.documentation.parsing import get_documentation
 
 
 class ScenarioPhase(str, Enum):
@@ -36,6 +45,88 @@ class ScenarioPhase(str, Enum):
     Complete = "Complete"
 
 
+class PendingCheck(object):
+    _documentation: TestCheckDocumentation
+    _step_report: TestStepReport
+    _on_failed_check: Optional[Callable[[FailedCheck], None]]
+    _participants: List[ParticipantID]
+    _outcome_recorded: bool = False
+
+    def __init__(
+        self,
+        documentation: TestCheckDocumentation,
+        participants: List[ParticipantID],
+        step_report: TestStepReport,
+        on_failed_check: Optional[Callable[[FailedCheck], None]],
+    ):
+        self._documentation = documentation
+        self._participants = participants
+        self._step_report = step_report
+        self._on_failed_check = on_failed_check
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self._outcome_recorded:
+            self.record_passed()
+
+    def record_failed(
+        self,
+        summary: str,
+        severity: Severity,
+        details: str = "",
+        participants: Optional[List[ParticipantID]] = None,
+        query_timestamps: Optional[List[datetime]] = None,
+        additional_data: Optional[dict] = None,
+        requirements: Optional[List[str]] = None,
+    ) -> None:
+        self._outcome_recorded = True
+        if participants is None:
+            participants = self._participants
+        if requirements is None:
+            requirements = self._documentation.applicable_requirements
+
+        kwargs = {
+            "name": self._documentation.name,
+            "documentation_url": self._documentation.url,
+            "timestamp": StringBasedDateTime(datetime.utcnow()),
+            "summary": summary,
+            "details": details,
+            "requirements": requirements,
+            "severity": severity,
+            "participants": participants,
+        }
+        if additional_data is not None:
+            kwargs["additional_data"] = additional_data
+        if query_timestamps is not None:
+            kwargs["query_report_timestamps"] = [
+                StringBasedDateTime(t) for t in query_timestamps
+            ]
+        failed_check = FailedCheck(**kwargs)
+        self._step_report.failed_checks.append(failed_check)
+        if self._on_failed_check is not None:
+            self._on_failed_check(failed_check)
+
+    def record_passed(
+        self,
+        participants: Optional[List[ParticipantID]] = None,
+        requirements: Optional[List[str]] = None,
+    ) -> None:
+        self._outcome_recorded = True
+        if participants is None:
+            participants = self._participants
+        if requirements is None:
+            requirements = self._documentation.applicable_requirements
+
+        passed_check = PassedCheck(
+            name=self._documentation.name,
+            participants=participants,
+            requirements=requirements,
+        )
+        self._step_report.passed_checks.append(passed_check)
+
+
 class TestScenario(ABC):
     """Instance of a test scenario, ready to run after construction.
 
@@ -44,6 +135,7 @@ class TestScenario(ABC):
       2) Call TestScenario.__init__ from the subclass's __init__
     """
 
+    declaration: TestScenarioDeclaration
     documentation: TestScenarioDocumentation
     on_failed_check: Optional[Callable[[FailedCheck], None]] = None
     _phase: ScenarioPhase = ScenarioPhase.Undefined
@@ -54,8 +146,40 @@ class TestScenario(ABC):
     _step_report: Optional[TestStepReport] = None
 
     def __init__(self):
-        self.documentation = parse_documentation(self.__class__)
+        self.documentation = get_documentation(self.__class__)
         self._phase = ScenarioPhase.NotStarted
+
+    @staticmethod
+    def make_test_scenario(
+        declaration: TestScenarioDeclaration,
+        resource_pool: Dict[ResourceID, ResourceTypeName],
+    ) -> "TestScenario":
+        inspection.import_submodules(scenarios_module)
+        scenario_type = inspection.get_module_object_by_name(
+            parent_module=uss_qualifier_module, object_name=declaration.scenario_type
+        )
+        if not issubclass(scenario_type, TestScenario):
+            raise NotImplementedError(
+                "Scenario type {} is not a subclass of the TestScenario base class".format(
+                    scenario_type.__name__
+                )
+            )
+
+        constructor_signature = inspect.signature(scenario_type.__init__)
+        constructor_args = {}
+        for arg_name, arg in constructor_signature.parameters.items():
+            if arg_name == "self":
+                continue
+            if arg_name not in resource_pool:
+                available_pool = ", ".join(resource_pool)
+                raise ValueError(
+                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {self.scenario_type} test scenario (resource pool: {available_pool})'
+                )
+            constructor_args[arg_name] = resource_pool[arg_name]
+
+        scenario = scenario_type(**constructor_args)
+        scenario.declaration = declaration
+        return scenario
 
     @abstractmethod
     def run(self):
@@ -70,15 +194,14 @@ class TestScenario(ABC):
     def me(self) -> str:
         return inspection.fullname(self.__class__)
 
-    def _make_scenario_report(self, information: Optional[str] = None) -> None:
+    def _make_scenario_report(self) -> None:
         self._scenario_report = TestScenarioReport(
             name=self.documentation.name,
+            scenario_type=self.declaration.scenario_type,
             documentation_url=self.documentation.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
             cases=[],
         )
-        if information is not None:
-            self._scenario_report.information = information
 
     def _expect_phase(self, expected_phase: Union[ScenarioPhase, Set[ScenarioPhase]]):
         if isinstance(expected_phase, ScenarioPhase):
@@ -90,9 +213,28 @@ class TestScenario(ABC):
                 f"Test scenario `{self.me()}` was {self._phase} when {caller} was called (expected {acceptable_phases})"
             )
 
-    def begin_test_scenario(self, information: Optional[str] = None) -> None:
+    def record_note(self, key: str, message: str) -> None:
+        self._expect_phase(
+            {
+                ScenarioPhase.NotStarted,
+                ScenarioPhase.ReadyForTestCase,
+                ScenarioPhase.ReadyForTestStep,
+                ScenarioPhase.RunningTestStep,
+                ScenarioPhase.ReadyForCleanup,
+                ScenarioPhase.CleaningUp,
+            }
+        )
+        if "notes" not in self._scenario_report:
+            self._scenario_report.notes = {}
+        self._scenario_report.notes[key] = Note(
+            message=message,
+            timestamp=StringBasedDateTime(arrow.utcnow().datetime),
+        )
+        print(f"Note: {key} -> {message}")
+
+    def begin_test_scenario(self) -> None:
         self._expect_phase(ScenarioPhase.NotStarted)
-        self._make_scenario_report(information)
+        self._make_scenario_report()
         self._phase = ScenarioPhase.ReadyForTestCase
 
     def begin_test_case(self, name: str) -> None:
@@ -131,6 +273,7 @@ class TestScenario(ABC):
             documentation_url=self._current_step.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
             failed_checks=[],
+            passed_checks=[],
         )
         self._case_report.steps.append(self._step_report)
         self._phase = ScenarioPhase.RunningTestStep
@@ -140,46 +283,36 @@ class TestScenario(ABC):
         if "queries" not in self._step_report:
             self._step_report.queries = []
         self._step_report.queries.append(query)
+        print(
+            f"Queried {query.request['method']} {query.request['url']} -> {query.response.status_code}"
+        )
 
-    def record_failed_check(
-        self,
-        name: str,
-        summary: str,
-        severity: Severity,
-        relevant_participants: List[str],
-        details: str = "",
-        query_timestamps: Optional[List[datetime]] = None,
-        additional_data: Optional[dict] = None,
-    ) -> None:
+    def _get_check(self, name: str) -> TestCheckDocumentation:
+        available_checks = {c.name: c for c in self._current_step.checks}
+        if name not in available_checks:
+            check_list = ", ".join(available_checks)
+            raise RuntimeError(
+                f'Test scenario `{self.me()}` was instructed to record outcome for check "{name}" during test step "{self._current_step.name}" during test case "{self._current_case.name}", but that check is not declared in documentation; declared checks are: {check_list}'
+            )
+        return available_checks[name]
+
+    def check(
+        self, name: str, participants: Optional[List[ParticipantID]] = None
+    ) -> PendingCheck:
         self._expect_phase({ScenarioPhase.RunningTestStep, ScenarioPhase.CleaningUp})
         available_checks = {c.name: c for c in self._current_step.checks}
         if name not in available_checks:
             check_list = ", ".join(available_checks)
             raise RuntimeError(
-                f'Test scenario `{self.me()}` was instructed to record_failed_check "{name}" during test step "{self._current_step.name}" during test case "{self._current_case.name}", but that check is not declared in documentation; declared checks are: {check_list}'
+                f'Test scenario `{self.me()}` was instructed to prepare to record outcome for check "{name}" during test step "{self._current_step.name}" during test case "{self._current_case.name}", but that check is not declared in documentation; declared checks are: {check_list}'
             )
-        check = available_checks[name]
-
-        kwargs = {
-            "name": check.name,
-            "documentation_url": check.url,
-            "timestamp": StringBasedDateTime(datetime.utcnow()),
-            "summary": summary,
-            "details": details,
-            "relevant_requirements": check.applicable_requirements,
-            "severity": severity,
-            "relevant_participants": relevant_participants,
-        }
-        if additional_data is not None:
-            kwargs["additional_data"] = additional_data
-        if query_timestamps is not None:
-            kwargs["query_report_timestamps"] = [
-                StringBasedDateTime(t) for t in query_timestamps
-            ]
-        failed_check = FailedCheck(**kwargs)
-        self._step_report.failed_checks.append(failed_check)
-        if self.on_failed_check is not None:
-            self.on_failed_check(failed_check)
+        check_documentation = available_checks[name]
+        return PendingCheck(
+            documentation=check_documentation,
+            participants=[] if participants is None else participants,
+            step_report=self._step_report,
+            on_failed_check=self.on_failed_check,
+        )
 
     def end_test_step(self) -> None:
         self._expect_phase(ScenarioPhase.RunningTestStep)
@@ -223,6 +356,7 @@ class TestScenario(ABC):
             documentation_url=self._current_step.url,
             start_time=StringBasedDateTime(datetime.utcnow()),
             failed_checks=[],
+            passed_checks=[],
         )
         self._scenario_report.cleanup = self._step_report
         self._phase = ScenarioPhase.CleaningUp
@@ -237,6 +371,7 @@ class TestScenario(ABC):
 
     def end_cleanup(self) -> None:
         self._expect_phase(ScenarioPhase.CleaningUp)
+        self._step_report.end_time = StringBasedDateTime(datetime.utcnow())
         self._phase = ScenarioPhase.Complete
 
     def record_execution_error(self, e: Exception) -> None:
@@ -279,42 +414,27 @@ class TestScenario(ABC):
 TestScenarioType = TypeVar("TestScenarioType", bound=TestScenario)
 
 
-class TestScenarioDeclaration(ImplicitDict):
-    scenario_type: str
-    """Type of test scenario, expressed as a Python class name qualified relative to this `scenarios` module"""
-
-    resources: Dict[str, str] = {}
-    """Mapping of resource parameter (additional argument to concrete test scenario constructor) to ID of resource to use"""
-
-    def make_test_scenario(
-        self, resource_pool: Dict[str, ResourceTypeName]
-    ) -> TestScenario:
-        inspection.import_submodules(scenarios_module)
-        scenario_type = inspection.get_module_object_by_name(
-            scenarios_module, self.scenario_type
-        )
-        if not issubclass(scenario_type, TestScenario):
-            raise NotImplementedError(
-                "Scenario type {} is not a subclass of the TestScenario base class".format(
-                    scenario_type.__name__
-                )
-            )
-
-        constructor_signature = inspect.signature(scenario_type.__init__)
-        constructor_args = {}
-        for arg_name, arg in constructor_signature.parameters.items():
-            if arg_name == "self":
-                continue
-            if arg_name not in self.resources:
-                raise ValueError(
-                    'Test scenario declaration for {} is missing a source for resource "{}"'.format(
-                        self.scenario_type, arg
-                    )
-                )
-            if self.resources[arg_name] not in resource_pool:
-                raise ValueError(
-                    f'Resource "{self.resources[arg_name]}" was not found in the resource pool when trying to create {self.scenario_type} test scenario'
-                )
-            constructor_args[arg_name] = resource_pool[self.resources[arg_name]]
-
-        return scenario_type(**constructor_args)
+def find_test_scenarios(
+    module, already_checked: Optional[Set[str]] = None
+) -> List[TestScenarioType]:
+    if already_checked is None:
+        already_checked = set()
+    already_checked.add(module.__name__)
+    test_scenarios = set()
+    for name, member in inspect.getmembers(module):
+        if (
+            inspect.ismodule(member)
+            and member.__name__ not in already_checked
+            and member.__name__.startswith("monitoring.uss_qualifier.scenarios")
+        ):
+            descendants = find_test_scenarios(member, already_checked)
+            for descendant in descendants:
+                if descendant not in test_scenarios:
+                    test_scenarios.add(descendant)
+        elif inspect.isclass(member) and member is not TestScenario:
+            if issubclass(member, TestScenario):
+                if member not in test_scenarios:
+                    test_scenarios.add(member)
+    result = list(test_scenarios)
+    result.sort(key=lambda s: fullname(s))
+    return result
