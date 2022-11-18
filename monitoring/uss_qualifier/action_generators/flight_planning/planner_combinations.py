@@ -8,10 +8,10 @@ from monitoring.uss_qualifier.resources.definitions import ResourceID
 from monitoring.uss_qualifier.resources.flight_planning import FlightPlannersResource
 from monitoring.uss_qualifier.resources.flight_planning.flight_planners import (
     FlightPlannerCombinationSelectorResource,
+    FlightPlannerCombinationSelectorSpecification,
 )
 from monitoring.uss_qualifier.resources.resource import (
     ResourceType,
-    make_child_resources,
 )
 
 from monitoring.uss_qualifier.suites.definitions import TestSuiteActionDeclaration
@@ -32,8 +32,8 @@ class FlightPlannerCombinationsSpecification(ImplicitDict):
     combination_selector_source: Optional[ResourceID] = None
     """If specified and contained in the provided resources, the resource containing a FlightPlannerCombinationSelectorResource to select only a subset of combinations"""
 
-    roles: int
-    """Number of flight planners to make available to the action, via whichever resource ID is mapped to the parent `flight_planners_source`"""
+    roles: List[ResourceID]
+    """Resource IDs of FlightPlannerResource inputs to the action_to_repeat"""
 
 
 class FlightPlannerCombinations(
@@ -73,25 +73,22 @@ class FlightPlannerCombinations(
                     f"Expected resource ID {specification.combination_selector_source} to be a {fullname(FlightPlannerCombinationSelectorResource)} but it was a {fullname(combination_selector.__class__)} instead"
                 )
         else:
-            combination_selector = None
-
-        self._actions = []
-        role_assignments = [0] * specification.roles
-        while True:
-            flight_planners_combination = flight_planners_resource.make_subset(
-                role_assignments
+            combination_selector = FlightPlannerCombinationSelectorResource(
+                FlightPlannerCombinationSelectorSpecification()
             )
 
-            if (
-                combination_selector is None
-                or combination_selector.is_valid_combination(
-                    flight_planners_combination
-                )
-            ):
+        self._actions = []
+        role_assignments = [0] * len(specification.roles)
+        while True:
+            participants = flight_planners_resource.make_subset(role_assignments)
+            flight_planners_combination = {
+                k: v for k, v in zip(specification.roles, participants)
+            }
+
+            if combination_selector.is_valid_combination(flight_planners_combination):
                 modified_resources = {k: v for k, v in resources.items()}
-                modified_resources[
-                    specification.flight_planners_source
-                ] = flight_planners_combination
+                for k, v in flight_planners_combination.items():
+                    modified_resources[k] = v
 
                 self._actions.append(
                     TestSuiteAction(specification.action_to_repeat, modified_resources)

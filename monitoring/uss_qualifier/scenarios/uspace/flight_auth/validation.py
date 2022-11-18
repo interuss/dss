@@ -14,6 +14,9 @@ from monitoring.uss_qualifier.resources.flight_planning import (
 from monitoring.uss_qualifier.resources.flight_planning.flight_planner import (
     FlightPlanner,
 )
+from monitoring.uss_qualifier.resources.flight_planning.flight_planners import (
+    FlightPlannerResource,
+)
 from monitoring.uss_qualifier.scenarios.scenario import TestScenario
 from monitoring.uss_qualifier.scenarios.flight_planning.test_steps import (
     clear_area,
@@ -30,14 +33,10 @@ class Validation(TestScenario):
     def __init__(
         self,
         flight_intents: FlightIntentsResource,
-        flight_planners: FlightPlannersResource,
+        flight_planner: FlightPlannerResource,
     ):
         super().__init__()
-        if len(flight_planners.flight_planners) != 1:
-            raise ValueError(
-                f"`{self.me()}` TestScenario requires exactly 1 flight_planner; found {len(flight_planners.flight_planners)}"
-            )
-        self.ussp = flight_planners.flight_planners[0]
+        self.ussp = flight_planner.flight_planner
 
         intents = flight_intents.get_flight_intents()
         if len(intents) < 2:

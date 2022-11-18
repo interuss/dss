@@ -173,7 +173,7 @@ class TestScenario(ABC):
             if arg_name not in resource_pool:
                 available_pool = ", ".join(resource_pool)
                 raise ValueError(
-                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {self.scenario_type} test scenario (resource pool: {available_pool})'
+                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {declaration.scenario_type} test scenario (resource pool: {available_pool})'
                 )
             constructor_args[arg_name] = resource_pool[arg_name]
 
