@@ -1,4 +1,4 @@
-# USS to USS Communication and Synchronization [![Build Status](https://dev.azure.com/astm/dss/_apis/build/status/interuss.dss?branchName=master)](https://dev.azure.com/astm/dss/_build/latest?definitionId=2&branchName=master) [![GoDoc](https://godoc.org/github.com/interuss/dss?status.svg)](https://godoc.org/github.com/interuss/dss)
+# USS to USS Communication and Synchronization [![GoDoc](https://godoc.org/github.com/interuss/dss?status.svg)](https://godoc.org/github.com/interuss/dss)
 
 <img src="assets/color_logo_transparent.png" width="200">
 
@@ -48,8 +48,7 @@ Management (UTM) UAS Service Supplier (USS) Interoperability Specification.
   - [Diagnostic tool to monitor DSS and USS interactions: tracer](./monitoring/tracer)
 
 ## Development Practices
-<!-- - [Getting Started]() -->
-<!-- - [Contribution Guidelines]() -->
 - [Introduction to the repository](./introduction_to_repository.md)
+- [Contributing](./CONTRIBUTING.md)
 - [Release process](./RELEASE.md)
 - [Governance](https://github.com/interuss/tsc)
