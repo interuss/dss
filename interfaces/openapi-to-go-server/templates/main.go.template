@@ -8,7 +8,7 @@ import (
 
 type PermissiveAuthorizer struct{}
 
-func (*PermissiveAuthorizer) Authorize(w http.ResponseWriter, r *http.Request, schemes *map[string]<API_PACKAGE>.SecurityScheme) <API_PACKAGE>.AuthorizationResult {
+func (*PermissiveAuthorizer) Authorize(w http.ResponseWriter, r *http.Request, authOptions []<API_PACKAGE>.AuthorizationOption) <API_PACKAGE>.AuthorizationResult {
   return <API_PACKAGE>.AuthorizationResult{}
 }
 

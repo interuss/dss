@@ -18,7 +18,7 @@ type APIRouter struct {
 // *dummyoauth.APIRouter (type defined above) implements the api.PartialRouter interface
 func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 	for _, route := range s.Routes {
-		if route.Pattern.MatchString(r.URL.Path) {
+		if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
 			route.Handler(route.Pattern, w, r)
 			return true
 		}
@@ -30,7 +30,7 @@ func (s *APIRouter) GetToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.
 	var req GetTokenRequest
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, &GetTokenSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, GetTokenSecurity)
 
 	// Copy query parameters
 	query := r.URL.Query()
@@ -59,7 +59,7 @@ func (s *APIRouter) GetToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.
 	}
 
 	// Call implementation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	response := s.Implementation.GetToken(ctx, &req)
 
@@ -83,7 +83,7 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 1)}
 
 	pattern := regexp.MustCompile("^/token$")
-	router.Routes[0] = &api.Route{Pattern: pattern, Handler: router.GetToken}
+	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetToken}
 
 	return router
 }

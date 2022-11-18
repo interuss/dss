@@ -86,9 +86,10 @@ def _object_field(field: data_types.ObjectField) -> List[str]:
     :return: Lines of Go code defining the provided field
     """
     lines = comment(field.description.split('\n')) if field.description else []
-    lines.append('{} {}{} `json:"{}"`'.format(field.go_name,
+    lines.append('{} {}{} `json:"{}{}"`'.format(field.go_name,
                                               '*' if not field.required else '',
-                                              field.go_type, field.api_name))
+                                              field.go_type, field.api_name,
+                                              ',omitempty' if not field.required else ''))
     return lines
 
 
@@ -108,17 +109,18 @@ def implementation_interface(api: apis.API, api_package: str, ensure_500: bool) 
     var_body: List[str] = []
     for operation in api.operations:
         var_body.append(
-            '%sSecurity = map[string]%s.SecurityScheme{' % (operation.interface_name, api_package))
+            '%sSecurity = []%s.AuthorizationOption{' % (operation.interface_name, api_package))
 
         init_body: List[str] = []
-        for scheme, options in operation.security.schemes.items():
-            init_body.append('"%s": []%s.AuthorizationOption{' % (scheme, api_package))
-            init_body.extend(indent([
-                '%s.AuthorizationOption{RequiredScopes: []string{%s}},' % (
-                    api_package,
-                    ', '.join('"{}"'.format(scope)
-                              for scope in option.required_scopes))
-                for option in options], 1))
+        for auth_option in operation.security.options:
+            init_body.append('{')
+            for scheme, scopes in auth_option.option.items():
+                init_body.extend(indent([
+                    '"%s": {%s},' % (
+                        scheme,
+                        ', '.join('"{}"'.format(scope) for scope in scopes)
+                    )
+                ], 1))
             init_body.append('},')
         var_body.extend(indent(init_body, 1))
 
@@ -164,7 +166,7 @@ def implementation_interface(api: apis.API, api_package: str, ensure_500: bool) 
         for response in responses:
             if response.description:
                 body.extend(comment(response.description.split('\n')))
-            body_type = response.json_body_type if response.json_body_type else 'EmptyResponseBody'
+            body_type = response.json_body_type if response.json_body_type else '{}.EmptyResponseBody'.format(api_package)
             body.extend(['{} *{}'.format(response.response_set_field, body_type)])
             body.append('')
         body.pop()
@@ -228,7 +230,7 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> Tuple[List[str]
         # Attempt to authorize access to the operation
         body.extend(comment(['Authorize request']))
         body.append(
-            'req.Auth = s.Authorizer.Authorize(w, r, &{}Security)'.format(
+            'req.Auth = s.Authorizer.Authorize(w, r, {}Security)'.format(
                 operation.interface_name))
         body.append('')
 
@@ -301,7 +303,7 @@ def routes(api: apis.API, api_package: str, ensure_500: bool) -> Tuple[List[str]
         # Actually invoke the API Implementation with the processed request to obtain the response
         imports.add('context')
         body.extend(comment(['Call implementation']))
-        body.append('ctx, cancel := context.WithCancel(context.Background())')
+        body.append('ctx, cancel := context.WithCancel(r.Context())')
         body.append('defer cancel()')
         body.append('response := s.Implementation.{}(ctx, &req)'.format(
             operation.interface_name))
@@ -349,8 +351,8 @@ def routing(api: apis.API, api_package: str) -> List[str]:
         lines.append('pattern {}= regexp.MustCompile("^{}$")'.format(
             ':' if first_assignment else '', path_regex))
         lines.append(
-            'router.Routes[%d] = &%s.Route{Pattern: pattern, Handler: router.%s}' % (
-            i, api_package, operation.interface_name))
+            'router.Routes[%d] = &%s.Route{Method: %s, Pattern: pattern, Handler: router.%s}' % (
+            i, api_package, operation.verb_const_name, operation.interface_name))
         lines.append('')
         first_assignment = False
     lines.append('return router')
