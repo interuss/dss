@@ -65,9 +65,11 @@ def get_operational_intent_details(entityid: str):
                 response = scd.ErrorResponse(message=error_message)
                 query["response"] = {"code": 403, "json": response}
                 status_code = 403
-            resp = sign_response(flask.jsonify(response))
+            response = flask.jsonify(response)
+            response.status_code = status_code
+            response = sign_response(response)
             query["response"]["headers"] = json.dumps(
-                {k: v for k, v in resp.headers.items()}
+                {k: v for k, v in response.headers.items()}
             )
             interaction_id = report_settings.reprt_recorder.capture_interaction(
                 query,
@@ -114,9 +116,10 @@ def notify_operational_intent_details_changed():
                 query["response"] = {"code": 403, "json": {"message": error_message}}
                 response = flask.jsonify(scd.ErrorResponse(message=error_message))
                 status_code = 403
-            resp = sign_response(response)
+            response.status_code = status_code
+            response = sign_response(response)
             query["response"]["headers"] = json.dumps(
-                {k: v for k, v in resp.headers.items()}
+                {k: v for k, v in response.headers.items()}
             )
             interaction_id = report_settings.reprt_recorder.capture_interaction(
                 query,
