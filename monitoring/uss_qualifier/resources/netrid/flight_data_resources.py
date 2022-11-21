@@ -1,17 +1,16 @@
 from datetime import timedelta
-import json
 from typing import List, Optional
 import uuid
 
 import arrow
 from implicitdict import ImplicitDict, StringBasedDateTime
-import requests
+from uas_standards.interuss.automated_testing.rid.v1.injection import TestFlightDetails
 
 from monitoring.monitorlib.rid import RIDAircraftState
 from monitoring.monitorlib.rid_automated_testing.injection_api import (
-    TestFlightDetails,
     TestFlight,
 )
+from monitoring.uss_qualifier.fileio import load_dict_with_references, load_content
 from monitoring.uss_qualifier.resources.resource import Resource
 from monitoring.uss_qualifier.resources.netrid.flight_data import (
     FlightDataSpecification,
@@ -30,29 +29,25 @@ class FlightDataResource(Resource[FlightDataSpecification]):
     flight_collection: FlightRecordCollection
 
     def __init__(self, specification: FlightDataSpecification):
-        if specification.json_file_source is not None:
-            if specification.json_file_source.path.startswith("http"):
-                resp = requests.get(specification.json_file_source.path)
-                resp.raise_for_status()
-                self.flight_collection = ImplicitDict.parse(
-                    json.loads(resp.content.decode("utf-8")), FlightRecordCollection
-                )
-            else:
-                with open(specification.json_file_source.path, "r") as f:
-                    self.flight_collection = ImplicitDict.parse(
-                        json.load(f), FlightRecordCollection
-                    )
-        elif specification.adjacent_circular_flights_simulation_source is not None:
+        if "record_source" in specification:
+            self.flight_collection = ImplicitDict.parse(
+                load_dict_with_references(specification.record_source),
+                FlightRecordCollection,
+            )
+        elif "adjacent_circular_flights_simulation_source" in specification:
             self.flight_collection = generate_aircraft_states(
                 specification.adjacent_circular_flights_simulation_source
             )
-        elif specification.kml_file_source is not None:
+        elif "kml_source" in specification:
+            kml_content = load_content(specification.kml_source.kml_location)
             self.flight_collection = get_flight_records(
-                specification.kml_file_source.kml_path
+                kml_content,
+                specification.kml_source.reference_time.datetime,
+                specification.kml_source.random_seed,
             )
         else:
             raise ValueError(
-                "A source of flight data was not identified in the specification for a NetRIDFlightDataResource"
+                "A source of flight data was not identified in the specification for a FlightDataSpecification"
             )
         self._flight_start_delay = specification.flight_start_delay.timedelta
 

@@ -2,53 +2,36 @@
 
 ## Introduction
 
-The USS Qualifier automates testing compliance to requirements and interoperability of multiple USS/USSPs.
+The uss_qualifier tool in this folder automates verifying compliance to requirements and interoperability of multiple USS/USSPs.
+
+## Usage
+
+The `uss_qualifier` tool is a synchronous executable built into the `interuss/monitoring` Docker image.  To use the `interuss/monitoring` image to run uss_qualifier, specify a working directory of `/app/monitoring/uss_qualifier` and a command of `python main.py ${OPTIONS}` -- see [`run_locally.sh`](run_locally.sh) for an example that can be run on any local system that is running the required prerequisites (documented in message printed by run_locally.sh).
+
+The primary input accepted by uss_qualifier is the "configuration" specified with the `--config` option.  This option should be a [reference to a configuration file](configurations/README.md) that the user has constructed or been provided to test the desired system for the desired characteristics.  If testing a standard local system (DSS + dummy auth + mock USSs), the user can specify an alternate configuration reference as a single argument to `run_locally.sh` (the default configuration is `configurations.dev.local_test`).
+
+When building a custom configuration file, consider starting from [`configurations.dev.self_contained_f3548`](configurations/dev/self_contained_f3548.yaml), as it contains all information necessary to run the test without the usage of sometimes-configuring `$ref`s and `allOf`s.  See [configurations documentation](configurations/README.md) for more information.
+
+### Quick start
+
+This section provides a specific set of commands to execute uss_qualifier for demonstration purposes.
+
+1. Check out this repository: `git clone https://github.com/interuss/dss`
+2. Go to repository root: `cd dss`
+3. Bring up a local UTM ecosystem (DSS + dummy auth): `build/dev/run_locally.sh`
+4. In a separate window, bring up a mock RID Service Provider USS: `monitoring/mock_uss/run_locally_ridsp.sh`
+5. In a separate window, bring up a mock RID Display Provider USS: `monitoring/mock_uss/run_locally_riddp.sh`
+6. In a separate window, bring up a mock strategic conflict detection USS: `monitoring/mock_uss/run_locally_scdsc.sh`
+7. Wait until all 4 windows above stop printing new text (should take 1-2 minutes usually, or up to 15 minutes the first time)
+8. In a separate window, run uss_qualifier explicitly specifying a configuration to use: `monitoring/uss_qualifier/run_locally.sh configurations.dev.local_test`
+
+After building, uss_qualifier should take a few minutes to run and then `report.json` should appear in [monitoring/uss_qualifier](.)
+
+At this point, uss_qualifier can be run again with a different configuration targeted at the development resources brought up in steps 3-6; for instance: `monitoring/uss_qualifier/run_locally.sh configurations.dev.self_contained_f3548`
 
 ## Architecture
 
-Note: We are currently in the process of migrating the technical implementation of uss_qualifier to the architecture described here; the architecture today is different from this.
-
-### Test suites
-
-1. A test suite is a set of tests that establish compliance to the thing they're named after.
-    * Example: Passing the "ASTM F3548-21" test suite should indicate the systems under test are compliant with ASTM F3548-21.
-2. A test suite is composed of a list of {test suite|test scenario}.
-    * Each element on the list is executed sequentially.
-
-### [Test scenarios](scenarios/README.md)
-
-### Test cases
-
-1. A test case is a single wholistic operation or action performed as part of a larger test scenario.
-    * Test cases are like acts in the "play" of the test scenario they are a part of.
-    * Test cases are typically the "gray headers” of the overview sequence diagrams.
-2. A given test case belongs to exactly one test scenario.
-3. A test case is composed of a list of test steps.
-    * Each test step on the list is executed sequentially.
-
-### Test steps
-
-1. A test step is a single task that must be performed in order to accomplish its associated test case.
-   * Test steps are like scenes in the "play/act" of the test scenario/test case they are a part of.
-2. A given test step belongs to exactly one test case.
-3. A test step may have a list of checks associated with it.
-
-### Checks
-
-1. A check is the lowest-level thing automated testing does – it is a single pass/fail evaluation of a single criterion for a requirement.
-2. A check evaluates information collected during the actions performed for a test step.
-3. A given check belongs to exactly one test step.
-4. Each check defines which requirement is not met if the check fails.
-
-### Test configurations
-
-1. Even though all the scenarios, cases, steps and checks are fully defined for a particular test suite, the scenarios require data customized for a particular ecosystem – this data is provided as "test resources" which are created from the specifications in a "test configuration".
-2. A test configuration is associated with exactly one test suite, and contains descriptions for how to create each of the set of required test resources.
-    * The resources required for a particular test definition depend on which test scenarios are included in the test suite.
-3. One resource can be used by many different test scenarios.
-4. One test scenario may use multiple resources.
-5. One class of resources is resources that describe the systems under test and how to interact with them; e.g., "Display Providers under test".
-    * This means that a complete test configuration can't be tracked in the InterUSS repository because it wouldn't make sense to list, e.g., Display Provider observation endpoint URLs in the SUSI qual-partners environment.
-    * Partial test configurations, including RID telemetry to inject, operational intents to inject, etc, can be tracked in the InterUSS repository, but they could not be used without specifying the missing resources describing systems under test.
-
-### [Test resources](resources/README.md)
+* [Test suites](suites/README.md)
+* [Test scenarios](scenarios/README.md) (includes test case, test step, check breakdown)
+* [Test configurations](configurations/README.md)
+* [Test resources](resources/README.md)

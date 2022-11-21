@@ -198,7 +198,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
               name: 'prometheus-datadir',
             },
             spec: {
-              storageClassName: 'standard',
+              storageClassName: metadata.prometheus.storageClass,
               accessModes: [
                 'ReadWriteOnce',
               ],

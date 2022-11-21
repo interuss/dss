@@ -71,6 +71,3 @@ done
 echo "Run the standard local tests."
 echo "============="
 monitoring/uss_qualifier/run_locally.sh
-echo "Run the SCD qualifier."
-echo "============="
-monitoring/uss_qualifier/run_locally_scd.sh

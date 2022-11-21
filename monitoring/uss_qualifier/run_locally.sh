@@ -14,28 +14,30 @@ cd "${BASEDIR}/../.." || exit 1
 
 echo '#########################################################################'
 echo '## NOTE: A prerequisite for running this command locally is to have    ##'
-echo '## running instances of mock_uss acting as RID SP and RID DP           ##'
+echo '## running instances of mock_uss acting as RID SP, RID DP, and SCD     ##'
 echo '## (../mock_uss/run_locally_ridsp.sh) and                              ##'
-echo '## (../mock_uss/run_locally_riddp.sh) including related dependencies.  ##'
+echo '## (../mock_uss/run_locally_riddp.sh) and                              ##'
+echo '## (../mock_uss/run_locally_scdsc.sh) including related dependencies.  ##'
 echo '#########################################################################'
 
 monitoring/build.sh || exit 1
 
-CONFIG_LOCATION="monitoring/uss_qualifier/config_run_locally_rid.json"
-CONFIG='--config config_run_locally_rid.json'
+CONFIG_NAME="${1:-configurations.dev.local_test}"
+CONFIG_FLAG="--config ${CONFIG_NAME}"
 
 AUTH_SPEC='DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
 
-echo '{
-    "locale": "CHE",
-    "config": "dev.local_test"
-}' > ${CONFIG_LOCATION}
-
-QUALIFIER_OPTIONS="$CONFIG"
+QUALIFIER_OPTIONS="$CONFIG_FLAG"
 
 REPORT_FILE="$(pwd)/monitoring/uss_qualifier/report.json"
 # Report file must already exist to share correctly with the Docker container
 touch "${REPORT_FILE}"
+
+TESTED_REQS_FILE="$(pwd)/monitoring/uss_qualifier/tested_requirements.html"
+touch "${TESTED_REQS_FILE}"
+
+DOT_FILE="$(pwd)/monitoring/uss_qualifier/report.gv"
+touch "${DOT_FILE}"
 
 if [ "$CI" == "true" ]; then
   docker_args="--add-host host.docker.internal:host-gateway" # Required to reach other containers in Ubuntu (used for Github Actions)
@@ -50,9 +52,15 @@ docker run ${docker_args} --name uss_qualifier \
   -e PYTHONBUFFERED=1 \
   -e AUTH_SPEC=${AUTH_SPEC} \
   -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
+  -v "${TESTED_REQS_FILE}:/app/monitoring/uss_qualifier/tested_requirements.html" \
+  -v "${DOT_FILE}:/app/monitoring/uss_qualifier/report.gv" \
   -v "$(pwd):/app" \
   -w /app/monitoring/uss_qualifier \
   interuss/monitoring \
-  python main.py $QUALIFIER_OPTIONS
-
-rm ${CONFIG_LOCATION}
+  python main.py $QUALIFIER_OPTIONS \
+  --report report.json \
+  --tested_requirements tested_requirements.html \
+  --role_requirements uss1,uss2=astm.f3548.v21.scd \
+  --role_requirements uss1=astm.f3411.v19.service_provider \
+  --role_requirements uss2=astm.f3411.v19.display_provider \
+  --dot report.gv

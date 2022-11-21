@@ -30,11 +30,11 @@ In this step, uss_qualifier injects a single nominal flight into each SP under t
 
 #### Successful injection check
 
-Per **[injection.yaml::UpsertTestSuccess](../../../../../interfaces/automated-testing/rid/injection.yaml)**, the injection attempt of the valid flight should succeed for every NetRID Service Provider under test.
+Per **[interuss.automated_testing.rid.injection.UpsertTestSuccess](../../../requirements/interuss/automated_testing/rid/injection.md)**, the injection attempt of the valid flight should succeed for every NetRID Service Provider under test.
 
 #### Valid flight check
 
-Per **[injection.yaml::UpsertTestResult](../../../../../interfaces/automated-testing/rid/injection.yaml)**, the NetRID Service Provider under test should only make valid modifications to the injected flights.  This includes:
+Per **[interuss.automated_testing.rid.injection.UpsertTestResult](../../../requirements/interuss/automated_testing/rid/injection.md)**, the NetRID Service Provider under test should only make valid modifications to the injected flights.  This includes:
 * A flight with the specified injection ID must be returned.
 
 ### Polling test step
@@ -43,29 +43,29 @@ In this step, all observers are periodically queried for the flights they observ
 
 #### Successful observation check
 
-Per **[observation.yaml::ObservationSuccess](../../../../../interfaces/automated-testing/rid/observation.yaml)**, the call to each observer is expected to succeed since a valid view was provided by uss_qualifier.
+Per **[interuss.automated_testing.rid.observation.ObservationSuccess](../../../requirements/interuss/automated_testing/rid/observation.md)**, the call to each observer is expected to succeed since a valid view was provided by uss_qualifier.
 
 #### Duplicate flights check
 
-An assumption this test scenario currently makes is that the flight ID reported by the SP the flight was injected into is the same flight ID that each observer will report.  This is probably not a robust assumption and should be adjusted.
+An assumption (**[interuss.automated_testing.rid.ObservationFlightID](../../../requirements/interuss/automated_testing/rid.md)**) this test scenario currently makes is that the flight ID reported by the SP the flight was injected into is the same flight ID that each observer will report.  This is probably not a robust assumption and should be adjusted.
 
 This check will fail if an observation contains two flights with the same ID.
 
 #### Premature flight check
 
-The timestamps of the injected telemetry usually start in the future.  If a flight with injected telemetry only in the future is observed prior to the timestamp of the first telemetry point, this check will fail because the SP does not satisfy **[injection.yaml::ExpectedBehavior](../../../../../interfaces/automated-testing/rid/injection.yaml)**.
+The timestamps of the injected telemetry usually start in the future.  If a flight with injected telemetry only in the future is observed prior to the timestamp of the first telemetry point, this check will fail because the SP does not satisfy **[interuss.automated_testing.rid.injection.ExpectedBehavior](../../../requirements/interuss/automated_testing/rid/injection.md)**.
 
 #### Lingering flight check
 
-**ASTM F3411-19::NET0260** and **ASTM F3411-22a::NET0260** require a SP to provide flights up to *NetMaxNearRealTimeDataPeriod* in the past, but an SP should preserve privacy and ensure relevancy by not sharing flights that are further in the past than this window.
+**[astm.f3411.v19.NET0260](../../../requirements/astm/f3411/v19.md)** requires a SP to provide flights up to *NetMaxNearRealTimeDataPeriod* in the past, but an SP should preserve privacy and ensure relevancy by not sharing flights that are further in the past than this window.
 
 #### Missing flight check
 
-**ASTM F3411-19::NET0610** and **ASTM F3411-22a::NET0610** require that SPs make all UAS operations discoverable over the duration of the flight plus *NetMaxNearRealTimeDataPeriod*, so each injected flight should be observable during this time.  If one of the flights is not observed during its appropriate time period, this check will fail.
+**[astm.f3411.v19.NET0610](../../../requirements/astm/f3411/v19.md)** require that SPs make all UAS operations discoverable over the duration of the flight plus *NetMaxNearRealTimeDataPeriod*, so each injected flight should be observable during this time.  If one of the flights is not observed during its appropriate time period, this check will fail.
 
 #### Area too large check
 
-**ASTM F3411-19::NET0430** and **ASTM F3411-22a::NET0430** require that a NetRID Display Provider reject a request for a very large view area with a diagonal greater than *NetMaxDisplayAreaDiagonal*.  If such a large view is requested and a 413 error code is not received, then this check will fail.
+**[astm.f3411.v19.NET0430](../../../requirements/astm/f3411/v19.md)** require that a NetRID Display Provider reject a request for a very large view area with a diagonal greater than *NetMaxDisplayAreaDiagonal*.  If such a large view is requested and a 413 error code is not received, then this check will fail.
 
 ## Cleanup
 
@@ -73,4 +73,4 @@ The cleanup phase of this test scenario attempts to remove injected data from al
 
 ### Successful test deletion check
 
-Per **[injection.yaml::DeleteTestSuccess](../../../../../interfaces/automated-testing/rid/injection.yaml)**, the deletion attempt of the previously-injected test should succeed for every NetRID Service Provider under test.
+**[interuss.automated_testing.rid.injection.DeleteTestSuccess](../../../requirements/interuss/automated_testing/rid/injection.md)**

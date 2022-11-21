@@ -5,98 +5,90 @@ import json
 import os
 import sys
 
-import yaml
-
 from implicitdict import ImplicitDict
+from monitoring.monitorlib.versioning import get_code_version
 from monitoring.uss_qualifier.configurations.configuration import TestConfiguration
-from monitoring.uss_qualifier.reports import FailedCheck
+from monitoring.uss_qualifier.reports.documents import generate_tested_requirements
+from monitoring.uss_qualifier.reports.graphs import make_graph
+from monitoring.uss_qualifier.reports.report import TestRunReport
 from monitoring.uss_qualifier.resources.resource import create_resources
-from monitoring.uss_qualifier.scd.executor import executor as scd_test_executor
 from monitoring.uss_qualifier.suites.suite import (
-    TestSuiteAction,
-    TestSuiteActionDeclaration,
-    ReactionToFailure,
+    TestSuite,
 )
-from monitoring.uss_qualifier.utils import USSQualifierTestConfiguration
 
 
 def parseArgs() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Execute USS Qualifier for a locale")
+    parser = argparse.ArgumentParser(description="Execute USS Qualifier")
 
     parser.add_argument(
         "--config",
-        required=True,
-        help="Configuration of test to be conducted; either JSON describing a utils.USSQualifierTestConfig, or the name of a file with that content",
+        help="Configuration string according to monitoring/uss_qualifier/configurations/README.md",
+    )
+
+    parser.add_argument(
+        "--report",
+        help="File name of the report to write (if --config provided) or read (if --config not provided)",
+    )
+
+    parser.add_argument(
+        "--dot",
+        help="File name to create for a GraphViz dot text file summarizing the test run",
+    )
+
+    parser.add_argument(
+        "--tested_requirements",
+        help="File name to create for a tested requirements HTML summary",
+    )
+    parser.add_argument(
+        "--role_requirements",
+        action="append",
+        help="Specification of a role to include in the tested_requirements summary for the specified participants, in the form of <PARTICIPANT_ID>[,<PARTICIPANT_ID>,...]=<REQUIREMENT_SET_ID>",
     )
 
     return parser.parse_args()
 
 
-def _print_failed_check(failed_check: FailedCheck) -> None:
-    print("New failed check:")
-    yaml_lines = yaml.dump(json.loads(json.dumps(failed_check))).split("\n")
-    print("\n".join("  " + line for line in yaml_lines))
-
-
-def uss_test_executor(config: USSQualifierTestConfiguration):
-    if config.config:
-        test_config = TestConfiguration.from_string(config.config)
-        resources = create_resources(test_config.resources.resource_declarations)
-        suite_action = TestSuiteAction(
-            TestSuiteActionDeclaration(
-                test_suite=test_config.test_suite, on_failure=ReactionToFailure.Continue
-            ),
-            resources,
-        )
-        action_report = suite_action.run()
-
-        legacy_reports = {"suite": action_report.test_suite}
+def uss_test_executor(config: str):
+    codebase_version = get_code_version()
+    test_config = TestConfiguration.from_string(config)
+    resources = create_resources(test_config.resources.resource_declarations)
+    suite = TestSuite(test_config.test_suite, resources)
+    report = suite.run()
+    if report.successful:
+        print("Final result: SUCCESS")
     else:
-        legacy_reports = {}
+        print("Final result: FAILURE")
 
-    # TODO: Convert SCD tests into new architecture
-    if "resources" in config:
-        scd_test_report, executed_test_run_count = scd_test_executor.run_scd_tests(
-            test_configuration=config
-        )
-        legacy_reports["scd"] = {
-            "report": scd_test_report,
-            "executed_test_run_count": executed_test_run_count,
-        }
-    else:
-        legacy_reports["scd"] = {}
-        print("[SCD] No configuration provided.")
-    return legacy_reports
+    return TestRunReport(
+        codebase_version=codebase_version, configuration=test_config, report=report
+    )
 
 
 def main() -> int:
     args = parseArgs()
 
-    # Load/parse configuration
-    config_input = args.config
-    if config_input.lower().endswith(".json"):
-        with open(config_input, "r") as f:
-            config_json = json.load(f)
+    if args.config is not None:
+        report = uss_test_executor(args.config)
+        if args.report is not None:
+            print(f"Writing report to {args.report}")
+            with open(args.report, "w") as f:
+                json.dump(report, f, indent=2)
+    elif args.report is not None:
+        with open(args.report, "r") as f:
+            report = ImplicitDict.parse(json.load(f), TestRunReport)
     else:
-        config_json = json.loads(config_input)
-    config: USSQualifierTestConfiguration = ImplicitDict.parse(
-        config_json, USSQualifierTestConfiguration
-    )
-    reports = uss_test_executor(config)
-    with open("report.json", "w") as f:
-        json.dump(reports, f, indent=2)
-    scd_report = reports["scd"].get("report")
-    executed_test_run_count = reports["scd"].get("executed_test_run_count")
-    if (
-        scd_report
-        and executed_test_run_count
-        and (
-            not scd_test_executor.check_scd_test_run_issues(
-                scd_report, executed_test_run_count
-            )
-        )
-    ):
-        return os.EX_SOFTWARE
+        raise ValueError("No input provided; --config or --report must be specified")
+
+    if args.dot is not None:
+        print(f"Writing GraphViz dot source to {args.dot}")
+        with open(args.dot, "w") as f:
+            f.write(make_graph(report).source)
+
+    if args.tested_requirements is not None:
+        print(f"Writing tested requirements summary to {args.tested_requirements}")
+        with open(args.tested_requirements, "w") as f:
+            f.write(generate_tested_requirements(report, args.role_requirements))
+
     return os.EX_OK
 
 
