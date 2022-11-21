@@ -17,9 +17,13 @@ intent.
 
 FlightIntentsResource that provides at least 2 flight intents.  The first flight intent will be used for the successfully-planned flight and the second flight will be used for the failed flight.  Therefore, the second flight must intersect the first flight.
 
-### flight_planners
+### uss1
 
-FlightPlannersResource that provides exactly 2 flight planners (USSs).  The first flight planner will successfully plan the first flight.  The second flight planner will unsuccessfully attempt to plan the second flight.
+FlightPlannerResource that will successfully plan the first flight.
+
+### uss2
+
+FlightPlannerResource that will unsuccessfully attempt to plan the second flight.
 
 ### dss
 
