@@ -212,10 +212,8 @@ test-e2e:
 hygiene:
 	test/repo_hygiene/repo_hygiene.sh
 
-tag: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
-
 tag:
-	scripts/tag.sh $(UPSTREAM_OWNER)/dss/$(VERSION)
+	scripts/tag.sh $(UPSTREAM_OWNER)/dss/v$(VERSION)
 
 start-locally:
 	build/dev/run_locally.sh
