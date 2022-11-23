@@ -5,7 +5,7 @@
 # Semantic versioning regex (suffixed below) from:
 # https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 tag_regex='^[^/]+/[^/]+/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
-tag=$(echo "$1" | grep -E ${tag_regex})
+tag=$(echo "$1" | grep -E "${tag_regex}")
 
 set -e
 
