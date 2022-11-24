@@ -335,7 +335,7 @@ a PR to that effect would be greatly appreciated.
         [`us-demo.pem`](./jwt-public-certs/us-demo.pem), use the path
         `/jwt-public-certs/us-demo.pem`.  Note that your .pem file must have
         been copied into [`jwt-public-certs`](./jwt-public-certs) in an earlier
-        step.
+        step, or mounted at runtime using a volume.
 
         - If providing an access token public key via JWKS, provide a blank
           string for this parameter.
