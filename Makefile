@@ -226,10 +226,12 @@ build-monitoring:
 test-e2e:
 	test/docker_e2e.sh
 
-tag: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
+.PHONY: hygiene
+hygiene:
+	test/repo_hygiene/repo_hygiene.sh
 
 tag:
-	scripts/tag.sh $(UPSTREAM_OWNER)/dss/$(VERSION)
+	scripts/tag.sh $(UPSTREAM_OWNER)/dss/v$(VERSION)
 
 start-locally:
 	build/dev/run_locally.sh
