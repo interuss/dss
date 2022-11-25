@@ -45,7 +45,7 @@ format:
 lint: python-lint shell-lint go-lint
 
 .PHONY: check-hygiene
-lint: python-lint hygiene validate-uss-qualifier-docs shell-lint go-lint
+check-hygiene: python-lint hygiene validate-uss-qualifier-docs shell-lint go-lint
 
 .PHONY: python-lint
 python-lint:
@@ -68,6 +68,8 @@ shell-lint:
 go-lint:
 	echo "===== Checking Go lint except staticcheck & vet =====" && docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
 	echo "===== Checking Go lint with staticcheck =====" && docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all --skip-dirs /dss/build/workspace -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
+	# vet separately for: https://github.com/golangci/golangci-lint/issues/896 (TODO: update to 1.27.0 and remove this comment)
+	echo "===== Checking Go lint with vet =====" && docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run -v --disable-all -E vet --timeout 5m
 
 
 pkg/api/v1/ridpbv1/rid.pb.go: pkg/api/v1/ridpbv1/rid.proto generator
@@ -198,7 +200,8 @@ test-go-units:
 
 .PHONY: test-go-units-crdb
 test-go-units-crdb: cleanup-test-go-units-crdb
-	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v21.2.7 start-single-node --insecure > /dev/null
+	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v21.2.7 start-single-node --listen-addr=0.0.0.0 --insecure > /dev/null
+	@until [ -n "`docker logs dss-crdb-for-testing | grep 'nodeID'`" ]; do echo "Waiting for CRDB to be ready"; sleep 3; done;
 	go run ./cmds/db-manager/main.go --schemas_dir ./build/deploy/db_schemas/rid --db_version latest --cockroach_host localhost
 	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid --schemas_dir db-schemas/rid
 	go test -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name scd --schemas_dir db-schemas/scd

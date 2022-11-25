@@ -24,7 +24,7 @@ jobs:
     - name: Python lint
       run: make python-lint
     - name: Automated hygiene verification
-      run: make hygiene
+      run: make check-hygiene
     - name: uss_qualifier documentation validation
       run: make validate-uss-qualifier-docs
     - name: Shell lint
