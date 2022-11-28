@@ -203,9 +203,8 @@ test-go-units-crdb: cleanup-test-go-units-crdb
 	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v21.2.7 start-single-node --listen-addr=0.0.0.0 --insecure > /dev/null
 	@until [ -n "`docker logs dss-crdb-for-testing | grep 'nodeID'`" ]; do echo "Waiting for CRDB to be ready"; sleep 3; done;
 	go run ./cmds/db-manager/main.go --schemas_dir ./build/deploy/db_schemas/rid --db_version latest --cockroach_host localhost
-	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid --schemas_dir db-schemas/rid
-	go test -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name scd --schemas_dir db-schemas/scd
-	go test -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid --schemas_dir db-schemas/rid
+	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid
+	go test -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 
@@ -225,10 +224,6 @@ build-monitoring:
 .PHONY: test-e2e
 test-e2e:
 	test/docker_e2e.sh
-
-.PHONY: hygiene
-hygiene:
-	test/repo_hygiene/repo_hygiene.sh
 
 tag:
 	scripts/tag.sh $(UPSTREAM_OWNER)/dss/v$(VERSION)
