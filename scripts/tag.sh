@@ -2,24 +2,26 @@
 
 # We only enable -o pipefail after having verified that
 # the command line argument satisfies format requirements.
-version=$(echo "$1" | grep -E '.+/.+/v[0-9]+\.[0-9]+\.[0-9]+')
+# Semantic versioning regex (suffixed below) from:
+# https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+tag_regex='^[^/]+/[^/]+/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
+tag=$(echo "$1" | grep -E "${tag_regex}")
 
 set -e
+
+if test -z "${tag}"; then
+  echo "requested tag \"${1}\" does not match expected tag format [owner]/[component]/[semantic version] using the pattern ${tag_regex}" && false
+fi
 
 branch=$(git rev-parse --abbrev-ref HEAD)
 
 if test "${branch}" != "master"; then
-  echo "releases are only supported on master" && false
+  echo "releases are only supported on master branch (currently on ${branch})" && false
 fi
 
 if test -n "$(git status -s)"; then
-  echo "releases are only supported on clean workspace" && false
+  echo "releases are only supported in a clean git workspace" && false
 fi
 
-if test -z "${version}"; then
-  echo "${1} does not match .+/.+/v[0-9]+\.[0-9]+\.[0-9]+" && false
-fi
-
-git tag -a "${version}"
-git push origin "${version}"
-
+git tag -a "${tag}"
+git push origin "${tag}"

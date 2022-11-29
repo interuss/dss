@@ -1,10 +1,10 @@
 """Operation References corner cases error tests:
 """
 
-import datetime
 import json
 import uuid
 
+import arrow
 import yaml
 
 from monitoring.monitorlib.infrastructure import default_scope
@@ -223,7 +223,7 @@ def test_missing_conflicted_operation(ids, scd_api, scd_session):
   # Emplace the initial version of Operation 1
   with open('./scd/resources/op_missing_initial.yaml', 'r') as f:
     req = yaml.full_load(f)
-  dt = datetime.datetime.utcnow() - scd.start_of(req['extents'])
+  dt = arrow.utcnow().datetime - scd.start_of(req['extents'])
   req['extents'] = scd.offset_time(req['extents'], dt)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
   assert resp.status_code == 201, resp.content
@@ -272,7 +272,7 @@ def test_missing_conflicted_operation(ids, scd_api, scd_session):
 def test_big_operation_search(scd_api, scd_session):
   with open('./scd/resources/op_big_operation.json', 'r') as f:
     req = json.load(f)
-  dt = datetime.datetime.utcnow() - scd.start_of([req['area_of_interest']])
+  dt = arrow.utcnow().datetime - scd.start_of([req['area_of_interest']])
   req['area_of_interest'] = scd.offset_time([req['area_of_interest']], dt)[0]
   resp = scd_session.post('/operational_intent_references/query', json=req)
   assert  resp.status_code == 400, resp.content
