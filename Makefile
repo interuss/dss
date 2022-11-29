@@ -60,8 +60,8 @@ shell-lint:
 	echo "===== Checking DSS shell lint except monitoring =====" && find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | grep -v '^./monitoring' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
 	cd monitoring && make shell-lint
 
-.PHONY: go_lint
-go_lint:
+.PHONY: go-lint
+go-lint:
 	echo "===== Checking Go lint (except for *.gen.go files) =====" && docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.50.1 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace --skip-files '.*\.gen\.go' -v -E gofmt,bodyclose,rowserrcheck,misspell,golint,staticcheck,vet
 
 # --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
