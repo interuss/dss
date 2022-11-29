@@ -22,7 +22,6 @@ services:
       dockerfile: Dockerfile
     image: interuss-local/dss
     volumes:
-      - $PWD/../deploy/db_schemas/rid:/db-schemas/rid:ro
       - local-dss-data:/var/local-dss-data
       - $PWD/startup:/startup:ro
     entrypoint: /startup/rid_bootstrapper.sh
@@ -35,7 +34,6 @@ services:
       dockerfile: Dockerfile
     image: interuss-local/dss
     volumes:
-      - $PWD/../deploy/db_schemas/scd:/db-schemas/scd:ro
       - local-dss-data:/var/local-dss-data
       - $PWD/startup:/startup:ro
     entrypoint: /startup/scd_bootstrapper.sh

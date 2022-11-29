@@ -132,7 +132,6 @@ echo "Bootstrapping RID Database tables"
 docker run --rm --name rid-db-manager \
 	--link dss-crdb-cluster-for-testing:crdb \
 	--network dss_sandbox_default	\
-	-v "$(pwd)/build/deploy/db_schemas/rid:/db-schemas/rid" \
 	local-interuss-dss-image \
 	/usr/bin/db-manager \
 	--schemas_dir db-schemas/rid \
@@ -144,7 +143,6 @@ echo "Bootstrapping SCD Database tables"
 docker run --rm --name scd-db-manager \
 	--link dss-crdb-cluster-for-testing:crdb \
 	--network dss_sandbox_default	\
-	-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
 	local-interuss-dss-image \
 	/usr/bin/db-manager \
 	--schemas_dir db-schemas/scd \

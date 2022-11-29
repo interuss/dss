@@ -42,7 +42,6 @@ fi
 echo "Bootstrapping SCD Database tables"
 docker run --rm --name scd-db-manager \
 	--link $CRDB_MIGRATION_CONTAINER:crdb \
-	-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
 	local-db-manager \
 	--schemas_dir db-schemas/scd \
 	--db_version "latest" \

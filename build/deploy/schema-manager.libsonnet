@@ -1,5 +1,8 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
+
+# Deprecated: Mounting schemas is required for dss images with version below 0.6.0.
+# This will be removed in future releases.
 local rid_schema = import "db_schemas/rid.libsonnet";
 local scd_schema = import "db_schemas/scd.libsonnet";
 
@@ -58,7 +61,6 @@ local scd_schema_mount = {
                 cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 db_version: metadata.schema_manager.desired_rid_db_version,
                 schemas_dir: rid_schema_mount.mountPath,
-
               },
               volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert + [rid_schema_mount],
             },
