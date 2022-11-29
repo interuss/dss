@@ -36,4 +36,6 @@ RUN apk update && apk add ca-certificates
 COPY --from=build /go/bin/core-service /usr/bin
 COPY --from=build /go/bin/db-manager /usr/bin
 COPY --from=build /go/bin/dlv /usr/bin
+COPY build/jwt-public-certs /jwt-public-certs
+COPY build/test-certs /test-certs
 HEALTHCHECK CMD cat service.ready || exit 1

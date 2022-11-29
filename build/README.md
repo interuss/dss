@@ -69,8 +69,7 @@ your choice.  All major cloud providers have a docker registry service, or you
 can set up your own.
 
 To use the prebuilt InterUSS Docker images (without building them yourself), use
-`docker.io/interuss/dss` for `VAR_DOCKER_IMAGE_NAME` and
-`docker.io/interuss/db-manager` for `VAR_SCHEMA_MANAGER_IMAGE_NAME`.
+`docker.io/interuss/dss` for `VAR_DOCKER_IMAGE_NAME`.
 
 To build these images (and, optionally, push them to a docker registry):
 
@@ -93,7 +92,7 @@ endpoint.
 1. Use the [`build.sh` script](./build.sh) in this directory to build and push
    an image tagged with the current date and git commit hash.
 
-1. Note the two VAR_* values printed at the end of the script.
+1. Note the VAR_* value printed at the end of the script.
 
 ## Deploying a DSS instance via Kubernetes
 
@@ -329,11 +328,12 @@ a PR to that effect would be greatly appreciated.
 
     1.  `VAR_PUBLIC_KEY_PEM_PATH`: If providing a .pem file directly as the
         public key to validate incoming access tokens, specify the name of this
-        .pem file here as `/public-certs/YOUR-KEY-NAME.pem` replacing
+        .pem file here as `/jwt-public-certs/YOUR-KEY-NAME.pem` replacing
         YOUR-KEY-NAME as appropriate.  For instance, if using the provided
         [`us-demo.pem`](./jwt-public-certs/us-demo.pem), use the path
-        `/public-certs/us-demo.pem`.  Note that your .pem file must have been
-        copied into [`jwt-public-certs`](./jwt-public-certs) in an earlier step.
+        `/jwt-public-certs/us-demo.pem`.  Note that your .pem file must have
+        been copied into [`jwt-public-certs`](./jwt-public-certs) in an earlier
+        step, or mounted at runtime using a volume.
 
         - If providing an access token public key via JWKS, provide a blank
           string for this parameter.
@@ -402,9 +402,9 @@ a PR to that effect would be greatly appreciated.
 1.  If joining an existing pool, share your CRDB node addresses with the
     operators of the existing DSS instances.  They will add these node addresses
     to JoinExisting where `VAR_CRDB_EXTERNAL_NODEn` is indicated in the minimum
-    example, and then perform another rolling restart of their CockroachDB pods:
+    example, and then update their deployment:
 
-    `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
+    `tk apply workspace/$CLUSTER_CONTEXT`
 
 ## Pooling
 
@@ -534,7 +534,7 @@ existing clusters you will need to:
 
 1.  Run `tk apply workspace/$CLUSTER_CONTEXT_schema_manager`
 
-### Garbadge collector job ###
+### Garbage collector job
 Only since commit [c789b2b](https://github.com/interuss/dss/commit/c789b2b4a9fa5fb651d202da0a3abc02a03c15d2) on Aug 25, 2020 will the DSS enable automatic garbage collection of records by tracking which DSS instance is responsible for garbage collection of the record. Expired records added with a DSS deployment running code earlier than this must be manually removed.
 
 The Garbage collector job runs every 30 minute to delete records in RID tables that records' endtime is 30 minutes less than current time. If the event takes a long time and takes longer than 30 minutes (previous job is still running), the job will skip a run until the previous job completes.
