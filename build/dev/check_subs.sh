@@ -6,18 +6,10 @@ set -eo pipefail
 # DSS instance using any of the deployment method described in
 # standalone_instance.md.
 
-if jq --version > /dev/null; then
-  echo "This script requires the jq utility.  On Debian Linux, install with"
-  echo "  sudo apt-get install jq"
-  echo "With homebrew, install with"
-  echo "  brew install jq"
-  exit 1
-fi
-
 # Retrieve token from dummy OAuth server
-ACCESS_TOKEN=$(curl --silent -X GET \
+ACCESS_TOKEN=$(curl --silent \
   "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost" \
-  | jq -r '.access_token')
+  | python extract_json_field.py 'access_token')
 
 echo "DSS response to [SCD] PUT Subscriptions query:"
 echo "============="
