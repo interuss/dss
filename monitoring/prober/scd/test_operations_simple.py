@@ -153,7 +153,7 @@ def test_op1_does_not_exist_query_2(ids, scd_api, scd_session, scd_session2):
 def test_create_op1(ids, scd_api, scd_session, scd_session2):
   req = _make_op1_request()
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP1_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
 
   data = resp.json()
   op = data['operational_intent_reference']
@@ -280,7 +280,7 @@ def test_create_op2(ids, scd_api, scd_session, scd_session2):
   req['subscription_id'] = ids(SUB2_TYPE)
   req['key'] = [op1_ovn]
   resp = scd_session2.put('/operational_intent_references/{}'.format(ids(OP2_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
 
   data = resp.json()
   op = data['operational_intent_reference']
