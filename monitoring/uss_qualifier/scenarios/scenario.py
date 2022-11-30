@@ -34,6 +34,11 @@ from monitoring.uss_qualifier.resources.definitions import ResourceTypeName, Res
 from monitoring.uss_qualifier.scenarios.documentation.parsing import get_documentation
 
 
+class ScenarioCannotContinueError(Exception):
+    def __init__(self, msg):
+        super(ScenarioCannotContinueError, self).__init__(msg)
+
+
 class ScenarioPhase(str, Enum):
     Undefined = "Undefined"
     NotStarted = "NotStarted"
@@ -107,6 +112,8 @@ class PendingCheck(object):
         self._step_report.failed_checks.append(failed_check)
         if self._on_failed_check is not None:
             self._on_failed_check(failed_check)
+        if severity in {Severity.High, Severity.Critical}:
+            raise ScenarioCannotContinueError(f"{severity}-severity issue: {summary}")
 
     def record_passed(
         self,
