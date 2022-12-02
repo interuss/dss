@@ -4,7 +4,7 @@
 
 This core-service executable is the main application logic of the DSS.  It requires a connection to a CockroachDB
 database and exposes a few REST services: [ASTM remote ID](../../interfaces/rid),
-[auxiliary](../../interfaces/aux), and [ASTM strategic coordination](../../interfaces/astm-utm/Protocol) (if specified).
+[auxiliary](../../interfaces/aux_), and [ASTM strategic coordination](../../interfaces/astm-utm/Protocol) (if specified).
 
 ## Usage
 
