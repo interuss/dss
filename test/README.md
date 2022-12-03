@@ -19,31 +19,31 @@ make test-cockroach
 
 ## Integration tests
 For tests that benefit from being run in a fully-constructed environment, the
-[`docker_e2e.sh`](docker_e2e.sh) script in this folder sets up a full
-environment and runs a set of tests in that environment.  Docker is the only
-prerequisite to running this end-to-end test on your local system.
+`make test-e2e` from the repo root folder sets up a full environment and runs
+the prober tests in that environment.  Docker is the only  prerequisite to
+running this end-to-end test on your local system.
+
+For repeated tests without changes to the DSS, the local DSS instance can be
+brought up initially with `make start-locally`, then the prober tests can be run
+repeatedly with `make probe-locally` without needing to rerun
+`make start-locally`.  To capture DSS logs, run `make collect-local-logs`.  To
+bring down the local DSS instance at the conclusion of testing, run
+`make stop-locally` or `make down-locally`.
 
 ### Running a subset of tests
-To test a specific test in the [prober](../monitoring/prober) test suite,
-simply add its name as the first argument to `docker_e2e.sh`.  For example:
+To run a specific test in the [prober](../monitoring/prober) test suite,
+simply add its name as the first argument to the script to run prober locally
+(this is the same script `make probe-locally` uses).  For example:
 ```shell script
-./docker_e2e.sh scd/test_constraint_simple.py
-./docker_e2e.sh scd/test_constraint_simple.py::test_constraint_does_not_exist_get
+./monitoring/prober/run_locally.sh scd/test_constraint_simple.py
+./monitoring/prober/run_locally.sh scd/test_constraint_simple.py::test_ensure_clean_workspace
 ```
 
 ### Examining Core Service logs
-After a `docker_e2e.sh` run, the Core Service logs are automatically captured
-to core-service-for-testing.log in the repository root.
+After a `make probe-locally` run, the Core Service logs can be examined in the
+Core Service container (usually `dss_sandbox_local-dss-core-service_1`) or
+dumped to core-service-for-testing.log using `make collect-local-logs`.
 
-## Lint checks
-One of the continuous integration presubmit checks on this repository checks Go
-style with a linter.  To run this check yourself, run the following command in
-the root folder of this repo:
-```shell script
-make lint
-```
-
-## Interoperability tests
-The [interoperability folder](../monitoring/interoperability) contains a test suite that
-verifies interoperability between two DSS instances in the same region; see
-[the README](../monitoring/interoperability/README.md) for more information.
+## Continuous integration
+The other tests involved in continuous integration presubmit checks are
+described in [the continuous integration folder](../.github/workflows/CI.md).

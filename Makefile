@@ -64,6 +64,10 @@ shell-lint:
 go-lint:
 	echo "===== Checking Go lint (except for *.gen.go files) =====" && docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.50.1 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace --skip-files '.*\.gen\.go' -v -E gofmt,bodyclose,rowserrcheck,misspell,golint,staticcheck,vet
 
+# This mirrors the hygiene-tests continuous integration workflow job (.github/workflows/ci.yml)
+.PHONY: hygiene-tests
+hygiene-tests: python-lint check-hygiene validate-uss-qualifier-docs shell-lint go-lint
+
 # --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
 .PHONY: apis
 apis: example_apis dummy_oauth_api dss_apis
@@ -130,17 +134,35 @@ build-monitoring:
 	cd monitoring && make build
 
 .PHONY: test-e2e
-test-e2e:
-	test/docker_e2e.sh
+test-e2e: down-locally start-locally probe-locally collect-local-logs down-locally
 
 tag:
 	scripts/tag.sh $(UPSTREAM_OWNER)/dss/v$(VERSION)
 
+.PHONY: start-locally
 start-locally:
-	build/dev/run_locally.sh
+	build/dev/run_locally.sh up -d
+	build/dev/wait_for_local_dss.sh
 
+.PHONY: probe-locally
+probe-locally:
+	monitoring/prober/run_locally.sh
+
+.PHONY: collect-local-logs
+collect-local-logs:
+	docker logs core-service-for-testing 2> core-service-for-testing.log
+
+.PHONY: stop-locally
 stop-locally:
 	build/dev/run_locally.sh stop
+
+.PHONY: down-locally
+down-locally:
+	build/dev/run_locally.sh down
+
+# This mirrors the dss-tests continuous integration workflow job (.github/workflows/ci.yml)
+.PHONY: dss-tests
+dss-tests: evaluate-tanka test-go-units test-go-units-crdb build-dss build-monitoring down-locally start-locally probe-locally collect-local-logs down-locally
 
 .PHONY: check-monitoring
 check-monitoring:
@@ -150,3 +172,11 @@ check-monitoring:
 evaluate-tanka:
 	docker container run -v $(CURDIR)/build/jsonnetfile.json:/build/jsonnetfile.json -v $(CURDIR)/build/deploy:/build/deploy grafana/tanka show --dangerous-allow-redirect /build/deploy/examples/minimum
 	docker container run -v $(CURDIR)/build/jsonnetfile.json:/build/jsonnetfile.json -v $(CURDIR)/build/deploy:/build/deploy grafana/tanka show --dangerous-allow-redirect /build/deploy/examples/schema_manager
+
+# This mirrors the monitoring-tests continuous integration workflow job (.github/workflows/ci.yml)
+.PHONY: monitoring-tests
+monitoring-tests: check-monitoring
+
+# This reproduces the entire continuous integration workflow (.github/workflows/ci.yml)
+.PHONY: presubmit
+presubmit: hygiene-tests dss-tests monitoring-tests
