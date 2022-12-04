@@ -6,11 +6,11 @@ from implicitdict import ImplicitDict, StringBasedDateTime
 
 from monitoring.monitorlib import fetch, inspection
 from monitoring.uss_qualifier.common_data_definitions import Severity
-from monitoring.uss_qualifier.configurations.configuration import TestConfiguration
+from monitoring.uss_qualifier.configurations.configuration import (
+    TestConfiguration,
+    ParticipantID,
+)
 from monitoring.uss_qualifier.fileio import FileReference
-
-ParticipantID = str
-"""String that refers to a participant being qualified by uss_qualifier"""
 
 
 RequirementID = str  # TODO: Use uss_qualifier.requirements.documentation.RequirementID

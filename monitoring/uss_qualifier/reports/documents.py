@@ -3,6 +3,7 @@ from typing import List, Dict
 
 from jinja2 import Environment, PackageLoader
 
+from monitoring.uss_qualifier.configurations.configuration import TestedRole
 from monitoring.uss_qualifier.reports.report import ParticipantID, TestRunReport
 from monitoring.uss_qualifier.requirements.documentation import (
     RequirementSet,
@@ -50,33 +51,25 @@ def _render_requirement_table(
 
 @dataclass
 class TestedRequirementsTable(object):
+    name: str
     participants: List[ParticipantID]
     requirement_set: RequirementSet
 
 
-def _parse_role_arguments(args: List[str]) -> List[TestedRequirementsTable]:
-    tables: Dict[RequirementSetID, List[ParticipantID]] = {}
-    for arg in args:
-        cols = arg.split("=")
-        if len(cols) != 2:
-            raise ValueError(
-                f'Argument "{arg}" is invalid; arguments must be in the form of <PARTICIPANT_ID>[,<PARTICIPANT_ID>,...]=<REQUIREMENT_SET_ID>'
-            )
-        req_set_id = RequirementSetID(cols[1])
-        if req_set_id not in tables:
-            tables[req_set_id] = []
-        tables[req_set_id].extend(ParticipantID(s.strip()) for s in cols[0].split(","))
+def _make_tables(roles: List[TestedRole]) -> List[TestedRequirementsTable]:
     return [
-        TestedRequirementsTable(requirement_set=get_requirement_set(k), participants=v)
-        for k, v in tables.items()
+        TestedRequirementsTable(
+            name=role.name,
+            participants=role.participants,
+            requirement_set=get_requirement_set(role.requirement_set),
+        )
+        for role in roles
     ]
 
 
-def generate_tested_requirements(
-    report: TestRunReport, role_arguments: List[str]
-) -> str:
+def generate_tested_requirements(report: TestRunReport, roles: List[TestedRole]) -> str:
     env = Environment(loader=PackageLoader(__name__))
-    tables = _parse_role_arguments(role_arguments)
+    tables = _make_tables(roles)
     requirements = evaluate_requirements(report)
     tested_reqs_by_id = {tr.requirement_id: tr for tr in requirements}
     unclassified_reqs = set(tr.requirement_id for tr in requirements)
