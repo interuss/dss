@@ -5,9 +5,9 @@ set -eo pipefail
 echo "Re/Create probe_local_instance_test_result file"
 RESULTFILE="$(pwd)/probe_local_instance_test_result.xml"
 touch "${RESULTFILE}"
-GATEWAY_CONTAINER="dss_sandbox_local-dss-http-gateway_1"
+CORE_CONTAINER="dss_sandbox_local-dss-core-service_1"
 OAUTH_CONTAINER="dss_sandbox_local-dss-dummy-oauth_1"
-declare -a localhost_containers=("$GATEWAY_CONTAINER" "$OAUTH_CONTAINER")
+declare -a localhost_containers=("$CORE_CONTAINER" "$OAUTH_CONTAINER")
 
 for container_name in "${localhost_containers[@]}"; do
 	if [ "$( docker container inspect -f '{{.State.Status}}' "$container_name" )" == "running" ]; then
@@ -37,7 +37,7 @@ docker build -q --rm -f monitoring/Dockerfile monitoring -t interuss/monitoring
 echo "Finally Begin Testing"
 docker run --network dss_sandbox_default \
   --link $OAUTH_CONTAINER:oauth \
-	--link $GATEWAY_CONTAINER:local-gateway \
+	--link $CORE_CONTAINER:core-service \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \
 	interuss/monitoring \
@@ -45,7 +45,7 @@ docker run --network dss_sandbox_default \
 	"${1:-.}" \
   -rsx \
 	--junitxml=/app/test_result \
-	--dss-endpoint http://local-gateway:8082 \
+	--dss-endpoint http://core-service:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--rid-v2-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \

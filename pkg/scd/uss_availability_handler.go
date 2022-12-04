@@ -2,32 +2,42 @@ package scd
 
 import (
 	"context"
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	"strings"
+
+	"github.com/interuss/dss/pkg/api"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v4"
-	"strings"
 )
 
-func GetDefaultAvailabilityResponse(id dssmodels.Manager) *scdpb.UssAvailabilityStatusResponse {
-	return &scdpb.UssAvailabilityStatusResponse{
-		Status: &scdpb.UssAvailabilityStatus{
-			Availability: "Unknown",
+func GetDefaultAvailabilityResponse(id dssmodels.Manager) *restapi.UssAvailabilityStatusResponse {
+	return &restapi.UssAvailabilityStatusResponse{
+		Status: restapi.UssAvailabilityStatus{
+			Availability: restapi.UssAvailabilityState_Unknown,
 			Uss:          id.String()},
 		Version: "",
 	}
 }
 
-func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAvailabilityRequest) (*scdpb.UssAvailabilityStatusResponse, error) {
-	id := dssmodels.ManagerFromString(request.GetUssId())
-	if id == "" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "UssId not provided")
+func (a *Server) GetUssAvailability(ctx context.Context, req *restapi.GetUssAvailabilityRequest,
+) restapi.GetUssAvailabilityResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.GetUssAvailabilityResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
 	}
 
-	var response *scdpb.UssAvailabilityStatusResponse
+	id := dssmodels.ManagerFromString(req.UssId)
+	if id == "" {
+		return restapi.GetUssAvailabilityResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "UssId not provided"))}}
+	}
+
+	var response *restapi.UssAvailabilityStatusResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Get USS availability from Store
 		ussa, err := r.GetUssAvailability(ctx, id)
@@ -39,9 +49,9 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 			response = GetDefaultAvailabilityResponse(id)
 			return nil
 		}
-		response = &scdpb.UssAvailabilityStatusResponse{
-			Status: &scdpb.UssAvailabilityStatus{
-				Availability: ussa.Availability.String(),
+		response = &restapi.UssAvailabilityStatusResponse{
+			Status: restapi.UssAvailabilityStatus{
+				Availability: ussa.Availability.ToRest(),
 				Uss:          id.String()},
 			Version: ussa.Version.String(),
 		}
@@ -54,43 +64,55 @@ func (a *Server) GetUssAvailability(ctx context.Context, request *scdpb.GetUssAv
 		if strings.Contains(err.Error(), "does not exist") {
 			response = GetDefaultAvailabilityResponse(id)
 		} else {
-			return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+			return restapi.GetUssAvailabilityResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, err)}}
+			// No need to Propagate this error as this is not a useful stacktrace line
 		}
 	}
-	return response, nil
+	return restapi.GetUssAvailabilityResponseSet{Response200: response}
 }
 
-func (a *Server) SetUssAvailability(ctx context.Context, request *scdpb.SetUssAvailabilityRequest) (*scdpb.UssAvailabilityStatusResponse, error) {
-	return a.PutUssAvailability(ctx, request.GetUssId(), "", request.GetParams())
-}
-
-func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version string, params *scdpb.SetUssAvailabilityStatusParameters) (*scdpb.UssAvailabilityStatusResponse, error) {
-	if ussID == "" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "ussID not provided.")
+func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvailabilityRequest,
+) restapi.SetUssAvailabilityResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.SetUssAvailabilityResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
 	}
+
+	if req.UssId == "" {
+		return restapi.SetUssAvailabilityResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "ussID not provided."))}}
+	}
+	if req.BodyParseError != nil {
+		return restapi.SetUssAvailabilityResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+
 	// Retrieve USS availability status from request params
-	availability, err := scdmodels.UssAvailabilityStateFromString(params.GetAvailability())
+	availability, err := scdmodels.UssAvailabilityStateFromRest(req.Body.Availability)
 	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid availability state")
+		return restapi.SetUssAvailabilityResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid availability state"))}}
 	}
 	ussareq := &scdmodels.UssAvailabilityStatus{
-		Uss:          dssmodels.ManagerFromString(ussID),
+		Uss:          dssmodels.ManagerFromString(req.UssId),
 		Availability: availability,
 	}
 
-	var result *scdpb.UssAvailabilityStatusResponse
+	var result *restapi.UssAvailabilityStatusResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		ussa, err := r.UpsertUssAvailability(ctx, ussareq)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not upsert UssAvailability into repo")
 		}
 		if ussa == nil {
-			return stacktrace.NewError("UssAvailability returned no Uss for ID: %s", ussID)
+			return stacktrace.NewError("UssAvailability returned no Uss for ID: %s", req.UssId)
 		}
-		result = &scdpb.UssAvailabilityStatusResponse{
-			Status: &scdpb.UssAvailabilityStatus{
-				Availability: ussa.Availability.String(),
-				Uss:          ussID},
+		result = &restapi.UssAvailabilityStatusResponse{
+			Status: restapi.UssAvailabilityStatus{
+				Availability: ussa.Availability.ToRest(),
+				Uss:          req.UssId},
 			Version: ussa.Version.String(),
 		}
 		return nil
@@ -99,12 +121,14 @@ func (a *Server) PutUssAvailability(ctx context.Context, ussID string, version s
 	if err != nil {
 		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
-			result = GetDefaultAvailabilityResponse(dssmodels.ManagerFromString(ussID))
+			result = GetDefaultAvailabilityResponse(dssmodels.ManagerFromString(req.UssId))
 		} else {
-			return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+			return restapi.SetUssAvailabilityResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, err)}}
+			// No need to Propagate this error as this is not a useful stacktrace line
 		}
 	}
 
 	// Return response to client
-	return result, nil
+	return restapi.SetUssAvailabilityResponseSet{Response200: result}
 }

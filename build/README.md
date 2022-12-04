@@ -63,12 +63,10 @@ Download & install the following tools to your workstation:
 
 ## Docker images
 
-The application logic of the DSS is located in core-service and translation
-between external HTTPS requests and internal gRPC requests to core-service is
-accomplished with http-gateway.  Both of these binaries are provided in a single
-Docker image which is built locally and then pushed to a Docker registry of your
-choice.  All major cloud providers have a docker registry service, or you can
-set up your own.
+The application logic of the DSS is located in core-service which is provided in
+a Docker image which is built locally and then pushed to a Docker registry of
+your choice.  All major cloud providers have a docker registry service, or you
+can set up your own.
 
 To use the prebuilt InterUSS Docker images (without building them yourself), use
 `docker.io/interuss/dss` for `VAR_DOCKER_IMAGE_NAME`.
@@ -167,11 +165,11 @@ a PR to that effect would be greatly appreciated.
     echo "Current CLUSTER_CONTEXT is $CLUSTER_CONTEXT
     ```
 
-1.  Create static IP addresses: one for the HTTPS Gateway's ingress, and one
+1.  Create static IP addresses: one for the Core Service ingress, and one
     for each CockroachDB node if you want to be able to interact with other
     DSS instances.
 
-    -  If using Google Cloud, the HTTPS Gateway ingress needs to be created as
+    -  If using Google Cloud, the Core Service ingress needs to be created as
        a "Global" IP address, but the CRDB ingresses as "Regional" IP addresses.
        IPv4 is recommended as IPv6 has not yet been tested.  Follow
        [these instructions](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#reserve_new_static)
@@ -179,7 +177,7 @@ a PR to that effect would be greatly appreciated.
        CLUSTER_NAME as appropriate since static IP addresses are defined at
        the project level rather than the cluster level), e.g.:
 
-         -  `gcloud compute addresses create ${CLUSTER_NAME}-gateway --global --ip-version IPV4`
+         -  `gcloud compute addresses create ${CLUSTER_NAME}-backend --global --ip-version IPV4`
          -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-0 --region $REGION`
          -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-1 --region $REGION`
          -  `gcloud compute addresses create ${CLUSTER_NAME}-crdb-2 --region $REGION`
@@ -313,8 +311,8 @@ a PR to that effect would be greatly appreciated.
           - AWS: `gp2`
 
     1.  `VAR_INGRESS_NAME`: If using Google Kubernetes Engine, set this to the
-        the name of the gateway static IP address created above (e.g.,
-        `CLUSTER_NAME-gateway`).
+        the name of the core-service static IP address created above (e.g.,
+        `CLUSTER_NAME-backend`).
 
     1.  `VAR_DOCKER_IMAGE_NAME`: Full name of the docker image built in the
         section above.  `build.sh` prints this name as the last thing it does
@@ -323,9 +321,9 @@ a PR to that effect would be greatly appreciated.
         yourself, or `docker.io/interuss/dss` if using the InterUSS image
         without `build.sh`.
 
-        -   Note that `VAR_DOCKER_IMAGE_NAME` is used in three places.
+        -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
 
-    1.  `VAR_APP_HOSTNAME`: Fully-qualified domain name of your HTTPS Gateway
+    1.  `VAR_APP_HOSTNAME`: Fully-qualified domain name of your Core Service
         ingress endpoint.  For example, `dss.example.com`.
 
     1.  `VAR_PUBLIC_KEY_PEM_PATH`: If providing a .pem file directly as the
@@ -382,7 +380,7 @@ a PR to that effect would be greatly appreciated.
       finished their rolling restarts.
 
 1.  Wait for services to initialize.  Verify that basic services are functioning
-    by navigating to https://your-gateway-domain.com/healthy.
+    by navigating to https://your-domain.example.com/healthy.
 
     - On Google Cloud, the highest-latency operation is provisioning of the
       HTTPS certificate which generally takes 10-45 minutes.  To track this

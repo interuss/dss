@@ -78,7 +78,7 @@ def test_isa_empty_vertices(ids, session_ridv1):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400, resp.content
-  assert 'Not enough points in polygon' in resp.json()['message']
+  assert 'Missing or malformed required extents' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -100,7 +100,7 @@ def test_isa_missing_footprint(ids, session_ridv1):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400, resp.content
-  assert 'Error parsing Volume4D' in resp.json()['message']
+  assert 'Missing or malformed required extents' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -118,7 +118,7 @@ def test_isa_missing_spatial_volume(ids, session_ridv1):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400, resp.content
-  assert 'Error parsing Volume4D' in resp.json()['message']
+  assert 'Missing or malformed required extents' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -129,7 +129,7 @@ def test_isa_missing_extents(ids, session_ridv1):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400, resp.content
-  assert resp.json()['message'] == 'Missing required extents'
+  assert 'Missing or malformed required extents' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -154,7 +154,7 @@ def test_isa_start_time_in_past(ids, session_ridv1):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400, resp.content
-  assert resp.json()['message'] == 'IdentificationServiceArea time_start must not be in the past'
+  assert 'IdentificationServiceArea time_start must not be in the past' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)
@@ -179,7 +179,7 @@ def test_isa_start_time_after_time_end(ids, session_ridv1):
           'flights_url': 'https://example.com/uss/flights',
       })
   assert resp.status_code == 400, resp.content
-  assert resp.json()['message'] == 'IdentificationServiceArea time_end must be after time_start'
+  assert 'IdentificationServiceArea time_end must be after time_start' in resp.json()['message']
 
 
 @default_scope(SCOPE_WRITE)

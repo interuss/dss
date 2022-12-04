@@ -6,18 +6,10 @@ set -eo pipefail
 # DSS instance using any of the deployment methods described in
 # standalone_instance.md.
 
-if [[ -z $(command -v jq) ]]; then
-  echo "This script requires the jq utility.  On Debian Linux, install with"
-  echo "  sudo apt-get install jq"
-  echo "With homebrew, install with"
-  echo "  brew install jq"
-  exit 1
-fi
-
 # Retrieve token from dummy OAuth server
-ACCESS_TOKEN=$(curl --silent -X POST \
+ACCESS_TOKEN=$(curl --silent \
   "http://localhost:8085/token?grant_type=client_credentials&scope=dss.read.identification_service_areas&intended_audience=localhost&issuer=localhost" \
-  | jq -r '.access_token')
+  | python extract_json_field.py access_token)
 
 # Retrieve Identification Service Areas currently active on Mauna Loa
 echo "DSS response to Mauna Loa ISA query:"
