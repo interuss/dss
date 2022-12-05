@@ -1,0 +1,78 @@
+{
+  "formatVersion": "1.0.0",
+  "createdAt": "2022-11-30T14:50:33Z",
+  "UASZoneList": [
+    {
+      "identifier": "LSXX",
+      "country": "CHE",
+      "name": "LSXX City Sample",
+      "type": "COMMON",
+      "restriction": "REQ_AUTHORISATION",
+      "restrictionConditions": "RST02",
+      "reason": [
+        "AIR_TRAFFIC"
+      ],
+      "message": "MSG01",
+      "applicability": [
+        {
+          "permanent": "YES",
+          "startDateTime": null,
+          "endDateTime": null,
+          "dailyPeriod": [
+            {
+              "day": [],
+              "startTime": null,
+              "endTime": null
+            }
+          ]
+        }
+      ],
+      "zoneAuthority": [
+        {
+          "name": "LSXX City Sample",
+          "service": "Supervisor",
+          "email": "admin@example.com",
+          "contactName": null,
+          "siteURL": "https://www.example.com/contact",
+          "phone": "0041221234567"
+        }
+      ],
+      "geometry": [
+        {
+          "uomDimensions": "M",
+          "lowerLimit": "0",
+          "lowerVerticalReference": "AGL",
+          "upperLimit": null,
+          "upperVerticalReference": "AGL",
+          "horizontalProjection": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  6.166485701899006,
+                  46.217024450605436
+                ],
+                [
+                  6.167929158182119,
+                  46.212280093834295
+                ],
+                [
+                  6.170816070746923,
+                  46.214777174806045
+                ],
+                [
+                  6.170695782723101,
+                  46.21802321032931
+                ],
+                [
+                  6.166485701899006,
+                  46.217024450605436
+                ]
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
