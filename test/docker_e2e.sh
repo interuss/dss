@@ -19,7 +19,6 @@ echo "e2e base directory is ${BASEDIR}"
 cd "${BASEDIR}"
 
 function gather_logs() {
-	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
 	docker logs core-service-for-testing 2> core-service-for-testing.log
 }
 
@@ -27,9 +26,6 @@ function cleanup() {
 	# ----------- clean up -----------
 	echo "Stopping dummy oauth container"
 	docker rm -f dummy-oauth-for-testing &> /dev/null || true
-
-	echo "Stopping http gateway container"
-	docker kill -f http-gateway-for-testing &> /dev/null || true
 
 	echo "Stopping core-service container"
 	docker kill -f core-service-for-testing &> /dev/null || true
@@ -92,35 +88,20 @@ echo " ------------ CORE SERVICE ---------------- "
 echo "Cleaning up any pre-existing core-service container"
 docker rm -f core-service-for-testing &> /dev/null || echo "No core service to clean up"
 
-echo "Starting core service on :8081"
+echo "Starting core service on :8082"
 docker run -d --name core-service-for-testing \
 	--link dss-crdb-for-debugging:crdb \
 	-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
 	local-interuss-dss-image \
 	core-service \
+    -addr :8082 \
 	--cockroach_host crdb \
 	-public_key_files /app/test.crt \
-	-reflect_api \
 	-log_format console \
 	-dump_requests \
-	-accepted_jwt_audiences local-gateway \
+	-accepted_jwt_audiences core-service \
 	-enable_scd	\
 	-enable_http
-
-sleep 1
-echo " ------------- HTTP GATEWAY -------------- "
-echo "Cleaning up any pre-existing http-gateway container"
-docker rm -f http-gateway-for-testing &> /dev/null || echo "No http gateway to clean up"
-
-echo "Starting http-gateway on :8082"
-docker run -d --name http-gateway-for-testing -p 8082:8082 \
-	--link core-service-for-testing:grpc \
-	local-interuss-dss-image \
-	http-gateway \
-	-core-service grpc:8081 \
-	-addr :8082 \
-	-trace-requests \
-	-enable_scd
 
 echo " -------------- DUMMY OAUTH -------------- "
 echo "Building dummy-oauth server container"
@@ -142,7 +123,7 @@ docker build -q --rm -f monitoring/Dockerfile monitoring -t interuss/monitoring
 
 echo "Finally Begin Testing"
 if ! docker run --link dummy-oauth-for-testing:oauth \
-	--link http-gateway-for-testing:local-gateway \
+	--link core-service-for-testing:core-service \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \
 	interuss/monitoring \
@@ -150,7 +131,7 @@ if ! docker run --link dummy-oauth-for-testing:oauth \
 	"${1:-.}" \
 	-rsx \
 	--junitxml=/app/test_result \
-	--dss-endpoint http://local-gateway:8082 \
+	--dss-endpoint http://core-service:8082 \
 	--rid-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--rid-v2-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
@@ -161,14 +142,8 @@ if ! docker run --link dummy-oauth-for-testing:oauth \
         echo "=== END OF TEST RESULTS ==="
         echo "Dumping core-service logs"
         docker logs core-service-for-testing
-        echo "Dumping http-gateway logs"
-        docker logs http-gateway-for-testing
     fi
 fi
-
-echo "Cleaning up http-gateway container"
-docker stop http-gateway-for-testing > /dev/null
-test "$(docker inspect http-gateway-for-testing --format='{{.State.ExitCode}}')" = 0
 
 echo "Cleaning up core-service container"
 docker stop core-service-for-testing > /dev/null

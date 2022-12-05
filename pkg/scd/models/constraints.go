@@ -4,11 +4,10 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/stacktrace"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Constraint models a constraint, as known by the DSS
@@ -26,34 +25,33 @@ type Constraint struct {
 	Cells           s2.CellUnion
 }
 
-// ToProto converts the Constraint to its proto API format
-func (c *Constraint) ToProto() (*scdpb.ConstraintReference, error) {
-	result := &scdpb.ConstraintReference{
-		Id:              c.ID.String(),
-		Ovn:             c.OVN.String(),
+// ToRest converts the Constraint to its SCD v1 REST model API format
+func (c *Constraint) ToRest() *restapi.ConstraintReference {
+	ovn := restapi.EntityOVN(c.OVN.String())
+	result := &restapi.ConstraintReference{
+		Id:              restapi.EntityID(c.ID.String()),
+		Ovn:             &ovn,
 		Manager:         c.Manager.String(),
 		Version:         int32(c.Version),
-		UssBaseUrl:      c.USSBaseURL,
-		UssAvailability: UssAvailabilityStateUnknown.String(),
+		UssBaseUrl:      restapi.ConstraintUssBaseURL(c.USSBaseURL),
+		UssAvailability: UssAvailabilityStateUnknown.ToRest(),
 	}
 
 	if c.StartTime != nil {
-		ts := tspb.New(*c.StartTime)
-		result.TimeStart = &scdpb.Time{
-			Value:  ts,
+		result.TimeStart = restapi.Time{
+			Value:  c.StartTime.Format(time.RFC3339Nano),
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 
 	if c.EndTime != nil {
-		ts := tspb.New(*c.EndTime)
-		result.TimeEnd = &scdpb.Time{
-			Value:  ts,
+		result.TimeEnd = restapi.Time{
+			Value:  c.EndTime.Format(time.RFC3339Nano),
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 
-	return result, nil
+	return result
 }
 
 // ValidateTimeRange validates the time range of c.

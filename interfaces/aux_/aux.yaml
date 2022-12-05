@@ -1,0 +1,76 @@
+openapi: 3.0.2
+info:
+  title: DSS Auxiliary API
+  version: 1.0.0
+
+components:
+  schemas:
+    VersionResponse:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          description: The version of the DSS.
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          description: Human-readable message indicating what error occurred and/or why.
+          type: string
+
+paths:
+  /aux/v1/version:
+    get:
+      tags: [ dss ]
+      operationId: getVersion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+          description: The version of the DSS is successfully returned.
+      summary: Queries the version of the DSS.
+  /aux/v1/validate_oauth:
+    get:
+      tags: [ dss ]
+      operationId: validateOauth
+      parameters:
+        - name: owner
+          description: Validate the owner claim matches the provided owner.
+          schema:
+            type: string
+          in: query
+          required: true
+      responses:
+        '200':
+          description: The provided token was validated.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bearer access token was not provided in Authorization header,
+            token could not be decoded, or token was invalid.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: The access token was decoded successfully but did not include
+            a scope appropriate to this endpoint.
+      summary: Validate Oauth token against the DSS.
+      security:
+        - Auth:
+            - dss.read.identification_service_areas
+        - Auth:
+            - dss.write.identification_service_areas
+security:
+  - Auth:
+      - dss.read.identification_service_areas
+      - dss.write.identification_service_areas
+tags:
+  - name: dss
+    description: Endpoints exposed by the DSS server.

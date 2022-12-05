@@ -32,7 +32,11 @@ A resources.astm.f3411.DSSInstancesResource containing at least two DSS instance
 * D: Number of seconds needed to process requests to all DSS instances before
   the note to wait >D seconds from a particular time
 
-## Interoperability sequence case
+## Sequence diagram
+
+![Sequence diagram for interoperability test](dss_interoperability_test.png)
+
+## Interoperability sequence test case
 
 ### S1 test step
 
@@ -42,7 +46,7 @@ Qualitatively proves: Can create ISA in primary DSS
 
 #### ISA[*P*] created with proper response check
 
-**astm.f3411.v19.A2-6-1,1a**
+**[astm.f3411.v19.A2-6-1,1a](../../../../requirements/astm/f3411/v19.md)**
 
 ### S2 test step
 
@@ -52,11 +56,11 @@ Qualitatively proves: Can create Subscription in primary DSS, ISA accessible fro
 
 #### Subscription[*n*] created with proper response check
 
-**astm.f3411.v19.A2-6-1,3a**
+**[astm.f3411.v19.A2-6-1,3a](../../../../requirements/astm/f3411/v19.md)**
 
 #### service_areas includes ISA from S1 check
 
-**astm.f3411.v19.A2-6-1,1c**
+**[astm.f3411.v19.A2-6-1,1c](../../../../requirements/astm/f3411/v19.md)**
 
 ### S3 test step
 
@@ -66,7 +70,7 @@ Qualitatively proves: Can retrieve specific Subscription emplaced in primary DSS
 
 #### Subscription[*P*] returned with proper response check
 
-**astm.f3411.v19.A2-6-1,5**
+**[astm.f3411.v19.A2-6-1,5](../../../../requirements/astm/f3411/v19.md)**
 
 ### S4 test step
 
@@ -76,7 +80,7 @@ Qualitatively proves: All Subscription[i] 1≤i≤n are returned in subscription
 
 #### Can query all Subscriptions in area from all DSSs check
 
-**astm.f3411.v19.A2-6-1,6**
+**[astm.f3411.v19.A2-6-1,6](../../../../requirements/astm/f3411/v19.md)**
 
 ### S5 test step
 
@@ -84,13 +88,17 @@ Action: USS1@DSS*P*: PUT ISA[*P*] setting end time to now + D seconds
 
 Qualitatively proves: ISA[*P*] modified with proper response, all Subscription[i] 1≤i≤n are returned in subscribers with proper response
 
+#### Can get ISA from primary DSS check
+
+**[astm.f3411.v19.DSS0130](../../../../requirements/astm/f3411/v19.md)**
+
 #### Can modify ISA in primary DSS check
 
-**astm.f3411.v19.A2-6-1,1b**
+**[astm.f3411.v19.A2-6-1,1b](../../../../requirements/astm/f3411/v19.md)**
 
 #### ISA modification triggers subscription notification requests check
 
-**astm.f3411.v19.A2-6-1,3c**
+**[astm.f3411.v19.A2-6-1,3c](../../../../requirements/astm/f3411/v19.md)**
 
 ### S6 test step
 
@@ -100,7 +108,7 @@ Qualitatively proves: Can delete Subscriptions in primary DSS
 
 #### Subscription[*n*] deleted with proper response check
 
-**astm.f3411.v19.A2-6-1,4a**
+**[astm.f3411.v19.A2-6-1,4a](../../../../requirements/astm/f3411/v19.md)**
 
 ### S7 test step
 
@@ -110,7 +118,7 @@ Qualitatively proves: Subscription deletion from ID index was effective from pri
 
 #### 404 with proper response check
 
-**astm.f3411.v19.A2-6-1,4b**
+**[astm.f3411.v19.A2-6-1,4b](../../../../requirements/astm/f3411/v19.md)**
 
 ### S8 test step
 
@@ -118,9 +126,13 @@ Action: USS2@DSS*n*: GET Subscriptions using ISA[*P*]’s area
 
 Qualitatively proves: Subscription deletion from geographic index was effective from primary DSS
 
+#### Subscriptions queried successfully check
+
+**[astm.f3411.v19.A2-6-1,6](../../../../requirements/astm/f3411/v19.md)**
+
 #### No Subscription[i] 1≤i≤n returned with proper response check
 
-**astm.f3411.v19.A2-6-1,4b**
+**[astm.f3411.v19.A2-6-1,4b](../../../../requirements/astm/f3411/v19.md)**
 
 ### S9 test step
 
@@ -130,11 +142,11 @@ Qualitatively proves: Expired ISA automatically removed, ISA modifications acces
 
 #### Subscription[*n*] created with proper response check
 
-**astm.f3411.v19.A2-6-1,1c**
+**[astm.f3411.v19.A2-6-1,1c](../../../../requirements/astm/f3411/v19.md)**
 
 #### service_areas does not include ISA from S1 check
 
-**astm.f3411.v19.A2-6-1,1d**
+**[astm.f3411.v19.A2-6-1,1d](../../../../requirements/astm/f3411/v19.md)**
 
 ### S10 test step
 
@@ -144,11 +156,11 @@ Qualitatively proves: ISA creation triggers subscription notification requests
 
 #### ISA[*P*] created with proper response check
 
-**astm.f3411.v19.A2-6-1,1a**
+**[astm.f3411.v19.A2-6-1,1a](../../../../requirements/astm/f3411/v19.md)**
 
 #### All Subscription[i] 1≤i≤n returned in subscribers check
 
-**astm.f3411.v19.A2-6-1,3b**
+**[astm.f3411.v19.A2-6-1,3b](../../../../requirements/astm/f3411/v19.md)**
 
 ### S11 test step
 
@@ -158,11 +170,11 @@ Qualitatively proves: ISA deletion triggers subscription notification requests
 
 #### ISA[*P*] deleted with proper response check
 
-**astm.f3411.v19.A2-6-1,2a**
+**[astm.f3411.v19.A2-6-1,2a](../../../../requirements/astm/f3411/v19.md)**
 
 #### All Subscription[i] 1≤i≤n returned in subscribers check
 
-**astm.f3411.v19.A2-6-1,3c**
+**[astm.f3411.v19.A2-6-1,3c](../../../../requirements/astm/f3411/v19.md)**
 
 ### S12 test step
 
@@ -172,11 +184,11 @@ Qualitatively proves: Expired Subscriptions don’t trigger subscription notific
 
 #### ISA[*P*] created with proper response check
 
-**astm.f3411.v19.A2-6-1,1a**
+**[astm.f3411.v19.A2-6-1,1a](../../../../requirements/astm/f3411/v19.md)**
 
 #### None of Subscription[i] 1≤i≤n returned in subscribers check
 
-**astm.f3411.v19.A2-6-1,3d**
+**[astm.f3411.v19.A2-6-1,3d](../../../../requirements/astm/f3411/v19.md)**
 
 ### S13 test step
 
@@ -186,7 +198,7 @@ Qualitatively proves: Expired Subscription removed from geographic index on prim
 
 #### No Subscription[i] 1≤i≤n returned with proper response check
 
-**astm.f3411.v19.A2-6-1,3d**
+**[astm.f3411.v19.A2-6-1,3d](../../../../requirements/astm/f3411/v19.md)**
 
 ### S14 test step
 
@@ -196,7 +208,7 @@ Qualitatively proves: Expired Subscription removed from ID index on primary DSS
 
 #### 404 with proper response check
 
-**astm.f3411.v19.A2-6-1,3d**
+**[astm.f3411.v19.A2-6-1,3d](../../../../requirements/astm/f3411/v19.md)**
 
 ### S15 test step
 
@@ -206,11 +218,11 @@ Qualitatively proves: ISA deletion does not trigger subscription notification re
 
 #### ISA[*P*] deleted with proper response check
 
-**astm.f3411.v19.A2-6-1,2a**
+**[astm.f3411.v19.A2-6-1,2a](../../../../requirements/astm/f3411/v19.md)**
 
 #### None of Subscription[i] 1≤i≤n returned in subscribers with proper response check
 
-**astm.f3411.v19.A2-6-1,3d**
+**[astm.f3411.v19.A2-6-1,3d](../../../../requirements/astm/f3411/v19.md)**
 
 ### S16 test step
 
@@ -220,11 +232,11 @@ Qualitatively proves: Deleted ISA removed from all DSSs
 
 #### Subscription[*n*] created with proper response check
 
-**astm.f3411.v19.A2-6-1,3a**
+**[astm.f3411.v19.A2-6-1,3a](../../../../requirements/astm/f3411/v19.md)**
 
-#### service_areas includes ISA from S12 check
+#### service_areas does not include ISA from S12 check
 
-**astm.f3411.v19.A2-6-1,2b**
+**[astm.f3411.v19.A2-6-1,2b](../../../../requirements/astm/f3411/v19.md)**
 
 ### S17 test step
 
@@ -232,9 +244,16 @@ Action: USS2@DSS*P*: DELETE Subscription[*n*]
 
 #### Subscription[*n*] deleted with proper response check
 
-**astm.f3411.v19.A2-6-1,4a**
+**[astm.f3411.v19.A2-6-1,4a](../../../../requirements/astm/f3411/v19.md)**
 
-## Sequence diagram
+## Cleanup
 
-![Sequence diagram for interoperability test](dss_interoperability_test.png)
+Any entities (ISAs or Subscriptions) not deleted normally will be deleted here.
 
+### ISA deleted with proper response check
+
+**[astm.f3411.v19.A2-6-1,2a](../../../../requirements/astm/f3411/v19.md)**
+
+### Subscription deleted with proper response check
+
+**[astm.f3411.v19.A2-6-1,4a](../../../../requirements/astm/f3411/v19.md)**

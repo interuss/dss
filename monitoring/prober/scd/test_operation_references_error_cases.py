@@ -116,7 +116,7 @@ def test_op_already_exists(ids, scd_api, scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
   ovn = resp.json()['operational_intent_reference']['ovn']
 
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
@@ -190,7 +190,7 @@ def test_op_repeated_requests(ids, scd_api, scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
   ovn = resp.json()['operational_intent_reference']['ovn']
 
   print(resp.json()['operational_intent_reference']['ovn'])
@@ -226,7 +226,7 @@ def test_missing_conflicted_operation(ids, scd_api, scd_session):
   dt = arrow.utcnow().datetime - scd.start_of(req['extents'])
   req['extents'] = scd.offset_time(req['extents'], dt)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
   ovn1a = resp.json()['operational_intent_reference']['ovn']
   sub_id = resp.json()['operational_intent_reference']['subscription_id']
 
@@ -236,7 +236,7 @@ def test_missing_conflicted_operation(ids, scd_api, scd_session):
   req['extents'] = scd.offset_time(req['extents'], dt)
   req['key'] = [ovn1a]
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE2)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
 
   # Attempt to update Operation 1 without OVN for the pre-existing Operation
   with open('./scd/resources/op_missing_update.json', 'r') as f:

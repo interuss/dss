@@ -31,14 +31,9 @@ When building new monitoring tools, we recommend using Docker containers as a wa
 - The way to set up access to the DSS in prober is to create special requests.Sessions which automatically perform their own authorization and have their own implicit USS identity. These sessions are created for dependency injection in [conftest.py](monitoring/prober/conftest.py).
 - When we need requests to appear as if they are coming from two different USSs, we need to use two different Sessions. We can see that happening with `scd_session` and `scd_session2`.  The tests themselves are just functions prefixed with `test_` which is the standard way `pytest` manages test infrastructure.
 
-#### Interoperability Test
-
-- Another monitoring tool with a different binary from prober is the [interoperability](monitoring/interoperability/README.md) test suite. For the moment, ignore [clients.py](monitoring/interoperability/clients.py); that file is obsolete, unused, and should be removed. This tool doesn't use pytest, but instead is just a standard Python script.
-- The main() method is in [interop.py](monitoring/interoperability/interop.py) and then the logic is in [interop_test_suite.py](monitoring/interoperability/interop.py). The `monitorlib` utilities for authorization and infrastructure provide the UTMClientSessions to easily communicate with the DSS instances without worrying about any of the specifics.
-
 #### Load test
 
-- A third monitoring tool with a different binary is the [loadtest](monitoring/loadtest/README.md)
+- Another monitoring tool with a different binary is the [loadtest](monitoring/loadtest/README.md)
 - This tool uses [Locust](https://locust.io) (a load testing tool/library) to send a bunch of requests to a DSS instance on an ongoing basis.  Again, you'll see that most of the complicated parts of interacting with the DSS instance are reused from `monitorlib`.
 
 #### Tracer
@@ -50,4 +45,4 @@ When building new monitoring tools, we recommend using Docker containers as a wa
 
 #### USS Qualifier
 
-The [uss_qualifier](monitoring/uss_qualifier/README.md) is a test suite for testing / qualifying USS compliance with requirements including ASTM NetRID, flight planning, and more.
+The [uss_qualifier](monitoring/uss_qualifier/README.md) is a tool for testing / qualifying USS compliance with requirements including ASTM NetRID, flight planning, and more.

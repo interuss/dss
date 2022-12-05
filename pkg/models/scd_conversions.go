@@ -1,14 +1,15 @@
 package models
 
 import (
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	"time"
+
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/stacktrace"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// Volume4DFromSCDProto converts vol4 proto to a Volume4D
-func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
-	vol3, err := Volume3DFromSCDProto(vol4.GetVolume())
+// Volume4DFromSCDRest converts vol4 SCD v1 REST model to a Volume4D
+func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*Volume4D, error) {
+	vol3, err := Volume3DFromSCDRest(&vol4.Volume)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
@@ -17,22 +18,18 @@ func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 		SpatialVolume: vol3,
 	}
 
-	if startTime := vol4.GetTimeStart(); startTime != nil {
-		st := startTime.GetValue()
-		ts := st.AsTime()
-		err := st.CheckValid()
+	if vol4.TimeStart != nil {
+		ts, err := time.Parse(time.RFC3339Nano, vol4.TimeStart.Value)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time from proto")
+			return nil, stacktrace.Propagate(err, "Error converting start time")
 		}
 		result.StartTime = &ts
 	}
 
-	if endTime := vol4.GetTimeEnd(); endTime != nil {
-		et := endTime.GetValue()
-		ts := et.AsTime()
-		err := et.CheckValid()
+	if vol4.TimeEnd != nil {
+		ts, err := time.Parse(time.RFC3339Nano, vol4.TimeEnd.Value)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time from proto")
+			return nil, stacktrace.Propagate(err, "Error converting end time")
 		}
 		result.EndTime = &ts
 	}
@@ -40,48 +37,46 @@ func Volume4DFromSCDProto(vol4 *scdpb.Volume4D) (*Volume4D, error) {
 	return result, nil
 }
 
-// Volume3DFromSCDProto converts a vol3 proto to a Volume3D
-func Volume3DFromSCDProto(vol3 *scdpb.Volume3D) (*Volume3D, error) {
+// Volume3DFromSCDRest converts a vol3 SCD v1 REST model to a Volume3D
+func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*Volume3D, error) {
 	if vol3 == nil {
 		return nil, nil
 	}
 
-	altitudeLower := vol3.GetAltitudeLower()
 	var altLo *float32
-	if altitudeLower != nil {
-		if altitudeLower.Units != UnitsM {
+	if vol3.AltitudeLower != nil {
+		if vol3.AltitudeLower.Units != UnitsM {
 			return nil, stacktrace.NewError("Invalid lower altitude unit")
 		}
-		if altitudeLower.Reference != ReferenceW84 {
+		if vol3.AltitudeLower.Reference != ReferenceW84 {
 			return nil, stacktrace.NewError("Invalid lower altitude reference")
 		}
-		altLo = float32p(float32(altitudeLower.GetValue()))
+		altLo = float32p(float32(vol3.AltitudeLower.Value))
 	}
 
-	altitudeUpper := vol3.GetAltitudeUpper()
 	var altHi *float32
-	if altitudeUpper != nil {
-		if altitudeUpper.Units != UnitsM {
+	if vol3.AltitudeUpper != nil {
+		if vol3.AltitudeUpper.Units != UnitsM {
 			return nil, stacktrace.NewError("Invalid upper altitude unit")
 		}
-		if altitudeUpper.Reference != ReferenceW84 {
+		if vol3.AltitudeUpper.Reference != ReferenceW84 {
 			return nil, stacktrace.NewError("Invalid upper altitude reference")
 		}
-		altHi = float32p(float32(altitudeUpper.GetValue()))
+		altHi = float32p(float32(vol3.AltitudeUpper.Value))
 	}
 
 	switch {
-	case vol3.GetOutlineCircle() != nil && vol3.GetOutlinePolygon() != nil:
+	case vol3.OutlineCircle != nil && vol3.OutlinePolygon != nil:
 		return nil, stacktrace.NewError("Both circle and polygon specified in outline geometry")
-	case vol3.GetOutlinePolygon() != nil:
+	case vol3.OutlinePolygon != nil:
 		return &Volume3D{
-			Footprint:  GeoPolygonFromSCDProto(vol3.GetOutlinePolygon()),
+			Footprint:  GeoPolygonFromSCDRest(vol3.OutlinePolygon),
 			AltitudeLo: altLo,
 			AltitudeHi: altHi,
 		}, nil
-	case vol3.GetOutlineCircle() != nil:
+	case vol3.OutlineCircle != nil:
 		return &Volume3D{
-			Footprint:  GeoCircleFromSCDProto(vol3.GetOutlineCircle()),
+			Footprint:  GeoCircleFromSCDRest(vol3.OutlineCircle),
 			AltitudeLo: altLo,
 			AltitudeHi: altHi,
 		}, nil
@@ -93,72 +88,67 @@ func Volume3DFromSCDProto(vol3 *scdpb.Volume3D) (*Volume3D, error) {
 	}, nil
 }
 
-// GeoCircleFromSCDProto converts a circle proto to a GeoCircle
-func GeoCircleFromSCDProto(c *scdpb.Circle) *GeoCircle {
+// GeoCircleFromSCDRest converts a circle SCD v1 REST model to a GeoCircle
+func GeoCircleFromSCDRest(c *restapi.Circle) *GeoCircle {
 	return &GeoCircle{
-		Center:      *LatLngPointFromSCDProto(c.GetCenter()),
-		RadiusMeter: unitToMeterMultiplicativeFactors[unit(c.GetRadius().GetUnits())] * c.GetRadius().GetValue(),
+		Center:      *LatLngPointFromSCDRest(c.Center),
+		RadiusMeter: unitToMeterMultiplicativeFactors[unit(c.Radius.Units)] * c.Radius.Value,
 	}
 }
 
-// GeoPolygonFromSCDProto converts a polygon proto to a GeoPolygon
-func GeoPolygonFromSCDProto(p *scdpb.Polygon) *GeoPolygon {
+// GeoPolygonFromSCDRest converts a polygon SCD v1 REST model to a GeoPolygon
+func GeoPolygonFromSCDRest(p *restapi.Polygon) *GeoPolygon {
 	result := &GeoPolygon{}
-	for _, ltlng := range p.GetVertices() {
-		result.Vertices = append(result.Vertices, LatLngPointFromSCDProto(ltlng))
+	for _, ltlng := range p.Vertices {
+		result.Vertices = append(result.Vertices, LatLngPointFromSCDRest(&ltlng))
 	}
 
 	return result
 }
 
-// LatLngPointFromSCDProto converts a point proto to a latlngpoint
-func LatLngPointFromSCDProto(p *scdpb.LatLngPoint) *LatLngPoint {
+// LatLngPointFromSCDRest converts a point SCD v1 REST model to a latlngpoint
+func LatLngPointFromSCDRest(p *restapi.LatLngPoint) *LatLngPoint {
 	return &LatLngPoint{
-		Lat: p.GetLat(),
-		Lng: p.GetLng(),
+		Lat: float64(p.Lat),
+		Lng: float64(p.Lng),
 	}
 }
 
-// ToSCDProto converts the Volume4D to a proto
-func (vol4 *Volume4D) ToSCDProto() (*scdpb.Volume4D, error) {
-	vol3, err := vol4.SpatialVolume.ToSCDProto()
-	if err != nil {
-		return nil, err // No need to Propagate this error as this stack layer does not add useful information
-	}
+// ToSCDRest converts the Volume4D to a SCD v1 REST model
+func (vol4 *Volume4D) ToSCDRest() *restapi.Volume4D {
 
-	result := &scdpb.Volume4D{
-		Volume: vol3,
+	result := &restapi.Volume4D{}
+	if vol4.SpatialVolume != nil {
+		result.Volume = *vol4.SpatialVolume.ToSCDRest()
 	}
 
 	if vol4.StartTime != nil {
-		ts := tspb.New(*vol4.StartTime)
-		result.TimeStart = &scdpb.Time{
+		result.TimeStart = &restapi.Time{
 			Format: TimeFormatRFC3339,
-			Value:  ts,
+			Value:  vol4.StartTime.Format(time.RFC3339Nano),
 		}
 	}
 
 	if vol4.EndTime != nil {
-		ts := tspb.New(*vol4.EndTime)
-		result.TimeEnd = &scdpb.Time{
+		result.TimeEnd = &restapi.Time{
 			Format: TimeFormatRFC3339,
-			Value:  ts,
+			Value:  vol4.EndTime.Format(time.RFC3339Nano),
 		}
 	}
 
-	return result, nil
+	return result
 }
 
-// ToSCDProto converts the Volume3D to a proto
-func (vol3 *Volume3D) ToSCDProto() (*scdpb.Volume3D, error) {
+// ToSCDRest converts the Volume3D to a SCD v1 REST model
+func (vol3 *Volume3D) ToSCDRest() *restapi.Volume3D {
 	if vol3 == nil {
-		return nil, nil
+		return nil
 	}
 
-	result := &scdpb.Volume3D{}
+	result := &restapi.Volume3D{}
 
 	if vol3.AltitudeLo != nil {
-		result.AltitudeLower = &scdpb.Altitude{
+		result.AltitudeLower = &restapi.Altitude{
 			Reference: altitudeReferenceWGS84.String(),
 			Units:     unitMeter.String(),
 			Value:     float64(*vol3.AltitudeLo),
@@ -166,7 +156,7 @@ func (vol3 *Volume3D) ToSCDProto() (*scdpb.Volume3D, error) {
 	}
 
 	if vol3.AltitudeHi != nil {
-		result.AltitudeUpper = &scdpb.Altitude{
+		result.AltitudeUpper = &restapi.Altitude{
 			Reference: altitudeReferenceWGS84.String(),
 			Units:     unitMeter.String(),
 			Value:     float64(*vol3.AltitudeHi),
@@ -177,49 +167,51 @@ func (vol3 *Volume3D) ToSCDProto() (*scdpb.Volume3D, error) {
 	case nil:
 		// Empty on purpose
 	case *GeoPolygon:
-		result.OutlinePolygon = t.ToSCDProto()
+		result.OutlinePolygon = t.ToSCDRest()
 	case *GeoCircle:
-		result.OutlineCircle = t.ToSCDProto()
+		result.OutlineCircle = t.ToSCDRest()
 	}
 
-	return result, nil
+	return result
 }
 
-// ToSCDProto converts the GeoCircle to a proto
-func (gc *GeoCircle) ToSCDProto() *scdpb.Circle {
+// ToSCDRest converts the GeoCircle to a SCD v1 REST model
+func (gc *GeoCircle) ToSCDRest() *restapi.Circle {
 	if gc == nil {
 		return nil
 	}
 
-	return &scdpb.Circle{
-		Center: gc.Center.ToSCDProto(),
-		Radius: &scdpb.Radius{
+	return &restapi.Circle{
+		Center: gc.Center.ToSCDRest(),
+		Radius: &restapi.Radius{
 			Units: unitMeter.String(),
 			Value: gc.RadiusMeter,
 		},
 	}
 }
 
-// ToSCDProto converts the GeoPolygon to a proto
-func (gp *GeoPolygon) ToSCDProto() *scdpb.Polygon {
+// ToSCDRest converts the GeoPolygon to a SCD v1 REST model
+func (gp *GeoPolygon) ToSCDRest() *restapi.Polygon {
 	if gp == nil {
 		return nil
 	}
 
-	result := &scdpb.Polygon{}
+	result := &restapi.Polygon{
+		Vertices: make([]restapi.LatLngPoint, len(gp.Vertices)),
+	}
 
 	for _, pt := range gp.Vertices {
-		result.Vertices = append(result.Vertices, pt.ToSCDProto())
+		result.Vertices = append(result.Vertices, *pt.ToSCDRest())
 	}
 
 	return result
 }
 
-// ToSCDProto converts the LatLngPoint to a proto
-func (pt *LatLngPoint) ToSCDProto() *scdpb.LatLngPoint {
-	result := &scdpb.LatLngPoint{
-		Lat: pt.Lat,
-		Lng: pt.Lng,
+// ToSCDRest converts the LatLngPoint to a SCD v1 REST model
+func (pt *LatLngPoint) ToSCDRest() *restapi.LatLngPoint {
+	result := &restapi.LatLngPoint{
+		Lat: restapi.Latitude(pt.Lat),
+		Lng: restapi.Longitude(pt.Lng),
 	}
 
 	return result

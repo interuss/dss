@@ -50,28 +50,12 @@ services:
       - local-dss-data:/var/local-dss-data
       - $PWD/startup:/startup:ro
     command: /startup/core_service.sh ${DEBUG_ON:-0}
-    expose:
-      - 8081
     ports:
       - "4000:4000"
+      - "8082:8082"
     depends_on:
       - local-dss-rid-bootstrapper
       - local-dss-scd-bootstrapper
-
-  local-dss-http-gateway:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
-    image: interuss-local/dss
-    volumes:
-      - local-dss-data:/var/local-dss-data
-      - $PWD/startup:/startup:ro
-    command: /startup/http_gateway.sh
-
-    ports:
-      - "8082:8082"
-    depends_on:
-      - local-dss-core-service
 
   local-dss-dummy-oauth:
     build:

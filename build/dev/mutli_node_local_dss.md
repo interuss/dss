@@ -10,7 +10,7 @@ Multi-node local instance can be deployed by running [`./build/dev/haproxy_local
 Once the setup is complete, the following endpoints will be available:
 
 * Dummy OAuth Server: http://localhost:8085/token
-* DSS HTTP Gateway Server: http://localhost:8082/healthy
+* DSS Core Service: http://localhost:8082/healthy
 * CockroachDB web UI: http://localhost:8080
 
 Run [`./check_dss.sh`](check_dss.sh) to ensure environment is up. The expected output is an empty list of ISAs (no ISAs have been announced).

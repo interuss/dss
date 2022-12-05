@@ -22,13 +22,6 @@ testing implementation of a USS can make only outgoing calls to atproxy, which
 can be hosted in an entirely differently location than the automated testing
 implementation.
 
-### interoperability
-
-![DSS interoperability test system](../assets/interoperability_system.png)
-
-The [DSS interoperability test](interoperability) injects data into one DSS
-instance and ensures it is visible on the other DSS instances.
-
 ### load_test
 
 ![DSS load test system](../assets/load_test_system.png)

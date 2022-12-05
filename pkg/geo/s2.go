@@ -193,7 +193,7 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 // * ErrBadCoordSet
 //
 // TODO(tvoss):
-//   * Agree and implement a maximum number of points in area
+// * Agree and implement a maximum number of points in area
 func AreaToCellIDs(area string) (s2.CellUnion, error) {
 	var (
 		lat, lng float64
