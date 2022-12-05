@@ -42,8 +42,3 @@ the root folder of this repo:
 ```shell script
 make lint
 ```
-
-## Interoperability tests
-The [interoperability folder](../monitoring/interoperability) contains a test suite that
-verifies interoperability between two DSS instances in the same region; see
-[the README](../monitoring/interoperability/README.md) for more information.
