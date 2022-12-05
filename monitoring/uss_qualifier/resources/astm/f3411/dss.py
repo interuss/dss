@@ -5,12 +5,13 @@ from implicitdict import ImplicitDict
 
 from monitoring.monitorlib import infrastructure
 from monitoring.monitorlib.rid_common import RIDVersion
+from monitoring.uss_qualifier.reports.report import ParticipantID
 from monitoring.uss_qualifier.resources.resource import Resource
 from monitoring.uss_qualifier.resources.communications import AuthAdapterResource
 
 
 class DSSInstanceSpecification(ImplicitDict):
-    participant_id: str
+    participant_id: ParticipantID
     """ID of the USS responsible for this DSS instance"""
 
     rid_version: RIDVersion
@@ -28,14 +29,20 @@ class DSSInstanceSpecification(ImplicitDict):
 
 
 class DSSInstance(object):
+    participant_id: ParticipantID
+    rid_version: RIDVersion
+    client: infrastructure.UTMClientSession
+
     def __init__(
         self,
-        participant_id: str,
+        participant_id: ParticipantID,
         base_url: str,
         rid_version: RIDVersion,
         auth_adapter: infrastructure.AuthAdapter,
     ):
-        raise NotImplementedError()
+        self.participant_id = participant_id
+        self.rid_version = rid_version
+        self.client = infrastructure.UTMClientSession(base_url, auth_adapter)
 
 
 class DSSInstancesSpecification(ImplicitDict):

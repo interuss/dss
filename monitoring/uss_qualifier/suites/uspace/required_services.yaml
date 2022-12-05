@@ -10,7 +10,7 @@ resources:
   service_providers: resources.netrid.NetRIDServiceProviders
   observers: resources.netrid.NetRIDObserversResource
   evaluation_configuration: resources.netrid.EvaluationConfigurationResource
-
+  netrid_dss_instances: resources.astm.f3411.DSSInstancesResource
 actions:
 - test_suite:
     suite_type: suites.uspace.flight_auth
@@ -28,4 +28,5 @@ actions:
       service_providers: service_providers
       observers: observers
       evaluation_configuration: evaluation_configuration
+      dss_instances: netrid_dss_instances
   on_failure: Continue

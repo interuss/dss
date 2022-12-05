@@ -18,7 +18,8 @@
       "conflicting_flights": "conflicting_flights",
       "priority_preemption_flights": "priority_preemption_flights",
       "invalid_flight_auth_flights": "invalid_flight_auth_flights",
-      "dss": "dss"
+      "dss": "dss",
+      "netrid_dss_instances": "netrid_dss_instances"
     }
   }
 }
