@@ -130,7 +130,7 @@ def test_isa_missing_extents(ids, session_ridv2):
           'uss_base_url': BASE_URL,
       })
   assert resp.status_code == 400, resp.content
-  assert resp.json()['message'] == 'Missing required extents'
+  assert 'Error parsing Volume4D: Neither outline_polygon nor outline_circle were specified in volume' in resp.json()['message']
 
 
 @default_scope(SCOPE_SP)
@@ -155,7 +155,7 @@ def test_isa_start_time_in_past(ids, session_ridv2):
           'uss_base_url': BASE_URL,
       })
   assert resp.status_code == 400, resp.content
-  assert resp.json()['message'] == 'IdentificationServiceArea time_start must not be in the past'
+  assert 'IdentificationServiceArea time_start must not be in the past' in resp.json()['message']
 
 
 @default_scope(SCOPE_SP)
@@ -180,7 +180,7 @@ def test_isa_start_time_after_time_end(ids, session_ridv2):
           'uss_base_url': BASE_URL,
       })
   assert resp.status_code == 400, resp.content
-  assert resp.json()['message'] == 'IdentificationServiceArea time_end must be after time_start'
+  assert 'IdentificationServiceArea time_end must be after time_start' in resp.json()['message']
 
 
 @default_scope(SCOPE_SP)

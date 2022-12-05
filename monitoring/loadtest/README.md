@@ -14,7 +14,7 @@ In each files every action has a weight declared in the `@task(n)` decorator. Yo
 1. Set OAuth Spec with environment variable `AUTH_SPEC`. See [the auth spec documentation](../monitorlib/README.md#Auth_specs)
 for the format of these values.  Omitting this step will result in Client Initialization failure.
 1. You have 2 options of load testing the ISA or Subscription workflow
-    
+
     a. For ISA run: `AUTH_SPEC="<auth spec>" locust -f ./monitoring/loadtest/locust_files/ISA.py -H <DSS Endpoint URL>`
 
     b. For Subscription run: `AUTH_SPEC="<auth spec>" locust -f ./monitoring/loadtest/locust_files/Sub.py -H <DSS Endpoint URL>`
@@ -38,4 +38,4 @@ Simply build the Docker container with the Dockerfile from the root directory. A
 ## Use
 1. Navigate to http://localhost:8089
 1. Start new test with number of Users to spawn and the rate to spawn them.
-1. For the Host, provide the DSS HTTP Gateway endpoint used for testing. An example of such url is: http://dss_sandbox_local-dss-http-gateway_1:8082/v1/dss/ in case local environment is setup by [run_locally.sh](../../build/dev/run_locally.sh)
+1. For the Host, provide the DSS Core Service endpoint used for testing. An example of such url is: http://dss_sandbox_local-dss-core-service_1:8082/v1/dss/ in case local environment is setup by [run_locally.sh](../../build/dev/run_locally.sh)

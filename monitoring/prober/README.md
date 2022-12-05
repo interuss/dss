@@ -98,7 +98,7 @@ new tests.
 ### Creating a new test
 When creating a new test, the first decision is where to locate the test.  The
 prober is divided by subsystems with each subsystem tested in its respective
-folder ([`aux`](aux), [`rid`](rid), [`scd`](scd)).  Each test_*.py file in those
+folder ([`aux`](aux_), [`rid`](rid), [`scd`](scd)).  Each test_*.py file in those
 folders contains a group of tests, sometimes necessary to be executed in
 sequence.  An individual test reproducing a problem with a specific query might
 be placed in test_<RESOURCE>_special_cases.py.  Otherwise, the new test should

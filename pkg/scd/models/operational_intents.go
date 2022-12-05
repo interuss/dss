@@ -4,11 +4,10 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/stacktrace"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Aggregates constants for operational intents.
@@ -35,7 +34,7 @@ func (s OperationalIntentState) RequiresKey() bool {
 	return true
 }
 
-// IsValid indicates whether an OperationalIntent may be transitioned to the specified
+// IsValidInDSS indicates whether an OperationalIntent may be transitioned to the specified
 // state via a DSS PUT.
 func (s OperationalIntentState) IsValidInDSS() bool {
 	switch s {
@@ -72,36 +71,39 @@ func (s OperationalIntentState) String() string {
 	return string(s)
 }
 
-// ToProto converts the OperationalIntent to its proto API format
-func (o *OperationalIntent) ToProto() (*scdpb.OperationalIntentReference, error) {
-	result := &scdpb.OperationalIntentReference{
-		Id:              o.ID.String(),
-		Ovn:             o.OVN.String(),
+func (s OperationalIntentState) ToRest() restapi.OperationalIntentState {
+	return restapi.OperationalIntentState(s)
+}
+
+// ToRest converts the OperationalIntent to its SCD v1 REST model API format
+func (o *OperationalIntent) ToRest() *restapi.OperationalIntentReference {
+	ovn := restapi.EntityOVN(o.OVN.String())
+	result := &restapi.OperationalIntentReference{
+		Id:              restapi.EntityID(o.ID.String()),
+		Ovn:             &ovn,
 		Manager:         o.Manager.String(),
 		Version:         int32(o.Version),
-		UssBaseUrl:      o.USSBaseURL,
-		SubscriptionId:  o.SubscriptionID.String(),
-		State:           o.State.String(),
-		UssAvailability: UssAvailabilityStateUnknown.String(),
+		UssBaseUrl:      restapi.OperationalIntentUssBaseURL(o.USSBaseURL),
+		SubscriptionId:  restapi.SubscriptionID(o.SubscriptionID.String()),
+		State:           o.State.ToRest(),
+		UssAvailability: UssAvailabilityStateUnknown.ToRest(),
 	}
 
 	if o.StartTime != nil {
-		ts := tspb.New(*o.StartTime)
-		result.TimeStart = &scdpb.Time{
-			Value:  ts,
+		result.TimeStart = restapi.Time{
+			Value:  o.StartTime.Format(time.RFC3339Nano),
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 
 	if o.EndTime != nil {
-		ts := tspb.New(*o.EndTime)
-		result.TimeEnd = &scdpb.Time{
-			Value:  ts,
+		result.TimeEnd = restapi.Time{
+			Value:  o.EndTime.Format(time.RFC3339Nano),
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 
-	return result, nil
+	return result
 }
 
 // ValidateTimeRange validates the time range of o.

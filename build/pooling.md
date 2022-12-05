@@ -172,8 +172,8 @@ Once all participants in the existing pool have confirmed that the new ca.crt
 has been adopted by all of their nodes, the joining USS brings their system
 online with `tk apply`.  The pool should then be re-verified for functionality
 by running the prober test on each DSS instance, and the
-[interoperability test](../monitoring/interoperability/README.md) on the full
-pool (including the newly-added instance).
+[interoperability test scenario](../monitoring/uss_qualifier/scenarios/astm/netrid/v19/dss_interoperability.md)
+on the full pool (including the newly-added instance).
 
 Finally, the joining USS should provide its node addresses to all other 
 participants in the pool, and each other participant should add those addresses

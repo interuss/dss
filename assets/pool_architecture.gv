@@ -6,8 +6,6 @@ digraph G {
     DSSClient [label="DSS client"]
 
     LoadBalancer1 [label="TLS termination +\nload balancer"]
-    HTTPGateway1a [label="HTTP gateway"];
-    HTTPGateway1b [label="HTTP gateway"];
     CoreService1a [label="Core Service"];
     CoreService1b [label="Core Service"];
     CRDB1a [label="CRDB 1a"];
@@ -15,8 +13,6 @@ digraph G {
     PrivateKey1 [label="Certs signed by\nUSS1 private key"]
 
     LoadBalancer2 [label="TLS termination +\nload balancer"]
-    HTTPGateway2a [label="HTTP gateway"];
-    HTTPGateway2b [label="HTTP gateway"];
     CoreService2a [label="Core Service"];
     CoreService2b [label="Core Service"];
     CRDB2a [label="CRDB 2a"];
@@ -24,8 +20,6 @@ digraph G {
     PrivateKey2 [label="Certs signed by\nUSS2 private key"]
 
     LoadBalancer3 [label="TLS termination +\nload balancer"]
-    HTTPGateway3a [label="HTTP gateway"];
-    HTTPGateway3b [label="HTTP gateway"];
     CoreService3a [label="Core Service"];
     CoreService3b [label="Core Service"];
     CRDB3a [label="CRDB 3a"];
@@ -39,54 +33,54 @@ digraph G {
     label="USS1's DSS instance"
     subgraph cluster_1 {
     label="Stateful set a";
-    HTTPGateway1a -> CoreService1a -> CRDB1a;
+    CoreService1a -> CRDB1a;
     }
     subgraph cluster_2 {
     label="Stateful set b";
-    HTTPGateway1b -> CoreService1b -> CRDB1b;
+    CoreService1b -> CRDB1b;
     }
     CRDB1a -> PrivateKey1 [dir=back,style=dotted];
     CRDB1b -> PrivateKey1 [dir=back,style=dotted];
-    HTTPGateway1a -> CoreService1b -> CRDB1a;
-    HTTPGateway1b -> CoreService1a -> CRDB1b;
-    LoadBalancer1 -> HTTPGateway1a
-    LoadBalancer1 -> HTTPGateway1b
+    CoreService1b -> CRDB1a;
+    CoreService1a -> CRDB1b;
+    LoadBalancer1 -> CoreService1a
+    LoadBalancer1 -> CoreService1b
     }
 
     subgraph cluster_4 {
     label="USS2's DSS instance"
     subgraph cluster_5 {
     label="Stateful set a";
-    HTTPGateway2a -> CoreService2a -> CRDB2a;
+    CoreService2a -> CRDB2a;
     }
     subgraph cluster_6 {
     label="Stateful set b";
-    HTTPGateway2b -> CoreService2b -> CRDB2b;
+    CoreService2b -> CRDB2b;
     }
     CRDB2a -> PrivateKey2 [dir=back,style=dotted];
     CRDB2b -> PrivateKey2 [dir=back,style=dotted];
-    HTTPGateway2a -> CoreService2b -> CRDB2a;
-    HTTPGateway2b -> CoreService2a -> CRDB2b;
-    LoadBalancer2 -> HTTPGateway2a
-    LoadBalancer2 -> HTTPGateway2b
+    CoreService2b -> CRDB2a;
+    CoreService2a -> CRDB2b;
+    LoadBalancer2 -> CoreService2a
+    LoadBalancer2 -> CoreService2b
     }
 
     subgraph cluster_8 {
     label="USS3's DSS instance"
     subgraph cluster_9 {
     label="Stateful set a";
-    HTTPGateway3a -> CoreService3a -> CRDB3a;
+    CoreService3a -> CRDB3a;
     }
     subgraph cluster_10 {
     label="Stateful set b";
-    HTTPGateway3b -> CoreService3b -> CRDB3b;
+    CoreService3b -> CRDB3b;
     }
     CRDB3a -> PrivateKey3 [dir=back,style=dotted];
     CRDB3b -> PrivateKey3 [dir=back,style=dotted];
-    HTTPGateway3a -> CoreService3b -> CRDB3a;
-    HTTPGateway3b -> CoreService3a -> CRDB3b;
-    LoadBalancer3 -> HTTPGateway3a
-    LoadBalancer3 -> HTTPGateway3b
+    CoreService3b -> CRDB3a;
+    CoreService3a -> CRDB3b;
+    LoadBalancer3 -> CoreService3a
+    LoadBalancer3 -> CoreService3b
     }
 
     DSSClient -> LoadBalancer1;

@@ -25,7 +25,10 @@ from monitoring.uss_qualifier.resources.resource import (
     ResourceType,
     make_child_resources,
 )
-from monitoring.uss_qualifier.scenarios.scenario import TestScenario
+from monitoring.uss_qualifier.scenarios.scenario import (
+    TestScenario,
+    ScenarioCannotContinueError,
+)
 from monitoring.uss_qualifier.suites.definitions import (
     TestSuiteActionDeclaration,
     TestSuiteDefinition,
@@ -91,7 +94,10 @@ class TestSuiteAction(object):
         print(f'Running "{scenario.documentation.name}" scenario...')
         scenario.on_failed_check = _print_failed_check
         try:
-            scenario.run()
+            try:
+                scenario.run()
+            except ScenarioCannotContinueError:
+                pass
             scenario.go_to_cleanup()
             scenario.cleanup()
         except KeyboardInterrupt:

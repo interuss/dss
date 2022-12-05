@@ -18,17 +18,14 @@ local metadata = metadataBase {
     JoinExisting: ['VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1' ],
     storageClass: 'VAR_STORAGE_CLASS',
   },
-  gateway+: {
-    ipName: 'VAR_INGRESS_NAME',
-    image: 'VAR_DOCKER_IMAGE_NAME',
-    hostname: 'VAR_APP_HOSTNAME',
-    traceRequests: true,
-  },
   backend+: {
+    ipName: 'VAR_INGRESS_NAME',
     image: 'VAR_DOCKER_IMAGE_NAME',
     pubKeys: ['VAR_PUBLIC_KEY_PEM_PATH'],
     jwksEndpoint: 'VAR_JWKS_ENDPOINT',
     jwksKeyIds: ['VAR_JWKS_KEY_ID'],
+    hostname: 'VAR_APP_HOSTNAME',
+    dumpRequests: true,
   },
   schema_manager+: {
     image: 'VAR_DOCKER_IMAGE_NAME',

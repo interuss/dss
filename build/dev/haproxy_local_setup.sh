@@ -31,16 +31,12 @@ function cleanup() {
 
 	echo "Stopping node roachc container"
 	docker rm -f roachc &> /dev/null || true
-	
+
 	echo "Stopping haproxy docker"
 	docker rm -f dss-crdb-cluster-for-testing &> /dev/null || true
 
 	echo "Stopping dummy oauth container"
 	docker rm -f dummy-oauth-for-testing &> /dev/null || true
-
-	echo "Stopping http gateway container"
-	docker kill -f http-gateway-for-testing &> /dev/null || true
-	docker rm -f http-gateway-for-testing &> /dev/null || true
 
 	echo "Stopping core-service container"
 	docker kill -f core-service-for-testing &> /dev/null || true
@@ -59,7 +55,6 @@ echo "HAProxy base directory is ${BASEDIR}"
 # cd "${BASEDIR}"
 
 function gather_logs() {
-	docker logs http-gateway-for-testing 2> http-gateway-for-testing.log
 	docker logs core-service-for-testing 2> core-service-for-testing.log
 }
 
@@ -125,7 +120,7 @@ echo "Start the HAProxy container by mounting the cfg file."
 docker run -d --name dss-crdb-cluster-for-testing	\
 	--network dss_sandbox_default	\
 	-p 26257:26257	\
-	-v "$(pwd)/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg":ro haproxy:1.7  
+	-v "$(pwd)/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg":ro haproxy:1.7
 sleep 1
 
 echo "Bootstrapping RID Database tables"
@@ -156,37 +151,21 @@ echo " ------------ CORE SERVICE ---------------- "
 echo "Cleaning up any pre-existing core-service container"
 docker rm -f core-service-for-testing &> /dev/null || echo "No core service to clean up"
 
-echo "Starting core service on :8081"
-docker run -d --name core-service-for-testing \
+echo "Starting core service on :8082"
+docker run -d --name core-service-for-testing -p 8082:8082 \
 	--link dss-crdb-cluster-for-testing:crdb \
 	--network dss_sandbox_default	\
 	-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
 	local-interuss-dss-image \
 	core-service \
+    -addr :8082 \
 	--cockroach_host crdb \
 	-public_key_files /app/test.crt \
-	-reflect_api \
 	-log_format console \
 	-dump_requests \
-	-accepted_jwt_audiences local-gateway,localhost \
+	-accepted_jwt_audiences core-service,localhost \
 	-enable_scd	\
 	-enable_http
-
-sleep 1
-echo " ------------- HTTP GATEWAY -------------- "
-echo "Cleaning up any pre-existing http-gateway container"
-docker rm -f http-gateway-for-testing &> /dev/null || echo "No http gateway to clean up"
-
-echo "Starting http-gateway on :8082"
-docker run -d --name http-gateway-for-testing -p 8082:8082 \
-	--link core-service-for-testing:grpc \
-	--network dss_sandbox_default	\
-	local-interuss-dss-image \
-	http-gateway \
-	-core-service grpc:8081 \
-	-addr :8082 \
-	-trace-requests \
-	-enable_scd
 
 echo " -------------- DUMMY OAUTH -------------- "
 echo "Building dummy-oauth server container"

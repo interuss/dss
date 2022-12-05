@@ -1,9 +1,11 @@
 package models
 
 import (
+	"strings"
+
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/stacktrace"
-	"strings"
 )
 
 // Aggregates constants for uss availability.
@@ -27,6 +29,10 @@ func (u UssAvailabilityState) String() string {
 	return string(u)
 }
 
+func (u UssAvailabilityState) ToRest() restapi.UssAvailabilityState {
+	return restapi.UssAvailabilityState(u)
+}
+
 func UssAvailabilityStateFromString(s string) (UssAvailabilityState, error) {
 	switch strings.ToLower(s) {
 	case "", "unknown":
@@ -38,4 +44,8 @@ func UssAvailabilityStateFromString(s string) (UssAvailabilityState, error) {
 	default:
 		return UssAvailabilityStateUnknown, stacktrace.NewError("Invalid USS availability state")
 	}
+}
+
+func UssAvailabilityStateFromRest(s restapi.UssAvailabilityState) (UssAvailabilityState, error) {
+	return UssAvailabilityStateFromString(string(s))
 }
