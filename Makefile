@@ -134,7 +134,7 @@ build-monitoring:
 	cd monitoring && make build
 
 .PHONY: test-e2e
-test-e2e: down-locally start-locally probe-locally collect-local-logs down-locally
+test-e2e: down-locally build-dss build-monitoring start-locally probe-locally collect-local-logs down-locally
 
 tag:
 	scripts/tag.sh $(UPSTREAM_OWNER)/dss/v$(VERSION)
