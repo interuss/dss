@@ -70,7 +70,7 @@ def main() -> int:
             with open(config.artifacts.report_path, "w") as f:
                 json.dump(report, f, indent=2)
     elif config.artifacts and config.artifacts.report_path:
-        with open(config.report_path, "r") as f:
+        with open(config.artifacts.report_path, "r") as f:
             report = ImplicitDict.parse(json.load(f), TestRunReport)
     else:
         raise ValueError(
