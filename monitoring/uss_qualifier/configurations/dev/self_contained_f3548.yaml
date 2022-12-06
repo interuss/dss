@@ -1,84 +1,86 @@
-# This block defines how to perform a test run
-test_run:
-  # This block defines which test suite uss_qualifier should run, and what resources from the pool should be used
-  test_suite:
-    # suite_type is a FileReference (defined in uss_qualifier/file_io.py) to a test suite definition (see uss_qualifier/suites/README.md)
-    suite_type: suites.astm.utm.f3548_21
+# This configuration uses the v1 configuration schema
+v1:
+  # This block defines how to perform a test run
+  test_run:
+    # This block defines which test suite uss_qualifier should run, and what resources from the pool should be used
+    test_suite:
+      # suite_type is a FileReference (defined in uss_qualifier/file_io.py) to a test suite definition (see uss_qualifier/suites/README.md)
+      suite_type: suites.astm.utm.f3548_21
 
-    # Mapping of <resource name in test suite> to <resource name in resource pool>
+      # Mapping of <resource name in test suite> to <resource name in resource pool>
+      resources:
+        flight_planners: flight_planners
+        conflicting_flights: conflicting_flights
+        priority_preemption_flights: priority_preemption_flights
+        dss: dss
+
+    # This block defines all the resources available in the resource pool.
+    # Presumably all resources defined below would be used either
+    #   1) directly in the test suite or
+    #   2) to create another resource in the pool (see, e.g., `utm_auth` as it relates to `dss` below)
     resources:
-      flight_planners: flight_planners
-      conflicting_flights: conflicting_flights
-      priority_preemption_flights: priority_preemption_flights
-      dss: dss
+      resource_declarations:
+        # Means by which uss_qualifier can obtain authorization to make requests in an ASTM USS ecosystem
+        utm_auth:
+          # resource_type is a ResourceTypeName (defined in uss_qualifier/resources/definitions.py)
+          resource_type: resources.communications.AuthAdapterResource
+          specification:
+            # To avoid putting secrets in configuration files, the auth spec (including sensitive information) will be read from the AUTH_SPEC environment variable
+            environment_variable_containing_auth_spec: AUTH_SPEC
 
-  # This block defines all the resources available in the resource pool.
-  # Presumably all resources defined below would be used either
-  #   1) directly in the test suite or
-  #   2) to create another resource in the pool (see, e.g., `utm_auth` as it relates to `dss` below)
-  resources:
-    resource_declarations:
-      # Means by which uss_qualifier can obtain authorization to make requests in an ASTM USS ecosystem
-      utm_auth:
-        # resource_type is a ResourceTypeName (defined in uss_qualifier/resources/definitions.py)
-        resource_type: resources.communications.AuthAdapterResource
-        specification:
-          # To avoid putting secrets in configuration files, the auth spec (including sensitive information) will be read from the AUTH_SPEC environment variable
-          environment_variable_containing_auth_spec: AUTH_SPEC
+        # Set of USSs capable of being tested as flight planners
+        flight_planners:
+          resource_type: resources.flight_planning.FlightPlannersResource
+          dependencies:
+            auth_adapter: utm_auth
+          specification:
+            flight_planners:
+            - participant_id: uss1
+              injection_base_url: http://host.docker.internal:8074/scdsc
+            - participant_id: uss2
+              injection_base_url: http://host.docker.internal:8074/scdsc
 
-      # Set of USSs capable of being tested as flight planners
-      flight_planners:
-        resource_type: resources.flight_planning.FlightPlannersResource
-        dependencies:
-          auth_adapter: utm_auth
-        specification:
-          flight_planners:
-          - participant_id: uss1
-            injection_base_url: http://host.docker.internal:8074/scdsc
-          - participant_id: uss2
-            injection_base_url: http://host.docker.internal:8074/scdsc
+        # Details of conflicting flights (used in nominal planning scenario)
+        conflicting_flights:
+          resource_type: resources.flight_planning.FlightIntentsResource
+          specification:
+            planning_time: '0:05:00'
+            file_source: file://./test_data/che/flight_intents/conflicting_flights.json
 
-      # Details of conflicting flights (used in nominal planning scenario)
-      conflicting_flights:
-        resource_type: resources.flight_planning.FlightIntentsResource
-        specification:
-          planning_time: '0:05:00'
-          file_source: file://./test_data/che/flight_intents/conflicting_flights.json
+        # Details of priority-preemption flights (used in nominal planning priority scenario)
+        priority_preemption_flights:
+          resource_type: resources.flight_planning.FlightIntentsResource
+          specification:
+            planning_time: '0:05:00'
+            file_source: test_data.che.flight_intents.priority_preemption
 
-      # Details of priority-preemption flights (used in nominal planning priority scenario)
-      priority_preemption_flights:
-        resource_type: resources.flight_planning.FlightIntentsResource
-        specification:
-          planning_time: '0:05:00'
-          file_source: test_data.che.flight_intents.priority_preemption
+        # Location of DSS instance that can be used to verify flight planning outcomes
+        dss:
+          resource_type: resources.astm.f3548.v21.DSSInstanceResource
+          dependencies:
+            auth_adapter: utm_auth
+          specification:
+            # A USS that hosts a DSS instance is also a participant in the test, even if they don't fulfill any other roles
+            participant_id: uss1
+            base_url: http://host.docker.internal:8082
 
-      # Location of DSS instance that can be used to verify flight planning outcomes
-      dss:
-        resource_type: resources.astm.f3548.v21.DSSInstanceResource
-        dependencies:
-          auth_adapter: utm_auth
-        specification:
-          # A USS that hosts a DSS instance is also a participant in the test, even if they don't fulfill any other roles
-          participant_id: uss1
-          base_url: http://host.docker.internal:8082
+  # This block defines artifacts related to the test run.  Note that all paths are
+  # relative to where uss_qualifier is executed from, and are located inside the
+  # Docker container executing uss_qualifier.
+  artifacts:
+    # Path to main report output
+    report_path: report.json
 
-# This block defines artifacts related to the test run.  Note that all paths are
-# relative to where uss_qualifier is executed from, and are located inside the
-# Docker container executing uss_qualifier.
-artifacts:
-  # Path to main report output
-  report_path: report.json
+    # Information about a report including a list of roles tested and which participants are attempting to fill them
+    tested_roles:
+      report_path: tested_requirements.html
+      roles:
+        - name: Strategic Coordination role
+          requirement_set: astm.f3548.v21.scd
+          participants:
+            - uss1
+            - uss2
 
-  # Information about a report including a list of roles tested and which participants are attempting to fill them
-  tested_roles:
-    report_path: tested_requirements.html
-    roles:
-      - name: Strategic Coordination role
-        requirement_set: astm.f3548.v21.scd
-        participants:
-          - uss1
-          - uss2
-
-  graph:
-    # Path to output GraphViz test file summarizing test run
-    gv_path: report.gv
+    graph:
+      # Path to output GraphViz test file summarizing test run
+      gv_path: report.gv

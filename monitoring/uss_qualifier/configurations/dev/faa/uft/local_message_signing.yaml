@@ -1,65 +1,66 @@
-test_run:
-  resources:
-    resource_declarations:
-      "$ref": ../../resources.yaml#/common
-      flight_planners:
-        resource_type: resources.flight_planning.FlightPlannersResource
-        dependencies:
-          auth_adapter: utm_auth
-        specification:
-          flight_planners:
-          - participant_id: uss1
-            injection_base_url: http://host.docker.internal:8074/scdsc
-          - participant_id: uss2
-            injection_base_url: http://host.docker.internal:8074/scdsc
-          - participant_id: mock_uss
-            injection_base_url: http://host.docker.internal:8074/scdsc
-      combination_selector:
-        resource_type: resources.flight_planning.FlightPlannerCombinationSelectorResource
-        specification:
-          must_include:
-          - mock_uss
-          maximum_roles:
-            mock_uss: 1
-      conflicting_flights:
-        resource_type: resources.flight_planning.FlightIntentsResource
-        specification:
-          planning_time: '0:05:00'
-          file_source: file://./test_data/che/flight_intents/conflicting_flights.json
-      priority_preemption_flights:
-        resource_type: resources.flight_planning.FlightIntentsResource
-        specification:
-          planning_time: '0:05:00'
-          file_source: test_data.che.flight_intents.priority_preemption
-      dss:
-        resource_type: resources.astm.f3548.v21.DSSInstanceResource
-        dependencies:
-          auth_adapter: utm_auth
-        specification:
-          participant_id: uss1
-          base_url: http://host.docker.internal:8082
-      mock_uss:
-        resource_type: resources.interuss.MockUSSResource
-        dependencies:
-          auth_adapter: utm_auth
-        specification:
-          participant_id: mock_uss
-          mock_uss_base_url: http://host.docker.internal:8074
-
-  test_suite:
-    suite_type: suites.faa.uft.message_signing
+v1:
+  test_run:
     resources:
-      mock_uss: mock_uss
-      flight_planners: flight_planners
-      combination_selector: combination_selector
-      conflicting_flights: conflicting_flights
-      priority_preemption_flights: priority_preemption_flights
-      dss: dss
+      resource_declarations:
+        "$ref": ../../resources.yaml#/common
+        flight_planners:
+          resource_type: resources.flight_planning.FlightPlannersResource
+          dependencies:
+            auth_adapter: utm_auth
+          specification:
+            flight_planners:
+            - participant_id: uss1
+              injection_base_url: http://host.docker.internal:8074/scdsc
+            - participant_id: uss2
+              injection_base_url: http://host.docker.internal:8074/scdsc
+            - participant_id: mock_uss
+              injection_base_url: http://host.docker.internal:8074/scdsc
+        combination_selector:
+          resource_type: resources.flight_planning.FlightPlannerCombinationSelectorResource
+          specification:
+            must_include:
+            - mock_uss
+            maximum_roles:
+              mock_uss: 1
+        conflicting_flights:
+          resource_type: resources.flight_planning.FlightIntentsResource
+          specification:
+            planning_time: '0:05:00'
+            file_source: file://./test_data/che/flight_intents/conflicting_flights.json
+        priority_preemption_flights:
+          resource_type: resources.flight_planning.FlightIntentsResource
+          specification:
+            planning_time: '0:05:00'
+            file_source: test_data.che.flight_intents.priority_preemption
+        dss:
+          resource_type: resources.astm.f3548.v21.DSSInstanceResource
+          dependencies:
+            auth_adapter: utm_auth
+          specification:
+            participant_id: uss1
+            base_url: http://host.docker.internal:8082
+        mock_uss:
+          resource_type: resources.interuss.MockUSSResource
+          dependencies:
+            auth_adapter: utm_auth
+          specification:
+            participant_id: mock_uss
+            mock_uss_base_url: http://host.docker.internal:8074
 
-artifacts:
-  report_path: report.json
-  tested_roles:
-    report_path: tested_requirements.html
-    roles: []
-  graph:
-    gv_path: report.gv
+    test_suite:
+      suite_type: suites.faa.uft.message_signing
+      resources:
+        mock_uss: mock_uss
+        flight_planners: flight_planners
+        combination_selector: combination_selector
+        conflicting_flights: conflicting_flights
+        priority_preemption_flights: priority_preemption_flights
+        dss: dss
+
+  artifacts:
+    report_path: report.json
+    tested_roles:
+      report_path: tested_requirements.html
+      roles: []
+    graph:
+      gv_path: report.gv
