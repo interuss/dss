@@ -130,10 +130,7 @@ target version parameter to `migrate_local_db.sh`.
 
 ### Prober
 
-* `probe_local_instance.sh` runs the end-to-end [prober](../../monitoring/prober)
-integration test, similar to [docker_e2e.sh](../../test/docker_e2e.sh), but using
-the DSS instance already deployed locally instead of also deploying a local
-instance as docker_e2e.sh does
+* `monitoring/prober/run_locally.sh` runs the [prober](../../monitoring/prober) integration tests using the DSS instance already deployed locally via [`run_locally.sh`](run_locally.sh)
 
 ### RID
 

@@ -26,12 +26,13 @@ Before a pull request can be merged into the master branch, it must pass all aut
 
 ### Build `monitoring` image (`make build-monitoring`)
 
-### End-to-end test (`make test-e2e`)
+### Tear down any pre-existing local DSS instance (`make down-locally`)
 
-Steps:
+### Start local DSS instance (`make start-locally`)
 
-* `make start-locally` (build/dev/run_locally.sh)
-* Run pytest in monitoring/prober (in `monitoring` container)
+### Probe local DSS instance (`make probe-locally`)
+
+### Bring down local DSS instance (`make down-locally`)
 
 ## `monitoring` tests (`make check-monitoring`)
 
