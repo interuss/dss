@@ -23,7 +23,6 @@ class SourceDataModelValidation(TestScenario):
         super().__init__()
         self.source_document = source_document
 
-
     def run(self):
         self.begin_test_scenario()
 
@@ -38,14 +37,16 @@ class SourceDataModelValidation(TestScenario):
         with self.check("Valid JSON", [self.source_document.specification.url]):
             data = json.loads(self.source_document.raw_document)
 
-        with self.check("Valid schema and values", [self.source_document.specification.url]) as check:
+        with self.check(
+            "Valid schema and values", [self.source_document.specification.url]
+        ) as check:
             try:
                 ImplicitDict.parse(data, ED269SchemaFile)
             except ValueError as e:
                 check.record_failed(
                     summary="Invalid format error",
                     severity=Severity.Critical,
-                    details=str(e)
+                    details=str(e),
                 )
 
         self.end_test_step()
