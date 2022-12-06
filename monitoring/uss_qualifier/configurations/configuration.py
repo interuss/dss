@@ -55,12 +55,17 @@ class ArtifactsConfiguration(ImplicitDict):
     """If specified, configuration describing a desired report summarizing tested requirements for each specified participant and role"""
 
 
-class USSQualifierConfiguration(ImplicitDict):
+class USSQualifierConfigurationV1(ImplicitDict):
     test_run: Optional[TestConfiguration] = None
     """If specified, configuration describing how to perform a test run"""
 
     artifacts: Optional[ArtifactsConfiguration] = None
     """If specified, configuration describing the artifacts related to the test run"""
+
+
+class USSQualifierConfiguration(ImplicitDict):
+    v1: Optional[USSQualifierConfigurationV1]
+    """Configuration in version 1 format"""
 
     @staticmethod
     def from_string(config_string: str) -> "USSQualifierConfiguration":

@@ -56,7 +56,7 @@ def execute_test_run(config: TestConfiguration):
 def main() -> int:
     args = parseArgs()
 
-    config = USSQualifierConfiguration.from_string(args.config)
+    config = USSQualifierConfiguration.from_string(args.config).v1
     if args.report:
         if not config.artifacts:
             config.artifacts = ArtifactsConfiguration(report_path=args.report)
