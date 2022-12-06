@@ -5,16 +5,18 @@ from implicitdict import ImplicitDict
 from monitoring.uss_qualifier.fileio import load_dict_with_references
 from monitoring.uss_qualifier.requirements.documentation import RequirementSetID
 from monitoring.uss_qualifier.resources.definitions import ResourceCollection
-from monitoring.uss_qualifier.suites.definitions import TestSuiteDeclaration
-
+from monitoring.uss_qualifier.suites.definitions import (
+    TestSuiteDeclaration,
+    TestSuiteActionDeclaration,
+)
 
 ParticipantID = str
 """String that refers to a participant being qualified by uss_qualifier"""
 
 
 class TestConfiguration(ImplicitDict):
-    test_suite: TestSuiteDeclaration
-    """The test suite this test configuration wants to run"""
+    action: TestSuiteActionDeclaration
+    """The action this test configuration wants to run (usually a test suite)"""
 
     resources: ResourceCollection
     """Declarations for resources used by the test suite"""

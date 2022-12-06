@@ -16,9 +16,7 @@ from monitoring.uss_qualifier.reports.documents import generate_tested_requireme
 from monitoring.uss_qualifier.reports.graphs import make_graph
 from monitoring.uss_qualifier.reports.report import TestRunReport
 from monitoring.uss_qualifier.resources.resource import create_resources
-from monitoring.uss_qualifier.suites.suite import (
-    TestSuite,
-)
+from monitoring.uss_qualifier.suites.suite import TestSuiteAction
 
 
 def parseArgs() -> argparse.Namespace:
@@ -41,8 +39,8 @@ def parseArgs() -> argparse.Namespace:
 def execute_test_run(config: TestConfiguration):
     codebase_version = get_code_version()
     resources = create_resources(config.resources.resource_declarations)
-    suite = TestSuite(config.test_suite, resources)
-    report = suite.run()
+    action = TestSuiteAction(config.action, resources)
+    report = action.run()
     if report.successful:
         print("Final result: SUCCESS")
     else:

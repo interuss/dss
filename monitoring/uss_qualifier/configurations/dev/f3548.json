@@ -6,13 +6,15 @@
           "$ref": "resources.yaml#/f3548"
         }
       },
-      "test_suite": {
-        "suite_type": "suites.astm.utm.f3548_21",
-        "resources": {
-          "flight_planners": "flight_planners",
-          "conflicting_flights": "conflicting_flights",
-          "priority_preemption_flights": "priority_preemption_flights",
-          "dss": "dss"
+      "action": {
+        "test_suite": {
+          "suite_type": "suites.astm.utm.f3548_21",
+          "resources": {
+            "flight_planners": "flight_planners",
+            "conflicting_flights": "conflicting_flights",
+            "priority_preemption_flights": "priority_preemption_flights",
+            "dss": "dss"
+          }
         }
       }
     },

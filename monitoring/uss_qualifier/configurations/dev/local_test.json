@@ -6,22 +6,24 @@
           "$ref": "resources.yaml#/all"
         }
       },
-      "test_suite": {
-        "suite_type": "suites.dev.local_test",
-        "resources": {
-          "adjacent_circular_flights_data": "adjacent_circular_flights_data",
-          "adjacent_circular_storage_config": "adjacent_circular_storage_config",
-          "kml_flights_data": "kml_flights_data",
-          "kml_storage_config": "kml_storage_config",
-          "service_providers": "netrid_service_providers",
-          "observers": "netrid_observers",
-          "evaluation_configuration": "netrid_observation_evaluation_configuration",
-          "flight_planners": "flight_planners",
-          "conflicting_flights": "conflicting_flights",
-          "priority_preemption_flights": "priority_preemption_flights",
-          "invalid_flight_auth_flights": "invalid_flight_auth_flights",
-          "dss": "dss",
-          "netrid_dss_instances": "netrid_dss_instances"
+      "action": {
+        "test_suite": {
+          "suite_type": "suites.dev.local_test",
+          "resources": {
+            "adjacent_circular_flights_data": "adjacent_circular_flights_data",
+            "adjacent_circular_storage_config": "adjacent_circular_storage_config",
+            "kml_flights_data": "kml_flights_data",
+            "kml_storage_config": "kml_storage_config",
+            "service_providers": "netrid_service_providers",
+            "observers": "netrid_observers",
+            "evaluation_configuration": "netrid_observation_evaluation_configuration",
+            "flight_planners": "flight_planners",
+            "conflicting_flights": "conflicting_flights",
+            "priority_preemption_flights": "priority_preemption_flights",
+            "invalid_flight_auth_flights": "invalid_flight_auth_flights",
+            "dss": "dss",
+            "netrid_dss_instances": "netrid_dss_instances"
+          }
         }
       }
     },

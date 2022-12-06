@@ -2,17 +2,18 @@
 v1:
   # This block defines how to perform a test run
   test_run:
-    # This block defines which test suite uss_qualifier should run, and what resources from the pool should be used
-    test_suite:
-      # suite_type is a FileReference (defined in uss_qualifier/file_io.py) to a test suite definition (see uss_qualifier/suites/README.md)
-      suite_type: suites.astm.utm.f3548_21
+    # This block defines which test action uss_qualifier should run, and what resources from the pool should be used
+    action:
+      test_suite:
+        # suite_type is a FileReference (defined in uss_qualifier/file_io.py) to a test suite definition (see uss_qualifier/suites/README.md)
+        suite_type: suites.astm.utm.f3548_21
 
-      # Mapping of <resource name in test suite> to <resource name in resource pool>
-      resources:
-        flight_planners: flight_planners
-        conflicting_flights: conflicting_flights
-        priority_preemption_flights: priority_preemption_flights
-        dss: dss
+        # Mapping of <resource name in test suite> to <resource name in resource pool>
+        resources:
+          flight_planners: flight_planners
+          conflicting_flights: conflicting_flights
+          priority_preemption_flights: priority_preemption_flights
+          dss: dss
 
     # This block defines all the resources available in the resource pool.
     # Presumably all resources defined below would be used either

@@ -251,5 +251,5 @@ class TestRunReport(ImplicitDict):
     configuration: TestConfiguration
     """Configuration used to run uss_qualifier"""
 
-    report: TestSuiteReport
-    """Report produced by configured test suite"""
+    report: TestSuiteActionReport
+    """Report produced by configured test action"""

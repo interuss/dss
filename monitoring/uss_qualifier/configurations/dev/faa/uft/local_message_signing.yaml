@@ -47,15 +47,16 @@ v1:
             participant_id: mock_uss
             mock_uss_base_url: http://host.docker.internal:8074
 
-    test_suite:
-      suite_type: suites.faa.uft.message_signing
-      resources:
-        mock_uss: mock_uss
-        flight_planners: flight_planners
-        combination_selector: combination_selector
-        conflicting_flights: conflicting_flights
-        priority_preemption_flights: priority_preemption_flights
-        dss: dss
+    action:
+      test_suite:
+        suite_type: suites.faa.uft.message_signing
+        resources:
+          mock_uss: mock_uss
+          flight_planners: flight_planners
+          combination_selector: combination_selector
+          conflicting_flights: conflicting_flights
+          priority_preemption_flights: priority_preemption_flights
+          dss: dss
 
   artifacts:
     report_path: report.json
