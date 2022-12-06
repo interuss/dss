@@ -6,18 +6,21 @@ on:
       - master
 jobs:
   windows:
+    name: Clone on Windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - name: Checkout on Windows
         run: echo "Project successfully cloned on ${{ runner.os }}"
   macos:
+    name: Clone on Mac
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
       - name: Checkout on Mac
         run: echo "Project successfully cloned on ${{ runner.os }}"
   ubuntu:
+    name: Clone on Ubuntu
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
