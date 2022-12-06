@@ -1,4 +1,4 @@
-name: Developper environment checks
+name: Developers environment checks
 on:
   pull_request: # All
   push:
@@ -11,18 +11,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Checkout on Windows
-        run: echo "Project successfully cloned on ${{ runner.image }}:${{ runner.version }}"
+        run: echo "Project successfully cloned on ${{ runner.os }}. See `Set up Job` stage for more details about the Runner."
   macos:
     name: Clone on Mac
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
       - name: Checkout on Mac
-        run: echo "Project successfully cloned on ${{ runner.image }}:${{ runner.version }}"
+        run: echo "Project successfully cloned on ${{ runner.os }}. See `Set up Job` stage for more details about the Runner."
   ubuntu:
     name: Clone on Ubuntu
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Checkout on Ubuntu
-        run: echo "Project successfully cloned on ${{ runner.image }}:${{ runner.version }}"
+        run: echo "Project successfully cloned on ${{ runner.os }}. See `Set up Job` stage for more details about the Runner."
