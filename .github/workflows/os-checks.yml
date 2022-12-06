@@ -1,0 +1,25 @@
+name: Operating Systems checks
+on:
+  pull_request: # All
+  push:
+    branches:
+      - master
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Checkout on Windows
+        run: echo "Project successfully cloned on ${{ runner.os }}"
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Checkout on Mac
+        run: echo "Project successfully cloned on ${{ runner.os }}"
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Checkout on Ubuntu
+        run: echo "Project successfully cloned on ${{ runner.os }}"
