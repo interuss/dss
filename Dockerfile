@@ -38,4 +38,5 @@ COPY --from=build /go/bin/db-manager /usr/bin
 COPY --from=build /go/bin/dlv /usr/bin
 COPY build/jwt-public-certs /jwt-public-certs
 COPY build/test-certs /test-certs
+COPY build/deploy/db_schemas /db-schemas
 HEALTHCHECK CMD cat service.ready || exit 1

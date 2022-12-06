@@ -1,43 +1,11 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
-local rid_schema = import "db_schemas/rid.libsonnet";
-local scd_schema = import "db_schemas/scd.libsonnet";
 
-local rid_schema_vol = {
-  name: 'db-rid-schema',
-  configMap: {
-    defaultMode: 420,
-    name: 'db-rid-schema',
-  },
-};
-local rid_schema_mount = {
-  name: 'db-rid-schema',
-  readOnly: false,
-  mountPath: '/db-schemas/rid',
-};
-
-local scd_schema_vol = {
-  name: 'db-scd-schema',
-  configMap: {
-    defaultMode: 420,
-    name: 'db-scd-schema',
-  },
-};
-local scd_schema_mount = {
-  name: 'db-scd-schema',
-  readOnly: false,
-  mountPath: '/db-schemas/scd',
-};
+local schema_dir = '/db-schemas';
 
 {
   all(metadata): {
     assert metadata.cockroach.shouldInit == true && metadata.cockroach.JoinExisting == [] : "If shouldInit is True, JoinExisiting should be empty",
-    rid_schema: base.ConfigMap(metadata, 'db-rid-schema') {
-      data: rid_schema.data
-    },
-    scd_schema: if metadata.enableScd then base.ConfigMap(metadata, 'db-scd-schema') {
-      data: scd_schema.data
-    } else null,
     RIDSchemaManager: if metadata.cockroach.shouldInit then base.Job(metadata, 'rid-schema-manager') {
       spec+: {
         template+: {
@@ -45,7 +13,6 @@ local scd_schema_mount = {
             volumes_: {
               client_certs: volumes.volumes.client_certs,
               ca_certs: volumes.volumes.ca_certs,
-              rid_schema: rid_schema_vol,
             },
             soloContainer:: base.Container('rid-schema-manager') {
               image: metadata.schema_manager.image,
@@ -57,10 +24,9 @@ local scd_schema_mount = {
                 cockroach_user: 'root',
                 cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 db_version: metadata.schema_manager.desired_rid_db_version,
-                schemas_dir: rid_schema_mount.mountPath,
-
+                schemas_dir: schema_dir + '/rid',
               },
-              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert + [rid_schema_mount],
+              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
             },
           },
         },
@@ -73,7 +39,6 @@ local scd_schema_mount = {
             volumes_: {
               client_certs: volumes.volumes.client_certs,
               ca_certs: volumes.volumes.ca_certs,
-              scd_schema: scd_schema_vol,
             },
             soloContainer:: base.Container('scd-schema-manager') {
               image: metadata.schema_manager.image,
@@ -85,9 +50,9 @@ local scd_schema_mount = {
                 cockroach_user: 'root',
                 cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 db_version: metadata.schema_manager.desired_scd_db_version,
-                schemas_dir: scd_schema_mount.mountPath,
+                schemas_dir: schema_dir + '/scd',
               },
-              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert + [scd_schema_mount],
+              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
             },
           },
         },
