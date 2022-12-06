@@ -1,4 +1,4 @@
-name: Operating Systems checks
+name: Developper environment checks
 on:
   pull_request: # All
   push:
