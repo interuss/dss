@@ -77,7 +77,7 @@ openapi-to-go-server:
 
 dss_apis: openapi-to-go-server
 	docker container run -u "$(USER_GROUP)" -it \
-      	-v "$(CURDIR)/interfaces/aux_/aux.yaml:/resources/auxv1.yaml" \
+      	-v "$(CURDIR)/interfaces/aux_/aux_.yaml:/resources/auxv1.yaml" \
       	-v "$(CURDIR)/interfaces/astm-utm/Protocol/utm.yaml:/resources/scdv1.yaml" \
       	-v "$(CURDIR)/interfaces/rid/v1/remoteid/augmented.yaml:/resources/ridv1.yaml" \
         -v "$(CURDIR)/interfaces/rid/v2/remoteid/updated.yaml:/resources/ridv2.yaml" \
