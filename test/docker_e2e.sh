@@ -67,7 +67,6 @@ sleep 1
 echo "Bootstrapping RID Database tables"
 docker run --rm --name rid-db-manager \
 	--link dss-crdb-for-debugging:crdb \
-	-v "$(pwd)/build/deploy/db_schemas/rid:/db-schemas/rid" \
 	local-interuss-dss-image \
 	/usr/bin/db-manager \
 	--schemas_dir db-schemas/rid \
@@ -78,7 +77,6 @@ sleep 1
 echo "Bootstrapping SCD Database tables"
 docker run --rm --name scd-db-manager \
 	--link dss-crdb-for-debugging:crdb \
-	-v "$(pwd)/build/deploy/db_schemas/scd:/db-schemas/scd" \
 	local-interuss-dss-image \
 	/usr/bin/db-manager \
 	--schemas_dir db-schemas/scd \
