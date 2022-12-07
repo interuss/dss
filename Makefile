@@ -148,6 +148,14 @@ start-locally:
 probe-locally:
 	monitoring/prober/run_locally.sh
 
+.PHONY: start-uss-mocks
+start-uss-mocks:
+	monitoring/mock_uss/start_all_local_mocks.sh
+
+.PHONY: stop-uss-mocks
+stop-uss-mocks:
+	monitoring/mock_uss/stop_all_local_mocks.sh
+
 .PHONY: collect-local-logs
 collect-local-logs:
 	docker logs dss_sandbox_local-dss-core-service_1 2> core-service-for-testing.log

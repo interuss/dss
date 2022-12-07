@@ -14,7 +14,7 @@ for container_name in "${localhost_containers[@]}"; do
     if [ "${new_message}" = "${last_message}" ]; then
       printf "."
     else
-      printf '..%s..' "${new_message}"
+      printf '%s' "${new_message}"
       last_message="${new_message}"
     fi
     sleep 3
@@ -34,7 +34,7 @@ while true; do
       if [ "${new_message}" = "${last_message}" ]; then
         printf "."
       else
-        printf '..%s..' "${new_message}"
+        printf '%s' "${new_message}"
         last_message="${new_message}"
       fi
       sleep 3

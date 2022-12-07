@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-"${SCRIPT_DIR}/../build.sh" || exit 1
+if [ -z "${DO_NOT_BUILD_MONITORING}" ]; then
+  "${SCRIPT_DIR}/../build.sh" || exit 1
+fi
 
 PUBLIC_KEY="/var/test-certs/auth2.pem"
 AUD=${MOCK_USS_TOKEN_AUDIENCE:-localhost,host.docker.internal}
@@ -19,6 +21,8 @@ if [ "$TEST" == "true" ]; then
   AUD="localhost"
   docker_command="mock_uss/test.sh"
 fi
+
+docker container rm -f mock_uss_geoawareness || echo "mock_uss_geoawareness container was not already running"
 
 # shellcheck disable=SC2086
 docker run ${docker_args} --name mock_uss_geoawareness \
