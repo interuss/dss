@@ -179,9 +179,8 @@ class TestScenarioReport(ImplicitDict):
         return result
 
     def has_critical_problem(self) -> bool:
-        return (
-            any(c.has_critical_problem() for c in self.cases)
-            or self.cleanup.has_critical_problem()
+        return any(c.has_critical_problem() for c in self.cases) or (
+            "cleanup" in self and self.cleanup and self.cleanup.has_critical_problem()
         )
 
 
