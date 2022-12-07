@@ -67,3 +67,21 @@ No issues indicate the USS-under-test message-signed all its requests and respon
 Replace the private/public keys with invalid key pair by setting the `USE_VALID_KEY_PAIR` in `run_locally_msgsigning.sh` to "false". This will set the keypair to be `mock_priv.pem`/`mock_pub.der`. Using this keypair will lead to invalid signatures, and the `mock_pub.der` will not pass SCVP validation.
 The USS-under-test will respond with 403 to all requests from mock_uss. The Uss Qualifier tests will not pass.
 The message signing section of the report would show `403` in interactions with mock_uss.
+
+
+### Other notes
+Below are examples of valid http message signature headers. Malformed headers can cause validation to fail, for example providing an unreachable url within an `x5u`, or missing quotes in the `utm-message-signature-input` field.
+
+
+```
+{
+    ...
+    "headers": {
+        ...
+        "content-digest": "sha-512=:8eCoJlCRDjzhhswDGwC00GfIe7AvGsHuXsBphaZCB9U4kfdMOTJP+bnYNhHdKVPQaSWxTjuim3ywMxh+kIA25w==:",
+        "x-utm-jws-header": "alg=\"RS256\", typ=\"JOSE\", kid=\"mock_uss_keyid\", x5u=\"https://host.docker.internal:8074/mock/scd/.well-known/uas-traffic-management/mock_pub.der\"",
+        "x-utm-message-signature-input": "utm-message-signature=(\"@status\" \"content-type\" \"content-digest\" \"x-utm-jws-header\");created=1670277282425",
+        "x-utm-message-signature": "utm-message-signature=:VrUhTe7g2PdnrX37t4hM6Dj7ggSy9YSYt6AqxvICSBTo+AFTVnhCw6k4Kpo1udVboepVYzYC4MHdjaGoTQ6hDT4gvH63QB3JyEqjs0TrAxFj78D5Rau7Sysku18Y/MJG1/cta7DRekdBQJnhFks0aIYzPTizYt0tUL9jx3yybyuK7jTNdtsFmN5qQDs2upTe0ivQjOWggGACMF1yxMZBsGmPLs24E5LssAfSpa1qunnWQNukMHYxtJ+GFMhAV4LDLsO3QQRidKhuhndqittYrGGujQwSz6WSaO8D+4DjR8vpWeR14JnwEIoS2oS6DiyX4fHMB296ai/tkbzklkbe5g==:"
+    }
+}
+```
